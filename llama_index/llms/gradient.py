@@ -34,6 +34,9 @@ class _BaseGradientLLM(CustomLLM):
     workspace_id: Optional[str] = Field(
         description="The Gradient workspace id to use.",
     )
+    is_chat_model: bool = Field(
+        default=False, description="Whether the model is a chat model."
+    )
 
     def __init__(
         self,
@@ -43,6 +46,7 @@ class _BaseGradientLLM(CustomLLM):
         max_tokens: Optional[int] = None,
         workspace_id: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        is_chat_model: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -51,6 +55,7 @@ class _BaseGradientLLM(CustomLLM):
             host=host,
             workspace_id=workspace_id,
             callback_manager=callback_manager,
+            is_chat_model=is_chat_model,
             **kwargs,
         )
         try:
@@ -93,7 +98,7 @@ class _BaseGradientLLM(CustomLLM):
         return LLMMetadata(
             context_window=1024,
             num_output=self.max_tokens or 20,
-            is_chat_model=False,
+            is_chat_model=self.is_chat_model,
             is_function_calling_model=False,
             model_name=self._model.id,
         )
@@ -113,6 +118,7 @@ class GradientBaseModelLLM(_BaseGradientLLM):
         max_tokens: Optional[int] = None,
         workspace_id: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        is_chat_model: bool = False,
     ) -> None:
         super().__init__(
             access_token=access_token,
@@ -121,6 +127,7 @@ class GradientBaseModelLLM(_BaseGradientLLM):
             max_tokens=max_tokens,
             workspace_id=workspace_id,
             callback_manager=callback_manager,
+            is_chat_model=is_chat_model,
         )
 
         self._model = self._gradient.get_base_model(
@@ -142,6 +149,7 @@ class GradientModelAdapterLLM(_BaseGradientLLM):
         model_adapter_id: str,
         workspace_id: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        is_chat_model: bool = False,
     ) -> None:
         super().__init__(
             access_token=access_token,
@@ -150,6 +158,7 @@ class GradientModelAdapterLLM(_BaseGradientLLM):
             model_adapter_id=model_adapter_id,
             workspace_id=workspace_id,
             callback_manager=callback_manager,
+            is_chat_model=is_chat_model,
         )
         self._model = self._gradient.get_model_adapter(
             model_adapter_id=model_adapter_id

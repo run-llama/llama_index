@@ -1,16 +1,19 @@
 from typing import Any, Dict, Optional
 
-from llama_index.bridge.pydantic import Field, root_validator
+from llama_index.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai_utils import resolve_from_aliases
+from llama_index.llms.openai_utils import (
+    refresh_openai_azuread_token,
+    resolve_from_aliases,
+)
 
 AZURE_OPENAI_API_TYPE = "azure"
 
 
 class AzureOpenAI(OpenAI):
     """
-    Azure OpenAI
+    Azure OpenAI.
 
     To use this, you must first deploy a model on Azure OpenAI.
     Unlike OpenAI, you need to specify a `engine` parameter to identify
@@ -27,13 +30,18 @@ class AzureOpenAI(OpenAI):
         This may change in the future.
     - `OPENAI_API_BASE`: your endpoint should look like the following
         https://YOUR_RESOURCE_NAME.openai.azure.com/
-    - `OPENAI_API_KEY`: your API key
+    - `OPENAI_API_KEY`: your API key if the api type is `azure`
 
     More information can be found here:
         https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quickstart?tabs=command-line&pivots=programming-language-python
     """
 
     engine: str = Field(description="The name of the deployed azure engine.")
+    use_azure_ad: bool = Field(
+        description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
+    )
+
+    _azure_ad_token: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -64,8 +72,11 @@ class AzureOpenAI(OpenAI):
         if engine is None:
             raise ValueError("You must specify an `engine` parameter.")
 
+        use_azure_ad = api_type in ("azuread", "azure_ad")
+
         super().__init__(
             engine=engine,
+            use_azure_ad=use_azure_ad,
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -96,6 +107,14 @@ class AzureOpenAI(OpenAI):
             raise ValueError("You must set OPENAI_API_VERSION for Azure OpenAI.")
 
         return values
+
+    @property
+    def _credential_kwargs(self) -> Dict[str, Any]:
+        if self.use_azure_ad:
+            self._azure_ad_token = refresh_openai_azuread_token(self._azure_ad_token)
+            self.api_key = self._azure_ad_token.token
+
+        return super()._credential_kwargs
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:

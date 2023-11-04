@@ -70,20 +70,18 @@ async def read_channel(
 
     ### Wraps each message in a Document containing the text \
     # as well as some useful metadata properties.
-    return list(
-        map(
-            lambda msg: Document(
-                text=msg.content,
-                metadata={
-                    "message_id": msg.id,
-                    "username": msg.author.name,
-                    "created_at": msg.created_at,
-                    "edited_at": msg.edited_at,
-                },
-            ),
-            messages,
+    return [
+        Document(
+            text=msg.content,
+            metadata={
+                "message_id": msg.id,
+                "username": msg.author.name,
+                "created_at": msg.created_at,
+                "edited_at": msg.edited_at,
+            },
         )
-    )
+        for msg in messages
+    ]
 
 
 class DiscordReader(BasePydanticReader):
@@ -103,7 +101,7 @@ class DiscordReader(BasePydanticReader):
     def __init__(self, discord_token: Optional[str] = None) -> None:
         """Initialize with parameters."""
         try:
-            import discord
+            import discord  # noqa
         except ImportError:
             raise ImportError(
                 "`discord.py` package not found, please run `pip install discord.py`"

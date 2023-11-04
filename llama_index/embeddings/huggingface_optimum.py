@@ -3,12 +3,14 @@ from typing import Any, List, Optional
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.embeddings.huggingface_utils import format_query, format_text
 
 
 class OptimumEmbedding(BaseEmbedding):
     folder_name: str = Field(description="Folder name to load from.")
     max_length: int = Field(description="Maximum length of input.")
     pooling: str = Field(description="Pooling strategy. One of ['cls', 'mean'].")
+    normalize: str = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
     )
@@ -27,6 +29,7 @@ class OptimumEmbedding(BaseEmbedding):
         folder_name: str,
         pooling: str = "cls",
         max_length: Optional[int] = None,
+        normalize: bool = True,
         query_instruction: Optional[str] = None,
         text_instruction: Optional[str] = None,
         model: Optional[Any] = None,
@@ -65,6 +68,7 @@ class OptimumEmbedding(BaseEmbedding):
             folder_name=folder_name,
             max_length=max_length,
             pooling=pooling,
+            normalize=normalize,
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
@@ -103,14 +107,6 @@ class OptimumEmbedding(BaseEmbedding):
             f"`embed_model = OptimumEmbedding(folder_name='{output_path}')`."
         )
 
-    def _format_query_text(self, query_text: str) -> str:
-        """Format query text."""
-        return f"{self.query_instruction} {query_text}".strip()
-
-    def _format_text(self, text: str) -> str:
-        """Format text."""
-        return f"{self.text_instruction} {text}".strip()
-
     def _mean_pooling(self, model_output: Any, attention_mask: Any) -> Any:
         """Mean Pooling - Take attention mask into account for correct averaging."""
         import torch
@@ -140,15 +136,22 @@ class OptimumEmbedding(BaseEmbedding):
         model_output = self._model(**encoded_input)
 
         if self.pooling == "cls":
-            return self._cls_pooling(model_output).tolist()
+            embeddings = self._cls_pooling(model_output)
         else:
-            return self._mean_pooling(
+            embeddings = self._mean_pooling(
                 model_output, encoded_input["attention_mask"]
-            ).tolist()
+            )
+
+        if self.normalize:
+            import torch
+
+            embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+
+        return embeddings.tolist()
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        query = self._format_query_text(query)
+        query = format_query(query, self.model_name, self.query_instruction)
         return self._embed([query])[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
@@ -161,10 +164,12 @@ class OptimumEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        text = self._format_text(text)
+        text = format_text(text, self.model_name, self.text_instruction)
         return self._embed([text])[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        texts = [self._format_text(text) for text in texts]
+        texts = [
+            format_text(text, self.model_name, self.text_instruction) for text in texts
+        ]
         return self._embed(texts)

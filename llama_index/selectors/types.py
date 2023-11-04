@@ -1,8 +1,9 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import List, Sequence, Union
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.indices.query.schema import QueryBundle, QueryType
+from llama_index.prompts.mixin import PromptMixin, PromptMixinType
 from llama_index.tools.types import ToolMetadata
 
 MetadataType = Union[str, ToolMetadata]
@@ -67,7 +68,11 @@ def _wrap_query(query: QueryType) -> QueryBundle:
         raise ValueError(f"Unexpected type: {type(query)}")
 
 
-class BaseSelector(ABC):
+class BaseSelector(PromptMixin):
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {}
+
     def select(
         self, choices: Sequence[MetadataType], query: QueryType
     ) -> SelectorResult:

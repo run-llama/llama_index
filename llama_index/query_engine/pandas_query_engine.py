@@ -19,6 +19,7 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import Response
 from llama_index.utils import print_text
 
@@ -66,8 +67,15 @@ def default_output_processor(
             # string to get the actual expression
             module_end_str = eval(module_end_str, {"np": np}, local_vars)
         try:
-            return str(eval(module_end_str, {"np": np}, local_vars))
-        except Exception as e:
+            # str(pd.dataframe) will truncate output by display.max_colwidth
+            # set width temporarily to extract more text
+            if "max_colwidth" in output_kwargs:
+                pd.set_option("display.max_colwidth", output_kwargs["max_colwidth"])
+            output_str = str(eval(module_end_str, {"np": np}, local_vars))
+            pd.reset_option("display.max_colwidth")
+            return output_str
+
+        except Exception:
             raise
     except Exception as e:
         err_string = (
@@ -95,6 +103,9 @@ class PandasQueryEngine(BaseQueryEngine):
         output_processor (Optional[Callable[[str], str]]): Output processor.
             A callable that takes in the output string, pandas DataFrame,
             and any output kwargs and returns a string.
+            eg.kwargs["max_colwidth"] = [int] is used to set the length of text
+            that each column can display during str(df). Set it to a higher number
+            if there is possibly long text in the dataframe.
         pandas_prompt (Optional[BasePromptTemplate]): Pandas prompt to use.
         head (int): Number of rows to show in the table context.
 
@@ -124,6 +135,10 @@ class PandasQueryEngine(BaseQueryEngine):
         self._service_context = service_context or ServiceContext.from_defaults()
 
         super().__init__(self._service_context.callback_manager)
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {"pandas_prompt": self._pandas_prompt}
 
     @classmethod
     def from_index(cls, index: PandasIndex, **kwargs: Any) -> "PandasQueryEngine":

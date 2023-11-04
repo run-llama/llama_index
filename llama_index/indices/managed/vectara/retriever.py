@@ -1,5 +1,5 @@
 """Vectara index.
-An index that that is built on top of Vectara
+An index that that is built on top of Vectara.
 """
 
 import json

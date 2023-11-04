@@ -26,7 +26,7 @@ DEFAULT_SUMMARY_PROMPT = PromptTemplate(
 # insert prompts
 DEFAULT_INSERT_PROMPT_TMPL = (
     "Context information is below. It is provided in a numbered list "
-    "(1 to {num_chunks}),"
+    "(1 to {num_chunks}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
@@ -45,7 +45,7 @@ DEFAULT_INSERT_PROMPT = PromptTemplate(
 # # single choice
 DEFAULT_QUERY_PROMPT_TMPL = (
     "Some choices are given below. It is provided in a numbered list "
-    "(1 to {num_chunks}),"
+    "(1 to {num_chunks}), "
     "where each item in the list corresponds to a summary.\n"
     "---------------------\n"
     "{context_list}"
@@ -210,6 +210,49 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
 
 DEFAULT_TEXT_TO_SQL_PROMPT = PromptTemplate(
     DEFAULT_TEXT_TO_SQL_TMPL,
+    prompt_type=PromptType.TEXT_TO_SQL,
+)
+
+DEFAULT_TEXT_TO_SQL_PGVECTOR_TMPL = """\
+Given an input question, first create a syntactically correct {dialect} \
+query to run, then look at the results of the query and return the answer. \
+You can order the results by a relevant column to return the most \
+interesting examples in the database.
+
+Pay attention to use only the column names that you can see in the schema \
+description. Be careful to not query for columns that do not exist. \
+Pay attention to which column is in which table. Also, qualify column names \
+with the table name when needed.
+
+IMPORTANT NOTE: you can use specialized pgvector syntax (`<->`) to do nearest \
+neighbors/semantic search to a given vector from an embeddings column in the table. \
+The embeddings value for a given row typically represents the semantic meaning of that row. \
+The vector represents an embedding representation \
+of the question, given below. Do NOT fill in the vector values directly, but rather specify a \
+`[query_vector]` placeholder. For instance, some select statement examples below \
+(the name of the embeddings column is `embedding`):
+SELECT * FROM items ORDER BY embedding <-> '[query_vector]' LIMIT 5;
+SELECT * FROM items WHERE id != 1 ORDER BY embedding <-> (SELECT embedding FROM items WHERE id = 1) LIMIT 5;
+SELECT * FROM items WHERE embedding <-> '[query_vector]' < 5;
+
+You are required to use the following format, \
+each taking one line:
+
+Question: Question here
+SQLQuery: SQL Query to run
+SQLResult: Result of the SQLQuery
+Answer: Final answer here
+
+Only use tables listed below.
+{schema}
+
+
+Question: {query_str}
+SQLQuery: \
+"""
+
+DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT = PromptTemplate(
+    DEFAULT_TEXT_TO_SQL_PGVECTOR_TMPL,
     prompt_type=PromptType.TEXT_TO_SQL,
 )
 

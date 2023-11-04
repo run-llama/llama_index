@@ -32,6 +32,8 @@ as the storage backend for `VectorStoreIndex`.
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
+- DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
+- AstraDB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/home/docs/index.html).
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 
@@ -263,31 +265,22 @@ vector_store = QdrantVectorStore(
 )
 ```
 
-**Cassandra** (covering DataStax Astra DB as well, which is built on Cassandra)
+**Cassandra** (covering DataStax Astra DB cloud instances as well)
 
 ```python
-from cassandra.cluster import Cluster
-from cassandra.auth import PlainTextAuthProvider
 from llama_index.vector_stores import CassandraVectorStore
+import cassio
 
-# for a Cassandra cluster:
+# For an Astra DB cloud instance:
+cassio.init(database_id="1234abcd-...", token="AstraCS:...")
+
+# For a Cassandra cluster:
+from cassandra.cluster import Cluster
 cluster = Cluster(["127.0.0.1"])
-# for an Astra DB cloud instance:
-cluster = Cluster(
-  cloud={"secure_connect_bundle": "/home/USER/secure-bundle.zip"},
-  auth_provider=PlainTextAuthProvider("token", "AstraCS:...")
-)
-#
-session = cluster.connect()
-keyspace = "my_cassandra_keyspace"
+cassio.init(session=cluster.connect(), keyspace="my_keyspace")
 
-vector_store = CassandraVectorStore(
-    session=session,
-    keyspace=keyspace,
-    table="llamaindex_vector_test_1",
-    embedding_dimension=1536,
-    #insertion_batch_size=50,  # optional
-)
+# After the above `cassio.init(...)`, create a vector store:
+vector_store = CassandraVectorStore(table="cass_v_table", embedding_dimension=1536)
 ```
 
 **Chroma**
@@ -360,7 +353,7 @@ from llama_index.vector_stores import MilvusVectorStore
 # construct vector store
 vector_store = MilvusVectorStore(
     uri='foo.vectordb.zillizcloud.com',
-    token="your_token_here"
+    token="your_token_here",
     overwrite='True'
 )
 ```
@@ -400,6 +393,24 @@ from llama_index.vector_stores import TimescaleVectorStore
 vector_store = TimescaleVectorStore.from_params(
     service_url='YOUR TIMESCALE SERVICE URL',
     table_name="paul_graham_essay",
+)
+```
+
+**SingleStore**
+
+```python
+from llama_index.vector_stores import SingleStoreVectorStore
+import os
+
+# can set the singlestore db url in env
+# or pass it in as an argument to the SingleStoreVectorStore constructor
+os.environ["SINGLESTOREDB_URL"] = "PLACEHOLDER URL"
+vector_store = SingleStoreVectorStore(
+    table_name="embeddings",
+    content_field="content",
+    metadata_field="metadata",
+    vector_field="vector",
+    timeout=30,
 )
 ```
 
@@ -486,11 +497,28 @@ vector_store = CognitiveSearchVectorStore(
 )
 ```
 
+**DashVector**
+
+```python
+import dashvector
+from llama_index.vector_stores import DashVectorStore
+
+# init dashvector client
+client = dashvector.Client(api_key='your-dashvector-api-key')
+
+# creating a DashVector collection
+client.create("quickstart", dimension=1536)
+collection = client.get("quickstart")
+
+# construct vector store
+vector_store = DashVectorStore(collection)
+```
+
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
 
 ## Loading Data from Vector Stores using Data Connector
 
-LlamaIndex supports loading data from the following sources. See [Data Connectors](../connector/root.md) for more details and API documentation.
+LlamaIndex supports loading data from a huge number of sources. See [Data Connectors](/module_guides/loading/connector/modules.md) for more details and API documentation.
 
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
@@ -625,4 +653,6 @@ maxdepth: 1
 ../../examples/vector_stores/Neo4jVectorDemo.ipynb
 ../../examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 ../../examples/vector_stores/Timescalevector.ipynb
+../../examples/vector_stores/SingleStoreDemo.ipynb
+../../examples/vector_stores/DashvectorIndexDemo.ipynb
 ```

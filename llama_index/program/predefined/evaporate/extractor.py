@@ -231,7 +231,7 @@ class EvaporateExtractor:
                 with time_limit(1):
                     exec(fn_str, globals())
                     exec(f"result = get_{function_field}_field(node_text)", globals())
-            except TimeoutException as e:
+            except TimeoutException:
                 raise
             results.append(result)  # type: ignore[name-defined]
         return results

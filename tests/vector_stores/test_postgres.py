@@ -2,7 +2,13 @@ import asyncio
 from typing import Any, Dict, Generator, List, Union, cast
 
 import pytest
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.schema import (
+    BaseNode,
+    IndexNode,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 from llama_index.vector_stores import PGVectorStore
 from llama_index.vector_stores.loading import load_vector_store
 from llama_index.vector_stores.types import (
@@ -23,15 +29,15 @@ PARAMS: Dict[str, Union[str, int]] = {
 }
 TEST_DB = "test_vector_db"
 TEST_TABLE_NAME = "lorem_ipsum"
+TEST_SCHEMA_NAME = "test"
 TEST_EMBED_DIM = 2
 
-
 try:
-    import asyncpg
-    import pgvector
+    import asyncpg  # noqa
+    import pgvector  # noqa
     import psycopg2
     import sqlalchemy
-    import sqlalchemy.ext.asyncio
+    import sqlalchemy.ext.asyncio  # noqa
 
     # connection check
     conn__ = psycopg2.connect(**PARAMS)  # type: ignore
@@ -77,6 +83,7 @@ def pg(db: None) -> Any:
         **PARAMS,  # type: ignore
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
+        schema_name=TEST_SCHEMA_NAME,
         embed_dim=TEST_EMBED_DIM,
     )
 
@@ -91,6 +98,7 @@ def pg_hybrid(db: None) -> Any:
         **PARAMS,  # type: ignore
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
+        schema_name=TEST_SCHEMA_NAME,
         hybrid_search=True,
         embed_dim=TEST_EMBED_DIM,
     )
@@ -151,6 +159,29 @@ def hybrid_node_embeddings() -> List[TextNode]:
     ]
 
 
+@pytest.fixture(scope="session")
+def index_node_embeddings() -> List[TextNode]:
+    return [
+        TextNode(
+            text="lorem ipsum",
+            id_="aaa",
+            embedding=_get_sample_vector(0.1),
+        ),
+        TextNode(
+            text="dolor sit amet",
+            id_="bbb",
+            extra_info={"test_key": "test_value"},
+            embedding=_get_sample_vector(1.0),
+        ),
+        IndexNode(
+            text="The quick brown fox jumped over the lazy dog.",
+            id_="aaa_ref",
+            index_id="aaa",
+            embedding=_get_sample_vector(5.0),
+        ),
+    ]
+
+
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
 async def test_instance_creation(db: None) -> None:
@@ -158,6 +189,7 @@ async def test_instance_creation(db: None) -> None:
         **PARAMS,  # type: ignore
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
+        schema_name=TEST_SCHEMA_NAME,
     )
     assert isinstance(pg, PGVectorStore)
     assert not hasattr(pg, "_engine")
@@ -435,3 +467,29 @@ def test_hybrid_query_fails_if_no_query_str_provided(
         pg_hybrid.query(q)
 
         assert str(exc) == "query_str must be specified for a sparse vector query."
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_db_and_query_index_nodes(
+    pg: PGVectorStore, index_node_embeddings: List[BaseNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg.async_add(index_node_embeddings)
+    else:
+        pg.add(index_node_embeddings)
+    assert isinstance(pg, PGVectorStore)
+    assert hasattr(pg, "_engine")
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(5.0), similarity_top_k=2)
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 2
+    assert res.nodes[0].node_id == "aaa_ref"
+    assert isinstance(res.nodes[0], IndexNode)
+    assert hasattr(res.nodes[0], "index_id")
+    assert res.nodes[1].node_id == "bbb"
+    assert isinstance(res.nodes[1], TextNode)

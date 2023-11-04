@@ -8,7 +8,7 @@ from llama_index.vector_stores.cassandra import CassandraVectorStore
 from llama_index.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
 
 try:
-    import cassio
+    import cassio  # noqa
 
     has_cassio = True
 except ImportError:
@@ -20,17 +20,17 @@ class TestCassandraVectorStore(unittest.TestCase):
     def test_cassandra_create_and_crud(self) -> None:
         mock_db_session = MagicMock()
         try:
-            import cassio
+            import cassio  # noqa
         except ModuleNotFoundError:
             # mock `cassio` if not installed
             mock_cassio = MagicMock()
             sys.modules["cassio"] = mock_cassio
         #
         vector_store = CassandraVectorStore(
-            session=mock_db_session,
-            keyspace="keyspace",
             table="table",
             embedding_dimension=2,
+            session=mock_db_session,
+            keyspace="keyspace",
             ttl_seconds=123,
         )
 
@@ -55,17 +55,17 @@ class TestCassandraVectorStore(unittest.TestCase):
     def test_cassandra_queries(self) -> None:
         mock_db_session = MagicMock()
         try:
-            import cassio
+            import cassio  # noqa
         except ModuleNotFoundError:
             # mock `cassio` if not installed
             mock_cassio = MagicMock()
             sys.modules["cassio"] = mock_cassio
         #
         vector_store = CassandraVectorStore(
-            session=mock_db_session,
-            keyspace="keyspace",
             table="table",
             embedding_dimension=2,
+            session=mock_db_session,
+            keyspace="keyspace",
             ttl_seconds=123,
         )
         # q1: default

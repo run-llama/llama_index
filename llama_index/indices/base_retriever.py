@@ -1,13 +1,25 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import List, Optional
 
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import NodeWithScore
 
 
-class BaseRetriever(ABC):
+class BaseRetriever(PromptMixin):
     """Base retriever."""
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {}
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
 
     def retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         """Retrieve nodes given query.
@@ -47,7 +59,7 @@ class BaseRetriever(ABC):
     def get_service_context(self) -> Optional[ServiceContext]:
         """Attempts to resolve a service context.
         Short-circuits at self.service_context, self._service_context,
-        or self._index.service_context
+        or self._index.service_context.
         """
         if hasattr(self, "service_context"):
             return self.service_context

@@ -94,7 +94,7 @@ class CodeSplitter(TextSplitter):
 
             try:
                 parser = tree_sitter_languages.get_parser(self.language)
-            except Exception as e:
+            except Exception:
                 print(
                     f"Could not get parser for language {self.language}. Check "
                     "https://github.com/grantjenks/py-tree-sitter-languages#license "
