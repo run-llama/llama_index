@@ -53,6 +53,7 @@ class VectaraIndex(BaseManagedIndex):
         vectara_customer_id: Optional[str] = None,
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
+        use_core_api: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize the Vectara API."""
@@ -90,11 +91,10 @@ class VectaraIndex(BaseManagedIndex):
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("https://", adapter)
         self.vectara_api_timeout = 60
-        self.use_core_api = kwargs.get("use_core_api", False)
+        self.use_core_api = use_core_api
 
         # if nodes is specified, consider each node as a single document
         # and use _add_documents() to add them to the index
-        print(f"DEBUG nodes = {nodes}")
         if nodes is not None:
             self._build_index_from_nodes(nodes, use_core_api)
 
