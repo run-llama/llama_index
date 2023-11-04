@@ -18,7 +18,7 @@ from llama_index.vector_stores.utils import (
 )
 
 try:
-    from deeplake.core.vectorstore import VectorStore
+    from deeplake.core.vectorstore.deeplake_vectorstore import VectorStore
 
     DEEPLAKE_INSTALLED = True
 except ImportError:
