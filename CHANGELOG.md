@@ -10,6 +10,7 @@
 - emotion prompt guide (#8674)
 
 ### Bug Fixes / Nits
+
 - Adds mistral 7b instruct v0.1 to available anyscale models (#8652)
 - Make pgvector's setup (extension, schema, and table creation) optional (#8656)
 - Allow init of stores_text variable for Pinecone vector store (#8633)
