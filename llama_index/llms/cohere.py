@@ -70,6 +70,7 @@ class Cohere(LLM):
             max_retries=max_retries,
             model=model,
             callback_manager=callback_manager,
+            max_tokens=max_tokens,
         )
 
     @classmethod
