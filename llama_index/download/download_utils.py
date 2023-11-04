@@ -12,7 +12,6 @@ import pkg_resources
 import requests
 from pkg_resources import DistributionNotFound
 
-
 LLAMA_HUB_CONTENTS_URL = "https://raw.githubusercontent.com/run-llama/llama-hub/main"
 LLAMA_HUB_PATH = "/llama_hub"
 LLAMA_HUB_URL = LLAMA_HUB_CONTENTS_URL + LLAMA_HUB_PATH
@@ -265,7 +264,7 @@ def download_llama_module(
         extra_files=extra_files,
         refresh_cache=refresh_cache,
         use_gpt_index_import=use_gpt_index_import,
-        base_file_name=base_file_name
+        base_file_name=base_file_name,
     )
 
     # loads the module into memory
@@ -273,7 +272,9 @@ def download_llama_module(
         "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
     )
     if spec is None:
-        raise ValueError(f"Could not find file: {dirpath}/{module_id}/{base_file_name}.")
+        raise ValueError(
+            f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
+        )
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore
 
