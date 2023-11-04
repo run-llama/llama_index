@@ -28,7 +28,7 @@ Use the popular RAKE keyword extractor.
 from llama_index import KeywordTableIndex, SimpleDirectoryReader
 
 # build index
-documents = SimpleDirectoryReader('data').load_data()
+documents = SimpleDirectoryReader("data").load_data()
 index = KeywordTableIndex.from_documents(documents)
 # query
 query_engine = index.as_query_engine()

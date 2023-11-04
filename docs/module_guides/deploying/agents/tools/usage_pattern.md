@@ -22,13 +22,16 @@ def add_numbers(x: int, y: int) -> int:
     """
     return x + y
 
+
 function_tool = FunctionTool.from_defaults(fn=add_numbers)
 
 tools = tool_spec.to_tool_list() + [function_tool]
 agent = OpenAIAgent.from_tools(tools, verbose=True)
 
 # use agent
-agent.chat("Can you create a new email to helpdesk and support @example.com about a service outage")
+agent.chat(
+    "Can you create a new email to helpdesk and support @example.com about a service outage"
+)
 ```
 
 Full Tool details can be found on our [LlamaHub](https://llamahub.ai) page. Each tool contains a "Usage" section showing how that tool can be used.
@@ -46,5 +49,4 @@ from langchain.agents import initialize_agent
 agent_executor = initialize_agent(
     langchain_tools, llm, agent="conversational-react-description", memory=memory
 )
-
 ```

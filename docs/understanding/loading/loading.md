@@ -9,7 +9,7 @@ The easiest reader to use is our SimpleDirectoryReader, which creates documents 
 ```python
 from llama_index import SimpleDirectoryReader
 
-documents = SimpleDirectoryReader('./data').load_data()
+documents = SimpleDirectoryReader("./data").load_data()
 ```
 
 ## Using Readers from LlamaHub
@@ -21,15 +21,15 @@ In this example LlamaIndex downloads and installs the connector called [Database
 ```python
 from llama_index import download_loader
 
-DatabaseReader = download_loader('DatabaseReader')
+DatabaseReader = download_loader("DatabaseReader")
 
 reader = DatabaseReader(
-    scheme = os.getenv('DB_SCHEME'),
-    host = os.getenv('DB_HOST'),
-    port = os.getenv('DB_PORT'),
-    user = os.getenv('DB_USER'),
-    password = os.getenv('DB_PASS'),
-    dbname = os.getenv('DB_NAME')
+    scheme=os.getenv("DB_SCHEME"),
+    host=os.getenv("DB_HOST"),
+    port=os.getenv("DB_PORT"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASS"),
+    dbname=os.getenv("DB_NAME"),
 )
 
 query = "SELECT * FROM users"
@@ -78,7 +78,7 @@ from llama_index.schema import TextNode
 node1 = TextNode(text="<text_chunk>", id_="<node_id>")
 node2 = TextNode(text="<text_chunk>", id_="<node_id>")
 
-index = VectorStoreIndex([node1,node2])
+index = VectorStoreIndex([node1, node2])
 ```
 
 ## Customizing Documents
@@ -87,11 +87,7 @@ When creating documents, you can also attach useful metadata that can be used at
 
 ```python
 document = Document(
-    text='text',
-    metadata={
-        'filename': '<doc_file_name>',
-        'category': '<category>'
-    }
+    text="text", metadata={"filename": "<doc_file_name>", "category": "<category>"}
 )
 ```
 

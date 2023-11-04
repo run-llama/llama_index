@@ -31,7 +31,9 @@ nodes = [node1, node2]
 The `RelatedNodeInfo` class can also store additional `metadata` if needed:
 
 ```python
-node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id=node1.node_id, metadata={"key": "val"})
+node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(
+    node_id=node1.node_id, metadata={"key": "val"}
+)
 ```
 
 ### Customizing the ID
@@ -45,5 +47,4 @@ You can also get and set the `node_id` of any `TextNode` directly.
 ```python
 print(node.node_id)
 node.node_id = "My new node_id!"
-
 ```

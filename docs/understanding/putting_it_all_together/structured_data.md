@@ -20,7 +20,16 @@ A notebook for this tutorial is [available here](../../examples/index_structs/st
 First, we use SQLAlchemy to setup a simple sqlite db:
 
 ```python
-from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, select, column
+from sqlalchemy import (
+    create_engine,
+    MetaData,
+    Table,
+    Column,
+    String,
+    Integer,
+    select,
+    column,
+)
 
 engine = create_engine("sqlite:///:memory:")
 metadata_obj = MetaData()
@@ -49,6 +58,7 @@ to directly populate this table:
 
 ```python
 from sqlalchemy import insert
+
 rows = [
     {"city_name": "Toronto", "population": 2731571, "country": "Canada"},
     {"city_name": "Tokyo", "population": 13929286, "country": "Japan"},
@@ -85,9 +95,7 @@ query_engine = NLSQLTableQueryEngine(
     sql_database=sql_database,
     tables=["city_stats"],
 )
-query_str = (
-    "Which city has the highest population?"
-)
+query_str = "Which city has the highest population?"
 response = query_engine.query(query_str)
 ```
 
@@ -109,7 +117,10 @@ into the ObjectIndex constructor.
 from llama_index.objects import SQLTableNodeMapping, ObjectIndex, SQLTableSchema
 
 table_node_mapping = SQLTableNodeMapping(sql_database)
-table_schema_objs = [(SQLTableSchema(table_name="city_stats")), ...] # one SQLTableSchema for each table
+table_schema_objs = [
+    (SQLTableSchema(table_name="city_stats")),
+    ...,
+]  # one SQLTableSchema for each table
 
 obj_index = ObjectIndex.from_objects(
     table_schema_objs,
@@ -133,7 +144,9 @@ city_stats_text = (
 )
 
 table_node_mapping = SQLTableNodeMapping(sql_database)
-table_schema_objs = [(SQLTableSchema(table_name="city_stats", context_str=city_stats_text))]
+table_schema_objs = [
+    (SQLTableSchema(table_name="city_stats", context_str=city_stats_text))
+]
 ```
 
 ## Using natural language SQL queries

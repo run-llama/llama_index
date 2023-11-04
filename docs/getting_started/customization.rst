@@ -9,7 +9,7 @@ In this tutorial, we start with the code you wrote for the `starter example <sta
 
     from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-    documents = SimpleDirectoryReader('data').load_data()
+    documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
     query_engine = index.as_query_engine()
     response = query_engine.query("What did the author do growing up?")
@@ -22,6 +22,7 @@ In this tutorial, we start with the code you wrote for the `starter example <sta
 .. code-block:: python
 
     from llama_index import ServiceContext
+
     service_context = ServiceContext.from_defaults(chunk_size=1000)
 
 The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ is a bundle of services and configurations used across a LlamaIndex pipeline.
@@ -31,7 +32,7 @@ The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ i
 
     from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-    documents = SimpleDirectoryReader('data').load_data()
+    documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents, service_context=service_context)
     query_engine = index.as_query_engine()
     response = query_engine.query("What did the author do growing up?")
@@ -59,7 +60,7 @@ The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ i
 
     from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-    documents = SimpleDirectoryReader('data').load_data()
+    documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
     query_engine = index.as_query_engine()
     response = query_engine.query("What did the author do growing up?")
@@ -74,7 +75,7 @@ The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ i
 
     from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-    documents = SimpleDirectoryReader('data').load_data()
+    documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
     query_engine = index.as_query_engine(similarity_top_k=5)
     response = query_engine.query("What did the author do growing up?")
@@ -90,6 +91,7 @@ The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ i
 
     from llama_index import ServiceContext
     from llama_index.llms import PaLM
+
     service_context = ServiceContext.from_defaults(llm=PaLM())
 
 You can learn more about `customizing LLMs </module_guides/models/llms.html>`_.
@@ -99,7 +101,7 @@ You can learn more about `customizing LLMs </module_guides/models/llms.html>`_.
 
     from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-    documents = SimpleDirectoryReader('data').load_data()
+    documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
     query_engine = index.as_query_engine(service_context=service_context)
     response = query_engine.query("What did the author do growing up?")
@@ -115,9 +117,9 @@ You can learn more about `customizing LLMs </module_guides/models/llms.html>`_.
 
     from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-    documents = SimpleDirectoryReader('data').load_data()
+    documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
-    query_engine = index.as_query_engine(response_mode='tree_summarize')
+    query_engine = index.as_query_engine(response_mode="tree_summarize")
     response = query_engine.query("What did the author do growing up?")
     print(response)
 
@@ -133,7 +135,7 @@ You can learn more about `query engines <../core_modules/query_modules/query_eng
 
     from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-    documents = SimpleDirectoryReader('data').load_data()
+    documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
     query_engine = index.as_query_engine(streaming=True)
     response = query_engine.query("What did the author do growing up?")
@@ -150,7 +152,7 @@ You can learn more about `streaming responses </module_guides/putting_it_all_tog
 
     from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-    documents = SimpleDirectoryReader('data').load_data()
+    documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
     query_engine = index.as_chat_engine()
     response = query_engine.chat("What did the author do growing up?")

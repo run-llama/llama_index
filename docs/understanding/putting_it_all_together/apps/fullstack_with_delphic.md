@@ -116,10 +116,12 @@ in the `endpoints.py` file:
 
 ```python
 @collections_router.post("/create")
-async def create_collection(request,
-                            title: str = Form(...),
-                            description: str = Form(...),
-                            files: list[UploadedFile] = File(...), ):
+async def create_collection(
+    request,
+    title: str = Form(...),
+    description: str = Form(...),
+    files: list[UploadedFile] = File(...),
+):
     key = None if getattr(request, "auth", None) is None else request.auth
     if key is not None:
         key = await key
@@ -141,9 +143,7 @@ async def create_collection(request,
 
     create_index.si(collection_instance.id).apply_async()
 
-    return await sync_to_async(CollectionModelSchema)(
-        ...
-    )
+    return await sync_to_async(CollectionModelSchema)(...)
 ```
 
 3. `/collections/query` — a POST endpoint to query a document collection using the LLM. Accepts a JSON payload
@@ -152,9 +152,11 @@ async def create_collection(request,
    to this REST endpoint to query a specific collection.
 
 ```python
-@collections_router.post("/query",
-                         response=CollectionQueryOutput,
-                         summary="Ask a question of a document collection", )
+@collections_router.post(
+    "/query",
+    response=CollectionQueryOutput,
+    summary="Ask a question of a document collection",
+)
 def query_collection_view(request: HttpRequest, query_input: CollectionQueryInput):
     collection_id = query_input.collection_id
     query_str = query_input.query_str
@@ -166,9 +168,11 @@ def query_collection_view(request: HttpRequest, query_input: CollectionQueryInpu
    output is serialized using the `CollectionModelSchema`.
 
 ```python
-@collections_router.get("/available",
-                        response=list[CollectionModelSchema],
-                        summary="Get a list of all of the collections created with my api_key", )
+@collections_router.get(
+    "/available",
+    response=list[CollectionModelSchema],
+    summary="Get a list of all of the collections created with my api_key",
+)
 async def get_my_collections_view(request: HttpRequest):
     key = None if getattr(request, "auth", None) is None else request.auth
     if key is not None:
@@ -176,12 +180,7 @@ async def get_my_collections_view(request: HttpRequest):
 
     collections = Collection.objects.filter(api_key=key)
 
-    return [
-        {
-            ...
-        }
-        async for collection in collections
-    ]
+    return [{...} async for collection in collections]
 ```
 
 5. `/collections/{collection_id}/add_file`: A POST endpoint to add a file to an existing collection. Accepts
@@ -189,11 +188,15 @@ async def get_my_collections_view(request: HttpRequest):
    instance associated with the specified collection.
 
 ```python
-@collections_router.post("/{collection_id}/add_file", summary="Add a file to a collection")
-async def add_file_to_collection(request,
-                                 collection_id: int,
-                                 file: UploadedFile = File(...),
-                                 description: str = Form(...), ):
+@collections_router.post(
+    "/{collection_id}/add_file", summary="Add a file to a collection"
+)
+async def add_file_to_collection(
+    request,
+    collection_id: int,
+    file: UploadedFile = File(...),
+    description: str = Form(...),
+):
     collection = await sync_to_async(Collection.objects.get)(id=collection_id)
 ```
 
@@ -312,7 +315,9 @@ async def receive(self, text_data):
 
         await self.send(json.dumps({"response": formatted_response}, indent=4))
     else:
-        await self.send(json.dumps({"error": "No index loaded for this connection."}, indent=4))
+        await self.send(
+            json.dumps({"error": "No index loaded for this connection."}, indent=4)
+        )
 ```
 
 To load the collection model, the `load_collection_model` function is used, which can be found

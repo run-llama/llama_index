@@ -51,8 +51,7 @@ def dump_docs_to_json(documents: List[Document], out_path: str) -> Dict:
         }
         result_json.append(cur_dict)
 
-    json.dump(result_json, open(out_path, 'w'))
-
+    json.dump(result_json, open(out_path, "w"))
 ```
 
 For more details, check out the [full example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/chatgpt_plugin/ChatGPT_Retrieval_Plugin_Upload.ipynb).
@@ -72,22 +71,19 @@ import os
 # load documents
 bearer_token = os.getenv("BEARER_TOKEN")
 reader = ChatGPTRetrievalPluginReader(
-    endpoint_url="http://localhost:8000",
-    bearer_token=bearer_token
+    endpoint_url="http://localhost:8000", bearer_token=bearer_token
 )
 documents = reader.load_data("What did the author do growing up?")
 
 # build and query index
 from llama_index import SummaryIndex
+
 index = SummaryIndex.from_documents(documents)
 # set Logging to DEBUG for more detailed outputs
-query_engine = vector_index.as_query_engine(
-    response_mode="compact"
-)
+query_engine = vector_index.as_query_engine(response_mode="compact")
 response = query_engine.query(
     "Summarize the retrieved content and describe what the author did growing up",
 )
-
 ```
 
 For more details, check out the [full example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/chatgpt_plugin/ChatGPTRetrievalPluginReaderDemo.ipynb).
@@ -107,7 +103,7 @@ from llama_index import SimpleDirectoryReader
 import os
 
 # load documents
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 
 # build index
 bearer_token = os.getenv("BEARER_TOKEN")
@@ -124,7 +120,6 @@ query_engine = vector_index.as_query_engine(
     response_mode="compact",
 )
 response = query_engine.query("What did the author do growing up?")
-
 ```
 
 For more details, check out the [full example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/chatgpt_plugin/ChatGPTRetrievalPluginIndexDemo.ipynb).
