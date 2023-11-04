@@ -6,7 +6,7 @@ All of the evaluation modules in LlamaIndex implement the `BaseEvaluator` class,
 
 1. The `evaluate` method takes in `query`, `contexts`, `response`, and additional keyword arguments.
 
-```python
+```
     def evaluate(
         self,
         query: Optional[str] = None,
@@ -18,7 +18,7 @@ All of the evaluation modules in LlamaIndex implement the `BaseEvaluator` class,
 
 2. The `evaluate_response` method provide an alternative interface that takes in a llamaindex `Response` object (which contains response string and source nodes) instead of separate `contexts` and `response`.
 
-```python
+```
 def evaluate_response(
     self,
     query: Optional[str] = None,
@@ -63,7 +63,9 @@ evaluator = FaithfulnessEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
-response = query_engine.query("What battles took place in New York City in the American Revolution?")
+response = query_engine.query(
+    "What battles took place in New York City in the American Revolution?"
+)
 eval_result = evaluator.evaluate_response(response=response)
 print(str(eval_result.passing))
 ```
@@ -89,12 +91,15 @@ evaluator = FaithfulnessEvaluator(service_context=service_context)
 
 # query index
 query_engine = vector_index.as_query_engine()
-response = query_engine.query("What battles took place in New York City in the American Revolution?")
+response = query_engine.query(
+    "What battles took place in New York City in the American Revolution?"
+)
 response_str = response.response
 for source_node in response.source_nodes:
-    eval_result = evaluator.evaluate(response=response_str, contexts=[source_node.get_content()])
+    eval_result = evaluator.evaluate(
+        response=response_str, contexts=[source_node.get_content()]
+    )
     print(str(eval_result.passing))
-
 ```
 
 You'll get back a list of results, corresponding to each source node in `response.source_nodes`.
@@ -126,7 +131,6 @@ query = "What battles took place in New York City in the American Revolution?"
 response = query_engine.query(query)
 eval_result = evaluator.evaluate_response(query=query, response=response)
 print(str(eval_result))
-
 ```
 
 ![](/_static/evaluation/eval_query_response_context.png)
@@ -154,7 +158,9 @@ query = "What battles took place in New York City in the American Revolution?"
 response = query_engine.query(query)
 response_str = response.response
 for source_node in response.source_nodes:
-    eval_result = evaluator.evaluate(query=query, response=response_str, contexts=[source_node.get_content()])
+    eval_result = evaluator.evaluate(
+        query=query, response=response_str, contexts=[source_node.get_content()]
+    )
     print(str(eval_result.passing))
 ```
 
@@ -190,10 +196,7 @@ We also provide a batch evaluation runner for running a set of evaluators across
 from llama_index.evaluation import BatchEvalRunner
 
 runner = BatchEvalRunner(
-    {
-        "faithfulness": faithfulness_evaluator, "
-        "relevancy": relevancy_evaluator
-    },
+    {"faithfulness": faithfulness_evaluator, "relevancy": relevancy_evaluator},
     workers=8,
 )
 
