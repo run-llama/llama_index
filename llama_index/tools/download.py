@@ -30,11 +30,9 @@ def download_tool(
         refresh_cache=refresh_cache,
         custom_dir="tools",
         custom_path=custom_path,
-        library_path="tools/library.json"
+        library_path="tools/library.json",
     )
     if not issubclass(tool_cls, BaseToolSpec):
-        raise ValueError(
-            f"Tool class {tool_class} must be a subclass of BaseToolSpec."
-        )
+        raise ValueError(f"Tool class {tool_class} must be a subclass of BaseToolSpec.")
 
     return tool_cls
