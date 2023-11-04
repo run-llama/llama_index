@@ -1,4 +1,4 @@
-"""Download loader from the Loader Hub.
+"""Download loader from Llama Hub.
 
 NOTE: using `download_loader` is now deprecated.
 Please do `pip install llama-hub` instead.
@@ -6,9 +6,10 @@ Please do `pip install llama-hub` instead.
 """
 
 from typing import Optional, Type
-from llama_index.download.download_utils import download_llama_module, LLAMA_HUB_URL
 
+from llama_index.download.download_utils import LLAMA_HUB_URL, download_llama_module
 from llama_index.readers.base import BaseReader
+
 
 def download_loader(
     loader_class: str,
@@ -34,13 +35,16 @@ def download_loader(
     Returns:
         A Loader.
     """
-    
-    download_llama_module(
+    reader_cls = download_llama_module(
         loader_class,
         llama_hub_url=loader_hub_url,
         refresh_cache=refresh_cache,
-        suffix="llamahub_modules",
+        custom_dir="llamahub_modules",
         custom_path=custom_path,
         use_gpt_index_import=use_gpt_index_import,
     )
-
+    if not issubclass(reader_cls, BaseReader):
+        raise ValueError(
+            f"Loader class {loader_class} must be a subclass of BaseReader."
+        )
+    return reader_cls

@@ -52,6 +52,7 @@ from llama_index.readers.web import (
 )
 from llama_index.readers.wikipedia import WikipediaReader
 from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
+from llama_index.readers.download import download_loader
 from llama_index.schema import Document
 
 __all__ = [
@@ -92,4 +93,5 @@ __all__ = [
     "HTMLTagReader",
     "PDFReader",
     "DashVectorReader",
+    "download_loader"
 ]

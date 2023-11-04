@@ -1,16 +1,15 @@
 """Download."""
 
-from typing import Type, Optional, Tuple, Dict, List
-from llama_index.readers.base import BaseReader
-from pathlib import Path
-import os
 import json
-import requests
+import os
 import subprocess
 import sys
 from importlib import util
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Type
 
 import pkg_resources
+import requests
 from pkg_resources import DistributionNotFound
 
 
@@ -23,6 +22,7 @@ def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
     """Get the content of a file from the GitHub REST API."""
     resp = requests.get(loader_hub_url + path)
     return resp.text, resp.status_code
+
 
 def get_exports(raw_content: str) -> List:
     """Read content of a Python file and returns a list of exported class names.
@@ -75,15 +75,19 @@ def rewrite_exports(exports: List[str], dirpath: str) -> None:
 
 
 def initialize_directory(
-    custom_path: Optional[str] = None,
-    suffix: Optional[str] = None
+    custom_path: Optional[str] = None, custom_dir: Optional[str] = None
 ) -> None:
     """Initialize directory."""
-    suffix = suffix or "llamahub_modules"
+    if custom_path is not None and custom_dir is not None:
+        raise ValueError(
+            "You cannot specify both `custom_path` and `custom_dir` at the same time."
+        )
+
+    custom_dir = custom_dir or "llamahub_modules"
     if custom_path is not None:
         dirpath = Path(custom_path)
     else:
-        dirpath = Path(__file__).parent / suffix
+        dirpath = Path(__file__).parent / custom_dir
     if not os.path.exists(dirpath):
         # Create a new directory because it does not exist
         os.makedirs(dirpath)
@@ -96,19 +100,20 @@ def initialize_directory(
 
 
 def get_module_info(
-    local_dir_path: str, 
+    local_dir_path: str,
     remote_dir_path: str,
-    module_class: str, 
+    module_class: str,
     refresh_cache: bool = False,
+    library_path: str = "library.json",
 ) -> Dict:
     """Get module info."""
-    library_path = f"{local_dir_path}/library.json"
+    local_library_path = f"{local_dir_path}/{library_path}]"
     module_id = None  # e.g. `web/simple_web`
     extra_files = []  # e.g. `web/simple_web/utils.py`
 
     # Check cache first
-    if not refresh_cache and os.path.exists(library_path):
-        with open(library_path) as f:
+    if not refresh_cache and os.path.exists(local_library_path):
+        with open(local_library_path) as f:
             library = json.load(f)
         if module_class in library:
             module_id = library[module_class]["id"]
@@ -116,7 +121,7 @@ def get_module_info(
 
     # Fetch up-to-date library from remote repo if module_id not found
     if module_id is None:
-        library_raw_content, _ = _get_file_content(remote_dir_path, "/library.json")
+        library_raw_content, _ = _get_file_content(remote_dir_path, f"/{library_path}")
         library = json.loads(library_raw_content)
         if module_class not in library:
             raise ValueError("Loader class name not found in library")
@@ -124,7 +129,7 @@ def get_module_info(
         module_id = library[module_class]["id"]
         extra_files = library[module_class].get("extra_files", [])
         # Update cache
-        with open(library_path, "w") as f:
+        with open(local_library_path, "w") as f:
             f.write(library_raw_content)
 
     if module_id is None:
@@ -142,17 +147,26 @@ def download_module_and_reqs(
     module_id: str,
     extra_files: List[str],
     refresh_cache: bool = False,
-    use_gpt_index_import: bool = False
+    use_gpt_index_import: bool = False,
+    base_file_name: str = "base.py",
 ):
     """Load module."""
     module_path = f"{local_dir_path}/{module_id}"
     if refresh_cache or not os.path.exists(module_path):
         os.makedirs(module_path, exist_ok=True)
-        basepy_raw_content, _ = _get_file_content(
-            remote_dir_path, f"/{module_id}/base.py"
-        )
 
-        with open(f"{module_path}/base.py", "w") as f:
+        basepy_raw_content, _ = _get_file_content(
+            remote_dir_path, f"/{module_id}/{base_file_name}"
+        )
+        if use_gpt_index_import:
+            basepy_raw_content = basepy_raw_content.replace(
+                "import llama_index", "import llama_index"
+            )
+            basepy_raw_content = basepy_raw_content.replace(
+                "from llama_index", "from llama_index"
+            )
+
+        with open(f"{module_path}/{base_file_name}", "w") as f:
             f.write(basepy_raw_content)
 
         # Get content of extra files if there are any
@@ -169,9 +183,7 @@ def download_module_and_reqs(
                 with open(local_dir_path / "__init__.py", "r+") as f:
                     f.write(f"from .{module_id} import {', '.join(loader_exports)}")
                     existing_exports = get_exports(f.read())
-                rewrite_exports(
-                    existing_exports + loader_exports, local_dir_path
-                )
+                rewrite_exports(existing_exports + loader_exports, local_dir_path)
             with open(f"{module_path}/{extra_file}", "w") as f:
                 f.write(extra_file_raw_content)
 
@@ -198,16 +210,18 @@ def download_module_and_reqs(
             subprocess.check_call(
                 [sys.executable, "-m", "pip", "install", "-r", requirements_path]
             )
-    
+
 
 def download_llama_module(
     module_class: str,
     llama_hub_url: str = LLAMA_HUB_URL,
     refresh_cache: Optional[bool] = False,
-    suffix: Optional[str] = None,
+    custom_dir: Optional[str] = None,
     custom_path: Optional[str] = None,
-    use_gpt_index_import: bool = False
-) -> Type[BaseReader]:
+    library_path: str = "library.json",
+    base_file_name: str = "base.py",
+    use_gpt_index_import: bool = False,
+) -> Type:
     """Download a module from LlamaHub.
 
     Can be a loader, tool, pack, or more.
@@ -217,7 +231,9 @@ def download_llama_module(
             such as `GmailOpenAIAgentPack`.
         refresh_cache: If true, the local cache will be skipped and the
             loader will be fetched directly from the remote repo.
+        custom_dir: Custom dir name to download loader into (under parent folder).
         custom_path: Custom dirpath to download loader into.
+        library_path: File name of the library file.
         use_gpt_index_import: If true, the loader files will use
             llama_index as the base dependency. By default (False),
             the loader files use llama_index as the base dependency.
@@ -228,7 +244,7 @@ def download_llama_module(
         A Loader.
     """
     # create directory / get path
-    dirpath = initialize_directory(custom_path=custom_path, suffix=suffix)
+    dirpath = initialize_directory(custom_path=custom_path, custom_dir=custom_dir)
 
     # fetch info from library.json file
     module_info = get_module_info(
@@ -236,10 +252,11 @@ def download_llama_module(
         remote_dir_path=llama_hub_url,
         module_class=module_class,
         refresh_cache=refresh_cache,
+        library_path=library_path,
     )
     module_id = module_info["module_id"]
     extra_files = module_info["extra_files"]
-   
+
     # download the module, install requirements
     download_module_and_reqs(
         local_dir_path=dirpath,
@@ -248,14 +265,15 @@ def download_llama_module(
         extra_files=extra_files,
         refresh_cache=refresh_cache,
         use_gpt_index_import=use_gpt_index_import,
+        base_file_name=base_file_name
     )
 
     # loads the module into memory
     spec = util.spec_from_file_location(
-        "custom_loader", location=f"{dirpath}/{module_id}/base.py"
+        "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
     )
     if spec is None:
-        raise ValueError(f"Could not find file: {dirpath}/{module_id}/base.py.")
+        raise ValueError(f"Could not find file: {dirpath}/{module_id}/{base_file_name}.")
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore
 
