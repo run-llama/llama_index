@@ -18,6 +18,7 @@ class PgVectorStore(pydantic.BaseModel):
     connection_string: str
     async_connection_string: str
     table_name: str
+    schema_name: str
     embed_dim: int
     hybrid_search: bool
     text_search_config: str
@@ -44,4 +45,5 @@ class PgVectorStore(pydantic.BaseModel):
 
     class Config:
         frozen = True
+        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

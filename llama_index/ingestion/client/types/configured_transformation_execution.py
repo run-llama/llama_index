@@ -30,8 +30,12 @@ class ConfiguredTransformationExecution(pydantic.BaseModel):
     partitions: typing.Optional[typing.Dict[str, str]] = pydantic.Field(
         description="Partition information"
     )
-    pipeline_id: str
-    configured_transformation_id: str
+    pipeline_id: str = pydantic.Field(
+        description="The ID for the Pipeline for which this execution ran a particular transformation."
+    )
+    configured_transformation_id: str = pydantic.Field(
+        description="The ID for the specific configured transformation step this execution ran."
+    )
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {
@@ -51,4 +55,5 @@ class ConfiguredTransformationExecution(pydantic.BaseModel):
 
     class Config:
         frozen = True
+        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

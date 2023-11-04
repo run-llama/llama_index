@@ -26,6 +26,10 @@ from llama_index.ingestion.client.types.configured_transformation_item import (
 )
 from llama_index.ingestion.client.types.data_sink_create import DataSinkCreate
 from llama_index.ingestion.client.types.data_source_create import DataSourceCreate
+from llama_index.ingestion.client.types.eval_dataset_execution import (
+    EvalDatasetExecution,
+)
+from llama_index.ingestion.client.types.eval_question_result import EvalQuestionResult
 from llama_index.ingestion.client.types.http_validation_error import HttpValidationError
 from llama_index.ingestion.client.types.pipeline import Pipeline
 from llama_index.ingestion.client.types.text_node import TextNode
@@ -55,7 +59,7 @@ class PipelineClient:
         _response = self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/pipeline/"
+                f"{self._client_wrapper.get_base_url()}/", "api/pipeline"
             ),
             params=remove_none_from_dict(
                 {"pipeline_name": pipeline_name, "project_name": project_name}
@@ -261,28 +265,156 @@ class PipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def get_configured_transformation_execution_result(
-        self, pipeline_id: str, configured_transformation_execution_id: str
+    def get_configured_transformation_result(
+        self, pipeline_id: str, configured_transformation_id: str
     ) -> typing.List[TextNode]:
         """
         Get the result of an ConfiguredTransformationExecution step.
+        Unlike get_configured_transformation_execution_result, this endpoint does
+        not check the status of the execution that produced the result for the
+        configured_transformation.
 
         Parameters:
             - pipeline_id: str.
 
-            - configured_transformation_execution_id: str.
+            - configured_transformation_id: str.
         """
         _response = self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/configured_transformation_execution/{configured_transformation_execution_id}/result",
+                f"api/pipeline/{pipeline_id}/configured_transformation/{configured_transformation_id}/result",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
             return pydantic.parse_obj_as(typing.List[TextNode], _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    def get_eval_dataset_executions_api_pipeline_pipeline_id_eval_dataset_execution_get(
+        self, pipeline_id: str
+    ) -> typing.List[EvalDatasetExecution]:
+        """
+        Get the status of an EvalDatasetExecution.
+
+        Parameters:
+            - pipeline_id: str.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/pipeline/{pipeline_id}/eval_dataset_execution",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(typing.List[EvalDatasetExecution], _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    def execute_eval_dataset_api_pipeline_pipeline_id_eval_dataset_execution_post(
+        self, pipeline_id: str, *, eval_dataset_id: str, question_ids: typing.List[str]
+    ) -> EvalDatasetExecution:
+        """
+        Execute a dataset.
+
+        Parameters:
+            - pipeline_id: str.
+
+            - eval_dataset_id: str.
+
+            - question_ids: typing.List[str].
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "POST",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/pipeline/{pipeline_id}/eval_dataset_execution",
+            ),
+            json=jsonable_encoder(
+                {"eval_dataset_id": eval_dataset_id, "question_ids": question_ids}
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(EvalDatasetExecution, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    def get_eval_dataset_execution(
+        self, pipeline_id: str, eval_dataset_execution_id: str
+    ) -> EvalDatasetExecution:
+        """
+        Get the status of an EvalDatasetExecution.
+
+        Parameters:
+            - pipeline_id: str.
+
+            - eval_dataset_execution_id: str.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/pipeline/{pipeline_id}/eval_dataset_execution/{eval_dataset_execution_id}",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(EvalDatasetExecution, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    def get_eval_question_result(
+        self, pipeline_id: str, eval_dataset_id: str, eval_question_id: str
+    ) -> EvalQuestionResult:
+        """
+        Get the result of an EvalQuestionExecution.
+
+        Parameters:
+            - pipeline_id: str.
+
+            - eval_dataset_id: str.
+
+            - eval_question_id: str.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/eval_question/{eval_question_id}/result",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(EvalQuestionResult, _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:
@@ -519,28 +651,156 @@ class AsyncPipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def get_configured_transformation_execution_result(
-        self, pipeline_id: str, configured_transformation_execution_id: str
+    async def get_configured_transformation_result(
+        self, pipeline_id: str, configured_transformation_id: str
     ) -> typing.List[TextNode]:
         """
         Get the result of an ConfiguredTransformationExecution step.
+        Unlike get_configured_transformation_execution_result, this endpoint does
+        not check the status of the execution that produced the result for the
+        configured_transformation.
 
         Parameters:
             - pipeline_id: str.
 
-            - configured_transformation_execution_id: str.
+            - configured_transformation_id: str.
         """
         _response = await self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/configured_transformation_execution/{configured_transformation_execution_id}/result",
+                f"api/pipeline/{pipeline_id}/configured_transformation/{configured_transformation_id}/result",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
             return pydantic.parse_obj_as(typing.List[TextNode], _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def get_eval_dataset_executions_api_pipeline_pipeline_id_eval_dataset_execution_get(
+        self, pipeline_id: str
+    ) -> typing.List[EvalDatasetExecution]:
+        """
+        Get the status of an EvalDatasetExecution.
+
+        Parameters:
+            - pipeline_id: str.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/pipeline/{pipeline_id}/eval_dataset_execution",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(typing.List[EvalDatasetExecution], _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def execute_eval_dataset_api_pipeline_pipeline_id_eval_dataset_execution_post(
+        self, pipeline_id: str, *, eval_dataset_id: str, question_ids: typing.List[str]
+    ) -> EvalDatasetExecution:
+        """
+        Execute a dataset.
+
+        Parameters:
+            - pipeline_id: str.
+
+            - eval_dataset_id: str.
+
+            - question_ids: typing.List[str].
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "POST",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/pipeline/{pipeline_id}/eval_dataset_execution",
+            ),
+            json=jsonable_encoder(
+                {"eval_dataset_id": eval_dataset_id, "question_ids": question_ids}
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(EvalDatasetExecution, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def get_eval_dataset_execution(
+        self, pipeline_id: str, eval_dataset_execution_id: str
+    ) -> EvalDatasetExecution:
+        """
+        Get the status of an EvalDatasetExecution.
+
+        Parameters:
+            - pipeline_id: str.
+
+            - eval_dataset_execution_id: str.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/pipeline/{pipeline_id}/eval_dataset_execution/{eval_dataset_execution_id}",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(EvalDatasetExecution, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def get_eval_question_result(
+        self, pipeline_id: str, eval_dataset_id: str, eval_question_id: str
+    ) -> EvalQuestionResult:
+        """
+        Get the result of an EvalQuestionExecution.
+
+        Parameters:
+            - pipeline_id: str.
+
+            - eval_dataset_id: str.
+
+            - eval_question_id: str.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/eval_question/{eval_question_id}/result",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(EvalQuestionResult, _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:

@@ -13,6 +13,9 @@ class BasePromptTemplate(pydantic.BaseModel):
     template_vars: typing.List[str]
     kwargs: typing.Dict[str, str]
     output_parser: typing.Optional[typing.Dict[str, typing.Any]]
+    template_var_mappings: typing.Optional[
+        typing.Dict[str, typing.Any]
+    ] = pydantic.Field(description="Template variable mappings (Optional).")
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {
@@ -32,4 +35,5 @@ class BasePromptTemplate(pydantic.BaseModel):
 
     class Config:
         frozen = True
+        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

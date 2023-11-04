@@ -30,6 +30,7 @@ class ChromaVectorStore(pydantic.BaseModel):
     port: typing.Optional[str]
     ssl: bool
     headers: typing.Optional[typing.Dict[str, str]]
+    persist_dir: typing.Optional[str]
     collection_kwargs: typing.Optional[typing.Dict[str, typing.Any]]
     class_name: typing.Optional[str]
 
@@ -51,4 +52,5 @@ class ChromaVectorStore(pydantic.BaseModel):
 
     class Config:
         frozen = True
+        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}
