@@ -1,10 +1,22 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.60] - 2023-11-04
 
 ### New Features
 
+- prompt optimization guide (#8659)
+- VoyageEmbedding (#8634)
+- Multilingual support for `YoutubeTranscriptReader` (#8673)
+- emotion prompt guide (#8674)
+
+### Bug Fixes / Nits
+- Adds mistral 7b instruct v0.1 to available anyscale models (#8652)
 - Make pgvector's setup (extension, schema, and table creation) optional (#8656)
+- Allow init of stores_text variable for Pinecone vector store (#8633)
+- fix: azure ad support (#8667)
+- Fix nltk bug in multi-threaded environments (#8668)
+- Fix google colab link in cohereai notebook (#8677)
+- passing max_tokens to the `Cohere` llm (#8672)
 
 ## [0.8.59] - 2023-11-02
 
