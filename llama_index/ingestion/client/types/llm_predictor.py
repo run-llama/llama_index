@@ -8,6 +8,7 @@ import pydantic
 from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
 
 from .base_prompt_template import BasePromptTemplate
+from .pydantic_program_mode import PydanticProgramMode
 
 
 class LlmPredictor(pydantic.BaseModel):
@@ -24,6 +25,7 @@ class LlmPredictor(pydantic.BaseModel):
 
     system_prompt: typing.Optional[str]
     query_wrapper_prompt: typing.Optional[BasePromptTemplate]
+    pydantic_program_mode: typing.Optional[PydanticProgramMode]
     class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
@@ -44,4 +46,5 @@ class LlmPredictor(pydantic.BaseModel):
 
     class Config:
         frozen = True
+        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

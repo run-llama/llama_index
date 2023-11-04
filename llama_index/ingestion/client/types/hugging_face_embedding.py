@@ -7,6 +7,8 @@ import pydantic
 
 from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
 
+from .pooling import Pooling
+
 
 class HuggingFaceEmbedding(pydantic.BaseModel):
     """
@@ -24,9 +26,7 @@ class HuggingFaceEmbedding(pydantic.BaseModel):
     max_length: typing.Optional[int] = pydantic.Field(
         description="Maximum length of input."
     )
-    pooling: typing.Optional[str] = pydantic.Field(
-        description="Pooling strategy. One of ['cls', 'mean']."
-    )
+    pooling: typing.Optional[Pooling] = pydantic.Field(description="Pooling strategy.")
     normalize: typing.Optional[str] = pydantic.Field(
         description="Normalize embeddings or not."
     )
@@ -59,4 +59,5 @@ class HuggingFaceEmbedding(pydantic.BaseModel):
 
     class Config:
         frozen = True
+        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

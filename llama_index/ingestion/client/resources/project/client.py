@@ -18,6 +18,7 @@ from llama_index.ingestion.client.core.remove_none_from_dict import (
 from llama_index.ingestion.client.errors.unprocessable_entity_error import (
     UnprocessableEntityError,
 )
+from llama_index.ingestion.client.types.eval_dataset import EvalDataset
 from llama_index.ingestion.client.types.http_validation_error import HttpValidationError
 from llama_index.ingestion.client.types.pipeline import Pipeline
 from llama_index.ingestion.client.types.pipeline_create import PipelineCreate
@@ -44,7 +45,7 @@ class ProjectClient:
         _response = self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/project/"
+                f"{self._client_wrapper.get_base_url()}/", "api/project"
             ),
             params=remove_none_from_dict({"project_name": project_name}),
             headers=self._client_wrapper.get_headers(),
@@ -70,7 +71,7 @@ class ProjectClient:
         _response = self._client_wrapper.httpx_client.request(
             "POST",
             urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/project/"
+                f"{self._client_wrapper.get_base_url()}/", "api/project"
             ),
             json=jsonable_encoder(request),
             headers=self._client_wrapper.get_headers(),
@@ -97,7 +98,7 @@ class ProjectClient:
         _response = self._client_wrapper.httpx_client.request(
             "PUT",
             urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/project/"
+                f"{self._client_wrapper.get_base_url()}/", "api/project"
             ),
             json=jsonable_encoder(request),
             headers=self._client_wrapper.get_headers(),
@@ -229,6 +230,63 @@ class ProjectClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
+    def get_datasets_for_project(self, project_id: str) -> typing.List[EvalDataset]:
+        """
+        Get all eval datasets for a project.
+
+        Parameters:
+            - project_id: str.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/project/{project_id}/eval/dataset",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(typing.List[EvalDataset], _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    def create_eval_dataset_for_project(
+        self, project_id: str, *, name: str
+    ) -> EvalDataset:
+        """
+        Create a new eval dataset for a project.
+
+        Parameters:
+            - project_id: str.
+
+            - name: str.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "POST",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/project/{project_id}/eval/dataset",
+            ),
+            json=jsonable_encoder({"name": name}),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(EvalDataset, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
 
 class AsyncProjectClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -246,7 +304,7 @@ class AsyncProjectClient:
         _response = await self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/project/"
+                f"{self._client_wrapper.get_base_url()}/", "api/project"
             ),
             params=remove_none_from_dict({"project_name": project_name}),
             headers=self._client_wrapper.get_headers(),
@@ -274,7 +332,7 @@ class AsyncProjectClient:
         _response = await self._client_wrapper.httpx_client.request(
             "POST",
             urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/project/"
+                f"{self._client_wrapper.get_base_url()}/", "api/project"
             ),
             json=jsonable_encoder(request),
             headers=self._client_wrapper.get_headers(),
@@ -303,7 +361,7 @@ class AsyncProjectClient:
         _response = await self._client_wrapper.httpx_client.request(
             "PUT",
             urllib.parse.urljoin(
-                f"{self._client_wrapper.get_base_url()}/", "api/project/"
+                f"{self._client_wrapper.get_base_url()}/", "api/project"
             ),
             json=jsonable_encoder(request),
             headers=self._client_wrapper.get_headers(),
@@ -427,6 +485,65 @@ class AsyncProjectClient:
         )
         if 200 <= _response.status_code < 300:
             return pydantic.parse_obj_as(Pipeline, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def get_datasets_for_project(
+        self, project_id: str
+    ) -> typing.List[EvalDataset]:
+        """
+        Get all eval datasets for a project.
+
+        Parameters:
+            - project_id: str.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/project/{project_id}/eval/dataset",
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(typing.List[EvalDataset], _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def create_eval_dataset_for_project(
+        self, project_id: str, *, name: str
+    ) -> EvalDataset:
+        """
+        Create a new eval dataset for a project.
+
+        Parameters:
+            - project_id: str.
+
+            - name: str.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "POST",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/project/{project_id}/eval/dataset",
+            ),
+            json=jsonable_encoder({"name": name}),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(EvalDataset, _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:

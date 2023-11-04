@@ -7,18 +7,27 @@ import pydantic
 
 from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
 
-from .configurable_data_source_names import ConfigurableDataSourceNames
-from .data_source_create_component import DataSourceCreateComponent
+from .text_node import TextNode
 
 
-class DataSourceCreate(pydantic.BaseModel):
+class EvalQuestionResult(pydantic.BaseModel):
     """
-    Schema for creating a data source.
+    Schema for the result of an eval question execution.
     """
 
-    source_type: ConfigurableDataSourceNames
-    component: DataSourceCreateComponent
-    name: str
+    question_id: str = pydantic.Field(
+        description="The ID of the question that was executed."
+    )
+    pipeline_id: str = pydantic.Field(
+        description="The ID of the pipeline that the question was executed against."
+    )
+    retrieved_nodes: typing.List[TextNode] = pydantic.Field(
+        description="The nodes retrieved by the pipeline for the given question."
+    )
+    answer: str = pydantic.Field(description="The answer to the question.")
+    eval_metrics: typing.Dict[str, typing.Any] = pydantic.Field(
+        description="The eval metrics for the question."
+    )
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

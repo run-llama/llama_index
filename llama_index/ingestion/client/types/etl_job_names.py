@@ -13,14 +13,18 @@ class EtlJobNames(str, enum.Enum):
 
     LOAD_DOCUMENTS_JOB = "load_documents_job"
     RUN_TRANSFORM_JOB = "run_transform_job"
+    EVAL_DATASET_JOB = "eval_dataset_job"
 
     def visit(
         self,
         load_documents_job: typing.Callable[[], T_Result],
         run_transform_job: typing.Callable[[], T_Result],
+        eval_dataset_job: typing.Callable[[], T_Result],
     ) -> T_Result:
         if self is EtlJobNames.LOAD_DOCUMENTS_JOB:
             return load_documents_job()
         if self is EtlJobNames.RUN_TRANSFORM_JOB:
             return run_transform_job()
+        if self is EtlJobNames.EVAL_DATASET_JOB:
+            return eval_dataset_job()
         return None

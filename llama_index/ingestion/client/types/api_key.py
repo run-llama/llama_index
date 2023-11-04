@@ -7,18 +7,22 @@ import pydantic
 
 from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
 
-from .configurable_data_source_names import ConfigurableDataSourceNames
-from .data_source_create_component import DataSourceCreateComponent
 
-
-class DataSourceCreate(pydantic.BaseModel):
+class ApiKey(pydantic.BaseModel):
     """
-    Schema for creating a data source.
+    Schema for an API Key.
     """
 
-    source_type: ConfigurableDataSourceNames
-    component: DataSourceCreateComponent
-    name: str
+    id: str
+    created_at: typing.Optional[dt.datetime] = pydantic.Field(
+        description="Creation datetime"
+    )
+    updated_at: typing.Optional[dt.datetime] = pydantic.Field(
+        description="Update datetime"
+    )
+    name: typing.Optional[str]
+    user_id: str
+    redacted_api_key: str
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

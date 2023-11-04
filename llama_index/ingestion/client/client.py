@@ -5,42 +5,62 @@ import typing
 import httpx
 
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
+from .resources.api_key.client import ApiKeyClient, AsyncApiKeyClient
 from .resources.component_definition.client import (
     AsyncComponentDefinitionClient,
     ComponentDefinitionClient,
 )
 from .resources.data_sink.client import AsyncDataSinkClient, DataSinkClient
 from .resources.data_source.client import AsyncDataSourceClient, DataSourceClient
+from .resources.eval.client import AsyncEvalClient, EvalClient
 from .resources.health.client import AsyncHealthClient, HealthClient
 from .resources.pipeline.client import AsyncPipelineClient, PipelineClient
 from .resources.project.client import AsyncProjectClient, ProjectClient
 
 
 class PlatformApi:
-    def __init__(self, *, base_url: str, timeout: typing.Optional[float] = 60):
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
+        timeout: typing.Optional[float] = 60
+    ):
         self._client_wrapper = SyncClientWrapper(
-            base_url=base_url, httpx_client=httpx.Client(timeout=timeout)
+            base_url=base_url, token=token, httpx_client=httpx.Client(timeout=timeout)
         )
         self.health = HealthClient(client_wrapper=self._client_wrapper)
+        self.api_key = ApiKeyClient(client_wrapper=self._client_wrapper)
         self.data_sink = DataSinkClient(client_wrapper=self._client_wrapper)
         self.data_source = DataSourceClient(client_wrapper=self._client_wrapper)
         self.project = ProjectClient(client_wrapper=self._client_wrapper)
         self.pipeline = PipelineClient(client_wrapper=self._client_wrapper)
+        self.eval = EvalClient(client_wrapper=self._client_wrapper)
         self.component_definition = ComponentDefinitionClient(
             client_wrapper=self._client_wrapper
         )
 
 
 class AsyncPlatformApi:
-    def __init__(self, *, base_url: str, timeout: typing.Optional[float] = 60):
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
+        timeout: typing.Optional[float] = 60
+    ):
         self._client_wrapper = AsyncClientWrapper(
-            base_url=base_url, httpx_client=httpx.AsyncClient(timeout=timeout)
+            base_url=base_url,
+            token=token,
+            httpx_client=httpx.AsyncClient(timeout=timeout),
         )
         self.health = AsyncHealthClient(client_wrapper=self._client_wrapper)
+        self.api_key = AsyncApiKeyClient(client_wrapper=self._client_wrapper)
         self.data_sink = AsyncDataSinkClient(client_wrapper=self._client_wrapper)
         self.data_source = AsyncDataSourceClient(client_wrapper=self._client_wrapper)
         self.project = AsyncProjectClient(client_wrapper=self._client_wrapper)
         self.pipeline = AsyncPipelineClient(client_wrapper=self._client_wrapper)
+        self.eval = AsyncEvalClient(client_wrapper=self._client_wrapper)
         self.component_definition = AsyncComponentDefinitionClient(
             client_wrapper=self._client_wrapper
         )

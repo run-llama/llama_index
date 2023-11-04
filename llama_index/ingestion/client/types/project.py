@@ -24,6 +24,7 @@ class Project(pydantic.BaseModel):
         description="Update datetime"
     )
     pipelines: typing.List[Pipeline]
+    ad_hoc_eval_dataset_id: str
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {
@@ -43,4 +44,5 @@ class Project(pydantic.BaseModel):
 
     class Config:
         frozen = True
+        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

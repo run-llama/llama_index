@@ -7,13 +7,13 @@ import pydantic
 
 from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
 
-from .configurable_data_source_names import ConfigurableDataSourceNames
-from .data_source_component import DataSourceComponent
+from .etl_job_names import EtlJobNames
+from .status_enum import StatusEnum
 
 
-class DataSource(pydantic.BaseModel):
+class DataSourceLoadExecution(pydantic.BaseModel):
     """
-    Schema for a data source.
+    Schema for job that loads from a data source.
     """
 
     id: typing.Optional[str] = pydantic.Field(description="Unique identifier")
@@ -23,9 +23,16 @@ class DataSource(pydantic.BaseModel):
     updated_at: typing.Optional[dt.datetime] = pydantic.Field(
         description="Update datetime"
     )
-    source_type: ConfigurableDataSourceNames
-    component: DataSourceComponent
-    name: str
+    job_name: EtlJobNames
+    status: StatusEnum
+    started_at: typing.Optional[dt.datetime]
+    ended_at: typing.Optional[dt.datetime]
+    partitions: typing.Optional[typing.Dict[str, str]] = pydantic.Field(
+        description="Partition information"
+    )
+    data_source_id: str = pydantic.Field(
+        description="The ID for the DataSource this execution loaded documents from."
+    )
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {
