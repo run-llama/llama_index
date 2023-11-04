@@ -18,7 +18,7 @@ from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.schema import MetadataMode, NodeWithScore
 
-DEFAULT_CONTEXT_TEMPALTE = (
+DEFAULT_CONTEXT_TEMPLATE = (
     "Context information is below."
     "\n--------------------\n"
     "{context_str}"
@@ -48,7 +48,7 @@ class ContextChatEngine(BaseChatEngine):
         self._memory = memory
         self._prefix_messages = prefix_messages
         self._node_postprocessors = node_postprocessors or []
-        self._context_template = context_template or DEFAULT_CONTEXT_TEMPALTE
+        self._context_template = context_template or DEFAULT_CONTEXT_TEMPLATE
 
         self.callback_manager = callback_manager or CallbackManager([])
         for node_postprocessor in self._node_postprocessors:

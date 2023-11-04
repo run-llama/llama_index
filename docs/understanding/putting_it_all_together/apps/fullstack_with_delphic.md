@@ -194,7 +194,7 @@ async def add_file_to_collection(request,
                                  collection_id: int,
                                  file: UploadedFile = File(...),
                                  description: str = Form(...), ):
-    collection = await sync_to_async(Collection.objects.get)(id=collection_id
+    collection = await sync_to_async(Collection.objects.get)(id=collection_id)
 ```
 
 ### Intro to Websockets
@@ -274,11 +274,11 @@ async def connect(self):
         self.index = await load_collection_model(self.collection_id)
         await self.accept()
 
-except ValueError as e:
-await self.accept()
-await self.close(code=4000)
-except Exception as e:
-pass
+    except ValueError as e:
+        await self.accept()
+        await self.close(code=4000)
+    except Exception as e:
+        pass
 ```
 
 #### Websocket disconnect listener

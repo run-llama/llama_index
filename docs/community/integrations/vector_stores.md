@@ -353,7 +353,7 @@ from llama_index.vector_stores import MilvusVectorStore
 # construct vector store
 vector_store = MilvusVectorStore(
     uri='foo.vectordb.zillizcloud.com',
-    token="your_token_here"
+    token="your_token_here",
     overwrite='True'
 )
 ```

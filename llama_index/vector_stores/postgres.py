@@ -109,6 +109,7 @@ class PGVectorStore(BasePydanticVectorStore):
     hybrid_search: bool
     text_search_config: str
     cache_ok: bool
+    perform_setup: bool
     debug: bool
 
     _base: Any = PrivateAttr()
@@ -129,6 +130,7 @@ class PGVectorStore(BasePydanticVectorStore):
         text_search_config: str = "english",
         embed_dim: int = 1536,
         cache_ok: bool = False,
+        perform_setup: bool = True,
         debug: bool = False,
     ) -> None:
         try:
@@ -175,6 +177,7 @@ class PGVectorStore(BasePydanticVectorStore):
             text_search_config=text_search_config,
             embed_dim=embed_dim,
             cache_ok=cache_ok,
+            perform_setup=perform_setup,
             debug=debug,
         )
 
@@ -207,6 +210,7 @@ class PGVectorStore(BasePydanticVectorStore):
         text_search_config: str = "english",
         embed_dim: int = 1536,
         cache_ok: bool = False,
+        perform_setup: bool = True,
         debug: bool = False,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
@@ -226,6 +230,7 @@ class PGVectorStore(BasePydanticVectorStore):
             text_search_config=text_search_config,
             embed_dim=embed_dim,
             cache_ok=cache_ok,
+            perform_setup=perform_setup,
             debug=debug,
         )
 
@@ -269,9 +274,10 @@ class PGVectorStore(BasePydanticVectorStore):
     def _initialize(self) -> None:
         if not self._is_initialized:
             self._connect()
-            self._create_extension()
-            self._create_schema_if_not_exists()
-            self._create_tables_if_not_exists()
+            if self.perform_setup:
+                self._create_extension()
+                self._create_schema_if_not_exists()
+                self._create_tables_if_not_exists()
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:

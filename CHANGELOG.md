@@ -1,5 +1,17 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Make pgvector's setup (extension, schema, and table creation) optional (#8656)
+
+## [0.8.59] - 2023-11-02
+
+- Deepmemory support (#8625)
+- Add CohereAI embeddings (#8650)
+- Add Azure AD (Microsoft Entra ID) support (#8667)
+
 ## [0.8.58] - 2023-11-02
 
 ### New Features
@@ -11,6 +23,7 @@
 
 ### New Features
 
+- Add `VoyageAIEmbedding` integration (#8634)
 - Add fine-tuning evaluator notebooks (#8596)
 - Add `SingleStoreDB` integration (#7991)
 - Add support for ChromaDB PersistentClient (#8582)
