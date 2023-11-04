@@ -28,7 +28,7 @@ nest_asyncio.apply()
 
 Let's first download the raw 10-k files, from 2019-2022.
 
-```python
+```
 # NOTE: the code examples assume you're operating within a Jupyter notebook.
 # download files
 !mkdir data
@@ -40,7 +40,7 @@ To parse the HTML files into formatted text, we use the [Unstructured](https://g
 
 First we install the necessary packages:
 
-```python
+```
 !pip install llama-hub unstructured
 ```
 

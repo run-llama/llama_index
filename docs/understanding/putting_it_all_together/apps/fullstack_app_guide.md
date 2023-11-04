@@ -25,9 +25,11 @@ from flask import Flask
 
 app = Flask(__name__)
 
+
 @app.route("/")
 def home():
     return "Hello World!"
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5601)
@@ -50,9 +52,10 @@ import os
 from llama_index import SimpleDirectoryReader, VectorStoreIndex, StorageContext
 
 # NOTE: for local testing only, do NOT deploy with your key hardcoded
-os.environ['OPENAI_API_KEY'] = "your key here"
+os.environ["OPENAI_API_KEY"] = "your key here"
 
 index = None
+
 
 def initialize_index():
     global index
@@ -61,7 +64,9 @@ def initialize_index():
         index = load_index_from_storage(storage_context)
     else:
         documents = SimpleDirectoryReader("./documents").load_data()
-        index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+        index = VectorStoreIndex.from_documents(
+            documents, storage_context=storage_context
+        )
         storage_context.persist(index_dir)
 ```
 
@@ -72,15 +77,16 @@ Our query endpoint will accept `GET` requests with the query text as a parameter
 ```python
 from flask import request
 
+
 @app.route("/query", methods=["GET"])
 def query_index():
-  global index
-  query_text = request.args.get("text", None)
-  if query_text is None:
-    return "No text found, please include a ?text=blah parameter in the URL", 400
-  query_engine = index.as_query_engine()
-  response = query_engine.query(query_text)
-  return str(response), 200
+    global index
+    query_text = request.args.get("text", None)
+    if query_text is None:
+        return "No text found, please include a ?text=blah parameter in the URL", 400
+    query_engine = index.as_query_engine()
+    response = query_engine.query(query_text)
+    return str(response), 200
 ```
 
 Now, we've introduced a few new concepts to our server:
@@ -113,22 +119,26 @@ from multiprocessing.managers import BaseManager
 from llama_index import SimpleDirectoryReader, VectorStoreIndex, Document
 
 # NOTE: for local testing only, do NOT deploy with your key hardcoded
-os.environ['OPENAI_API_KEY'] = "your key here"
+os.environ["OPENAI_API_KEY"] = "your key here"
 
 index = None
 lock = Lock()
 
-def initialize_index():
-  global index
 
-  with lock:
-    # same as before ...
+def initialize_index():
+    global index
+
+    with lock:
+        # same as before ...
+        pass
+
 
 def query_index(query_text):
-  global index
-  query_engine = index.as_query_engine()
-  response = query_engine.query(query_text)
-  return str(response)
+    global index
+    query_engine = index.as_query_engine()
+    response = query_engine.query(query_text)
+    return str(response)
+
 
 if __name__ == "__main__":
     # init the global index
@@ -137,8 +147,8 @@ if __name__ == "__main__":
 
     # setup server
     # NOTE: you might want to handle the password in a less hardcoded way
-    manager = BaseManager(('', 5602), b'password')
-    manager.register('query_index', query_index)
+    manager = BaseManager(("", 5602), b"password")
+    manager.register("query_index", query_index)
     server = manager.get_server()
 
     print("starting server...")
@@ -157,26 +167,28 @@ from flask import Flask, request
 
 # initialize manager connection
 # NOTE: you might want to handle the password in a less hardcoded way
-manager = BaseManager(('', 5602), b'password')
-manager.register('query_index')
+manager = BaseManager(("", 5602), b"password")
+manager.register("query_index")
 manager.connect()
+
 
 @app.route("/query", methods=["GET"])
 def query_index():
-  global index
-  query_text = request.args.get("text", None)
-  if query_text is None:
-    return "No text found, please include a ?text=blah parameter in the URL", 400
-  response = manager.query_index(query_text)._getvalue()
-  return str(response), 200
+    global index
+    query_text = request.args.get("text", None)
+    if query_text is None:
+        return "No text found, please include a ?text=blah parameter in the URL", 400
+    response = manager.query_index(query_text)._getvalue()
+    return str(response), 200
+
 
 @app.route("/")
 def home():
     return "Hello World!"
 
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5601)
-
 ```
 
 _flask_demo.py_
@@ -189,20 +201,21 @@ If we allow users to upload their own documents, we should probably remove the P
 
 ```python
 ...
-manager.register('insert_into_index')
+manager.register("insert_into_index")
 ...
+
 
 @app.route("/uploadFile", methods=["POST"])
 def upload_file():
     global manager
-    if 'file' not in request.files:
+    if "file" not in request.files:
         return "Please send a POST request with a file", 400
 
     filepath = None
     try:
         uploaded_file = request.files["file"]
         filename = secure_filename(uploaded_file.filename)
-        filepath = os.path.join('documents', os.path.basename(filename))
+        filepath = os.path.join("documents", os.path.basename(filename))
         uploaded_file.save(filepath)
 
         if request.form.get("filename_as_doc_id", None) is not None:
@@ -239,8 +252,9 @@ def insert_into_index(doc_text, doc_id=None):
         index.insert(document)
         index.storage_context.persist()
 
+
 ...
-manager.register('insert_into_index', insert_into_index)
+manager.register("insert_into_index", insert_into_index)
 ...
 ```
 

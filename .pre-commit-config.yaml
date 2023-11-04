@@ -58,3 +58,4 @@ repos:
     hooks:
       - id: blacken-docs
         additional_dependencies: [black==22.12.0]
+        exclude: "^docs/module_guides/models/prompts/usage_pattern.md"
