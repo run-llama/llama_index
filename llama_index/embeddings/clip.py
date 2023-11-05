@@ -1,8 +1,6 @@
 import logging
 from typing import Any, List
 
-from PIL import Image
-
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
@@ -114,8 +112,11 @@ class ClipEmbedding(BaseEmbedding):
         for img_file_path in img_file_paths:
             try:
                 import torch
+                from PIL import Image
             except ImportError:
-                raise ImportError("ClipEmbedding requires `pip install torch`.")
+                raise ImportError(
+                    "ClipEmbedding requires `pip install torch` and `pip install pillow`."
+                )
             with torch.no_grad():
                 image = (
                     self._preprocess(Image.open(img_file_path))
