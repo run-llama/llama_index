@@ -7,6 +7,7 @@ from llama_index.embeddings.adapter import (
 from llama_index.embeddings.base import SimilarityMode
 from llama_index.embeddings.bedrock import BedrockEmbedding
 from llama_index.embeddings.clarifai import ClarifaiEmbedding
+from llama_index.embeddings.clip import ClipEmbedding
 from llama_index.embeddings.cohereai import CohereEmbedding
 from llama_index.embeddings.elasticsearch import (
     ElasticsearchEmbedding,
@@ -33,6 +34,7 @@ __all__ = [
     "AdapterEmbeddingModel",
     "BedrockEmbedding",
     "ClarifaiEmbedding",
+    "ClipEmbedding",
     "CohereEmbedding",
     "DEFAULT_HUGGINGFACE_EMBEDDING_MODEL",
     "ElasticsearchEmbedding",
