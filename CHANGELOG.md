@@ -1,15 +1,42 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.60] - 2023-11-04
+
+### New Features
+
+- prompt optimization guide (#8659)
+- VoyageEmbedding (#8634)
+- Multilingual support for `YoutubeTranscriptReader` (#8673)
+- emotion prompt guide (#8674)
+
+### Bug Fixes / Nits
+
+- Adds mistral 7b instruct v0.1 to available anyscale models (#8652)
+- Make pgvector's setup (extension, schema, and table creation) optional (#8656)
+- Allow init of stores_text variable for Pinecone vector store (#8633)
+- fix: azure ad support (#8667)
+- Fix nltk bug in multi-threaded environments (#8668)
+- Fix google colab link in cohereai notebook (#8677)
+- passing max_tokens to the `Cohere` llm (#8672)
+
+## [0.8.59] - 2023-11-02
+
+- Deepmemory support (#8625)
+- Add CohereAI embeddings (#8650)
+- Add Azure AD (Microsoft Entra ID) support (#8667)
+
+## [0.8.58] - 2023-11-02
 
 ### New Features
 
 - Add `lm-format-enforcer` integration for structured output (#8601)
+- Google Vertex Support (#8626)
 
 ## [0.8.57] - 2023-10-31
 
 ### New Features
 
+- Add `VoyageAIEmbedding` integration (#8634)
 - Add fine-tuning evaluator notebooks (#8596)
 - Add `SingleStoreDB` integration (#7991)
 - Add support for ChromaDB PersistentClient (#8582)

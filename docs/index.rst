@@ -41,7 +41,7 @@ To install the library:
 
 ``pip install llama-index``
 
-We recommend starting at `how to read these docs </getting_started/reading.html>`_, which will point you to the right place based on your experience level.
+We recommend starting at `how to read these docs <getting_started/reading.md>`_, which will point you to the right place based on your experience level.
 
 🗺️ Ecosystem
 ************

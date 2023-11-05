@@ -35,6 +35,7 @@ class Cohere(LLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Cohere API."
     )
+    max_tokens: int = Field(description="The maximum number of tokens to generate.")
 
     _client: Any = PrivateAttr()
     _aclient: Any = PrivateAttr()
@@ -70,6 +71,7 @@ class Cohere(LLM):
             max_retries=max_retries,
             model=model,
             callback_manager=callback_manager,
+            max_tokens=max_tokens,
         )
 
     @classmethod

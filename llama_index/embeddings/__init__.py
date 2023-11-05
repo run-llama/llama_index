@@ -7,6 +7,7 @@ from llama_index.embeddings.adapter import (
 from llama_index.embeddings.base import SimilarityMode
 from llama_index.embeddings.bedrock import BedrockEmbedding
 from llama_index.embeddings.clarifai import ClarifaiEmbedding
+from llama_index.embeddings.cohereai import CohereEmbedding
 from llama_index.embeddings.elasticsearch import (
     ElasticsearchEmbedding,
     ElasticsearchEmbeddings,
@@ -26,11 +27,13 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.pooling import Pooling
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 from llama_index.embeddings.utils import resolve_embed_model
+from llama_index.embeddings.voyageai import VoyageEmbedding
 
 __all__ = [
     "AdapterEmbeddingModel",
     "BedrockEmbedding",
     "ClarifaiEmbedding",
+    "CohereEmbedding",
     "DEFAULT_HUGGINGFACE_EMBEDDING_MODEL",
     "ElasticsearchEmbedding",
     "GoogleUnivSentEncoderEmbedding",
@@ -51,4 +54,5 @@ __all__ = [
     "LLMRailsEmbeddings",
     "ElasticsearchEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
+    "VoyageEmbedding",
 ]
