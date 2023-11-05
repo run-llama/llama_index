@@ -25,7 +25,7 @@ In this tutorial, we start with the code you wrote for the `starter example <sta
 
     service_context = ServiceContext.from_defaults(chunk_size=1000)
 
-The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ is a bundle of services and configurations used across a LlamaIndex pipeline.
+The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_ is a bundle of services and configurations used across a LlamaIndex pipeline.
 
 .. code-block:: python
     :emphasize-lines: 4
@@ -53,7 +53,7 @@ The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ i
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about `storage </module_guides/storing/storing.html>`_ and `how to customize it </module_guides/storing/customization.html>`_.
+`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about `storage <../module_guides/storing/storing.html>`_ and `how to customize it <../module_guides/storing/customization.html>`_.
 
 .. code-block:: python
     :emphasize-lines: 4
@@ -81,7 +81,7 @@ The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ i
     response = query_engine.query("What did the author do growing up?")
     print(response)
 
-`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about `retrievers </module_guides/querying/retrievers.html>_` and `query engines </module_guides/putting_it_all_together/query_engine/root.html>_`
+`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about `retrievers <../module_guides/querying/retrievers.html>_` and `query engines <../module_guides/putting_it_all_together/query_engine/root.html>_`
 
 -----------------
 
@@ -94,7 +94,7 @@ The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ i
 
     service_context = ServiceContext.from_defaults(llm=PaLM())
 
-You can learn more about `customizing LLMs </module_guides/models/llms.html>`_.
+You can learn more about `customizing LLMs <../module_guides/models/llms.html>`_.
 
 .. code-block:: python
     :emphasize-lines: 5
@@ -123,7 +123,7 @@ You can learn more about `customizing LLMs </module_guides/models/llms.html>`_.
     response = query_engine.query("What did the author do growing up?")
     print(response)
 
-You can learn more about `query engines <../core_modules/query_modules/query_engine/usage_pattern.html>`_ and `response modes </module_guides/putting_it_all_together/query_engine/response_modes.html>`_.
+You can learn more about `query engines <../module_guides/querying/querying.html>`_ and `response modes <../module_guides/putting_it_all_together/query_engine/response_modes.html>`_.
 
 -----------------
 
@@ -141,7 +141,7 @@ You can learn more about `query engines <../core_modules/query_modules/query_eng
     response = query_engine.query("What did the author do growing up?")
     response.print_response_stream()
 
-You can learn more about `streaming responses </module_guides/putting_it_all_together/query_engine/streaming.html>`_.
+You can learn more about `streaming responses <../module_guides/putting_it_all_together/query_engine/streaming.html>`_.
 
 -----------------
 
@@ -161,11 +161,11 @@ You can learn more about `streaming responses </module_guides/putting_it_all_tog
     response = query_engine.chat("Oh interesting, tell me more.")
     print(response)
 
-Learn more about the `chat engine </module_guides/putting_it_all_together/chat_engines/usage_pattern.html>`_.
+Learn more about the `chat engine <../module_guides/putting_it_all_together/chat_engines/usage_pattern.html>`_.
 
 -----------------
 
 .. admonition:: Next Steps
 
-    * want a thorough walkthrough of (almost) everything you can configure? Get started with `Understanding LlamaIndex </understanding/understanding.html>`_.
+    * want a thorough walkthrough of (almost) everything you can configure? Get started with `Understanding LlamaIndex <../understanding/understanding.html>`_.
     * want more in-depth understanding of specific modules? Check out the module guides in the left nav 👈
