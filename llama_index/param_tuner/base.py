@@ -238,7 +238,7 @@ class RayTuneParamTuner(BaseParamTuner):
 
         def param_fn_wrapper(
             ray_param_dict: Dict, fixed_param_dict: Optional[Dict] = None
-        ):
+        ) -> Dict:
             # need a wrapper to pass in parameters to tune + fixed params
             fixed_param_dict = fixed_param_dict or {}
             full_param_dict = {
@@ -246,6 +246,8 @@ class RayTuneParamTuner(BaseParamTuner):
                 **ray_param_dict,
             }
             tuned_result = self.param_fn(full_param_dict)
+            # need to convert RunResult to dict to obey
+            # Ray Tune's API
             return tuned_result.dict()
 
         run_config = RunConfig(**self.run_config_dict) if self.run_config_dict else None
