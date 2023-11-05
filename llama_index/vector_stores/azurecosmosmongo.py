@@ -11,7 +11,6 @@ from pymongo import MongoClient
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
