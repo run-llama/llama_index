@@ -126,10 +126,10 @@ class ClipEmbedding(BaseEmbedding):
                 results.append(self._model.encode_image(image).tolist()[0])
         return results
 
-    def get_image_embeddings(self, img_file_paths: List[str]) -> Embedding:
+    def get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
         return self._get_image_embeddings(img_file_paths)
 
-    def _get_image_embedding(self, img_file_path: str) -> list[Embedding]:
+    def _get_image_embedding(self, img_file_path: str) -> Embedding:
         return self._get_image_embeddings([img_file_path])[0]
 
     def get_image_embedding(self, img_file_path: str) -> Embedding:
