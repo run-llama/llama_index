@@ -1,19 +1,20 @@
 """Param tuner."""
 
 
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Awaitable
-from llama_index.bridge.pydantic import PrivateAttr
-from pydantic import BaseModel, Field
-from copy import deepcopy
-from typing import Callable
-from llama_index.utils import get_tqdm_iterable
 import asyncio
+from abc import abstractmethod
+from copy import deepcopy
+from typing import Any, Awaitable, Callable, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
+from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.utils import get_tqdm_iterable
 
 
 class RunResult(BaseModel):
     """Run result."""
-    
+
     score: float
     params: Dict[str, Any]
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata.")
@@ -22,7 +23,7 @@ class RunResult(BaseModel):
 class TunedResult(BaseModel):
     run_results: List[RunResult]
     best_idx: int
-    
+
     @property
     def best_run_result(self) -> RunResult:
         """Get best run result."""
@@ -51,14 +52,15 @@ def generate_param_combinations(param_dict: Dict[str, Any]) -> List[Dict[str, An
     return _generate_param_combinations_helper(param_dict, {})
 
 
-
 class BaseParamTuner(BaseModel):
     """Base param tuner."""
+
     param_dict: Dict[str, Any] = Field(
         ..., description="A dictionary of parameters to iterate over."
     )
     fixed_param_dict: Dict[str, Any] = Field(
-        default_factory=dict, description="A dictionary of fixed parameters passed to each job."
+        default_factory=dict,
+        description="A dictionary of fixed parameters passed to each job.",
     )
     show_progress: bool = False
 
@@ -70,14 +72,14 @@ class BaseParamTuner(BaseModel):
         """Async Tune parameters.
 
         Override if you implement a native async method.
-        
+
         """
         return self.tune()
 
 
 class ParamTuner(BaseParamTuner):
     """Parameter tuner.
-    
+
     Args:
         param_dict(Dict): A dictionary of parameters to iterate over.
             Example param_dict:
@@ -86,8 +88,9 @@ class ParamTuner(BaseParamTuner):
                 "batch_size": [8, 16, 32],
             }
         fixed_param_dict(Dict): A dictionary of fixed parameters passed to each job.
-    
+
     """
+
     param_fn: Callable[[Dict[str, Any]], RunResult] = Field(
         ..., description="Function to run with parameters."
     )
@@ -103,9 +106,11 @@ class ParamTuner(BaseParamTuner):
         # in args_dict
 
         combos_with_progress = enumerate(
-            get_tqdm_iterable(param_combinations, self.show_progress, "Param combinations.")
+            get_tqdm_iterable(
+                param_combinations, self.show_progress, "Param combinations."
+            )
         )
-        
+
         all_run_results = []
         for idx, param_combination in combos_with_progress:
             full_param_dict = {
@@ -126,7 +131,7 @@ class ParamTuner(BaseParamTuner):
 
 class AsyncParamTuner(BaseParamTuner):
     """Async Parameter tuner.
-    
+
     Args:
         param_dict(Dict): A dictionary of parameters to iterate over.
             Example param_dict:
@@ -137,14 +142,13 @@ class AsyncParamTuner(BaseParamTuner):
         fixed_param_dict(Dict): A dictionary of fixed parameters passed to each job.
         aparam_fn (Callable): An async function to run with parameters.
         num_workers (int): Number of workers to use.
-    
+
     """
+
     aparam_fn: Callable[[Dict[str, Any]], Awaitable[RunResult]] = Field(
         ..., description="Async function to run with parameters."
     )
-    num_workers: int = Field(
-        2, description="Number of workers to use."
-    )
+    num_workers: int = Field(2, description="Number of workers to use.")
 
     _semaphore: asyncio.Semaphore = PrivateAttr()
 
@@ -170,7 +174,7 @@ class AsyncParamTuner(BaseParamTuner):
             """Async param fn worker."""
             async with semaphore:
                 return await self.aparam_fn(full_param_dict)
-        
+
         all_run_results = []
         run_jobs = []
         for param_combination in param_combinations:
@@ -202,7 +206,7 @@ class AsyncParamTuner(BaseParamTuner):
 
 class RayTuneParamTuner(BaseParamTuner):
     """Parameter tuner powered by Ray Tune.
-    
+
     Args:
         param_dict(Dict): A dictionary of parameters to iterate over.
             Example param_dict:
@@ -211,8 +215,9 @@ class RayTuneParamTuner(BaseParamTuner):
                 "batch_size": [8, 16, 32],
             }
         fixed_param_dict(Dict): A dictionary of fixed parameters passed to each job.
-    
+
     """
+
     param_fn: Callable[[Dict[str, Any]], RunResult] = Field(
         ..., description="Function to run with parameters."
     )
@@ -231,7 +236,9 @@ class RayTuneParamTuner(BaseParamTuner):
         for param_name, param_vals in self.param_dict.items():
             ray_param_dict[param_name] = tune.grid_search(param_vals)
 
-        def param_fn_wrapper(ray_param_dict: Dict, fixed_param_dict: Optional[Dict] = None):
+        def param_fn_wrapper(
+            ray_param_dict: Dict, fixed_param_dict: Optional[Dict] = None
+        ):
             # need a wrapper to pass in parameters to tune + fixed params
             fixed_param_dict = fixed_param_dict or {}
             full_param_dict = {
@@ -244,7 +251,9 @@ class RayTuneParamTuner(BaseParamTuner):
         run_config = RunConfig(**self.run_config_dict) if self.run_config_dict else None
 
         tuner = tune.Tuner(
-            tune.with_parameters(param_fn_wrapper, fixed_param_dict=self.fixed_param_dict),
+            tune.with_parameters(
+                param_fn_wrapper, fixed_param_dict=self.fixed_param_dict
+            ),
             param_space=ray_param_dict,
             run_config=run_config,
         )
@@ -253,7 +262,7 @@ class RayTuneParamTuner(BaseParamTuner):
         all_run_results = []
         for result in results:
             # convert dict back to RunResult (reconstruct it with metadata)
-            # get the keys in RunResult, assign corresponding values in 
+            # get the keys in RunResult, assign corresponding values in
             # result.metrics to those keys
             run_result = RunResult.parse_obj(result.metrics)
             # add some more metadata to run_result (e.g. timestamp)
