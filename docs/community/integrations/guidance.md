@@ -77,7 +77,9 @@ intermediate response has the expected structure (so that they can be parsed cor
 As an example, we implement a `GuidanceQuestionGenerator` that can be plugged into a `SubQuestionQueryEngine` to make it more robust than using the default setting.
 
 ```python
-from llama_index.question_gen.guidance_generator import GuidanceQuestionGenerator
+from llama_index.question_gen.guidance_generator import (
+    GuidanceQuestionGenerator,
+)
 from guidance.llms import OpenAI as GuidanceOpenAI
 
 # define guidance based question generator

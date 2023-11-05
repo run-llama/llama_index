@@ -115,12 +115,15 @@ response_schemas = [
         description="Describes the author's educational experience/background.",
     ),
     ResponseSchema(
-        name="Work", description="Describes the author's work experience/background."
+        name="Work",
+        description="Describes the author's work experience/background.",
     ),
 ]
 
 # define output parser
-lc_output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
+lc_output_parser = StructuredOutputParser.from_response_schemas(
+    response_schemas
+)
 output_parser = LangchainOutputParser(lc_output_parser)
 
 # format each prompt with output parser instructions

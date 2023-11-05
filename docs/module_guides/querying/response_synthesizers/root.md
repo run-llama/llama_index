@@ -18,11 +18,18 @@ Use a response synthesizer on it's own:
 
 ```python
 from llama_index.schema import Node
-from llama_index.response_synthesizers import ResponseMode, get_response_synthesizer
+from llama_index.response_synthesizers import (
+    ResponseMode,
+    get_response_synthesizer,
+)
 
-response_synthesizer = get_response_synthesizer(response_mode=ResponseMode.COMPACT)
+response_synthesizer = get_response_synthesizer(
+    response_mode=ResponseMode.COMPACT
+)
 
-response = response_synthesizer.synthesize("query text", nodes=[Node(text="text"), ...])
+response = response_synthesizer.synthesize(
+    "query text", nodes=[Node(text="text"), ...]
+)
 ```
 
 Or in a query engine after you've created an index:
@@ -136,7 +143,9 @@ class BaseSynthesizer(ABC):
         streaming: bool = False,
     ) -> None:
         """Init params."""
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._service_context = (
+            service_context or ServiceContext.from_defaults()
+        )
         self._callback_manager = self._service_context.callback_manager
         self._streaming = streaming
 

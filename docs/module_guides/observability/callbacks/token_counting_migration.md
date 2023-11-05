@@ -25,12 +25,16 @@ token_counter = TokenCountingHandler(
 
 callback_manager = CallbackManager([token_counter])
 
-service_context = ServiceContext.from_defaults(callback_manager=callback_manager)
+service_context = ServiceContext.from_defaults(
+    callback_manager=callback_manager
+)
 
 document = SimpleDirectoryReader("./data").load_data()
 
 # if verbose is turned on, you will see embedding token usage printed
-index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+index = VectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
 
 # otherwise, you can access the count directly
 print(token_counter.total_embedding_token_count)

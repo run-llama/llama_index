@@ -111,7 +111,9 @@ from llama_index.vector_stores import PineconeVectorStore
 # Creating a Pinecone index
 api_key = "api_key"
 pinecone.init(api_key=api_key, environment="us-west1-gcp")
-pinecone.create_index("quickstart", dimension=1536, metric="euclidean", pod_type="p1")
+pinecone.create_index(
+    "quickstart", dimension=1536, metric="euclidean", pod_type="p1"
+)
 index = pinecone.Index("quickstart")
 
 # construct vector store
@@ -124,7 +126,9 @@ storage_context = StorageContext.from_defaults(vector_store=vector_store)
 documents = SimpleDirectoryReader("./data").load_data()
 
 # create index, which will insert documents/vectors to pinecone
-index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(
+    documents, storage_context=storage_context
+)
 ```
 
 If you have an existing vector store with data already loaded in,

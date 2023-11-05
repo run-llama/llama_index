@@ -32,14 +32,20 @@ response_synthesizer = get_response_synthesizer(
 response = response_synthesizer.synthesize(
     "query string",
     nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ...],
-    additional_source_nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ...],
+    additional_source_nodes=[
+        NodeWithScore(node=Node(text="text"), score=1.0),
+        ...,
+    ],
 )
 
 # asynchronous
 response = await response_synthesizer.asynthesize(
     "query string",
     nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ...],
-    additional_source_nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ...],
+    additional_source_nodes=[
+        NodeWithScore(node=Node(text="text"), score=1.0),
+        ...,
+    ],
 )
 ```
 

@@ -118,7 +118,9 @@ After a retriever fetches relevant nodes, a `BaseSynthesizer` synthesizes the fi
 You can configure it via
 
 ```python
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode=response_mode)
+query_engine = RetrieverQueryEngine.from_args(
+    retriever, response_mode=response_mode
+)
 ```
 
 Right now, we support the following options:

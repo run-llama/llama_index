@@ -22,7 +22,9 @@ To load data, user simply needs to re-create the storage context using the same 
 ```python
 storage_context = StorageContext.from_defaults(
     docstore=SimpleDocumentStore.from_persist_dir(persist_dir="<persist_dir>"),
-    vector_store=SimpleVectorStore.from_persist_dir(persist_dir="<persist_dir>"),
+    vector_store=SimpleVectorStore.from_persist_dir(
+        persist_dir="<persist_dir>"
+    ),
     index_store=SimpleIndexStore.from_persist_dir(persist_dir="<persist_dir>"),
 )
 ```

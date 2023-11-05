@@ -49,7 +49,9 @@ You may choose to manually specify the summary text, or use LlamaIndex itself to
 a summary, for instance with the following:
 
 ```python
-summary = index1.query("What is a summary of this document?", retriever_mode="all_leaf")
+summary = index1.query(
+    "What is a summary of this document?", retriever_mode="all_leaf"
+)
 index1_summary = str(summary)
 ```
 

@@ -59,7 +59,9 @@ documents = SimpleDirectoryReader("./data").load_data()
 node_parser = SimpleNodeParser.from_defaults(chunk_size=512, chunk_overlap=10)
 service_context = ServiceContext.from_defaults(node_parser=node_parser)
 
-index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+index = VectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
 ```
 
 ```{tip}
@@ -87,7 +89,8 @@ When creating documents, you can also attach useful metadata that can be used at
 
 ```python
 document = Document(
-    text="text", metadata={"filename": "<doc_file_name>", "category": "<category>"}
+    text="text",
+    metadata={"filename": "<doc_file_name>", "category": "<category>"},
 )
 ```
 

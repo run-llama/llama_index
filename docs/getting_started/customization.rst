@@ -33,7 +33,9 @@ The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ i
     from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
-    index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+    index = VectorStoreIndex.from_documents(
+        documents, service_context=service_context
+    )
     query_engine = index.as_query_engine()
     response = query_engine.query("What did the author do growing up?")
     print(response)
@@ -61,7 +63,9 @@ The `ServiceContext </module_guides/supporting_modules/service_context.html>`_ i
     from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
-    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+    index = VectorStoreIndex.from_documents(
+        documents, storage_context=storage_context
+    )
     query_engine = index.as_query_engine()
     response = query_engine.query("What did the author do growing up?")
     print(response)

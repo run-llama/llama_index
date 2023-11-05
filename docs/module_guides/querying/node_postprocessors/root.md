@@ -46,7 +46,9 @@ index = VectorStoreIndex.from_documents(documents)
 
 query_engine = index.as_query_engine(
     node_postprocessors=[
-        TimeWeightedPostprocessor(time_decay=0.5, time_access_refresh=False, top_k=1)
+        TimeWeightedPostprocessor(
+            time_decay=0.5, time_access_refresh=False, top_k=1
+        )
     ]
 )
 

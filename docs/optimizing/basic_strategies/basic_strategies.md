@@ -119,7 +119,9 @@ documents = [
     Document(text="text", metadata={"author": "John Doe"}),
 ]
 
-filters = MetadataFilters(filters=[ExactMatchFilter(key="author", value="John Doe")])
+filters = MetadataFilters(
+    filters=[ExactMatchFilter(key="author", value="John Doe")]
+)
 
 index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine(filters=filters)

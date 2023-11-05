@@ -67,7 +67,12 @@ for convenience (so you don't have to manually construct them).
 Here's a complete example that sets up all objects using their default settings:
 
 ```python
-from llama_index import ServiceContext, LLMPredictor, OpenAIEmbedding, PromptHelper
+from llama_index import (
+    ServiceContext,
+    LLMPredictor,
+    OpenAIEmbedding,
+    PromptHelper,
+)
 from llama_index.llms import OpenAI
 from llama_index.text_splitter import TokenTextSplitter
 from llama_index.node_parser import SimpleNodeParser
@@ -78,7 +83,10 @@ node_parser = SimpleNodeParser.from_defaults(
     text_splitter=TokenTextSplitter(chunk_size=1024, chunk_overlap=20)
 )
 prompt_helper = PromptHelper(
-    context_window=4096, num_output=256, chunk_overlap_ratio=0.1, chunk_size_limit=None
+    context_window=4096,
+    num_output=256,
+    chunk_overlap_ratio=0.1,
+    chunk_size_limit=None,
 )
 
 service_context = ServiceContext.from_defaults(

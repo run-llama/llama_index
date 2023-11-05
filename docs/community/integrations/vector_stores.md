@@ -74,7 +74,9 @@ storage_context = StorageContext.from_defaults(
 
 # Load documents and build index
 documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
-index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(
+    documents, storage_context=storage_context
+)
 
 # Query index
 query_engine = index.as_query_engine()
@@ -129,7 +131,9 @@ Then connect and use Redis as a vector database with LlamaIndex
 from llama_index.vector_stores import RedisVectorStore
 
 vector_store = RedisVectorStore(
-    index_name="llm-project", redis_url="redis://localhost:6379", overwrite=True
+    index_name="llm-project",
+    redis_url="redis://localhost:6379",
+    overwrite=True,
 )
 ```
 
@@ -183,7 +187,8 @@ resource_owner_config = weaviate.AuthClientPassword(
     password="<password>",
 )
 client = weaviate.Client(
-    "https://<cluster-id>.semi.network/", auth_client_secret=resource_owner_config
+    "https://<cluster-id>.semi.network/",
+    auth_client_secret=resource_owner_config,
 )
 
 # construct vector store
@@ -206,10 +211,14 @@ vector_store = ZepVectorStore(
 
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(
+    documents, storage_context=storage_context
+)
 
 # Query index using both a text query and metadata filters
-filters = MetadataFilters(filters=[ExactMatchFilter(key="theme", value="Mafia")])
+filters = MetadataFilters(
+    filters=[ExactMatchFilter(key="theme", value="Mafia")]
+)
 retriever = index.as_retriever(filters=filters)
 result = retriever.retrieve("What is inception about?")
 ```
@@ -223,7 +232,9 @@ from llama_index.vector_stores import PineconeVectorStore
 # Creating a Pinecone index
 api_key = "api_key"
 pinecone.init(api_key=api_key, environment="us-west1-gcp")
-pinecone.create_index("quickstart", dimension=1536, metric="euclidean", pod_type="p1")
+pinecone.create_index(
+    "quickstart", dimension=1536, metric="euclidean", pod_type="p1"
+)
 index = pinecone.Index("quickstart")
 
 # can define filters specific to this vector index (so you can
@@ -271,7 +282,9 @@ cluster = Cluster(["127.0.0.1"])
 cassio.init(session=cluster.connect(), keyspace="my_keyspace")
 
 # After the above `cassio.init(...)`, create a vector store:
-vector_store = CassandraVectorStore(table="cass_v_table", embedding_dimension=1536)
+vector_store = CassandraVectorStore(
+    table="cass_v_table", embedding_dimension=1536
+)
 ```
 
 **Chroma**
@@ -319,7 +332,9 @@ import pymilvus
 from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
-vector_store = MilvusVectorStore(uri="https://localhost:19530", overwrite="True")
+vector_store = MilvusVectorStore(
+    uri="https://localhost:19530", overwrite="True"
+)
 ```
 
 **Note**: `MilvusVectorStore` depends on the `pymilvus` library.
@@ -339,7 +354,9 @@ from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
-    uri="foo.vectordb.zillizcloud.com", token="your_token_here", overwrite="True"
+    uri="foo.vectordb.zillizcloud.com",
+    token="your_token_here",
+    overwrite="True",
 )
 ```
 
@@ -423,16 +440,22 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.readers.file.base import SimpleDirectoryReader
 
 # mongo_uri = os.environ["MONGO_URI"]
-mongo_uri = "mongodb+srv://<username>:<password>@<host>?retryWrites=true&w=majority"
+mongo_uri = (
+    "mongodb+srv://<username>:<password>@<host>?retryWrites=true&w=majority"
+)
 mongodb_client = pymongo.MongoClient(mongo_uri)
 
 # construct store
 store = MongoDBAtlasVectorSearch(mongodb_client)
 storage_context = StorageContext.from_defaults(vector_store=store)
-uber_docs = SimpleDirectoryReader(input_files=["../data/10k/uber_2021.pdf"]).load_data()
+uber_docs = SimpleDirectoryReader(
+    input_files=["../data/10k/uber_2021.pdf"]
+).load_data()
 
 # construct index
-index = VectorStoreIndex.from_documents(uber_docs, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(
+    uber_docs, storage_context=storage_context
+)
 ```
 
 **Neo4j**
@@ -517,7 +540,9 @@ reader = ChromaReader(
 
 query_vector = [n1, n2, n3, ...]
 
-documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
+documents = reader.load_data(
+    collection_name="demo", query_vector=query_vector, limit=5
+)
 index = SummaryIndex.from_documents(documents)
 
 query_engine = index.as_query_engine()
@@ -542,7 +567,9 @@ query_vector = [n1, n2, n3, ...]
 # See the Python client: https;//github.com/qdrant/qdrant_client
 # for more details
 
-documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
+documents = reader.load_data(
+    collection_name="demo", query_vector=query_vector, limit=5
+)
 ```
 
 NOTE: Since Weaviate can store a hybrid of document and vector objects, the user may either choose to explicitly specify `class_name` and `properties` in order to query documents, or they may choose to specify a raw GraphQL query. See below for usage.

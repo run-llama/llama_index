@@ -108,7 +108,10 @@ You can also define a custom query engine. Simply subclass the `CustomQueryEngin
 ```python
 from llama_index.query_engine import CustomQueryEngine
 from llama_index.retrievers import BaseRetriever
-from llama_index.response_synthesizers import get_response_synthesizer, BaseSynthesizer
+from llama_index.response_synthesizers import (
+    get_response_synthesizer,
+    BaseSynthesizer,
+)
 
 
 class RAGQueryEngine(CustomQueryEngine):

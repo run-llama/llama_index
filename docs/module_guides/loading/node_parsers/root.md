@@ -42,7 +42,9 @@ documents = SimpleDirectoryReader("./data").load_data()
 node_parser = SimpleNodeParser.from_defaults(chunk_size=1024, chunk_overlap=20)
 service_context = ServiceContext.from_defaults(node_parser=node_parser)
 
-index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+index = VectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
 ```
 
 ## Customization

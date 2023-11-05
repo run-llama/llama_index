@@ -53,7 +53,10 @@ Album(
     artist="The Shining Choir",
     songs=[
         Song(title="Redrum", length_seconds=300),
-        Song(title="All Work and No Play Makes Jack a Dull Boy", length_seconds=240),
+        Song(
+            title="All Work and No Play Makes Jack a Dull Boy",
+            length_seconds=240,
+        ),
         Song(title="Heeeeere's Johnny!", length_seconds=180),
     ],
 )

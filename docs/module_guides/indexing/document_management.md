@@ -48,7 +48,8 @@ If a Document is already present within an index, you can "update" a Document wi
 # NOTE: the document has a `doc_id` specified
 doc_chunks[0].text = "Brand new document text"
 index.update_ref_doc(
-    doc_chunks[0], update_kwargs={"delete_kwargs": {"delete_from_docstore": True}}
+    doc_chunks[0],
+    update_kwargs={"delete_kwargs": {"delete_from_docstore": True}},
 )
 ```
 
@@ -68,7 +69,10 @@ doc_chunks[0] = Document(text="Super new document text", id_="doc_id_0")
 
 # add a new document
 doc_chunks.append(
-    Document(text="This isn't in the index yet, but it will be soon!", id_="doc_id_3")
+    Document(
+        text="This isn't in the index yet, but it will be soon!",
+        id_="doc_id_3",
+    )
 )
 
 # refresh the index

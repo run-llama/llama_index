@@ -87,7 +87,8 @@ query_engine_tools = [
     QueryEngineTool(
         query_engine=gmail_agent,
         metadata=ToolMetadata(
-            name="gmail_agent", description="Tool that can send emails on Gmail."
+            name="gmail_agent",
+            description="Tool that can send emails on Gmail.",
         ),
     ),
 ]
@@ -129,7 +130,9 @@ We then define our `FnRetrieverOpenAIAgent`:
 ```python
 from llama_index.agent import FnRetrieverOpenAIAgent
 
-agent = FnRetrieverOpenAIAgent.from_retriever(obj_index.as_retriever(), verbose=True)
+agent = FnRetrieverOpenAIAgent.from_retriever(
+    obj_index.as_retriever(), verbose=True
+)
 ```
 
 ### Context Retrieval Agents
@@ -155,7 +158,9 @@ context_index = VectorStoreIndex.from_documents(docs)
 
 # add context agent
 context_agent = ContextRetrieverOpenAIAgent.from_tools_and_retriever(
-    query_engine_tools, context_index.as_retriever(similarity_top_k=1), verbose=True
+    query_engine_tools,
+    context_index.as_retriever(similarity_top_k=1),
+    verbose=True,
 )
 response = context_agent.chat("What is the YZ of March 2022?")
 ```
@@ -171,7 +176,9 @@ plan over a set of subtools.
 from llama_index.tools import QueryPlanTool
 from llama_index import get_response_synthesizer
 
-response_synthesizer = get_response_synthesizer(service_context=service_context)
+response_synthesizer = get_response_synthesizer(
+    service_context=service_context
+)
 query_plan_tool = QueryPlanTool.from_defaults(
     query_engine_tools=[query_tool_sept, query_tool_june, query_tool_march],
     response_synthesizer=response_synthesizer,
@@ -186,5 +193,7 @@ agent = OpenAIAgent.from_tools(
 )
 
 # should output a query plan to call march, june, and september tools
-response = agent.query("Analyze Uber revenue growth in March, June, and September")
+response = agent.query(
+    "Analyze Uber revenue growth in March, June, and September"
+)
 ```

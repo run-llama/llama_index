@@ -43,7 +43,8 @@ There are a few ways to set up this dictionary:
 
 ```python
 document = Document(
-    text="text", metadata={"filename": "<doc_file_name>", "category": "<category>"}
+    text="text",
+    metadata={"filename": "<doc_file_name>", "category": "<category>"},
 )
 ```
 
@@ -61,7 +62,9 @@ from llama_index import SimpleDirectoryReader
 filename_fn = lambda filename: {"file_name": filename}
 
 # automatically sets the metadata of each document according to filename_fn
-documents = SimpleDirectoryReader("./data", file_metadata=filename_fn).load_data()
+documents = SimpleDirectoryReader(
+    "./data", file_metadata=filename_fn
+).load_data()
 ```
 
 ### Customizing the id
@@ -158,7 +161,10 @@ document = Document(
     text_template="Metadata: {metadata_str}\n-----\nContent: {content}",
 )
 
-print("The LLM sees this: \n", document.get_content(metadata_mode=MetadataMode.LLM))
+print(
+    "The LLM sees this: \n",
+    document.get_content(metadata_mode=MetadataMode.LLM),
+)
 print(
     "The Embedding model sees this: \n",
     document.get_content(metadata_mode=MetadataMode.EMBED),

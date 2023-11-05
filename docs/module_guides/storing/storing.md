@@ -35,7 +35,9 @@ from llama_index.vector_stores import DeepLakeVectorStore
 vector_store = DeepLakeVectorStore(dataset_path="<dataset_path>")
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 # Load documents and build index
-index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(
+    documents, storage_context=storage_context
+)
 
 
 ## reload an existing one

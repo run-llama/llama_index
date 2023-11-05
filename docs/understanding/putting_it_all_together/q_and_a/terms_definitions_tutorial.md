@@ -60,7 +60,8 @@ with setup_tab:
         "LLM Temperature", min_value=0.0, max_value=1.0, step=0.1
     )
     term_extract_str = st.text_area(
-        "The query to extract terms and definitions with.", value=DEFAULT_TERM_STR
+        "The query to extract terms and definitions with.",
+        value=DEFAULT_TERM_STR,
     )
 
 with upload_tab:
@@ -95,15 +96,21 @@ from llama_index.llms import OpenAI
 
 def get_llm(llm_name, model_temperature, api_key, max_tokens=256):
     os.environ["OPENAI_API_KEY"] = api_key
-    return OpenAI(temperature=model_temperature, model=llm_name, max_tokens=max_tokens)
+    return OpenAI(
+        temperature=model_temperature, model=llm_name, max_tokens=max_tokens
+    )
 
 
-def extract_terms(documents, term_extract_str, llm_name, model_temperature, api_key):
+def extract_terms(
+    documents, term_extract_str, llm_name, model_temperature, api_key
+):
     llm = get_llm(llm_name, model_temperature, api_key, max_tokens=1024)
 
     service_context = ServiceContext.from_defaults(llm=llm, chunk_size=1024)
 
-    temp_index = SummaryIndex.from_documents(documents, service_context=service_context)
+    temp_index = SummaryIndex.from_documents(
+        documents, service_context=service_context
+    )
     query_engine = temp_index.as_query_engine(response_mode="tree_summarize")
     terms_definitions = str(query_engine.query(term_extract_str))
     terms_definitions = [
@@ -471,7 +478,8 @@ with upload_tab:
             "Either upload an image/screenshot of a document, or enter the text manually."
         )
         uploaded_file = st.file_uploader(
-            "Upload an image/screenshot of a document:", type=["png", "jpg", "jpeg"]
+            "Upload an image/screenshot of a document:",
+            type=["png", "jpg", "jpeg"],
         )
         document_text = st.text_area("Or enter raw text")
         if st.button("Extract Terms and Definitions") and (

@@ -135,7 +135,9 @@ graph = ComposableGraph.from_indices(
 )
 
 # get root index
-root_index = graph.get_index(graph.index_struct.root_id, SimpleKeywordTableIndex)
+root_index = graph.get_index(
+    graph.index_struct.root_id, SimpleKeywordTableIndex
+)
 # set id of root index
 root_index.set_index_id("compare_contrast")
 root_summary = (
@@ -150,12 +152,18 @@ An example is shown below.
 ```python
 # define decompose_transform
 from llama_index import LLMPredictor
-from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import (
+    DecomposeQueryTransform,
+)
 
-decompose_transform = DecomposeQueryTransform(LLMPredictor(llm=llm_gpt4), verbose=True)
+decompose_transform = DecomposeQueryTransform(
+    LLMPredictor(llm=llm_gpt4), verbose=True
+)
 
 # define custom query engines
-from llama_index.query_engine.transform_query_engine import TransformQueryEngine
+from llama_index.query_engine.transform_query_engine import (
+    TransformQueryEngine,
+)
 
 custom_query_engines = {}
 for index in vector_indices.values():
@@ -209,7 +217,9 @@ for wiki_title in wiki_titles:
     summary = index_summaries[wiki_title]
 
     query_engine = index.as_query_engine(service_context=service_context)
-    vector_tool = QueryEngineTool.from_defaults(query_engine, description=summary)
+    vector_tool = QueryEngineTool.from_defaults(
+        query_engine, description=summary
+    )
     query_engine_tools.append(vector_tool)
 
 

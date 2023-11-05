@@ -48,6 +48,9 @@ langchain_tools = [t.to_langchain_tool() for t in tools]
 from langchain.agents import initialize_agent
 
 agent_executor = initialize_agent(
-    langchain_tools, llm, agent="conversational-react-description", memory=memory
+    langchain_tools,
+    llm,
+    agent="conversational-react-description",
+    memory=memory,
 )
 ```

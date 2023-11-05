@@ -19,7 +19,9 @@ from llama_index.node_parser.extractors import (
 )
 from llama_index.text_splitter import TokenTextSplitter
 
-text_splitter = TokenTextSplitter(separator=" ", chunk_size=512, chunk_overlap=128)
+text_splitter = TokenTextSplitter(
+    separator=" ", chunk_size=512, chunk_overlap=128
+)
 metadata_extractor = MetadataExtractor(
     extractors=[
         TitleExtractor(nodes=5),

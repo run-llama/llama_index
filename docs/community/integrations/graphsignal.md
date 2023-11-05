@@ -18,7 +18,9 @@ pip install graphsignal
 import graphsignal
 
 # Provide an API key directly or via GRAPHSIGNAL_API_KEY environment variable
-graphsignal.configure(api_key="my-api-key", deployment="my-llama-index-app-prod")
+graphsignal.configure(
+    api_key="my-api-key", deployment="my-llama-index-app-prod"
+)
 ```
 
 You can get an API key [here](https://app.graphsignal.com/).

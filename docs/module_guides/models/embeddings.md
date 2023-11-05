@@ -91,7 +91,9 @@ To configure the model used (from Hugging Face hub), add the model name separate
 ```python
 from llama_index import ServiceContext
 
-service_context = ServiceContext.from_defaults(embed_model="local:BAAI/bge-large-en")
+service_context = ServiceContext.from_defaults(
+    embed_model="local:BAAI/bge-large-en"
+)
 ```
 
 ### HuggingFace Optimum ONNX Embeddings
@@ -109,7 +111,9 @@ Creation with specifying the model and output path:
 ```python
 from llama_index.embeddings import OptimumEmbedding
 
-OptimumEmbedding.create_and_save_optimum_model("BAAI/bge-small-en-v1.5", "./bge_onnx")
+OptimumEmbedding.create_and_save_optimum_model(
+    "BAAI/bge-small-en-v1.5", "./bge_onnx"
+)
 ```
 
 And then usage:
@@ -179,7 +183,9 @@ class InstructorEmbeddings(BaseEmbedding):
 You can also use embeddings as a standalone module for your project, existing application, or general testing and exploration.
 
 ```python
-embeddings = embed_model.get_text_embedding("It is raining cats and dogs here!")
+embeddings = embed_model.get_text_embedding(
+    "It is raining cats and dogs here!"
+)
 ```
 
 ## Modules

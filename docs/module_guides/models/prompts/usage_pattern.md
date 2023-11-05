@@ -102,7 +102,9 @@ qa_prompt_tmpl_str = (
 )
 qa_prompt_tmpl = PromptTemplate(qa_prompt_tmpl_str)
 
-query_engine.update_prompts({"response_synthesizer:text_qa_template": qa_prompt_tmpl})
+query_engine.update_prompts(
+    {"response_synthesizer:text_qa_template": qa_prompt_tmpl}
+)
 ```
 
 #### Modify prompts used in query engine

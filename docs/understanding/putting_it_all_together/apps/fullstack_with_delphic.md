@@ -157,7 +157,9 @@ async def create_collection(
     response=CollectionQueryOutput,
     summary="Ask a question of a document collection",
 )
-def query_collection_view(request: HttpRequest, query_input: CollectionQueryInput):
+def query_collection_view(
+    request: HttpRequest, query_input: CollectionQueryInput
+):
     collection_id = query_input.collection_id
     query_str = query_input.query_str
     response = query_collection(collection_id, query_str)
@@ -307,7 +309,9 @@ async def receive(self, text_data):
 
         markdown_response = f"## Response\n\n{response}\n\n"
         if response.source_nodes:
-            markdown_sources = f"## Sources\n\n{response.get_formatted_sources()}"
+            markdown_sources = (
+                f"## Sources\n\n{response.get_formatted_sources()}"
+            )
         else:
             markdown_sources = ""
 
@@ -316,7 +320,9 @@ async def receive(self, text_data):
         await self.send(json.dumps({"response": formatted_response}, indent=4))
     else:
         await self.send(
-            json.dumps({"error": "No index loaded for this connection."}, indent=4)
+            json.dumps(
+                {"error": "No index loaded for this connection."}, indent=4
+            )
         )
 ```
 
@@ -358,7 +364,9 @@ async def load_collection_model(collection_id: str | int) -> VectorStoreIndex:
         if not cache_file_path.exists():
             cache_dir.mkdir(parents=True, exist_ok=True)
             with collection.model.open("rb") as model_file:
-                with cache_file_path.open("w+", encoding="utf-8") as cache_file:
+                with cache_file_path.open(
+                    "w+", encoding="utf-8"
+                ) as cache_file:
                     cache_file.write(model_file.read().decode("utf-8"))
 
         # define LLM
