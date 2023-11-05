@@ -6,6 +6,7 @@ from llama_index.vector_stores.postgres import PGVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.lantern import LanternStore
 
 LOADABLE_VECTOR_STORES: Dict[str, Type[BasePydanticVectorStore]] = {
     ChromaVectorStore.class_name(): ChromaVectorStore,
@@ -13,6 +14,7 @@ LOADABLE_VECTOR_STORES: Dict[str, Type[BasePydanticVectorStore]] = {
     PineconeVectorStore.class_name(): PineconeVectorStore,
     PGVectorStore.class_name(): PGVectorStore,
     WeaviateVectorStore.class_name(): WeaviateVectorStore,
+    LanternStore.class_name(): LanternStore,
 }
 
 

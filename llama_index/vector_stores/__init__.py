@@ -46,6 +46,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.lantern import LanternStore
 
 __all__ = [
     "ElasticsearchStore",
@@ -86,4 +87,5 @@ __all__ = [
     "TencentVectorDB",
     "AstraDBVectorStore",
     "AzureCosmosDBMongoDBVectorSearch",
+    "LanternStore",
 ]
