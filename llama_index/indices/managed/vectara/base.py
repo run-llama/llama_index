@@ -85,12 +85,12 @@ class VectaraIndex(BaseManagedIndex):
         else:
             _logger.debug(f"Using corpus id {self._vectara_corpus_id}")
 
-        # setup requests session with max 3 retries and 60s timeout
+        # setup requests session with max 3 retries and 90s timeout
         # for calling Vectara API
         self._session = requests.Session()  # to reuse connections
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("https://", adapter)
-        self.vectara_api_timeout = 60
+        self.vectara_api_timeout = 90
         self.use_core_api = use_core_api
 
         # if nodes is specified, consider each node as a single document
