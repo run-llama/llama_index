@@ -1,7 +1,6 @@
 import logging
 from typing import Any, List
 
-import torch
 from PIL import Image
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -65,9 +64,10 @@ class ClipEmbedding(BaseEmbedding):
 
         try:
             import clip
+            import torch
         except ImportError:
             raise ImportError(
-                "ClipEmbedding requires `pip install git+https://github.com/openai/CLIP.git`."
+                "ClipEmbedding requires `pip install git+https://github.com/openai/CLIP.git` and torch."
             )
 
         super().__init__(
@@ -97,7 +97,7 @@ class ClipEmbedding(BaseEmbedding):
                 import clip
             except ImportError:
                 raise ImportError(
-                    "ClipEmbedding requires `pip install git+https://github.com/openai/CLIP.git`."
+                    "ClipEmbedding requires `pip install git+https://github.com/openai/CLIP.git` and torch."
                 )
             text_embedding = self._model.encode_text(
                 clip.tokenize(text).to(self._device)
@@ -112,6 +112,10 @@ class ClipEmbedding(BaseEmbedding):
     def _get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
         results = []
         for img_file_path in img_file_paths:
+            try:
+                import torch
+            except ImportError:
+                raise ImportError("ClipEmbedding requires `pip install torch`.")
             with torch.no_grad():
                 image = (
                     self._preprocess(Image.open(img_file_path))
