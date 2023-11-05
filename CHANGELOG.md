@@ -1,5 +1,16 @@
 # ChangeLog
 
+## [0.8.61] - 2023-11-05
+
+### New Features
+
+- [experimental] Hyperparameter tuner (#8687)
+
+### Bug Fixes / Nits
+
+- Fix typo error in CohereAIModelName class: cohere light models was missing v3 (#8684)
+- Update deeplake.py (#8683)
+
 ## [0.8.60] - 2023-11-04
 
 ### New Features
