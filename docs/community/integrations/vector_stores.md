@@ -51,13 +51,12 @@ that's initialized as part of the default storage context.
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
 # Load documents and build index
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 index = VectorStoreIndex.from_documents(documents)
 
 # Query index
 query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do growing up?")
-
 ```
 
 **Custom Vector Store Index Construction/Querying**
@@ -70,11 +69,11 @@ from llama_index.vector_stores import DeepLakeVectorStore
 
 # construct vector store and customize storage context
 storage_context = StorageContext.from_defaults(
-    vector_store = DeepLakeVectorStore(dataset_path="<dataset_path>")
+    vector_store=DeepLakeVectorStore(dataset_path="<dataset_path>")
 )
 
 # Load documents and build index
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
 
 # Query index
@@ -103,6 +102,7 @@ Then connect and use Elasticsearch as a vector database with LlamaIndex
 
 ```python
 from llama_index.vector_stores import ElasticsearchStore
+
 vector_store = ElasticsearchStore(
     index_name="llm-project",
     es_url="http://localhost:9200",
@@ -127,10 +127,9 @@ Then connect and use Redis as a vector database with LlamaIndex
 
 ```python
 from llama_index.vector_stores import RedisVectorStore
+
 vector_store = RedisVectorStore(
-    index_name="llm-project",
-    redis_url="redis://localhost:6379",
-    overwrite=True
+    index_name="llm-project", redis_url="redis://localhost:6379", overwrite=True
 )
 ```
 
@@ -196,14 +195,13 @@ vector_store = WeaviateVectorStore(weaviate_client=client)
 Zep stores texts, metadata, and embeddings. All are returned in search results.
 
 ```python
-
 from llama_index.vector_stores.zep import ZepVectorStore
 
 vector_store = ZepVectorStore(
     api_url="<api_url>",
     api_key="<api_key>",
     collection_name="<unique_collection_name>",  # Can either be an existing collection or a new one
-    embedding_dimensions=1536 # Optional, required if creating a new collection
+    embedding_dimensions=1536,  # Optional, required if creating a new collection
 )
 
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
@@ -225,12 +223,7 @@ from llama_index.vector_stores import PineconeVectorStore
 # Creating a Pinecone index
 api_key = "api_key"
 pinecone.init(api_key=api_key, environment="us-west1-gcp")
-pinecone.create_index(
-    "quickstart",
-    dimension=1536,
-    metric="euclidean",
-    pod_type="p1"
-)
+pinecone.create_index("quickstart", dimension=1536, metric="euclidean", pod_type="p1")
 index = pinecone.Index("quickstart")
 
 # can define filters specific to this vector index (so you can
@@ -239,8 +232,7 @@ metadata_filters = {"title": "paul_graham_essay"}
 
 # construct vector store
 vector_store = PineconeVectorStore(
-    pinecone_index=index,
-    metadata_filters=metadata_filters
+    pinecone_index=index, metadata_filters=metadata_filters
 )
 ```
 
@@ -252,9 +244,7 @@ from llama_index.vector_stores import QdrantVectorStore
 
 # Creating a Qdrant vector store
 client = qdrant_client.QdrantClient(
-    host="<qdrant-host>",
-    api_key="<qdrant-api-key>",
-    https=True
+    host="<qdrant-host>", api_key="<qdrant-api-key>", https=True
 )
 collection_name = "paul_graham"
 
@@ -276,6 +266,7 @@ cassio.init(database_id="1234abcd-...", token="AstraCS:...")
 
 # For a Cassandra cluster:
 from cassandra.cluster import Cluster
+
 cluster = Cluster(["127.0.0.1"])
 cassio.init(session=cluster.connect(), keyspace="my_keyspace")
 
@@ -328,11 +319,7 @@ import pymilvus
 from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
-vector_store = MilvusVectorStore(
-    uri='https://localhost:19530',
-    overwrite='True'
-)
-
+vector_store = MilvusVectorStore(uri="https://localhost:19530", overwrite="True")
 ```
 
 **Note**: `MilvusVectorStore` depends on the `pymilvus` library.
@@ -352,9 +339,7 @@ from llama_index.vector_stores import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
-    uri='foo.vectordb.zillizcloud.com',
-    token="your_token_here",
-    overwrite='True'
+    uri="foo.vectordb.zillizcloud.com", token="your_token_here", overwrite="True"
 )
 ```
 
@@ -372,17 +357,15 @@ from llama_index.vector_stores import MyScaleVectorStore
 
 # Creating a MyScale client
 client = clickhouse_connect.get_client(
-    host='YOUR_CLUSTER_HOST',
+    host="YOUR_CLUSTER_HOST",
     port=8443,
-    username='YOUR_USERNAME',
-    password='YOUR_CLUSTER_PASSWORD'
+    username="YOUR_USERNAME",
+    password="YOUR_CLUSTER_PASSWORD",
 )
 
 
 # construct vector store
-vector_store = MyScaleVectorStore(
-    myscale_client=client
-)
+vector_store = MyScaleVectorStore(myscale_client=client)
 ```
 
 **Timescale**
@@ -391,7 +374,7 @@ vector_store = MyScaleVectorStore(
 from llama_index.vector_stores import TimescaleVectorStore
 
 vector_store = TimescaleVectorStore.from_params(
-    service_url='YOUR TIMESCALE SERVICE URL',
+    service_url="YOUR TIMESCALE SERVICE URL",
     table_name="paul_graham_essay",
 )
 ```
@@ -423,7 +406,7 @@ from llama_index.vector_stores import (
 )
 
 # construct vector store
-vector_store = DocArrayHnswVectorStore(work_dir='hnsw_index')
+vector_store = DocArrayHnswVectorStore(work_dir="hnsw_index")
 
 # alternatively, construct the in-memory vector store
 vector_store = DocArrayInMemoryVectorStore()
@@ -464,9 +447,8 @@ neo4j_vector = Neo4jVectorStore(
     username="neo4j",
     password="pleaseletmein",
     url="bolt://localhost:7687",
-    embed_dim=1536
+    embed_dim=1536,
 )
-
 ```
 
 **Azure Cognitive Search**
@@ -504,7 +486,7 @@ import dashvector
 from llama_index.vector_stores import DashVectorStore
 
 # init dashvector client
-client = dashvector.Client(api_key='your-dashvector-api-key')
+client = dashvector.Client(api_key="your-dashvector-api-key")
 
 # creating a DashVector collection
 client.create("quickstart", dimension=1536)
@@ -523,7 +505,6 @@ LlamaIndex supports loading data from a huge number of sources. See [Data Connec
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
 ```python
-
 from llama_index.readers.chroma import ChromaReader
 from llama_index.indices import SummaryIndex
 
@@ -531,10 +512,10 @@ from llama_index.indices import SummaryIndex
 # This requires a collection name and a persist directory.
 reader = ChromaReader(
     collection_name="chroma_collection",
-    persist_directory="examples/data_connectors/chroma_collection"
+    persist_directory="examples/data_connectors/chroma_collection",
 )
 
-query_vector=[n1, n2, n3, ...]
+query_vector = [n1, n2, n3, ...]
 
 documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
 index = SummaryIndex.from_documents(documents)
@@ -547,7 +528,6 @@ display(Markdown(f"<b>{response}</b>"))
 Qdrant also stores both documents and vectors. This is an example of how to use Qdrant:
 
 ```python
-
 from llama_index.readers.qdrant import QdrantReader
 
 reader = QdrantReader(host="localhost")
@@ -563,7 +543,6 @@ query_vector = [n1, n2, n3, ...]
 # for more details
 
 documents = reader.load_data(collection_name="demo", query_vector=query_vector, limit=5)
-
 ```
 
 NOTE: Since Weaviate can store a hybrid of document and vector objects, the user may either choose to explicitly specify `class_name` and `properties` in order to query documents, or they may choose to specify a raw GraphQL query. See below for usage.
@@ -575,7 +554,7 @@ NOTE: Since Weaviate can store a hybrid of document and vector objects, the user
 documents = reader.load_data(
     class_name="<class_name>",
     properties=["property1", "property2", "..."],
-    separate_documents=True
+    separate_documents=True,
 )
 
 # 2) example GraphQL query
@@ -598,7 +577,6 @@ NOTE: Both Pinecone and Faiss data loaders assume that the respective data sourc
 For instance, this is an example usage of the Pinecone data loader `PineconeReader`:
 
 ```python
-
 from llama_index.readers.pinecone import PineconeReader
 
 reader = PineconeReader(api_key=api_key, environment="us-west1-gcp")
@@ -608,12 +586,15 @@ id_to_text_map = {
     "id2": "text blob 2",
 }
 
-query_vector=[n1, n2, n3, ..]
+query_vector = [n1, n2, n3, ...]
 
 documents = reader.load_data(
-    index_name="quickstart", id_to_text_map=id_to_text_map, top_k=3, vector=query_vector, separate_documents=True
+    index_name="quickstart",
+    id_to_text_map=id_to_text_map,
+    top_k=3,
+    vector=query_vector,
+    separate_documents=True,
 )
-
 ```
 
 [Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/data_connectors).

@@ -6,12 +6,12 @@ The most basic example usage of LlamaIndex is through semantic search. We provid
 
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
-documents = SimpleDirectoryReader('data').load_data()
+
+documents = SimpleDirectoryReader("data").load_data()
 index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do growing up?")
 print(response)
-
 ```
 
 **Tutorials**
@@ -38,9 +38,7 @@ Empirically, setting `response_mode="tree_summarize"` also leads to better summa
 ```python
 index = SummaryIndex.from_documents(documents)
 
-query_engine = index.as_query_engine(
-    response_mode="tree_summarize"
-)
+query_engine = index.as_query_engine(response_mode="tree_summarize")
 response = query_engine.query("<summarization_query>")
 ```
 
@@ -72,10 +70,11 @@ from llama_index.indices.composability import ComposableGraph
 index1 = VectorStoreIndex.from_documents(notion_docs)
 index2 = VectorStoreIndex.from_documents(slack_docs)
 
-graph = ComposableGraph.from_indices(SummaryIndex, [index1, index2], index_summaries=["summary1", "summary2"])
+graph = ComposableGraph.from_indices(
+    SummaryIndex, [index1, index2], index_summaries=["summary1", "summary2"]
+)
 query_engine = graph.as_query_engine()
 response = query_engine.query("<query_str>")
-
 ```
 
 **Guides**
@@ -117,14 +116,9 @@ By default, this uses a `LLMSingleSelector` as the router, which uses the LLM to
 ```python
 from llama_index.query_engine import RouterQueryEngine
 
-query_engine = RouterQueryEngine.from_defaults(
-    query_engine_tools=[tool1, tool2]
-)
+query_engine = RouterQueryEngine.from_defaults(query_engine_tools=[tool1, tool2])
 
-response = query_engine.query(
-    "In Notion, give me a summary of the product roadmap."
-)
-
+response = query_engine.query("In Notion, give me a summary of the product roadmap.")
 ```
 
 **Guides**
@@ -138,6 +132,7 @@ You can explicitly perform compare/contrast queries with a **query transformatio
 
 ```python
 from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
+
 decompose_transform = DecomposeQueryTransform(
     service_context.llm_predictor, verbose=True
 )
@@ -166,15 +161,24 @@ from llama_index.tools import QueryEngineTool, ToolMetadata
 query_engine_tools = [
     QueryEngineTool(
         query_engine=sept_engine,
-        metadata=ToolMetadata(name='sept_22', description='Provides information about Uber quarterly financials ending September 2022')
+        metadata=ToolMetadata(
+            name="sept_22",
+            description="Provides information about Uber quarterly financials ending September 2022",
+        ),
     ),
     QueryEngineTool(
         query_engine=june_engine,
-        metadata=ToolMetadata(name='june_22', description='Provides information about Uber quarterly financials ending June 2022')
+        metadata=ToolMetadata(
+            name="june_22",
+            description="Provides information about Uber quarterly financials ending June 2022",
+        ),
     ),
     QueryEngineTool(
         query_engine=march_engine,
-        metadata=ToolMetadata(name='march_22', description='Provides information about Uber quarterly financials ending March 2022')
+        metadata=ToolMetadata(
+            name="march_22",
+            description="Provides information about Uber quarterly financials ending March 2022",
+        ),
     ),
 ]
 ```
@@ -184,8 +188,9 @@ Then, we define a `SubQuestionQueryEngine` over these tools:
 ```python
 from llama_index.query_engine import SubQuestionQueryEngine
 
-query_engine = SubQuestionQueryEngine.from_defaults(query_engine_tools=query_engine_tools)
-
+query_engine = SubQuestionQueryEngine.from_defaults(
+    query_engine_tools=query_engine_tools
+)
 ```
 
 This query engine can execute any number of sub-queries against any subset of query engine tools before synthesizing the final answer.

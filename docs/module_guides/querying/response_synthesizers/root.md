@@ -44,11 +44,10 @@ Configuring the response synthesizer for a query engine using `response_mode`:
 from llama_index.schema import Node, NodeWithScore
 from llama_index.response_synthesizers import get_response_synthesizer
 
-response_synthesizer = get_response_synthesizer(response_mode='compact')
+response_synthesizer = get_response_synthesizer(response_mode="compact")
 
 response = response_synthesizer.synthesize(
-  "query text",
-  nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..]
+    "query text", nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ...]
 )
 ```
 
@@ -185,7 +184,6 @@ You can specify these additional variables in the `**kwargs` for `get_response`.
 For example,
 
 ```python
-
 from llama_index import PromptTemplate
 from llama_index.response_synthesizers import TreeSummarize
 
@@ -207,7 +205,9 @@ qa_prompt = PromptTemplate(qa_prompt_tmpl)
 summarizer = TreeSummarize(verbose=True, summary_template=qa_prompt)
 
 # get response
-response = summarizer.get_response("who is Paul Graham?", [text], tone_name="a Shakespeare play")
+response = summarizer.get_response(
+    "who is Paul Graham?", [text], tone_name="a Shakespeare play"
+)
 ```
 
 ## Modules

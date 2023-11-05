@@ -27,11 +27,10 @@ tool_config = IndexToolConfig(
     query_engine=query_engine,
     name=f"Vector Index",
     description=f"useful for when you want to answer queries about X",
-    tool_kwargs={"return_direct": True}
+    tool_kwargs={"return_direct": True},
 )
 
 tool = LlamaIndexTool.from_tool_config(tool_config)
-
 ```
 
 ### Llama Demo Notebook: Tool + Memory module

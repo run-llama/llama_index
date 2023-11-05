@@ -10,7 +10,9 @@ The basis of all querying is the `QueryEngine`. The simplest way to get a QueryE
 
 ```python
 query_engine = index.as_query_engine()
-response = query_engine.query("Write an email to the user given their background information.")
+response = query_engine.query(
+    "Write an email to the user given their background information."
+)
 print(response)
 ```
 
@@ -57,10 +59,7 @@ response_synthesizer = get_response_synthesizer()
 query_engine = RetrieverQueryEngine(
     retriever=retriever,
     response_synthesizer=response_synthesizer,
-    node_postprocessors=[
-        SimilarityPostprocessor(similarity_cutoff=0.7)
-    ]
-
+    node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=0.7)],
 )
 
 # query
@@ -103,8 +102,7 @@ To configure the desired node postprocessors:
 ```python
 node_postprocessors = [
     KeywordNodePostprocessor(
-        required_keywords=["Combinator"],
-        exclude_keywords=["Italy"]
+        required_keywords=["Combinator"], exclude_keywords=["Italy"]
     )
 ]
 query_engine = RetrieverQueryEngine.from_args(
@@ -120,7 +118,7 @@ After a retriever fetches relevant nodes, a `BaseSynthesizer` synthesizes the fi
 You can configure it via
 
 ```python
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode=<response_mode>)
+query_engine = RetrieverQueryEngine.from_args(retriever, response_mode=response_mode)
 ```
 
 Right now, we support the following options:

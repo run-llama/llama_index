@@ -42,7 +42,7 @@ LlamaIndex supports a [huge number of vector stores](/module_guides/storing/vect
 
 First you will need to install chroma:
 
-```python
+```
 pip install chromadb
 ```
 
@@ -75,10 +75,7 @@ vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
 # create your index
-index = VectorStoreIndex.from_documents(
-    documents,
-    storage_context=storage_context
-)
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
 
 # create a query engine and query
 query_engine = index.as_query_engine()
@@ -106,8 +103,7 @@ storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
 # load your index from stored vectors
 index = VectorStoreIndex.from_vector_store(
-    vector_store,
-    storage_context=storage_context
+    vector_store, storage_context=storage_context
 )
 
 # create a query engine

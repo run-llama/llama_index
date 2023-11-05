@@ -34,9 +34,7 @@ from llama_index import ServiceContext, set_global_service_context
 
 set_global_service_context(
     ServiceContext.from_defaults(
-        llm=llm,
-        embed_model=embed_model,
-        callback_manager=callback_manager
+        llm=llm, embed_model=embed_model, callback_manager=callback_manager
     )
 )
 ```

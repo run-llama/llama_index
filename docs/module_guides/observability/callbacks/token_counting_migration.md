@@ -19,8 +19,8 @@ from llama_index import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
 # to the same tokenizer that was used previously for token counting
 # NOTE: The tokenizer should be a function that takes in text and returns a list of tokens
 token_counter = TokenCountingHandler(
-    tokenizer=tiktoken.encoding_for_model("text-davinci-003").encode
-    verbose=False  # set to true to see usage printed to the console
+    tokenizer=tiktoken.encoding_for_model("text-davinci-003").encode,
+    verbose=False,  # set to true to see usage printed to the console
 )
 
 callback_manager = CallbackManager([token_counter])
@@ -40,8 +40,17 @@ token_counter.reset_counts()
 
 # also track prompt, completion, and total LLM tokens, in addition to embeddings
 response = index.as_query_engine().query("What did the author do growing up?")
-print('Embedding Tokens: ', token_counter.total_embedding_token_count, '\n',
-      'LLM Prompt Tokens: ', token_counter.prompt_llm_token_count, '\n',
-      'LLM Completion Tokens: ', token_counter.completion_llm_token_count, '\n',
-      'Total LLM Token Count: ', token_counter.total_llm_token_count)
+print(
+    "Embedding Tokens: ",
+    token_counter.total_embedding_token_count,
+    "\n",
+    "LLM Prompt Tokens: ",
+    token_counter.prompt_llm_token_count,
+    "\n",
+    "LLM Completion Tokens: ",
+    token_counter.completion_llm_token_count,
+    "\n",
+    "Total LLM Token Count: ",
+    token_counter.total_llm_token_count,
+)
 ```

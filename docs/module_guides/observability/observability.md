@@ -19,7 +19,6 @@ Each provider has similarities and differences. Take a look below for the full s
 To toggle, you will generally just need to do the following:
 
 ```python
-
 from llama_index import set_global_handler
 
 # general usage
@@ -27,7 +26,6 @@ set_global_handler("<handler_name>", **kwargs)
 
 # W&B example
 # set_global_handler("wandb", run_args={"project": "llamaindex"})
-
 ```
 
 Note that all `kwargs` to `set_global_handler` are passed to the underlying callback handler.
@@ -60,6 +58,7 @@ Prompts allows users to log/trace/inspect the execution flow of LlamaIndex durin
 
 ```python
 from llama_index import set_global_handler
+
 set_global_handler("wandb", run_args={"project": "llamaindex"})
 
 # NOTE: No need to do the following
@@ -79,7 +78,6 @@ llama_index.global_handler.persist_index(graph, index_name="composable_graph")
 storage_context = llama_index.global_handler.load_storage_context(
     artifact_url="ayut/llamaindex/composable_graph:v0"
 )
-
 ```
 
 ![](/_static/integrations/wandb.png)
@@ -106,12 +104,14 @@ Arize [Phoenix](https://github.com/Arize-ai/phoenix): LLMOps insights at lightni
 # Phoenix can display in real time the traces automatically
 # collected from your LlamaIndex application.
 import phoenix as px
+
 # Look for a URL in the output to open the App in a browser.
 px.launch_app()
 # The App is initially empty, but as you proceed with the steps below,
 # traces will appear automatically as your LlamaIndex application runs.
 
 import llama_index
+
 llama_index.set_global_handler("arize_phoenix")
 
 # Run all of your LlamaIndex applications as usual and traces
@@ -181,11 +181,11 @@ TruLens allows users to instrument/evaluate LlamaIndex applications, through fea
 ```python
 # use trulens
 from trulens_eval import TruLlama
+
 tru_query_engine = TruLlama(query_engine)
 
 # query
 tru_query_engine.query("What did the author do growing up?")
-
 ```
 
 ![](/_static/integrations/trulens.png)
@@ -209,6 +209,7 @@ HoneyHive allows users to trace the execution flow of any LLM pipeline. Users ca
 
 ```python
 from llama_index import set_global_handler
+
 set_global_handler(
     "honeyhive",
     project="My HoneyHive Project",
