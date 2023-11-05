@@ -7,8 +7,6 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
-from pymongo import MongoClient
-
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     VectorStore,
@@ -37,7 +35,7 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
 
     def __init__(
         self,
-        mongodb_client: Optional[MongoClient] = None,
+        mongodb_client: Optional[Any] = None,
         db_name: str = "default_db",
         collection_name: str = "default_collection",
         index_name: str = "default_vector_search_index",
@@ -52,7 +50,7 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
         """Initialize the vector store.
 
         Args:
-            mongodb_client: An Azure CosmoDB MongoDB client.
+            mongodb_client: An Azure CosmoDB MongoDB client (type: MongoClient, shown any for lazy import).
             db_name: An Azure CosmosDB MongoDB database name.
             collection_name: An Azure CosmosDB collection name.
             index_name: An Azure CosmosDB MongoDB vCore Vector Search index name.
