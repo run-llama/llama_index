@@ -96,7 +96,7 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
         self._cosmos_search_kwargs = cosmos_search_kwargs or {}
         self._create_vector_search_index()
 
-    def _create_vector_search_index(self):
+    def _create_vector_search_index(self) -> None:
         db = self._mongodb_client[self._db_name]
         db.command(
             {
