@@ -151,7 +151,7 @@ class LlamaCPP(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self._model.context_params.n_ctx,
+            context_window=self._model.params.n_ctx,
             num_output=self.max_new_tokens,
             model_name=self.model_path,
         )
