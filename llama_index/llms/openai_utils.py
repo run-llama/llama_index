@@ -31,7 +31,7 @@ GPT4_MODELS = {
     #   resolves to gpt-4-0613 after
     "gpt-4": 8192,
     "gpt-4-32k": 32768,
-    # 1106 model (JSON mode)
+    # 1106 model (Turbo, JSON mode)
     "gpt-4-1106-preview": 128000,
     # multimodal model
     "gpt-4-vision-preview": 128000,
