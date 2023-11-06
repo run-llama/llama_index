@@ -270,6 +270,7 @@ class ElasticsearchStore(VectorStore):
         nodes: List[BaseNode],
         *,
         create_index_if_not_exists: bool = True,
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to Elasticsearch index.
 
@@ -296,6 +297,7 @@ class ElasticsearchStore(VectorStore):
         nodes: List[BaseNode],
         *,
         create_index_if_not_exists: bool = True,
+        **add_kwargs: Any,
     ) -> List[str]:
         """Asynchronous method to add nodes to Elasticsearch index.
 

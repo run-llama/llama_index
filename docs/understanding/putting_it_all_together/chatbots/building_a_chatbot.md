@@ -28,7 +28,7 @@ nest_asyncio.apply()
 
 Let's first download the raw 10-k files, from 2019-2022.
 
-```python
+```
 # NOTE: the code examples assume you're operating within a Jupyter notebook.
 # download files
 !mkdir data
@@ -40,7 +40,7 @@ To parse the HTML files into formatted text, we use the [Unstructured](https://g
 
 First we install the necessary packages:
 
-```python
+```
 !pip install llama-hub unstructured
 ```
 
@@ -98,7 +98,9 @@ from llama_index import load_index_from_storage
 
 index_set = {}
 for year in years:
-    storage_context = StorageContext.from_defaults(persist_dir=f"./storage/{year}")
+    storage_context = StorageContext.from_defaults(
+        persist_dir=f"./storage/{year}"
+    )
     cur_index = load_index_from_storage(
         storage_context, service_context=service_context
     )
@@ -189,7 +191,9 @@ If we test it with a query regarding the 10-k of a given year, the agent will us
 the relevant vector index Tool.
 
 ```python
-response = agent.chat("What were some of the biggest risk factors in 2020 for Uber?")
+response = agent.chat(
+    "What were some of the biggest risk factors in 2020 for Uber?"
+)
 print(str(response))
 ```
 

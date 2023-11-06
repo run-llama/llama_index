@@ -26,13 +26,26 @@ repos:
     hooks:
       - id: black-jupyter
         name: black-src
+        alias: black
         exclude: docs/
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
       - id: black-jupyter
-        name: black-docs
+        name: black-docs-py
+        alias: black
         files: docs/
+        # Using PEP 8's line length in docs prevents excess left/right scrolling
+        args: [--line-length=79]
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.16.0
+    hooks:
+      - id: blacken-docs
+        name: black-docs-text
+        alias: black
+        types_or: [rst, markdown, tex]
+        additional_dependencies: [black==23.10.1]
+        # Using PEP 8's line length in docs prevents excess left/right scrolling
         args: [--line-length=79]
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.0.3

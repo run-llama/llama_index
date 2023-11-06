@@ -72,7 +72,7 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "LongLLMLinguaPostprocessor"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,

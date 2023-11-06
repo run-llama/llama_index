@@ -17,18 +17,27 @@ Confused about where node postprocessor fits in the pipeline? Read about [high-l
 An example of using a node postprocessors is below:
 
 ```python
-from llama_index.indices.postprocessor import SimilarityPostprocessor
+from llama_index.indices.postprocessor import (
+    SimilarityPostprocessor,
+    CohereRerank,
+)
 from llama_index.schema import Node, NodeWithScore
 
 nodes = [
-  NodeWithScore(node=Node(text="text"), score=0.7),
-  NodeWithScore(node=Node(text="text"), score=0.8)
+    NodeWithScore(node=Node(text="text1"), score=0.7),
+    NodeWithScore(node=Node(text="text2"), score=0.8),
 ]
 
-# filter nodes below 0.75 similarity score
+# similarity postprocessor: filter nodes below 0.75 similarity score
 processor = SimilarityPostprocessor(similarity_cutoff=0.75)
 filtered_nodes = processor.postprocess_nodes(nodes)
+
+# cohere rerank: rerank nodes given query using trained model
+reranker = CohereRerank(api_key="<COHERE_API_KEY>", top_n=2)
+reranker.postprocess_nodes(nodes, query_str="<user_query>")
 ```
+
+Note that `postprocess_nodes` can take in either a `query_str` or `query_bundle` (`QueryBundle`), though not both.
 
 ## Usage Pattern
 
@@ -45,11 +54,11 @@ documents = SimpleDirectoryReader("./data").load_data()
 index = VectorStoreIndex.from_documents(documents)
 
 query_engine = index.as_query_engine(
-  node_postprocessors=[
-    TimeWeightedPostprocessor(
-        time_decay=0.5, time_access_refresh=False, top_k=1
-    )
-  ]
+    node_postprocessors=[
+        TimeWeightedPostprocessor(
+            time_decay=0.5, time_access_refresh=False, top_k=1
+        )
+    ]
 )
 
 # all node post-processors will be applied during each query
@@ -79,8 +88,8 @@ from llama_index.indices.postprocessor import SimilarityPostprocessor
 from llama_index.schema import Node, NodeWithScore
 
 nodes = [
-  NodeWithScore(node=Node(text="text"), score=0.7),
-  NodeWithScore(node=Node(text="text"), score=0.8)
+    NodeWithScore(node=Node(text="text"), score=0.7),
+    NodeWithScore(node=Node(text="text"), score=0.8),
 ]
 
 # filter nodes below 0.75 similarity score
@@ -97,7 +106,7 @@ class BaseNodePostprocessor:
     """Node postprocessor."""
 
     @abstractmethod
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
@@ -110,12 +119,11 @@ from llama_index import QueryBundle
 from llama_index.indices.postprocessor.base import BaseNodePostprocessor
 from llama_index.schema import NodeWithScore
 
-class DummyNodePostprocessor:
 
-    def postprocess_nodes(
+class DummyNodePostprocessor:
+    def _postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
     ) -> List[NodeWithScore]:
-
         # subtracts 1 from the score
         for n in nodes:
             n.score -= 1

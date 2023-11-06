@@ -16,7 +16,8 @@ class StringIterableReader(BasePydanticReader):
             from llama_index import StringIterableReader, TreeIndex
 
             documents = StringIterableReader().load_data(
-                texts=["I went to the store", "I bought an apple"])
+                texts=["I went to the store", "I bought an apple"]
+            )
             index = TreeIndex.from_documents(documents)
             query_engine = index.as_query_engine()
             query_engine.query("what did I buy?")
