@@ -16,6 +16,7 @@ from llama_index.readers.chroma import ChromaReader
 from llama_index.readers.dashvector import DashVectorReader
 from llama_index.readers.deeplake import DeepLakeReader
 from llama_index.readers.discord_reader import DiscordReader
+from llama_index.readers.download import download_loader
 from llama_index.readers.elasticsearch import ElasticsearchReader
 from llama_index.readers.faiss import FaissReader
 
@@ -92,4 +93,5 @@ __all__ = [
     "HTMLTagReader",
     "PDFReader",
     "DashVectorReader",
+    "download_loader",
 ]
