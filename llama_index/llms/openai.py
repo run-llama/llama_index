@@ -26,6 +26,7 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -229,27 +230,21 @@ class OpenAI(LLM):
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
             ):
-                if len(response) == 0 and (
-                    response.get("prompt_annotations")
-                    or response.get("prompt_filter_results")
-                ):
-                    # When asking a stream response from the Azure OpenAI API
-                    # you first get an empty message with the content filtering
-                    # results. Ignore this message
-                    continue
-
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["delta"]
+                print(response)
+                if len(response.choices) > 0:
+                    delta = response.choices[0].delta
                 else:
                     delta = {}
-                role = delta.get("role", "assistant")
-                content_delta = delta.get("content", "") or ""
+                role = delta.role or MessageRole.ASSISTANT
+                content_delta = delta.content or ""
                 content += content_delta
 
-                function_call_delta = delta.get("function_call", None)
+                function_call_delta = delta.function_call
                 if function_call_delta is not None:
+                    function_dict = function_call_delta.dict()
+
                     if function_call is None:
-                        function_call = function_call_delta
+                        function_call = function_dict
 
                         ## ensure we do not add a blank function call
                         if function_call.get("function_name", "") is None:
@@ -257,7 +252,7 @@ class OpenAI(LLM):
                     else:
                         function_call["arguments"] = (
                             function_call.get("arguments", "")
-                            + function_call_delta["arguments"]
+                            + function_dict["arguments"]
                         )
 
                 additional_kwargs = {}
@@ -304,8 +299,8 @@ class OpenAI(LLM):
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["text"]
+                if len(response.choices) > 0:
+                    delta = response.choices[0].text
                 else:
                     delta = ""
                 text += delta
@@ -426,21 +421,20 @@ class OpenAI(LLM):
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
             ):
-                if len(response["choices"]) == 0 and response.get("prompt_annotations"):
-                    # open ai sends empty response first while streaming ignore it
-                    continue
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["delta"]
+                if len(response.choices) > 0:
+                    delta = response.choices[0].delta
                 else:
                     delta = {}
-                role = delta.get("role", "assistant")
-                content_delta = delta.get("content", "") or ""
+                role = delta.role or MessageRole.ASSISTANT
+                content_delta = delta.content or ""
                 content += content_delta
 
-                function_call_delta = delta.get("function_call", None)
+                function_call_delta = delta.function_call
                 if function_call_delta is not None:
+                    function_dict = function_call_delta.dict()
+
                     if function_call is None:
-                        function_call = function_call_delta
+                        function_call = function_dict
 
                         ## ensure we do not add a blank function call
                         if function_call.get("function_name", "") is None:
@@ -448,7 +442,7 @@ class OpenAI(LLM):
                     else:
                         function_call["arguments"] = (
                             function_call.get("arguments", "")
-                            + function_call_delta["arguments"]
+                            + function_dict["arguments"]
                         )
 
                 additional_kwargs = {}
@@ -497,8 +491,8 @@ class OpenAI(LLM):
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["text"]
+                if len(response.choices) > 0:
+                    delta = response.choices[0].text
                 else:
                     delta = ""
                 text += delta
