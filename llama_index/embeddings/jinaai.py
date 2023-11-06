@@ -1,13 +1,17 @@
 """JinaAI embeddings file."""
 
 import requests
-from typing import Any, Dict, List, Optional
+import aiohttp
+
+from typing import Any, List, Optional
 from llama_index.llms.generic_utils import get_from_param_or_env
-from llama_index.bridge.pydantic import Field
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
 MAX_BATCH_SIZE = 2048
+
+API_URL = 'https://api.jina.ai/v1/embeddings'
 
 
 class JinaAIEmbedding(BaseEmbedding):
@@ -18,11 +22,10 @@ class JinaAIEmbedding(BaseEmbedding):
             Defaults to `jina-embeddings-v2-base-en`
     """
 
-    additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs for the JinaAI API."
-    )
-
     api_key: str = Field(default=None, description="The JinaAI API key.")
+    model: str = Field(default='jina-embeddings-v2-base-en', description="The model to use when calling Jina AI API")
+
+    _session: Any = PrivateAttr()
 
     def __init__(
             self,
@@ -32,18 +35,17 @@ class JinaAIEmbedding(BaseEmbedding):
             callback_manager: Optional[CallbackManager] = None,
             **kwargs: Any,
     ) -> None:
-        api_key = get_from_param_or_env("api_key", api_key, "JINAAI_API_KEY", "")
-        self._model_name = model
-        self._api_url = 'https://api.jina.ai/v1/embeddings'
-        self._session = requests.Session()
-        self._session.headers.update({"Authorization": f"Bearer {api_key}"})
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
-            model_name=model,
+            model=model,
             api_key=api_key,
             **kwargs,
         )
+        self.api_key = get_from_param_or_env("api_key", api_key, "JINAAI_API_KEY", "")
+        self.model = model
+        self._session = requests.Session()
+        self._session.headers.update({"Authorization": f"Bearer {api_key}", "Accept-Encoding": "identity"})
 
     @classmethod
     def class_name(cls) -> str:
@@ -71,7 +73,7 @@ class JinaAIEmbedding(BaseEmbedding):
         """
         # Call Jina AI Embedding API
         resp = self._session.post(  # type: ignore
-            self._api_url, json={"input": texts, "model": self._model_name}
+            API_URL, json={"input": texts, "model": self.model}
         ).json()
         if "data" not in resp:
             raise RuntimeError(resp["detail"])
@@ -86,9 +88,19 @@ class JinaAIEmbedding(BaseEmbedding):
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        return await aget_embeddings(
-            texts,
-            engine=self._text_engine,
-            deployment_id=self.deployment_name,
-            **self._all_kwargs,
-        )
+        async with aiohttp.ClientSession(trust_env=True) as session:
+            headers = {"Authorization": f"Bearer {self.api_key}", "Accept-Encoding": "identity"}
+            async with session.post(
+                    f'{API_URL}',
+                    json={"input": texts, "model": self.model},
+                    headers=headers,
+            ) as response:
+                resp = await response.json()
+                response.raise_for_status()
+                embeddings = resp["data"]
+
+                # Sort resulting embeddings by index
+                sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])  # type: ignore
+
+                # Return just the embeddings
+                return [result["embedding"] for result in sorted_embeddings]
