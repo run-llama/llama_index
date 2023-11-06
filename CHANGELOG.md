@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Breaking Changes
+
+- moved `max_docs` parameter from constructor to `lazy_load_data()` for `SimpleMongoReader` (#8686)
+
 ## [0.8.61] - 2023-11-05
 
 ### New Features
