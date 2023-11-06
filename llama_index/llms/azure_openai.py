@@ -95,8 +95,9 @@ class AzureOpenAI(OpenAI):
         )
 
         self._client = AzureOpenAI(
-            model=model,
-            engine=engine,
+            **self._get_model_kwargs(),
+            **self._get_credential_kwargs(),
+            **kwargs,
         )
 
     @root_validator
@@ -117,17 +118,20 @@ class AzureOpenAI(OpenAI):
 
         return values
 
-    @property
-    def _credential_kwargs(self) -> Dict[str, Any]:
+    def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         if self.use_azure_ad:
             self._azure_ad_token = refresh_openai_azuread_token(self._azure_ad_token)
             self.api_key = self._azure_ad_token.token
 
-        return super()._credential_kwargs
+        return {
+            "api_key": self.api_key,
+            "api_type": self.api_type,
+            "api_base": self.api_base,
+            "api_version": self.api_version,
+        }
 
-    @property
-    def _model_kwargs(self) -> Dict[str, Any]:
-        model_kwargs = super()._model_kwargs
+    def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        model_kwargs = super()._get_model_kwargs(**kwargs)
         model_kwargs.pop("model")
         model_kwargs["engine"] = self.engine
         return model_kwargs
