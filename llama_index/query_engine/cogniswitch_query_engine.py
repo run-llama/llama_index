@@ -4,7 +4,7 @@ import requests
 
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.response.schema import Response
 
 
 class CogniswitchQueryEngine(BaseQueryEngine):

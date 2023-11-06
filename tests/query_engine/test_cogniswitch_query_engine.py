@@ -1,5 +1,5 @@
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from llama_index.query_engine.cogniswitch_query_engine import CogniswitchQueryEngine
