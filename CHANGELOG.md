@@ -1,6 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.62] - 2023-11-06
+
+### Bug Fixes / Nits
+
+- Pin OpenAI client version to <1
 
 ### Breaking Changes
 
