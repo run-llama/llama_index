@@ -21,6 +21,7 @@ from llama_index.vector_stores.elasticsearch import (
 from llama_index.vector_stores.epsilla import EpsillaVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
+from llama_index.vector_stores.lantern import LanternStore
 from llama_index.vector_stores.metal import MetalVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.myscale import MyScaleVectorStore
@@ -46,7 +47,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
-from llama_index.vector_stores.lantern import LanternStore
 
 __all__ = [
     "ElasticsearchStore",

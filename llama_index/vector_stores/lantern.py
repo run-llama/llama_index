@@ -33,13 +33,20 @@ def get_data_model(
     embed_dim: int = 1536,
     m: int = 16,
     ef_construction: int = 128,
-    ef: int = 64
+    ef: int = 64,
 ) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table.
     """
     from sqlalchemy import Column, Computed
-    from sqlalchemy.dialects.postgresql import BIGINT, JSON, TSVECTOR, VARCHAR, ARRAY, REAL
+    from sqlalchemy.dialects.postgresql import (
+        ARRAY,
+        BIGINT,
+        JSON,
+        REAL,
+        TSVECTOR,
+        VARCHAR,
+    )
     from sqlalchemy.schema import Index
     from sqlalchemy.types import TypeDecorator
 
@@ -103,9 +110,9 @@ def get_data_model(
             "m": m,
             "ef_construction": ef_construction,
             "ef": ef,
-            "dim": embed_dim
+            "dim": embed_dim,
         },
-        postgresql_ops={"embedding": "dist_cos_ops"}
+        postgresql_ops={"embedding": "dist_cos_ops"},
     )
     return model
 
@@ -185,7 +192,7 @@ class LanternStore(BasePydanticVectorStore):
             embed_dim=embed_dim,
             m=m,
             ef_construction=ef_construction,
-            ef=ef
+            ef=ef,
         )
 
         super().__init__(
@@ -365,26 +372,26 @@ class LanternStore(BasePydanticVectorStore):
         limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
-        from sqlalchemy import select, func
+        from sqlalchemy import func, select
 
         stmt = select(  # type: ignore
-            self._table_class, 
+            self._table_class,
             func.cos_dist(self._table_class.embedding, embedding),
-        ).order_by(
-            self._table_class.embedding.op("<->")(embedding)
-        )
+        ).order_by(self._table_class.embedding.op("<->")(embedding))
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 
     def _prepare_query(self, session: Any, limit: int) -> None:
         from sqlalchemy import text
-        session.execute(text("SET enable_seqscan=OFF")) # always use index
-        session.execute(text("SET hnsw.init_k={}".format(limit))) # always use index
-        
+
+        session.execute(text("SET enable_seqscan=OFF"))  # always use index
+        session.execute(text(f"SET hnsw.init_k={limit}"))  # always use index
+
     async def _aprepare_query(self, session: Any, limit: int) -> None:
         from sqlalchemy import text
-        await session.execute(text("SET enable_seqscan=OFF")) # always use index
-        await session.execute(text("SET hnsw.init_k={}".format(limit))) # always use index
+
+        await session.execute(text("SET enable_seqscan=OFF"))  # always use index
+        await session.execute(text(f"SET hnsw.init_k={limit}"))  # always use index
 
     def _query_with_score(
         self,
