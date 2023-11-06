@@ -70,9 +70,11 @@ rank-bm25 = {optional = true, version = "^0.2.2"}
 scikit-learn = {optional = true, version = "<1.3.0"}
 spacy = {optional = true, version = "^3.7.1"}
 aiostream = "^0.5.2"
+clip = {git = "https://github.com/openai/CLIP.git", optional = true}
 
 [tool.poetry.extras]
 local_models = [
+    "clip",
     "optimum",
     "sentencepiece",
     "transformers",
