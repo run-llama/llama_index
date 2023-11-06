@@ -6,7 +6,7 @@ import subprocess
 import sys
 from importlib import util
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 import pkg_resources
 import requests
@@ -15,6 +15,8 @@ from pkg_resources import DistributionNotFound
 LLAMA_HUB_CONTENTS_URL = "https://raw.githubusercontent.com/run-llama/llama-hub/main"
 LLAMA_HUB_PATH = "/llama_hub"
 LLAMA_HUB_URL = LLAMA_HUB_CONTENTS_URL + LLAMA_HUB_PATH
+
+PATH_TYPE = Union[str, Path]
 
 
 def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
@@ -75,7 +77,7 @@ def rewrite_exports(exports: List[str], dirpath: str) -> None:
 
 def initialize_directory(
     custom_path: Optional[str] = None, custom_dir: Optional[str] = None
-) -> None:
+) -> Path:
     """Initialize directory."""
     if custom_path is not None and custom_dir is not None:
         raise ValueError(
@@ -99,13 +101,18 @@ def initialize_directory(
 
 
 def get_module_info(
-    local_dir_path: str,
-    remote_dir_path: str,
+    local_dir_path: PATH_TYPE,
+    remote_dir_path: PATH_TYPE,
     module_class: str,
     refresh_cache: bool = False,
     library_path: str = "library.json",
 ) -> Dict:
     """Get module info."""
+    if isinstance(local_dir_path, str):
+        local_dir_path = Path(local_dir_path)
+    if isinstance(remote_dir_path, str):
+        remote_dir_path = Path(remote_dir_path)
+
     local_library_path = f"{local_dir_path}/{library_path}]"
     module_id = None  # e.g. `web/simple_web`
     extra_files = []  # e.g. `web/simple_web/utils.py`
@@ -120,7 +127,9 @@ def get_module_info(
 
     # Fetch up-to-date library from remote repo if module_id not found
     if module_id is None:
-        library_raw_content, _ = _get_file_content(remote_dir_path, f"/{library_path}")
+        library_raw_content, _ = _get_file_content(
+            str(remote_dir_path), f"/{library_path}"
+        )
         library = json.loads(library_raw_content)
         if module_class not in library:
             raise ValueError("Loader class name not found in library")
@@ -141,21 +150,26 @@ def get_module_info(
 
 
 def download_module_and_reqs(
-    local_dir_path: str,
-    remote_dir_path: str,
+    local_dir_path: PATH_TYPE,
+    remote_dir_path: PATH_TYPE,
     module_id: str,
     extra_files: List[str],
     refresh_cache: bool = False,
     use_gpt_index_import: bool = False,
     base_file_name: str = "base.py",
-):
+) -> None:
     """Load module."""
+    if isinstance(local_dir_path, str):
+        local_dir_path = Path(local_dir_path)
+    if isinstance(remote_dir_path, str):
+        remote_dir_path = Path(remote_dir_path)
+
     module_path = f"{local_dir_path}/{module_id}"
     if refresh_cache or not os.path.exists(module_path):
         os.makedirs(module_path, exist_ok=True)
 
         basepy_raw_content, _ = _get_file_content(
-            remote_dir_path, f"/{module_id}/{base_file_name}"
+            str(remote_dir_path), f"/{module_id}/{base_file_name}"
         )
         if use_gpt_index_import:
             basepy_raw_content = basepy_raw_content.replace(
@@ -172,7 +186,7 @@ def download_module_and_reqs(
         # and write them under the loader directory
         for extra_file in extra_files:
             extra_file_raw_content, _ = _get_file_content(
-                remote_dir_path, f"/{module_id}/{extra_file}"
+                str(remote_dir_path), f"/{module_id}/{extra_file}"
             )
             # If the extra file is an __init__.py file, we need to
             # add the exports to the __init__.py file in the modules directory
@@ -182,7 +196,7 @@ def download_module_and_reqs(
                 with open(local_dir_path / "__init__.py", "r+") as f:
                     f.write(f"from .{module_id} import {', '.join(loader_exports)}")
                     existing_exports = get_exports(f.read())
-                rewrite_exports(existing_exports + loader_exports, local_dir_path)
+                rewrite_exports(existing_exports + loader_exports, str(local_dir_path))
             with open(f"{module_path}/{extra_file}", "w") as f:
                 f.write(extra_file_raw_content)
 
@@ -192,7 +206,7 @@ def download_module_and_reqs(
     if not os.path.exists(requirements_path):
         # NOTE: need to check the status code
         response_txt, status_code = _get_file_content(
-            remote_dir_path, f"/{module_id}/requirements.txt"
+            str(remote_dir_path), f"/{module_id}/requirements.txt"
         )
         if status_code == 200:
             with open(requirements_path, "w") as f:
@@ -214,7 +228,7 @@ def download_module_and_reqs(
 def download_llama_module(
     module_class: str,
     llama_hub_url: str = LLAMA_HUB_URL,
-    refresh_cache: Optional[bool] = False,
+    refresh_cache: bool = False,
     custom_dir: Optional[str] = None,
     custom_path: Optional[str] = None,
     library_path: str = "library.json",

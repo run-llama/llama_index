@@ -14,7 +14,7 @@ from llama_index.readers.base import BaseReader
 def download_loader(
     loader_class: str,
     loader_hub_url: str = LLAMA_HUB_URL,
-    refresh_cache: Optional[bool] = False,
+    refresh_cache: bool = False,
     use_gpt_index_import: bool = False,
     custom_path: Optional[str] = None,
 ) -> Type[BaseReader]:

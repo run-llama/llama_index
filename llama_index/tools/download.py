@@ -9,7 +9,7 @@ from llama_index.tools.tool_spec.base import BaseToolSpec
 def download_tool(
     tool_class: str,
     llama_hub_url: str = LLAMA_HUB_URL,
-    refresh_cache: Optional[bool] = False,
+    refresh_cache: bool = False,
     custom_path: Optional[str] = None,
 ) -> Type[BaseToolSpec]:
     """Download a single tool from Llama Hub.
