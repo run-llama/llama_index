@@ -8,6 +8,7 @@ import fsspec
 from llama_index.constants import (
     DOC_STORE_KEY,
     GRAPH_STORE_KEY,
+    IMAGE_STORE_KEY,
     INDEX_STORE_KEY,
     VECTOR_STORE_KEY,
 )
@@ -28,6 +29,7 @@ from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
 
 DEFAULT_PERSIST_DIR = "./storage"
+IMAGE_STORE_FNAME = "image_store.json"
 
 
 @dataclass
@@ -46,6 +48,7 @@ class StorageContext:
     docstore: BaseDocumentStore
     index_store: BaseIndexStore
     vector_store: VectorStore
+    image_store: VectorStore
     graph_store: GraphStore
 
     @classmethod
@@ -54,6 +57,7 @@ class StorageContext:
         docstore: Optional[BaseDocumentStore] = None,
         index_store: Optional[BaseIndexStore] = None,
         vector_store: Optional[VectorStore] = None,
+        image_store: Optional[VectorStore] = None,
         graph_store: Optional[GraphStore] = None,
         persist_dir: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
@@ -71,6 +75,7 @@ class StorageContext:
             docstore = docstore or SimpleDocumentStore()
             index_store = index_store or SimpleIndexStore()
             vector_store = vector_store or SimpleVectorStore()
+            image_store = image_store or SimpleVectorStore()
             graph_store = graph_store or SimpleGraphStore()
         else:
             docstore = docstore or SimpleDocumentStore.from_persist_dir(
@@ -82,11 +87,14 @@ class StorageContext:
             vector_store = vector_store or SimpleVectorStore.from_persist_dir(
                 persist_dir, fs=fs
             )
+            image_store = image_store or SimpleVectorStore.from_persist_dir(
+                persist_dir, fs=fs
+            )
             graph_store = graph_store or SimpleGraphStore.from_persist_dir(
                 persist_dir, fs=fs
             )
 
-        return cls(docstore, index_store, vector_store, graph_store)
+        return cls(docstore, index_store, vector_store, image_store, graph_store)
 
     def persist(
         self,
@@ -94,6 +102,7 @@ class StorageContext:
         docstore_fname: str = DOCSTORE_FNAME,
         index_store_fname: str = INDEX_STORE_FNAME,
         vector_store_fname: str = VECTOR_STORE_FNAME,
+        image_store_fname: str = IMAGE_STORE_FNAME,
         graph_store_fname: str = GRAPH_STORE_FNAME,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
@@ -107,22 +116,26 @@ class StorageContext:
             docstore_path = concat_dirs(persist_dir, docstore_fname)
             index_store_path = concat_dirs(persist_dir, index_store_fname)
             vector_store_path = concat_dirs(persist_dir, vector_store_fname)
+            image_store_path = concat_dirs(persist_dir, image_store_fname)
             graph_store_path = concat_dirs(persist_dir, graph_store_fname)
         else:
             persist_dir = Path(persist_dir)
             docstore_path = str(persist_dir / docstore_fname)
             index_store_path = str(persist_dir / index_store_fname)
             vector_store_path = str(persist_dir / vector_store_fname)
+            image_store_path = str(persist_dir / image_store_fname)
             graph_store_path = str(persist_dir / graph_store_fname)
 
         self.docstore.persist(persist_path=docstore_path, fs=fs)
         self.index_store.persist(persist_path=index_store_path, fs=fs)
         self.vector_store.persist(persist_path=vector_store_path, fs=fs)
+        self.image_store.persist(persist_path=image_store_path, fs=fs)
         self.graph_store.persist(persist_path=graph_store_path, fs=fs)
 
     def to_dict(self) -> dict:
         all_simple = (
             isinstance(self.vector_store, SimpleVectorStore)
+            and isinstance(self.image_store, SimpleVectorStore)
             and isinstance(self.docstore, SimpleDocumentStore)
             and isinstance(self.index_store, SimpleIndexStore)
             and isinstance(self.graph_store, SimpleGraphStore)
@@ -133,12 +146,14 @@ class StorageContext:
             )
 
         assert isinstance(self.vector_store, SimpleVectorStore)
+        assert isinstance(self.image_store, SimpleVectorStore)
         assert isinstance(self.docstore, SimpleDocumentStore)
         assert isinstance(self.index_store, SimpleIndexStore)
         assert isinstance(self.graph_store, SimpleGraphStore)
 
         return {
             VECTOR_STORE_KEY: self.vector_store.to_dict(),
+            IMAGE_STORE_KEY: self.image_store.to_dict(),
             DOC_STORE_KEY: self.docstore.to_dict(),
             INDEX_STORE_KEY: self.index_store.to_dict(),
             GRAPH_STORE_KEY: self.graph_store.to_dict(),
@@ -149,11 +164,13 @@ class StorageContext:
         """Create a StorageContext from dict."""
         docstore = SimpleDocumentStore.from_dict(save_dict[DOC_STORE_KEY])
         vector_store = SimpleVectorStore.from_dict(save_dict[VECTOR_STORE_KEY])
+        image_store = SimpleVectorStore.from_dict(save_dict[IMAGE_STORE_KEY])
         index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
         graph_store = SimpleGraphStore.from_dict(save_dict[GRAPH_STORE_KEY])
         return cls(
             docstore=docstore,
             index_store=index_store,
             vector_store=vector_store,
+            image_store=image_store,
             graph_store=graph_store,
         )
