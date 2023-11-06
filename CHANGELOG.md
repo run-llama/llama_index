@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+
+- Improve async support in `QueryFusionRetriever` (#8460)
+
 ### Breaking Changes
 
 - moved `max_docs` parameter from constructor to `lazy_load_data()` for `SimpleMongoReader` (#8686)
