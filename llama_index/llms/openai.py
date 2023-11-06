@@ -281,7 +281,7 @@ class OpenAI(LLM):
         response = self._client.completions.create(
             prompt=prompt,
             stream=False,
-            **self._get_model_kwargs(**kwargs),
+            **all_kwargs,
         )
         text = response.choices[0].text
         return CompletionResponse(
@@ -299,7 +299,7 @@ class OpenAI(LLM):
             for response in self._client.completions.create(
                 prompt=prompt,
                 stream=True,
-                **self._get_model_kwargs(**kwargs),
+                **all_kwargs,
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
@@ -472,7 +472,7 @@ class OpenAI(LLM):
         response = await self._aclient.completions.create(
             prompt=prompt,
             stream=False,
-            **self._get_model_kwargs(**kwargs),
+            **all_kwargs,
         )
         text = response.choices[0].text
         return CompletionResponse(
@@ -492,7 +492,7 @@ class OpenAI(LLM):
             async for response in await self._aclient.completions.create(
                 prompt=prompt,
                 stream=True,
-                **self._get_model_kwargs(**kwargs),
+                **all_kwargs,
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
