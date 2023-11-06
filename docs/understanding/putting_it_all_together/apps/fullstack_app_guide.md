@@ -83,7 +83,10 @@ def query_index():
     global index
     query_text = request.args.get("text", None)
     if query_text is None:
-        return "No text found, please include a ?text=blah parameter in the URL", 400
+        return (
+            "No text found, please include a ?text=blah parameter in the URL",
+            400,
+        )
     query_engine = index.as_query_engine()
     response = query_engine.query(query_text)
     return str(response), 200
@@ -177,7 +180,10 @@ def query_index():
     global index
     query_text = request.args.get("text", None)
     if query_text is None:
-        return "No text found, please include a ?text=blah parameter in the URL", 400
+        return (
+            "No text found, please include a ?text=blah parameter in the URL",
+            400,
+        )
     response = manager.query_index(query_text)._getvalue()
     return str(response), 200
 

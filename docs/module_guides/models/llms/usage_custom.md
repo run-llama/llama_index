@@ -39,11 +39,15 @@ llm = OpenAI(temperature=0.1, model="gpt-4")
 service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
-index = KeywordTableIndex.from_documents(documents, service_context=service_context)
+index = KeywordTableIndex.from_documents(
+    documents, service_context=service_context
+)
 
 # get response from query
 query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do after his time at Y Combinator?")
+response = query_engine.query(
+    "What did the author do after his time at Y Combinator?"
+)
 ```
 
 ## Example: Changing the number of output tokens (for OpenAI, Cohere, AI21)
@@ -55,7 +59,11 @@ For OpenAI, Cohere, AI21, you just need to set the `max_tokens` parameter
 (or maxTokens for AI21). We will handle text chunking/calculations under the hood.
 
 ```python
-from llama_index import KeywordTableIndex, SimpleDirectoryReader, ServiceContext
+from llama_index import (
+    KeywordTableIndex,
+    SimpleDirectoryReader,
+    ServiceContext,
+)
 from llama_index.llms import OpenAI
 
 documents = SimpleDirectoryReader("data").load_data()
@@ -70,7 +78,11 @@ service_context = ServiceContext.from_defaults(llm=llm)
 If you are using other LLM classes from langchain, you may need to explicitly configure the `context_window` and `num_output` via the `ServiceContext` since the information is not available by default.
 
 ```python
-from llama_index import KeywordTableIndex, SimpleDirectoryReader, ServiceContext
+from llama_index import (
+    KeywordTableIndex,
+    SimpleDirectoryReader,
+    ServiceContext,
+)
 from llama_index.llms import OpenAI
 
 # alternatively
@@ -203,20 +215,26 @@ class OurLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=context_window, num_output=num_output, model_name=model_name
+            context_window=context_window,
+            num_output=num_output,
+            model_name=model_name,
         )
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         prompt_length = len(prompt)
-        response = pipeline(prompt, max_new_tokens=num_output)[0]["generated_text"]
+        response = pipeline(prompt, max_new_tokens=num_output)[0][
+            "generated_text"
+        ]
 
         # only return newly generated tokens
         text = response[prompt_length:]
         return CompletionResponse(text=text)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError()
 
 

@@ -44,7 +44,9 @@ set_global_service_context(
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-documents = SimpleDirectoryReader("./docs/examples/data/paul_graham").load_data()
+documents = SimpleDirectoryReader(
+    "./docs/examples/data/paul_graham"
+).load_data()
 
 index = VectorStoreIndex.from_documents(documents)
 ```

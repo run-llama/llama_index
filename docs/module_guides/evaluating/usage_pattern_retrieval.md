@@ -17,7 +17,9 @@ retriever_evaluator = RetrieverEvaluator.from_metric_names(
     ["mrr", "hit_rate"], retriever=retriever
 )
 
-retriever_evaluator.evaluate(query="query", expected_ids=["node_id1", "node_id2"])
+retriever_evaluator.evaluate(
+    query="query", expected_ids=["node_id1", "node_id2"]
+)
 ```
 
 ## Building an Evaluation Dataset
@@ -27,7 +29,9 @@ You can manually curate a retrieval evaluation dataset of questions + node id's.
 ```python
 from llama_index.evaluation import generate_question_context_pairs
 
-qa_dataset = generate_question_context_pairs(nodes, llm=llm, num_questions_per_chunk=2)
+qa_dataset = generate_question_context_pairs(
+    nodes, llm=llm, num_questions_per_chunk=2
+)
 ```
 
 The returned result is a `EmbeddingQAFinetuneDataset` object (containing `queries`, `relevant_docs`, and `corpus`).

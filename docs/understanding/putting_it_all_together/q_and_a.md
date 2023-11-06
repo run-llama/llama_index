@@ -116,9 +116,13 @@ By default, this uses a `LLMSingleSelector` as the router, which uses the LLM to
 ```python
 from llama_index.query_engine import RouterQueryEngine
 
-query_engine = RouterQueryEngine.from_defaults(query_engine_tools=[tool1, tool2])
+query_engine = RouterQueryEngine.from_defaults(
+    query_engine_tools=[tool1, tool2]
+)
 
-response = query_engine.query("In Notion, give me a summary of the product roadmap.")
+response = query_engine.query(
+    "In Notion, give me a summary of the product roadmap."
+)
 ```
 
 **Guides**
@@ -131,7 +135,9 @@ response = query_engine.query("In Notion, give me a summary of the product roadm
 You can explicitly perform compare/contrast queries with a **query transformation** module within a ComposableGraph.
 
 ```python
-from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import (
+    DecomposeQueryTransform,
+)
 
 decompose_transform = DecomposeQueryTransform(
     service_context.llm_predictor, verbose=True

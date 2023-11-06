@@ -32,7 +32,9 @@ llm = OpenAI(temperature=0.1, model="gpt-4")
 service_context = ServiceContext.from_defaults(llm=llm)
 
 documents = SimpleDirectoryReader("data").load_data()
-index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+index = VectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
 ```
 
 In this case, you've instantiated OpenAI and customized it to use the `gpt-4` model instead of the default `gpt-3.5-turbo`, and also modified the `temperature`. The `VectorStoreIndex` will now use gpt-4 to encode or `embed` your documents for later querying.

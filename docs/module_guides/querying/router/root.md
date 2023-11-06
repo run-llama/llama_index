@@ -63,7 +63,10 @@ We also highlight using our router as a standalone module.
 Some examples are given below with LLM and Pydantic based single/multi selectors:
 
 ```python
-from llama_index.selectors.llm_selectors import LLMSingleSelector, LLMMultiSelector
+from llama_index.selectors.llm_selectors import (
+    LLMSingleSelector,
+    LLMMultiSelector,
+)
 from llama_index.selectors.pydantic_selectors import (
     PydanticMultiSelector,
     PydanticSingleSelector,
@@ -88,7 +91,10 @@ A `RouterQueryEngine` is composed on top of other query engines as tools.
 
 ```python
 from llama_index.query_engine.router_query_engine import RouterQueryEngine
-from llama_index.selectors.pydantic_selectors import PydanticSingleSelector, Pydantic
+from llama_index.selectors.pydantic_selectors import (
+    PydanticSingleSelector,
+    Pydantic,
+)
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index import (
     VectorStoreIndex,
@@ -171,7 +177,10 @@ choices = [
 ]
 
 # choices as a list of strings
-choices = ["choice 1 - description for choice 1", "choice 2: description for choice 2"]
+choices = [
+    "choice 1 - description for choice 1",
+    "choice 2: description for choice 2",
+]
 
 selector = LLMSingleSelector.from_defaults()
 selector_result = selector.select(

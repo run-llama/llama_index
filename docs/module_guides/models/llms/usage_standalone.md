@@ -26,7 +26,9 @@ for delta in resp:
 from llama_index.llms import ChatMessage, OpenAI
 
 messages = [
-    ChatMessage(role="system", content="You are a pirate with a colorful personality"),
+    ChatMessage(
+        role="system", content="You are a pirate with a colorful personality"
+    ),
     ChatMessage(role="user", content="What is your name"),
 ]
 resp = OpenAI().chat(messages)

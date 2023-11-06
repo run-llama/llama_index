@@ -28,7 +28,9 @@ To use HyDE, an example code snippet is shown below.
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.indices.query.query_transform.base import HyDEQueryTransform
-from llama_index.query_engine.transform_query_engine import TransformQueryEngine
+from llama_index.query_engine.transform_query_engine import (
+    TransformQueryEngine,
+)
 
 # load documents, build index
 documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
@@ -65,9 +67,13 @@ Here's a corresponding example code snippet over a composed graph.
 ```python
 # Setting: a summary index composed over multiple vector indices
 # llm_predictor_chatgpt corresponds to the ChatGPT LLM interface
-from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import (
+    DecomposeQueryTransform,
+)
 
-decompose_transform = DecomposeQueryTransform(llm_predictor_chatgpt, verbose=True)
+decompose_transform = DecomposeQueryTransform(
+    llm_predictor_chatgpt, verbose=True
+)
 
 # initialize indexes and graph
 ...
@@ -83,7 +89,9 @@ vector_query_engine = TransformQueryEngine(
 custom_query_engines = {vector_index.index_id: vector_query_engine}
 
 # query
-query_str = "Compare and contrast the airports in Seattle, Houston, and Toronto. "
+query_str = (
+    "Compare and contrast the airports in Seattle, Houston, and Toronto. "
+)
 query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
 response = query_engine.query(query_str)
 ```
@@ -104,10 +112,14 @@ An example image is shown below.
 Here's a corresponding example code snippet.
 
 ```python
-from llama_index.indices.query.query_transform.base import StepDecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import (
+    StepDecomposeQueryTransform,
+)
 
 # gpt-4
-step_decompose_transform = StepDecomposeQueryTransform(llm_predictor, verbose=True)
+step_decompose_transform = StepDecomposeQueryTransform(
+    llm_predictor, verbose=True
+)
 
 query_engine = index.as_query_engine()
 query_engine = MultiStepQueryEngine(

@@ -114,7 +114,11 @@ SQLDatabase and produces a Node object for each SQLTableSchema object passed
 into the ObjectIndex constructor.
 
 ```python
-from llama_index.objects import SQLTableNodeMapping, ObjectIndex, SQLTableSchema
+from llama_index.objects import (
+    SQLTableNodeMapping,
+    ObjectIndex,
+    SQLTableSchema,
+)
 
 table_node_mapping = SQLTableNodeMapping(sql_database)
 table_schema_objs = [

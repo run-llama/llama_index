@@ -159,7 +159,9 @@ response = query_engine.query(query)
 response_str = response.response
 for source_node in response.source_nodes:
     eval_result = evaluator.evaluate(
-        query=query, response=response_str, contexts=[source_node.get_content()]
+        query=query,
+        response=response_str,
+        contexts=[source_node.get_content()],
     )
     print(str(eval_result.passing))
 ```

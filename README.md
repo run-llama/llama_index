@@ -99,12 +99,16 @@ from llama_index.embeddings import HuggingFaceEmbedding
 from llama_index import ServiceContext
 
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
-service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model)
+service_context = ServiceContext.from_defaults(
+    llm=llm, embed_model=embed_model
+)
 
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()
-index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+index = VectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
 ```
 
 To query:
