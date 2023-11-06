@@ -21,7 +21,7 @@ The following code snippet shows how you can get started using LLMs.
 from llama_index.llms import OpenAI
 
 # non-streaming
-resp = OpenAI().complete('Paul Graham is ')
+resp = OpenAI().complete("Paul Graham is ")
 print(resp)
 ```
 

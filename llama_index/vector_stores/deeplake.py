@@ -18,7 +18,7 @@ from llama_index.vector_stores.utils import (
 )
 
 try:
-    from deeplake.core.vectorstore import VectorStore
+    from deeplake.core.vectorstore.deeplake_vectorstore import VectorStore
 
     DEEPLAKE_INSTALLED = True
 except ImportError:
@@ -123,7 +123,7 @@ class DeepLakeVectorStore(VectorStoreBase):
         """
         return self.vectorstore.dataset
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
 
         Args:

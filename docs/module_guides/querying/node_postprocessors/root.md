@@ -21,8 +21,8 @@ from llama_index.indices.postprocessor import SimilarityPostprocessor
 from llama_index.schema import Node, NodeWithScore
 
 nodes = [
-  NodeWithScore(node=Node(text="text"), score=0.7),
-  NodeWithScore(node=Node(text="text"), score=0.8)
+    NodeWithScore(node=Node(text="text"), score=0.7),
+    NodeWithScore(node=Node(text="text"), score=0.8),
 ]
 
 # filter nodes below 0.75 similarity score
@@ -45,11 +45,11 @@ documents = SimpleDirectoryReader("./data").load_data()
 index = VectorStoreIndex.from_documents(documents)
 
 query_engine = index.as_query_engine(
-  node_postprocessors=[
-    TimeWeightedPostprocessor(
-        time_decay=0.5, time_access_refresh=False, top_k=1
-    )
-  ]
+    node_postprocessors=[
+        TimeWeightedPostprocessor(
+            time_decay=0.5, time_access_refresh=False, top_k=1
+        )
+    ]
 )
 
 # all node post-processors will be applied during each query
@@ -79,8 +79,8 @@ from llama_index.indices.postprocessor import SimilarityPostprocessor
 from llama_index.schema import Node, NodeWithScore
 
 nodes = [
-  NodeWithScore(node=Node(text="text"), score=0.7),
-  NodeWithScore(node=Node(text="text"), score=0.8)
+    NodeWithScore(node=Node(text="text"), score=0.7),
+    NodeWithScore(node=Node(text="text"), score=0.8),
 ]
 
 # filter nodes below 0.75 similarity score
@@ -110,12 +110,11 @@ from llama_index import QueryBundle
 from llama_index.indices.postprocessor.base import BaseNodePostprocessor
 from llama_index.schema import NodeWithScore
 
-class DummyNodePostprocessor:
 
+class DummyNodePostprocessor:
     def postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
     ) -> List[NodeWithScore]:
-
         # subtracts 1 from the score
         for n in nodes:
             n.score -= 1

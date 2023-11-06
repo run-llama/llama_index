@@ -9,9 +9,9 @@ from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 # Enums for validation and type safety
 class CohereAIModelName(str, Enum):
     ENGLISH_V3 = "embed-english-v3.0"
-    ENGLISH_LIGHT_V3 = "embed-english-light-3.0"
+    ENGLISH_LIGHT_V3 = "embed-english-light-v3.0"
     MULTILINGUAL_V3 = "embed-multilingual-v3.0"
-    MULTILINGUAL_LIGHT_V3 = "embed-multilingual-light-3.0"
+    MULTILINGUAL_LIGHT_V3 = "embed-multilingual-light-v3.0"
 
     ENGLISH_V2 = "embed-english-v2.0"
     ENGLISH_LIGHT_V2 = "embed-english-light-v2.0"

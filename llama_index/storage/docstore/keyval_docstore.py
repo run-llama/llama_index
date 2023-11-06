@@ -28,10 +28,7 @@ class KVDocumentStore(BaseDocumentStore):
 
         summary_index = SummaryIndex(nodes, storage_context=storage_context)
         vector_index = VectorStoreIndex(nodes, storage_context=storage_context)
-        keyword_table_index = SimpleKeywordTableIndex(
-            nodes,
-            storage_context=storage_context
-        )
+        keyword_table_index = SimpleKeywordTableIndex(nodes, storage_context=storage_context)
 
     This will use the same docstore for multiple index structures.
 

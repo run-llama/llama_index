@@ -34,9 +34,7 @@ from llama_index import ServiceContext, set_global_service_context
 
 set_global_service_context(
     ServiceContext.from_defaults(
-        llm=llm,
-        embed_model=embed_model,
-        callback_manager=callback_manager
+        llm=llm, embed_model=embed_model, callback_manager=callback_manager
     )
 )
 ```
@@ -46,7 +44,9 @@ set_global_service_context(
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-documents = SimpleDirectoryReader("./docs/examples/data/paul_graham").load_data()
+documents = SimpleDirectoryReader(
+    "./docs/examples/data/paul_graham"
+).load_data()
 
 index = VectorStoreIndex.from_documents(documents)
 ```

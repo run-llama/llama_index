@@ -21,14 +21,19 @@ Then construct the Vectara Index and query it as follows:
 
 ```python
 from llama_index import ManagedIndex, SimpleDirectoryReade
-from llama_index.managed import VectaraIndex
+from llama_index.indices import VectaraIndex
 
 # Load documents and build index
 vectara_customer_id = os.environ.get("VECTARA_CUSTOMER_ID")
 vectara_corpus_id = os.environ.get("VECTARA_CORPUS_ID")
 vectara_api_key = os.environ.get("VECTARA_API_KEY")
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
-index = VectaraIndex.from_documents(documents, vectara_customer_id=vectara_customer_id, vectara_corpus_id=vectara_corpus_id, vectara_api_key=vectara_api_key)
+documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
+index = VectaraIndex.from_documents(
+    documents,
+    vectara_customer_id=vectara_customer_id,
+    vectara_corpus_id=vectara_corpus_id,
+    vectara_api_key=vectara_api_key,
+)
 
 # Query index
 query_engine = index.as_query_engine()
@@ -39,10 +44,10 @@ Note that if the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID
 
 ```python
 from llama_index import ManagedIndex, SimpleDirectoryReade
-from llama_index.managed import VectaraIndex
+from llama_index.indices import VectaraIndex
 
 # Load documents and build index
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 index = VectaraIndex.from_documents(documents)
 
 # Query index

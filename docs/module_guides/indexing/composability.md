@@ -11,9 +11,9 @@ To see how this works, imagine you have 3 documents: `doc1`, `doc2`, and `doc3`.
 ```python
 from llama_index import SimpleDirectoryReader
 
-doc1 = SimpleDirectoryReader('data1').load_data()
-doc2 = SimpleDirectoryReader('data2').load_data()
-doc3 = SimpleDirectoryReader('data3').load_data()
+doc1 = SimpleDirectoryReader("data1").load_data()
+doc2 = SimpleDirectoryReader("data2").load_data()
+doc3 = SimpleDirectoryReader("data3").load_data()
 ```
 
 ![](/_static/composability/diagram_b0.png)
@@ -71,7 +71,6 @@ graph = ComposableGraph.from_indices(
     index_summaries=[index1_summary, index2_summary, index3_summary],
     storage_context=storage_context,
 )
-
 ```
 
 ![](/_static/composability/diagram.png)
@@ -88,14 +87,10 @@ More detail on how to configure `ComposableGraphQueryEngine` can be found [here]
 ```python
 # set custom retrievers. An example is provided below
 custom_query_engines = {
-    index.index_id: index.as_query_engine(
-        child_branch_factor=2
-    )
+    index.index_id: index.as_query_engine(child_branch_factor=2)
     for index in [index1, index2, index3]
 }
-query_engine = graph.as_query_engine(
-    custom_query_engines=custom_query_engines
-)
+query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
 response = query_engine.query("Where did the author grow up?")
 ```
 

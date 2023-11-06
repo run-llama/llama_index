@@ -122,7 +122,7 @@ class SingleStoreVectorStore(VectorStore):
         finally:
             conn.close()
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
 
         Args:
