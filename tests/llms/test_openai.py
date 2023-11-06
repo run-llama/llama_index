@@ -1,6 +1,6 @@
 import os
 from typing import Any, AsyncGenerator, Generator
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from llama_index.llms.base import ChatMessage
@@ -13,7 +13,6 @@ from openai.types.chat.chat_completion import (
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
 from openai.types.completion import Completion, CompletionChoice, CompletionUsage
-from pytest import MonkeyPatch
 
 from tests.conftest import CachedOpenAIApiKeys
 
@@ -122,7 +121,6 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, N
 
 
 def mock_completion_stream_v1(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
-    # Example taken from https://github.com/openai/openai-cookbook/blob/main/examples/How_to_stream_completions.ipynb
     responses = [
         Completion(
             id="cmpl-uqkvlQyYK7bGYrRHQ0eXlWi7",
@@ -147,6 +145,16 @@ async def mock_async_completion_stream(
 ) -> AsyncGenerator[dict, None]:
     async def gen() -> AsyncGenerator[dict, None]:
         for response in mock_completion_stream(*args, **kwargs):
+            yield response
+
+    return gen()
+
+
+async def mock_async_completion_stream_v1(
+    *args: Any, **kwargs: Any
+) -> AsyncGenerator[Completion, None]:
+    async def gen() -> AsyncGenerator[dict, None]:
+        for response in mock_completion_stream_v1(*args, **kwargs):
             yield response
 
     return gen()
@@ -319,10 +327,12 @@ def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
 
 
 @pytest.mark.asyncio()
-async def test_completion_model_async(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "llama_index.llms.openai.acompletion_with_retry", mock_async_completion
-    )
+@patch("llama_index.llms.openai.AsyncOpenAI")
+async def test_completion_model_async(MockAsyncOpenAI: MagicMock) -> None:
+    mock_instance = MockAsyncOpenAI.return_value
+    create_fn = AsyncMock()
+    create_fn.side_effect = mock_async_completion_v1
+    mock_instance.completions.create = create_fn
 
     llm = OpenAI(model="text-davinci-003")
     prompt = "test prompt"
@@ -336,11 +346,12 @@ async def test_completion_model_async(monkeypatch: MonkeyPatch) -> None:
 
 
 @pytest.mark.asyncio()
-async def test_completion_model_async_streaming(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "llama_index.llms.openai.acompletion_with_retry",
-        mock_async_completion_stream,
-    )
+@patch("llama_index.llms.openai.AsyncOpenAI")
+async def test_completion_model_async_streaming(MockAsyncOpenAI: MagicMock) -> None:
+    mock_instance = MockAsyncOpenAI.return_value
+    create_fn = AsyncMock()
+    create_fn.side_effect = mock_async_completion_stream_v1
+    mock_instance.completions.create = create_fn
 
     llm = OpenAI(model="text-davinci-003")
     prompt = "test prompt"
@@ -349,6 +360,7 @@ async def test_completion_model_async_streaming(monkeypatch: MonkeyPatch) -> Non
     response_gen = await llm.astream_complete(prompt)
     responses = [item async for item in response_gen]
     assert responses[-1].text == "12"
+
     chat_response_gen = await llm.astream_chat([message])
     chat_responses = [item async for item in chat_response_gen]
     assert chat_responses[-1].message.content == "12"
