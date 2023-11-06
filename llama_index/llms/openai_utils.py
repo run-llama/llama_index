@@ -236,7 +236,7 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
     content = openai_message.content
 
     function_call = (
-        openai_message.function_call.dict() if openai.function_call else None
+        openai_message.function_call.dict() if openai_message.function_call else None
     )
 
     additional_kwargs = (
