@@ -31,6 +31,10 @@ GPT4_MODELS = {
     #   resolves to gpt-4-0613 after
     "gpt-4": 8192,
     "gpt-4-32k": 32768,
+    # 1106 model (Turbo, JSON mode)
+    "gpt-4-1106-preview": 128000,
+    # multimodal model
+    "gpt-4-vision-preview": 128000,
     # 0613 models (function calling):
     #   https://openai.com/blog/function-calling-and-other-api-updates
     "gpt-4-0613": 8192,
@@ -48,10 +52,14 @@ AZURE_TURBO_MODELS = {
 TURBO_MODELS = {
     # stable model names:
     #   resolves to gpt-3.5-turbo-0301 before 2023-06-27,
-    #   resolves to gpt-3.5-turbo-0613 after
+    #   resolves to gpt-3.5-turbo-0613 until 2023-12-11,
+    #   resolves to gpt-3.5-turbo-1106 after
     "gpt-3.5-turbo": 4096,
-    # resolves to gpt-3.5-turbo-16k-0613
+    # resolves to gpt-3.5-turbo-16k-0613 until 2023-12-11
+    # resolves to gpt-3.5-turbo-1106 after
     "gpt-3.5-turbo-16k": 16384,
+    # 1106 model (JSON mode)
+    "gpt-3.5-turbo-1106": 16384,
     # 0613 models (function calling):
     #   https://openai.com/blog/function-calling-and-other-api-updates
     "gpt-3.5-turbo-0613": 4096,
