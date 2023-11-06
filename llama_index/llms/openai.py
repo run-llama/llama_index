@@ -7,12 +7,14 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    cast,
     runtime_checkable,
 )
 
 import tiktoken
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -230,7 +232,7 @@ class OpenAI(LLM):
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
             ):
-                print(response)
+                response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
@@ -421,6 +423,7 @@ class OpenAI(LLM):
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
             ):
+                response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
