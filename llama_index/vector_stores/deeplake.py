@@ -123,7 +123,7 @@ class DeepLakeVectorStore(VectorStoreBase):
         """
         return self.vectorstore.dataset
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
 
         Args:

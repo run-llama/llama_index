@@ -220,7 +220,7 @@ class Neo4jVectorStore(VectorStore):
             except CypherSyntaxError as e:
                 raise ValueError(f"Cypher Statement is not valid\n{e}")
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         ids = [r.node_id for r in nodes]
         import_query = (
             "UNWIND $data AS row "

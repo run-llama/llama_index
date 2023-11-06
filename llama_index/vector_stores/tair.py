@@ -125,7 +125,7 @@ class TairVectorStore(VectorStore):
         """Return the Tair client instance."""
         return self._tair_client
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to the index.
 
         Args:

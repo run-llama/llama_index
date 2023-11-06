@@ -292,7 +292,7 @@ class PGVectorStore(BasePydanticVectorStore):
             ),
         )
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         self._initialize()
         ids = []
         with self._session() as session, session.begin():

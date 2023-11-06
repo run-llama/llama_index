@@ -96,6 +96,7 @@ class DocArrayVectorStore(VectorStore, ABC):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Adds nodes to the vector store.
 
