@@ -110,7 +110,7 @@ class QueryFusionRetriever(BaseRetriever):
 
         return sorted(all_nodes.values(), key=lambda x: x.score or 0.0, reverse=True)
 
-    def _run_async_queries(
+    def _run_queries_async(
         self, queries: List[str]
     ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
         tasks = []
@@ -126,7 +126,17 @@ class QueryFusionRetriever(BaseRetriever):
 
         return results
 
-    async def _run_async_queries_async(
+    def _run_queries_seq(
+        self, queries: List[str]
+    ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
+        results = {}
+        for query in queries:
+            for i, retriever in enumerate(self._retrievers):
+                results[(query, i)] = retriever.retrieve(query)
+
+        return results
+
+    async def _arun_queries(
         self, queries: List[str]
     ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
         tasks = []
@@ -142,16 +152,6 @@ class QueryFusionRetriever(BaseRetriever):
 
         return results
 
-    def _run_sync_queries(
-        self, queries: List[str]
-    ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
-        results = {}
-        for query in queries:
-            for i, retriever in enumerate(self._retrievers):
-                results[(query, i)] = retriever.retrieve(query)
-
-        return results
-
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         if self.num_queries > 1:
             queries = self._get_queries(query_bundle.query_str)
@@ -159,9 +159,9 @@ class QueryFusionRetriever(BaseRetriever):
             queries = [query_bundle.query_str]
 
         if self.use_async:
-            results = self._run_async_queries(queries)
+            results = self._run_queries_async(queries)
         else:
-            results = self._run_sync_queries(queries)
+            results = self._run_queries_seq(queries)
 
         if self.mode == FUSION_MODES.RECIPROCAL_RANK:
             return self._reciprocal_rerank_fusion(results)[: self.similarity_top_k]
@@ -176,7 +176,7 @@ class QueryFusionRetriever(BaseRetriever):
         else:
             queries = [query_bundle.query_str]
 
-        results = await self._run_async_queries_async(queries)
+        results = await self._arun_queries(queries)
 
         if self.mode == FUSION_MODES.RECIPROCAL_RANK:
             return self._reciprocal_rerank_fusion(results)[: self.similarity_top_k]
