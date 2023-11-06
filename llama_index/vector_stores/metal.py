@@ -111,7 +111,7 @@ class MetalVectorStore(VectorStore):
         """Return Metal client."""
         return self.metal_client
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
 
         Args:
