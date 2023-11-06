@@ -3,7 +3,6 @@ import os
 from typing import Any, List
 from unittest.mock import patch
 
-import openai
 import pytest
 from llama_index.embeddings.base import SimilarityMode, mean_agg
 from llama_index.embeddings.openai import OpenAIEmbedding
@@ -112,8 +111,7 @@ def test_validates_api_key_is_present() -> None:
         assert OpenAIEmbedding()
 
         os.environ["OPENAI_API_KEY"] = ""
-        openai.api_key = "sk-" + ("a" * 48)
 
         # We can create a new LLM when the api_key is set on the
-        # library directly
-        assert OpenAIEmbedding()
+        # class directly
+        assert OpenAIEmbedding(api_key="sk-" + ("a" * 48))

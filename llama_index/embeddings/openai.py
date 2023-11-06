@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
-import openai
+from openai import AsyncOpenAI, OpenAI
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
@@ -104,7 +104,7 @@ _TEXT_MODE_MODEL_DICT = {
 
 @embedding_retry_decorator
 def get_embedding(
-    text: str, engine: Optional[str] = None, **kwargs: Any
+    client: OpenAI, text: str, engine: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
     """Get embedding.
 
@@ -117,14 +117,14 @@ def get_embedding(
     """
     text = text.replace("\n", " ")
 
-    return openai.Embedding.create(input=[text], model=engine, **kwargs)["data"][0][
+    return client.embeddings.create(input=[text], model=engine, **kwargs)["data"][0][
         "embedding"
     ]
 
 
 @embedding_retry_decorator
 async def aget_embedding(
-    text: str, engine: Optional[str] = None, **kwargs: Any
+    aclient: AsyncOpenAI, text: str, engine: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
     """Asynchronously get embedding.
 
@@ -137,14 +137,14 @@ async def aget_embedding(
     """
     text = text.replace("\n", " ")
 
-    return (await openai.Embedding.acreate(input=[text], model=engine, **kwargs))[
+    return (await aclient.embeddings.create(input=[text], model=engine, **kwargs))[
         "data"
     ][0]["embedding"]
 
 
 @embedding_retry_decorator
 def get_embeddings(
-    list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
+    client: OpenAI, list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
 ) -> List[List[float]]:
     """Get embeddings.
 
@@ -159,13 +159,16 @@ def get_embeddings(
 
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
-    data = openai.Embedding.create(input=list_of_text, model=engine, **kwargs).data
+    data = client.embeddings.create(input=list_of_text, model=engine, **kwargs).data
     return [d["embedding"] for d in data]
 
 
 @embedding_retry_decorator
 async def aget_embeddings(
-    list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
+    aclient: AsyncOpenAI,
+    list_of_text: List[str],
+    engine: Optional[str] = None,
+    **kwargs: Any,
 ) -> List[List[float]]:
     """Asynchronously get embeddings.
 
@@ -181,7 +184,7 @@ async def aget_embeddings(
     list_of_text = [text.replace("\n", " ") for text in list_of_text]
 
     data = (
-        await openai.Embedding.acreate(input=list_of_text, model=engine, **kwargs)
+        await aclient.embeddings.create(input=list_of_text, model=engine, **kwargs)
     ).data
     return [d["embedding"] for d in data]
 
@@ -236,6 +239,8 @@ class OpenAIEmbedding(BaseEmbedding):
 
     _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
     _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
+    _client: OpenAI = PrivateAttr()
+    _aclient: AsyncOpenAI = PrivateAttr()
 
     def __init__(
         self,
@@ -270,6 +275,9 @@ class OpenAIEmbedding(BaseEmbedding):
 
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
+
+        self._client = OpenAI()
+        self._aclient = AsyncOpenAI()
 
         super().__init__(
             embed_batch_size=embed_batch_size,
@@ -307,6 +315,7 @@ class OpenAIEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return get_embedding(
+            self._client,
             query,
             engine=self._query_engine,
             deployment_id=self.deployment_name,
@@ -316,6 +325,7 @@ class OpenAIEmbedding(BaseEmbedding):
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
         return await aget_embedding(
+            self._aclient,
             query,
             engine=self._query_engine,
             deployment_id=self.deployment_name,
@@ -325,6 +335,7 @@ class OpenAIEmbedding(BaseEmbedding):
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         return get_embedding(
+            self._client,
             text,
             engine=self._text_engine,
             deployment_id=self.deployment_name,
@@ -334,6 +345,7 @@ class OpenAIEmbedding(BaseEmbedding):
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
         return await aget_embedding(
+            self._aclient,
             text,
             engine=self._text_engine,
             deployment_id=self.deployment_name,
@@ -348,6 +360,7 @@ class OpenAIEmbedding(BaseEmbedding):
 
         """
         return get_embeddings(
+            self._client,
             texts,
             engine=self._text_engine,
             deployment_id=self.deployment_name,
@@ -357,6 +370,7 @@ class OpenAIEmbedding(BaseEmbedding):
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         return await aget_embeddings(
+            self._aclient,
             texts,
             engine=self._text_engine,
             deployment_id=self.deployment_name,

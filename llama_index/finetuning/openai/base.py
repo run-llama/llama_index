@@ -6,6 +6,7 @@ import time
 from typing import Any, Optional
 
 import openai
+from openai import OpenAI
 
 from llama_index.callbacks import OpenAIFineTuningHandler
 from llama_index.finetuning.openai.validate_json import validate_json
@@ -33,8 +34,9 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         self._verbose = verbose
         self._validate_json = validate_json
         self._start_job: Optional[Any] = None
+        self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", None))
         if start_job_id is not None:
-            self._start_job = openai.FineTuningJob.retrieve(start_job_id)
+            self._start_job = self._client.fine_tuning.jobs.retrieve(start_job_id)
 
     @classmethod
     def from_finetuning_handler(
@@ -62,10 +64,8 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
 
         # upload file
         with open(self.data_path, "rb") as f:
-            output = openai.File.create(
-                file=f,
-                purpose="fine-tune",
-                user_provided_filename=file_name,
+            output = self._client.files.create(
+                file=f, purpose="fine-tune", user_provided_filename=file_name
             )
         logger.info("File uploaded...")
         if self._verbose:
@@ -74,12 +74,12 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         # launch training
         while True:
             try:
-                job_output = openai.FineTuningJob.create(
+                job_output = self._client.fine_tunes.create(
                     training_file=output["id"], model=self.base_model
                 )
                 self._start_job = job_output
                 break
-            except openai.error.InvalidRequestError:
+            except openai.BadRequestError:
                 print("Waiting for file to be ready...")
                 time.sleep(60)
         info_str = (
@@ -98,7 +98,7 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
 
         # try getting id, make sure that run succeeded
         job_id = self._start_job["id"]
-        return openai.FineTuningJob.retrieve(job_id)
+        return self._client.fine_tuning.jobs.retrieve(job_id)
 
     def get_finetuned_model(self, **model_kwargs: Any) -> LLM:
         """Gets finetuned model."""

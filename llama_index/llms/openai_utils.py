@@ -1,10 +1,10 @@
 import logging
 import os
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
 import openai
-from openai import ChatCompletion, Completion
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from tenacity import (
     before_sleep_log,
     retry,
@@ -108,8 +108,6 @@ https://platform.openai.com/account/api-keys
 
 logger = logging.getLogger(__name__)
 
-CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
-
 
 def create_retry_decorator(
     max_retries: int,
@@ -135,57 +133,16 @@ def create_retry_decorator(
         retry=(
             retry_if_exception_type(
                 (
-                    openai.error.Timeout,
-                    openai.error.APIError,
-                    openai.error.APIConnectionError,
-                    openai.error.RateLimitError,
-                    openai.error.ServiceUnavailableError,
+                    openai.APITimeoutError,
+                    openai.APIError,
+                    openai.APIConnectionError,
+                    openai.RateLimitError,
+                    openai.APIStatusError,
                 )
             )
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-
-
-def completion_with_retry(
-    is_chat_model: bool,
-    max_retries: int,
-    min_seconds: float = 4,
-    max_seconds: float = 10,
-    **kwargs: Any,
-) -> Any:
-    """Use tenacity to retry the completion call."""
-    retry_decorator = create_retry_decorator(
-        max_retries=max_retries, min_seconds=min_seconds, max_seconds=max_seconds
-    )
-
-    @retry_decorator
-    def _completion_with_retry(**kwargs: Any) -> Any:
-        client = get_completion_endpoint(is_chat_model)
-        return client.create(**kwargs)
-
-    return _completion_with_retry(**kwargs)
-
-
-async def acompletion_with_retry(
-    is_chat_model: bool,
-    max_retries: int,
-    min_seconds: float = 4,
-    max_seconds: float = 10,
-    **kwargs: Any,
-) -> Any:
-    """Use tenacity to retry the async completion call."""
-    retry_decorator = create_retry_decorator(
-        max_retries=max_retries, min_seconds=min_seconds, max_seconds=max_seconds
-    )
-
-    @retry_decorator
-    async def _completion_with_retry(**kwargs: Any) -> Any:
-        # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-        client = get_completion_endpoint(is_chat_model)
-        return await client.acreate(**kwargs)
-
-    return await _completion_with_retry(**kwargs)
 
 
 def openai_modelname_to_contextsize(modelname: str) -> int:
@@ -234,13 +191,6 @@ def is_function_calling_model(model: str) -> bool:
     return is_chat_model_ and not is_old
 
 
-def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
-    if is_chat_model:
-        return openai.ChatCompletion
-    else:
-        return openai.Completion
-
-
 def to_openai_message_dict(message: ChatMessage, drop_none: bool = False) -> dict:
     """Convert generic message to OpenAI message dict."""
     message_dict = {
@@ -271,22 +221,24 @@ def to_openai_message_dicts(
     ]
 
 
-def from_openai_message_dict(message_dict: dict) -> ChatMessage:
+def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
     """Convert openai message dict to generic message."""
-    role = message_dict["role"]
+    role = openai_message.role
     # NOTE: Azure OpenAI returns function calling messages without a content key
-    content = message_dict.get("content", None)
+    content = openai_message.content
 
-    additional_kwargs = message_dict.copy()
-    additional_kwargs.pop("role")
-    additional_kwargs.pop("content", None)
+    function_call = openai_message.function_call
+
+    additional_kwargs = (
+        {"function_call": function_call} if function_call is not None else {}
+    )
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
 
-def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage]:
+def from_openai_messages(openai_message: Sequence[dict]) -> List[ChatMessage]:
     """Convert openai message dicts to generic messages."""
-    return [from_openai_message_dict(message_dict) for message_dict in message_dicts]
+    return [from_openai_message(message) for message in from_openai_message]
 
 
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
@@ -324,7 +276,7 @@ def resolve_openai_credentials(
     # resolve from openai module or default
     api_key = api_key or openai.api_key
     api_type = api_type or openai.api_type or DEFAULT_OPENAI_API_TYPE
-    api_base = api_base or openai.api_base or DEFAULT_OPENAI_API_BASE
+    api_base = api_base or openai.base_url or DEFAULT_OPENAI_API_BASE
     api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
 
     if not api_key and api_type not in ("azuread", "azure_ad"):

@@ -1,7 +1,6 @@
 import os
 from typing import Any, AsyncGenerator, Generator
 
-import openai
 import pytest
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
@@ -240,8 +239,7 @@ def test_validates_api_key_is_present() -> None:
     assert OpenAI()
 
     os.environ["OPENAI_API_KEY"] = ""
-    openai.api_key = "sk-" + ("a" * 48)
 
     # We can create a new LLM when the api_key is set on the
-    # library directly
-    assert OpenAI()
+    # class directly
+    assert OpenAI(api_key="sk-" + ("a" * 48))

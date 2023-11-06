@@ -1,5 +1,7 @@
 from typing import Any, Dict, Optional
 
+from openai import AsyncAzureOpenAI, AzureOpenAI
+
 from llama_index.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.openai import OpenAI
@@ -42,6 +44,8 @@ class AzureOpenAI(OpenAI):
     )
 
     _azure_ad_token: Any = PrivateAttr()
+    _client: AzureOpenAI = PrivateAttr()
+    _aclient: AsyncAzureOpenAI = PrivateAttr()
 
     def __init__(
         self,
@@ -88,6 +92,11 @@ class AzureOpenAI(OpenAI):
             api_version=api_version,
             callback_manager=callback_manager,
             **kwargs,
+        )
+
+        self._client = AzureOpenAI(
+            model=model,
+            engine=engine,
         )
 
     @root_validator
