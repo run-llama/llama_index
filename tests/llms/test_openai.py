@@ -1,9 +1,18 @@
 import os
 from typing import Any, AsyncGenerator, Generator
+from unittest.mock import MagicMock, patch
 
 import pytest
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.openai import OpenAI
+from openai.types.chat.chat_completion import (
+    ChatCompletion,
+    ChatCompletionMessage,
+    Choice,
+)
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
+from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
+from openai.types.completion import Completion, CompletionChoice, CompletionUsage
 from pytest import MonkeyPatch
 
 from tests.conftest import CachedOpenAIApiKeys
@@ -28,8 +37,30 @@ def mock_completion(*args: Any, **kwargs: Any) -> dict:
     }
 
 
+def mock_completion_v1(*args: Any, **kwargs: Any) -> Completion:
+    return Completion(
+        id="cmpl-uqkvlQyYK7bGYrRHQ0eXlWi7",
+        object="text_completion",
+        created=1589478378,
+        model="text-davinci-003",
+        choices=[
+            CompletionChoice(
+                text="\n\nThis is indeed a test",
+                index=0,
+                logprobs=None,
+                finish_reason="length",
+            )
+        ],
+        usage=CompletionUsage(prompt_tokens=5, completion_tokens=7, total_tokens=12),
+    )
+
+
 async def mock_async_completion(*args: Any, **kwargs: Any) -> dict:
     return mock_completion(*args, **kwargs)
+
+
+async def mock_async_completion_v1(*args: Any, **kwargs: Any) -> dict:
+    return mock_completion_v1(*args, **kwargs)
 
 
 def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
@@ -50,6 +81,25 @@ def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
     }
 
 
+def mock_chat_completion_v1(*args: Any, **kwargs: Any) -> dict:
+    return ChatCompletion(
+        id="chatcmpl-abc123",
+        object="chat.completion",
+        created=1677858242,
+        model="gpt-3.5-turbo-0301",
+        usage=CompletionUsage(prompt_tokens=13, completion_tokens=7, total_tokens=20),
+        choices=[
+            Choice(
+                message=ChatCompletionMessage(
+                    role="assistant", content="\n\nThis is a test!"
+                ),
+                finish_reason="stop",
+                index=0,
+            )
+        ],
+    )
+
+
 def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
     # Example taken from https://github.com/openai/openai-cookbook/blob/main/examples/How_to_stream_completions.ipynb
     responses = [
@@ -67,6 +117,27 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, N
                 }
             ],
         },
+    ]
+    yield from responses
+
+
+def mock_completion_stream_v1(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
+    # Example taken from https://github.com/openai/openai-cookbook/blob/main/examples/How_to_stream_completions.ipynb
+    responses = [
+        Completion(
+            id="cmpl-uqkvlQyYK7bGYrRHQ0eXlWi7",
+            object="text_completion",
+            created=1589478378,
+            model="text-davinci-003",
+            choices=[CompletionChoice(text="1", finish_reason="stop", index=0)],
+        ),
+        Completion(
+            id="cmpl-uqkvlQyYK7bGYrRHQ0eXlWi7",
+            object="text_completion",
+            created=1589478378,
+            model="text-davinci-003",
+            choices=[CompletionChoice(text="2", finish_reason="stop", index=0)],
+        ),
     ]
     yield from responses
 
@@ -122,11 +193,57 @@ def mock_chat_completion_stream(
     yield from responses
 
 
-def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
+def mock_chat_completion_stream_v1(
+    *args: Any, **kwargs: Any
+) -> Generator[dict, None, None]:
+    responses = [
+        ChatCompletionChunk(
+            id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
+            object="chat.completion.chunk",
+            created=1677825464,
+            model="gpt-3.5-turbo-0301",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(role="assistant"), finish_reason=None, index=0
+                )
+            ],
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
+            object="chat.completion.chunk",
+            created=1677825464,
+            model="gpt-3.5-turbo-0301",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(content="\n\n"), finish_reason=None, index=0
+                )
+            ],
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
+            object="chat.completion.chunk",
+            created=1677825464,
+            model="gpt-3.5-turbo-0301",
+            choices=[
+                ChunkChoice(delta=ChoiceDelta(content="2"), finish_reason=None, index=0)
+            ],
+        ),
+        ChatCompletionChunk(
+            id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
+            object="chat.completion.chunk",
+            created=1677825464,
+            model="gpt-3.5-turbo-0301",
+            choices=[ChunkChoice(delta=ChoiceDelta(), finish_reason="stop", index=0)],
+        ),
+    ]
+    yield from responses
+
+
+@patch("llama_index.llms.openai.SyncOpenAI")
+def test_completion_model_basic(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
-        monkeypatch.setattr(
-            "llama_index.llms.openai.completion_with_retry", mock_completion
-        )
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.completions.create.return_value = mock_completion_v1()
 
         llm = OpenAI(model="text-davinci-003")
         prompt = "test prompt"
@@ -139,11 +256,11 @@ def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
         assert chat_response.message.content == "\n\nThis is indeed a test"
 
 
-def test_chat_model_basic(monkeypatch: MonkeyPatch) -> None:
+@patch("llama_index.llms.openai.SyncOpenAI")
+def test_chat_model_basic(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
-        monkeypatch.setattr(
-            "llama_index.llms.openai.completion_with_retry", mock_chat_completion
-        )
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = mock_chat_completion_v1()
 
         llm = OpenAI(model="gpt-3.5-turbo")
         prompt = "test prompt"
@@ -156,40 +273,49 @@ def test_chat_model_basic(monkeypatch: MonkeyPatch) -> None:
         assert chat_response.message.content == "\n\nThis is a test!"
 
 
-def test_completion_model_streaming(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "llama_index.llms.openai.completion_with_retry", mock_completion_stream
-    )
+@patch("llama_index.llms.openai.SyncOpenAI")
+def test_completion_model_streaming(MockSyncOpenAI: MagicMock) -> None:
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.completions.create.return_value = mock_completion_stream_v1()
 
-    llm = OpenAI(model="text-davinci-003")
-    prompt = "test prompt"
-    message = ChatMessage(role="user", content="test message")
+        llm = OpenAI(model="text-davinci-003")
+        prompt = "test prompt"
+        message = ChatMessage(role="user", content="test message")
 
-    response_gen = llm.stream_complete(prompt)
-    responses = list(response_gen)
-    assert responses[-1].text == "12"
-    chat_response_gen = llm.stream_chat([message])
-    chat_responses = list(chat_response_gen)
-    assert chat_responses[-1].message.content == "12"
+        response_gen = llm.stream_complete(prompt)
+        responses = list(response_gen)
+        assert responses[-1].text == "12"
+
+        mock_instance.completions.create.return_value = mock_completion_stream_v1()
+        chat_response_gen = llm.stream_chat([message])
+        chat_responses = list(chat_response_gen)
+        assert chat_responses[-1].message.content == "12"
 
 
-def test_chat_model_streaming(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "llama_index.llms.openai.completion_with_retry", mock_chat_completion_stream
-    )
+@patch("llama_index.llms.openai.SyncOpenAI")
+def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = (
+            mock_chat_completion_stream_v1()
+        )
 
-    llm = OpenAI(model="gpt-3.5-turbo")
-    prompt = "test prompt"
-    message = ChatMessage(role="user", content="test message")
+        llm = OpenAI(model="gpt-3.5-turbo")
+        prompt = "test prompt"
+        message = ChatMessage(role="user", content="test message")
 
-    response_gen = llm.stream_complete(prompt)
-    responses = list(response_gen)
-    assert responses[-1].text == "\n\n2"
+        response_gen = llm.stream_complete(prompt)
+        responses = list(response_gen)
+        assert responses[-1].text == "\n\n2"
 
-    chat_response_gen = llm.stream_chat([message])
-    chat_responses = list(chat_response_gen)
-    assert chat_responses[-1].message.content == "\n\n2"
-    assert chat_responses[-1].message.role == "assistant"
+        mock_instance.chat.completions.create.return_value = (
+            mock_chat_completion_stream_v1()
+        )
+        chat_response_gen = llm.stream_chat([message])
+        chat_responses = list(chat_response_gen)
+        assert chat_responses[-1].message.content == "\n\n2"
+        assert chat_responses[-1].message.role == "assistant"
 
 
 @pytest.mark.asyncio()

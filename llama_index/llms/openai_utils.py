@@ -236,9 +236,11 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
 
-def from_openai_messages(openai_message: Sequence[dict]) -> List[ChatMessage]:
+def from_openai_messages(
+    openai_messages: Sequence[ChatCompletionMessage],
+) -> List[ChatMessage]:
     """Convert openai message dicts to generic messages."""
-    return [from_openai_message(message) for message in from_openai_message]
+    return [from_openai_message(message) for message in openai_messages]
 
 
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
