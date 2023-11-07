@@ -2,7 +2,6 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
 import openai
-from openai.resources import Completions
 from tenacity import (
     before_sleep_log,
     retry,
@@ -121,7 +120,7 @@ def is_function_calling_model(model: str) -> bool:
     return is_chat_model_ and not is_old
 
 
-def get_completion_endpoint(is_chat_model: bool) -> Type[Completions]:
+def get_completion_endpoint(is_chat_model: bool) -> Any:
     import konko
 
     if is_chat_model:
