@@ -228,7 +228,7 @@ class OpenAIEmbedding(BaseEmbedding):
         default_factory=dict, description="Additional kwargs for the OpenAI API."
     )
 
-    api_key: str = Field(default=None, description="The OpenAI API key.")
+    api_key: str = Field(description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The version for OpenAI API.")
 

@@ -38,8 +38,12 @@ class AzureOpenAI(OpenAI):
     """
 
     engine: str = Field(description="The name of the deployed azure engine.")
-    azure_endpoint: Optional[str] = Field(description="The Azure endpoint to use.")
-    azure_deployment: Optional[str] = Field(description="The Azure deployment to use.")
+    azure_endpoint: Optional[str] = Field(
+        default=None, description="The Azure endpoint to use."
+    )
+    azure_deployment: Optional[str] = Field(
+        default=None, description="The Azure deployment to use."
+    )
     use_azure_ad: bool = Field(
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
@@ -99,7 +103,7 @@ class AzureOpenAI(OpenAI):
             **kwargs,
         )
 
-    @root_validator(pre=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate necessary credentials are set."""
         if (

@@ -15,8 +15,12 @@ from llama_index.llms.openai_utils import resolve_from_aliases
 
 
 class AzureOpenAIEmbedding(OpenAIEmbedding):
-    azure_endpoint: Optional[str] = Field(description="The Azure endpoint to use.")
-    azure_deployment: Optional[str] = Field(description="The Azure deployment to use.")
+    azure_endpoint: Optional[str] = Field(
+        default=None, description="The Azure endpoint to use."
+    )
+    azure_deployment: Optional[str] = Field(
+        default=None, description="The Azure deployment to use."
+    )
 
     _client: AzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
@@ -60,7 +64,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             **kwargs,
         )
 
-    @root_validator(pre=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate necessary credentials are set."""
         if (
