@@ -117,7 +117,7 @@ def get_data_model(
     return model
 
 
-class LanternStore(BasePydanticVectorStore):
+class LanternVectorStore(BasePydanticVectorStore):
     from sqlalchemy.sql.selectable import Select
 
     stores_text = True
@@ -242,7 +242,7 @@ class LanternStore(BasePydanticVectorStore):
         cache_ok: bool = False,
         perform_setup: bool = True,
         debug: bool = False,
-    ) -> "LanternStore":
+    ) -> "LanternVectorStore":
         """Return connection string from database parameters."""
         conn_str = (
             connection_string

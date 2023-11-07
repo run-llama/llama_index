@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- Add support for `Lantern` VectorStore (#8714)
+
 ### Breaking Changes
 
 - moved `max_docs` parameter from constructor to `lazy_load_data()` for `SimpleMongoReader` (#8686)

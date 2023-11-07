@@ -9,7 +9,7 @@ from llama_index.schema import (
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.vector_stores import LanternStore
+from llama_index.vector_stores import LanternVectorStore
 from llama_index.vector_stores.loading import load_vector_store
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
@@ -78,7 +78,7 @@ def db(conn: Any) -> Generator:
 
 @pytest.fixture()
 def pg(db: None) -> Any:
-    pg = LanternStore.from_params(
+    pg = LanternVectorStore.from_params(
         **PARAMS,  # type: ignore
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
@@ -93,7 +93,7 @@ def pg(db: None) -> Any:
 
 @pytest.fixture()
 def pg_hybrid(db: None) -> Any:
-    pg = LanternStore.from_params(
+    pg = LanternVectorStore.from_params(
         **PARAMS,  # type: ignore
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
@@ -184,13 +184,13 @@ def index_node_embeddings() -> List[TextNode]:
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
 async def test_instance_creation(db: None) -> None:
-    pg = LanternStore.from_params(
+    pg = LanternVectorStore.from_params(
         **PARAMS,  # type: ignore
         database=TEST_DB,
         table_name=TEST_TABLE_NAME,
         schema_name=TEST_SCHEMA_NAME,
     )
-    assert isinstance(pg, LanternStore)
+    assert isinstance(pg, LanternVectorStore)
     assert not hasattr(pg, "_engine")
     assert pg.client is None
     await pg.close()
@@ -200,13 +200,13 @@ async def test_instance_creation(db: None) -> None:
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query(
-    pg: LanternStore, node_embeddings: List[TextNode], use_async: bool
+    pg: LanternVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
         await pg.async_add(node_embeddings)
     else:
         pg.add(node_embeddings)
-    assert isinstance(pg, LanternStore)
+    assert isinstance(pg, LanternVectorStore)
     assert hasattr(pg, "_engine")
     q = VectorStoreQuery(query_embedding=_get_sample_vector(1.0), similarity_top_k=1)
     if use_async:
@@ -222,13 +222,13 @@ async def test_add_to_db_and_query(
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters(
-    pg: LanternStore, node_embeddings: List[TextNode], use_async: bool
+    pg: LanternVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
         await pg.async_add(node_embeddings)
     else:
         pg.add(node_embeddings)
-    assert isinstance(pg, LanternStore)
+    assert isinstance(pg, LanternVectorStore)
     assert hasattr(pg, "_engine")
     filters = MetadataFilters(
         filters=[ExactMatchFilter(key="test_key", value="test_value")]
@@ -249,13 +249,13 @@ async def test_add_to_db_and_query_with_metadata_filters(
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_query_and_delete(
-    pg: LanternStore, node_embeddings: List[TextNode], use_async: bool
+    pg: LanternVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
         await pg.async_add(node_embeddings)
     else:
         pg.add(node_embeddings)
-    assert isinstance(pg, LanternStore)
+    assert isinstance(pg, LanternVectorStore)
     assert hasattr(pg, "_engine")
 
     q = VectorStoreQuery(query_embedding=_get_sample_vector(0.1), similarity_top_k=1)
@@ -273,13 +273,13 @@ async def test_add_to_db_query_and_delete(
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [(True,), (False,)])
 async def test_save_load(
-    pg: LanternStore, node_embeddings: List[TextNode], use_async: bool
+    pg: LanternVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
         await pg.async_add(node_embeddings)
     else:
         pg.add(node_embeddings)
-    assert isinstance(pg, LanternStore)
+    assert isinstance(pg, LanternVectorStore)
     assert hasattr(pg, "_engine")
 
     q = VectorStoreQuery(query_embedding=_get_sample_vector(0.1), similarity_top_k=1)
@@ -295,7 +295,7 @@ async def test_save_load(
     pg_dict = pg.to_dict()
     await pg.close()
 
-    loaded_pg = cast(LanternStore, load_vector_store(pg_dict))
+    loaded_pg = cast(LanternVectorStore, load_vector_store(pg_dict))
     assert not hasattr(loaded_pg, "_engine")
     loaded_pg_dict = loaded_pg.to_dict()
     for key, val in pg.to_dict().items():
@@ -317,7 +317,7 @@ async def test_save_load(
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_sparse_query(
-    pg_hybrid: LanternStore,
+    pg_hybrid: LanternVectorStore,
     hybrid_node_embeddings: List[TextNode],
     use_async: bool,
 ) -> None:
@@ -325,7 +325,7 @@ async def test_sparse_query(
         await pg_hybrid.async_add(hybrid_node_embeddings)
     else:
         pg_hybrid.add(hybrid_node_embeddings)
-    assert isinstance(pg_hybrid, LanternStore)
+    assert isinstance(pg_hybrid, LanternVectorStore)
     assert hasattr(pg_hybrid, "_engine")
 
     # text search should work when query is a sentence and not just a single word
@@ -350,7 +350,7 @@ async def test_sparse_query(
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_hybrid_query(
-    pg_hybrid: LanternStore,
+    pg_hybrid: LanternVectorStore,
     hybrid_node_embeddings: List[TextNode],
     use_async: bool,
 ) -> None:
@@ -358,7 +358,7 @@ async def test_hybrid_query(
         await pg_hybrid.async_add(hybrid_node_embeddings)
     else:
         pg_hybrid.add(hybrid_node_embeddings)
-    assert isinstance(pg_hybrid, LanternStore)
+    assert isinstance(pg_hybrid, LanternVectorStore)
     assert hasattr(pg_hybrid, "_engine")
 
     q = VectorStoreQuery(
@@ -422,7 +422,7 @@ async def test_hybrid_query(
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_hybrid_query_with_metadata_filters(
-    pg_hybrid: LanternStore,
+    pg_hybrid: LanternVectorStore,
     hybrid_node_embeddings: List[TextNode],
     use_async: bool,
 ) -> None:
@@ -430,7 +430,7 @@ async def test_add_to_db_and_hybrid_query_with_metadata_filters(
         await pg_hybrid.async_add(hybrid_node_embeddings)
     else:
         pg_hybrid.add(hybrid_node_embeddings)
-    assert isinstance(pg_hybrid, LanternStore)
+    assert isinstance(pg_hybrid, LanternVectorStore)
     assert hasattr(pg_hybrid, "_engine")
     filters = MetadataFilters(
         filters=[ExactMatchFilter(key="test_key", value="test_value")]
@@ -454,7 +454,7 @@ async def test_add_to_db_and_hybrid_query_with_metadata_filters(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 def test_hybrid_query_fails_if_no_query_str_provided(
-    pg_hybrid: LanternStore, hybrid_node_embeddings: List[TextNode]
+    pg_hybrid: LanternVectorStore, hybrid_node_embeddings: List[TextNode]
 ) -> None:
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(1.0),
@@ -472,13 +472,13 @@ def test_hybrid_query_fails_if_no_query_str_provided(
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_index_nodes(
-    pg: LanternStore, index_node_embeddings: List[BaseNode], use_async: bool
+    pg: LanternVectorStore, index_node_embeddings: List[BaseNode], use_async: bool
 ) -> None:
     if use_async:
         await pg.async_add(index_node_embeddings)
     else:
         pg.add(index_node_embeddings)
-    assert isinstance(pg, LanternStore)
+    assert isinstance(pg, LanternVectorStore)
     assert hasattr(pg, "_engine")
     q = VectorStoreQuery(query_embedding=_get_sample_vector(5.0), similarity_top_k=2)
     if use_async:
