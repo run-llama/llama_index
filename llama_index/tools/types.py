@@ -31,8 +31,8 @@ class ToolMetadata:
             raise ValueError("name is None.")
         return self.name
 
-    def to_openai_function(self) -> Dict[str, Any]:
-        """To OpenAI function."""
+    def to_openai_tool(self) -> Dict[str, Any]:
+        """To OpenAI tool."""
         if self.fn_schema is None:
             parameters = {
                 "properties": {
@@ -44,11 +44,13 @@ class ToolMetadata:
         else:
             parameters = self.fn_schema.schema()
 
-        return {
+        function = {
             "name": self.name,
             "description": self.description,
             "parameters": parameters,
         }
+
+        return {"type": "function", "function": function}
 
 
 class ToolOutput(BaseModel):

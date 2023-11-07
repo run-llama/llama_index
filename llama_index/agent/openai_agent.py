@@ -98,15 +98,15 @@ async def acall_function(
     )
 
 
-def resolve_function_call(function_call: Union[str, dict] = "auto") -> Union[str, dict]:
-    """Resolve function call.
+def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
+    """Resolve tool choice.
 
-    If function_call is a function name string, return a dict with the name.
+    If tool_choice is a function name string, return the appropriate dict.
     """
-    if isinstance(function_call, str) and function_call not in ["none", "auto"]:
-        return {"name": function_call}
+    if isinstance(tool_choice, str) and tool_choice not in ["none", "auto"]:
+        return {"type": "function", "function": {"name": tool_choice}}
 
-    return function_call
+    return tool_choice
 
 
 class BaseOpenAIAgent(BaseAgent):
@@ -167,8 +167,8 @@ class BaseOpenAIAgent(BaseAgent):
         self.sources = []
         self.memory.put(ChatMessage(content=message, role=MessageRole.USER))
         tools = self.get_tools(message)
-        functions = [tool.metadata.to_openai_function() for tool in tools]
-        return tools, functions
+        openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
+        return tools, openai_tools
 
     def _process_message(self, chat_response: ChatResponse) -> AgentChatResponse:
         ai_message = chat_response.message
@@ -248,13 +248,12 @@ class BaseOpenAIAgent(BaseAgent):
         self.memory.put(function_message)
 
     def _get_llm_chat_kwargs(
-        self, functions: List[dict], function_call: Union[str, dict] = "auto"
+        self, openai_tools: List[dict], tool_choice: Union[str, dict] = "auto"
     ) -> Dict[str, Any]:
         llm_chat_kwargs: dict = {"messages": self.all_messages}
-        if functions:
-            tools = [{"type": "function", "function": f} for f in functions]
+        if openai_tools:
             llm_chat_kwargs.update(
-                tools=tools, tool_choice=resolve_function_call(function_call)
+                tools=openai_tools, tool_choice=resolve_tool_choice(tool_choice)
             )
         return llm_chat_kwargs
 
@@ -284,22 +283,25 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        function_call: Union[str, dict] = "auto",
+        tool_choice: Union[str, dict] = "auto",
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
-        tools, functions = self.init_chat(message, chat_history)
+        tools, openai_tools = self.init_chat(message, chat_history)
         n_function_calls = 0
 
         # Loop until no more function calls or max_function_calls is reached
-        current_func = function_call
+        current_tool_choice = tool_choice
         while True:
-            llm_chat_kwargs = self._get_llm_chat_kwargs(functions, current_func)
+            llm_chat_kwargs = self._get_llm_chat_kwargs(
+                openai_tools, current_tool_choice
+            )
             agent_chat_response = self._get_agent_response(mode=mode, **llm_chat_kwargs)
-            print(agent_chat_response)
             if not self._should_continue(self.latest_tool_calls, n_function_calls):
                 logger.debug("Break: should continue False")
                 break
+            # iterate through all the tool calls
             for tool_call in self.latest_tool_calls:
+                # Some validation
                 if not isinstance(tool_call, dict):
                     raise ValueError("Invalid tool_call object")
 
@@ -309,8 +311,8 @@ class BaseOpenAIAgent(BaseAgent):
                 self._call_function(tools, tool_call)
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
-                if current_func not in ("auto", "none"):
-                    current_func = "auto"
+                if current_tool_choice not in ("auto", "none"):
+                    current_tool_choice = "auto"
                 n_function_calls += 1
 
         return agent_chat_response
@@ -349,14 +351,14 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        function_call: Union[str, dict] = "auto",
+        tool_choice: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         with self.callback_manager.event(
             CBEventType.AGENT_STEP,
             payload={EventPayload.MESSAGES: [message]},
         ) as e:
             chat_response = self._chat(
-                message, chat_history, function_call, mode=ChatResponseMode.WAIT
+                message, chat_history, tool_choice, mode=ChatResponseMode.WAIT
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
@@ -385,14 +387,14 @@ class BaseOpenAIAgent(BaseAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        function_call: Union[str, dict] = "auto",
+        tool_choice: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
         with self.callback_manager.event(
             CBEventType.AGENT_STEP,
             payload={EventPayload.MESSAGES: [message]},
         ) as e:
             chat_response = self._chat(
-                message, chat_history, function_call, mode=ChatResponseMode.STREAM
+                message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
             )
             assert isinstance(chat_response, StreamingAgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})

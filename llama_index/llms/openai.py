@@ -226,7 +226,7 @@ class OpenAI(LLM):
 
         def gen() -> ChatResponseGen:
             content = ""
-            function_call: Optional[dict] = None
+            tool_calls: Optional[List[dict]] = None
             for response in self._client.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
@@ -241,25 +241,20 @@ class OpenAI(LLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                function_call_delta = delta.function_call
-                if function_call_delta is not None:
-                    function_dict = function_call_delta.dict()
-
-                    if function_call is None:
-                        function_call = function_dict
-
-                        ## ensure we do not add a blank function call
-                        if function_call.get("function_name", "") is None:
-                            del function_call["function_name"]
+                tool_calls_delta = delta.tool_calls
+                if tool_calls_delta is not None:
+                    if tool_calls is None:
+                        tool_calls = tool_calls_delta
                     else:
-                        function_call["arguments"] = (
-                            function_call.get("arguments", "")
-                            + function_dict["arguments"]
-                        )
+                        tool_calls += tool_calls_delta
+
+                    # do we need to validate tool_calls?
+                    for tool_call in tool_calls_delta:
+                        assert "type" in tool_call.dict()
 
                 additional_kwargs = {}
                 if function_call is not None:
-                    additional_kwargs["function_call"] = function_call
+                    additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
                     message=ChatMessage(
