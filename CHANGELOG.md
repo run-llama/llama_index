@@ -6,6 +6,7 @@
 
 - Fix returning zero nodes in elastic search vector store (#8746)
 - Add try/except for `SimpleDirectoryReader` loop to avoid crashing on a single document (#8744)
+- Fix for `deployment_name` in async embeddings (#8748)
 
 ## [0.8.63] - 2023-11-05
 
