@@ -7,6 +7,9 @@ from llama_index.llms.openai_utils import (
     from_openai_messages,
     to_openai_message_dicts,
 )
+from openai.types.chat.chat_completion_assistant_message_param import (
+    FunctionCall as FunctionCallParam,
+)
 from openai.types.chat.chat_completion_message import (
     ChatCompletionMessage,
     FunctionCall,
@@ -52,7 +55,7 @@ def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessagePar
         ChatCompletionAssistantMessageParam(
             role="assistant",
             content=None,
-            function_call=FunctionCall(
+            function_call=FunctionCallParam(
                 name="get_current_weather",
                 arguments='{ "location": "Boston, MA"}',
             ),
@@ -133,10 +136,10 @@ def test_to_openai_message_dicts_function_calling(
 
 
 def test_from_openai_message_dicts_function_calling(
-    openi_message_dicts_with_function_calling: List[ChatCompletionMessage],
+    openi_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
     chat_messages_with_function_calling: List[ChatMessage],
 ) -> None:
-    chat_messages = from_openai_message_dicts(openi_message_dicts_with_function_calling)
+    chat_messages = from_openai_message_dicts(openi_message_dicts_with_function_calling)  # type: ignore
 
     # assert attributes match
     for chat_message, chat_message_with_function_calling in zip(
