@@ -1,9 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.62.post1] - 2023-11-05
 
 ### Breaking Changes
 
+- add new devday models (#8713)
 - moved `max_docs` parameter from constructor to `lazy_load_data()` for `SimpleMongoReader` (#8686)
 
 ## [0.8.61] - 2023-11-05
