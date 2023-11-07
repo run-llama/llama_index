@@ -15,9 +15,13 @@ from llama_index.multi_modal_llms import OpenAIMultiModal
 from llama_index.multi_modal_llms.generic_utils import (
     load_image_urls,
 )
+from llama_index import SimpleDirectoryReader
 
-# load image documents
+# load image documents from urls
 image_documents = load_image_urls(image_urls)
+
+# load image documents from local directory
+image_documents = SimpleDirectoryReader(local_directory).load_data()
 
 # non-streaming
 openai_mm_llm = OpenAIMultiModal(
