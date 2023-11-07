@@ -11,7 +11,7 @@ from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
 MAX_BATCH_SIZE = 2048
 
-API_URL = 'https://api.jina.ai/v1/embeddings'
+API_URL = "https://api.jina.ai/v1/embeddings"
 
 
 class JinaAIEmbedding(BaseEmbedding):
@@ -24,7 +24,7 @@ class JinaAIEmbedding(BaseEmbedding):
 
     api_key: str = Field(default=None, description="The JinaAI API key.")
     model: str = Field(
-        default='jina-embeddings-v2-base-en',
+        default="jina-embeddings-v2-base-en",
         description="The model to use when calling Jina AI API",
     )
 
@@ -32,7 +32,7 @@ class JinaAIEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model: str = 'jina-embeddings-v2-base-en',
+        model: str = "jina-embeddings-v2-base-en",
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -98,7 +98,7 @@ class JinaAIEmbedding(BaseEmbedding):
                 "Accept-Encoding": "identity",
             }
             async with session.post(
-                f'{API_URL}',
+                f"{API_URL}",
                 json={"input": texts, "model": self.model},
                 headers=headers,
             ) as response:
