@@ -7,6 +7,7 @@ from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.output_parsers import PydanticOutputParser
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.mixin import PromptDictType
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,17 @@ class GuidelineEvaluator(BaseEvaluator):
 
         self._output_parser = PydanticOutputParser(output_cls=EvaluationData)
         self._eval_template.output_parser = self._output_parser
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {
+            "eval_template": self._eval_template,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "eval_template" in prompts:
+            self._eval_template = prompts["eval_template"]
 
     async def aevaluate(
         self,

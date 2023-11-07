@@ -79,7 +79,7 @@ class SupabaseVectorStore(VectorStore):
             vecs_filter[f.key] = {"$eq": f.value}
         return vecs_filter
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
 
         Args:

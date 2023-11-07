@@ -42,8 +42,8 @@ def test_load_data_with_max_docs() -> None:
 
         mock_find.side_effect = limit_fn
 
-        reader = SimpleMongoReader("host", 1, max_docs=2)
-        documents = reader.load_data("my_db", "my_collection")
+        reader = SimpleMongoReader("host", 1)
+        documents = reader.load_data("my_db", "my_collection", max_docs=2)
 
         assert len(documents) == 2
         assert documents[0].get_content() == "one"

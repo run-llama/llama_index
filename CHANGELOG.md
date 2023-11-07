@@ -4,7 +4,235 @@
 
 ### New Features
 
-- Added support for `LLMRailsEmbeddings` (#8169)
+- Add support for `Lantern` VectorStore (#8714)
+
+### Bug Fixes / Nits
+
+- Fix returning zero nodes in elastic search vector store (#8746)
+- Add try/except for `SimpleDirectoryReader` loop to avoid crashing on a single document (#8744)
+- Fix for `deployment_name` in async embeddings (#8748)
+
+## [0.8.63] - 2023-11-05
+
+### New Features
+
+- added native sync and async client support for the lasted `openai` client package (#8712)
+- added support for `AzureOpenAIEmbedding` (#8712)
+
+### Bug Fixes / Nits
+
+- Fixed errors about "no host supplied" with `download_loader` (#8723)
+
+### Breaking Changes
+
+- `OpenAIEmbedding` no longer supports azure, moved into the `AzureOpenAIEmbedding` class (#8712)
+
+## [0.8.62.post1] - 2023-11-05
+
+### Breaking Changes
+
+- add new devday models (#8713)
+- moved `max_docs` parameter from constructor to `lazy_load_data()` for `SimpleMongoReader` (#8686)
+
+## [0.8.61] - 2023-11-05
+
+### New Features
+
+- [experimental] Hyperparameter tuner (#8687)
+
+### Bug Fixes / Nits
+
+- Fix typo error in CohereAIModelName class: cohere light models was missing v3 (#8684)
+- Update deeplake.py (#8683)
+
+## [0.8.60] - 2023-11-04
+
+### New Features
+
+- prompt optimization guide (#8659)
+- VoyageEmbedding (#8634)
+- Multilingual support for `YoutubeTranscriptReader` (#8673)
+- emotion prompt guide (#8674)
+
+### Bug Fixes / Nits
+
+- Adds mistral 7b instruct v0.1 to available anyscale models (#8652)
+- Make pgvector's setup (extension, schema, and table creation) optional (#8656)
+- Allow init of stores_text variable for Pinecone vector store (#8633)
+- fix: azure ad support (#8667)
+- Fix nltk bug in multi-threaded environments (#8668)
+- Fix google colab link in cohereai notebook (#8677)
+- passing max_tokens to the `Cohere` llm (#8672)
+
+## [0.8.59] - 2023-11-02
+
+- Deepmemory support (#8625)
+- Add CohereAI embeddings (#8650)
+- Add Azure AD (Microsoft Entra ID) support (#8667)
+
+## [0.8.58] - 2023-11-02
+
+### New Features
+
+- Add `lm-format-enforcer` integration for structured output (#8601)
+- Google Vertex Support (#8626)
+
+## [0.8.57] - 2023-10-31
+
+### New Features
+
+- Add `VoyageAIEmbedding` integration (#8634)
+- Add fine-tuning evaluator notebooks (#8596)
+- Add `SingleStoreDB` integration (#7991)
+- Add support for ChromaDB PersistentClient (#8582)
+- Add DataStax Astra DB support (#8609)
+
+### Bug Fixes / Nits
+
+- Update dataType in Weaviate (#8608)
+- In Knowledge Graph Index with hybrid retriever_mode,
+  - return the nodes found by keyword search when 'No Relationship found'
+- Fix exceed context length error in chat engines (#8530)
+- Retrieve actual content of all the triplets from KG (#8579)
+- Return the nodes found by Keywords when no relationship is found by embeddings in hybrid retriever_mode in `KnowledgeGraphIndex` (#8575)
+- Optimize content of retriever tool and minor bug fix (#8588)
+
+## [0.8.56] - 2023-10-30
+
+### New Features
+
+- Add Amazon `BedrockEmbedding` (#8550)
+- Moves `HuggingFaceEmbedding` to center on `Pooling` enum for pooling (#8467)
+- Add IBM WatsonX LLM support (#8587)
+
+### Bug Fixes / Nits
+
+- [Bug] Patch Clarifai classes (#8529)
+- fix retries for bedrock llm (#8528)
+- Fix : VectorStore’s QueryResult always returns saved Node as TextNode (#8521)
+- Added default file_metadata to get basic metadata that many postprocessors use, for SimpleDirectoryReader (#8486)
+- Handle metadata with None values in chromadb (#8584)
+
+## [0.8.55] - 2023-10-29
+
+### New Features
+
+- allow prompts to take in functions with `function_mappings` (#8548)
+- add advanced prompt + "prompt engineering for RAG" notebook (#8555)
+- Leverage Replicate API for serving LLaVa modal (#8539)
+
+### Bug Fixes / Nits
+
+- Update pull request template with google colab support inclusion (#8525)
+
+## [0.8.54] - 2023-10-28
+
+### New Features
+
+- notebook showing how to fine-tune llama2 on structured outputs (#8540)
+  - added GradientAIFineTuningHandler
+  - added pydantic_program_mode to ServiceContext
+- Initialize MultiModal Retrieval using LlamaIndex (#8507)
+
+### Bug Fixes / Nits
+
+- Add missing import to `ChatEngine` usage pattern `.md` doc (#8518)
+- :bug: fixed async add (#8531)
+- fix: add the needed CondenseQuestionChatEngine import in the usage_pa… (#8518)
+- Add import LongLLMLinguaPostprocessor for LongLLMLingua.ipynb (#8519)
+
+## [0.8.53] - 2023-10-27
+
+### New Features
+
+- Docs refactor (#8500)
+  An overhaul of the docs organization. Major changes
+  - Added a big new "understanding" section
+  - Added a big new "optimizing" section
+  - Overhauled Getting Started content
+  - Categorized and moved module guides to a single section
+
+## [0.8.52] - 2023-10-26
+
+### New Features
+
+- Add longllmlingua (#8485)
+- Add google colab support for notebooks (#7560)
+
+### Bug Fixes / Nits
+
+- Adapt Cassandra VectorStore constructor DB connection through cassio.init (#8255)
+- Allow configuration of service context and storage context in managed index (#8487)
+
+## [0.8.51.post1] - 2023-10-25
+
+### New Features
+
+- Add Llava MultiModal QA examples for Tesla 10k RAG (#8271)
+- fix bug streaming on react chat agent not working as expected (#8459)
+
+### Bug Fixes / Nits
+
+- patch: add selected result to response metadata for router query engines, fix bug (#8483)
+- add Jina AI embeddings notebook + huggingface embedding fix (#8478)
+- add `is_chat_model` to replicate (#8469)
+- Brought back `toml-sort` to `pre-commit` (#8267)
+- Added `LocationConstraint` for local `test_s3_kvstore` (#8263)
+
+## [0.8.50] - 2023-10-24
+
+### New Features
+
+- Expose prompts in different modules (query engines, synthesizers, and more) (#8275)
+
+## [0.8.49] - 2023-10-23
+
+### New Features
+
+- New LLM integrations
+  - Support for Hugging Face Inference API's `conversational`, `text_generation`,
+    and `feature_extraction` endpoints via `huggingface_hub[inference]` (#8098)
+  - Add Amazon Bedrock LLMs (#8223)
+  - Add AI21 Labs LLMs (#8233)
+  - Add OpenAILike LLM class for OpenAI-compatible api servers (#7973)
+- New / updated vector store integrations
+  - Add DashVector (#7772)
+  - Add Tencent VectorDB (#8173)
+  - Add option for custom Postgres schema on PGVectorStore instead of only allowing public schema (#8080)
+- Add Gradient fine tuning engine (#8208)
+- docs(FAQ): frequently asked questions (#8249)
+
+### Bug Fixes / Nits
+
+- Fix inconsistencies with `ReActAgent.stream_chat` (#8147)
+- Deprecate some functions for GuardrailsOutputParser (#8016)
+- Simplify dependencies (#8236)
+- Bug fixes for LiteLLM (#7885)
+- Update for Predibase LLM (#8211)
+
+## [0.8.48] - 2023-10-20
+
+### New Features
+
+- Add `DELETE` for MyScale vector store (#8159)
+- Add SQL Retriever (#8197)
+- add semantic kernel document format (#8226)
+- Improve MyScale Hybrid Search and Add `DELETE` for MyScale vector store (#8159)
+
+### Bug Fixes / Nits
+
+- Fixed additional kwargs in ReActAgent.from_tools() (#8206)
+- Fixed missing spaces in prompt templates (#8190)
+- Remove auto-download of llama2-13B on exception (#8225)
+
+## [0.8.47] - 2023-10-19
+
+### New Features
+
+- add response synthesis to text-to-SQL (#8196)
+- Added support for `LLMRailsEmbedding` (#8169)
+- Inferring MPS device with PyTorch (#8195)
+- Consolidated query/text prepending (#8189)
 
 ## [0.8.46] - 2023-10-18
 
@@ -16,6 +244,7 @@
 ### Bug Fixes / Nits
 
 - Add normalization to huggingface embeddings (#8145)
+- Improve MyScale Hybrid Search (#8159)
 - Fixed duplicate `FORMAT_STR` being inside prompt (#8171)
 - Added: support for output_kwargs={'max_colwidth': xx} for PandasQueryEngine (#8110)
 - Minor fix in the description for an argument in cohere llm (#8163)
@@ -156,7 +385,7 @@
 - Updated `KeywordNodePostprocessor` to use spacy to support more languages (#7894)
 - `LocalAI` supporting global or per-query `/chat/completions` vs `/completions` (#7921)
 - Added notebook on using REBEL + Wikipedia filtering for knowledge graphs (#7919)
-- Added support for `ElasticsearchEmbeddings` (#7914)
+- Added support for `ElasticsearchEmbedding` (#7914)
 
 ## [0.8.37] - 2023-09-30
 

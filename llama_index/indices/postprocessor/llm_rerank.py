@@ -11,6 +11,7 @@ from llama_index.indices.utils import (
 )
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import NodeWithScore
 
 
@@ -55,11 +56,20 @@ class LLMRerank(BaseNodePostprocessor):
             top_n=top_n,
         )
 
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"choice_select_prompt": self.choice_select_prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "choice_select_prompt" in prompts:
+            self.choice_select_prompt = prompts["choice_select_prompt"]
+
     @classmethod
     def class_name(cls) -> str:
         return "LLMRerank"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,

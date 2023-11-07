@@ -159,6 +159,7 @@ class VectorStore(Protocol):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes with embedding to vector store."""
         ...
@@ -166,6 +167,7 @@ class VectorStore(Protocol):
     async def async_add(
         self,
         nodes: List[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """
         Asynchronously add nodes with embedding to vector store.

@@ -1,3 +1,4 @@
+import re
 from typing import Any, List, Sequence
 
 import pytest
@@ -150,7 +151,9 @@ class MockStreamChatLLM(MockLLM):
         full_text = full_message.content or ""
 
         text_so_far = ""
-        for token in full_text:
+        # create mock stream
+        mock_stream = re.split(r"(\s+)", full_text)
+        for token in mock_stream:
             text_so_far += token
             message = ChatMessage(
                 content=text_so_far,
@@ -191,14 +194,11 @@ def test_stream_chat_basic(
     response = agent.stream_chat("What is 1 + 1?")
     assert isinstance(response, StreamingAgentChatResponse)
 
-    text_so_far = ""
-    counter = 0
+    # exhaust stream
     for delta in response.response_gen:
-        text_so_far += delta
-        counter += 1
-    expected_answer = MOCK_STREAM_FINAL_RESPONSE.split("Answer: ")[-1]
-    assert text_so_far == expected_answer
-    assert counter == len(expected_answer)
+        continue
+    expected_answer = MOCK_STREAM_FINAL_RESPONSE.split("Answer: ")[-1].strip()
+    assert response.response == expected_answer
 
     assert agent.chat_history == [
         ChatMessage(
@@ -206,7 +206,7 @@ def test_stream_chat_basic(
             role=MessageRole.USER,
         ),
         ChatMessage(
-            content="2 is the final answer.\n",
+            content="2 is the final answer.",
             role=MessageRole.ASSISTANT,
         ),
     ]  # thread = Thread(
@@ -241,14 +241,11 @@ async def test_astream_chat_basic(
     response = await agent.astream_chat("What is 1 + 1?")
     assert isinstance(response, StreamingAgentChatResponse)
 
-    text_so_far = ""
-    counter = 0
+    # exhaust stream
     async for delta in response.async_response_gen():
-        text_so_far += delta
-        counter += 1
-    expected_answer = MOCK_STREAM_FINAL_RESPONSE.split("Answer: ")[-1]
-    assert text_so_far == expected_answer
-    assert counter == len(expected_answer)
+        continue
+    expected_answer = MOCK_STREAM_FINAL_RESPONSE.split("Answer: ")[-1].strip()
+    assert response.response == expected_answer
 
     assert agent.chat_history == [
         ChatMessage(
@@ -256,7 +253,7 @@ async def test_astream_chat_basic(
             role=MessageRole.USER,
         ),
         ChatMessage(
-            content="2 is the final answer.\n",
+            content="2 is the final answer.",
             role=MessageRole.ASSISTANT,
         ),
     ]

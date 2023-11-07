@@ -120,7 +120,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "QdraantVectorStore"
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
 
         Args:
@@ -374,7 +374,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
         """
-        from qdrant_client.http.models import Filter, Payload
+        from qdrant_client.http.models import Filter
 
         query_embedding = cast(List[float], query.query_embedding)
 

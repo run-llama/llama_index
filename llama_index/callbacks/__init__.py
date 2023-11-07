@@ -1,6 +1,6 @@
 from .aim import AimCallback
 from .base import CallbackManager
-from .finetuning_handler import OpenAIFineTuningHandler
+from .finetuning_handler import GradientAIFineTuningHandler, OpenAIFineTuningHandler
 from .llama_debug import LlamaDebugHandler
 from .open_inference_callback import OpenInferenceCallbackHandler
 from .schema import CBEvent, CBEventType, EventPayload
@@ -19,5 +19,6 @@ __all__ = [
     "WandbCallbackHandler",
     "TokenCountingHandler",
     "OpenAIFineTuningHandler",
+    "GradientAIFineTuningHandler",
     "trace_method",
 ]

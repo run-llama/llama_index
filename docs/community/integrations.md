@@ -12,18 +12,18 @@ The full set of agent tools are found on [LlamaHub](https://llamahub.ai/)
 
 ## LLMs
 
-The full set of supported LLMs are found [here](/core_modules/model_modules/llms/modules.md).
+We support [a huge number of LLMs](/module_guides/models/llms/modules.md).
 
 ## Observability/Tracing/Evaluation
 
-Check out our [one-click observability](/end_to_end_tutorials/one_click_observability.md) page
+Check out our [one-click observability](/module_guides/observability/observability.md) page
 for full tracing integrations.
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/end_to_end_tutorials/one_click_observability.md
+/module_guides/observability/observability.md
 integrations/graphsignal.md
 integrations/trulens.md
 integrations/deepeval.md
@@ -37,6 +37,7 @@ integrations/deepeval.md
 maxdepth: 1
 ---
 integrations/guidance.md
+integrations/lmformatenforcer.md
 Guardrails </examples/output_parsing/GuardrailsDemo.ipynb>
 OpenAI Function Calling </examples/output_parsing/openai_pydantic_program.ipynb>
 ```

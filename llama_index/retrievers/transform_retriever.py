@@ -3,6 +3,7 @@ from typing import List, Optional
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.schema import NodeWithScore
 
 
@@ -23,6 +24,11 @@ class TransformRetriever(BaseRetriever):
         self._retriever = retriever
         self._query_transform = query_transform
         self._transform_metadata = transform_metadata
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        # NOTE: don't include tools for now
+        return {"query_transform": self._query_transform}
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         query_bundle = self._query_transform.run(

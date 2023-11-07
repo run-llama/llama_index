@@ -287,7 +287,7 @@ class CognitiveSearchVectorStore(VectorStore):
         )
 
         try:
-            import azure.search.documents
+            import azure.search.documents  # noqa
             from azure.search.documents import SearchClient
             from azure.search.documents.indexes import SearchIndexClient
         except ImportError:
@@ -397,6 +397,7 @@ class CognitiveSearchVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index associated with the configured search client.
 
