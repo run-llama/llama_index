@@ -248,8 +248,13 @@ class OpenAI(LLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                # provides the delta on one tool-at-a-time
+                # openai provides the delta on one tool-at-a-time
+                # we need to use the index on it to see if its updating one
+                # for which we've already started to received content on, OR
+                # if we need to start a new tool_call and accumulate that new
+                # one thereafter, and so on.
                 tool_calls_delta = delta.tool_calls or None
+                print(tool_calls_delta)
                 if tool_calls_delta is not None:
                     t_delta = tool_calls_delta[0]
                     print(t_delta)
@@ -258,22 +263,24 @@ class OpenAI(LLM):
                         t = t_delta
                         tool_calls.append(t)
                     else:
+                        # we need to either update latest tool_call or start a
+                        # new tool_call and accumulate that with future chunks
                         t = tool_calls[-1]
                         # check if should start new t
                         if t.index != t_delta.index:
+                            # start a new tool and append to our running
+                            # tool_calls list
                             t = t_delta
                             tool_calls.append(t)
-                        else:  # update latest tool call
+                        else:
+                            # not the start of a new tool, so update last tool
                             t.function.arguments += t_delta.function.arguments or ""
                             t.function.name += t_delta.function.name or ""
                             t.id += t_delta.id or ""
                             t.type += t_delta.type or ""
                             tool_calls[-1] = t
-
-                    # do we need to validate tool_calls?
-                    for tool_call in tool_calls_delta:
-                        assert "type" in tool_call.dict()
-
+                print(tool_calls)
+                print(content)
                 additional_kwargs = {}
                 if tool_calls is not None:
                     additional_kwargs["tool_calls"] = [t.dict() for t in tool_calls]
