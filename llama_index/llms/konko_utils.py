@@ -1,8 +1,7 @@
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
 import openai
-from openai import ChatCompletion, Completion
 from tenacity import (
     before_sleep_log,
     retry,
@@ -44,8 +43,6 @@ Please set KONKO_API_KEY environment variable"""
 
 logger = logging.getLogger(__name__)
 
-CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
-
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
     min_seconds = 4
@@ -57,11 +54,11 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.APITimeoutError)
+            | retry_if_exception_type(openai.APIError)
+            | retry_if_exception_type(openai.APIConnectionError)
+            | retry_if_exception_type(openai.RateLimitError)
+            | retry_if_exception_type(openai.APIStatusError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -123,7 +120,7 @@ def is_function_calling_model(model: str) -> bool:
     return is_chat_model_ and not is_old
 
 
-def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
+def get_completion_endpoint(is_chat_model: bool) -> Any:
     import konko
 
     if is_chat_model:
