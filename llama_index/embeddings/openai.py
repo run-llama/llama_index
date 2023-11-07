@@ -102,9 +102,7 @@ _TEXT_MODE_MODEL_DICT = {
 
 
 @embedding_retry_decorator
-def get_embedding(
-    client: OpenAI, text: str, engine: Optional[str] = None, **kwargs: Any
-) -> List[float]:
+def get_embedding(client: OpenAI, text: str, engine: str, **kwargs: Any) -> List[float]:
     """Get embedding.
 
     NOTE: Copied from OpenAI's embedding utils:
@@ -123,7 +121,7 @@ def get_embedding(
 
 @embedding_retry_decorator
 async def aget_embedding(
-    aclient: AsyncOpenAI, text: str, engine: Optional[str] = None, **kwargs: Any
+    aclient: AsyncOpenAI, text: str, engine: str, **kwargs: Any
 ) -> List[float]:
     """Asynchronously get embedding.
 
@@ -145,7 +143,7 @@ async def aget_embedding(
 
 @embedding_retry_decorator
 def get_embeddings(
-    client: OpenAI, list_of_text: List[str], engine: Optional[str] = None, **kwargs: Any
+    client: OpenAI, list_of_text: List[str], engine: str, **kwargs: Any
 ) -> List[List[float]]:
     """Get embeddings.
 
@@ -168,7 +166,7 @@ def get_embeddings(
 async def aget_embeddings(
     aclient: AsyncOpenAI,
     list_of_text: List[str],
-    engine: Optional[str] = None,
+    engine: str,
     **kwargs: Any,
 ) -> List[List[float]]:
     """Asynchronously get embeddings.

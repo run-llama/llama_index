@@ -85,7 +85,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         aclient = AsyncAzureOpenAI(**self._get_credential_kwargs())
         return client, aclient
 
-    def _get_credential_kwargs(self, **kwargs) -> Dict[str, Any]:
+    def _get_credential_kwargs(self) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
             "azure_endpoint": self.azure_endpoint,

@@ -155,7 +155,7 @@ async def mock_async_completion_stream(
 async def mock_async_completion_stream_v1(
     *args: Any, **kwargs: Any
 ) -> AsyncGenerator[Completion, None]:
-    async def gen() -> AsyncGenerator[dict, None]:
+    async def gen() -> AsyncGenerator[Completion, None]:
         for response in mock_completion_stream_v1(*args, **kwargs):
             yield response
 

@@ -4,6 +4,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
 import openai
+from openai.types.chat import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from tenacity import (
     before_sleep_log,
@@ -199,7 +200,9 @@ def is_function_calling_model(model: str) -> bool:
     return is_chat_model_ and not is_old
 
 
-def to_openai_message_dict(message: ChatMessage, drop_none: bool = False) -> dict:
+def to_openai_message_dict(
+    message: ChatMessage, drop_none: bool = False
+) -> ChatCompletionMessageParam:
     """Convert generic message to OpenAI message dict."""
     message_dict = {
         "role": message.role,
@@ -222,7 +225,7 @@ def to_openai_message_dict(message: ChatMessage, drop_none: bool = False) -> dic
 
 def to_openai_message_dicts(
     messages: Sequence[ChatMessage], drop_none: bool = False
-) -> List[dict]:
+) -> List[ChatCompletionMessageParam]:
     """Convert generic messages to OpenAI message dicts."""
     return [
         to_openai_message_dict(message, drop_none=drop_none) for message in messages
