@@ -110,7 +110,7 @@ class QueryFusionRetriever(BaseRetriever):
 
         return sorted(all_nodes.values(), key=lambda x: x.score or 0.0, reverse=True)
 
-    def _run_async_queries(
+    def _run_nested_async_queries(
         self, queries: List[str]
     ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
         tasks = []
@@ -126,7 +126,7 @@ class QueryFusionRetriever(BaseRetriever):
 
         return results
 
-    async def _run_async_queries_async(
+    async def _run_async_queries(
         self, queries: List[str]
     ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
         tasks = []
@@ -159,7 +159,7 @@ class QueryFusionRetriever(BaseRetriever):
             queries = [query_bundle.query_str]
 
         if self.use_async:
-            results = self._run_async_queries(queries)
+            results = self._run_nested_async_queries(queries)
         else:
             results = self._run_sync_queries(queries)
 
@@ -176,7 +176,7 @@ class QueryFusionRetriever(BaseRetriever):
         else:
             queries = [query_bundle.query_str]
 
-        results = await self._run_async_queries_async(queries)
+        results = await self._run_async_queries(queries)
 
         if self.mode == FUSION_MODES.RECIPROCAL_RANK:
             return self._reciprocal_rerank_fusion(results)[: self.similarity_top_k]
