@@ -1,5 +1,12 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fix returning zero nodes in elastic search vector store (#8746)
+- Add try/except for `SimpleDirectoryReader` loop to avoid crashing on a single document (#8744)
+
 ## [0.8.63] - 2023-11-05
 
 ### New Features
