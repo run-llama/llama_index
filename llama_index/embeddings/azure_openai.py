@@ -93,5 +93,6 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "api_version": self.api_version,
         }
 
+    @classmethod
     def class_name(cls) -> str:
         return "AzureOpenAIEmbedding"

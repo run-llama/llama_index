@@ -289,12 +289,11 @@ class OpenAIEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "OpenAIEmbedding"
 
-    def _get_credential_kwargs(self, **kwargs) -> Dict[str, Any]:
+    def _get_credential_kwargs(self) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
-            **kwargs,
         }
 
     def _get_query_embedding(self, query: str) -> List[float]:

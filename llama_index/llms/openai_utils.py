@@ -267,7 +267,7 @@ def resolve_openai_credentials(
     api_key: Optional[str] = None,
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
-) -> Tuple[Optional[str], str, str, str]:
+) -> Tuple[Optional[str], str, str]:
     """ "Resolve OpenAI credentials.
 
     The order of precedence is:

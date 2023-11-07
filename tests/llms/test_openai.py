@@ -58,7 +58,7 @@ async def mock_async_completion(*args: Any, **kwargs: Any) -> dict:
     return mock_completion(*args, **kwargs)
 
 
-async def mock_async_completion_v1(*args: Any, **kwargs: Any) -> dict:
+async def mock_async_completion_v1(*args: Any, **kwargs: Any) -> Completion:
     return mock_completion_v1(*args, **kwargs)
 
 
@@ -80,7 +80,7 @@ def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
     }
 
 
-def mock_chat_completion_v1(*args: Any, **kwargs: Any) -> dict:
+def mock_chat_completion_v1(*args: Any, **kwargs: Any) -> ChatCompletion:
     return ChatCompletion(
         id="chatcmpl-abc123",
         object="chat.completion",
@@ -120,7 +120,9 @@ def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, N
     yield from responses
 
 
-def mock_completion_stream_v1(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
+def mock_completion_stream_v1(
+    *args: Any, **kwargs: Any
+) -> Generator[Completion, None, None]:
     responses = [
         Completion(
             id="cmpl-uqkvlQyYK7bGYrRHQ0eXlWi7",
@@ -203,7 +205,7 @@ def mock_chat_completion_stream(
 
 def mock_chat_completion_stream_v1(
     *args: Any, **kwargs: Any
-) -> Generator[dict, None, None]:
+) -> Generator[ChatCompletionChunk, None, None]:
     responses = [
         ChatCompletionChunk(
             id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
