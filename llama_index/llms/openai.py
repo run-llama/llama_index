@@ -241,19 +241,30 @@ class OpenAI(LLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
-                tool_calls_delta = delta.tool_calls
+                tool_calls_delta = delta.tool_calls or None
                 if tool_calls_delta is not None:
                     if tool_calls is None:
-                        tool_calls = tool_calls_delta
+                        tool_calls = [t.dict() for t in tool_calls_delta]
                     else:
-                        tool_calls += tool_calls_delta
+                        for ix, t in enumerate(tool_calls):
+                            t["function"]["arguments"] += (
+                                tool_calls_delta[ix]
+                                .function.dict()
+                                .get("arguments", "")
+                            )
+                            t["function"]["name"] += (
+                                tool_calls_delta[ix].function.dict().get("name", "")
+                                or ""
+                            )
+                            t["id"] += tool_calls_delta[ix].id or ""
+                            t["type"] += tool_calls_delta[ix].type or ""
 
                     # do we need to validate tool_calls?
                     for tool_call in tool_calls_delta:
                         assert "type" in tool_call.dict()
 
                 additional_kwargs = {}
-                if function_call is not None:
+                if tool_calls is not None:
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(

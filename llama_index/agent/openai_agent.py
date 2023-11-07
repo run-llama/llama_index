@@ -300,6 +300,7 @@ class BaseOpenAIAgent(BaseAgent):
                 logger.debug("Break: should continue False")
                 break
             # iterate through all the tool calls
+            logger.info(f"continue to tools: {self.latest_tool_calls}")
             for tool_call in self.latest_tool_calls:
                 # Some validation
                 if not isinstance(tool_call, dict):
