@@ -27,7 +27,7 @@ https://platform.openai.com/account/api-keys
 logger = logging.getLogger(__name__)
 
 
-def to_open_ai_multi_modal_payload(
+def to_openai_multi_modal_payload(
     prompt: str, image_documents: Sequence[ImageDocument]
 ) -> List[ChatCompletionMessageParam]:
     completion_content = [{"type": "text", "text": prompt}]

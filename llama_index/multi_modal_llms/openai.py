@@ -18,7 +18,7 @@ from llama_index.multi_modal_llms import (
     MultiModalLLMMetadata,
 )
 from llama_index.multi_modal_llms.openai_utils import (
-    to_open_ai_multi_modal_payload,
+    to_openai_multi_modal_payload,
 )
 from llama_index.schema import ImageDocument
 
@@ -119,7 +119,7 @@ class OpenAIMultiModal(MultiModalLLM):
     def _get_multi_modal_input_dict(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> List[ChatCompletionMessageParam]:
-        return to_open_ai_multi_modal_payload(
+        return to_openai_multi_modal_payload(
             prompt=prompt,
             image_documents=image_documents,
         )
