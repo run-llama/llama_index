@@ -6,7 +6,8 @@ import time
 from typing import Any, Optional
 
 import openai
-from openai import OpenAI
+from openai import OpenAI as SyncOpenAI
+from openai.types.fine_tuning import FineTuningJob
 
 from llama_index.callbacks import OpenAIFineTuningHandler
 from llama_index.finetuning.openai.validate_json import validate_json
@@ -34,7 +35,7 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         self._verbose = verbose
         self._validate_json = validate_json
         self._start_job: Optional[Any] = None
-        self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", None))
+        self._client = SyncOpenAI(api_key=os.getenv("OPENAI_API_KEY", None))
         if start_job_id is not None:
             self._start_job = self._client.fine_tuning.jobs.retrieve(start_job_id)
 
@@ -60,13 +61,12 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         if self._validate_json:
             validate_json(self.data_path)
 
-        file_name = os.path.basename(self.data_path)
+        # TODO: figure out how to specify file name in the new API
+        # file_name = os.path.basename(self.data_path)
 
         # upload file
         with open(self.data_path, "rb") as f:
-            output = self._client.files.create(
-                file=f, purpose="fine-tune", user_provided_filename=file_name
-            )
+            output = self._client.files.create(file=f, purpose="fine-tune")
         logger.info("File uploaded...")
         if self._verbose:
             print("File uploaded...")
@@ -75,7 +75,7 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         while True:
             try:
                 job_output = self._client.fine_tunes.create(
-                    training_file=output["id"], model=self.base_model
+                    training_file=output.id, model=self.base_model
                 )
                 self._start_job = job_output
                 break
@@ -83,14 +83,14 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
                 print("Waiting for file to be ready...")
                 time.sleep(60)
         info_str = (
-            f"Training job {output['id']} launched. "
+            f"Training job {output.id} launched. "
             "You will be emailed when it's complete."
         )
         logger.info(info_str)
         if self._verbose:
             print(info_str)
 
-    def get_current_job(self) -> Any:
+    def get_current_job(self) -> FineTuningJob:
         """Get current job."""
         # validate that it works
         if not self._start_job:
@@ -104,9 +104,9 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         """Gets finetuned model."""
         current_job = self.get_current_job()
 
-        job_id = current_job["id"]
-        status = current_job["status"]
-        model_id = current_job["fine_tuned_model"]
+        job_id = current_job.id
+        status = current_job.status
+        model_id = current_job.fine_tuned_model
 
         if model_id is None:
             raise ValueError(
