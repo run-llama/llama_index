@@ -83,7 +83,8 @@ class StreamingAgentChatResponse:
 
     def __str__(self) -> str:
         if self._is_done and not self._queue.empty() and not self._is_function:
-            for delta in self._queue.queue:
+            while self._queue.queue:
+                delta = self._queue.queue.popleft()
                 self._unformatted_response += delta
             self.response = self._unformatted_response.strip()
         return self.response

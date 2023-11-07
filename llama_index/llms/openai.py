@@ -232,6 +232,10 @@ class OpenAI(LLM):
             tool_index = 0
             content = ""
             tool_calls: List[ChoiceDeltaToolCall] = []
+            response_id = None
+
+            is_function = False
+            response_ix = 0
             for response in self._client.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
@@ -242,6 +246,14 @@ class OpenAI(LLM):
                     delta = response.choices[0].delta
                 else:
                     delta = {}
+
+                if response_id is None:
+                    response_id = response.id
+
+                if response_id != response.id:
+                    # start of a new response
+                    is_function = False
+                    response_ix = 0
 
                 # update using deltas
                 role = delta.role or MessageRole.ASSISTANT
@@ -254,8 +266,11 @@ class OpenAI(LLM):
                 # if we need to start a new tool_call and accumulate that new
                 # one thereafter, and so on.
                 tool_calls_delta = delta.tool_calls or None
-                print(tool_calls_delta)
+                print(f"\nresponse: {response}")
+                print(f"delta: {delta}")
+                print(f"tool_calls_delta: {tool_calls_delta}")
                 if tool_calls_delta is not None:
+                    is_function = True
                     t_delta = tool_calls_delta[0]
                     if len(tool_calls) == 0:
                         t = t_delta
@@ -277,18 +292,29 @@ class OpenAI(LLM):
                             t.id += t_delta.id or ""
                             t.type += t_delta.type or ""
                             tool_calls[-1] = t
-                print(tool_calls)
-                print(content)
+                print(f"tool_calls: {tool_calls}")
+                print(f"content: {content}")
                 additional_kwargs = {}
-                if tool_calls is not None:
+                if len(tool_calls) > 0:
                     additional_kwargs["tool_calls"] = [t.dict() for t in tool_calls]
 
-                yield ChatResponse(
-                    message=ChatMessage(
+                if response_ix == 0:
+                    message = ChatMessage(
+                        role=role,
+                        content=content,
+                        additional_kwargs={"tool_calls": []},
+                    )
+                else:
+                    message = ChatMessage(
                         role=role,
                         content=content,
                         additional_kwargs=additional_kwargs,
-                    ),
+                    )
+
+                response_ix += 1
+
+                yield ChatResponse(
+                    message=message,
                     delta=content_delta,
                     raw=response,
                     additional_kwargs=self._get_response_token_counts(response),
