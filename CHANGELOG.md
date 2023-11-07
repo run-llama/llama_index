@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- Add support for `Lantern` VectorStore (#8714)
+
 ### Bug Fixes / Nits
 
 - Fix returning zero nodes in elastic search vector store (#8746)
