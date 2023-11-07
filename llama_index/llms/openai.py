@@ -229,8 +229,9 @@ class OpenAI(LLM):
         message_dicts = to_openai_message_dicts(messages)
 
         def gen() -> ChatResponseGen:
+            tool_index = 0
             content = ""
-            tool_calls: Optional[List[ChoiceDeltaToolCall]] = None
+            tool_calls: List[ChoiceDeltaToolCall] = []
             for response in self._client.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
@@ -247,17 +248,27 @@ class OpenAI(LLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
+                # provides the delta on one tool-at-a-time
                 tool_calls_delta = delta.tool_calls or None
                 if tool_calls_delta is not None:
-                    if tool_calls is None:
-                        tool_calls = tool_calls_delta
+                    t_delta = tool_calls_delta[0]
+                    print(t_delta)
+                    print(tool_calls)
+                    if len(tool_calls) == 0:
+                        t = t_delta
+                        tool_calls.append(t)
                     else:
-                        assert len(tool_calls) == len(tool_calls_delta)
-                        for t, t_delta in zip(tool_calls, tool_calls_delta):
+                        t = tool_calls[-1]
+                        # check if should start new t
+                        if t.index != t_delta.index:
+                            t = t_delta
+                            tool_calls.append(t)
+                        else:  # update latest tool call
                             t.function.arguments += t_delta.function.arguments or ""
                             t.function.name += t_delta.function.name or ""
                             t.id += t_delta.id or ""
                             t.type += t_delta.type or ""
+                            tool_calls[-1] = t
 
                     # do we need to validate tool_calls?
                     for tool_call in tool_calls_delta:

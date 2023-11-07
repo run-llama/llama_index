@@ -56,7 +56,7 @@ def call_function(
     output = tool(**argument_dict)
     if verbose:
         print(f"Got output: {output!s}")
-        print("========================")
+        print("========================\n")
     return (
         ChatMessage(
             content=str(output),
@@ -291,7 +291,11 @@ class BaseOpenAIAgent(BaseAgent):
 
         # Loop until no more function calls or max_function_calls is reached
         current_tool_choice = tool_choice
+        ix = 0
         while True:
+            ix += 1
+            if self._verbose:
+                print(f"STARTING TURN {ix}\n---------------\n")
             llm_chat_kwargs = self._get_llm_chat_kwargs(
                 openai_tools, current_tool_choice
             )
@@ -300,7 +304,7 @@ class BaseOpenAIAgent(BaseAgent):
                 logger.debug("Break: should continue False")
                 break
             # iterate through all the tool calls
-            logger.info(f"continue to tools: {self.latest_tool_calls}")
+            logger.debug(f"Continue to tool calls: {self.latest_tool_calls}")
             for tool_call in self.latest_tool_calls:
                 # Some validation
                 if not isinstance(tool_call, dict):
