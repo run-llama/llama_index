@@ -120,11 +120,11 @@ def test_to_openai_message_dicts_function_calling(
     openi_message_dicts_with_function_calling: List[ChatCompletionMessage],
 ) -> None:
     openai_messages = to_openai_message_dicts(chat_messages_with_function_calling)
-    for openai_message, openai_message_dict in zip(
+    for openai_message_dict, openai_message in zip(
         openai_messages, openi_message_dicts_with_function_calling
     ):
         for key in openai_message_dict:
-            assert openai_message_dict[key] == getattr(openai_message, key, None)
+            assert openai_message_dict[key] == getattr(openai_message, key, None)  # type: ignore
 
 
 def test_from_openai_message_dicts_function_calling(

@@ -255,6 +255,24 @@ def from_openai_messages(
     return [from_openai_message(message) for message in openai_messages]
 
 
+def from_openai_message_dict(message_dict: dict) -> ChatMessage:
+    """Convert openai message dict to generic message."""
+    role = message_dict["role"]
+    # NOTE: Azure OpenAI returns function calling messages without a content key
+    content = message_dict.get("content", None)
+
+    additional_kwargs = message_dict.copy()
+    additional_kwargs.pop("role")
+    additional_kwargs.pop("content", None)
+
+    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+
+
+def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage]:
+    """Convert openai message dicts to generic messages."""
+    return [from_openai_message_dict(message_dict) for message_dict in message_dicts]
+
+
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
     """Convert pydantic class to OpenAI function."""
     schema = pydantic_class.schema()
