@@ -290,7 +290,7 @@ def resolve_openai_credentials(
     final_api_base = api_base or openai.base_url or DEFAULT_OPENAI_API_BASE
     final_api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
 
-    return final_api_key, final_api_base, final_api_version
+    return final_api_key, str(final_api_base), final_api_version
 
 
 def refresh_openai_azuread_token(
