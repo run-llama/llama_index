@@ -41,9 +41,11 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 
 def call_function(
-    tools: List[BaseTool], function_call: dict, verbose: bool = False
+    tools: List[BaseTool], tool_call: dict, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
+    id_ = tool_call["id"]
+    function_call = tool_call["function"]
     name = function_call["name"]
     arguments_str = function_call["arguments"]
     if verbose:
@@ -58,9 +60,10 @@ def call_function(
     return (
         ChatMessage(
             content=str(output),
-            role=MessageRole.FUNCTION,
+            role=MessageRole.TOOL,
             additional_kwargs={
-                "name": function_call["name"],
+                "name": name,
+                "tool_call_id": id_,
             },
         ),
         output,
@@ -136,6 +139,10 @@ class BaseOpenAIAgent(BaseAgent):
     def latest_function_call(self) -> Optional[dict]:
         return self.memory.get_all()[-1].additional_kwargs.get("function_call", None)
 
+    @property
+    def latest_tool_calls(self) -> Optional[List[dict]]:
+        return self.memory.get_all()[-1].additional_kwargs.get("tool_calls", None)
+
     def reset(self) -> None:
         self.memory.reset()
 
@@ -144,11 +151,11 @@ class BaseOpenAIAgent(BaseAgent):
         """Get tools."""
 
     def _should_continue(
-        self, function_call: Optional[dict], n_function_calls: int
+        self, tool_calls: Optional[List[dict]], n_function_calls: int
     ) -> bool:
         if n_function_calls > self._max_function_calls:
             return False
-        if not function_call:
+        if not tool_calls:
             return False
         return True
 
@@ -205,7 +212,8 @@ class BaseOpenAIAgent(BaseAgent):
         # return response stream
         return chat_stream_response
 
-    def _call_function(self, tools: List[BaseTool], function_call: dict) -> None:
+    def _call_function(self, tools: List[BaseTool], tool_call: dict) -> None:
+        function_call = tool_call["function"]
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
@@ -216,7 +224,7 @@ class BaseOpenAIAgent(BaseAgent):
             },
         ) as event:
             function_message, tool_output = call_function(
-                tools, function_call, verbose=self._verbose
+                tools, tool_call, verbose=self._verbose
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         self.sources.append(tool_output)
@@ -244,8 +252,9 @@ class BaseOpenAIAgent(BaseAgent):
     ) -> Dict[str, Any]:
         llm_chat_kwargs: dict = {"messages": self.all_messages}
         if functions:
+            tools = [{"type": "function", "function": f} for f in functions]
             llm_chat_kwargs.update(
-                functions=functions, function_call=resolve_function_call(function_call)
+                tools=tools, tool_choice=resolve_function_call(function_call)
             )
         return llm_chat_kwargs
 
@@ -286,16 +295,23 @@ class BaseOpenAIAgent(BaseAgent):
         while True:
             llm_chat_kwargs = self._get_llm_chat_kwargs(functions, current_func)
             agent_chat_response = self._get_agent_response(mode=mode, **llm_chat_kwargs)
-            if not self._should_continue(self.latest_function_call, n_function_calls):
+            print(agent_chat_response)
+            if not self._should_continue(self.latest_tool_calls, n_function_calls):
                 logger.debug("Break: should continue False")
                 break
-            assert isinstance(self.latest_function_call, dict)
-            self._call_function(tools, self.latest_function_call)
-            # change function call to the default value, if a custom function was given
-            # as an argument (none and auto are predefined by OpenAI)
-            if current_func not in ("auto", "none"):
-                current_func = "auto"
-            n_function_calls += 1
+            for tool_call in self.latest_tool_calls:
+                if not isinstance(tool_call, dict):
+                    raise ValueError("Invalid tool_call object")
+
+                if tool_call["type"] != "function":
+                    raise ValueError("Invalid tool type. Unsupported by OpenAI")
+                # TODO: maybe execute this with multi-threading
+                self._call_function(tools, tool_call)
+                # change function call to the default value, if a custom function was given
+                # as an argument (none and auto are predefined by OpenAI)
+                if current_func not in ("auto", "none"):
+                    current_func = "auto"
+                n_function_calls += 1
 
         return agent_chat_response
 

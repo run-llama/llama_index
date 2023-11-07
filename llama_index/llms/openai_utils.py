@@ -236,12 +236,15 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
     content = openai_message.content
 
     function_call = (
-        openai_message.function_call.dict() if openai_message.function_call else None
+        openai_message.function_call.dict() if openai_message.function_call else {}
     )
 
-    additional_kwargs = (
-        {"function_call": function_call} if function_call is not None else {}
-    )
+    tool_calls = None
+    if openai_message.tool_calls is not None:
+        tool_calls = [tool_call.dict() for tool_call in openai_message.tool_calls]
+
+    additional_kwargs = {}
+    additional_kwargs.update(tool_calls=tool_calls)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
