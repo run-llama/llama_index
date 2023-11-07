@@ -72,6 +72,8 @@ class OpenAIMultiModal(MultiModalLLM):
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
+        self._client = SyncOpenAI(**self._get_credential_kwargs(**kwargs))
+        self._aclient = AsyncOpenAI(**self._get_credential_kwargs(**kwargs))
 
         super().__init__(
             model=model,
@@ -87,9 +89,6 @@ class OpenAIMultiModal(MultiModalLLM):
             api_base=api_base,
             callback_manager=callback_manager,
         )
-
-        self._client = SyncOpenAI(**self._get_credential_kwargs(**kwargs))
-        self._aclient = AsyncOpenAI(**self._get_credential_kwargs(**kwargs))
 
     @classmethod
     def class_name(cls) -> str:
@@ -126,7 +125,7 @@ class OpenAIMultiModal(MultiModalLLM):
             # If max_tokens is None, don't include in the payload:
             # https://platform.openai.com/docs/api-reference/chat
             # https://platform.openai.com/docs/api-reference/completions
-            base_kwargs["max_tokens"] = self.max_new_tokens
+            base_kwargs["max_tokens"] = str(self.max_new_tokens)
         return {**base_kwargs, **self.additional_kwargs}
 
     def _get_response_token_counts(self, raw_response: Any) -> dict:
