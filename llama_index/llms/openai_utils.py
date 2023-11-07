@@ -265,7 +265,6 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
 
 def resolve_openai_credentials(
     api_key: Optional[str] = None,
-    api_type: Optional[str] = None,
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str, str]:
@@ -279,7 +278,6 @@ def resolve_openai_credentials(
     """
     # resolve from param or env
     api_key = get_from_param_or_env("api_key", api_key, "OPENAI_API_KEY", "")
-    api_type = get_from_param_or_env("api_type", api_type, "OPENAI_API_TYPE", "")
     api_base = get_from_param_or_env("api_base", api_base, "OPENAI_API_BASE", "")
     api_version = get_from_param_or_env(
         "api_version", api_version, "OPENAI_API_VERSION", ""
@@ -287,14 +285,10 @@ def resolve_openai_credentials(
 
     # resolve from openai module or default
     api_key = api_key or openai.api_key
-    api_type = api_type or openai.api_type or DEFAULT_OPENAI_API_TYPE
     api_base = api_base or openai.base_url or DEFAULT_OPENAI_API_BASE
     api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
 
-    if not api_key and api_type not in ("azuread", "azure_ad"):
-        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
-
-    return api_key, api_type, api_base, api_version
+    return api_key, api_base, api_version
 
 
 def refresh_openai_azuread_token(

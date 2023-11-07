@@ -72,7 +72,6 @@ class OpenAI(LLM):
     max_retries: int = Field(description="The maximum number of API retries.")
 
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
-    api_type: str = Field(default=None, description="The OpenAI API type.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
 
@@ -87,7 +86,6 @@ class OpenAI(LLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
-        api_type: Optional[str] = None,
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -95,9 +93,8 @@ class OpenAI(LLM):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
 
-        api_key, api_type, api_base, api_version = resolve_openai_credentials(
+        api_key, api_base, api_version = resolve_openai_credentials(
             api_key=api_key,
-            api_type=api_type,
             api_base=api_base,
             api_version=api_version,
         )
@@ -110,7 +107,6 @@ class OpenAI(LLM):
             max_retries=max_retries,
             callback_manager=callback_manager,
             api_key=api_key,
-            api_type=api_type,
             api_version=api_version,
             api_base=api_base,
             **kwargs,
