@@ -23,7 +23,6 @@ maxdepth: 1
 
 ## [Beta] OpenAI Assistant Agent
 
-
 ```{toctree}
 ---
 maxdepth: 1
