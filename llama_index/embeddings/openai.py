@@ -350,6 +350,5 @@ class OpenAIEmbedding(BaseEmbedding):
             self._aclient,
             texts,
             engine=self._text_engine,
-            deployment_id=self.deployment_name,
             **self.additional_kwargs,
         )
