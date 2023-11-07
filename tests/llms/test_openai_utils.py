@@ -3,12 +3,22 @@ from typing import List
 import pytest
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.openai_utils import (
+    from_openai_message_dicts,
     from_openai_messages,
     to_openai_message_dicts,
+)
+from openai.types.chat.chat_completion_assistant_message_param import (
+    FunctionCall as FunctionCallParam,
 )
 from openai.types.chat.chat_completion_message import (
     ChatCompletionMessage,
     FunctionCall,
+)
+from openai.types.chat.chat_completion_message_param import (
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionFunctionMessageParam,
+    ChatCompletionMessageParam,
+    ChatCompletionUserMessageParam,
 )
 
 
@@ -37,18 +47,20 @@ def chat_messages_with_function_calling() -> List[ChatMessage]:
 
 
 @pytest.fixture()
-def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessage]:
+def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessageParam]:
     return [
-        ChatCompletionMessage(role="user", content="test question with functions"),
-        ChatCompletionMessage(
+        ChatCompletionUserMessageParam(
+            role="user", content="test question with functions"
+        ),
+        ChatCompletionAssistantMessageParam(
             role="assistant",
             content=None,
-            function_call=FunctionCall(
+            function_call=FunctionCallParam(
                 name="get_current_weather",
                 arguments='{ "location": "Boston, MA"}',
             ),
         ),
-        ChatCompletionMessage(
+        ChatCompletionFunctionMessageParam(
             role="function",
             content='{"temperature": "22", "unit": "celsius", '
             '"description": "Sunny"}',
@@ -117,21 +129,17 @@ def test_to_openai_message_dicts_basic_string() -> None:
 
 def test_to_openai_message_dicts_function_calling(
     chat_messages_with_function_calling: List[ChatMessage],
-    openi_message_dicts_with_function_calling: List[ChatCompletionMessage],
+    openi_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
 ) -> None:
-    openai_messages = to_openai_message_dicts(chat_messages_with_function_calling)
-    for openai_message_dict, openai_message in zip(
-        openai_messages, openi_message_dicts_with_function_calling
-    ):
-        for key in openai_message_dict:
-            assert openai_message_dict[key] == getattr(openai_message, key, None)  # type: ignore
+    message_dicts = to_openai_message_dicts(chat_messages_with_function_calling)
+    assert message_dicts == openi_message_dicts_with_function_calling
 
 
 def test_from_openai_message_dicts_function_calling(
-    openi_message_dicts_with_function_calling: List[ChatCompletionMessage],
+    openi_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
     chat_messages_with_function_calling: List[ChatMessage],
 ) -> None:
-    chat_messages = from_openai_messages(openi_message_dicts_with_function_calling)
+    chat_messages = from_openai_message_dicts(openi_message_dicts_with_function_calling)  # type: ignore
 
     # assert attributes match
     for chat_message, chat_message_with_function_calling in zip(
@@ -145,7 +153,7 @@ def test_from_openai_message_dicts_function_calling(
         assert chat_message.role == chat_message_with_function_calling.role
 
 
-def test_from_openai_message_dicts_function_calling_azure(
+def test_from_openai_messages_function_calling_azure(
     azure_openi_message_dicts_with_function_calling: List[ChatCompletionMessage],
     azure_chat_messages_with_function_calling: List[ChatMessage],
 ) -> None:
