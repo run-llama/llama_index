@@ -213,6 +213,11 @@ class OpenAIAssistantAgent(BaseAgent):
         return self._client
 
     @property
+    def thread_id(self) -> str:
+        """Get thread id."""
+        return self._thread_id
+
+    @property
     def chat_history(self) -> List[ChatMessage]:
         raw_messages = self._client.beta.threads.messages.list(
             thread_id=self._thread_id, order="asc"
