@@ -156,7 +156,6 @@ class BaseOpenAIAgent(BaseAgent):
         if n_function_calls > self._max_function_calls:
             return False
         if not tool_calls:
-            print("stopping tool calls")
             return False
         return True
 
@@ -301,7 +300,6 @@ class BaseOpenAIAgent(BaseAgent):
                 openai_tools, current_tool_choice
             )
             agent_chat_response = self._get_agent_response(mode=mode, **llm_chat_kwargs)
-            print(str(agent_chat_response))
             if not self._should_continue(self.latest_tool_calls, n_function_calls):
                 logger.debug("Break: should continue False")
                 break
