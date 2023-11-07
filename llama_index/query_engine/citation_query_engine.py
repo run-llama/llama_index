@@ -101,6 +101,7 @@ class CitationQueryEngine(BaseQueryEngine):
         text_splitter: Optional[TextSplitter] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        include_metadata: bool = False,
     ) -> None:
         self.text_splitter = text_splitter or get_default_text_splitter(
             chunk_size=citation_chunk_size, chunk_overlap=citation_chunk_overlap
@@ -111,6 +112,7 @@ class CitationQueryEngine(BaseQueryEngine):
             callback_manager=callback_manager,
         )
         self._node_postprocessors = node_postprocessors or []
+        self._include_metadata = include_metadata
 
         callback_manager = callback_manager or CallbackManager()
         for node_postprocessor in self._node_postprocessors:
@@ -135,6 +137,7 @@ class CitationQueryEngine(BaseQueryEngine):
         use_async: bool = False,
         streaming: bool = False,
         # class-specific args
+        include_metadata: bool = False,
         **kwargs: Any,
     ) -> "CitationQueryEngine":
         """Initialize a CitationQueryEngine object.".
@@ -182,6 +185,7 @@ class CitationQueryEngine(BaseQueryEngine):
             citation_chunk_overlap=citation_chunk_overlap,
             text_splitter=text_splitter,
             node_postprocessors=node_postprocessors,
+            include_metadata=include_metadata,
         )
 
     def _get_prompt_modules(self) -> PromptMixinType:
@@ -193,9 +197,14 @@ class CitationQueryEngine(BaseQueryEngine):
         new_nodes: List[NodeWithScore] = []
         for node in nodes:
             text_chunks = self.text_splitter.split_text(node.node.get_content())
+            metadata_str = node.node.get_metadata_str()
 
             for text_chunk in text_chunks:
                 text = f"Source {len(new_nodes)+1}:\n{text_chunk}\n"
+                if self._include_metadata:
+                    text = (
+                        f"Source {len(new_nodes)+1}:\n{metadata_str}\n\n{text_chunk}\n"
+                    )
 
                 new_node = NodeWithScore(
                     node=TextNode.parse_obj(node.node), score=node.score
