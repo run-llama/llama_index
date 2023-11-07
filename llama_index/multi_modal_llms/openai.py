@@ -9,6 +9,9 @@ from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
+from llama_index.llms.openai_utils import (
+    to_openai_message_dicts,
+)
 from llama_index.multi_modal_llms import (
     ChatMessage,
     MultiModalCompletionResponse,
@@ -19,7 +22,6 @@ from llama_index.multi_modal_llms import (
 )
 from llama_index.multi_modal_llms.openai_utils import (
     to_open_ai_multi_modal_payload,
-    to_openai_message_dicts,
 )
 from llama_index.schema import ImageDocument
 

@@ -1,7 +1,5 @@
 import logging
-from typing import List, Sequence, Type, Union
-
-from openai import ChatCompletion, Completion
+from typing import Sequence
 
 from llama_index.multi_modal_llms.base import ChatMessage
 from llama_index.multi_modal_llms.generic_utils import encode_image
@@ -9,7 +7,6 @@ from llama_index.schema import ImageDocument
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
-DEFAULT_OPENAI_API_VERSION = ""
 
 
 GPT4V_MODELS = {
@@ -25,8 +22,6 @@ https://platform.openai.com/account/api-keys
 """
 
 logger = logging.getLogger(__name__)
-
-CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
 
 
 def to_open_ai_multi_modal_payload(
@@ -56,34 +51,4 @@ def to_open_ai_multi_modal_payload(
 
     return [
         ChatMessage(role="user", content=str(completion_content)),
-    ]
-
-
-def to_openai_message_dict(message: ChatMessage, drop_none: bool = False) -> dict:
-    """Convert generic message to OpenAI message dict."""
-    message_dict = {
-        "role": message.role,
-        "content": message.content,
-    }
-
-    # NOTE: openai messages have additional arguments:
-    # - function messages have `name`
-    # - assistant messages have optional `function_call`
-    message_dict.update(message.additional_kwargs)
-
-    null_keys = [key for key, value in message_dict.items() if value is None]
-    # if drop_none is True, remove keys with None values
-    if drop_none:
-        for key in null_keys:
-            message_dict.pop(key)
-
-    return message_dict
-
-
-def to_openai_message_dicts(
-    messages: Sequence[ChatMessage], drop_none: bool = False
-) -> List[dict]:
-    """Convert generic messages to OpenAI message dicts."""
-    return [
-        to_openai_message_dict(message, drop_none=drop_none) for message in messages
     ]
