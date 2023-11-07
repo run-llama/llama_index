@@ -46,6 +46,7 @@ We are actively adding more integrations and improving feature coverage for each
 | TencentVectorDB          | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | AstraDB                  | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Azure CosmosDB MongoDB   | cloud               |                    |               | ✓      | ✓               |       |
+| Lantern                  | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 

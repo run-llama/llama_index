@@ -34,6 +34,7 @@ as the storage backend for `VectorStoreIndex`.
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - AstraDB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/home/docs/index.html).
+- Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).
 
 A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
 

@@ -4,6 +4,7 @@ from llama_index.embeddings.adapter import (
     AdapterEmbeddingModel,
     LinearAdapterEmbeddingModel,
 )
+from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from llama_index.embeddings.base import SimilarityMode
 from llama_index.embeddings.bedrock import BedrockEmbedding
 from llama_index.embeddings.clarifai import ClarifaiEmbedding
@@ -47,6 +48,7 @@ __all__ = [
     "LinearAdapterEmbeddingModel",
     "LLMRailsEmbedding",
     "OpenAIEmbedding",
+    "AzureOpenAIEmbedding",
     "OptimumEmbedding",
     "Pooling",
     "SimilarityMode",
