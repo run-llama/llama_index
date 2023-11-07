@@ -3,9 +3,10 @@ import sys
 import time
 
 import openai
+from openai import OpenAI
 from validate_json import validate_json
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 def launch_training(data_path: str) -> None:
@@ -15,7 +16,7 @@ def launch_training(data_path: str) -> None:
 
     # upload file
     with open(data_path, "rb") as f:
-        output = openai.File.create(
+        output = client.files.create(
             file=f,
             purpose="fine-tune",
             user_provided_filename=file_name,
@@ -25,11 +26,9 @@ def launch_training(data_path: str) -> None:
     # launch training
     while True:
         try:
-            openai.FineTuningJob.create(
-                training_file=output["id"], model="gpt-3.5-turbo"
-            )
+            client.fine_tunes.create(training_file=output["id"], model="gpt-3.5-turbo")
             break
-        except openai.error.InvalidRequestError:
+        except openai.BadRequestError:
             print("Waiting for file to be ready...")
             time.sleep(60)
     print(
