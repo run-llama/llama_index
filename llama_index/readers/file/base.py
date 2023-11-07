@@ -224,7 +224,14 @@ class SimpleDirectoryReader(BaseReader):
                     reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
                     self.file_extractor[file_suffix] = reader_cls()
                 reader = self.file_extractor[file_suffix]
-                docs = reader.load_data(input_file, extra_info=metadata)
+
+                try:
+                    docs = reader.load_data(input_file, extra_info=metadata)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load file {input_file} with error:\n{e}.\nSkipping..."
+                    )
+                    continue
 
                 # iterate over docs if needed
                 if self.filename_as_id:
