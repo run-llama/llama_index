@@ -3,12 +3,15 @@
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from pydantic import Field
 
-from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
-from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
+if TYPE_CHECKING:
+    from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
+    from llama_index.bridge.langchain import (
+        ConditionalPromptSelector as LangchainSelector,
+    )
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
@@ -320,13 +323,13 @@ class SelectorPromptTemplate(BasePromptTemplate):
 
 
 class LangchainPromptTemplate(BasePromptTemplate):
-    selector: LangchainSelector
+    selector: "LangchainSelector"
     requires_langchain_llm: bool = False
 
     def __init__(
         self,
-        template: Optional[LangchainTemplate] = None,
-        selector: Optional[LangchainSelector] = None,
+        template: Optional["LangchainTemplate"] = None,
+        selector: Optional["LangchainSelector"] = None,
         output_parser: Optional[BaseOutputParser] = None,
         prompt_type: str = PromptType.CUSTOM,
         metadata: Optional[Dict[str, Any]] = None,
@@ -334,6 +337,14 @@ class LangchainPromptTemplate(BasePromptTemplate):
         function_mappings: Optional[Dict[str, Callable]] = None,
         requires_langchain_llm: bool = False,
     ) -> None:
+        try:
+            from llama_index.bridge.langchain import (
+                ConditionalPromptSelector as LangchainSelector,
+            )
+        except ImportError:
+            raise ImportError(
+                "Must install `llama_index[langchain]` to use LangchainPromptTemplate."
+            )
         if selector is None:
             if template is None:
                 raise ValueError("Must provide either template or selector.")

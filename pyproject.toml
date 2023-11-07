@@ -45,7 +45,7 @@ SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
 dataclasses-json = "^0.5.7"
 deprecated = ">=1.2.9.3"
 fsspec = ">=2023.5.0"
-langchain = ">=0.0.303"
+langchain = {optional = true, version = ">=0.0.303"}
 nest-asyncio = "^1.5.8"
 nltk = "^3.8.1"
 numpy = "*"
@@ -72,6 +72,9 @@ spacy = {optional = true, version = "^3.7.1"}
 aiostream = "^0.5.2"
 
 [tool.poetry.extras]
+langchain = [
+    "langchain",
+]
 local_models = [
     "optimum",
     "sentencepiece",
