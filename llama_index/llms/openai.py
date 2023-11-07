@@ -259,7 +259,7 @@ class OpenAI(LLM):
                             )
                             t["id"] += tool_calls_delta[ix].id or ""
                             t["type"] += tool_calls_delta[ix].type or ""
-                            print(t)
+                            # print(t)
 
                     # do we need to validate tool_calls?
                     for tool_call in tool_calls_delta:
