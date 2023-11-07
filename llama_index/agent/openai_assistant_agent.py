@@ -222,8 +222,7 @@ class OpenAIAssistantAgent(BaseAgent):
         raw_messages = self._client.beta.threads.messages.list(
             thread_id=self._thread_id, order="asc"
         )
-        messages = from_openai_thread_messages(raw_messages)
-        return messages
+        return from_openai_thread_messages(raw_messages)
 
     def reset(self) -> None:
         """Delete and create a new thread."""
@@ -243,13 +242,12 @@ class OpenAIAssistantAgent(BaseAgent):
     def add_message(self, message: str, file_ids: Optional[List[str]] = None) -> Any:
         """Add message to assistant."""
         file_ids = file_ids or []
-        message = self._client.beta.threads.messages.create(
+        return self._client.beta.threads.messages.create(
             thread_id=self._thread_id,
             role="user",
             content=message,
             file_ids=file_ids,
         )
-        return message
 
     def _run_function_calling(self, run: Any) -> List[ToolOutput]:
         """Run function calling."""
