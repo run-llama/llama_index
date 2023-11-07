@@ -22,6 +22,7 @@ from llama_index.chat_engine.types import (
 )
 from llama_index.llms.base import ChatMessage
 # from llama_index.llms.openai_utils import is_function_calling_model, from_openai_message_dicts
+from llama_index.llms.openai_utils import from_openai_messages
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
@@ -30,8 +31,33 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 
+def from_openai_thread_message(thread_message: Any) -> ChatMessage:
+    """From OpenAI thread message."""
+    from openai.types.beta.threads import ThreadMessage, MessageContentText
+    thread_message = cast(ThreadMessage, thread_message)
 
-import openai
+    # we don't have a way of showing images, just do text for now
+    text_contents = [t for t in thread_message.content if isinstance(t, MessageContentText)]
+    text_content_str = " ".join([t.text.value for t in text_contents])
+
+    return ChatMessage(
+        role=thread_message.role,
+        content=text_content_str,
+        additional_kwargs={
+            "thread_message": thread_message,
+            "thread_id": thread_message.thread_id,
+            "assistant_id": thread_message.assistant_id,
+            "id": thread_message.id,
+            "metadata": thread_message.metadata,
+        }
+    )
+
+
+def from_openai_thread_messages(thread_messages: List[Any]) -> List[ChatMessage]:
+    """From OpenAI thread messages."""
+    return [from_openai_thread_message(thread_message) for thread_message in thread_messages]
+    
+
 
 
 class OpenAIAssistantAgent(BaseAgent):
@@ -46,6 +72,7 @@ class OpenAIAssistantAgent(BaseAgent):
         client: Any,
         assistant: Any, 
         tools: List[BaseTool],
+        callback_manager: Optional[CallbackManager] = None,
         thread_id: Optional[str] = None,
         instructions_prefix: Optional[str] = None,
         run_retrieve_sleep_time: float = 0.1,
@@ -64,34 +91,53 @@ class OpenAIAssistantAgent(BaseAgent):
         self._instructions_prefix = instructions_prefix
         self._run_retrieve_sleep_time = run_retrieve_sleep_time
 
+        self.callback_manager = callback_manager or CallbackManager([])
+
     @classmethod
     def from_new(
         cls,
         name: str,
         instructions: str,
         tools: Optional[List[BaseTool]] = None,
-        openai_tool_names: Optional[List[str]] = None,
+        openai_tools: Optional[List[Dict]] = None,
         thread_id: Optional[str] = None,
         model: str = "gpt-4-1106-preview",
         instructions_prefix: Optional[str] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> "OpenAIAssistantAgent":
         """From new."""
         from openai import OpenAI
 
         # this is the set of openai tools
         # not to be confused with the tools we pass in for function calling
-        openai_tool_names = openai_tool_names or ["code_interpreter"]
+        openai_tools = openai_tools or [{"type": "code_interpreter"}]
         client = OpenAI()
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=openai_tool_names,
+            tools=openai_tools,
             model=model
         )
         return cls(
-            client, assistant, tools, thread_id=thread_id, instructions_prefix=instructions_prefix
+            client, assistant, tools, 
+            callback_manager=callback_manager,
+            thread_id=thread_id, instructions_prefix=instructions_prefix
         )
-        
+
+    @property
+    def chat_history(self) -> List[ChatMessage]:
+        raw_messages = self._client.beta.threads.messages.list(
+            thread_id=self._thread_id
+        )
+        messages = from_openai_thread_messages(raw_messages)
+        return messages
+
+    def reset(self) -> None:
+        """Delete and create a new thread."""
+        self._client.beta.threads.delete(self._thread_id)
+        thread = self._client.beta.threads.create()
+        thread_id = thread.id
+        self._thread_id = thread_id
 
     def get_tools(self, message: str) -> List[BaseTool]:
         """Get tools."""
@@ -121,12 +167,17 @@ class OpenAIAssistantAgent(BaseAgent):
         """Retrieve response from assistant."""
         from openai.types.beta.threads import Run
         run = cast(Run, run)
-        while run.status == "queued":
+        while run.status in ["queued", "in_progress"]:
             run = self._client.beta.threads.runs.retrieve(
                 thread_id=self._thread_id,
                 run_id=run.id
             )
             time.sleep(self._run_retrieve_sleep_time)
+        if run.status != "completed":
+            raise ValueError(
+                f"Run failed with status {run.status}.\n"
+                f"Error: {run.last_error}"
+            )
         return run
 
     def _chat(
@@ -144,7 +195,10 @@ class OpenAIAssistantAgent(BaseAgent):
         raw_messages = self._client.beta.threads.messages.list(
             thread_id=self._thread_id
         )
-        messages = from_openai_message_dicts(raw_messages)
+        print(raw_messages)
+        messages = from_openai_thread_messages(raw_messages)
+        print(messages)
+        raise Exception
         return messages
 
     async def _achat(
