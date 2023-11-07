@@ -20,12 +20,13 @@ from llama_index.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.base import ChatMessage, MessageRole
 # from llama_index.llms.openai_utils import is_function_calling_model, from_openai_message_dicts
 from llama_index.llms.openai_utils import from_openai_messages
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.agent.openai_agent import get_function_by_name
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -58,6 +59,47 @@ def from_openai_thread_messages(thread_messages: List[Any]) -> List[ChatMessage]
     return [from_openai_thread_message(thread_message) for thread_message in thread_messages]
     
 
+def call_function(
+    tools: List[BaseTool], fn_obj: Any, verbose: bool = False
+) -> Tuple[ChatMessage, ToolOutput]:
+    """Call a function and return the output as a string."""
+    from openai.types.beta.threads.required_action_function_tool_call import Function
+    
+    fn_obj = cast(Function, fn_obj)
+    # TMP: consolidate with other abstractions
+    name = fn_obj.name
+    arguments_str = fn_obj.arguments
+    if verbose:
+        print("=== Calling Function ===")
+        print(f"Calling function: {name} with args: {arguments_str}")
+    tool = get_function_by_name(tools, name)
+    argument_dict = json.loads(arguments_str)
+    output = tool(**argument_dict)
+    if verbose:
+        print(f"Got output: {output!s}")
+        print("========================")
+    return (
+        ChatMessage(
+            content=str(output),
+            role=MessageRole.FUNCTION,
+            additional_kwargs={
+                "name": fn_obj.name,
+            },
+        ),
+        output,
+    )
+
+
+def _process_files(client: Any, files: List[str]) -> Dict[str, Any]:
+    """Process files."""
+    from openai import OpenAI
+    client = cast(OpenAI, client)
+
+    file_dict = {}
+    for file in files:
+        file_obj = client.files.create(file=open(file, 'rb'), purpose="assistants")
+        file_dict[file_obj.id] = file
+    return file_dict
 
 
 class OpenAIAssistantAgent(BaseAgent):
@@ -76,6 +118,7 @@ class OpenAIAssistantAgent(BaseAgent):
         thread_id: Optional[str] = None,
         instructions_prefix: Optional[str] = None,
         run_retrieve_sleep_time: float = 0.1,
+        verbose: bool = False,
     ) -> None:
         """Init params."""
         from openai import OpenAI
@@ -90,6 +133,7 @@ class OpenAIAssistantAgent(BaseAgent):
         self._thread_id = thread_id
         self._instructions_prefix = instructions_prefix
         self._run_retrieve_sleep_time = run_retrieve_sleep_time
+        self._verbose = verbose
 
         self.callback_manager = callback_manager or CallbackManager([])
 
@@ -103,31 +147,71 @@ class OpenAIAssistantAgent(BaseAgent):
         thread_id: Optional[str] = None,
         model: str = "gpt-4-1106-preview",
         instructions_prefix: Optional[str] = None,
+        run_retrieve_sleep_time: float = 0.1,
+        files: Optional[List[str]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
     ) -> "OpenAIAssistantAgent":
-        """From new."""
+        """From new assistant.
+
+        Args:
+            name: name of assistant
+            instructions: instructions for assistant
+            tools: list of tools
+            openai_tools: list of openai tools
+            thread_id: thread id
+            model: model
+            run_retrieve_sleep_time: run retrieve sleep time
+            instructions_prefix: instructions prefix
+            callback_manager: callback manager
+            verbose: verbose
+        
+        """
         from openai import OpenAI
 
         # this is the set of openai tools
         # not to be confused with the tools we pass in for function calling
-        openai_tools = openai_tools or [{"type": "code_interpreter"}]
+        openai_tools = openai_tools or []
+        tools = tools or []
+        tool_fns = [{"type": "function", "function": t.metadata.to_openai_function()} for t in tools]
+        all_openai_tools = openai_tools + tool_fns
+
+        # initialize client
         client = OpenAI()
+
+        # process files
+        files = files or []
+        file_dict = _process_files(client, files)
+
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=openai_tools,
-            model=model
+            tools=all_openai_tools,
+            model=model,
+            file_ids=list(file_dict.keys()),
         )
         return cls(
             client, assistant, tools, 
             callback_manager=callback_manager,
-            thread_id=thread_id, instructions_prefix=instructions_prefix
+            thread_id=thread_id, instructions_prefix=instructions_prefix,
+            verbose=verbose
         )
+
+    @property
+    def assistant(self) -> Any:
+        """Get assistant."""
+        return self._assistant
+
+    @property
+    def client(self) -> Any:
+        """Get client."""
+        return self._client
 
     @property
     def chat_history(self) -> List[ChatMessage]:
         raw_messages = self._client.beta.threads.messages.list(
-            thread_id=self._thread_id
+            thread_id=self._thread_id,
+            order="asc"
         )
         messages = from_openai_thread_messages(raw_messages)
         return messages
@@ -143,16 +227,47 @@ class OpenAIAssistantAgent(BaseAgent):
         """Get tools."""
         return self._tools
 
-    def add_message(self, message: str) -> Any:
+    def upload_files(self, files: List[str]) -> Dict[str, Any]:
+        """Upload files."""
+        return _process_files(self._client, files)
+
+    def add_message(self, message: str, file_ids: Optional[List[str]] = None) -> Any:
         """Add message to assistant."""
+        
+        file_ids = file_ids or []
         message = self._client.beta.threads.messages.create(
             thread_id=self._thread_id,
             role="user",
-            content=message
+            content=message,
+            file_ids=file_ids,
         )
         return message
 
-    def run_assistant(self, instructions_prefix: Optional[str] = None) -> Any:
+    def _run_function_calling(self, run: Any) -> List[ToolOutput]:
+        """Run function calling."""
+        tool_calls = run.required_action.submit_tool_outputs.tool_calls
+        tool_output_dicts = []
+        tool_output_objs: List[ToolOutput] = []
+        for tool_call in tool_calls:
+            fn_obj = tool_call.function
+            _, tool_output = call_function(
+                self._tools, fn_obj, verbose=self._verbose
+            )
+            tool_output_dicts.append({
+                "tool_call_id": tool_call.id,
+                "output": str(tool_output)
+            })
+            tool_output_objs.append(tool_output)
+
+        # submit tool outputs
+        self._client.beta.threads.runs.submit_tool_outputs(
+            thread_id=self._thread_id,
+            run_id=run.id,
+            tool_outputs=tool_output_dicts
+        )
+        return tool_output_objs
+
+    def run_assistant(self, instructions_prefix: Optional[str] = None) -> Tuple[Any, Dict]:
         """Run assistant."""
         instructions_prefix = instructions_prefix or self._instructions_prefix
         run = self._client.beta.threads.runs.create(
@@ -160,25 +275,37 @@ class OpenAIAssistantAgent(BaseAgent):
             assistant_id=self._assistant.id,
             instructions=self._instructions_prefix
         )
-        run = self.retrieve_response(run)
-        return run
-
-    def retrieve_response(self, run: Any) -> Any:
-        """Retrieve response from assistant."""
         from openai.types.beta.threads import Run
         run = cast(Run, run)
-        while run.status in ["queued", "in_progress"]:
+
+        sources = []
+
+        while run.status in ["queued", "in_progress", "requires_action"]:
             run = self._client.beta.threads.runs.retrieve(
                 thread_id=self._thread_id,
                 run_id=run.id
             )
+            if run.status == "requires_action":
+                cur_tool_outputs = self._run_function_calling(run)
+                sources.extend(cur_tool_outputs)
+                
             time.sleep(self._run_retrieve_sleep_time)
-        if run.status != "completed":
+        if run.status == "failed":
             raise ValueError(
                 f"Run failed with status {run.status}.\n"
                 f"Error: {run.last_error}"
             )
-        return run
+        return run, {"sources": sources}
+
+    @property
+    def latest_message(self) -> ChatMessage:
+        """Get latest message."""
+        raw_messages = self._client.beta.threads.messages.list(
+            thread_id=self._thread_id,
+            order="desc"
+        )
+        messages = from_openai_thread_messages(raw_messages)
+        return messages[0]
 
     def _chat(
         self,
@@ -188,15 +315,18 @@ class OpenAIAssistantAgent(BaseAgent):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Main chat interface."""
+        # TODO: since chat interface doesn't expose additional kwargs
+        # we can't pass in file_ids per message
         added_message_obj = self.add_message(message)
-        run = self.run_assistant(
-            instructions_prefix=self._instructions_prefix
+        run, metadata = self.run_assistant(
+            instructions_prefix=self._instructions_prefix,
         )
-        raw_messages = self._client.beta.threads.messages.list(
-            thread_id=self._thread_id
+        latest_message = self.latest_message
+        # get most recent message content
+        return AgentChatResponse(
+            response=str(latest_message.content),
+            sources=metadata["sources"],
         )
-        messages = from_openai_thread_messages(raw_messages)
-        return messages
 
     async def _achat(
         self,
