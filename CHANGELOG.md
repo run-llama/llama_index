@@ -1,5 +1,14 @@
 # ChangeLog
 
+## [0.8.64] - 2023-11-07
+
+### New Features
+
+- OpenAI GPT4v Abstraction (#8719)
+
+### Bug Fixes / Nits
+- try except SimpleDirectoryReader load loop (#8744)
+
 ## [0.8.63] - 2023-11-05
 
 ### New Features
