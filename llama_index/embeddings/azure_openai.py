@@ -60,7 +60,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             **kwargs,
         )
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate necessary credentials are set."""
         if (
