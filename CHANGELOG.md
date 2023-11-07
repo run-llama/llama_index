@@ -3,7 +3,8 @@
 ## [0.8.64] - 2023-11-06
 
 ### New Features
-- Add AI assistant agent  (#8735) 
+
+- Add AI assistant agent (#8735)
 - OpenAI GPT4v Abstraction (#8719)
 - Add support for `Lantern` VectorStore (#8714)
 
