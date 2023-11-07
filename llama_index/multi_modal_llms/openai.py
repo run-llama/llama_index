@@ -1,7 +1,8 @@
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -64,7 +65,7 @@ class OpenAIMultiModal(MultiModalLLM):
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
@@ -117,7 +118,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
     def _get_multi_modal_input_dict(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> dict:
+    ) -> List[ChatCompletionMessageParam]:
         return to_open_ai_multi_modal_payload(
             prompt=prompt,
             image_documents=image_documents,
@@ -154,7 +155,7 @@ class OpenAIMultiModal(MultiModalLLM):
         message_dict = self._get_multi_modal_input_dict(prompt, image_documents)
         response = self._client.chat.completions.create(
             model=self.model,
-            messages=[message_dict],
+            messages=message_dict,
             max_tokens=self.max_new_tokens,
         )
 

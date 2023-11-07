@@ -1,6 +1,10 @@
 import logging
-from typing import Sequence
+from typing import List, Sequence
 
+from openai.types.chat import ChatCompletionMessageParam
+
+from llama_index.llms.openai_utils import to_openai_message_dicts
+from llama_index.multi_modal_llms.base import ChatMessage
 from llama_index.multi_modal_llms.generic_utils import encode_image
 from llama_index.schema import ImageDocument
 
@@ -25,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 def to_open_ai_multi_modal_payload(
     prompt: str, image_documents: Sequence[ImageDocument]
-) -> dict:
+) -> List[ChatCompletionMessageParam]:
     completion_content = [{"type": "text", "text": prompt}]
     for image_document in image_documents:
         image_content = {}
@@ -47,5 +51,6 @@ def to_open_ai_multi_modal_payload(
                 "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
             }
         completion_content.append(image_content)
-
-    return {"role": "user", "content": str(completion_content)}
+    return to_openai_message_dicts(
+        [ChatMessage(role="user", content=str(completion_content))]
+    )

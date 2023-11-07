@@ -14,6 +14,6 @@ def load_image_urls(image_urls: list[str]) -> list[ImageDocument]:
 
 
 # Function to encode the image to base64 content
-def encode_image(image_path) -> str:
+def encode_image(image_path: str) -> str:
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
