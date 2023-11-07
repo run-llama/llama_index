@@ -1,7 +1,6 @@
 import logging
 from typing import Sequence
 
-from llama_index.multi_modal_llms.base import ChatMessage
 from llama_index.multi_modal_llms.generic_utils import encode_image
 from llama_index.schema import ImageDocument
 
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 def to_open_ai_multi_modal_payload(
     prompt: str, image_documents: Sequence[ImageDocument]
-) -> Sequence[ChatMessage]:
+) -> dict:
     completion_content = [{"type": "text", "text": prompt}]
     for image_document in image_documents:
         image_content = {}
@@ -49,6 +48,4 @@ def to_open_ai_multi_modal_payload(
             }
         completion_content.append(image_content)
 
-    return [
-        ChatMessage(role="user", content=str(completion_content)),
-    ]
+    return {"role": "user", "content": str(completion_content)}

@@ -9,11 +9,7 @@ from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.llms.openai_utils import (
-    to_openai_message_dicts,
-)
 from llama_index.multi_modal_llms import (
-    ChatMessage,
     MultiModalCompletionResponse,
     MultiModalCompletionResponseAsyncGen,
     MultiModalCompletionResponseGen,
@@ -63,8 +59,8 @@ class OpenAIMultiModal(MultiModalLLM):
         prompt_key: str = "text",
         image_key: str = "image_url",
         max_retries: int = 10,
-        api_key=api_key,
-        api_base: Optional[str] = None,
+        api_key: Optional[str] = None,
+        api_base: Optional[str] = "https://api.openai.com/v1",
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -72,8 +68,10 @@ class OpenAIMultiModal(MultiModalLLM):
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
-        self._client = SyncOpenAI(**self._get_credential_kwargs(**kwargs))
-        self._aclient = AsyncOpenAI(**self._get_credential_kwargs(**kwargs))
+        # self._client = SyncOpenAI(**self._get_credential_kwargs(**kwargs))
+        # self._aclient = AsyncOpenAI(**self._get_credential_kwargs(**kwargs))
+        api_key = api_key
+        api_base = api_base
 
         super().__init__(
             model=model,
@@ -89,6 +87,12 @@ class OpenAIMultiModal(MultiModalLLM):
             api_base=api_base,
             callback_manager=callback_manager,
         )
+        self._client, self._aclient = self._get_clients(**kwargs)
+
+    def _get_clients(self, **kwargs: Any) -> tuple[SyncOpenAI, AsyncOpenAI]:
+        client = SyncOpenAI(**self._get_credential_kwargs())
+        aclient = AsyncOpenAI(**self._get_credential_kwargs())
+        return client, aclient
 
     @classmethod
     def class_name(cls) -> str:
@@ -113,7 +117,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
     def _get_multi_modal_input_dict(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> Sequence[ChatMessage]:
+    ) -> dict:
         return to_open_ai_multi_modal_payload(
             prompt=prompt,
             image_documents=image_documents,
@@ -147,18 +151,15 @@ class OpenAIMultiModal(MultiModalLLM):
     def complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponse:
-        message_dicts = to_openai_message_dicts(
-            self._get_multi_modal_input_dict(prompt, image_documents)
-        )
+        message_dict = self._get_multi_modal_input_dict(prompt, image_documents)
         response = self._client.chat.completions.create(
-            messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
+            model=self.model,
+            messages=[message_dict],
+            max_tokens=self.max_new_tokens,
         )
-
-        openai_response = response.json()
-        text = openai_response["choices"][0]["message"]["content"]
 
         return MultiModalCompletionResponse(
-            text=text,
+            text=response.choices[0].message.content,
             raw=response,
             additional_kwargs=self._get_response_token_counts(response),
         )
