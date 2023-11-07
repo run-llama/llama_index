@@ -7,6 +7,10 @@
 - added native sync and async client support for the lasted `openai` client package (#8712)
 - added support for `AzureOpenAIEmbedding` (#8712)
 
+### Bug Fixes / Nits
+
+- Fixed errors about "no host supplied" with `download_loader` (#8723)
+
 ### Breaking Changes
 
 - `OpenAIEmbedding` no longer supports azure, moved into the `AzureOpenAIEmbedding` class (#8712)
