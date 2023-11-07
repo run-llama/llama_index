@@ -257,8 +257,6 @@ class OpenAI(LLM):
                 print(tool_calls_delta)
                 if tool_calls_delta is not None:
                     t_delta = tool_calls_delta[0]
-                    print(t_delta)
-                    print(tool_calls)
                     if len(tool_calls) == 0:
                         t = t_delta
                         tool_calls.append(t)

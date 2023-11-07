@@ -19,7 +19,10 @@ logger.setLevel(logging.WARNING)
 
 def is_function(message: ChatMessage) -> bool:
     """Utility for ChatMessage responses from OpenAI models."""
-    return "tool_calls" in message.additional_kwargs
+    additional_kwargs = message.additional_kwargs
+    print(f"additonal_kwargs: {additional_kwargs}")
+    print(f"is_function: {'tool_calls' in additional_kwargs}")
+    return "tool_calls" in additional_kwargs
 
 
 class ChatResponseMode(str, Enum):
