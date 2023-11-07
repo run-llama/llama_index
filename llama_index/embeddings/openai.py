@@ -256,7 +256,7 @@ class OpenAIEmbedding(BaseEmbedding):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
 
-        api_key, _, api_base, api_version = resolve_openai_credentials(
+        api_key, api_base, api_version = resolve_openai_credentials(
             api_key=api_key,
             api_base=api_base,
             api_version=api_version,
