@@ -20,6 +20,18 @@ class MessageRole(str, Enum):
     FUNCTION = "function"
 
 
+# ===== Generic Model Input - Chat =====
+class ChatMessage(BaseModel):
+    """Chat message."""
+
+    role: MessageRole = MessageRole.USER
+    content: Optional[str] = ""
+    additional_kwargs: dict = Field(default_factory=dict)
+
+    def __str__(self) -> str:
+        return f"{self.role.value}: {self.content}"
+
+
 # ===== Generic Model Output - Completion =====
 class MultiModalCompletionResponse(BaseModel):
     """
@@ -100,40 +112,24 @@ class MultiModalLLM(BaseComponent):
 
     @abstractmethod
     def complete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponse:
         """Completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     def stream_complete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponseGen:
         """Streaming completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     async def acomplete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponse:
         """Async completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     async def astream_complete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponseAsyncGen:
         """Async streaming completion endpoint for Multi-Modal LLM."""
