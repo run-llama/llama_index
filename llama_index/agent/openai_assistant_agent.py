@@ -195,10 +195,7 @@ class OpenAIAssistantAgent(BaseAgent):
         raw_messages = self._client.beta.threads.messages.list(
             thread_id=self._thread_id
         )
-        print(raw_messages)
         messages = from_openai_thread_messages(raw_messages)
-        print(messages)
-        raise Exception
         return messages
 
     async def _achat(
