@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
@@ -287,11 +286,11 @@ def resolve_openai_credentials(
     )
 
     # resolve from openai module or default
-    api_key = api_key or openai.api_key
-    api_base = api_base or openai.base_url or DEFAULT_OPENAI_API_BASE
-    api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
+    final_api_key = api_key or openai.api_key or ""
+    final_api_base = api_base or openai.base_url or DEFAULT_OPENAI_API_BASE
+    final_api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
 
-    return api_key, api_base, api_version
+    return final_api_key, final_api_base, final_api_version
 
 
 def refresh_openai_azuread_token(
@@ -324,13 +323,6 @@ def refresh_openai_azuread_token(
                 f"the resource due to the following error: {err.message}"
             ) from err
     return azure_ad_token
-
-
-def validate_openai_api_key(api_key: Optional[str] = None) -> None:
-    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
-
-    if not openai_api_key:
-        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
 
 
 def resolve_from_aliases(*args: Optional[str]) -> Optional[str]:

@@ -370,16 +370,13 @@ async def test_completion_model_async_streaming(MockAsyncOpenAI: MagicMock) -> N
 
 def test_validates_api_key_is_present() -> None:
     with CachedOpenAIApiKeys():
-        with pytest.raises(ValueError, match="No API key found for OpenAI."):
-            OpenAI()
+        os.environ["OPENAI_API_KEY"] = "sk-" + ("a" * 48)
 
-    os.environ["OPENAI_API_KEY"] = "sk-" + ("a" * 48)
+        # We can create a new LLM when the env variable is set
+        assert OpenAI()
 
-    # We can create a new LLM when the env variable is set
-    assert OpenAI()
+        os.environ["OPENAI_API_KEY"] = ""
 
-    os.environ["OPENAI_API_KEY"] = ""
-
-    # We can create a new LLM when the api_key is set on the
-    # class directly
-    assert OpenAI(api_key="sk-" + ("a" * 48))
+        # We can create a new LLM when the api_key is set on the
+        # class directly
+        assert OpenAI(api_key="sk-" + ("a" * 48))

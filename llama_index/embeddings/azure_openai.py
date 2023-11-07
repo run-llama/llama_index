@@ -1,8 +1,8 @@
 from typing import Any, Dict, Optional, Tuple
 
 from openai import AsyncAzureOpenAI, AzureOpenAI
-from pydantic import Field, PrivateAttr, root_validator
 
+from llama_index.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.embeddings.openai import (
@@ -64,7 +64,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             **kwargs,
         )
 
-    @root_validator(pre=False, skip_on_failure=True)
+    @root_validator(pre=True)
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate necessary credentials are set."""
         if (
