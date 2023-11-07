@@ -230,6 +230,7 @@ class OpenAIEmbedding(BaseEmbedding):
 
     api_key: str = Field(default=None, description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
+    api_version: str = Field(description="The version for OpenAI API.")
 
     max_retries: int = Field(
         default=10, description="Maximum number of retries.", gte=0
@@ -247,7 +248,6 @@ class OpenAIEmbedding(BaseEmbedding):
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
-        api_type: Optional[str] = None,
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         max_retries: int = 10,
@@ -256,9 +256,8 @@ class OpenAIEmbedding(BaseEmbedding):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
 
-        api_key, _, api_base, _ = resolve_openai_credentials(
+        api_key, _, api_base, api_version = resolve_openai_credentials(
             api_key=api_key,
-            api_type=api_type,
             api_base=api_base,
             api_version=api_version,
         )
@@ -273,13 +272,18 @@ class OpenAIEmbedding(BaseEmbedding):
             additional_kwargs=additional_kwargs,
             api_key=api_key,
             api_base=api_base,
+            api_version=api_version,
             max_retries=max_retries,
             **kwargs,
         )
 
         # NOTE: init after super to use class attributes + helper function
-        self._client = OpenAI(**self._get_credential_kwargs())
-        self._aclient = AsyncOpenAI(**self._get_credential_kwargs())
+        self._client, self._aclient = self._get_clients()
+
+    def _get_clients(self) -> Tuple[OpenAI, AsyncOpenAI]:
+        client = OpenAI(**self._get_credential_kwargs())
+        aclient = AsyncOpenAI(**self._get_credential_kwargs())
+        return client, aclient
 
     @classmethod
     def class_name(cls) -> str:
