@@ -216,6 +216,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
 
         client = cast(genai.RetrieverServiceClient, self.client)
 
+        created_node_ids: List[str] = []
         for nodeGroup in _group_nodes_by_source(nodes):
             source = nodeGroup.source_node
             document_id = source.node_id
@@ -232,15 +233,16 @@ class GoogleVectorStore(BasePydanticVectorStore):
                     client=client,
                 )
 
-            genaix.batch_create_chunk(
+            created_chunks = genaix.batch_create_chunk(
                 corpus_id=self.corpus_id,
                 document_id=document_id,
                 texts=[node.get_content() for node in nodeGroup.nodes],
                 metadatas=[node.metadata for node in nodeGroup.nodes],
                 client=client,
             )
+            created_node_ids.extend([chunk.name for chunk in created_chunks])
 
-        return [node.node_id for node in nodes]
+        return created_node_ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete nodes by ref_doc_id.

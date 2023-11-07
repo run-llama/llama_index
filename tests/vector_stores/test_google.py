@@ -75,95 +75,145 @@ def test_class_name() -> None:
 
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
-@patch("google.ai.generativelanguage.RetrieverServiceClient.create_chunk")
+@patch("google.ai.generativelanguage.RetrieverServiceClient.batch_create_chunks")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_document")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
 def test_add(
     mock_get_corpus: MagicMock,
     mock_create_document: MagicMock,
-    mock_create_chunk: MagicMock,
+    mock_batch_create_chunks: MagicMock,
 ) -> None:
     # Arrange
+    # We will use a max requests per batch to be 2.
+    # Then, we send 3 requests.
+    # We expect to have 2 batches where the last batch has only 1 request.
+    genaix._MAX_REQUEST_PER_CHUNK = 2
     mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
-    mock_create_document.return_value = genai.Document(
-        name="corpora/123/documents/doc-456"
-    )
-    mock_create_chunk.return_value = genai.Chunk(
-        name="corpora/123/documents/doc-456/chunks/789"
-    )
+    mock_create_document.return_value = genai.Document(name="corpora/123/documents/456")
+    mock_batch_create_chunks.side_effect = [
+        genai.BatchCreateChunksResponse(
+            chunks=[
+                genai.Chunk(name="corpora/123/documents/456/chunks/777"),
+                genai.Chunk(name="corpora/123/documents/456/chunks/888"),
+            ]
+        ),
+        genai.BatchCreateChunksResponse(
+            chunks=[
+                genai.Chunk(name="corpora/123/documents/456/chunks/999"),
+            ]
+        ),
+    ]
 
     # Act
     store = GoogleVectorStore.from_corpus(corpus_id="123")
-    store.add(
+    response = store.add(
         [
             TextNode(
-                text="Hello, my darling",
+                text="Hello my baby",
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(
-                        node_id="doc-456",
-                        metadata={"file_name": "Title for doc-456"},
+                        node_id="456",
+                        metadata={"file_name": "Title for doc 456"},
                     )
                 },
                 metadata={"position": 100},
             ),
             TextNode(
-                text="Goodbye, my baby",
+                text="Hello my honey",
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(
-                        node_id="doc-456",
-                        metadata={"file_name": "Title for doc-456"},
+                        node_id="456",
+                        metadata={"file_name": "Title for doc 456"},
                     )
                 },
                 metadata={"position": 200},
+            ),
+            TextNode(
+                text="Hello my ragtime gal",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(
+                        node_id="456",
+                        metadata={"file_name": "Title for doc 456"},
+                    )
+                },
+                metadata={"position": 300},
             ),
         ]
     )
 
     # Assert
+    assert response == [
+        "corpora/123/documents/456/chunks/777",
+        "corpora/123/documents/456/chunks/888",
+        "corpora/123/documents/456/chunks/999",
+    ]
+
     create_document_request = mock_create_document.call_args.args[0]
     assert create_document_request == genai.CreateDocumentRequest(
         parent="corpora/123",
         document=genai.Document(
-            name="corpora/123/documents/doc-456",
-            display_name="Title for doc-456",
+            name="corpora/123/documents/456",
+            display_name="Title for doc 456",
             custom_metadata=[
                 genai.CustomMetadata(
                     key="file_name",
-                    string_value="Title for doc-456",
+                    string_value="Title for doc 456",
                 ),
             ],
         ),
     )
 
-    assert mock_create_chunk.call_count == 2
-    create_chunk_requests = mock_create_chunk.call_args_list
+    assert mock_batch_create_chunks.call_count == 2
+    mock_batch_create_chunks_calls = mock_batch_create_chunks.call_args_list
 
-    first_create_chunk_request = create_chunk_requests[0].args[0]
-    assert first_create_chunk_request == genai.CreateChunkRequest(
-        parent="corpora/123/documents/doc-456",
-        chunk=genai.Chunk(
-            data=genai.ChunkData(string_value="Hello, my darling"),
-            custom_metadata=[
-                genai.CustomMetadata(
-                    key="position",
-                    numeric_value=100,
+    first_batch_create_chunks_request = mock_batch_create_chunks_calls[0].args[0]
+    assert first_batch_create_chunks_request == genai.BatchCreateChunksRequest(
+        parent="corpora/123/documents/456",
+        requests=[
+            genai.CreateChunkRequest(
+                parent="corpora/123/documents/456",
+                chunk=genai.Chunk(
+                    data=genai.ChunkData(string_value="Hello my baby"),
+                    custom_metadata=[
+                        genai.CustomMetadata(
+                            key="position",
+                            numeric_value=100,
+                        ),
+                    ],
                 ),
-            ],
-        ),
+            ),
+            genai.CreateChunkRequest(
+                parent="corpora/123/documents/456",
+                chunk=genai.Chunk(
+                    data=genai.ChunkData(string_value="Hello my honey"),
+                    custom_metadata=[
+                        genai.CustomMetadata(
+                            key="position",
+                            numeric_value=200,
+                        ),
+                    ],
+                ),
+            ),
+        ],
     )
 
-    second_create_chunk_request = create_chunk_requests[1].args[0]
-    assert second_create_chunk_request == genai.CreateChunkRequest(
-        parent="corpora/123/documents/doc-456",
-        chunk=genai.Chunk(
-            data=genai.ChunkData(string_value="Goodbye, my baby"),
-            custom_metadata=[
-                genai.CustomMetadata(
-                    key="position",
-                    numeric_value=200,
+    second_batch_create_chunks_request = mock_batch_create_chunks_calls[1].args[0]
+    assert second_batch_create_chunks_request == genai.BatchCreateChunksRequest(
+        parent="corpora/123/documents/456",
+        requests=[
+            genai.CreateChunkRequest(
+                parent="corpora/123/documents/456",
+                chunk=genai.Chunk(
+                    data=genai.ChunkData(string_value="Hello my ragtime gal"),
+                    custom_metadata=[
+                        genai.CustomMetadata(
+                            key="position",
+                            numeric_value=300,
+                        ),
+                    ],
                 ),
-            ],
-        ),
+            ),
+        ],
     )
 
 

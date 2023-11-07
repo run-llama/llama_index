@@ -23,6 +23,7 @@ _DEFAULT_API_ENDPOINT = "autopush-generativelanguage.sandbox.googleapis.com"
 _USER_AGENT = f"llama_index/{llama_index.__version__}"
 _default_page_size = 20
 _default_text_service_model = "models/text-bison-001"
+_MAX_REQUEST_PER_CHUNK = 100
 _name_regex = re.compile(r"^corpora/([^/]+?)(/documents/([^/]+?)(/chunks/([^/]+?))?)?$")
 
 
@@ -352,10 +353,14 @@ def batch_create_chunk(
 
     doc_name = str(EntityName(corpus_id=corpus_id, document_id=document_id))
 
-    # Temporary solution until b/307125429 is fixed.
     created_chunks: List[genai.Chunk] = []
+
+    batch_request = genai.BatchCreateChunksRequest(
+        parent=doc_name,
+        requests=[],
+    )
     for text, metadata in zip(texts, metadatas):
-        created_chunk = client.create_chunk(
+        batch_request.requests.append(
             genai.CreateChunkRequest(
                 parent=doc_name,
                 chunk=genai.Chunk(
@@ -364,31 +369,22 @@ def batch_create_chunk(
                 ),
             )
         )
-    return created_chunks
 
-
-"""Restore this after b/307125429 is fixed.
-operation = client.batch_create_chunks(
-    genai.BatchCreateChunksRequest(
-        parent=doc_name,
-        requests=[
-            genai.CreateChunkRequest(
+        if len(batch_request.requests) >= _MAX_REQUEST_PER_CHUNK:
+            response = client.batch_create_chunks(batch_request)
+            created_chunks.extend(list(response.chunks))
+            # Prepare a new batch for next round.
+            batch_request = genai.BatchCreateChunksRequest(
                 parent=doc_name,
-                chunk=genai.Chunk(
-                    data=genai.ChunkData(string_value=text),
-                    custom_metadata=_convert_to_metadata(metadata),
-                ),
+                requests=[],
             )
-            for text, metadata in zip(texts, metadatas)
-        ]
-    )
-)
 
-while not operation.done():
-    _logger.info("Waiting on batch_create_chunk operation")
-response = cast(genai.BatchCreateChunksResponse, operation.result())
-return [chunk for chunk in response.chunks]
-"""
+    # Process left over.
+    if len(batch_request.requests) > 0:
+        response = client.batch_create_chunks(batch_request)
+        created_chunks.extend(list(response.chunks))
+
+    return created_chunks
 
 
 def delete_chunk(
