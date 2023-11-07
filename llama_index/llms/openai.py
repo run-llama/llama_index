@@ -15,7 +15,10 @@ from typing import (
 import tiktoken
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
-from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+from openai.types.chat.chat_completion_chunk import (
+    ChatCompletionChunk,
+    ChoiceDeltaToolCall,
+)
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -227,7 +230,7 @@ class OpenAI(LLM):
 
         def gen() -> ChatResponseGen:
             content = ""
-            tool_calls: Optional[List[dict]] = None
+            tool_calls: Optional[List[ChoiceDeltaToolCall]] = None
             for response in self._client.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
@@ -238,6 +241,8 @@ class OpenAI(LLM):
                     delta = response.choices[0].delta
                 else:
                     delta = {}
+
+                # update using deltas
                 role = delta.role or MessageRole.ASSISTANT
                 content_delta = delta.content or ""
                 content += content_delta
@@ -245,21 +250,14 @@ class OpenAI(LLM):
                 tool_calls_delta = delta.tool_calls or None
                 if tool_calls_delta is not None:
                     if tool_calls is None:
-                        tool_calls = [t.dict() for t in tool_calls_delta]
+                        tool_calls = tool_calls_delta
                     else:
-                        for ix, t in enumerate(tool_calls):
-                            t["function"]["arguments"] += (
-                                tool_calls_delta[ix]
-                                .function.dict()
-                                .get("arguments", "")
-                            )
-                            t["function"]["name"] += (
-                                tool_calls_delta[ix].function.dict().get("name", "")
-                                or ""
-                            )
-                            t["id"] += tool_calls_delta[ix].id or ""
-                            t["type"] += tool_calls_delta[ix].type or ""
-                            # print(t)
+                        assert len(tool_calls) == len(tool_calls_delta)
+                        for t, t_delta in zip(tool_calls, tool_calls_delta):
+                            t.function.arguments += t_delta.function.arguments or ""
+                            t.function.name += t_delta.function.name or ""
+                            t.id += t_delta.id or ""
+                            t.type += t_delta.type or ""
 
                     # do we need to validate tool_calls?
                     for tool_call in tool_calls_delta:
@@ -267,7 +265,7 @@ class OpenAI(LLM):
 
                 additional_kwargs = {}
                 if tool_calls is not None:
-                    additional_kwargs["tool_calls"] = tool_calls
+                    additional_kwargs["tool_calls"] = [t.dict() for t in tool_calls]
 
                 yield ChatResponse(
                     message=ChatMessage(
