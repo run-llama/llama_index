@@ -80,7 +80,9 @@ class StorageContext:
             if vector_store:
                 vector_stores = {DEFAULT_VECTOR_STORE: vector_store}
             else:
-                vector_stores = vector_stores, SimpleVectorStore()
+                vector_stores = vector_stores or {
+                    DEFAULT_VECTOR_STORE: SimpleVectorStore()
+                }
         else:
             docstore = docstore or SimpleDocumentStore.from_persist_dir(
                 persist_dir, fs=fs
@@ -94,10 +96,11 @@ class StorageContext:
 
             if vector_store:
                 vector_stores = {DEFAULT_VECTOR_STORE: vector_store}
+            elif vector_stores:
+                vector_stores = vector_stores
             else:
-                vector_stores = (
-                    vector_stores
-                    or SimpleVectorStore.from_namespaced_persist_dir(persist_dir, fs=fs)
+                vector_stores = SimpleVectorStore.from_namespaced_persist_dir(
+                    persist_dir, fs=fs
                 )
 
         return cls(
