@@ -219,7 +219,7 @@ def to_openai_message_dict(
         for key in null_keys:
             message_dict.pop(key)
 
-    return message_dict
+    return message_dict  # type: ignore
 
 
 def to_openai_message_dicts(
