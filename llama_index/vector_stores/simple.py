@@ -130,9 +130,9 @@ class SimpleVectorStore(VectorStore):
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
         fs: Optional[fsspec.AbstractFileSystem] = None,
-    ) -> Dict[str, "SimpleVectorStore"]:
+    ) -> Dict[str, VectorStore]:
         """Load from namespaced persist dir."""
-        vector_stores = {}
+        vector_stores: Dict[str, VectorStore] = {}
         for fname in os.listdir(persist_dir):
             if fname.endswith(DEFAULT_PERSIST_FNAME):
                 namespace = fname.split(NAMESPACE_SEP)[0]

@@ -143,12 +143,12 @@ class StorageContext:
         for vector_store_name, vector_store in self.vector_stores.items():
             if fs is not None:
                 vector_store_path = concat_dirs(
-                    persist_dir,
+                    str(persist_dir),
                     f"{vector_store_name}{NAMESPACE_SEP}{vector_store_fname}",
                 )
             else:
                 vector_store_path = str(
-                    persist_dir
+                    Path(persist_dir)
                     / f"{vector_store_name}{NAMESPACE_SEP}{vector_store_fname}"
                 )
 
@@ -190,7 +190,7 @@ class StorageContext:
         index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
         graph_store = SimpleGraphStore.from_dict(save_dict[GRAPH_STORE_KEY])
 
-        vector_stores = {}
+        vector_stores: Dict[str, VectorStore] = {}
         for key, vector_store_dict in save_dict[VECTOR_STORE_KEY].items():
             vector_stores[key] = SimpleVectorStore.from_dict(vector_store_dict)
 
