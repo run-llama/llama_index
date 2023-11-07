@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
@@ -321,13 +320,6 @@ def refresh_openai_azuread_token(
                 f"the resource due to the following error: {err.message}"
             ) from err
     return azure_ad_token
-
-
-def validate_openai_api_key(api_key: Optional[str] = None) -> None:
-    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
-
-    if not openai_api_key:
-        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
 
 
 def resolve_from_aliases(*args: Optional[str]) -> Optional[str]:

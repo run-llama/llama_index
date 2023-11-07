@@ -3,7 +3,6 @@ import os
 from typing import Any, List
 from unittest.mock import patch
 
-import pytest
 from llama_index.embeddings.base import SimilarityMode, mean_agg
 from llama_index.embeddings.openai import OpenAIEmbedding
 
@@ -102,9 +101,6 @@ def test_mean_agg() -> None:
 
 def test_validates_api_key_is_present() -> None:
     with CachedOpenAIApiKeys():
-        with pytest.raises(ValueError, match="No API key found for OpenAI."):
-            OpenAIEmbedding()
-
         os.environ["OPENAI_API_KEY"] = "sk-" + ("a" * 48)
 
         # We can create a new LLM when the env variable is set
