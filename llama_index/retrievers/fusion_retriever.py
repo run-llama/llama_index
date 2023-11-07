@@ -113,15 +113,16 @@ class QueryFusionRetriever(BaseRetriever):
     def _run_nested_async_queries(
         self, queries: List[str]
     ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
-        tasks = []
+        tasks, task_queries = [], []
         for query in queries:
             for i, retriever in enumerate(self._retrievers):
                 tasks.append(retriever.aretrieve(query))
+                task_queries.append(query)
 
         task_results = run_async_tasks(tasks)
 
         results = {}
-        for i, (query, query_result) in enumerate(zip(queries, task_results)):
+        for i, (query, query_result) in enumerate(zip(task_queries, task_results)):
             results[(query, i)] = query_result
 
         return results
@@ -129,15 +130,16 @@ class QueryFusionRetriever(BaseRetriever):
     async def _run_async_queries(
         self, queries: List[str]
     ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
-        tasks = []
+        tasks, task_queries = [], []
         for query in queries:
             for i, retriever in enumerate(self._retrievers):
                 tasks.append(retriever.aretrieve(query))
+                task_queries.append(query)
 
         task_results = await asyncio.gather(*tasks)
 
         results = {}
-        for i, (query, query_result) in enumerate(zip(queries, task_results)):
+        for i, (query, query_result) in enumerate(zip(task_queries, task_results)):
             results[(query, i)] = query_result
 
         return results
