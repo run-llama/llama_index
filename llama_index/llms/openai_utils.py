@@ -284,11 +284,11 @@ def resolve_openai_credentials(
     )
 
     # resolve from openai module or default
-    api_key = api_key or openai.api_key
-    api_base = api_base or openai.base_url or DEFAULT_OPENAI_API_BASE
-    api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
+    final_api_key = api_key or openai.api_key or ""
+    final_api_base = api_base or openai.base_url or DEFAULT_OPENAI_API_BASE
+    final_api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
 
-    return api_key, api_base, api_version
+    return final_api_key, final_api_base, final_api_version
 
 
 def refresh_openai_azuread_token(
