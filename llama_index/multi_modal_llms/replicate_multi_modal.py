@@ -122,26 +122,16 @@ class ReplicateMultiModal(MultiModalLLM):
         return {}
 
     def complete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponse:
-        response_gen = self.stream_complete(
-            prompt, image_documents, image_idx, **kwargs
-        )
+        response_gen = self.stream_complete(prompt, image_documents, **kwargs)
         response_list = list(response_gen)
         final_response = response_list[-1]
         final_response.delta = None
         return final_response
 
     def stream_complete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponseGen:
         try:
             import replicate
@@ -153,7 +143,10 @@ class ReplicateMultiModal(MultiModalLLM):
 
         prompt = self._completion_to_prompt(prompt)
         input_dict = self._get_multi_modal_input_dict(
-            prompt, image_documents[image_idx], **kwargs
+            # using the first image for single image completion
+            prompt,
+            image_documents[0],
+            **kwargs
         )
 
         response_iter = replicate.run(self.model, input=input_dict)
@@ -170,19 +163,11 @@ class ReplicateMultiModal(MultiModalLLM):
         return gen()
 
     async def acomplete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponse:
         raise NotImplementedError
 
     async def astream_complete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponseAsyncGen:
         raise NotImplementedError
