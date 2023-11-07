@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from openai import AsyncAzureOpenAI
 from openai import AzureOpenAI as SyncAzureOpenAI
@@ -115,7 +115,7 @@ class AzureOpenAI(OpenAI):
 
         return values
 
-    def _get_clients(self, **kwargs: Any) -> tuple[SyncAzureOpenAI, AsyncAzureOpenAI]:
+    def _get_clients(self, **kwargs: Any) -> Tuple[SyncAzureOpenAI, AsyncAzureOpenAI]:
         client = SyncAzureOpenAI(
             **self._get_credential_kwargs(),
         )
