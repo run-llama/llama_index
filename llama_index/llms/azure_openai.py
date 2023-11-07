@@ -1,16 +1,16 @@
 from typing import Any, Dict, Optional
 
-from openai import AsyncAzureOpenAI, AzureOpenAI
+from openai import AsyncAzureOpenAI
+from openai import AzureOpenAI as SyncAzureOpenAI
 
 from llama_index.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.callbacks import CallbackManager
+from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import (
     refresh_openai_azuread_token,
     resolve_from_aliases,
 )
-
-AZURE_OPENAI_API_TYPE = "azure"
 
 
 class AzureOpenAI(OpenAI):
@@ -27,24 +27,25 @@ class AzureOpenAI(OpenAI):
         for your deployment when you deployed a model.
 
     You must have the following environment variables set:
-    - `OPENAI_API_TYPE`: set this to `azure`, `azure_ad`, or `azuread`
     - `OPENAI_API_VERSION`: set this to `2023-05-15`
         This may change in the future.
-    - `OPENAI_API_BASE`: your endpoint should look like the following
+    - `AZURE_OPENAI_ENDPOINT`: your endpoint should look like the following
         https://YOUR_RESOURCE_NAME.openai.azure.com/
-    - `OPENAI_API_KEY`: your API key if the api type is `azure`
+    - `AZURE_OPENAI_API_KEY`: your API key if the api type is `azure`
 
     More information can be found here:
         https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quickstart?tabs=command-line&pivots=programming-language-python
     """
 
     engine: str = Field(description="The name of the deployed azure engine.")
+    azure_endpoint: Optional[str] = Field(description="The Azure endpoint to use.")
+    azure_deployment: Optional[str] = Field(description="The Azure deployment to use.")
     use_azure_ad: bool = Field(
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
 
     _azure_ad_token: Any = PrivateAttr()
-    _client: AzureOpenAI = PrivateAttr()
+    _client: SyncAzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
 
     def __init__(
@@ -56,9 +57,11 @@ class AzureOpenAI(OpenAI):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
-        api_type: Optional[str] = AZURE_OPENAI_API_TYPE,
-        api_base: Optional[str] = None,
         api_version: Optional[str] = None,
+        # azure specific
+        azure_endpoint: Optional[str] = None,
+        azure_deployment: Optional[str] = None,
+        use_azure_ad: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         # aliases for engine
         deployment_name: Optional[str] = None,
@@ -76,47 +79,50 @@ class AzureOpenAI(OpenAI):
         if engine is None:
             raise ValueError("You must specify an `engine` parameter.")
 
-        use_azure_ad = api_type in ("azuread", "azure_ad")
+        azure_endpoint = get_from_param_or_env(
+            "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
+        )
 
         super().__init__(
             engine=engine,
-            use_azure_ad=use_azure_ad,
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             api_key=api_key,
-            api_base=api_base,
-            api_type=api_type,
+            azure_endpoint=azure_endpoint,
+            azure_deployment=azure_deployment,
+            use_azure_ad=use_azure_ad,
             api_version=api_version,
             callback_manager=callback_manager,
-            **kwargs,
-        )
-
-        self._client = AzureOpenAI(
-            **self._get_model_kwargs(),
-            **self._get_credential_kwargs(),
             **kwargs,
         )
 
     @root_validator
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate necessary credentials are set."""
-        if values["api_base"] == "https://api.openai.com/v1":
+        if (
+            values["api_base"] == "https://api.openai.com/v1"
+            and values["azure_endpoint"] is None
+        ):
             raise ValueError(
                 "You must set OPENAI_API_BASE to your Azure endpoint. "
                 "It should look like https://YOUR_RESOURCE_NAME.openai.azure.com/"
-            )
-        if values["api_type"] not in ("azure", "azure_ad", "azuread"):
-            raise ValueError(
-                "You must set OPENAI_API_TYPE to one of "
-                "(`azure`, `azuread`, `azure_ad`) for Azure OpenAI."
             )
         if values["api_version"] is None:
             raise ValueError("You must set OPENAI_API_VERSION for Azure OpenAI.")
 
         return values
+
+    def _get_clients(self, **kwargs: Any) -> tuple[SyncAzureOpenAI, AsyncAzureOpenAI]:
+        client = SyncAzureOpenAI(
+            **self._get_credential_kwargs(),
+        )
+        aclient = AsyncAzureOpenAI(
+            **self._get_credential_kwargs(),
+        )
+        return client, aclient
 
     def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         if self.use_azure_ad:
@@ -125,15 +131,14 @@ class AzureOpenAI(OpenAI):
 
         return {
             "api_key": self.api_key,
-            "api_type": self.api_type,
-            "api_base": self.api_base,
+            "azure_endpoint": self.azure_endpoint,
+            "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         model_kwargs = super()._get_model_kwargs(**kwargs)
-        model_kwargs.pop("model")
-        model_kwargs["engine"] = self.engine
+        model_kwargs["model"] = self.engine
         return model_kwargs
 
     @classmethod

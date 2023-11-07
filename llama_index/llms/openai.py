@@ -116,8 +116,12 @@ class OpenAI(LLM):
             **kwargs,
         )
 
-        self._client = SyncOpenAI(**self._get_credential_kwargs(**kwargs))
-        self._aclient = AsyncOpenAI(**self._get_credential_kwargs(**kwargs))
+        self._client, self._aclient = self._get_clients(**kwargs)
+
+    def _get_clients(self, **kwargs: Any) -> tuple[SyncOpenAI, AsyncOpenAI]:
+        client = SyncOpenAI(**self._get_credential_kwargs())
+        aclient = AsyncOpenAI(**self._get_credential_kwargs())
+        return client, aclient
 
     def _get_model_name(self) -> str:
         model_name = self.model
