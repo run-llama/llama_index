@@ -185,10 +185,12 @@ class OpenAIAssistantAgent(BaseAgent):
         files = files or []
         file_dict = _process_files(client, files)
 
+        # TODO: openai's typing is a bit sus
+        all_openai_tools = cast(List[Any], all_openai_tools)
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
-            tools=all_openai_tools,
+            tools=cast(List[Any], all_openai_tools),
             model=model,
             file_ids=list(file_dict.keys()),
         )
@@ -222,7 +224,7 @@ class OpenAIAssistantAgent(BaseAgent):
         raw_messages = self._client.beta.threads.messages.list(
             thread_id=self._thread_id, order="asc"
         )
-        return from_openai_thread_messages(raw_messages)
+        return from_openai_thread_messages(list(raw_messages))
 
     def reset(self) -> None:
         """Delete and create a new thread."""
@@ -263,8 +265,11 @@ class OpenAIAssistantAgent(BaseAgent):
             tool_output_objs.append(tool_output)
 
         # submit tool outputs
+        # TODO: openai's typing is a bit sus
         self._client.beta.threads.runs.submit_tool_outputs(
-            thread_id=self._thread_id, run_id=run.id, tool_outputs=tool_output_dicts
+            thread_id=self._thread_id,
+            run_id=run.id,
+            tool_outputs=cast(List[Any], tool_output_dicts),
         )
         return tool_output_objs
 
@@ -305,7 +310,7 @@ class OpenAIAssistantAgent(BaseAgent):
         raw_messages = self._client.beta.threads.messages.list(
             thread_id=self._thread_id, order="desc"
         )
-        messages = from_openai_thread_messages(raw_messages)
+        messages = from_openai_thread_messages(list(raw_messages))
         return messages[0]
 
     def _chat(
