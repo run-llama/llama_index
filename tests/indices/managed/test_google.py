@@ -62,9 +62,9 @@ def test_create_corpus(mock_create_corpus: MagicMock) -> None:
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_corpus")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_document")
-@patch("google.ai.generativelanguage.RetrieverServiceClient.create_chunk")
+@patch("google.ai.generativelanguage.RetrieverServiceClient.batch_create_chunks")
 def test_from_documents(
-    mock_create_chunk: MagicMock,
+    mock_batch_create_chunk: MagicMock,
     mock_create_document: MagicMock,
     mock_create_corpus: MagicMock,
 ) -> None:
@@ -73,12 +73,19 @@ def test_from_documents(
 
     # Arrange
     mock_create_corpus.side_effect = fake_create_corpus
-    mock_create_document.return_value = genai.Document(
-        name="corpora/123/documents/doc-456"
-    )
-    mock_create_chunk.return_value = genai.Chunk(
-        name="corpora/123/documents/doc-456/chunks/789"
-    )
+    mock_create_document.return_value = genai.Document(name="corpora/123/documents/456")
+    mock_batch_create_chunk.side_effect = [
+        genai.BatchCreateChunksResponse(
+            chunks=[
+                genai.Chunk(name="corpora/123/documents/456/chunks/777"),
+            ]
+        ),
+        genai.BatchCreateChunksResponse(
+            chunks=[
+                genai.Chunk(name="corpora/123/documents/456/chunks/888"),
+            ]
+        ),
+    ]
 
     # Act
     index = GoogleIndex.from_documents(
@@ -96,14 +103,17 @@ def test_from_documents(
     create_document_request = mock_create_document.call_args.args[0]
     assert create_document_request.parent == f"corpora/{index.corpus_id}"
 
-    assert mock_create_chunk.call_count == 2
-    create_chunk_requests = mock_create_chunk.call_args_list
+    assert mock_batch_create_chunk.call_count == 2
 
-    first_create_chunk_request = create_chunk_requests[0].args[0]
-    assert first_create_chunk_request.chunk.data.string_value == "Hello, my darling"
+    first_batch_request = mock_batch_create_chunk.call_args_list[0].args[0]
+    assert (
+        first_batch_request.requests[0].chunk.data.string_value == "Hello, my darling"
+    )
 
-    second_create_chunk_request = create_chunk_requests[1].args[0]
-    assert second_create_chunk_request.chunk.data.string_value == "Goodbye, my baby"
+    second_batch_request = mock_batch_create_chunk.call_args_list[1].args[0]
+    assert (
+        second_batch_request.requests[0].chunk.data.string_value == "Goodbye, my baby"
+    )
 
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
