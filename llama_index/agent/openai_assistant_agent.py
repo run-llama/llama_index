@@ -1,12 +1,10 @@
 """OpenAI Assistant Agent."""
-import asyncio
 import json
 import logging
-from abc import abstractmethod
-from threading import Thread
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 import time
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+from llama_index.agent.openai_agent import get_function_by_name
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
@@ -21,12 +19,7 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.llms.base import ChatMessage, MessageRole
-# from llama_index.llms.openai_utils import is_function_calling_model, from_openai_message_dicts
-from llama_index.llms.openai_utils import from_openai_messages
-from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.objects.base import ObjectRetriever
-from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
-from llama_index.agent.openai_agent import get_function_by_name
+from llama_index.tools import BaseTool, ToolOutput
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -34,11 +27,14 @@ logger.setLevel(logging.WARNING)
 
 def from_openai_thread_message(thread_message: Any) -> ChatMessage:
     """From OpenAI thread message."""
-    from openai.types.beta.threads import ThreadMessage, MessageContentText
+    from openai.types.beta.threads import MessageContentText, ThreadMessage
+
     thread_message = cast(ThreadMessage, thread_message)
 
     # we don't have a way of showing images, just do text for now
-    text_contents = [t for t in thread_message.content if isinstance(t, MessageContentText)]
+    text_contents = [
+        t for t in thread_message.content if isinstance(t, MessageContentText)
+    ]
     text_content_str = " ".join([t.text.value for t in text_contents])
 
     return ChatMessage(
@@ -50,21 +46,23 @@ def from_openai_thread_message(thread_message: Any) -> ChatMessage:
             "assistant_id": thread_message.assistant_id,
             "id": thread_message.id,
             "metadata": thread_message.metadata,
-        }
+        },
     )
 
 
 def from_openai_thread_messages(thread_messages: List[Any]) -> List[ChatMessage]:
     """From OpenAI thread messages."""
-    return [from_openai_thread_message(thread_message) for thread_message in thread_messages]
-    
+    return [
+        from_openai_thread_message(thread_message) for thread_message in thread_messages
+    ]
+
 
 def call_function(
     tools: List[BaseTool], fn_obj: Any, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     from openai.types.beta.threads.required_action_function_tool_call import Function
-    
+
     fn_obj = cast(Function, fn_obj)
     # TMP: consolidate with other abstractions
     name = fn_obj.name
@@ -93,11 +91,12 @@ def call_function(
 def _process_files(client: Any, files: List[str]) -> Dict[str, Any]:
     """Process files."""
     from openai import OpenAI
+
     client = cast(OpenAI, client)
 
     file_dict = {}
     for file in files:
-        file_obj = client.files.create(file=open(file, 'rb'), purpose="assistants")
+        file_obj = client.files.create(file=open(file, "rb"), purpose="assistants")
         file_dict[file_obj.id] = file
     return file_dict
 
@@ -106,13 +105,13 @@ class OpenAIAssistantAgent(BaseAgent):
     """OpenAIAssistant agent.
 
     Wrapper around OpenAI assistant API: https://platform.openai.com/docs/assistants/overview
-    
+
     """
 
     def __init__(
-        self, 
+        self,
         client: Any,
-        assistant: Any, 
+        assistant: Any,
         tools: List[BaseTool],
         callback_manager: Optional[CallbackManager] = None,
         thread_id: Optional[str] = None,
@@ -165,7 +164,7 @@ class OpenAIAssistantAgent(BaseAgent):
             instructions_prefix: instructions prefix
             callback_manager: callback manager
             verbose: verbose
-        
+
         """
         from openai import OpenAI
 
@@ -173,7 +172,10 @@ class OpenAIAssistantAgent(BaseAgent):
         # not to be confused with the tools we pass in for function calling
         openai_tools = openai_tools or []
         tools = tools or []
-        tool_fns = [{"type": "function", "function": t.metadata.to_openai_function()} for t in tools]
+        tool_fns = [
+            {"type": "function", "function": t.metadata.to_openai_function()}
+            for t in tools
+        ]
         all_openai_tools = openai_tools + tool_fns
 
         # initialize client
@@ -191,10 +193,13 @@ class OpenAIAssistantAgent(BaseAgent):
             file_ids=list(file_dict.keys()),
         )
         return cls(
-            client, assistant, tools, 
+            client,
+            assistant,
+            tools,
             callback_manager=callback_manager,
-            thread_id=thread_id, instructions_prefix=instructions_prefix,
-            verbose=verbose
+            thread_id=thread_id,
+            instructions_prefix=instructions_prefix,
+            verbose=verbose,
         )
 
     @property
@@ -210,8 +215,7 @@ class OpenAIAssistantAgent(BaseAgent):
     @property
     def chat_history(self) -> List[ChatMessage]:
         raw_messages = self._client.beta.threads.messages.list(
-            thread_id=self._thread_id,
-            order="asc"
+            thread_id=self._thread_id, order="asc"
         )
         messages = from_openai_thread_messages(raw_messages)
         return messages
@@ -233,7 +237,6 @@ class OpenAIAssistantAgent(BaseAgent):
 
     def add_message(self, message: str, file_ids: Optional[List[str]] = None) -> Any:
         """Add message to assistant."""
-        
         file_ids = file_ids or []
         message = self._client.beta.threads.messages.create(
             thread_id=self._thread_id,
@@ -250,50 +253,46 @@ class OpenAIAssistantAgent(BaseAgent):
         tool_output_objs: List[ToolOutput] = []
         for tool_call in tool_calls:
             fn_obj = tool_call.function
-            _, tool_output = call_function(
-                self._tools, fn_obj, verbose=self._verbose
+            _, tool_output = call_function(self._tools, fn_obj, verbose=self._verbose)
+            tool_output_dicts.append(
+                {"tool_call_id": tool_call.id, "output": str(tool_output)}
             )
-            tool_output_dicts.append({
-                "tool_call_id": tool_call.id,
-                "output": str(tool_output)
-            })
             tool_output_objs.append(tool_output)
 
         # submit tool outputs
         self._client.beta.threads.runs.submit_tool_outputs(
-            thread_id=self._thread_id,
-            run_id=run.id,
-            tool_outputs=tool_output_dicts
+            thread_id=self._thread_id, run_id=run.id, tool_outputs=tool_output_dicts
         )
         return tool_output_objs
 
-    def run_assistant(self, instructions_prefix: Optional[str] = None) -> Tuple[Any, Dict]:
+    def run_assistant(
+        self, instructions_prefix: Optional[str] = None
+    ) -> Tuple[Any, Dict]:
         """Run assistant."""
         instructions_prefix = instructions_prefix or self._instructions_prefix
         run = self._client.beta.threads.runs.create(
             thread_id=self._thread_id,
             assistant_id=self._assistant.id,
-            instructions=self._instructions_prefix
+            instructions=self._instructions_prefix,
         )
         from openai.types.beta.threads import Run
+
         run = cast(Run, run)
 
         sources = []
 
         while run.status in ["queued", "in_progress", "requires_action"]:
             run = self._client.beta.threads.runs.retrieve(
-                thread_id=self._thread_id,
-                run_id=run.id
+                thread_id=self._thread_id, run_id=run.id
             )
             if run.status == "requires_action":
                 cur_tool_outputs = self._run_function_calling(run)
                 sources.extend(cur_tool_outputs)
-                
+
             time.sleep(self._run_retrieve_sleep_time)
         if run.status == "failed":
             raise ValueError(
-                f"Run failed with status {run.status}.\n"
-                f"Error: {run.last_error}"
+                f"Run failed with status {run.status}.\n" f"Error: {run.last_error}"
             )
         return run, {"sources": sources}
 
@@ -301,8 +300,7 @@ class OpenAIAssistantAgent(BaseAgent):
     def latest_message(self) -> ChatMessage:
         """Get latest message."""
         raw_messages = self._client.beta.threads.messages.list(
-            thread_id=self._thread_id,
-            order="desc"
+            thread_id=self._thread_id, order="desc"
         )
         messages = from_openai_thread_messages(raw_messages)
         return messages[0]
@@ -390,4 +388,3 @@ class OpenAIAssistantAgent(BaseAgent):
         function_call: Union[str, dict] = "auto",
     ) -> StreamingAgentChatResponse:
         raise NotImplementedError("astream_chat not implemented")
-
