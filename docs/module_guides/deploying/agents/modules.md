@@ -19,6 +19,7 @@ maxdepth: 1
 /examples/query_engine/recursive_retriever_agents.ipynb
 /examples/agent/multi_document_agents.ipynb
 /examples/agent/agent_builder.ipynb
+/examples/agent/openai_agent_parallel_function_calling.ipynb
 ```
 
 ## [Beta] OpenAI Assistant Agent
