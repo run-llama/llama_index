@@ -7,6 +7,7 @@ import logging
 from typing import Any, List, Optional, Sequence
 
 from llama_index.data_structs.data_structs import IndexDict
+from llama_index.embeddings.mutli_modal_base import MultiModalEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
@@ -52,7 +53,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._image_embed_model = resolve_embed_model(image_embed_model)
+        image_embed_model = resolve_embed_model(image_embed_model)
+        assert isinstance(image_embed_model, MultiModalEmbedding)
+        self._image_embed_model = image_embed_model
+
         storage_context = storage_context or StorageContext.from_defaults()
 
         if image_vector_store is not None:
