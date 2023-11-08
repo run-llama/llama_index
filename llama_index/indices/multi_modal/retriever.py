@@ -10,6 +10,7 @@ from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRet
 from llama_index.schema import NodeWithScore
 from llama_index.vector_stores.types import (
     MetadataFilters,
+    VectorStoreQuery,
     VectorStoreQueryMode,
 )
 
@@ -35,6 +36,7 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
         self,
         index: MultiModalVectorStoreIndex,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        image_similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
         filters: Optional[MetadataFilters] = None,
         alpha: Optional[float] = None,
@@ -53,6 +55,7 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
         self._docstore = self._index.docstore
 
         self._similarity_top_k = similarity_top_k
+        self._image_similarity_top_k = image_similarity_top_k
         self._vector_store_query_mode = VectorStoreQueryMode(vector_store_query_mode)
         self._alpha = alpha
         self._node_ids = node_ids
@@ -71,6 +74,21 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
     def similarity_top_k(self, similarity_top_k: int) -> None:
         """Set similarity top k."""
         self._similarity_top_k = similarity_top_k
+
+    def _build_iamge_vector_store_query(
+        self, query_bundle_with_embeddings: QueryBundle
+    ) -> VectorStoreQuery:
+        return VectorStoreQuery(
+            query_embedding=query_bundle_with_embeddings.embedding,
+            similarity_top_k=self._image_similarity_top_k,
+            node_ids=self._node_ids,
+            doc_ids=self._doc_ids,
+            query_str=query_bundle_with_embeddings.query_str,
+            mode=self._vector_store_query_mode,
+            alpha=self._alpha,
+            filters=self._filters,
+            sparse_top_k=self._sparse_top_k,
+        )
 
     def _retrieve(
         self,
@@ -103,7 +121,7 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
         self,
         query_bundle_with_embeddings: QueryBundle,
     ) -> List[NodeWithScore]:
-        query = self._build_vector_store_query(query_bundle_with_embeddings)
+        query = self._build_iamge_vector_store_query(query_bundle_with_embeddings)
         query_result = self._image_vector_store.query(query, **self._kwargs)
         return self._build_node_list_from_query_result(query_result)
 
@@ -148,6 +166,6 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
         self,
         query_bundle_with_embeddings: QueryBundle,
     ) -> List[NodeWithScore]:
-        query = self._build_vector_store_query(query_bundle_with_embeddings)
+        query = self._build_iamge_vector_store_query(query_bundle_with_embeddings)
         query_result = await self._image_vector_store.aquery(query, **self._kwargs)
         return self._build_node_list_from_query_result(query_result)
