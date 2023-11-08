@@ -1,5 +1,4 @@
 import pytest
-
 from llama_index.node_parser.code_hierarchy import CodeHierarchyNodeParser
 
 

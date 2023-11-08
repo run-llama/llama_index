@@ -3,20 +3,18 @@
 Similar to SimpleKeywordTableIndex, but doesn't use GPT to extract keywords.
 """
 
-from pathlib import Path
 from typing import Any, Set, Union
 
 from pyparsing import Sequence
-from llama_index.data_structs.data_structs import KeywordTable
 
+from llama_index.data_structs.data_structs import KeywordTable
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.base import (
     BaseKeywordTableIndex,
     KeywordTableRetrieverMode,
 )
-from llama_index.indices.keyword_table.utils import simple_extract_keywords
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
-from llama_index.schema import BaseNode, MetadataMode
+from llama_index.schema import BaseNode
 from llama_index.utils import get_tqdm_iterable
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -30,14 +28,16 @@ class CodeHierarchyKeywordTableIndex(BaseKeywordTableIndex):
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        raise NotImplementedError("You should not be calling this method "
-                                  "from within CodeHierarchyKeywordTableIndex.")
+        raise NotImplementedError(
+            "You should not be calling this method "
+            "from within CodeHierarchyKeywordTableIndex."
+        )
 
     def _extract_keywords_from_node(self, node: BaseNode) -> Set[str]:
         keywords = []
         keywords.append(node.node_id)
         file_path = node.metadata["filepath"]
-        module_path = file_path.replace('/', '.').lstrip('.').rstrip('.py')
+        module_path = file_path.replace("/", ".").lstrip(".").rstrip(".py")
         keywords.append(module_path)
         # Add the last scope name and signature to the keywords
         if node.metadata["inclusive_scopes"]:

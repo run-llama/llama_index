@@ -142,10 +142,9 @@ node_parser = SentenceWindowNodeParser.from_defaults(
 
 A full example can be found [here in combination with the `MetadataReplacementNodePostProcessor`](/examples/node_postprocessor/MetadataReplacementDemo.ipynb).
 
-
 ## CodeHierarchyNodeParser
 
-The `CodeHierarchyNodeParser` is useful to split long code files into more reasonable chunks. What this will do is create a "Hierarchy" of sorts, where sections of the code are made more reasonable by replacing the scope body with short comments telling the LLM to search for a referenced node if it wants to read that context body. This is called skeletonization, and is toggled by setting `skeleton` to `True` which it is by default. 
+The `CodeHierarchyNodeParser` is useful to split long code files into more reasonable chunks. What this will do is create a "Hierarchy" of sorts, where sections of the code are made more reasonable by replacing the scope body with short comments telling the LLM to search for a referenced node if it wants to read that context body. This is called skeletonization, and is toggled by setting `skeleton` to `True` which it is by default.
 
 Nodes in this hierarchy will be split based on scope, like function, class, or method scope, and will have links to their children and parents so the LLM can traverse the tree.
 
@@ -163,4 +162,3 @@ split_nodes = CodeHierarchyNodeParser(
 ```
 
 A full example can be found [here in combination with `CodeSplitter`](/examples/node_parsers/code_hierarchy/CodeHierarchyNodeParserUsage.ipynb).
-

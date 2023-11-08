@@ -7,8 +7,7 @@ from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 
 
 def test_python_code_splitter() -> None:
-    """Test case for code splitting using python"""
-
+    """Test case for code splitting using python."""
     if "CI" in os.environ:
         return
 
@@ -144,8 +143,7 @@ class Foo:
 
 
 def test_python_code_splitter_with_decorators() -> None:
-    """Test case for code splitting using python"""
-
+    """Test case for code splitting using python."""
     if "CI" in os.environ:
         return
 
@@ -254,8 +252,7 @@ class Foo:
 
 
 def test_html_code_splitter() -> None:
-    """Test case for code splitting using HTML"""
-
+    """Test case for code splitting using HTML."""
     if "CI" in os.environ:
         return
 
@@ -368,8 +365,7 @@ def test_html_code_splitter() -> None:
 
 
 def test_typescript_code_splitter() -> None:
-    """Test case for code splitting using TypeScript"""
-
+    """Test case for code splitting using TypeScript."""
     if "CI" in os.environ:
         return
 
@@ -497,8 +493,7 @@ function baz() {
 
 
 def test_typescript_code_splitter_2() -> None:
-    """Test case for code splitting using TypeScript"""
-
+    """Test case for code splitting using TypeScript."""
     if "CI" in os.environ:
         return
 
