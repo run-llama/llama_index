@@ -207,4 +207,5 @@ maxdepth: 1
 /examples/embeddings/clarifai.ipynb
 /examples/embeddings/llm_rails.ipynb
 /examples/embeddings/text_embedding_inference.ipynb
+/examples/embeddings/jinaai_embeddings.ipynb
 ```
