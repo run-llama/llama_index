@@ -260,6 +260,7 @@ class OpenAI(LLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
+                # TODO: REFACTOR WITH FUNCTIONS
                 # openai provides the delta on one tool-at-a-time
                 # we need to use the index on it to see if its updating one
                 # for which we've already started to received content on, OR
@@ -493,6 +494,7 @@ class OpenAI(LLM):
                 content_delta = delta.content or ""
                 content += content_delta
 
+                # TODO: REFACTOR WITH HELPER FUNCTIONS
                 tool_calls_delta = delta.tool_calls or None
                 if tool_calls_delta is not None:
                     is_function = True
