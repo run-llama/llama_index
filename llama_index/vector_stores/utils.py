@@ -3,6 +3,7 @@ from typing import Any, Dict, Tuple
 
 from llama_index.schema import (
     BaseNode,
+    ImageNode,
     IndexNode,
     NodeRelationship,
     RelatedNodeInfo,
@@ -50,7 +51,7 @@ def node_to_metadata_dict(
 
     # dump remainder of node_dict to json string
     metadata["_node_content"] = json.dumps(node_dict)
-    metadata["_node_type"] = node.get_type()
+    metadata["_node_type"] = node.class_name()
 
     # store ref doc id at top level to allow metadata filtering
     # kept for backwards compatibility, will consolidate in future
@@ -68,8 +69,10 @@ def metadata_dict_to_node(metadata: dict) -> BaseNode:
     if node_json is None:
         raise ValueError("Node content not found in metadata dict.")
 
-    if node_type == IndexNode.get_type():
+    if node_type == IndexNode.class_name():
         return IndexNode.parse_raw(node_json)
+    elif node_type == ImageNode.class_name():
+        return ImageNode.parse_raw(node_json)
     else:
         return TextNode.parse_raw(node_json)
 
