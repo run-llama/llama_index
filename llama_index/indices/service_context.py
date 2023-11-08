@@ -54,7 +54,6 @@ class ServiceContextData(BaseModel):
     llm_predictor: dict
     prompt_helper: dict
     embed_model: dict
-    image_embed_model: dict
     node_parser: dict
     text_splitter: Optional[dict]
     metadata_extractor: Optional[dict]
@@ -70,7 +69,6 @@ class ServiceContext:
     - llm_predictor: BaseLLMPredictor
     - prompt_helper: PromptHelper
     - embed_model: BaseEmbedding
-    - image_embed_model: BaseEmbedding
     - node_parser: NodeParser
     - llama_logger: LlamaLogger (deprecated)
     - callback_manager: CallbackManager
@@ -80,7 +78,6 @@ class ServiceContext:
     llm_predictor: BaseLLMPredictor
     prompt_helper: PromptHelper
     embed_model: BaseEmbedding
-    image_embed_model: BaseEmbedding
     node_parser: NodeParser
     llama_logger: LlamaLogger
     callback_manager: CallbackManager
@@ -92,7 +89,6 @@ class ServiceContext:
         llm: Optional[LLMType] = "default",
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[EmbedType] = "default",
-        image_embed_model: Optional[EmbedType] = "clip",
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -121,8 +117,6 @@ class ServiceContext:
             prompt_helper (Optional[PromptHelper]): PromptHelper
             embed_model (Optional[BaseEmbedding]): BaseEmbedding
                 or "local" (use local model)
-            image_embed_model (Optional[BaseEmbedding]): BaseEmbedding
-                or "clip" (use clip model by default)
             node_parser (Optional[NodeParser]): NodeParser
             llama_logger (Optional[LlamaLogger]): LlamaLogger (deprecated)
             chunk_size (Optional[int]): chunk_size
@@ -148,7 +142,6 @@ class ServiceContext:
                 llm_predictor=llm_predictor,
                 prompt_helper=prompt_helper,
                 embed_model=embed_model,
-                image_embed_model=image_embed_model,
                 node_parser=node_parser,
                 llama_logger=llama_logger,
                 callback_manager=callback_manager,
@@ -175,10 +168,6 @@ class ServiceContext:
         embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
-        # NOTE: the embed_model isn't used in all indices
-        image_embed_model = resolve_embed_model(image_embed_model)
-        image_embed_model.callback_manager = callback_manager
-
         prompt_helper = prompt_helper or _get_default_prompt_helper(
             llm_metadata=llm_predictor.metadata,
             context_window=context_window,
@@ -196,7 +185,6 @@ class ServiceContext:
         return cls(
             llm_predictor=llm_predictor,
             embed_model=embed_model,
-            image_embed_model=image_embed_model,
             prompt_helper=prompt_helper,
             node_parser=node_parser,
             llama_logger=llama_logger,  # deprecated
@@ -211,7 +199,6 @@ class ServiceContext:
         llm: Optional[LLMType] = "default",
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[EmbedType] = "default",
-        image_embed_model: Optional[EmbedType] = "clip",
         node_parser: Optional[NodeParser] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -256,11 +243,6 @@ class ServiceContext:
         embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
-        if image_embed_model == "clip":
-            image_embed_model = service_context.image_embed_model
-        image_embed_model = resolve_embed_model(image_embed_model)
-        image_embed_model.callback_manager = callback_manager
-
         prompt_helper = prompt_helper or service_context.prompt_helper
         if context_window is not None or num_output is not None:
             prompt_helper = _get_default_prompt_helper(
@@ -282,7 +264,6 @@ class ServiceContext:
         return cls(
             llm_predictor=llm_predictor,
             embed_model=embed_model,
-            image_embed_model=image_embed_model,
             prompt_helper=prompt_helper,
             node_parser=node_parser,
             llama_logger=llama_logger,  # deprecated
@@ -301,8 +282,6 @@ class ServiceContext:
         llm_predictor_dict = self.llm_predictor.to_dict()
 
         embed_model_dict = self.embed_model.to_dict()
-
-        image_embed_model_dict = self.image_embed_model.to_dict()
 
         prompt_helper_dict = self.prompt_helper.to_dict()
 
@@ -328,7 +307,6 @@ class ServiceContext:
             llm_predictor=llm_predictor_dict,
             prompt_helper=prompt_helper_dict,
             embed_model=embed_model_dict,
-            image_embed_model=image_embed_model_dict,
             node_parser=node_parser_dict,
             text_splitter=text_splitter_dict,
             metadata_extractor=metadata_extractor_dict,
@@ -350,8 +328,6 @@ class ServiceContext:
         llm_predictor = load_predictor(service_context_data.llm_predictor, llm=llm)
 
         embed_model = load_embed_model(service_context_data.embed_model)
-
-        image_embed_model = load_embed_model(service_context_data.image_embed_model)
 
         prompt_helper = PromptHelper.from_dict(service_context_data.prompt_helper)
 
@@ -382,7 +358,6 @@ class ServiceContext:
             llm_predictor=llm_predictor,
             prompt_helper=prompt_helper,
             embed_model=embed_model,
-            image_embed_model=image_embed_model,
             node_parser=node_parser,
         )
 
