@@ -10,9 +10,15 @@
 
 ### New Features
 
+- `OpenAIAgent` parallel function calling (#8738)
 - Add AI assistant agent (#8735)
 - OpenAI GPT4v Abstraction (#8719)
 - Add support for `Lantern` VectorStore (#8714)
+
+### Breaking Changes / Deprecations
+
+- Use `tool_choice` over `function_call` and `tool` over `functions` in `OpenAI(LLM)` (#8738)
+- Deprecate `to_openai_function` in favor of `to_openai_tool` (#8738)
 
 ### Bug Fixes / Nits
 
