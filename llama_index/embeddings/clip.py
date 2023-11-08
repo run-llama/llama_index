@@ -82,6 +82,8 @@ class ClipEmbedding(MultiModalEmbedding):
             logger.error(f"Error while loading clip model.")
             raise ValueError("Unable to fetch the requested embeddings model") from e
 
+    # TEXT EMBEDDINGS
+
     async def _aget_query_embedding(self, query: str) -> Embedding:
         return self._get_query_embedding(query)
 
@@ -107,33 +109,23 @@ class ClipEmbedding(MultiModalEmbedding):
     def _get_query_embedding(self, query: str) -> Embedding:
         return self._get_text_embedding(query)
 
-    def _get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
-        results = []
-        for img_file_path in img_file_paths:
-            try:
-                import torch
-                from PIL import Image
-            except ImportError:
-                raise ImportError(
-                    "ClipEmbedding requires `pip install torch` and `pip install pillow`."
-                )
-            with torch.no_grad():
-                image = (
-                    self._preprocess(Image.open(img_file_path))
-                    .unsqueeze(0)
-                    .to(self._device)
-                )
-                results.append(self._model.encode_image(image).tolist()[0])
-        return results
+    # IMAGE EMBEDDINGS
 
     async def _aget_image_embedding(self, img_file_path: str) -> Embedding:
         return self._get_image_embedding(img_file_path)
 
-    def get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
-        return self._get_image_embeddings(img_file_paths)
-
     def _get_image_embedding(self, img_file_path: str) -> Embedding:
-        return self._get_image_embeddings([img_file_path])[0]
-
-    def get_image_embedding(self, img_file_path: str) -> Embedding:
-        return self._get_image_embedding(img_file_path)
+        try:
+            import torch
+            from PIL import Image
+        except ImportError:
+            raise ImportError(
+                "ClipEmbedding requires `pip install torch` and `pip install pillow`."
+            )
+        with torch.no_grad():
+            image = (
+                self._preprocess(Image.open(img_file_path))
+                .unsqueeze(0)
+                .to(self._device)
+            )
+            return self._model.encode_image(image).tolist()[0]
