@@ -7,6 +7,7 @@ from llama_index.embeddings.base import (
     Embedding,
 )
 from llama_index.embeddings.mutli_modal_base import MultiModalEmbedding
+from llama_index.schema import ImageType
 
 logger = logging.getLogger(__name__)
 
@@ -111,10 +112,10 @@ class ClipEmbedding(MultiModalEmbedding):
 
     # IMAGE EMBEDDINGS
 
-    async def _aget_image_embedding(self, img_file_path: str) -> Embedding:
+    async def _aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
         return self._get_image_embedding(img_file_path)
 
-    def _get_image_embedding(self, img_file_path: str) -> Embedding:
+    def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:
         try:
             import torch
             from PIL import Image

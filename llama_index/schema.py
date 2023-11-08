@@ -5,6 +5,7 @@ import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
+from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from typing_extensions import Self
@@ -24,6 +25,8 @@ DEFAULT_METADATA_TMPL = "{key}: {value}"
 # NOTE: for pretty printing
 TRUNCATE_LENGTH = 350
 WRAP_WIDTH = 70
+
+ImageType = Union[str, BytesIO]
 
 
 class BaseComponent(BaseModel):
@@ -398,7 +401,7 @@ class ImageNode(TextNode):
     def class_name(cls) -> str:
         return "ImageNode"
 
-    def resolve_image(self) -> Union[str, bytes]:
+    def resolve_image(self) -> ImageType:
         """Resolve an image such that PIL can read it."""
         if self.image is not None:
             return self.image
@@ -406,8 +409,6 @@ class ImageNode(TextNode):
             return self.image_path
         elif self.image_url is not None:
             # load image from URL
-            from io import BytesIO
-
             import requests
 
             response = requests.get(self.image_url)
@@ -644,7 +645,7 @@ class ImageDocument(Document):
     def class_name(cls) -> str:
         return "ImageDocument"
 
-    def resolve_image(self) -> Union[str, bytes]:
+    def resolve_image(self) -> ImageType:
         """Resolve an image such that PIL can read it."""
         if self.image is not None:
             return self.image
@@ -652,8 +653,6 @@ class ImageDocument(Document):
             return self.image_path
         elif self.image_url is not None:
             # load image from URL
-            from io import BytesIO
-
             import requests
 
             response = requests.get(self.image_url)
