@@ -186,7 +186,7 @@ class CodeHierarchyNodeParser(NodeParser):
         return "CodeHierarchyNodeParser"
 
     language: str = Field(
-        description="The programming languge of the code being split."
+        description="The programming language of the code being split."
     )
     signature_identifiers: Dict[str, _SignatureCaptureOptions] = Field(
         description=(
@@ -353,7 +353,7 @@ class CodeHierarchyNodeParser(NodeParser):
 
         # TIP: This is a wonderful place to put a debug breakpoint when
         #      Trying to integrate a new language. Pay attention to parent.type to learn
-        #      all the availible node types and their hierarchy.
+        #      all the available node types and their hierarchy.
         if parent.type in self.signature_identifiers or _root:
             # Get the new context
             if not _root:
@@ -473,7 +473,7 @@ class CodeHierarchyNodeParser(NodeParser):
                     "https://github.com/grantjenks/py-tree-sitter-languages#license "
                     "for a list of valid languages."
                 )
-                raise e
+                raise e  # noqa: TRY201
 
             documents_with_progress = get_tqdm_iterable(
                 documents, show_progress, "Parsing documents into nodes"
@@ -725,7 +725,7 @@ class CodeHierarchyNodeParser(NodeParser):
 
     @classmethod
     def _skeletonize(cls, parent_node: TextNode, child_node: TextNode) -> None:
-        """WARNING: In Place Operation"""
+        """WARNING: In Place Operation."""
         # Simple protection clauses
         if child_node.text not in parent_node.text:
             raise ValueError("The child text is not contained inside the parent text.")
@@ -738,7 +738,7 @@ class CodeHierarchyNodeParser(NodeParser):
 
     @classmethod
     def _skeletonize_list(cls, nodes: List[TextNode]) -> None:
-        # Create a convienient map for mapping node id's to nodes
+        # Create a convenient map for mapping node id's to nodes
         node_id_map = {n.node_id: n for n in nodes}
 
         def recur(node: TextNode) -> None:
