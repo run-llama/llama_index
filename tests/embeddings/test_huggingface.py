@@ -27,6 +27,18 @@ class TestHuggingFaceInferenceAPIEmbeddings:
             == HuggingFaceInferenceAPIEmbedding.__name__
         )
 
+    def test_using_recommended_model(self) -> None:
+        mock_hub = MagicMock()
+        mock_hub.InferenceClient.get_recommended_model.return_value = (
+            "facebook/bart-base"
+        )
+        with patch.dict("sys.modules", huggingface_hub=mock_hub):
+            embedding = HuggingFaceInferenceAPIEmbedding(task="feature-extraction")
+        assert embedding.model_name == "facebook/bart-base"
+        mock_hub.InferenceClient.get_recommended_model.assert_called_once_with(
+            task="feature-extraction"
+        )
+
     def test_embed_query(
         self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbedding
     ) -> None:
