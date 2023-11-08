@@ -1,4 +1,4 @@
-"""JinaAI embeddings file."""
+"""Jina embeddings file."""
 
 import requests
 import aiohttp
@@ -14,7 +14,7 @@ MAX_BATCH_SIZE = 2048
 API_URL = "https://api.jina.ai/v1/embeddings"
 
 
-class JinaAIEmbedding(BaseEmbedding):
+class JinaEmbedding(BaseEmbedding):
     """JinaAI class for embeddings.
 
     Args:
