@@ -7,12 +7,17 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    Tuple,
+    cast,
     runtime_checkable,
 )
 
 import tiktoken
+from openai import AsyncOpenAI
+from openai import OpenAI as SyncOpenAI
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
-from llama_index.bridge.pydantic import Field
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
     LLM,
@@ -24,6 +29,7 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -38,9 +44,7 @@ from llama_index.llms.generic_utils import (
     stream_completion_to_chat_decorator,
 )
 from llama_index.llms.openai_utils import (
-    acompletion_with_retry,
-    completion_with_retry,
-    from_openai_message_dict,
+    from_openai_message,
     is_chat_model,
     is_function_calling_model,
     openai_modelname_to_contextsize,
@@ -69,9 +73,11 @@ class OpenAI(LLM):
     max_retries: int = Field(description="The maximum number of API retries.")
 
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
-    api_type: str = Field(default=None, description="The OpenAI API type.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
+
+    _client: SyncOpenAI = PrivateAttr()
+    _aclient: AsyncOpenAI = PrivateAttr()
 
     def __init__(
         self,
@@ -81,7 +87,6 @@ class OpenAI(LLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
-        api_type: Optional[str] = None,
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -89,9 +94,8 @@ class OpenAI(LLM):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
 
-        api_key, api_type, api_base, api_version = resolve_openai_credentials(
+        api_key, api_base, api_version = resolve_openai_credentials(
             api_key=api_key,
-            api_type=api_type,
             api_base=api_base,
             api_version=api_version,
         )
@@ -104,11 +108,17 @@ class OpenAI(LLM):
             max_retries=max_retries,
             callback_manager=callback_manager,
             api_key=api_key,
-            api_type=api_type,
             api_version=api_version,
             api_base=api_base,
             **kwargs,
         )
+
+        self._client, self._aclient = self._get_clients(**kwargs)
+
+    def _get_clients(self, **kwargs: Any) -> Tuple[SyncOpenAI, AsyncOpenAI]:
+        client = SyncOpenAI(**self._get_credential_kwargs())
+        aclient = AsyncOpenAI(**self._get_credential_kwargs())
+        return client, aclient
 
     def _get_model_name(self) -> str:
         model_name = self.model
@@ -177,21 +187,16 @@ class OpenAI(LLM):
             return kwargs["use_chat_completions"]
         return self.metadata.is_chat_model
 
-    @property
-    def _credential_kwargs(self) -> Dict[str, Any]:
+    def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
-            "api_type": self.api_type,
-            "api_base": self.api_base,
-            "api_version": self.api_version,
+            "base_url": self.api_base,
+            "max_retries": self.max_retries,
+            **kwargs,
         }
 
-    @property
-    def _model_kwargs(self) -> Dict[str, Any]:
-        base_kwargs = {
-            "model": self.model,
-            "temperature": self.temperature,
-        }
+    def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        base_kwargs = {"model": self.model, "temperature": self.temperature, **kwargs}
         if self.max_tokens is not None:
             # If max_tokens is None, don't include in the payload:
             # https://platform.openai.com/docs/api-reference/chat
@@ -199,21 +204,15 @@ class OpenAI(LLM):
             base_kwargs["max_tokens"] = self.max_tokens
         return {**base_kwargs, **self.additional_kwargs}
 
-    def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        """Get all data for the request as a dictionary."""
-        return {**self._credential_kwargs, **self._model_kwargs, **kwargs}
-
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         message_dicts = to_openai_message_dicts(messages)
-        response = completion_with_retry(
-            is_chat_model=True,
-            max_retries=self.max_retries,
+        response = self._client.chat.completions.create(
             messages=message_dicts,
             stream=False,
-            **self._get_all_kwargs(**kwargs),
+            **self._get_model_kwargs(**kwargs),
         )
-        message_dict = response["choices"][0]["message"]
-        message = from_openai_message_dict(message_dict)
+        openai_message = response.choices[0].message
+        message = from_openai_message(openai_message)
 
         return ChatResponse(
             message=message,
@@ -229,34 +228,26 @@ class OpenAI(LLM):
         def gen() -> ChatResponseGen:
             content = ""
             function_call: Optional[dict] = None
-            for response in completion_with_retry(
-                is_chat_model=True,
-                max_retries=self.max_retries,
+            for response in self._client.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
-                **self._get_all_kwargs(**kwargs),
+                **self._get_model_kwargs(**kwargs),
             ):
-                if len(response["choices"]) == 0 and (
-                    response.get("prompt_annotations")
-                    or response.get("prompt_filter_results")
-                ):
-                    # When asking a stream response from the Azure OpenAI API
-                    # you first get an empty message with the content filtering
-                    # results. Ignore this message
-                    continue
-
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["delta"]
+                response = cast(ChatCompletionChunk, response)
+                if len(response.choices) > 0:
+                    delta = response.choices[0].delta
                 else:
                     delta = {}
-                role = delta.get("role", "assistant")
-                content_delta = delta.get("content", "") or ""
+                role = delta.role or MessageRole.ASSISTANT
+                content_delta = delta.content or ""
                 content += content_delta
 
-                function_call_delta = delta.get("function_call", None)
+                function_call_delta = delta.function_call
                 if function_call_delta is not None:
+                    function_dict = function_call_delta.dict()
+
                     if function_call is None:
-                        function_call = function_call_delta
+                        function_call = function_dict
 
                         ## ensure we do not add a blank function call
                         if function_call.get("function_name", "") is None:
@@ -264,7 +255,7 @@ class OpenAI(LLM):
                     else:
                         function_call["arguments"] = (
                             function_call.get("arguments", "")
-                            + function_call_delta["arguments"]
+                            + function_dict["arguments"]
                         )
 
                 additional_kwargs = {}
@@ -285,17 +276,15 @@ class OpenAI(LLM):
         return gen()
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        all_kwargs = self._get_all_kwargs(**kwargs)
+        all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
-        response = completion_with_retry(
-            is_chat_model=False,
-            max_retries=self.max_retries,
+        response = self._client.completions.create(
             prompt=prompt,
             stream=False,
             **all_kwargs,
         )
-        text = response["choices"][0]["text"]
+        text = response.choices[0].text
         return CompletionResponse(
             text=text,
             raw=response,
@@ -303,20 +292,18 @@ class OpenAI(LLM):
         )
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        all_kwargs = self._get_all_kwargs(**kwargs)
+        all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
         def gen() -> CompletionResponseGen:
             text = ""
-            for response in completion_with_retry(
-                is_chat_model=False,
-                max_retries=self.max_retries,
+            for response in self._client.completions.create(
                 prompt=prompt,
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["text"]
+                if len(response.choices) > 0:
+                    delta = response.choices[0].text
                 else:
                     delta = ""
                 text += delta
@@ -412,15 +399,11 @@ class OpenAI(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         message_dicts = to_openai_message_dicts(messages)
-        response = await acompletion_with_retry(
-            is_chat_model=True,
-            max_retries=self.max_retries,
-            messages=message_dicts,
-            stream=False,
-            **self._get_all_kwargs(**kwargs),
+        response = await self._aclient.chat.completions.create(
+            messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
         )
-        message_dict = response["choices"][0]["message"]
-        message = from_openai_message_dict(message_dict)
+        message_dict = response.choices[0].message
+        message = from_openai_message(message_dict)
 
         return ChatResponse(
             message=message,
@@ -436,28 +419,26 @@ class OpenAI(LLM):
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             function_call: Optional[dict] = None
-            async for response in await acompletion_with_retry(
-                is_chat_model=True,
-                max_retries=self.max_retries,
+            async for response in await self._aclient.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
-                **self._get_all_kwargs(**kwargs),
+                **self._get_model_kwargs(**kwargs),
             ):
-                if len(response["choices"]) == 0 and response.get("prompt_annotations"):
-                    # open ai sends empty response first while streaming ignore it
-                    continue
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["delta"]
+                response = cast(ChatCompletionChunk, response)
+                if len(response.choices) > 0:
+                    delta = response.choices[0].delta
                 else:
                     delta = {}
-                role = delta.get("role", "assistant")
-                content_delta = delta.get("content", "") or ""
+                role = delta.role or MessageRole.ASSISTANT
+                content_delta = delta.content or ""
                 content += content_delta
 
-                function_call_delta = delta.get("function_call", None)
+                function_call_delta = delta.function_call
                 if function_call_delta is not None:
+                    function_dict = function_call_delta.dict()
+
                     if function_call is None:
-                        function_call = function_call_delta
+                        function_call = function_dict
 
                         ## ensure we do not add a blank function call
                         if function_call.get("function_name", "") is None:
@@ -465,7 +446,7 @@ class OpenAI(LLM):
                     else:
                         function_call["arguments"] = (
                             function_call.get("arguments", "")
-                            + function_call_delta["arguments"]
+                            + function_dict["arguments"]
                         )
 
                 additional_kwargs = {}
@@ -486,17 +467,15 @@ class OpenAI(LLM):
         return gen()
 
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        all_kwargs = self._get_all_kwargs(**kwargs)
+        all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
-        response = await acompletion_with_retry(
-            is_chat_model=False,
-            max_retries=self.max_retries,
+        response = await self._aclient.completions.create(
             prompt=prompt,
             stream=False,
             **all_kwargs,
         )
-        text = response["choices"][0]["text"]
+        text = response.choices[0].text
         return CompletionResponse(
             text=text,
             raw=response,
@@ -506,20 +485,18 @@ class OpenAI(LLM):
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        all_kwargs = self._get_all_kwargs(**kwargs)
+        all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
-            async for response in await acompletion_with_retry(
-                is_chat_model=False,
-                max_retries=self.max_retries,
+            async for response in await self._aclient.completions.create(
                 prompt=prompt,
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["text"]
+                if len(response.choices) > 0:
+                    delta = response.choices[0].text
                 else:
                     delta = ""
                 text += delta

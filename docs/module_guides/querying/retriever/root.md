@@ -31,7 +31,7 @@ retriever = index.as_retriever()
 Retrieve relevant context for a question:
 
 ```python
-nodes = retriever.retrieve('Who is Paul Graham?')
+nodes = retriever.retrieve("Who is Paul Graham?")
 ```
 
 > Note: To learn how to build an index, see [Indexing](/module_guides/indexing/indexing.md)
@@ -45,7 +45,7 @@ For example, with a `SummaryIndex`:
 
 ```python
 retriever = summary_index.as_retriever(
-    retriever_mode='llm',
+    retriever_mode="llm",
 )
 ```
 
@@ -72,10 +72,9 @@ For example, if we selected the "llm" retriever mode, we might do the following:
 
 ```python
 retriever = summary_index.as_retriever(
-    retriever_mode='llm',
+    retriever_mode="llm",
     choice_batch_size=5,
 )
-
 ```
 
 ## Low-Level Composition API

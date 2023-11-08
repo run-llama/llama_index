@@ -18,11 +18,10 @@ tool = wiki_spec.to_tool_list()[1]
 
 # Wrap the tool, splitting into a loader and a reader
 agent = OpenAIAgent.from_tools(
- LoadAndSearchToolSpec.from_defaults(
-    tool
- ).to_tool_list(), verbose=True)
+    LoadAndSearchToolSpec.from_defaults(tool).to_tool_list(), verbose=True
+)
 
-agent.chat('who is ben affleck married to')
+agent.chat("who is ben affleck married to")
 ```
 
 `load`: Calls the wrapped function and loads the data into an index

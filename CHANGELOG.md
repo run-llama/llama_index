@@ -1,5 +1,52 @@
 # ChangeLog
 
+## [0.8.64] - 2023-11-06
+
+### New Features
+
+- Add AI assistant agent (#8735)
+- OpenAI GPT4v Abstraction (#8719)
+- Add support for `Lantern` VectorStore (#8714)
+
+### Bug Fixes / Nits
+
+- Fix returning zero nodes in elastic search vector store (#8746)
+- Add try/except for `SimpleDirectoryReader` loop to avoid crashing on a single document (#8744)
+- Fix for `deployment_name` in async embeddings (#8748)
+
+## [0.8.63] - 2023-11-05
+
+### New Features
+
+- added native sync and async client support for the lasted `openai` client package (#8712)
+- added support for `AzureOpenAIEmbedding` (#8712)
+
+### Bug Fixes / Nits
+
+- Fixed errors about "no host supplied" with `download_loader` (#8723)
+
+### Breaking Changes
+
+- `OpenAIEmbedding` no longer supports azure, moved into the `AzureOpenAIEmbedding` class (#8712)
+
+## [0.8.62.post1] - 2023-11-05
+
+### Breaking Changes
+
+- add new devday models (#8713)
+- moved `max_docs` parameter from constructor to `lazy_load_data()` for `SimpleMongoReader` (#8686)
+
+## [0.8.61] - 2023-11-05
+
+### New Features
+
+- [experimental] Hyperparameter tuner (#8687)
+
+### Bug Fixes / Nits
+
+- Fix typo error in CohereAIModelName class: cohere light models was missing v3 (#8684)
+- Update deeplake.py (#8683)
+
 ## [0.8.60] - 2023-11-04
 
 ### New Features

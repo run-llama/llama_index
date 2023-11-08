@@ -74,9 +74,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
                 input_field = "your_input_field"
 
                 # Create Elasticsearch connection
-                es_connection = Elasticsearch(
-                    hosts=["localhost:9200"], basic_auth=("user", "password")
-                )
+                es_connection = Elasticsearch(hosts=["localhost:9200"], basic_auth=("user", "password"))
 
                 # Instantiate ElasticsearchEmbedding using the existing connection
                 embeddings = ElasticsearchEmbedding.from_es_connection(

@@ -45,6 +45,8 @@ We are actively adding more integrations and improving feature coverage for each
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
 | TencentVectorDB          | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | AstraDB                  | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| Azure CosmosDB MongoDB   | cloud               |                    |               | ✓      | ✓               |       |
+| Lantern                  | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
 
@@ -85,4 +87,5 @@ maxdepth: 1
 /examples/vector_stores/SingleStoreDemo.ipynb
 /examples/vector_stores/DashvectorIndexDemo.ipynb
 /examples/vector_stores/TencentVectorDBIndexDemo.ipynb
+/examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb
 ```

@@ -53,7 +53,9 @@ llm_predictor = LLMPredictor(system_prompt="Always respond in Italian.")
 
 service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
 
-query_engine = load_index_from_storage(storage_context, service_context=service_context).as_query_engine()
+query_engine = load_index_from_storage(
+    storage_context, service_context=service_context
+).as_query_engine()
 ```
 
 ---

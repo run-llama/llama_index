@@ -3,6 +3,7 @@
 
 from llama_index.vector_stores.astra import AstraDBVectorStore
 from llama_index.vector_stores.awadb import AwaDBVectorStore
+from llama_index.vector_stores.azurecosmosmongo import AzureCosmosDBMongoDBVectorSearch
 from llama_index.vector_stores.bagel import BagelVectorStore
 from llama_index.vector_stores.cassandra import CassandraVectorStore
 from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
@@ -20,6 +21,7 @@ from llama_index.vector_stores.elasticsearch import (
 from llama_index.vector_stores.epsilla import EpsillaVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
+from llama_index.vector_stores.lantern import LanternVectorStore
 from llama_index.vector_stores.metal import MetalVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.myscale import MyScaleVectorStore
@@ -84,4 +86,6 @@ __all__ = [
     "DashVectorStore",
     "TencentVectorDB",
     "AstraDBVectorStore",
+    "AzureCosmosDBMongoDBVectorSearch",
+    "LanternVectorStore",
 ]

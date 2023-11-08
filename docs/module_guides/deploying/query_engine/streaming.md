@@ -14,10 +14,7 @@ Configure query engine to use streaming:
 If you are using the high-level API, set `streaming=True` when building a query engine.
 
 ```python
-query_engine = index.as_query_engine(
-    streaming=True,
-    similarity_top_k=1
-)
+query_engine = index.as_query_engine(streaming=True, similarity_top_k=1)
 ```
 
 If you are using the low-level API to compose the query engine,
@@ -25,6 +22,7 @@ pass `streaming=True` when constructing the `Response Synthesizer`:
 
 ```python
 from llama_index import get_response_synthesizer
+
 synth = get_response_synthesizer(streaming=True, ...)
 query_engine = RetrieverQueryEngine(response_synthesizer=synth, ...)
 ```
@@ -49,6 +47,7 @@ You can obtain a `Generator` from the streaming response and iterate over the to
 ```python
 for text in streaming_response.response_gen:
     # do something with text as they arrive.
+    pass
 ```
 
 Alternatively, if you just want to print the text as they arrive:
