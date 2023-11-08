@@ -63,10 +63,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         if image_vector_store is not None:
             storage_context.add_vector_store(image_vector_store, self.image_namespace)
 
-        self._image_vector_store = image_vector_store
-
         if self.image_namespace not in storage_context.vector_stores:
             storage_context.add_vector_store(SimpleVectorStore(), self.image_namespace)
+
+        self._image_vector_store = storage_context.vector_stores[self.image_namespace]
 
         super().__init__(
             nodes=nodes,

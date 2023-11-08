@@ -1,7 +1,7 @@
 """Base vector store index query."""
 
-
-from typing import Any, Dict, List, Optional
+import asyncio
+from typing import Any, Coroutine, Dict, List, Optional
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
@@ -84,15 +84,7 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        if self._vector_store.is_embedding_query:
-            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
-                # get text embedding from Text embed model
-                query_bundle.embedding = (
-                    self._service_context.embed_model.get_agg_embedding_from_queries(
-                        query_bundle.embedding_strs
-                    )
-                )
-        return self._get_nodes_with_embeddings(query_bundle)
+        return super()._retrieve(query_bundle)
 
     def _image_retrieve(
         self,
@@ -107,11 +99,55 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
             )
         return self._get_image_nodes_with_image_embeddings(query_bundle)
 
-    # for image nodes retrieval
     def _get_image_nodes_with_image_embeddings(
         self,
         query_bundle_with_embeddings: QueryBundle,
     ) -> List[NodeWithScore]:
         query = self._build_vector_store_query(query_bundle_with_embeddings)
         query_result = self._image_vector_store.query(query, **self._kwargs)
+        return self._build_node_list_from_query_result(query_result)
+
+    # Async Methods
+
+    async def _aretrieve(
+        self, query_bundle: QueryBundle
+    ) -> Coroutine[Any, Any, List[NodeWithScore]]:
+        # Run the two retrievals in async, and return their results as a concatenated list
+        results: List[NodeWithScore] = []
+        tasks = [
+            self._atext_retrieve(query_bundle),
+            self._aimage_retrieve(query_bundle),
+        ]
+
+        task_results = await asyncio.gather(*tasks)
+
+        for task_result in task_results:
+            results.extend(task_result)
+        return results
+
+    async def _atext_retrieve(
+        self,
+        query_bundle: QueryBundle,
+    ) -> List[NodeWithScore]:
+        return await super()._aretrieve(query_bundle)
+
+    async def _aimage_retrieve(
+        self,
+        query_bundle: QueryBundle,
+    ) -> List[NodeWithScore]:
+        if self._image_vector_store.is_embedding_query:
+            # change the embedding for query bundle to Multi Modal Text encoder
+            query_bundle.embedding = (
+                await self._image_embed_model.aget_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
+                )
+            )
+        return await self._aget_image_nodes_with_image_embeddings(query_bundle)
+
+    async def _aget_image_nodes_with_image_embeddings(
+        self,
+        query_bundle_with_embeddings: QueryBundle,
+    ) -> List[NodeWithScore]:
+        query = self._build_vector_store_query(query_bundle_with_embeddings)
+        query_result = await self._image_vector_store.aquery(query, **self._kwargs)
         return self._build_node_list_from_query_result(query_result)
