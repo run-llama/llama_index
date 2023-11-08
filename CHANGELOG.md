@@ -4,6 +4,7 @@
 
 ### New Features
 
+- OpenAIAgent parallel function calling and tool_calls over function_call (#8738)
 - Add AI assistant agent (#8735)
 - OpenAI GPT4v Abstraction (#8719)
 - Add support for `Lantern` VectorStore (#8714)
