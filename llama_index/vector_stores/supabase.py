@@ -106,7 +106,7 @@ class SupabaseVectorStore(VectorStore):
 
         return ids
 
-    def get_by_id(self, doc_id: str) -> list:
+    def get_by_id(self, doc_id: str, **kwargs: Any) -> list:
         """Get row ids by doc id.
 
         Args:
@@ -119,6 +119,7 @@ class SupabaseVectorStore(VectorStore):
             filters=filters,
             include_value=False,
             include_metadata=False,
+            **kwargs
         )
 
         # NOTE: list of row ids
