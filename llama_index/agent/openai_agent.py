@@ -309,20 +309,21 @@ class BaseOpenAIAgent(BaseAgent):
                 break
             # iterate through all the tool calls
             logger.debug(f"Continue to tool calls: {self.latest_tool_calls}")
-            for tool_call in self.latest_tool_calls:
-                # Some validation
-                if not isinstance(tool_call, dict):
-                    raise ValueError("Invalid tool_call object")
+            if self.latest_tool_calls is not None:
+                for tool_call in self.latest_tool_calls:
+                    # Some validation
+                    if not isinstance(tool_call, dict):
+                        raise ValueError("Invalid tool_call object")
 
-                if tool_call["type"] != "function":
-                    raise ValueError("Invalid tool type. Unsupported by OpenAI")
-                # TODO: maybe execute this with multi-threading
-                self._call_function(tools, tool_call)
-                # change function call to the default value, if a custom function was given
-                # as an argument (none and auto are predefined by OpenAI)
-                if current_tool_choice not in ("auto", "none"):
-                    current_tool_choice = "auto"
-                n_function_calls += 1
+                    if tool_call["type"] != "function":
+                        raise ValueError("Invalid tool type. Unsupported by OpenAI")
+                    # TODO: maybe execute this with multi-threading
+                    self._call_function(tools, tool_call)
+                    # change function call to the default value, if a custom function was given
+                    # as an argument (none and auto are predefined by OpenAI)
+                    if current_tool_choice not in ("auto", "none"):
+                        current_tool_choice = "auto"
+                    n_function_calls += 1
 
         return agent_chat_response
 
@@ -350,21 +351,22 @@ class BaseOpenAIAgent(BaseAgent):
             if not self._should_continue(self.latest_tool_calls, n_function_calls):
                 break
             # iterate through all the tool calls
-            for tool_call in self.latest_tool_calls:
-                # Some validation
-                if not isinstance(tool_call, dict):
-                    raise ValueError("Invalid tool_call object")
+            if self.latest_tool_calls is not None:
+                for tool_call in self.latest_tool_calls:
+                    # Some validation
+                    if not isinstance(tool_call, dict):
+                        raise ValueError("Invalid tool_call object")
 
-                if tool_call["type"] != "function":
-                    raise ValueError("Invalid tool type. Unsupported by OpenAI")
+                    if tool_call["type"] != "function":
+                        raise ValueError("Invalid tool type. Unsupported by OpenAI")
 
-                # TODO: maybe execute this with multi-threading
-                await self._acall_function(tools, tool_call)
-                # change function call to the default value, if a custom function was given
-                # as an argument (none and auto are predefined by OpenAI)
-                if current_tool_choice not in ("auto", "none"):
-                    current_tool_choice = "auto"
-                n_function_calls += 1
+                    # TODO: maybe execute this with multi-threading
+                    await self._acall_function(tools, tool_call)
+                    # change function call to the default value, if a custom function was given
+                    # as an argument (none and auto are predefined by OpenAI)
+                    if current_tool_choice not in ("auto", "none"):
+                        current_tool_choice = "auto"
+                    n_function_calls += 1
 
         return agent_chat_response
 
