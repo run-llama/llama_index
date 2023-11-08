@@ -12,8 +12,8 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
-- Apache Cassandra (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html)
-- Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/getting-started/getting-started.html).
+- Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)
+- Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
 - Azure Cognitive Search (`CognitiveSearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
@@ -86,6 +86,27 @@ response = query_engine.query("What did the author do growing up?")
 
 Below we show more examples of how to construct various vector stores we support.
 
+**Apache Cassandra®**
+
+```python
+from llama_index.vector_stores import CassandraVectorStore
+import cassio
+
+# For an Astra DB cloud instance:
+cassio.init(database_id="1234abcd-...", token="AstraCS:...")
+
+# For a Cassandra cluster:
+from cassandra.cluster import Cluster
+
+cluster = Cluster(["127.0.0.1"])
+cassio.init(session=cluster.connect(), keyspace="my_keyspace")
+
+# After the above `cassio.init(...)`, create a vector store:
+vector_store = CassandraVectorStore(
+    table="cass_v_table", embedding_dimension=1536
+)
+```
+
 **Astra DB**
 
 ```python
@@ -126,27 +147,6 @@ vector_store = CognitiveSearchVectorStore(
     embedding_field_key="embedding",
     metadata_field_key="li_jsonMetadata",
     doc_id_field_key="li_doc_id",
-)
-```
-
-**Cassandra**
-
-```python
-from llama_index.vector_stores import CassandraVectorStore
-import cassio
-
-# For an Astra DB cloud instance:
-cassio.init(database_id="1234abcd-...", token="AstraCS:...")
-
-# For a Cassandra cluster:
-from cassandra.cluster import Cluster
-
-cluster = Cluster(["127.0.0.1"])
-cassio.init(session=cluster.connect(), keyspace="my_keyspace")
-
-# After the above `cassio.init(...)`, create a vector store:
-vector_store = CassandraVectorStore(
-    table="cass_v_table", embedding_dimension=1536
 )
 ```
 

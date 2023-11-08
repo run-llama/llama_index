@@ -15,10 +15,10 @@ We are actively adding more integrations and improving feature coverage for each
 
 | Vector Store             | Type                | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
 | ------------------------ | ------------------- | ------------------ | ------------- | ------ | --------------- | ----- |
-| AstraDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
+| Apache Cassandra®       | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| Astra DB                 | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Azure Cognitive Search   | cloud               |                    | ✓             | ✓      | ✓               |       |
 | Azure CosmosDB MongoDB   | cloud               |                    |               | ✓      | ✓               |       |
-| Cassandra                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
 | Chroma                   | self-hosted         | ✓                  |               | ✓      | ✓               |       |
 | DashVector               | cloud               | ✓                  |               | ✓      | ✓               |       |
