@@ -6,7 +6,7 @@ An index that that is built on top of multiple vector stores for different modal
 import logging
 from typing import Any, List, Optional, Sequence
 
-from llama_index.data_structs.data_structs import MultiModelIndexDict
+from llama_index.data_structs.data_structs import IndexDict, MultiModelIndexDict
 from llama_index.embeddings.mutli_modal_base import MultiModalEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.base_retriever import BaseRetriever
@@ -174,7 +174,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
     async def _async_add_nodes_to_index(
         self,
-        index_struct: MultiModelIndexDict,
+        index_struct: IndexDict,
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
         **insert_kwargs: Any,
@@ -241,7 +241,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
     def _add_nodes_to_index(
         self,
-        index_struct: MultiModelIndexDict,
+        index_struct: IndexDict,
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
         **insert_kwargs: Any,
