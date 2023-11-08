@@ -228,8 +228,9 @@ class SimpleDirectoryReader(BaseReader):
                 try:
                     docs = reader.load_data(input_file, extra_info=metadata)
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to load file {input_file} with error:\n{e}.\nSkipping..."
+                    print(
+                        f"Failed to load file {input_file} with error: {e}. Skipping...",
+                        flush=True,
                     )
                     continue
 
