@@ -19,7 +19,7 @@ logger.setLevel(logging.WARNING)
 
 def is_function(message: ChatMessage) -> bool:
     """Utility for ChatMessage responses from OpenAI models."""
-    return "function_call" in message.additional_kwargs
+    return "tool_calls" in message.additional_kwargs
 
 
 class ChatResponseMode(str, Enum):
@@ -80,7 +80,8 @@ class StreamingAgentChatResponse:
 
     def __str__(self) -> str:
         if self._is_done and not self._queue.empty() and not self._is_function:
-            for delta in self._queue.queue:
+            while self._queue.queue:
+                delta = self._queue.queue.popleft()
                 self._unformatted_response += delta
             self.response = self._unformatted_response.strip()
         return self.response

@@ -15,7 +15,10 @@ from typing import (
 import tiktoken
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
-from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
+from openai.types.chat.chat_completion_chunk import (
+    ChatCompletionChunk,
+    ChoiceDeltaToolCall,
+)
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -226,8 +229,13 @@ class OpenAI(LLM):
         message_dicts = to_openai_message_dicts(messages)
 
         def gen() -> ChatResponseGen:
+            tool_index = 0
             content = ""
-            function_call: Optional[dict] = None
+            tool_calls: List[ChoiceDeltaToolCall] = []
+            response_id = None
+
+            is_function = False
+            response_ix = 0
             for response in self._client.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
@@ -238,36 +246,72 @@ class OpenAI(LLM):
                     delta = response.choices[0].delta
                 else:
                     delta = {}
+
+                if response_id is None:
+                    response_id = response.id
+
+                if response_id != response.id:
+                    # start of a new response
+                    is_function = False
+                    response_ix = 0
+
+                # update using deltas
                 role = delta.role or MessageRole.ASSISTANT
                 content_delta = delta.content or ""
                 content += content_delta
 
-                function_call_delta = delta.function_call
-                if function_call_delta is not None:
-                    function_dict = function_call_delta.dict()
-
-                    if function_call is None:
-                        function_call = function_dict
-
-                        ## ensure we do not add a blank function call
-                        if function_call.get("function_name", "") is None:
-                            del function_call["function_name"]
+                # TODO: REFACTOR WITH FUNCTIONS
+                # openai provides the delta on one tool-at-a-time
+                # we need to use the index on it to see if its updating one
+                # for which we've already started to received content on, OR
+                # if we need to start a new tool_call and accumulate that new
+                # one thereafter, and so on.
+                tool_calls_delta = delta.tool_calls or None
+                if tool_calls_delta is not None:
+                    is_function = True
+                    t_delta = tool_calls_delta[0]
+                    if len(tool_calls) == 0:
+                        t = t_delta
+                        tool_calls.append(t)
                     else:
-                        function_call["arguments"] = (
-                            function_call.get("arguments", "")
-                            + function_dict["arguments"]
-                        )
+                        # we need to either update latest tool_call or start a
+                        # new tool_call and accumulate that with future chunks
+                        t = tool_calls[-1]
+                        # check if should start new t
+                        if t.index != t_delta.index:
+                            # start a new tool and append to our running
+                            # tool_calls list
+                            t = t_delta
+                            tool_calls.append(t)
+                        else:
+                            # not the start of a new tool, so update last tool
+                            t.function.arguments += t_delta.function.arguments or ""
+                            t.function.name += t_delta.function.name or ""
+                            t.id += t_delta.id or ""
+                            t.type += t_delta.type or ""
+                            tool_calls[-1] = t
 
                 additional_kwargs = {}
-                if function_call is not None:
-                    additional_kwargs["function_call"] = function_call
+                if len(tool_calls) > 0:
+                    additional_kwargs["tool_calls"] = [t.dict() for t in tool_calls]
 
-                yield ChatResponse(
-                    message=ChatMessage(
+                if response_ix == 0:
+                    message = ChatMessage(
+                        role=role,
+                        content=content,
+                        additional_kwargs={"tool_calls": []},
+                    )
+                else:
+                    message = ChatMessage(
                         role=role,
                         content=content,
                         additional_kwargs=additional_kwargs,
-                    ),
+                    )
+
+                response_ix += 1
+
+                yield ChatResponse(
+                    message=message,
                     delta=content_delta,
                     raw=response,
                     additional_kwargs=self._get_response_token_counts(response),
@@ -417,8 +461,13 @@ class OpenAI(LLM):
         message_dicts = to_openai_message_dicts(messages)
 
         async def gen() -> ChatResponseAsyncGen:
+            tool_index = 0
             content = ""
-            function_call: Optional[dict] = None
+            tool_calls: List[ChoiceDeltaToolCall] = []
+            response_id = None
+
+            is_function = False
+            response_ix = 0
             async for response in await self._aclient.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
@@ -429,36 +478,59 @@ class OpenAI(LLM):
                     delta = response.choices[0].delta
                 else:
                     delta = {}
+
+                if response_id is None:
+                    response_id = response.id
+
+                if response_id != response.id:
+                    is_function = False
+                    response_ix = 0
+
                 role = delta.role or MessageRole.ASSISTANT
                 content_delta = delta.content or ""
                 content += content_delta
 
-                function_call_delta = delta.function_call
-                if function_call_delta is not None:
-                    function_dict = function_call_delta.dict()
-
-                    if function_call is None:
-                        function_call = function_dict
-
-                        ## ensure we do not add a blank function call
-                        if function_call.get("function_name", "") is None:
-                            del function_call["function_name"]
+                # TODO: REFACTOR WITH HELPER FUNCTIONS
+                tool_calls_delta = delta.tool_calls or None
+                if tool_calls_delta is not None:
+                    is_function = True
+                    t_delta = tool_calls_delta[0]
+                    if len(tool_calls) == 0:
+                        t = t_delta
+                        tool_calls.append(t)
                     else:
-                        function_call["arguments"] = (
-                            function_call.get("arguments", "")
-                            + function_dict["arguments"]
-                        )
+                        t = tool_calls[-1]
+                        if t.index != t_delta.index:
+                            t = t_delta
+                            tool_calls.append(t)
+                        else:
+                            t.function.arguments += t_delta.function.arguments or ""
+                            t.function.name += t_delta.function.name or ""
+                            t.id += t_delta.id or ""
+                            t.type += t_delta.type or ""
+                            tool_calls[-1] = t
 
                 additional_kwargs = {}
-                if function_call is not None:
-                    additional_kwargs["function_call"] = function_call
+                if len(tool_calls) > 0:
+                    additional_kwargs["tool_calls"] = [t.dict() for t in tool_calls]
 
-                yield ChatResponse(
-                    message=ChatMessage(
+                if response_ix == 0:
+                    message = ChatMessage(
+                        role=role,
+                        content=content,
+                        additional_kwargs={"tool_calls": []},
+                    )
+                else:
+                    message = ChatMessage(
                         role=role,
                         content=content,
                         additional_kwargs=additional_kwargs,
-                    ),
+                    )
+
+                response_ix += 1
+
+                yield ChatResponse(
+                    message=message,
                     delta=content_delta,
                     raw=response,
                     additional_kwargs=self._get_response_token_counts(response),

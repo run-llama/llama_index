@@ -32,6 +32,7 @@ from llama_index.vector_stores.simple import (
 from llama_index.vector_stores.types import VectorStore
 
 DEFAULT_PERSIST_DIR = "./storage"
+IMAGE_STORE_FNAME = "image_store.json"
 
 
 @dataclass
@@ -116,6 +117,7 @@ class StorageContext:
         docstore_fname: str = DOCSTORE_FNAME,
         index_store_fname: str = INDEX_STORE_FNAME,
         vector_store_fname: str = VECTOR_STORE_FNAME,
+        image_store_fname: str = IMAGE_STORE_FNAME,
         graph_store_fname: str = GRAPH_STORE_FNAME,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
