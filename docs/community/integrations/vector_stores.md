@@ -92,7 +92,7 @@ Below we show more examples of how to construct various vector stores we support
 from llama_index.vector_stores import CassandraVectorStore
 import cassio
 
-# For an Astra DB cloud instance:
+# To use an Astra DB cloud instance through CQL:
 cassio.init(database_id="1234abcd-...", token="AstraCS:...")
 
 # For a Cassandra cluster:
@@ -113,10 +113,8 @@ vector_store = CassandraVectorStore(
 from llama_index.vector_stores import AstraDBVectorStore
 
 astra_db_store = AstraDBVectorStore(
-    token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],  # Your Astra DB token
-    api_endpoint=os.environ[
-        "ASTRA_DB_API_ENDPOINT"
-    ],  # Your Astra DB API endpoint
+    token="AstraCS:xY3b...",  # Your Astra DB token
+    api_endpoint="https://012...abc-us-east1.apps.astra.datastax.com",  # Your Astra DB API endpoint
     collection_name="astra_v_table",  # Table name of your choice
     embedding_dimension=1536,  # Embedding dimension of the embeddings model used
 )
