@@ -49,7 +49,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         store_nodes_override: bool = False,
         show_progress: bool = False,
         # Image-related kwargs
-        image_vector_store: VectorStore = None,
+        image_vector_store: Optional[VectorStore] = None,
         image_embed_model: EmbedType = "clip",
         **kwargs: Any,
     ) -> None:

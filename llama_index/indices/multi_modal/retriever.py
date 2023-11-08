@@ -80,14 +80,6 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
         res.extend(self._image_retrieve(query_bundle))
         return res
 
-    async def _aretrieve(
-        self,
-        query_bundle: QueryBundle,
-    ) -> List[NodeWithScore]:
-        res = self._atext_retrieve(query_bundle)
-        res.extend(self._aimage_retrieve(query_bundle))
-        return res
-
     def _text_retrieve(
         self,
         query_bundle: QueryBundle,
@@ -102,18 +94,6 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
                 )
         return self._get_nodes_with_embeddings(query_bundle)
 
-    async def _atext_retrieve(
-        self,
-        query_bundle: QueryBundle,
-    ) -> List[NodeWithScore]:
-        if self._vector_store.is_embedding_query:
-            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
-                # get text embedding from Text embed model
-                query_bundle.embedding = await self._service_context.embed_model.aget_agg_embedding_from_queries(
-                    query_bundle.embedding_strs
-                )
-        return self._aget_nodes_with_embeddings(query_bundle)
-
     def _image_retrieve(
         self,
         query_bundle: QueryBundle,
@@ -127,19 +107,6 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
             )
         return self._get_image_nodes_with_image_embeddings(query_bundle)
 
-    async def _aimage_retrieve(
-        self,
-        query_bundle: QueryBundle,
-    ) -> List[NodeWithScore]:
-        if self._image_vector_store.is_embedding_query:
-            # change the embedding for query bundle to Multi Modal Text encoder
-            query_bundle.embedding = (
-                await self._image_embed_model.aget_agg_embedding_from_queries(
-                    query_bundle.embedding_strs
-                )
-            )
-        return self._aget_image_nodes_with_image_embeddings(query_bundle)
-
     # for image nodes retrieval
     def _get_image_nodes_with_image_embeddings(
         self,
@@ -147,12 +114,4 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
     ) -> List[NodeWithScore]:
         query = self._build_vector_store_query(query_bundle_with_embeddings)
         query_result = self._image_vector_store.query(query, **self._kwargs)
-        return self._build_node_list_from_query_result(query_result)
-
-    async def _aget_image_nodes_with_image_embeddings(
-        self,
-        query_bundle_with_embeddings: QueryBundle,
-    ) -> List[NodeWithScore]:
-        query = self._build_vector_store_query(query_bundle_with_embeddings)
-        query_result = await self._image_vector_store.aquery(query, **self._kwargs)
         return self._build_node_list_from_query_result(query_result)
