@@ -102,12 +102,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        # NOTE: lazy import
-        from llama_index.indices.multi_modal.retrievers import (
-            MultiModalVectorIndexRetriever,
-        )
-
-        return MultiModalVectorIndexRetriever()
+        raise NotImplementedError("Retriever not yet implemented for MultiModalIndex.")
 
     def _get_node_with_embedding(
         self,
