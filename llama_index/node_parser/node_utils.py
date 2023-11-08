@@ -43,6 +43,13 @@ def build_nodes_from_splits(
                 embedding=document.embedding,
                 metadata=node_metadata,
                 image=document.image,
+                image_path=document.image_path,
+                image_url=document.image_url,
+                excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
+                excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
+                metadata_seperator=document.metadata_seperator,
+                metadata_template=document.metadata_template,
+                text_template=document.text_template,
                 relationships={NodeRelationship.SOURCE: ref_doc.as_related_node_info()},
             )
             nodes.append(image_node)  # type: ignore

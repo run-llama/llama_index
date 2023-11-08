@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from typing_extensions import Self
 
 from llama_index.bridge.pydantic import BaseModel, Field, root_validator
+from llama_index.img_utils import b64_2_img
 from llama_index.utils import SAMPLE_TEXT, truncate_text
 
 if TYPE_CHECKING:
@@ -387,6 +388,8 @@ class ImageNode(TextNode):
     # TODO: store reference instead of actual image
     # base64 encoded image str
     image: Optional[str] = None
+    image_path: Optional[str] = None
+    image_url: Optional[str] = None
 
     @classmethod
     def get_type(cls) -> str:
@@ -395,6 +398,26 @@ class ImageNode(TextNode):
     @classmethod
     def class_name(cls) -> str:
         return "ImageNode"
+
+    def resolve_image(self) -> Any:
+        """Resolve image."""
+        if self.image is not None:
+            return b64_2_img(self.image)
+        elif self.image_path is not None:
+            from PIL import Image
+
+            return Image.open(self.image_path)
+        elif self.image_url is not None:
+            # load image from URL
+            from io import BytesIO
+
+            import requests
+            from PIL import Image
+
+            response = requests.get(self.image_url)
+            return Image.open(BytesIO(response.content))
+        else:
+            raise ValueError("No image found in node.")
 
 
 class IndexNode(TextNode):
@@ -618,7 +641,29 @@ class ImageDocument(Document):
 
     # base64 encoded image str
     image: Optional[str] = None
+    image_path: Optional[str] = None
+    image_url: Optional[str] = None
 
     @classmethod
     def class_name(cls) -> str:
         return "ImageDocument"
+
+    def resolve_image(self) -> Any:
+        """Resolve image."""
+        if self.image is not None:
+            return b64_2_img(self.image)
+        elif self.image_path is not None:
+            from PIL import Image
+
+            return Image.open(self.image_path)
+        elif self.image_url is not None:
+            # load image from URL
+            from io import BytesIO
+
+            import requests
+            from PIL import Image
+
+            response = requests.get(self.image_url)
+            return Image.open(BytesIO(response.content))
+        else:
+            raise ValueError("No image found in node.")
