@@ -8,12 +8,12 @@ import pydantic
 from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
 
 
-class SentenceAwareNodeParser(pydantic.BaseModel):
+class SentenceSplitter(pydantic.BaseModel):
     """
     Parse text with a preference for complete sentences.
 
     In general, this class tries to keep sentences and paragraphs together. Therefore
-    compared to the original TokenAwareNodeParser, there are less likely to be
+    compared to the original TokenTextSplitter, there are less likely to be
     hanging sentences or parts of sentences at the end of the node chunk.
     """
 

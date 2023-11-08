@@ -8,7 +8,7 @@ import pydantic
 from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
 
 
-class CodeNodeParser(pydantic.BaseModel):
+class CodeSplitter(pydantic.BaseModel):
     """
     Split code using a AST parser.
 

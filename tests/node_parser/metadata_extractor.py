@@ -8,7 +8,7 @@ from llama_index.extractors import (
 )
 from llama_index.indices.service_context import ServiceContext
 from llama_index.ingestion import run_transformations
-from llama_index.node_parser import SentenceAwareNodeParser
+from llama_index.node_parser import SentenceSplitter
 from llama_index.schema import Document, TransformComponent
 
 
@@ -20,7 +20,7 @@ def test_metadata_extractor(mock_service_context: ServiceContext) -> None:
         KeywordExtractor(keywords=10),
     ]
 
-    node_parser: TransformComponent = SentenceAwareNodeParser()
+    node_parser: TransformComponent = SentenceSplitter()
 
     document = Document(
         text="sample text",

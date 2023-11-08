@@ -5,7 +5,7 @@ from .base_prompt_template import BasePromptTemplate
 from .base_pydantic_reader import BasePydanticReader
 from .beautiful_soup_web_reader import BeautifulSoupWebReader
 from .chroma_vector_store import ChromaVectorStore
-from .code_node_parser import CodeNodeParser
+from .code_node_parser import CodeSplitter
 from .configurable_data_sink_names import ConfigurableDataSinkNames
 from .configurable_data_source_names import ConfigurableDataSourceNames
 from .configurable_transformation_definition import ConfigurableTransformationDefinition
@@ -77,7 +77,7 @@ from .raw_file import RawFile
 from .reader_config import ReaderConfig
 from .related_node_info import RelatedNodeInfo
 from .rss_reader import RssReader
-from .sentence_aware_node_parser import SentenceAwareNodeParser
+from .sentence_aware_node_parser import SentenceSplitter
 from .sentence_window_node_parser import SentenceWindowNodeParser
 from .simple_file_node_parser import SimpleFileNodeParser
 from .simple_web_page_reader import SimpleWebPageReader
@@ -87,7 +87,7 @@ from .summary_extractor import SummaryExtractor
 from .text_node import TextNode
 from .text_node_relationships_value import TextNodeRelationshipsValue
 from .title_extractor import TitleExtractor
-from .token_aware_node_parser import TokenAwareNodeParser
+from .token_aware_node_parser import TokenTextSplitter
 from .trafilatura_web_reader import TrafilaturaWebReader
 from .transformation_category_names import TransformationCategoryNames
 from .twitter_tweet_reader import TwitterTweetReader
@@ -103,7 +103,7 @@ __all__ = [
     "BasePydanticReader",
     "BeautifulSoupWebReader",
     "ChromaVectorStore",
-    "CodeNodeParser",
+    "CodeSplitter",
     "ConfigurableDataSinkNames",
     "ConfigurableDataSourceNames",
     "ConfigurableTransformationDefinition",
@@ -171,7 +171,7 @@ __all__ = [
     "ReaderConfig",
     "RelatedNodeInfo",
     "RssReader",
-    "SentenceAwareNodeParser",
+    "SentenceSplitter",
     "SentenceWindowNodeParser",
     "SimpleFileNodeParser",
     "SimpleWebPageReader",
@@ -181,7 +181,7 @@ __all__ = [
     "TextNode",
     "TextNodeRelationshipsValue",
     "TitleExtractor",
-    "TokenAwareNodeParser",
+    "TokenTextSplitter",
     "TrafilaturaWebReader",
     "TransformationCategoryNames",
     "TwitterTweetReader",

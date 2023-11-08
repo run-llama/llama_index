@@ -15,7 +15,7 @@ First, we define a metadata extractor that takes in a list of feature extractors
 We then feed this to the node parser, which will add the additional metadata to each node.
 
 ```python
-from llama_index.node_parser import SentenceAwareNodeParser
+from llama_index.node_parser import SentenceSplitter
 from llama_index.extractors import (
     SummaryExtractor,
     QuestionsAnsweredExtractor,
@@ -25,7 +25,7 @@ from llama_index.extractors import (
 )
 
 transformations = [
-    SentenceAwareNodeParser(),
+    SentenceSplitter(),
     TitleExtractor(nodes=5),
     QuestionsAnsweredExtractor(questions=3),
     SummaryExtractor(summaries=["prev", "self"]),

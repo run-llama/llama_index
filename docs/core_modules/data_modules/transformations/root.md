@@ -18,12 +18,12 @@ Using transformations directly is easy!
 ```python
 from llama_index.ingesstion import run_transformations
 from llama_index.embeddings import OpenAIEmbedding
-from llama_index.node_parser import SentenceAwareNodeParser
+from llama_index.node_parser import SentenceSplitter
 
 documents = ...
 
 transformations = [
-    SentenceAwareNodeParser(chunk_size=256),
+    SentenceSplitter(chunk_size=256),
     OpenAIEmbedding(embed_batch_size=10)
 ]
 

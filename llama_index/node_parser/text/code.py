@@ -3,14 +3,14 @@ from typing import Any, List
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.node_parser.interface import TextNodeParser
+from llama_index.node_parser.interface import TextSplitter
 
 DEFAULT_CHUNK_LINES = 40
 DEFAULT_LINES_OVERLAP = 15
 DEFAULT_MAX_CHARS = 1500
 
 
-class CodeNodeParser(TextNodeParser):
+class CodeSplitter(TextSplitter):
     """Split code using a AST parser.
 
     Thank you to Kevin Lu / SweepAI for suggesting this elegant code splitting solution.
@@ -43,7 +43,7 @@ class CodeNodeParser(TextNodeParser):
         chunk_lines: int = DEFAULT_CHUNK_LINES,
         chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
         max_chars: int = DEFAULT_MAX_CHARS,
-    ) -> "CodeNodeParser":
+    ) -> "CodeSplitter":
         return cls(
             language=language,
             chunk_lines=chunk_lines,

@@ -2,13 +2,13 @@ from typing import TYPE_CHECKING, List, Optional
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.node_parser.interface import TextNodeParser
+from llama_index.node_parser.interface import TextSplitter
 
 if TYPE_CHECKING:
     from langchain.text_splitter import TextSplitter
 
 
-class LangchainNodeParser(TextNodeParser):
+class LangchainNodeParser(TextSplitter):
     """
     Basic wrapper around langchain's text splitter.
 

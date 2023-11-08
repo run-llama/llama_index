@@ -29,10 +29,10 @@ we use a lower-level API that gives more granular control:
 from llama_index.storage.docstore import SimpleDocumentStore
 from llama_index.storage.index_store import SimpleIndexStore
 from llama_index.vector_stores import SimpleVectorStore
-from llama_index.node_parser import SentenceAwareNodeParser
+from llama_index.node_parser import SentenceSplitter
 
 # create parser and parse document into nodes
-parser = SentenceAwareNodeParser()
+parser = SentenceSplitter()
 nodes = parser.get_nodes_from_documents(documents)
 
 # create storage context using default stores

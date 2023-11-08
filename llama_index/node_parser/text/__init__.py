@@ -1,13 +1,13 @@
-from llama_index.node_parser.text.code import CodeNodeParser
+from llama_index.node_parser.text.code import CodeSplitter
 from llama_index.node_parser.text.langchain import LangchainNodeParser
-from llama_index.node_parser.text.sentence import SentenceAwareNodeParser
+from llama_index.node_parser.text.sentence import SentenceSplitter
 from llama_index.node_parser.text.sentence_window import SentenceWindowNodeParser
-from llama_index.node_parser.text.token import TokenAwareNodeParser
+from llama_index.node_parser.text.token import TokenTextSplitter
 
 __all__ = [
-    "CodeNodeParser",
+    "CodeSplitter",
     "LangchainNodeParser",
-    "SentenceAwareNodeParser",
+    "SentenceSplitter",
     "SentenceWindowNodeParser",
-    "TokenAwareNodeParser",
+    "TokenTextSplitter",
 ]

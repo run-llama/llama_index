@@ -6,7 +6,7 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
-from llama_index.node_parser.interface import MetadataAwareTextNodeParser
+from llama_index.node_parser.interface import MetadataAwareTextSplitter
 from llama_index.node_parser.text.utils import split_by_char, split_by_sep
 from llama_index.utils import get_tokenizer
 
@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 DEFAULT_METADATA_FORMAT_LEN = 2
 
 
-class TokenAwareNodeParser(MetadataAwareTextNodeParser):
+class TokenTextSplitter(MetadataAwareTextSplitter):
     """Implementation of splitting text that looks at word tokens."""
 
     chunk_size: int = Field(
@@ -83,7 +83,7 @@ class TokenAwareNodeParser(MetadataAwareTextNodeParser):
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
-    ) -> "TokenAwareNodeParser":
+    ) -> "TokenTextSplitter":
         """Initialize with default parameters."""
         callback_manager = callback_manager or CallbackManager([])
         return cls(

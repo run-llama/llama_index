@@ -6,7 +6,7 @@ from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.text.sentence import SentenceAwareNodeParser
+from llama_index.node_parser.text.sentence import SentenceSplitter
 from llama_index.schema import BaseNode, Document, NodeRelationship
 from llama_index.utils import get_tqdm_iterable
 
@@ -93,7 +93,7 @@ class HierarchicalNodeParser(NodeParser):
             node_parser_ids = [f"chunk_size_{chunk_size}" for chunk_size in chunk_sizes]
             node_parser_map = {}
             for chunk_size, node_parser_id in zip(chunk_sizes, node_parser_ids):
-                node_parser_map[node_parser_id] = SentenceAwareNodeParser(
+                node_parser_map[node_parser_id] = SentenceSplitter(
                     chunk_size=chunk_size,
                     callback_manager=callback_manager,
                 )

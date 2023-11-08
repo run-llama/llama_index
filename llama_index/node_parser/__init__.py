@@ -5,9 +5,9 @@ from llama_index.node_parser.file.json import JSONNodeParser
 from llama_index.node_parser.file.markdown import MarkdownNodeParser
 from llama_index.node_parser.file.simple_file import SimpleFileNodeParser
 from llama_index.node_parser.interface import (
-    MetadataAwareTextNodeParser,
+    MetadataAwareTextSplitter,
     NodeParser,
-    TextNodeParser,
+    TextSplitter,
 )
 from llama_index.node_parser.relational.hierarchical import (
     HierarchicalNodeParser,
@@ -17,16 +17,16 @@ from llama_index.node_parser.relational.hierarchical import (
 from llama_index.node_parser.relational.unstructured_element import (
     UnstructuredElementNodeParser,
 )
-from llama_index.node_parser.text.code import CodeNodeParser
+from llama_index.node_parser.text.code import CodeSplitter
 from llama_index.node_parser.text.langchain import LangchainNodeParser
-from llama_index.node_parser.text.sentence import SentenceAwareNodeParser
+from llama_index.node_parser.text.sentence import SentenceSplitter
 from llama_index.node_parser.text.sentence_window import SentenceWindowNodeParser
-from llama_index.node_parser.text.token import TokenAwareNodeParser
+from llama_index.node_parser.text.token import TokenTextSplitter
 
 __all__ = [
-    "TokenAwareNodeParser",
-    "SentenceAwareNodeParser",
-    "CodeNodeParser",
+    "TokenTextSplitter",
+    "SentenceSplitter",
+    "CodeSplitter",
     "SimpleFileNodeParser",
     "HTMLNodeParser",
     "MarkdownNodeParser",
@@ -34,8 +34,8 @@ __all__ = [
     "SentenceWindowNodeParser",
     "NodeParser",
     "HierarchicalNodeParser",
-    "TextNodeParser",
-    "MetadataAwareTextNodeParser",
+    "TextSplitter",
+    "MetadataAwareTextSplitter",
     "LangchainNodeParser",
     "UnstructuredElementNodeParser",
     "get_leaf_nodes",

@@ -16,9 +16,9 @@ from llama_index.extractors import (
     TitleExtractor,
     QuestionsAnsweredExtractor
 )
-from llama_index.node_parser import TokenAwareNodeParser
+from llama_index.node_parser import TokenTextSplitter
 
-node_parser = TokenAwareNodeParser(
+node_parser = TokenTextSplitter(
     separator=" ", chunk_size=512, chunk_overlap=128
 )
 
