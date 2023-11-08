@@ -99,7 +99,9 @@ class MultiModalEmbedding(BaseEmbedding):
         result_embeddings: List[Embedding] = []
 
         queue_with_progress = enumerate(
-            get_tqdm_iterable(img_file_paths, show_progress, "Generating embeddings")
+            get_tqdm_iterable(
+                img_file_paths, show_progress, "Generating image embeddings"
+            )
         )
 
         for idx, img_file_path in queue_with_progress:
@@ -159,7 +161,7 @@ class MultiModalEmbedding(BaseEmbedding):
                     for f in tqdm(
                         asyncio.as_completed(embeddings_coroutines),
                         total=len(embeddings_coroutines),
-                        desc="Generating embeddings",
+                        desc="Generating image embeddings",
                     )
                 ]
             except ImportError:
