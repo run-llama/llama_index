@@ -1,9 +1,10 @@
 """Base vector store index query."""
 
 import asyncio
-from typing import Any, Coroutine, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.embeddings.mutli_modal_base import MultiModalEmbedding
 from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
@@ -50,7 +51,10 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
         self._vector_store = self._index.vector_store
         # separate image vector store for image retrieval
         self._image_vector_store = self._index.image_vector_store
+
+        assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
         self._image_embed_model = self._index.image_embed_model
+
         self._service_context = self._index.service_context
         self._docstore = self._index.docstore
 
@@ -127,9 +131,7 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
 
     # Async Methods
 
-    async def _aretrieve(
-        self, query_bundle: QueryBundle
-    ) -> Coroutine[Any, Any, List[NodeWithScore]]:
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # Run the two retrievals in async, and return their results as a concatenated list
         results: List[NodeWithScore] = []
         tasks = [
