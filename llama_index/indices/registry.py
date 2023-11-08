@@ -9,6 +9,7 @@ from llama_index.indices.empty.base import EmptyIndex
 from llama_index.indices.keyword_table.base import KeywordTableIndex
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.list.base import SummaryIndex
+from llama_index.indices.multi_modal import MultiModalVectorStoreIndex
 from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.indices.tree.base import TreeIndex
@@ -24,4 +25,5 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseIndex]] = {
     IndexStructType.KG: KnowledgeGraphIndex,
     IndexStructType.EMPTY: EmptyIndex,
     IndexStructType.DOCUMENT_SUMMARY: DocumentSummaryIndex,
+    IndexStructType.MULTIMODAL_VECTOR_STORE: MultiModalVectorStoreIndex,
 }

@@ -6,7 +6,7 @@ An index that that is built on top of multiple vector stores for different modal
 import logging
 from typing import Any, List, Optional, Sequence
 
-from llama_index.data_structs.data_structs import IndexDict
+from llama_index.data_structs.data_structs import MultiModelIndexDict
 from llama_index.embeddings.mutli_modal_base import MultiModalEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.base_retriever import BaseRetriever
@@ -37,11 +37,12 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     """
 
     image_namespace = "image"
+    index_struct_cls = MultiModelIndexDict
 
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
-        index_struct: Optional[IndexDict] = None,
+        index_struct: Optional[MultiModelIndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
         use_async: bool = False,
@@ -72,7 +73,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             storage_context=storage_context,
             show_progress=show_progress,
             use_async=use_async,
-            store_nodes_override=store_nodes_override,
+            # force to true, since vector dbs don't store images
+            store_nodes_override=True,
             **kwargs,
         )
 
@@ -172,7 +174,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
     async def _async_add_nodes_to_index(
         self,
-        index_struct: IndexDict,
+        index_struct: MultiModelIndexDict,
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
         **insert_kwargs: Any,
@@ -239,7 +241,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
     def _add_nodes_to_index(
         self,
-        index_struct: IndexDict,
+        index_struct: MultiModelIndexDict,
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
         **insert_kwargs: Any,
