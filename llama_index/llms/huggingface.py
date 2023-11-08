@@ -168,6 +168,12 @@ class HuggingFaceLLM(CustomLLM):
             tokenizer_name, **tokenizer_kwargs
         )
 
+        if tokenizer_name != model_name:
+            logger.warning(
+                f"The model `{model_name}` and tokenizer `{tokenizer_name}` "
+                f"are different, please ensure that they are compatible."
+            )
+
         # setup stopping criteria
         stopping_ids_list = stopping_ids or []
 
@@ -188,7 +194,10 @@ class HuggingFaceLLM(CustomLLM):
         if isinstance(query_wrapper_prompt, PromptTemplate):
             query_wrapper_prompt = query_wrapper_prompt.template
 
-        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
+        self._messages_to_prompt = (
+            messages_to_prompt or self._tokenizer_messages_to_prompt
+        )
+
         super().__init__(
             context_window=context_window,
             max_new_tokens=max_new_tokens,
@@ -217,6 +226,15 @@ class HuggingFaceLLM(CustomLLM):
             num_output=self.max_new_tokens,
             model_name=self.model_name,
         )
+
+    def _tokenizer_messages_to_prompt(self, messages: Sequence[ChatMessage]) -> str:
+        """Use the tokenizer to convert messages to prompt. Fallback to generic."""
+        if hasattr(self._tokenizer, "apply_chat_template"):
+            messages_dict = [message.dict() for message in messages]
+            tokens = self._tokenizer.apply_chat_template(messages_dict)
+            return self._tokenizer.decode(tokens)
+
+        return generic_messages_to_prompt(messages)
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
