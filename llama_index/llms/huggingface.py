@@ -474,7 +474,7 @@ class HuggingFaceInferenceAPI(LLM):
         except ModuleNotFoundError as exc:
             raise ImportError(
                 f"{type(self).__name__} requires huggingface_hub with its inference"
-                " extras, please run `pip install huggingface_hub[inference]`."
+                " extra, please run `pip install huggingface_hub[inference]>=0.19.0`."
             ) from exc
         self._sync_client = InferenceClient(**self._get_inference_client_kwargs())
         self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
