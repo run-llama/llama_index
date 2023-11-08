@@ -1,7 +1,8 @@
 from threading import Thread
-from typing import Any, Generator, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Generator, Optional, Sequence
 
-from langchain.base_language import BaseLanguageModel
+if TYPE_CHECKING:
+    from langchain.base_language import BaseLanguageModel
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager

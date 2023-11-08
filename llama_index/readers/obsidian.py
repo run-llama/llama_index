@@ -9,7 +9,6 @@ import os
 from pathlib import Path
 from typing import Any, List
 
-from llama_index.bridge.langchain import Document as LCDocument
 from llama_index.readers.base import BaseReader
 from llama_index.readers.file.markdown_reader import MarkdownReader
 from llama_index.schema import Document
@@ -38,8 +37,3 @@ class ObsidianReader(BaseReader):
                     content = MarkdownReader().load_data(Path(filepath))
                     docs.extend(content)
         return docs
-
-    def load_langchain_documents(self, **load_kwargs: Any) -> List[LCDocument]:
-        """Load data in LangChain document format."""
-        docs = self.load_data(**load_kwargs)
-        return [d.to_langchain_format() for d in docs]

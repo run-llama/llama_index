@@ -1,8 +1,9 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
-from llama_index.bridge.langchain import StructuredTool, Tool
+if TYPE_CHECKING:
+    from llama_index.bridge.langchain import StructuredTool, Tool
 from llama_index.bridge.pydantic import BaseModel
 
 
@@ -90,7 +91,7 @@ class BaseTool:
     def to_langchain_tool(
         self,
         **langchain_tool_kwargs: Any,
-    ) -> Tool:
+    ) -> "Tool":
         """To langchain tool."""
         langchain_tool_kwargs = self._process_langchain_tool_kwargs(
             langchain_tool_kwargs
@@ -103,7 +104,7 @@ class BaseTool:
     def to_langchain_structured_tool(
         self,
         **langchain_tool_kwargs: Any,
-    ) -> StructuredTool:
+    ) -> "StructuredTool":
         """To langchain structured tool."""
         langchain_tool_kwargs = self._process_langchain_tool_kwargs(
             langchain_tool_kwargs

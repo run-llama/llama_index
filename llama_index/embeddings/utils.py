@@ -1,8 +1,9 @@
 """Embedding utils for LlamaIndex."""
 import os
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
-from llama_index.bridge.langchain import Embeddings as LCEmbeddings
+if TYPE_CHECKING:
+    from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.huggingface_utils import (
@@ -15,7 +16,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 from llama_index.utils import get_cache_dir
 
-EmbedType = Union[BaseEmbedding, LCEmbeddings, str]
+EmbedType = Union[BaseEmbedding, "LCEmbeddings", str]
 
 
 def save_embedding(embedding: List[float], file_path: str) -> None:

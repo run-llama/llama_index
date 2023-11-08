@@ -1,13 +1,19 @@
 """Test Output parsers."""
 
 
-from llama_index.bridge.langchain import (
-    BaseOutputParser as LCOutputParser,
-)
-from llama_index.bridge.langchain import (
-    ResponseSchema,
-)
+import pytest
 from llama_index.output_parsers.langchain import LangchainOutputParser
+
+try:
+    import langchain
+    from llama_index.bridge.langchain import (
+        BaseOutputParser as LCOutputParser,
+    )
+    from llama_index.bridge.langchain import (
+        ResponseSchema,
+    )
+except ImportError:
+    langchain = None
 
 
 class MockOutputParser(LCOutputParser):
@@ -29,6 +35,7 @@ class MockOutputParser(LCOutputParser):
         return text
 
 
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
 def test_lc_output_parser() -> None:
     """Test langchain output parser."""
     response_schema = ResponseSchema(

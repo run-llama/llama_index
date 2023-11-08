@@ -1,9 +1,11 @@
 """Retriever tool."""
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.langchain_helpers.agents.tools import LlamaIndexTool
+
+if TYPE_CHECKING:
+    from llama_index.langchain_helpers.agents.tools import LlamaIndexTool
 from llama_index.schema import MetadataMode
 from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 
@@ -101,5 +103,5 @@ class RetrieverTool(AsyncBaseTool):
             raw_output=docs,
         )
 
-    def as_langchain_tool(self) -> LlamaIndexTool:
+    def as_langchain_tool(self) -> "LlamaIndexTool":
         raise NotImplementedError("`as_langchain_tool` not implemented here.")

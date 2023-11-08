@@ -4,9 +4,6 @@
 from typing import Any
 
 import pytest
-from llama_index.bridge.langchain import BaseLanguageModel, FakeListLLM
-from llama_index.bridge.langchain import ConditionalPromptSelector as LangchainSelector
-from llama_index.bridge.langchain import PromptTemplate as LangchainTemplate
 from llama_index.llms import MockLLM
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.langchain import LangChainLLM
@@ -18,6 +15,16 @@ from llama_index.prompts import (
 )
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.types import BaseOutputParser
+
+try:
+    import langchain
+    from llama_index.bridge.langchain import BaseLanguageModel, FakeListLLM
+    from llama_index.bridge.langchain import (
+        ConditionalPromptSelector as LangchainSelector,
+    )
+    from llama_index.bridge.langchain import PromptTemplate as LangchainTemplate
+except ImportError:
+    langchain = None  # type: ignore
 
 
 class MockOutputParser(BaseOutputParser):
@@ -140,6 +147,7 @@ def test_selector_template() -> None:
     )
 
 
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
 def test_langchain_template() -> None:
     lc_template = LangchainTemplate.from_template("hello {text} {foo}")
     template = LangchainPromptTemplate(lc_template)
@@ -161,6 +169,7 @@ def test_langchain_template() -> None:
     assert template_2_partial.format(text2="world2") == "hello world2 bar"
 
 
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
 def test_langchain_selector_template() -> None:
     lc_llm = FakeListLLM(responses=["test"])
     mock_llm = LangChainLLM(llm=lc_llm)

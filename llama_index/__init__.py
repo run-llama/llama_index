@@ -14,7 +14,6 @@ from llama_index.callbacks.global_handlers import set_global_handler
 from llama_index.data_structs.struct_type import IndexStructType
 
 # embeddings
-from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 
 # structured
@@ -66,7 +65,6 @@ from llama_index.indices.struct_store.sql import (
 )
 from llama_index.indices.tree import GPTTreeIndex, TreeIndex
 from llama_index.indices.vector_store import GPTVectorStoreIndex, VectorStoreIndex
-from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
 
 # langchain helper
 from llama_index.llm_predictor import LLMPredictor
@@ -179,7 +177,6 @@ __all__ = [
     "BasePromptTemplate",
     "ChatPromptTemplate",
     "SelectorPromptTemplate",
-    "LangchainEmbedding",
     "OpenAIEmbedding",
     "SummaryPrompt",
     "TreeInsertPrompt",
@@ -220,7 +217,6 @@ __all__ = [
     "VellumPromptRegistry",
     "MockEmbedding",
     "SQLDatabase",
-    "GPTIndexMemory",
     "SQLDocumentContextBuilder",
     "SQLContextBuilder",
     "PromptHelper",
