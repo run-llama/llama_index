@@ -267,9 +267,6 @@ class OpenAI(LLM):
                 # if we need to start a new tool_call and accumulate that new
                 # one thereafter, and so on.
                 tool_calls_delta = delta.tool_calls or None
-                # print(f"\nresponse: {response}")
-                # print(f"delta: {delta}")
-                # print(f"tool_calls_delta: {tool_calls_delta}")
                 if tool_calls_delta is not None:
                     is_function = True
                     t_delta = tool_calls_delta[0]
@@ -293,8 +290,7 @@ class OpenAI(LLM):
                             t.id += t_delta.id or ""
                             t.type += t_delta.type or ""
                             tool_calls[-1] = t
-                # print(f"tool_calls: {tool_calls}")
-                # print(f"content: {content}")
+
                 additional_kwargs = {}
                 if len(tool_calls) > 0:
                     additional_kwargs["tool_calls"] = [t.dict() for t in tool_calls]

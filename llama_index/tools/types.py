@@ -2,6 +2,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
+from deprecated import deprecated
+
 from llama_index.bridge.langchain import StructuredTool, Tool
 from llama_index.bridge.pydantic import BaseModel
 
@@ -31,6 +33,9 @@ class ToolMetadata:
             raise ValueError("name is None.")
         return self.name
 
+    @deprecated(
+        "Deprecated in favor of `to_openai_tool`, which should be used instead."
+    )
     def to_openai_function(self) -> Dict[str, Any]:
         """Deprecated and replaced by `to_openai_tool`.
 

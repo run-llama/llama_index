@@ -3,6 +3,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
 import openai
+from deprecated import deprecated
 from openai.types.chat import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from tenacity import (
@@ -273,6 +274,7 @@ def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage
     return [from_openai_message_dict(message_dict) for message_dict in message_dicts]
 
 
+@deprecated("Deprecated in favor of `to_openai_tool`, which should be used instead.")
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
     """Deprecated in favor of `to_openai_tool`.
 
