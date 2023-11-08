@@ -119,7 +119,7 @@ class SupabaseVectorStore(VectorStore):
             filters=filters,
             include_value=False,
             include_metadata=False,
-            **kwargs
+            **kwargs,
         )
 
         # NOTE: list of row ids
