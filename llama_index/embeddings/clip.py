@@ -127,7 +127,6 @@ class ClipEmbedding(MultiModalEmbedding):
         return results
 
     async def _aget_image_embedding(self, img_file_path: str) -> Embedding:
-        # Gradient AI doesn't have the proper API for async yet, so we just use the sync version.
         return self._get_image_embedding(img_file_path)
 
     def get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
