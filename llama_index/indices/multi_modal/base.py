@@ -36,7 +36,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             store and document store even if vector store keeps text. Defaults to False
     """
 
-    image_store_key = "image"
+    image_namespace = "image"
 
     def __init__(
         self,
@@ -60,10 +60,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         storage_context = storage_context or StorageContext.from_defaults()
 
         if image_vector_store is not None:
-            storage_context.add_vector_store(image_vector_store, self.image_store_key)
+            storage_context.add_vector_store(image_vector_store, self.image_namespace)
 
-        if self.image_store_key not in storage_context.vector_stores:
-            storage_context.add_vector_store(SimpleVectorStore(), self.image_store_key)
+        if self.image_namespace not in storage_context.vector_stores:
+            storage_context.add_vector_store(SimpleVectorStore(), self.image_namespace)
 
         super().__init__(
             nodes=nodes,
@@ -203,7 +203,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             image_nodes, show_progress, is_image=True
         )
         new_img_ids = await self.storage_context.vector_stores[
-            self.image_store_key
+            self.image_namespace
         ].async_add(image_nodes, **insert_kwargs)
 
         # TODO: can vector stores just store images directly? Then no need for docstore
@@ -269,7 +269,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         image_nodes = self._get_node_with_embedding(
             image_nodes, show_progress, is_image=True
         )
-        new_img_ids = self.storage_context.vector_stores[self.image_store_key].add(
+        new_img_ids = self.storage_context.vector_stores[self.image_namespace].add(
             image_nodes, **insert_kwargs
         )
 
