@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fixed missing import for `embeddings.__all__` (#8779)
+
 ## [0.8.64] - 2023-11-06
 
 ### New Features
