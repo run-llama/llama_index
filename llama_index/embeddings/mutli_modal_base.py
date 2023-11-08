@@ -11,9 +11,6 @@ from llama_index.embeddings.base import (
 )
 from llama_index.utils import get_tqdm_iterable
 
-# TODO: change to numpy array
-Embedding = List[float]
-
 
 class MultiModalEmbedding(BaseEmbedding):
     """Base class for Multi Modal embeddings."""
