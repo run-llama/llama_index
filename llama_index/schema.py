@@ -633,29 +633,9 @@ class Document(TextNode):
         return "Document"
 
 
-class ImageDocument(Document):
+class ImageDocument(Document, ImageNode):
     """Data document containing an image."""
-
-    # base64 encoded image str
-    image: Optional[str] = None
-    image_path: Optional[str] = None
-    image_url: Optional[str] = None
 
     @classmethod
     def class_name(cls) -> str:
         return "ImageDocument"
-
-    def resolve_image(self) -> ImageType:
-        """Resolve an image such that PIL can read it."""
-        if self.image is not None:
-            return self.image
-        elif self.image_path is not None:
-            return self.image_path
-        elif self.image_url is not None:
-            # load image from URL
-            import requests
-
-            response = requests.get(self.image_url)
-            return BytesIO(response.content)
-        else:
-            raise ValueError("No image found in node.")
