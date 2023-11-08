@@ -12,13 +12,16 @@ from openai.types.chat.chat_completion_assistant_message_param import (
 )
 from openai.types.chat.chat_completion_message import (
     ChatCompletionMessage,
-    FunctionCall,
 )
 from openai.types.chat.chat_completion_message_param import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionFunctionMessageParam,
     ChatCompletionMessageParam,
     ChatCompletionUserMessageParam,
+)
+from openai.types.chat.chat_completion_message_tool_call import (
+    ChatCompletionMessageToolCall,
+    Function,
 )
 
 
@@ -70,7 +73,7 @@ def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessagePar
 
 
 @pytest.fixture()
-def azure_openi_message_dicts_with_function_calling() -> List[ChatCompletionMessage]:
+def azure_openai_message_dicts_with_function_calling() -> List[ChatCompletionMessage]:
     """
     Taken from:
     - https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling.
@@ -79,10 +82,16 @@ def azure_openi_message_dicts_with_function_calling() -> List[ChatCompletionMess
         ChatCompletionMessage(
             role="assistant",
             content=None,
-            function_call=FunctionCall(
-                name="search_hotels",
-                arguments='{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
-            ),
+            tool_calls=[
+                ChatCompletionMessageToolCall(
+                    id="0123",
+                    type="function",
+                    function=Function(
+                        name="search_hotels",
+                        arguments='{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
+                    ),
+                )
+            ],
         )
     ]
 
@@ -94,10 +103,16 @@ def azure_chat_messages_with_function_calling() -> List[ChatMessage]:
             role=MessageRole.ASSISTANT,
             content=None,
             additional_kwargs={
-                "function_call": {
-                    "name": "search_hotels",
-                    "arguments": '{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
-                },
+                "tool_calls": [
+                    {
+                        "id": "0123",
+                        "type": "function",
+                        "function": {
+                            "name": "search_hotels",
+                            "arguments": '{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
+                        },
+                    },
+                ]
             },
         ),
     ]
@@ -154,10 +169,10 @@ def test_from_openai_message_dicts_function_calling(
 
 
 def test_from_openai_messages_function_calling_azure(
-    azure_openi_message_dicts_with_function_calling: List[ChatCompletionMessage],
+    azure_openai_message_dicts_with_function_calling: List[ChatCompletionMessage],
     azure_chat_messages_with_function_calling: List[ChatMessage],
 ) -> None:
     chat_messages = from_openai_messages(
-        azure_openi_message_dicts_with_function_calling
+        azure_openai_message_dicts_with_function_calling
     )
     assert chat_messages == azure_chat_messages_with_function_calling
