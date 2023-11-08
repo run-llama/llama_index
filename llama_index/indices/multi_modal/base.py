@@ -75,8 +75,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             storage_context=storage_context,
             show_progress=show_progress,
             use_async=use_async,
-            # force to true, since vector dbs don't store images
-            store_nodes_override=True,
+            store_nodes_override=store_nodes_override,
             **kwargs,
         )
 
@@ -122,18 +121,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             storage_context=storage_context,
             image_vector_store=image_vector_store,
             image_embed_model=image_embed_model,
-            **kwargs,
-        )
-
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        # NOTE: lazy import
-        from llama_index.indices.multi_modal.retriever import (
-            MutliModalVectorIndexRetriever,
-        )
-
-        return MutliModalVectorIndexRetriever(
-            self,
-            node_ids=list(self.index_struct.nodes_dict.values()),
             **kwargs,
         )
 
