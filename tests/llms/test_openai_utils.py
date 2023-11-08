@@ -82,6 +82,7 @@ def azure_openai_message_dicts_with_function_calling() -> List[ChatCompletionMes
         ChatCompletionMessage(
             role="assistant",
             content=None,
+            function_call=None,
             tool_calls=[
                 ChatCompletionMessageToolCall(
                     id="0123",
@@ -112,7 +113,7 @@ def azure_chat_messages_with_function_calling() -> List[ChatMessage]:
                             "arguments": '{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
                         },
                     },
-                ]
+                ],
             },
         ),
     ]

@@ -237,11 +237,11 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
     # NOTE: Azure OpenAI returns function calling messages without a content key
     content = openai_message.content
 
-    function_call = (
-        openai_message.function_call.dict() if openai_message.function_call else {}
-    )
+    function_call = None  # deprecated in OpenAI v 1.1.0
 
-    additional_kwargs = {}
+    additional_kwargs = (
+        {"function_call": function_call} if function_call is not None else {}
+    )
     if openai_message.tool_calls is not None:
         tool_calls = [tool_call.dict() for tool_call in openai_message.tool_calls]
         additional_kwargs.update(tool_calls=tool_calls)
