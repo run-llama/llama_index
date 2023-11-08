@@ -43,6 +43,13 @@ def build_nodes_from_splits(
                 embedding=document.embedding,
                 metadata=node_metadata,
                 image=document.image,
+                image_path=document.image_path,
+                image_url=document.image_url,
+                excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
+                excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
+                metadata_seperator=document.metadata_seperator,
+                metadata_template=document.metadata_template,
+                text_template=document.text_template,
                 relationships={NodeRelationship.SOURCE: ref_doc.as_related_node_info()},
             )
             nodes.append(image_node)  # type: ignore
@@ -74,6 +81,28 @@ def build_nodes_from_splits(
             nodes.append(node)
         else:
             raise ValueError(f"Unknown document type: {type(document)}")
+
+    # account for pure image documents
+    if len(text_splits) == 0 and isinstance(document, ImageDocument):
+        node_metadata = {}
+        if include_metadata:
+            node_metadata = document.metadata
+
+        image_node = ImageNode(
+            text="",
+            embedding=document.embedding,
+            metadata=node_metadata,
+            image=document.image,
+            image_path=document.image_path,
+            image_url=document.image_url,
+            excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
+            excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
+            metadata_seperator=document.metadata_seperator,
+            metadata_template=document.metadata_template,
+            text_template=document.text_template,
+            relationships={NodeRelationship.SOURCE: ref_doc.as_related_node_info()},
+        )
+        nodes.append(image_node)  # type: ignore
 
     # if include_prev_next_rel, then add prev/next relationships
     if include_prev_next_rel:
@@ -121,9 +150,18 @@ def get_nodes_from_node(
     """Get nodes from document."""
     if include_metadata:
         if isinstance(text_splitter, MetadataAwareTextSplitter):
+            embed_metadata_str = node.get_metadata_str(mode=MetadataMode.EMBED)
+            llm_metadata_str = node.get_metadata_str(mode=MetadataMode.LLM)
+
+            # use the longest metadata str for splitting
+            if len(embed_metadata_str) > len(llm_metadata_str):
+                metadata_str = embed_metadata_str
+            else:
+                metadata_str = llm_metadata_str
+
             text_splits = text_splitter.split_text_metadata_aware(
                 text=node.get_content(metadata_mode=MetadataMode.NONE),
-                metadata_str=node.get_metadata_str(),
+                metadata_str=metadata_str,
             )
         else:
             logger.warning(

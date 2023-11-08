@@ -1,6 +1,6 @@
 """Markdown node parser."""
 import re
-from typing import List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
@@ -80,11 +80,11 @@ class MarkdownNodeParser(NodeParser):
         return all_nodes
 
     def get_nodes_from_node(self, node: BaseNode) -> List[TextNode]:
-        """Get nodes from document"""
+        """Get nodes from document."""
         text = node.get_content(metadata_mode=MetadataMode.NONE)
         markdown_nodes = []
         lines = text.split("\n")
-        metadata: dict[str, str] = {}
+        metadata: Dict[str, str] = {}
         code_block = False
         current_section = ""
 
@@ -115,7 +115,7 @@ class MarkdownNodeParser(NodeParser):
     def _update_metadata(
         self, headers_metadata: dict, new_header: str, new_header_level: int
     ) -> dict:
-        """Update the markdown headers for metadata
+        """Update the markdown headers for metadata.
 
         Removes all headers that are equal or less than the level
         of the newly found header
@@ -136,7 +136,7 @@ class MarkdownNodeParser(NodeParser):
         node: BaseNode,
         metadata: dict,
     ) -> TextNode:
-        """Build node from single text split"""
+        """Build node from single text split."""
         node = build_nodes_from_splits(
             [text_split], node, self.include_metadata, self.include_prev_next_rel
         )[0]

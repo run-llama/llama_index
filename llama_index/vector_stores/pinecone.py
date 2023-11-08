@@ -120,7 +120,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata: bool = True
+    flat_metadata: bool = False
 
     api_key: Optional[str]
     index_name: Optional[str]
@@ -130,6 +130,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     add_sparse_vector: bool
     text_key: str
     batch_size: int
+    remove_text_from_metadata: bool
 
     _pinecone_index: Any = PrivateAttr()
     _tokenizer: Optional[Callable] = PrivateAttr()
@@ -146,6 +147,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         tokenizer: Optional[Callable] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        remove_text_from_metadata: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -181,6 +183,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             add_sparse_vector=add_sparse_vector,
             text_key=text_key,
             batch_size=batch_size,
+            remove_text_from_metadata=remove_text_from_metadata,
         )
 
     @classmethod
@@ -195,6 +198,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         tokenizer: Optional[Callable] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        remove_text_from_metadata: bool = False,
         **kwargs: Any,
     ) -> "PineconeVectorStore":
         try:
@@ -216,6 +220,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             tokenizer=tokenizer,
             text_key=text_key,
             batch_size=batch_size,
+            remove_text_from_metadata=remove_text_from_metadata,
             **kwargs,
         )
 
@@ -226,6 +231,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 
@@ -239,7 +245,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
             node_id = node.node_id
 
             metadata = node_to_metadata_dict(
-                node, remove_text=False, flat_metadata=self.flat_metadata
+                node,
+                remove_text=self.remove_text_from_metadata,
+                flat_metadata=self.flat_metadata,
             )
 
             entry = {

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, cast
 
 from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings,
@@ -70,7 +70,7 @@ class DynamoDBVectorStore(VectorStore):
         item = cast(Dict[str, List[float]], item)
         return item[self._key_value]
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index."""
         response = []
         for node in nodes:
@@ -109,7 +109,7 @@ class DynamoDBVectorStore(VectorStore):
             )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Get nodes for response"""
+        """Get nodes for response."""
         if query.filters is not None:
             raise ValueError(
                 "Metadata filters not implemented for SimpleVectorStore yet."

@@ -1,10 +1,9 @@
 {
-  "python.formatting.provider": "none",
-  "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": true
-  },
   "[python]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": true
+    },
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
   "python.testing.pytestArgs": ["tests"],

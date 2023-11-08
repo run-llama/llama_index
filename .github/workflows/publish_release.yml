@@ -13,24 +13,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - name: Build and publish to pypi
+        uses: JRubics/poetry-publish@v1.17
         with:
-          python-version: "3.x"
+          pypi_token: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
+          ignore_dev_requirements: "yes"
 
-      - name: Build source and wheel distributions
-        run: |
-          python -m pip install --upgrade build twine
-          python -m build
-          twine check --strict dist/*
-      - name: Publish distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1

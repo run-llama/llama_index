@@ -128,6 +128,9 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
 
 
 def _to_llama_similarities(scores: List[float]) -> List[float]:
+    if scores is None or len(scores) == 0:
+        return []
+
     scores_to_norm: np.ndarray = np.array(scores)
     return np.exp(scores_to_norm - np.max(scores_to_norm)).tolist()
 
@@ -199,12 +202,12 @@ class ElasticsearchStore(VectorStore):
 
     @property
     def client(self) -> Any:
-        """Get async elasticsearch client"""
+        """Get async elasticsearch client."""
         return self._client
 
     @staticmethod
     def get_user_agent() -> str:
-        """Get user agent for elasticsearch client"""
+        """Get user agent for elasticsearch client."""
         import llama_index
 
         return f"llama_index-py-vs/{llama_index.__version__}"
@@ -270,6 +273,7 @@ class ElasticsearchStore(VectorStore):
         nodes: List[BaseNode],
         *,
         create_index_if_not_exists: bool = True,
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to Elasticsearch index.
 
@@ -296,6 +300,7 @@ class ElasticsearchStore(VectorStore):
         nodes: List[BaseNode],
         *,
         create_index_if_not_exists: bool = True,
+        **add_kwargs: Any,
     ) -> List[str]:
         """Asynchronous method to add nodes to Elasticsearch index.
 
@@ -412,7 +417,7 @@ class ElasticsearchStore(VectorStore):
                 logger.warning(f"Could not find text {ref_doc_id} to delete")
             else:
                 logger.debug(f"Deleted text {ref_doc_id} from index")
-        except Exception as e:
+        except Exception:
             logger.error(f"Error deleting text: {ref_doc_id}")
             raise
 

@@ -1,20 +1,28 @@
 """Base query engine."""
 
 import logging
-from abc import ABC, abstractmethod
-from typing import List, Optional, Sequence
+from abc import abstractmethod
+from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.schema import QueryBundle, QueryType
+from llama_index.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore
 
 logger = logging.getLogger(__name__)
 
 
-class BaseQueryEngine(ABC):
+class BaseQueryEngine(PromptMixin):
     def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
         self.callback_manager = callback_manager or CallbackManager([])
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
+        return {}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
 
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         with self.callback_manager.as_trace("query"):

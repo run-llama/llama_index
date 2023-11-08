@@ -5,7 +5,7 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 
 
 class SimpleLLMHandler(BaseCallbackHandler):
-    """Callback handler for printing llms inputs/outputs"""
+    """Callback handler for printing llms inputs/outputs."""
 
     def __init__(self) -> None:
         super().__init__(event_starts_to_ignore=[], event_ends_to_ignore=[])

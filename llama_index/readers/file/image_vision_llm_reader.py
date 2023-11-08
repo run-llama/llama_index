@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document, ImageDocument
+from llama_index.utils import infer_torch_device
 
 
 class ImageVisionLLMReader(BaseReader):
@@ -21,9 +22,9 @@ class ImageVisionLLMReader(BaseReader):
         """Init params."""
         if parser_config is None:
             try:
-                import sentencepiece
+                import sentencepiece  # noqa
                 import torch
-                from PIL import Image
+                from PIL import Image  # noqa
                 from transformers import Blip2ForConditionalGeneration, Blip2Processor
             except ImportError:
                 raise ImportError(
@@ -32,7 +33,7 @@ class ImageVisionLLMReader(BaseReader):
                     "`pip install torch transformers sentencepiece Pillow`"
                 )
 
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = infer_torch_device()
             dtype = torch.float16 if torch.cuda.is_available() else torch.float32
             processor = Blip2Processor.from_pretrained("Salesforce/blip2-opt-2.7b")
             model = Blip2ForConditionalGeneration.from_pretrained(
@@ -86,6 +87,7 @@ class ImageVisionLLMReader(BaseReader):
             ImageDocument(
                 text=text_str,
                 image=image_str,
+                image_path=str(file),
                 metadata=extra_info or {},
             )
         ]

@@ -26,7 +26,7 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "KeywordNodePostprocessor"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -68,7 +68,7 @@ class SimilarityPostprocessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "SimilarityPostprocessor"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -169,7 +169,7 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "PrevNextNodePostprocessor"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -303,7 +303,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
             return "none"
         raise ValueError(f"Invalid prediction: {raw_pred}")
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -362,14 +362,14 @@ class LongContextReorder(BaseNodePostprocessor):
     performance typically arises when crucial data is positioned
     at the start or conclusion of the input context. Additionally,
     as the input context lengthens, performance drops notably, even
-    in models designed for long contexts."
+    in models designed for long contexts.".
     """
 
     @classmethod
     def class_name(cls) -> str:
         return "LongContextReorder"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,

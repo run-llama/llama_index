@@ -1,16 +1,134 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-ignore-words-list = "ot"
-# Remove .git and venv skips when integrated with pre-commit
-# Feel free to un-skip docs, examples, and experimental, you will just need to
+ignore-words-list = "astroid,gallary,momento,narl,ot,rouge"
+# Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
-skip = "./.git,./*venv,./docs,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt"
+skip = "./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.mypy]
 disallow_untyped_defs = true
-exclude = ["build", "examples", "notebooks"]
+# Remove venv skip when integrated with pre-commit
+exclude = ["build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
+
+[tool.poetry]
+authors = ["Jerry Liu <jerry@llamaindex.ai>"]
+classifiers = [
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+description = "Interface between LLMs and your data"
+documentation = "https://docs.llamaindex.ai/en/stable/"
+homepage = "https://llamaindex.ai"
+keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
+license = "MIT"
+maintainers = [
+    "Jerry Liu <jerry@llamaindex.ai>",
+    "Logan Markewich <logan@llamaindex.ai>",
+    "Simon Suo <simon@llamaindex.ai>",
+    "Sourabh Desai <sourabh@llamaindex.ai>",
+]
+name = "llama-index"
+packages = [{include = "llama_index"}]
+readme = "README.md"
+repository = "https://github.com/run-llama/llama_index"
+version = "0.8.64.post1"
+
+[tool.poetry.dependencies]
+SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
+dataclasses-json = "^0.5.7"
+deprecated = ">=1.2.9.3"
+fsspec = ">=2023.5.0"
+langchain = ">=0.0.303"
+nest-asyncio = "^1.5.8"
+nltk = "^3.8.1"
+numpy = "*"
+openai = ">=1.1.0"
+pandas = "*"
+python = ">=3.8.1,<3.12"
+tenacity = ">=8.2.0,<9.0.0"
+tiktoken = ">=0.3.3"
+typing-extensions = ">=4.5.0"
+typing-inspect = ">=0.8.0"
+urllib3 = "<2"
+asyncpg = {optional = true, version = "^0.28.0"}
+pgvector = {optional = true, version = "^0.1.0"}
+psycopg-binary = {optional = true, version = "^3.1.12"}
+optimum = {extras = ["onnxruntime"], optional = true, version = "^1.13.2"}
+sentencepiece = {optional = true, version = "^0.1.99"}
+transformers = {extras = ["torch"], optional = true, version = "^4.34.0"}
+guidance = {optional = true, version = "^0.0.64"}
+lm-format-enforcer = {optional = true, version = "^0.4.3"}
+jsonpath-ng = {optional = true, version = "^1.6.0"}
+rank-bm25 = {optional = true, version = "^0.2.2"}
+scikit-learn = {optional = true, version = "<1.3.0"}
+spacy = {optional = true, version = "^3.7.1"}
+aiostream = "^0.5.2"
+
+[tool.poetry.extras]
+local_models = [
+    "optimum",
+    "sentencepiece",
+    "transformers",
+]
+postgres = [
+    "asyncpg",
+    "pgvector",
+    "psycopg-binary",
+]
+query_tools = [
+    "guidance",
+    "jsonpath-ng",
+    "lm-format-enforcer",
+    "rank-bm25",
+    "scikit-learn",
+    "spacy",
+]
+
+[tool.poetry.group.dev.dependencies]
+beautifulsoup4 = "^4.12.2"  # needed for tests
+black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
+codespell = {extras = ["toml"], version = ">=v2.2.6"}
+google-generativeai = {python = ">=3.9,<3.12", version = "^0.2.1"}
+ipython = "8.10.0"
+jupyter = "^1.0.0"
+mypy = "0.991"
+pre-commit = "3.2.0"
+pylint = "2.15.10"
+pymongo = "^4.5.0"  # needed for tests
+pytest = "7.2.1"
+pytest-asyncio = "0.21.0"
+pytest-dotenv = "0.5.2"
+pytest-mock = "3.11.1"
+rake-nltk = "1.0.6"
+ruff = "0.0.292"
+tree-sitter-languages = "^1.8.0"
+types-Deprecated = ">=0.1.0"
+types-PyYAML = "^6.0.12.12"
+types-redis = "4.5.5.0"
+types-requests = "2.28.11.8"
+types-setuptools = "67.1.0.0"
+vellum-ai = "^0.0.42"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+autodoc-pydantic = "<=1.9.0"
+docutils = "<0.17"
+furo = ">=2023.3.27"
+m2r2 = "0.3.2"
+myst-nb = "0.17.2"
+myst-parser = "0.18.1"
+pydantic = "<2.0.0"
+sphinx = ">=4.3.0"
+sphinx-autobuild = "^2021.3.14"
 
 [tool.ruff]
 exclude = [
@@ -18,7 +136,9 @@ exclude = [
     "notebooks",
 ]
 ignore = [
-    "COM812",
+    "COM812",  # Too aggressive
+    "D212",  # Using D213
+    "D417",  # Too aggressive
     "F541",  # Messes with prompts.py
     "TCH002",
     "UP006",  # Messes with pydantic
@@ -31,22 +151,7 @@ select = [
     "B011",
     "B013",
     "B014",
-    "C400",
-    "C401",
-    "C402",
-    "C403",
-    "C404",
-    "C405",
-    "C406",
-    "C408",
-    "C409",
-    "C410",
-    "C411",
-    "C413",
-    "C414",
-    "C416",
-    "C418",
-    "C419",
+    "C4",
     "COM812",
     "COM819",
     "D201",
@@ -60,24 +165,11 @@ select = [
     "D213",
     "D214",
     "D215",
-    "D400",
-    "D403",
-    "D405",
-    "D406",
-    "D407",
-    "D408",
-    "D409",
-    "D410",
-    "D411",
-    "D412",
-    "D413",
-    "D416",
-    "E703",
-    "E711",
-    "E712",
-    "E713",
-    "E714",
+    "D3",
+    "D4",
+    "E7",
     "EXE004",
+    "F401",
     "F504",
     "F541",
     "F632",
@@ -102,18 +194,7 @@ select = [
     "PT006",
     "PT02",
     "PTH201",
-    "PYI009",
-    "PYI010",
-    "PYI011",
-    "PYI012",
-    "PYI014",
-    "PYI015",
-    "PYI020",
-    "PYI026",
-    "PYI029",
-    "PYI032",
-    "PYI053",
-    "PYI054",
+    "PYI",
     "Q",
     "RET501",
     "RET502",
@@ -128,15 +209,7 @@ select = [
     "SIM103",
     "SIM109",
     "SIM118",
-    "SIM201",
-    "SIM202",
-    "SIM208",
-    "SIM211",
-    "SIM212",
-    "SIM220",
-    "SIM221",
-    "SIM222",
-    "SIM223",
+    "SIM2",
     "SIM300",
     "SIM9",
     "TCH005",
@@ -163,3 +236,6 @@ in_place = true
 spaces_before_inline_comment = 2  # Match Python PEP 8
 spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
+
+[tool.tomlsort.overrides."tool.poetry.dependencies"]
+table_keys = false

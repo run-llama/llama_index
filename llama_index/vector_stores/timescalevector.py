@@ -15,7 +15,7 @@ from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metad
 
 
 class IndexType(enum.Enum):
-    """Enumerator for the supported Index types"""
+    """Enumerator for the supported Index types."""
 
     TIMESCALE_VECTOR = 1
     PGVECTOR_IVFFLAT = 2
@@ -34,7 +34,7 @@ class TimescaleVectorStore(VectorStore):
         time_partition_interval: Optional[timedelta] = None,
     ) -> None:
         try:
-            from timescale_vector import client
+            from timescale_vector import client  # noqa
         except ImportError:
             raise ImportError("`timescale-vector` package should be pre installed")
 
@@ -118,15 +118,15 @@ class TimescaleVectorStore(VectorStore):
             node.embedding,
         ]
 
-    def add(self, embedding_results: List[BaseNode]) -> List[str]:
-        rows_to_insert = [self._node_to_row(node) for node in embedding_results]
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        rows_to_insert = [self._node_to_row(node) for node in nodes]
         ids = [result[0] for result in rows_to_insert]
         self._sync_client.upsert(rows_to_insert)
         return ids
 
-    async def async_add(self, embedding_results: List[BaseNode]) -> List[str]:
-        rows_to_insert = [self._node_to_row(node) for node in embedding_results]
-        ids = [result.node_id for result in embedding_results]
+    async def async_add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        rows_to_insert = [self._node_to_row(node) for node in nodes]
+        ids = [result.node_id for result in nodes]
         await self._async_client.upsert(rows_to_insert)
         return ids
 

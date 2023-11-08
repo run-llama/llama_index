@@ -37,6 +37,9 @@ LEARNER_MODES = {
 
 MMR_MODE = VectorStoreQueryMode.MMR
 
+NAMESPACE_SEP = "__"
+DEFAULT_VECTOR_STORE = "default"
+
 
 def _build_metadata_filter_fn(
     metadata_lookup_fn: Callable[[str], Mapping[str, Any]],
@@ -107,14 +110,44 @@ class SimpleVectorStore(VectorStore):
     def from_persist_dir(
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
+        namespace: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleVectorStore":
         """Load from persist dir."""
-        if fs is not None:
-            persist_path = concat_dirs(persist_dir, DEFAULT_PERSIST_FNAME)
+        if namespace:
+            persist_fname = f"{namespace}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
         else:
-            persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+            persist_fname = DEFAULT_PERSIST_FNAME
+
+        if fs is not None:
+            persist_path = concat_dirs(persist_dir, persist_fname)
+        else:
+            persist_path = os.path.join(persist_dir, persist_fname)
         return cls.from_persist_path(persist_path, fs=fs)
+
+    @classmethod
+    def from_namespaced_persist_dir(
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> Dict[str, VectorStore]:
+        """Load from namespaced persist dir."""
+        vector_stores: Dict[str, VectorStore] = {}
+        for fname in os.listdir(persist_dir):
+            if fname.endswith(DEFAULT_PERSIST_FNAME):
+                namespace = fname.split(NAMESPACE_SEP)[0]
+
+                # handle backwards compatibility with stores that were persisted
+                if namespace == DEFAULT_PERSIST_FNAME:
+                    vector_stores[DEFAULT_VECTOR_STORE] = cls.from_persist_dir(
+                        persist_dir=persist_dir, fs=fs
+                    )
+                else:
+                    vector_stores[namespace] = cls.from_persist_dir(
+                        persist_dir=persist_dir, namespace=namespace, fs=fs
+                    )
+
+        return vector_stores
 
     @property
     def client(self) -> None:
@@ -128,6 +161,7 @@ class SimpleVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index."""
         for node in nodes:

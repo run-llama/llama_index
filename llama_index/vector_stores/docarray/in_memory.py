@@ -30,7 +30,7 @@ class DocArrayInMemoryVectorStore(DocArrayVectorStore):
                 `pip install docarray`
         """
         try:
-            import docarray
+            import docarray  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
 

@@ -9,6 +9,7 @@ class YoutubeTranscriptReader(BasePydanticReader):
     """Youtube Transcript reader."""
 
     is_remote: bool = True
+    languages: tuple = ("en",)
 
     @classmethod
     def class_name(cls) -> str:
@@ -33,7 +34,9 @@ class YoutubeTranscriptReader(BasePydanticReader):
         results = []
         for link in ytlinks:
             video_id = link.split("?v=")[-1]
-            srt = YouTubeTranscriptApi.get_transcript(video_id)
+            srt = YouTubeTranscriptApi.get_transcript(
+                video_id, languages=self.languages
+            )
             transcript = ""
             for chunk in srt:
                 transcript = transcript + chunk["text"] + "\n"

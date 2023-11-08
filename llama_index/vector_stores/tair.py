@@ -89,7 +89,7 @@ class TairVectorStore(VectorStore):
 
         """
         try:
-            from tair import Tair, tairvector
+            from tair import Tair, tairvector  # noqa
         except ImportError:
             raise ValueError(
                 "Could not import tair-py python package. "
@@ -122,10 +122,10 @@ class TairVectorStore(VectorStore):
 
     @property
     def client(self) -> "Tair":
-        """Return the Tair client instance"""
+        """Return the Tair client instance."""
         return self._tair_client
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to the index.
 
         Args:

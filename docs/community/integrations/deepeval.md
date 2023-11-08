@@ -35,6 +35,7 @@ After running this, you will get a beautiful dashboard like so:
 ## Types of Tests
 
 DeepEval presents an opinionated framework for the types of tests that are being run. It breaks down LLM outputs into:
+
 - Answer Relevancy - [Read more here](https://docs.confident-ai.com/docs/measuring_llm_performance/answer_relevancy)
 - Factual Consistency (to measure the extent of hallucinations) - [Read more here](https://docs.confident-ai.com/docs/measuring_llm_performance/factual_consistency)
 - Conceptual Similarity (to know if answers are in line with expectations) - [Read more here](https://docs.confident-ai.com/docs/measuring_llm_performance/conceptual_similarity)
@@ -48,7 +49,6 @@ You can more about the [DeepEval Framework](https://docs.confident-ai.com/docs/f
 DeepEval integrates nicely with LlamaIndex's `BaseEvaluator` class. Below is an example of the factual consistency documentation.
 
 ```python
-
 from llama_index.response.schema import Response
 from typing import List
 from llama_index.schema import Document
@@ -83,7 +83,7 @@ from llama_index import download_loader
 WikipediaReader = download_loader("WikipediaReader")
 
 loader = WikipediaReader()
-documents = loader.load_data(pages=['Tokyo'])
+documents = loader.load_data(pages=["Tokyo"])
 tree_index = TreeIndex.from_documents(documents=documents)
 vector_index = VectorStoreIndex.from_documents(
     documents, service_context=service_context_gpt4
@@ -134,7 +134,7 @@ eval_result = evaluator.evaluate_response(response=response)
 
 ### Useful Links
 
-* [Read About The DeepEval Framework](https://docs.confident-ai.com/docs/framework)
-* [Answer Relevancy](https://docs.confident-ai.com/docs/measuring_llm_performance/answer_relevancy)
-* [Conceptual Similarity](https://docs.confident-ai.com/docs/measuring_llm_performance/conceptual_similarity) .
-* [Bias](https://docs.confident-ai.com/docs/measuring_llm_performance/debias)
+- [Read About The DeepEval Framework](https://docs.confident-ai.com/docs/framework)
+- [Answer Relevancy](https://docs.confident-ai.com/docs/measuring_llm_performance/answer_relevancy)
+- [Conceptual Similarity](https://docs.confident-ai.com/docs/measuring_llm_performance/conceptual_similarity) .
+- [Bias](https://docs.confident-ai.com/docs/measuring_llm_performance/debias)

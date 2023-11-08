@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.bridge.pydantic import Field, root_validator
-from llama_index.llms.base import LLM, ChatMessage
+from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory.types import BaseMemory
 from llama_index.utils import GlobalsHelper
 
@@ -82,20 +82,26 @@ class ChatMemoryBuffer(BaseMemory):
     def from_dict(cls, json_dict: dict) -> "ChatMemoryBuffer":
         return cls.parse_obj(json_dict)
 
-    def get(self) -> List[ChatMessage]:
+    def get(self, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
         message_count = len(self.chat_history)
         message_str = " ".join(
             [str(m.content) for m in self.chat_history[-message_count:]]
         )
-        token_count = len(self.tokenizer_fn(message_str))
+        token_count = initial_token_count + len(self.tokenizer_fn(message_str))
 
         while token_count > self.token_limit and message_count > 1:
             message_count -= 1
+            if self.chat_history[-message_count].role == MessageRole.ASSISTANT:
+                # we cannot have an assistant message at the start of the chat history
+                # if after removal of the first, we have an assistant message,
+                # we need to remove the assistant message too
+                message_count -= 1
+
             message_str = " ".join(
                 [str(m.content) for m in self.chat_history[-message_count:]]
             )
-            token_count = len(self.tokenizer_fn(message_str))
+            token_count = initial_token_count + len(self.tokenizer_fn(message_str))
 
         # catch one message longer than token limit
         if token_count > self.token_limit:

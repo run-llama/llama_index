@@ -4,7 +4,7 @@ from enum import Enum
 from os import getenv
 from time import sleep
 from types import ModuleType
-from typing import Any, List, Optional, Type, TypeVar
+from typing import Any, List, Type, TypeVar
 
 from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
@@ -24,7 +24,7 @@ T = TypeVar("T", bound="RocksetVectorStore")
 
 def _get_rockset() -> ModuleType:
     """Gets the rockset module and raises an ImportError if
-    the rockset package hasn't been installed
+    the rockset package hasn't been installed.
 
     Returns:
         rockset module (ModuleType)
@@ -123,8 +123,8 @@ class RocksetVectorStore(VectorStore):
     def client(self) -> Any:
         return self.rs
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
-        """Stores vectors in the collection
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        """Stores vectors in the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -151,7 +151,7 @@ class RocksetVectorStore(VectorStore):
         ]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Deletes nodes stored in the collection by their ref_doc_id
+        """Deletes nodes stored in the collection by their ref_doc_id.
 
         Args:
             ref_doc_id (str): The ref_doc_id of the document
@@ -177,7 +177,7 @@ class RocksetVectorStore(VectorStore):
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Gets nodes relevant to a query
+        """Gets nodes relevant to a query.
 
         Args:
             query (llama_index.vector_stores.types.VectorStoreQuery): The query
@@ -229,7 +229,7 @@ class RocksetVectorStore(VectorStore):
             else {},
         )
 
-        similarities: list[float] | None = [] if query.query_embedding else None
+        similarities: List[float] | None = [] if query.query_embedding else None
         nodes, ids = [], []
         for row in res.results:
             if similarities is not None:

@@ -4,6 +4,15 @@ import pytest
 from llama_index.indices.managed.vectara.base import VectaraIndex
 from llama_index.schema import Document
 
+#
+# For this test to run properly, please setup as follows:
+# 1. Create a Vectara account: sign up at https://console.vectara.com/signup
+# 2. Create a corpus in your Vectara account, with a filter attribute called "test_num".
+# 3. Create an API_KEY for this corpus with permissions for query and indexing
+# 4. Setup environment variables:
+#    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
+#
+
 
 def get_docs() -> Tuple[List[Document], List[str]]:
     inputs = [
@@ -16,8 +25,12 @@ def get_docs() -> Tuple[List[Document], List[str]]:
             "metadata": {"test_num": "2"},
         },
         {
-            "text": "when 900 year you will be, look as good you will not",
+            "text": "when 900 years you will be, look as good you will not",
             "metadata": {"test_num": "3"},
+        },
+        {
+            "text": "when 850 years you will be, look as good you will not",
+            "metadata": {"test_num": "4"},
         },
     ]
     docs: List[Document] = []
@@ -49,6 +62,48 @@ def test_simple_query() -> None:
     res = qe.retrieve("how will I look?")
     assert len(res) == 1
     assert res[0].node.text == docs[2].text
+
+    remove_docs(index, ids)
+
+
+def test_mmr_query() -> None:
+    docs, ids = get_docs()
+    try:
+        index = VectaraIndex.from_documents(docs)
+    except ValueError:
+        pytest.skip("Missing Vectara credentials, skipping test")
+
+    assert isinstance(index, VectaraIndex)
+
+    # test with diversity bias = 0
+    qe = index.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        vectara_query_mode="mmr",
+        mmr_k=10,
+        mmr_diversity_bias=0.0,
+    )
+    res = qe.retrieve("how will I look?")
+    print(res)
+    assert len(res) == 2
+    assert res[0].node.text == docs[2].text
+    assert res[1].node.text == docs[3].text
+
+    # test with diversity bias = 1
+    qe = index.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        vectara_query_mode="mmr",
+        mmr_k=10,
+        mmr_diversity_bias=1.0,
+    )
+    res = qe.retrieve("how will I look?")
+    assert len(res) == 2
+    print(res)
+    assert res[0].node.text == docs[2].text
+    assert res[1].node.text == docs[0].text
 
     remove_docs(index, ids)
 

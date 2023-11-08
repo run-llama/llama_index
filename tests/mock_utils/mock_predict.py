@@ -135,7 +135,7 @@ def _mock_decompose_query(prompt_args: Dict) -> str:
 def _mock_pandas(prompt_args: Dict) -> str:
     """Mock pandas prompt."""
     query_str = prompt_args["query_str"]
-    return f'df["{query_str}"].iloc[0]'
+    return f'df["{query_str}"]'
 
 
 def _mock_choice_select(prompt_args: Dict) -> str:
@@ -146,6 +146,15 @@ def _mock_choice_select(prompt_args: Dict) -> str:
 def _mock_sql_response_synthesis(prompt_args: Dict) -> str:
     """Mock sql response synthesis prompt."""
     return prompt_args["sql_response_str"]
+
+
+def _mock_sql_response_synthesis_v2(prompt_args: Dict) -> str:
+    """Mock sql response synthesis prompt.
+
+    TODO: deprecate the above
+
+    """
+    return prompt_args["context_str"]
 
 
 def _mock_conversation(prompt_args: Dict) -> str:
@@ -195,6 +204,8 @@ def mock_llmpredictor_predict(prompt: BasePromptTemplate, **prompt_args: Any) ->
         response = _mock_pandas(full_prompt_args)
     elif prompt_type == PromptType.SQL_RESPONSE_SYNTHESIS:
         response = _mock_sql_response_synthesis(full_prompt_args)
+    elif prompt_type == PromptType.SQL_RESPONSE_SYNTHESIS_V2:
+        response = _mock_sql_response_synthesis_v2(full_prompt_args)
     elif prompt_type == PromptType.DECOMPOSE:
         response = _mock_decompose_query(full_prompt_args)
     elif prompt_type == PromptType.CHOICE_SELECT:

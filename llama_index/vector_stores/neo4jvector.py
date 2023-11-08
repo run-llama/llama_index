@@ -10,7 +10,7 @@ from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metad
 
 
 def check_if_not_null(props: List[str], values: List[Any]) -> None:
-    """Check if variable is not null and raise error accordingly"""
+    """Check if variable is not null and raise error accordingly."""
     for prop, value in zip(props, values):
         if not value:
             raise ValueError(f"Parameter `{prop}` must not be None or empty string")
@@ -19,12 +19,12 @@ def check_if_not_null(props: List[str], values: List[Any]) -> None:
 def sort_by_index_name(
     lst: List[Dict[str, Any]], index_name: str
 ) -> List[Dict[str, Any]]:
-    """Sort first element to match the index_name if exists"""
+    """Sort first element to match the index_name if exists."""
     return sorted(lst, key=lambda x: x.get("index_name") != index_name)
 
 
 def clean_params(params: List[BaseNode]) -> List[Dict[str, Any]]:
-    """Convert BaseNode object to a dictionary to be imported into Neo4j"""
+    """Convert BaseNode object to a dictionary to be imported into Neo4j."""
     clean_params = []
     for record in params:
         text = record.get_content(metadata_mode=MetadataMode.NONE)
@@ -220,7 +220,7 @@ class Neo4jVectorStore(VectorStore):
             except CypherSyntaxError as e:
                 raise ValueError(f"Cypher Statement is not valid\n{e}")
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         ids = [r.node_id for r in nodes]
         import_query = (
             "UNWIND $data AS row "

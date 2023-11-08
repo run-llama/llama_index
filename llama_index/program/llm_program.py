@@ -58,6 +58,14 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     def output_cls(self) -> Type[BaseModel]:
         return self._output_parser.output_cls
 
+    @property
+    def prompt(self) -> BasePromptTemplate:
+        return self._prompt
+
+    @prompt.setter
+    def prompt(self, prompt: BasePromptTemplate) -> None:
+        self._prompt = prompt
+
     def __call__(
         self,
         *args: Any,

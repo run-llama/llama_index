@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
@@ -45,7 +45,7 @@ class ZepVectorStore(VectorStore):
         api_url: str,
         api_key: Optional[str] = None,
         collection_description: Optional[str] = None,
-        collection_metadata: Optional[dict] = None,
+        collection_metadata: Optional[Dict[str, Any]] = None,
         embedding_dimensions: Optional[int] = None,
         is_auto_embedded: bool = False,
         **kwargs: Any,
@@ -60,10 +60,10 @@ class ZepVectorStore(VectorStore):
             raise ImportError(import_err_msg)
 
         from zep_python import ZepClient
-        from zep_python.document import Document as ZepDocument
         from zep_python.document import DocumentCollection
 
         self._client = ZepClient(base_url=api_url, api_key=api_key)
+        self._collection: Union[DocumentCollection, None] = None
 
         try:
             self._collection = self._client.document.get_collection(
@@ -88,6 +88,11 @@ class ZepVectorStore(VectorStore):
                 metadata=collection_metadata,
             )
 
+    @property
+    def client(self) -> Any:
+        """Get client."""
+        return self._client
+
     def _prepare_documents(
         self, nodes: List[BaseNode]
     ) -> Tuple[List["ZepDocument"], List[str]]:
@@ -97,7 +102,7 @@ class ZepVectorStore(VectorStore):
         ids: List[str] = []
 
         for node in nodes:
-            metadata_dict = node_to_metadata_dict(
+            metadata_dict: Dict[str, Any] = node_to_metadata_dict(
                 node, remove_text=True, flat_metadata=self.flat_metadata
             )
 
@@ -116,7 +121,7 @@ class ZepVectorStore(VectorStore):
 
         return docs, ids
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to the collection.
 
         Args:
@@ -142,6 +147,7 @@ class ZepVectorStore(VectorStore):
     async def async_add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Asynchronously add nodes to the collection.
 
@@ -238,9 +244,9 @@ class ZepVectorStore(VectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    def _to_zep_filters(self, filters: MetadataFilters) -> Any:
+    def _to_zep_filters(self, filters: MetadataFilters) -> Dict[str, Any]:
         """Convert filters to Zep filters. Filters are ANDed together."""
-        filter_conditions = []
+        filter_conditions: List[Dict[str, Any]] = []
 
         for f in filters.filters:
             filter_conditions.append({"jsonpath": f'$[*] ? (@.{f.key} == "{f.value}")'})
