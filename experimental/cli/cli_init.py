@@ -1,5 +1,6 @@
-from .configuration import load_config, save_config
 from argparse import Namespace, _SubParsersAction
+
+from .configuration import load_config, save_config
 
 
 def init_cli(args: Namespace) -> None:

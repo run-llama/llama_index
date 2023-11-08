@@ -179,17 +179,13 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                 index_struct.add_node([subj, obj], n)
 
             if self.include_embeddings:
-                for triplet in triplets:
-                    self._service_context.embed_model.queue_text_for_embedding(
-                        str(triplet), str(triplet)
-                    )
+                triplet_texts = [str(t) for t in triplets]
 
-                embed_outputs = (
-                    self._service_context.embed_model.get_queued_text_embeddings(
-                        self._show_progress
-                    )
+                embed_model = self._service_context.embed_model
+                embed_outputs = embed_model.get_text_embedding_batch(
+                    triplet_texts, show_progress=self._show_progress
                 )
-                for rel_text, rel_embed in zip(*embed_outputs):
+                for rel_text, rel_embed in zip(triplet_texts, embed_outputs):
                     index_struct.add_to_embedding_dict(rel_text, rel_embed)
 
         return index_struct
@@ -223,7 +219,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         Used for manual insertion of KG triplets (in the form
         of (subject, relationship, object)).
 
-        Args
+        Args:
             triplet (str): Knowledge triplet
 
         """
@@ -308,7 +304,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         rel_map = self._graph_store.get_rel_map(subjs=subjs, depth=1, limit=limit)
 
         added_nodes = set()
-        for keyword in rel_map.keys():
+        for keyword in rel_map:
             for path in rel_map[keyword]:
                 subj = keyword
                 for i in range(0, len(path), 2):

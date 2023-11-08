@@ -1,5 +1,4 @@
 import pytest
-
 from llama_index.bridge.pydantic import BaseModel
 
 try:

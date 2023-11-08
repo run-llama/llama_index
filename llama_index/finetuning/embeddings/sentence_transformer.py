@@ -1,14 +1,13 @@
 """Sentence Transformer Finetuning Engine."""
 
-from llama_index.embeddings.base import BaseEmbedding
-
 from typing import Any, Optional
 
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 from llama_index.finetuning.embeddings.common import (
     EmbeddingQAFinetuneDataset,
 )
+from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 
 
 class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
@@ -79,8 +78,5 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
 
     def get_finetuned_model(self, **model_kwargs: Any) -> BaseEmbedding:
         """Gets finetuned model."""
-
         embed_model_str = "local:" + self.model_output_path
-        embed_model = resolve_embed_model(embed_model_str)
-
-        return embed_model
+        return resolve_embed_model(embed_model_str)

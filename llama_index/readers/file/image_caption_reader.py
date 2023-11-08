@@ -22,9 +22,9 @@ class ImageCaptionReader(BaseReader):
         if parser_config is None:
             """Init parser."""
             try:
-                import sentencepiece  # noqa: F401
-                import torch  # noqa: F401
-                from PIL import Image  # noqa: F401
+                import sentencepiece
+                import torch
+                from PIL import Image
                 from transformers import BlipForConditionalGeneration, BlipProcessor
             except ImportError:
                 raise ImportError(

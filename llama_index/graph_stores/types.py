@@ -54,7 +54,7 @@ class GraphStore(Protocol):
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
         """Persist the graph store to a file."""
-        return None
+        return
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""

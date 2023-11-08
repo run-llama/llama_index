@@ -1,46 +1,46 @@
 import os
 import shutil
-from typing import TypedDict
+from collections import defaultdict
+from datetime import datetime
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
     List,
     Optional,
     Sequence,
-    Union,
-    TYPE_CHECKING,
     Tuple,
+    TypedDict,
+    Union,
 )
-from collections import defaultdict
-from datetime import datetime
 
 from llama_index.callbacks.base_handler import BaseCallbackHandler
-from llama_index.callbacks.token_counting import get_llm_token_counts
 from llama_index.callbacks.schema import (
+    TIMESTAMP_FORMAT,
     CBEvent,
     CBEventType,
     EventPayload,
-    TIMESTAMP_FORMAT,
 )
+from llama_index.callbacks.token_counting import get_llm_token_counts
 from llama_index.utils import globals_helper
 
 if TYPE_CHECKING:
-    from wandb.sdk.data_types import trace_tree
     from wandb import Settings as WBSettings
-    from llama_index.storage.storage_context import StorageContext
+    from wandb.sdk.data_types import trace_tree
 
     from llama_index import (
         ComposableGraph,
-        GPTKeywordTableIndex,
-        GPTSimpleKeywordTableIndex,
-        GPTRAKEKeywordTableIndex,
-        SummaryIndex,
         GPTEmptyIndex,
+        GPTKeywordTableIndex,
+        GPTRAKEKeywordTableIndex,
+        GPTSimpleKeywordTableIndex,
+        GPTSQLStructStoreIndex,
         GPTTreeIndex,
         GPTVectorStoreIndex,
-        GPTSQLStructStoreIndex,
+        SummaryIndex,
     )
+    from llama_index.storage.storage_context import StorageContext
 
     IndexType = Union[
         ComposableGraph,
@@ -130,14 +130,14 @@ class WandbCallbackHandler(BaseCallbackHandler):
 
         from llama_index import (
             ComposableGraph,
-            GPTKeywordTableIndex,
-            GPTSimpleKeywordTableIndex,
-            GPTRAKEKeywordTableIndex,
-            SummaryIndex,
             GPTEmptyIndex,
+            GPTKeywordTableIndex,
+            GPTRAKEKeywordTableIndex,
+            GPTSimpleKeywordTableIndex,
+            GPTSQLStructStoreIndex,
             GPTTreeIndex,
             GPTVectorStoreIndex,
-            GPTSQLStructStoreIndex,
+            SummaryIndex,
         )
 
         self._IndexType = (
@@ -175,6 +175,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: str = "",
+        parent_id: str = "",
         **kwargs: Any,
     ) -> str:
         """Store event start data by event type.
@@ -183,6 +184,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             event_type (CBEventType): event type to store.
             payload (Optional[Dict[str, Any]]): payload to store.
             event_id (str): event id to store.
+            parent_id (str): parent event id.
 
         """
         event = CBEvent(event_type, payload=payload, id_=event_id)
@@ -253,7 +255,6 @@ class WandbCallbackHandler(BaseCallbackHandler):
         except Exception as e:
             print(f"Failed to log trace tree to W&B: {e}")
             # ignore errors to not break user code
-            pass
 
     def persist_index(
         self, index: "IndexType", index_name: str, persist_dir: Union[str, None] = None
@@ -315,8 +316,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
         artifact = self._wandb.use_artifact(artifact_url, type="storage_context")
         artifact_dir = artifact.download(root=index_download_dir)
 
-        storage_context = StorageContext.from_defaults(persist_dir=artifact_dir)
-        return storage_context
+        return StorageContext.from_defaults(persist_dir=artifact_dir)
 
     def _upload_index_as_wb_artifact(
         self, dir_path: str, artifact_name: str, metadata: Optional[Dict]

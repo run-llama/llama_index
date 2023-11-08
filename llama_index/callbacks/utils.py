@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from typing import Any, Callable, cast
+
 from llama_index.callbacks.base import CallbackManager
 
 logger = logging.getLogger(__name__)

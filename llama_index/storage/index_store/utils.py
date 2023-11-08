@@ -4,11 +4,10 @@ from llama_index.data_structs.registry import INDEX_STRUCT_TYPE_TO_INDEX_STRUCT_
 
 
 def index_struct_to_json(index_struct: IndexStruct) -> dict:
-    index_struct_dict = {
+    return {
         TYPE_KEY: index_struct.get_type(),
         DATA_KEY: index_struct.to_json(),
     }
-    return index_struct_dict
 
 
 def json_to_index_struct(struct_dict: dict) -> IndexStruct:

@@ -3,10 +3,9 @@ from typing import Any, List, Optional, Type, cast
 import pandas as pd
 
 from llama_index.bridge.pydantic import BaseModel, Field
-
-from llama_index.program.base_program import BasePydanticProgram
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.program.openai_program import OpenAIPydanticProgram
+from llama_index.types import BasePydanticProgram
 
 
 class DataFrameRow(BaseModel):
@@ -142,8 +141,7 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
         if self._input_key not in kwds:
             raise ValueError(f"Input key {self._input_key} not found in kwds.")
         result = self._pydantic_program(**{self._input_key: kwds[self._input_key]})
-        result = cast(DataFrame, result)
-        return result
+        return cast(DataFrame, result)
 
 
 class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
@@ -223,5 +221,4 @@ class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
         if self._input_key not in kwds:
             raise ValueError(f"Input key {self._input_key} not found in kwds.")
         result = self._pydantic_program(**{self._input_key: kwds[self._input_key]})
-        result = cast(DataFrameRowsOnly, result)
-        return result
+        return cast(DataFrameRowsOnly, result)

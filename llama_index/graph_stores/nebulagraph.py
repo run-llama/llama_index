@@ -130,7 +130,7 @@ class NebulaGraphStore(GraphStore):
             **kwargs: Keyword arguments.
         """
         try:
-            import nebula3  # noqa
+            import nebula3
         except ImportError:
             raise ImportError(
                 "Please install NebulaGraph Python client first: "
@@ -140,7 +140,8 @@ class NebulaGraphStore(GraphStore):
         self._space_name = space_name
         self._session_pool_kwargs = session_pool_kwargs
 
-        if session_pool is None:
+        self._session_pool: Any = session_pool
+        if self._session_pool is None:
             self.init_session_pool()
 
         self._vid_type = self._get_vid_type()
@@ -195,14 +196,12 @@ class NebulaGraphStore(GraphStore):
             if prop_names is not None:
                 self._tag_prop_names_map[tag] = f"`{tag}`.`{prop_names}`"
         self._tag_prop_names: List[str] = list(
-            set(
-                [
-                    prop_name.strip()
-                    for prop_names in tag_prop_names or []
-                    if prop_names is not None
-                    for prop_name in prop_names.split(",")
-                ]
-            )
+            {
+                prop_name.strip()
+                for prop_names in tag_prop_names or []
+                if prop_names is not None
+                for prop_name in prop_names.split(",")
+            }
         )
 
         self._include_vid = include_vid
@@ -282,14 +281,14 @@ class NebulaGraphStore(GraphStore):
             logger.error(
                 f"Connection issue, try to recreate session pool. Query: {query}, "
                 f"Param: {param_map}"
-                f"Erorr: {e}"
+                f"Error: {e}"
             )
             self.init_session_pool()
             logger.info(
                 f"Session pool recreated. Query: {query}, Param: {param_map}"
                 f"This was due to error: {e}, and now retrying."
             )
-            raise e
+            raise
 
         except ValueError as e:
             # query failed on db side
@@ -297,14 +296,14 @@ class NebulaGraphStore(GraphStore):
                 f"Query failed. Query: {query}, Param: {param_map}"
                 f"Error message: {e}"
             )
-            raise e
+            raise
         except Exception as e:
             # other exceptions
             logger.error(
                 f"Query failed. Query: {query}, Param: {param_map}"
                 f"Error message: {e}"
             )
-            raise e
+            raise
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "GraphStore":
@@ -418,7 +417,7 @@ class NebulaGraphStore(GraphStore):
             f"WITH start, id(start) AS vid, nodes(p) AS nodes, e AS rels,"
             f"  length(p) AS rel_count, arrow_l, arrow_r, edge_type_map "
             f"WITH "
-            f"  REDUCE(s = {s_prefix}, key IN [key_ in {str(self._tag_prop_names)} "
+            f"  REDUCE(s = {s_prefix}, key IN [key_ in {self._tag_prop_names!s} "
             f"    WHERE properties(start)[key_] IS NOT NULL]  | s + key + ': ' + "
             f"      COALESCE(TOSTRING(properties(start)[key]), 'null') + ', ')"
             f"      + '}}'"
@@ -433,7 +432,7 @@ class NebulaGraphStore(GraphStore):
             f"      +"
             f"    arrow_r[tostring(item[3])],"
             f"    REDUCE(s = {s1}, key IN [key_ in "
-            f"        {str(self._tag_prop_names)} WHERE properties(item[1])[key_] "
+            f"        {self._tag_prop_names!s} WHERE properties(item[1])[key_] "
             f"        IS NOT NULL]  | s + key + ': ' + "
             f"        COALESCE(TOSTRING(properties(item[1])[key]), 'null') + ', ')"
             f"        + '}}'"
@@ -541,7 +540,6 @@ class NebulaGraphStore(GraphStore):
            obj are isolated vertices,
            if so, delete them, too.
         """
-
         # lower case subj, rel, obj
         subj = escape_str(subj)
         rel = escape_str(rel)

@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, cast
+from typing import Any, List, Optional, cast
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
@@ -19,6 +19,7 @@ from llama_index.schema import NodeWithScore
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreInfo,
+    VectorStoreQueryMode,
     VectorStoreQuerySpec,
 )
 
@@ -45,6 +46,8 @@ class VectorIndexAutoRetriever(BaseRetriever):
         max_top_k (int):
             the maximum top_k allowed. The top_k set by LLM or similarity_top_k will
             be clamped to this value.
+        vector_store_query_mode (str): vector store query mode
+            See reference for VectorStoreQueryMode for full list of supported modes.
     """
 
     def __init__(
@@ -55,6 +58,8 @@ class VectorIndexAutoRetriever(BaseRetriever):
         service_context: Optional[ServiceContext] = None,
         max_top_k: int = 10,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
+        **kwargs: Any,
     ) -> None:
         self._index = index
         self._vector_store_info = vector_store_info
@@ -73,6 +78,8 @@ class VectorIndexAutoRetriever(BaseRetriever):
         # additional config
         self._max_top_k = max_top_k
         self._similarity_top_k = similarity_top_k
+        self._vector_store_query_mode = vector_store_query_mode
+        self._kwargs = kwargs
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input
@@ -95,7 +102,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
             )
             query_spec = cast(VectorStoreQuerySpec, structured_output.parsed_output)
         except OutputParserException:
-            _logger.warn("Failed to parse query spec, using defaults as fallback.")
+            _logger.warning("Failed to parse query spec, using defaults as fallback.")
             query_spec = VectorStoreQuerySpec(
                 query=query_bundle.query_str,
                 filters=[],
@@ -119,5 +126,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
             self._index,
             filters=MetadataFilters(filters=query_spec.filters),
             similarity_top_k=similarity_top_k,
+            vector_store_query_mode=self._vector_store_query_mode,
+            **self._kwargs,
         )
         return retriever.retrieve(query_spec.query)

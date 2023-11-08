@@ -1,17 +1,16 @@
 """Hierarchical node parser."""
 
-from typing import List, Optional, Sequence, Dict
+from typing import Dict, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import get_nodes_from_document
 from llama_index.schema import BaseNode, Document, NodeRelationship
-from llama_index.utils import get_tqdm_iterable
 from llama_index.text_splitter import TextSplitter, get_default_text_splitter
+from llama_index.utils import get_tqdm_iterable
 
 
 def _add_parent_child_relationship(parent_node: BaseNode, child_node: BaseNode) -> None:
@@ -32,6 +31,15 @@ def get_leaf_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
         if NodeRelationship.CHILD not in node.relationships:
             leaf_nodes.append(node)
     return leaf_nodes
+
+
+def get_root_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
+    """Get root nodes."""
+    root_nodes = []
+    for node in nodes:
+        if NodeRelationship.PARENT not in node.relationships:
+            root_nodes.append(node)
+    return root_nodes
 
 
 class HierarchicalNodeParser(NodeParser):
@@ -134,7 +142,6 @@ class HierarchicalNodeParser(NodeParser):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "HierarchicalNodeParser"
 
     def _recursively_get_nodes_from_nodes(

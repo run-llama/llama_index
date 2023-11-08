@@ -13,7 +13,6 @@ from typing import Any, Callable, Optional
 import numpy as np
 import pandas as pd
 
-from llama_index.bridge.langchain import print_text
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -21,6 +20,7 @@ from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.response.schema import Response
+from llama_index.utils import print_text
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,8 @@ DEFAULT_INSTRUCTION_STR = (
     "We wish to convert this query to executable Python code using Pandas.\n"
     "The final line of code should be a Python expression that can be called "
     "with the `eval()` function. This expression should represent a solution "
-    "to the query."
+    "to the query. This expression should not have leading or trailing "
+    "quotes.\n"
 )
 
 
@@ -42,7 +43,7 @@ def default_output_processor(
     import traceback
 
     if sys.version_info < (3, 9):
-        logger.warn(
+        logger.warning(
             "Python version must be >= 3.9 in order to use "
             "the default output processor, which executes "
             "the Python query. Instead, we will return the "
@@ -60,11 +61,14 @@ def default_output_processor(
         exec(ast.unparse(module), {}, local_vars)  # type: ignore
         module_end = ast.Module(tree.body[-1:], type_ignores=[])
         module_end_str = ast.unparse(module_end)  # type: ignore
-        print(module_end_str)
+        if module_end_str.strip("'\"") != module_end_str:
+            # if there's leading/trailing quotes, then we need to eval
+            # string to get the actual expression
+            module_end_str = eval(module_end_str, {"np": np}, local_vars)
         try:
             return str(eval(module_end_str, {"np": np}, local_vars))
         except Exception as e:
-            raise e
+            raise
     except Exception as e:
         err_string = (
             "There was an error running the output as Python code. "

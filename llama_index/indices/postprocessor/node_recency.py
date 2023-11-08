@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -68,7 +67,6 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
@@ -124,7 +122,6 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
@@ -137,13 +134,9 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
 
         # get embeddings for each node
         embed_model = self.service_context.embed_model
-        for node in sorted_nodes:
-            embed_model.queue_text_for_embedding(
-                node.node.node_id,
-                node.node.get_content(metadata_mode=MetadataMode.EMBED),
-            )
+        texts = [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes]
+        text_embeddings = embed_model.get_text_embedding_batch(texts=texts)
 
-        _, text_embeddings = embed_model.get_queued_text_embeddings()
         node_ids_to_skip: Set[str] = set()
         for idx, node in enumerate(sorted_nodes):
             if node.node.node_id in node_ids_to_skip:

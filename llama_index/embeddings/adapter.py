@@ -1,13 +1,11 @@
 """Embedding adapter model."""
 
+import logging
 from typing import Any, List, Optional, Type, cast
 
 from llama_index.bridge.pydantic import PrivateAttr
-
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -51,11 +49,12 @@ class AdapterEmbeddingModel(BaseEmbedding):
     ) -> None:
         """Init params"""
         import torch
-        from llama_index.embeddings.adapter_utils import LinearLayer, BaseAdapter
+
+        from llama_index.embeddings.adapter_utils import BaseAdapter, LinearLayer
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            logger.info("Use pytorch device: {}".format(device))
+            logger.info(f"Use pytorch device: {device}")
         self._target_device = torch.device(device)
 
         self._base_embed_model = base_embed_model
@@ -78,7 +77,6 @@ class AdapterEmbeddingModel(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "AdapterEmbeddingModel"
 
     def _get_query_embedding(self, query: str) -> List[float]:
@@ -106,14 +104,10 @@ class AdapterEmbeddingModel(BaseEmbedding):
         return query_embedding
 
     def _get_text_embedding(self, text: str) -> List[float]:
-        text_embedding = self._base_embed_model._get_text_embedding(text)
-
-        return text_embedding
+        return self._base_embed_model._get_text_embedding(text)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
-        text_embedding = await self._base_embed_model._aget_text_embedding(text)
-
-        return text_embedding
+        return await self._base_embed_model._aget_text_embedding(text)
 
 
 # Maintain for backwards compatibility

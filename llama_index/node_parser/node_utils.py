@@ -27,7 +27,6 @@ def build_nodes_from_splits(
     ref_doc: Optional[BaseNode] = None,
 ) -> List[TextNode]:
     """Build nodes from splits."""
-
     ref_doc = ref_doc or document
 
     nodes: List[TextNode] = []

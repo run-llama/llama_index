@@ -10,10 +10,10 @@ from llama_index.indices.struct_store.sql import (
 from llama_index.indices.struct_store.sql_query import (
     GPTNLStructStoreQueryEngine,
     GPTSQLStructStoreQueryEngine,
+    NLSQLTableQueryEngine,
     NLStructStoreQueryEngine,
     SQLStructStoreQueryEngine,
     SQLTableRetrieverQueryEngine,
-    NLSQLTableQueryEngine,
 )
 
 __all__ = [

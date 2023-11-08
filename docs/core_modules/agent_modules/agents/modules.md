@@ -16,6 +16,7 @@ maxdepth: 1
 /examples/agent/openai_agent_query_plan.ipynb
 /examples/agent/openai_agent_context_retrieval.ipynb
 /examples/query_engine/recursive_retriever_agents.ipynb
+/examples/agent/multi_document_agents.ipynb
 ```
 
 ## ReAct Agent
@@ -25,4 +26,3 @@ maxdepth: 1
 ---
 /examples/agent/react_agent_with_query_engine.ipynb
 ```
-

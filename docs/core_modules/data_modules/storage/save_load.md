@@ -31,10 +31,10 @@ from llama_index import load_index_from_storage, load_indices_from_storage, load
 
 # load a single index
 # need to specify index_id if multiple indexes are persisted to the same directory
-index = load_index_from_storage(storage_context, index_id="<index_id>") 
+index = load_index_from_storage(storage_context, index_id="<index_id>")
 
 # don't need to specify index_id if there's only one index in storage context
-index = load_index_from_storage(storage_context) 
+index = load_index_from_storage(storage_context)
 
 # load multiple indices
 indices = load_indices_from_storage(storage_context) # loads all indices

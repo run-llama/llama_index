@@ -3,10 +3,8 @@
 from typing import Optional, Sequence
 
 from llama_index.data_structs.data_structs import IndexGraph
-from llama_index.indices.tree.utils import get_numbered_text_from_nodes
-from llama_index.storage.docstore import BaseDocumentStore
-from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.indices.service_context import ServiceContext
+from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
@@ -16,7 +14,9 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
-from llama_index.schema import BaseNode, TextNode, MetadataMode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.storage.docstore import BaseDocumentStore
+from llama_index.storage.docstore.registry import get_default_docstore
 
 
 class TreeIndexInserter:
@@ -97,7 +97,7 @@ class TreeIndexInserter:
             # insert half1 and half2 as new children of parent_node
             # first remove child indices from parent node
             if parent_node is not None:
-                self.index_graph.node_id_to_children_ids[parent_node.node_id] = list()
+                self.index_graph.node_id_to_children_ids[parent_node.node_id] = []
             else:
                 self.index_graph.root_nodes = {}
             self.index_graph.insert_under_parent(

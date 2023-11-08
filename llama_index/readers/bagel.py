@@ -74,7 +74,6 @@ class BagelReader(BaseReader):
 
         Returns: None
         """
-
         try:
             import bagel
         except ImportError:
@@ -105,7 +104,6 @@ class BagelReader(BaseReader):
         Returns:
             List of documents.
         """
-
         documents = []
         # create a list of results
         all_results = list(
@@ -186,6 +184,4 @@ class BagelReader(BaseReader):
             raise ValueError("No embeddings or documents found")
 
         # create documents from the results
-        documents = self.create_documents(results)
-
-        return documents
+        return self.create_documents(results)

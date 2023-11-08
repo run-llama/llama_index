@@ -1,6 +1,9 @@
 """LanceDB vector store."""
 from typing import Any, List, Optional
 
+import numpy as np
+from pandas import DataFrame
+
 from llama_index.schema import (
     BaseNode,
     MetadataMode,
@@ -26,6 +29,18 @@ def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
         else:
             filters.append(filter.key + " = " + str(filter.value))
     return " AND ".join(filters)
+
+
+def _to_llama_similarities(results: DataFrame) -> List[float]:
+    keys = results.keys()
+    normalized_similarities: np.ndarray
+    if "score" in keys:
+        normalized_similarities = np.exp(results["score"] - np.max(results["score"]))
+    elif "_distance" in keys:
+        normalized_similarities = np.exp(-results["_distance"])
+    else:
+        normalized_similarities = np.linspace(1, 0, len(results))
+    return normalized_similarities.tolist()
 
 
 class LanceDBVectorStore(VectorStore):
@@ -67,7 +82,7 @@ class LanceDBVectorStore(VectorStore):
         """Init params."""
         import_err_msg = "`lancedb` package not found, please run `pip install lancedb`"
         try:
-            import lancedb  # noqa: F401
+            import lancedb
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -80,7 +95,7 @@ class LanceDBVectorStore(VectorStore):
     @property
     def client(self) -> None:
         """Get client."""
-        return None
+        return
 
     def add(
         self,
@@ -162,6 +177,6 @@ class LanceDBVectorStore(VectorStore):
 
         return VectorStoreQueryResult(
             nodes=nodes,
-            similarities=results["score"].tolist(),
+            similarities=_to_llama_similarities(results),
             ids=results["id"].tolist(),
         )

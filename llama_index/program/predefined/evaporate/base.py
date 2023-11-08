@@ -1,26 +1,25 @@
 import logging
-from typing import Any, Dict, List, Type, Optional, Generic
 from abc import abstractmethod
+from typing import Any, Dict, Generic, List, Optional, Type
 
-from llama_index.program.predefined.evaporate.extractor import EvaporateExtractor
-from llama_index.program.base_program import BasePydanticProgram
+import pandas as pd
+
+from llama_index.indices.service_context import ServiceContext
 from llama_index.program.predefined.df import (
-    DataFrameRowsOnly,
     DataFrameRow,
+    DataFrameRowsOnly,
     DataFrameValuesPerColumn,
 )
-from llama_index.schema import BaseNode, TextNode
-from llama_index.indices.service_context import ServiceContext
+from llama_index.program.predefined.evaporate.extractor import EvaporateExtractor
 from llama_index.program.predefined.evaporate.prompts import (
-    FnGeneratePrompt,
-    FN_GENERATION_LIST_PROMPT,
-    SchemaIDPrompt,
     DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
+    FN_GENERATION_LIST_PROMPT,
+    FnGeneratePrompt,
+    SchemaIDPrompt,
 )
-import pandas as pd
-from llama_index.types import Model
-from llama_index.bridge.langchain import print_text
-
+from llama_index.schema import BaseNode, TextNode
+from llama_index.types import BasePydanticProgram, Model
+from llama_index.utils import print_text
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +162,6 @@ class DFEvaporateProgram(BaseEvaporateProgram[DataFrameRowsOnly]):
 
     def __call__(self, *args: Any, **kwds: Any) -> DataFrameRowsOnly:
         """Call evaporate on inference data."""
-
         # TODO: either specify `nodes` or `texts` in kwds
         if "nodes" in kwds:
             nodes = kwds["nodes"]
@@ -259,7 +257,6 @@ class MultiValueEvaporateProgram(BaseEvaporateProgram[DataFrameValuesPerColumn])
 
     def __call__(self, *args: Any, **kwds: Any) -> DataFrameValuesPerColumn:
         """Call evaporate on inference data."""
-
         # TODO: either specify `nodes` or `texts` in kwds
         if "nodes" in kwds:
             nodes = kwds["nodes"]

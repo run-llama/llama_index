@@ -5,41 +5,45 @@ This module contains retrievers for document summary indices.
 """
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, List, Optional
 
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
-from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
-from llama_index.prompts import PromptTemplate
-from llama_index.prompts.default_prompts import (
-    DEFAULT_CHOICE_SELECT_PROMPT,
-)
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
+from llama_index.schema import NodeWithScore
+from llama_index.vector_stores.types import VectorStoreQuery
 
 logger = logging.getLogger(__name__)
 
 
-class DocumentSummaryIndexRetriever(BaseRetriever):
-    """Document Summary Index Retriever.
+class DocumentSummaryIndexLLMRetriever(BaseRetriever):
+    """Document Summary Index LLM Retriever.
 
     By default, select relevant summaries from index using LLM calls.
 
     Args:
         index (DocumentSummaryIndex): The index to retrieve from.
-
+        choice_select_prompt (Optional[BasePromptTemplate]): The prompt to use for selecting relevant summaries.
+        choice_batch_size (int): The number of summary nodes to send to LLM at a time.
+        choice_top_k (int): The number of summary nodes to retrieve.
+        format_node_batch_fn (Callable): Function to format a batch of nodes for LLM.
+        parse_choice_select_answer_fn (Callable): Function to parse LLM response.
+        service_context (ServiceContext): The service context to use.
     """
 
     def __init__(
         self,
         index: DocumentSummaryIndex,
-        choice_select_prompt: Optional[PromptTemplate] = None,
+        choice_select_prompt: Optional[BasePromptTemplate] = None,
         choice_batch_size: int = 10,
+        choice_top_k: int = 1,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
         service_context: Optional[ServiceContext] = None,
@@ -50,6 +54,7 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
             choice_select_prompt or DEFAULT_CHOICE_SELECT_PROMPT
         )
         self._choice_batch_size = choice_batch_size
+        self._choice_top_k = choice_top_k
         self._format_node_batch_fn = (
             format_node_batch_fn or default_format_node_batch_fn
         )
@@ -64,7 +69,9 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
     ) -> List[NodeWithScore]:
         """Retrieve nodes."""
         summary_ids = self._index.index_struct.summary_ids
-        results = []
+
+        all_summary_ids: List[str] = []
+        all_relevances: List[float] = []
         for idx in range(0, len(summary_ids), self._choice_batch_size):
             summary_ids_batch = summary_ids[idx : idx + self._choice_batch_size]
             summary_nodes = self._index.docstore.get_nodes(summary_ids_batch)
@@ -83,11 +90,18 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
 
             choice_summary_ids = [summary_ids_batch[ci] for ci in choice_idxs]
 
-            for idx, summary_id in enumerate(choice_summary_ids):
-                node_ids = self._index.index_struct.summary_id_to_node_ids[summary_id]
-                nodes = self._index.docstore.get_nodes(node_ids)
-                relevance = relevances[idx] if relevances is not None else None
-                results.extend([NodeWithScore(node=n, score=relevance) for n in nodes])
+            all_summary_ids.extend(choice_summary_ids)
+            all_relevances.extend(relevances)
+
+        zipped_list = list(zip(all_summary_ids, all_relevances))
+        sorted_list = sorted(zipped_list, key=lambda x: x[1], reverse=True)
+        top_k_list = sorted_list[: self._choice_top_k]
+
+        results = []
+        for summary_id, relevance in top_k_list:
+            node_ids = self._index.index_struct.summary_id_to_node_ids[summary_id]
+            nodes = self._index.docstore.get_nodes(node_ids)
+            results.extend([NodeWithScore(node=n, score=relevance) for n in nodes])
 
         return results
 
@@ -95,12 +109,9 @@ class DocumentSummaryIndexRetriever(BaseRetriever):
 class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
     """Document Summary Index Embedding Retriever.
 
-    Generates embeddings on the fly, attaches to each summary node.
-
-    NOTE: implementation is similar to SummaryIndexEmbeddingRetriever.
-
     Args:
         index (DocumentSummaryIndex): The index to retrieve from.
+        similarity_top_k (int): The number of summary nodes to retrieve.
 
     """
 
@@ -109,6 +120,11 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
     ) -> None:
         """Init params."""
         self._index = index
+        self._vector_store = self._index.vector_store
+        self._service_context = self._index.service_context
+        self._docstore = self._index.docstore
+        self._index_struct = self._index.index_struct
+
         self._similarity_top_k = similarity_top_k
 
     def _retrieve(
@@ -116,52 +132,38 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
         """Retrieve nodes."""
-        summary_ids = self._index.index_struct.summary_ids
-        summary_nodes = self._index.docstore.get_nodes(summary_ids)
-        query_embedding, node_embeddings = self._get_embeddings(
-            query_bundle, summary_nodes
-        )
+        if self._vector_store.is_embedding_query:
+            if query_bundle.embedding is None:
+                query_bundle.embedding = (
+                    self._service_context.embed_model.get_agg_embedding_from_queries(
+                        query_bundle.embedding_strs
+                    )
+                )
 
-        _, top_idxs = get_top_k_embeddings(
-            query_embedding,
-            node_embeddings,
+        query = VectorStoreQuery(
+            query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
-            embedding_ids=list(range(len(summary_nodes))),
         )
+        query_result = self._vector_store.query(query)
 
-        top_k_summary_ids = [summary_ids[i] for i in top_idxs]
+        top_k_summary_ids: List[str]
+        if query_result.ids is not None:
+            top_k_summary_ids = query_result.ids
+        elif query_result.nodes is not None:
+            top_k_summary_ids = [n.node_id for n in query_result.nodes]
+        else:
+            raise ValueError(
+                "Vector store query result should return "
+                "at least one of nodes or ids."
+            )
+
         results = []
         for summary_id in top_k_summary_ids:
-            node_ids = self._index.index_struct.summary_id_to_node_ids[summary_id]
-            nodes = self._index.docstore.get_nodes(node_ids)
+            node_ids = self._index_struct.summary_id_to_node_ids[summary_id]
+            nodes = self._docstore.get_nodes(node_ids)
             results.extend([NodeWithScore(node=n) for n in nodes])
         return results
 
-    def _get_embeddings(
-        self, query_bundle: QueryBundle, nodes: List[BaseNode]
-    ) -> Tuple[List[float], List[List[float]]]:
-        """Get top nodes by similarity to the query."""
-        embed_model = self._index.service_context.embed_model
-        if query_bundle.embedding is None:
-            query_bundle.embedding = embed_model.get_agg_embedding_from_queries(
-                query_bundle.embedding_strs
-            )
 
-        id_to_embed_map: Dict[str, List[float]] = {}
-        for node in nodes:
-            if node.embedding is None:
-                embed_model.queue_text_for_embedding(
-                    node.node_id,
-                    node.get_content(metadata_mode=MetadataMode.EMBED),
-                )
-            else:
-                id_to_embed_map[node.node_id] = node.embedding
-
-        (
-            result_ids,
-            result_embeddings,
-        ) = embed_model.get_queued_text_embeddings()
-        for new_id, text_embedding in zip(result_ids, result_embeddings):
-            id_to_embed_map[new_id] = text_embedding
-        node_embeddings = [id_to_embed_map[n.node_id] for n in nodes]
-        return query_bundle.embedding, node_embeddings
+# legacy, backward compatibility
+DocumentSummaryIndexRetriever = DocumentSummaryIndexLLMRetriever

@@ -1,10 +1,12 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import (
     Any,
     AsyncGenerator,
     Generator,
+    Generic,
     List,
     Protocol,
+    Type,
     TypeVar,
     Union,
     runtime_checkable,
@@ -17,7 +19,7 @@ Model = TypeVar("Model", bound=BaseModel)
 
 TokenGen = Generator[str, None, None]
 TokenAsyncGen = AsyncGenerator[str, None]
-RESPONSE_TEXT_TYPE = Union[str, TokenGen]
+RESPONSE_TEXT_TYPE = Union[BaseModel, str, TokenGen]
 
 
 # TODO: move into a `core` folder
@@ -45,3 +47,22 @@ class BaseOutputParser(Protocol):
                 messages[-1].content = self.format(messages[-1].content or "")
 
         return messages
+
+
+class BasePydanticProgram(ABC, Generic[Model]):
+    """A base class for LLM-powered function that return a pydantic model.
+
+    Note: this interface is not yet stable.
+    """
+
+    @property
+    @abstractmethod
+    def output_cls(self) -> Type[Model]:
+        pass
+
+    @abstractmethod
+    def __call__(self, *args: Any, **kwds: Any) -> Model:
+        pass
+
+    async def acall(self, *args: Any, **kwds: Any) -> Model:
+        return self(*args, **kwds)

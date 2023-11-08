@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from llama_index.bridge.pydantic import Field
-
 from llama_index.callbacks import CallbackManager
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.schema import NodeWithScore, BaseComponent
+from llama_index.schema import BaseComponent, NodeWithScore
 
 
 class BaseNodePostprocessor(BaseComponent, ABC):
@@ -28,4 +27,3 @@ class BaseNodePostprocessor(BaseComponent, ABC):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        pass

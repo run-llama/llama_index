@@ -19,3 +19,6 @@ vellum-ai==0.0.15
 # Code Parsing
 tree-sitter==0.20.2
 tree-sitter-languages==1.7.0
+
+# elasticsearch
+elasticsearch==8.9.0

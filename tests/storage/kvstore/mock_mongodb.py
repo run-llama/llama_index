@@ -1,7 +1,7 @@
+import uuid
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 from unittest.mock import Mock
-import uuid
 
 
 class MockMongoCollection:
@@ -37,8 +37,7 @@ class MockMongoCollection:
         elif upsert:
             self.insert_one(obj)
 
-        update_result = Mock()
-        return update_result
+        return Mock()
 
     def insert_one(self, obj: dict, _id: Optional[str] = None) -> Any:
         _id = _id or obj.get("_id", None) or str(uuid.uuid4())

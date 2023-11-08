@@ -36,7 +36,7 @@ index3 = TreeIndex.from_documents(doc3, storage_context=storage_context)
 
 ### Defining Summary Text
 
-You then need to explicitly define *summary text* for each subindex. This allows  
+You then need to explicitly define *summary text* for each subindex. This allows
 the subindices to be used as Documents for higher-level indices.
 
 ```python
@@ -55,7 +55,7 @@ summary = index1.query(
 index1_summary = str(summary)
 ```
 
-**If specified**, this summary text for each subindex can be used to refine the answer during query-time. 
+**If specified**, this summary text for each subindex can be used to refine the answer during query-time.
 
 ### Creating a Graph with a Top-Level Index
 
@@ -79,7 +79,7 @@ graph = ComposableGraph.from_indices(
 
 ### Querying the Graph
 
-During a query, we would start with the top-level summary index. Each node in the list corresponds to an underlying tree index. 
+During a query, we would start with the top-level summary index. Each node in the list corresponds to an underlying tree index.
 The query will be executed recursively, starting from the root index, then the sub-indices.
 The default query engine for each index is called under the hood (i.e. `index.as_query_engine()`), unless otherwise configured by passing `custom_query_engines` to the `ComposableGraphQueryEngine`.
 Below we show an example that configure the tree index retrievers to use `child_branch_factor=2` (instead of the default `child_branch_factor=1`).
@@ -93,7 +93,7 @@ More detail on how to configure `ComposableGraphQueryEngine` can be found [here]
 custom_query_engines = {
     index.index_id: index.as_query_engine(
         child_branch_factor=2
-    ) 
+    )
     for index in [index1, index2, index3]
 }
 query_engine = graph.as_query_engine(
@@ -117,12 +117,12 @@ So within a node, instead of fetching the text, we would recursively query the s
 
 ![](/_static/composability/diagram_q2.png)
 
-NOTE: You can stack indices as many times as you want, depending on the hierarchies of your knowledge base! 
+NOTE: You can stack indices as many times as you want, depending on the hierarchies of your knowledge base!
 
 
 ### [Optional] Persisting the Graph
 
-The graph can also be persisted to storage, and then loaded again when needed. Note that you'll need to set the 
+The graph can also be persisted to storage, and then loaded again when needed. Note that you'll need to set the
 ID of the root index, or keep track of the default.
 
 ```python
@@ -132,7 +132,7 @@ graph.root_index.set_index_id("my_id")
 # persist to storage
 graph.root_index.storage_context.persist(persist_dir="./storage")
 
-# load 
+# load
 from llama_index import StorageContext, load_graph_from_storage
 
 storage_context = StorageContext.from_defaults(persist_dir="./storage")

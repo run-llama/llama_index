@@ -8,9 +8,9 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
-    trace_method,
     CBEventType,
     EventPayload,
+    trace_method,
 )
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
@@ -54,7 +54,7 @@ def call_function(
     argument_dict = json.loads(arguments_str)
     output = tool(**argument_dict)
     if verbose:
-        print(f"Got output: {str(output)}")
+        print(f"Got output: {output!s}")
         print("========================")
     return (
         ChatMessage(
@@ -82,7 +82,7 @@ async def acall_function(
     argument_dict = json.loads(arguments_str)
     output = await async_tool.acall(**argument_dict)
     if verbose:
-        print(f"Got output: {str(output)}")
+        print(f"Got output: {output!s}")
         print("========================")
     return (
         ChatMessage(
@@ -122,7 +122,7 @@ class BaseOpenAIAgent(BaseAgent):
         self._max_function_calls = max_function_calls
         self.prefix_messages = prefix_messages
         self.memory = memory
-        self.callback_manager = callback_manager or CallbackManager([])
+        self.callback_manager = callback_manager or self._llm.callback_manager
         self.sources: List[ToolOutput] = []
 
     @property
@@ -143,7 +143,6 @@ class BaseOpenAIAgent(BaseAgent):
     @abstractmethod
     def _get_tools(self, message: str) -> List[BaseTool]:
         """Get tools."""
-        pass
 
     def _should_continue(
         self, function_call: Optional[dict], n_function_calls: int
@@ -244,7 +243,7 @@ class BaseOpenAIAgent(BaseAgent):
     def _get_llm_chat_kwargs(
         self, functions: List[dict], function_call: Union[str, dict] = "auto"
     ) -> Dict[str, Any]:
-        llm_chat_kwargs: dict = dict(messages=self.all_messages)
+        llm_chat_kwargs: dict = {"messages": self.all_messages}
         if functions:
             llm_chat_kwargs.update(
                 functions=functions, function_call=resolve_function_call(function_call)

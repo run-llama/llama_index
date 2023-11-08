@@ -17,7 +17,7 @@ nodes = retriever.retrieve('Who is Paul Graham?')
 
 ### Selecting a Retriever
 
-You can select the index-specific retriever class via `retriever_mode`. 
+You can select the index-specific retriever class via `retriever_mode`.
 For example, with a `SummaryIndex`:
 ```python
 retriever = summary_index.as_retriever(
@@ -51,7 +51,7 @@ retriever = summary_index.as_retriever(
 ```
 
 ## Low-Level Composition API
-You can use the low-level composition API if you need more granular control.  
+You can use the low-level composition API if you need more granular control.
 
 To achieve the same outcome as above, you can directly import and construct the desired retriever class:
 ```python
