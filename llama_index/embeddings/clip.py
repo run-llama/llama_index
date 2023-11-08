@@ -4,16 +4,16 @@ from typing import Any, List
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
-    BaseEmbedding,
     Embedding,
 )
+from llama_index.embeddings.mutli_modal_base import MultiModalEmbedding
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_CLIP_MODEL = "ViT-B/32"
 
 
-class ClipEmbedding(BaseEmbedding):
+class ClipEmbedding(MultiModalEmbedding):
     """CLIP embedding models for text and image.
 
     This class provides an interface to generate embeddings using a model
@@ -125,6 +125,10 @@ class ClipEmbedding(BaseEmbedding):
                 )
                 results.append(self._model.encode_image(image).tolist()[0])
         return results
+
+    async def _aget_image_embedding(self, img_file_path: str) -> Embedding:
+        # Gradient AI doesn't have the proper API for async yet, so we just use the sync version.
+        return self._get_image_embedding(img_file_path)
 
     def get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
         return self._get_image_embeddings(img_file_paths)
