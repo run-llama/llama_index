@@ -18,7 +18,7 @@ from llama_index.indices.utils import (
     embed_nodes,
 )
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import BaseNode, ImageNode, IndexNode
+from llama_index.schema import BaseNode, ImageNode
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import DEFAULT_VECTOR_STORE, SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
@@ -73,8 +73,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             storage_context=storage_context,
             show_progress=show_progress,
             use_async=use_async,
-            # force to true, since vector dbs don't store images
-            store_nodes_override=True,
+            store_nodes_override=store_nodes_override,
             **kwargs,
         )
 
@@ -208,9 +207,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             self.image_namespace
         ].async_add(image_nodes, **insert_kwargs)
 
-        # TODO: can vector stores just store images directly? Then no need for docstore
-        # Maybe a fix for later
-
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store
         all_nodes = text_nodes + image_nodes
@@ -225,19 +221,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                 self._docstore.add_documents(
                     [node_without_embedding], allow_update=True
                 )
-        else:
-            # NOTE: if the vector store keeps text,
-            # we only need to add image and index nodes
-            for node, new_id in zip(all_nodes, all_new_ids):
-                if isinstance(node, (ImageNode, IndexNode)):
-                    # NOTE: remove embedding from node to avoid duplication
-                    node_without_embedding = node.copy()
-                    node_without_embedding.embedding = None
-
-                    index_struct.add_node(node_without_embedding, text_id=new_id)
-                    self._docstore.add_documents(
-                        [node_without_embedding], allow_update=True
-                    )
 
     def _add_nodes_to_index(
         self,
@@ -275,9 +258,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             image_nodes, **insert_kwargs
         )
 
-        # TODO: can vector stores just store images directly? Then no need for docstore
-        # Maybe a fix for later
-
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store
         all_nodes = text_nodes + image_nodes
@@ -292,19 +272,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                 self._docstore.add_documents(
                     [node_without_embedding], allow_update=True
                 )
-        else:
-            # NOTE: if the vector store keeps text,
-            # we only need to add image and index nodes
-            for node, new_id in zip(all_nodes, all_new_ids):
-                if isinstance(node, (ImageNode, IndexNode)):
-                    # NOTE: remove embedding from node to avoid duplication
-                    node_without_embedding = node.copy()
-                    node_without_embedding.embedding = None
-
-                    index_struct.add_node(node_without_embedding, text_id=new_id)
-                    self._docstore.add_documents(
-                        [node_without_embedding], allow_update=True
-                    )
 
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
@@ -315,12 +282,14 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         for vector_store in self._storage_context.vector_stores.values():
             vector_store.delete(ref_doc_id)
 
-        ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
-        if ref_doc_info is not None:
-            for node_id in ref_doc_info.node_ids:
-                self._index_struct.delete(node_id)
-                self._vector_store.delete(node_id)
+            if self._store_nodes_override or self._vector_store.stores_text:
+                ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
+                if ref_doc_info is not None:
+                    for node_id in ref_doc_info.node_ids:
+                        self._index_struct.delete(node_id)
+                        self._vector_store.delete(node_id)
 
-        self._docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+        if delete_from_docstore:
+            self._docstore.delete_ref_doc(ref_doc_id, raise_error=False)
 
         self._storage_context.index_store.add_index_struct(self._index_struct)
