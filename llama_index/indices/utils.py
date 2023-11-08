@@ -4,7 +4,7 @@ import re
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.schema import BaseNode, MetadataMode
+from llama_index.schema import BaseNode, ImageNode, MetadataMode
 from llama_index.utils import globals_helper, truncate_text
 from llama_index.vector_stores.types import VectorStoreQueryResult
 
@@ -144,12 +144,12 @@ def embed_nodes(
 
 
 def embed_image_nodes(
-    nodes: Sequence[BaseNode], embed_model: BaseEmbedding, show_progress: bool = False
+    nodes: Sequence[ImageNode], embed_model: BaseEmbedding, show_progress: bool = False
 ) -> Dict[str, List[float]]:
     """Get image embeddings of the given nodes, run image embedding model if necessary.
 
     Args:
-        nodes (Sequence[BaseNode]): The nodes to embed.
+        nodes (Sequence[ImageNode]): The nodes to embed.
         embed_model (BaseEmbedding): The embedding model to use.
         show_progress (bool): Whether to show progress bar.
 
@@ -163,16 +163,16 @@ def embed_image_nodes(
     for node in nodes:
         if node.embedding is None:
             ids_to_embed.append(node.node_id)
-            images_to_embed.append(node.get_content(metadata_mode=MetadataMode.EMBED))
+            images_to_embed.append(node.resolve_image())
         else:
             id_to_embed_map[node.node_id] = node.embedding
 
-    new_embeddings = embed_model.get_text_embedding_batch(
+    new_embeddings = embed_model.get_image_embeddings(
         images_to_embed, show_progress=show_progress
     )
 
-    for new_id, text_embedding in zip(ids_to_embed, new_embeddings):
-        id_to_embed_map[new_id] = text_embedding
+    for new_id, img_embedding in zip(ids_to_embed, new_embeddings):
+        id_to_embed_map[new_id] = img_embedding
 
     return id_to_embed_map
 
@@ -212,12 +212,12 @@ async def async_embed_nodes(
 
 
 async def async_embed_image_nodes(
-    nodes: Sequence[BaseNode], embed_model: BaseEmbedding, show_progress: bool = False
+    nodes: Sequence[ImageNode], embed_model: BaseEmbedding, show_progress: bool = False
 ) -> Dict[str, List[float]]:
     """Get image embeddings of the given nodes, run image embedding model if necessary.
 
     Args:
-        nodes (Sequence[BaseNode]): The nodes to embed.
+        nodes (Sequence[ImageNode]): The nodes to embed.
         embed_model (BaseEmbedding): The embedding model to use.
         show_progress (bool): Whether to show progress bar.
 
@@ -231,15 +231,15 @@ async def async_embed_image_nodes(
     for node in nodes:
         if node.embedding is None:
             ids_to_embed.append(node.node_id)
-            images_to_embed.append(node.get_content(metadata_mode=MetadataMode.EMBED))
+            images_to_embed.append(node.resolve_image())
         else:
             id_to_embed_map[node.node_id] = node.embedding
 
-    new_embeddings = await embed_model.aget_text_embedding_batch(
+    new_embeddings = await embed_model.aget_image_embeddings(
         images_to_embed, show_progress=show_progress
     )
 
-    for new_id, text_embedding in zip(ids_to_embed, new_embeddings):
-        id_to_embed_map[new_id] = text_embedding
+    for new_id, img_embedding in zip(ids_to_embed, new_embeddings):
+        id_to_embed_map[new_id] = img_embedding
 
     return id_to_embed_map

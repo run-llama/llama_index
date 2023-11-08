@@ -7,6 +7,7 @@ from llama_index.embeddings.base import (
     BaseEmbedding,
     Embedding,
 )
+from llama_index.utils import get_tqdm_iterable
 
 logger = logging.getLogger(__name__)
 
@@ -107,9 +108,14 @@ class ClipEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> Embedding:
         return self._get_text_embedding(query)
 
-    def _get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
+    def _get_image_embeddings(
+        self, img_file_paths: List[str], show_progress: bool = False
+    ) -> List[Embedding]:
+        queue_with_progress = get_tqdm_iterable(
+            img_file_paths, show_progress, "Generating image embeddings"
+        )
         results = []
-        for img_file_path in img_file_paths:
+        for img_file_path in queue_with_progress:
             try:
                 import torch
                 from PIL import Image
@@ -126,8 +132,10 @@ class ClipEmbedding(BaseEmbedding):
                 results.append(self._model.encode_image(image).tolist()[0])
         return results
 
-    def get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
-        return self._get_image_embeddings(img_file_paths)
+    def get_image_embeddings(
+        self, img_file_paths: List[str], show_progress: bool = False
+    ) -> List[Embedding]:
+        return self._get_image_embeddings(img_file_paths, show_progress=show_progress)
 
     def _get_image_embedding(self, img_file_path: str) -> Embedding:
         return self._get_image_embeddings([img_file_path])[0]
