@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- Properly supporting Hugging Face recommended model (#8784)
+
 ### Bug Fixes / Nits
 
 - Fixed missing import for `embeddings.__all__` (#8779)
