@@ -77,19 +77,24 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """
         import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
         try:
-            import pymongo
+            from importlib.metadata import version
+
+            from pymongo import DriverInfo, MongoClient
         except ImportError:
             raise ImportError(import_err_msg)
 
         if mongodb_client is not None:
-            self._mongodb_client = cast(pymongo.MongoClient, mongodb_client)
+            self._mongodb_client = cast(MongoClient, mongodb_client)
         else:
             if "MONGO_URI" not in os.environ:
                 raise ValueError(
                     "Must specify MONGO_URI via env variable "
                     "if not directly passing in client."
                 )
-            self._mongodb_client = pymongo.MongoClient(os.environ["MONGO_URI"])
+            self._mongodb_client = MongoClient(
+                os.environ["MONGO_URI"],
+                driver=DriverInfo(name="llama-index", version=version("llama-index")),
+            )
 
         self._collection = self._mongodb_client[db_name][collection_name]
         self._index_name = index_name
