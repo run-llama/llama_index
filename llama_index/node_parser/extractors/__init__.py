@@ -9,6 +9,7 @@ from llama_index.node_parser.extractors.metadata_extractors import (
     QuestionsAnsweredExtractor,
     SummaryExtractor,
     TitleExtractor,
+    PydanticProgramExtractor
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "QuestionsAnsweredExtractor",
     "SummaryExtractor",
     "TitleExtractor",
+    "PydanticProgramExtractor",
 ]
