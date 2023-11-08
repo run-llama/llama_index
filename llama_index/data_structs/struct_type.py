@@ -87,6 +87,8 @@ class IndexStructType(str, Enum):
     CHATGPT_RETRIEVAL_PLUGIN = "chatgpt_retrieval_plugin"
     DEEPLAKE = "deeplake"
     EPSILLA = "epsilla"
+    # multimodal
+    MULTIMODAL_VECTOR_STORE = "multimodal"
     # for SQL index
     SQL = "sql"
     # for KG index

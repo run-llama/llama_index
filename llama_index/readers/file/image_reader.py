@@ -109,5 +109,10 @@ class ImageReader(BaseReader):
             text_str = re.sub(r"<.*?>", "", sequence, count=1).strip()
 
         return [
-            ImageDocument(text=text_str, image=image_str, metadata=extra_info or {})
+            ImageDocument(
+                text=text_str,
+                image=image_str,
+                image_path=str(file),
+                metadata=extra_info or {},
+            )
         ]

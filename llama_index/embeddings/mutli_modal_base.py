@@ -9,6 +9,7 @@ from llama_index.embeddings.base import (
     BaseEmbedding,
     Embedding,
 )
+from llama_index.schema import ImageType
 from llama_index.utils import get_tqdm_iterable
 
 
@@ -16,7 +17,7 @@ class MultiModalEmbedding(BaseEmbedding):
     """Base class for Multi Modal embeddings."""
 
     @abstractmethod
-    def _get_image_embedding(self, img_file_path: str) -> Embedding:
+    def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:
         """
         Embed the input image synchronously.
 
@@ -25,7 +26,7 @@ class MultiModalEmbedding(BaseEmbedding):
         """
 
     @abstractmethod
-    async def _aget_image_embedding(self, img_file_path: str) -> Embedding:
+    async def _aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
         """
         Embed the input image asynchronously.
 
@@ -33,7 +34,7 @@ class MultiModalEmbedding(BaseEmbedding):
         docstring for more information.
         """
 
-    def get_image_embedding(self, img_file_path: str) -> Embedding:
+    def get_image_embedding(self, img_file_path: ImageType) -> Embedding:
         """
         Embed the input image.
         """
@@ -50,7 +51,7 @@ class MultiModalEmbedding(BaseEmbedding):
             )
         return image_embedding
 
-    async def aget_image_embedding(self, img_file_path: str) -> Embedding:
+    async def aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
         """Get image embedding."""
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
@@ -65,7 +66,7 @@ class MultiModalEmbedding(BaseEmbedding):
             )
         return image_embedding
 
-    def _get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
+    def _get_image_embeddings(self, img_file_paths: List[ImageType]) -> List[Embedding]:
         """
         Embed the input sequence of image synchronously.
 
@@ -77,7 +78,7 @@ class MultiModalEmbedding(BaseEmbedding):
         ]
 
     async def _aget_image_embeddings(
-        self, img_file_paths: List[str]
+        self, img_file_paths: List[ImageType]
     ) -> List[Embedding]:
         """
         Embed the input sequence of image asynchronously.
@@ -92,10 +93,10 @@ class MultiModalEmbedding(BaseEmbedding):
         )
 
     def get_image_embedding_batch(
-        self, img_file_paths: List[str], show_progress: bool = False
+        self, img_file_paths: List[ImageType], show_progress: bool = False
     ) -> List[Embedding]:
         """Get a list of image embeddings, with batching."""
-        cur_batch: List[str] = []
+        cur_batch: List[ImageType] = []
         result_embeddings: List[Embedding] = []
 
         queue_with_progress = enumerate(
@@ -128,11 +129,11 @@ class MultiModalEmbedding(BaseEmbedding):
         return result_embeddings
 
     async def aget_image_embedding_batch(
-        self, img_file_paths: List[str], show_progress: bool = False
+        self, img_file_paths: List[ImageType], show_progress: bool = False
     ) -> List[Embedding]:
         """Asynchronously get a list of image embeddings, with batching."""
-        cur_batch: List[str] = []
-        callback_payloads: List[Tuple[str, List[str]]] = []
+        cur_batch: List[ImageType] = []
+        callback_payloads: List[Tuple[str, List[ImageType]]] = []
         result_embeddings: List[Embedding] = []
         embeddings_coroutines: List[Coroutine] = []
         for idx, img_file_path in enumerate(img_file_paths):
