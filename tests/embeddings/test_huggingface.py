@@ -8,22 +8,22 @@ from llama_index.embeddings.pooling import Pooling
 from tests.llms.test_huggingface import STUB_MODEL_NAME
 
 
-@pytest.fixture(name="hf_inference_api_embeddings")
-def fixture_hf_inference_api_embeddings() -> HuggingFaceInferenceAPIEmbedding:
+@pytest.fixture(name="hf_inference_api_embedding")
+def fixture_hf_inference_api_embedding() -> HuggingFaceInferenceAPIEmbedding:
     with patch.dict("sys.modules", huggingface_hub=MagicMock()):
         return HuggingFaceInferenceAPIEmbedding(model_name=STUB_MODEL_NAME)
 
 
 class TestHuggingFaceInferenceAPIEmbeddings:
     def test_class_name(
-        self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbedding
+        self, hf_inference_api_embedding: HuggingFaceInferenceAPIEmbedding
     ) -> None:
         assert (
             HuggingFaceInferenceAPIEmbedding.class_name()
             == HuggingFaceInferenceAPIEmbedding.__name__
         )
         assert (
-            hf_inference_api_embeddings.class_name()
+            hf_inference_api_embedding.class_name()
             == HuggingFaceInferenceAPIEmbedding.__name__
         )
 
@@ -40,17 +40,17 @@ class TestHuggingFaceInferenceAPIEmbeddings:
         )
 
     def test_embed_query(
-        self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbedding
+        self, hf_inference_api_embedding: HuggingFaceInferenceAPIEmbedding
     ) -> None:
         raw_single_embedding = np.random.rand(1, 3, 1024)
 
-        hf_inference_api_embeddings.pooling = Pooling.CLS
+        hf_inference_api_embedding.pooling = Pooling.CLS
         with patch.object(
-            hf_inference_api_embeddings._async_client,
+            hf_inference_api_embedding._async_client,
             "feature_extraction",
             AsyncMock(return_value=raw_single_embedding),
         ) as mock_feature_extraction:
-            embedding = hf_inference_api_embeddings.get_query_embedding("test")
+            embedding = hf_inference_api_embedding.get_query_embedding("test")
         assert isinstance(embedding, list)
         assert len(embedding) == 1024
         assert np.all(
@@ -59,13 +59,13 @@ class TestHuggingFaceInferenceAPIEmbeddings:
         )
         mock_feature_extraction.assert_awaited_once_with("test")
 
-        hf_inference_api_embeddings.pooling = Pooling.MEAN
+        hf_inference_api_embedding.pooling = Pooling.MEAN
         with patch.object(
-            hf_inference_api_embeddings._async_client,
+            hf_inference_api_embedding._async_client,
             "feature_extraction",
             AsyncMock(return_value=raw_single_embedding),
         ) as mock_feature_extraction:
-            embedding = hf_inference_api_embeddings.get_query_embedding("test")
+            embedding = hf_inference_api_embedding.get_query_embedding("test")
         assert isinstance(embedding, list)
         assert len(embedding) == 1024
         assert np.all(
@@ -75,9 +75,9 @@ class TestHuggingFaceInferenceAPIEmbeddings:
         mock_feature_extraction.assert_awaited_once_with("test")
 
     def test_serialization(
-        self, hf_inference_api_embeddings: HuggingFaceInferenceAPIEmbedding
+        self, hf_inference_api_embedding: HuggingFaceInferenceAPIEmbedding
     ) -> None:
-        serialized = hf_inference_api_embeddings.to_dict()
+        serialized = hf_inference_api_embedding.to_dict()
         # Check Hugging Face Inference API base class specifics
         assert serialized["model_name"] == STUB_MODEL_NAME
         assert isinstance(serialized["context_window"], int)
