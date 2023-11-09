@@ -16,7 +16,7 @@ from llama_index.vector_stores.types import (
 )
 
 
-class MutliModalVectorIndexRetriever(VectorIndexRetriever):
+class MultiModalVectorIndexRetriever(VectorIndexRetriever):
     """Multi Modal Vector index retriever.
 
     Args:
