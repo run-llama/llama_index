@@ -6,7 +6,8 @@ from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
-class PaLMEmbedding(BaseEmbedding):
+
+class GooglePaLMEmbedding(BaseEmbedding):
     """Class for Google PaLM embeddings.
 
     Args:
@@ -30,7 +31,8 @@ class PaLMEmbedding(BaseEmbedding):
             import google.generativeai as palm
         except ImportError:
             raise ImportError(
-                "google-generativeai package not found, install with" "'pip install google-generativeai'"
+                "google-generativeai package not found, install with"
+                "'pip install google-generativeai'"
             )
         palm.configure(api_key=api_key)
         self._model = palm
@@ -48,7 +50,9 @@ class PaLMEmbedding(BaseEmbedding):
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        return self._model.generate_embeddings(model=self.model_name, text=query)['embedding']
+        return self._model.generate_embeddings(model=self.model_name, text=query)[
+            "embedding"
+        ]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
@@ -56,7 +60,9 @@ class PaLMEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        return self._model.generate_embeddings(model=self.model_name, text=text)['embedding']
+        return self._model.generate_embeddings(model=self.model_name, text=text)[
+            "embedding"
+        ]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
@@ -64,7 +70,9 @@ class PaLMEmbedding(BaseEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        return self._model.generate_embeddings(model=self.model_name, text=texts)['embedding'][0]
+        return self._model.generate_embeddings(model=self.model_name, text=texts)[
+            "embedding"
+        ][0]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
