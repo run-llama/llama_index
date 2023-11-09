@@ -33,13 +33,10 @@ def to_openai_multi_modal_payload(
     completion_content = [{"type": "text", "text": prompt}]
     for image_document in image_documents:
         image_content = {}
-        if (
-            "image_url" in image_document.metadata
-            and image_document.metadata["image_url"] != ""
-        ):
+        if image_document.image_url and image_document.image_url != "":
             image_content = {
                 "type": "image_url",
-                "image_url": image_document.metadata["image_url"],
+                "image_url": image_document.image_url,
             }
         elif (
             "file_path" in image_document.metadata
