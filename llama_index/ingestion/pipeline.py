@@ -528,7 +528,7 @@ class IngestionPipeline(BaseModel):
         if self.reader is not None:
             input_nodes += self.reader.read()
 
-        nodes = arun_transformations(
+        nodes = await arun_transformations(
             input_nodes,
             self.transformations,
             show_progress=show_progress,

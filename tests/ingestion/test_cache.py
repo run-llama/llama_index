@@ -12,7 +12,7 @@ class DummyTransform(TransformComponent):
         return nodes
 
 
-def test_cache():
+def test_cache() -> None:
     cache = IngestionCache()
     transformation = DummyTransform()
 
