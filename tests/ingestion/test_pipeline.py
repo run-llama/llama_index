@@ -40,7 +40,7 @@ def test_run_local_pipeline() -> None:
         ],
     )
 
-    nodes = pipeline.run_local()
+    nodes = pipeline.run()
 
     assert len(nodes) == 2
     assert len(nodes[0].metadata) > 0
@@ -99,6 +99,6 @@ def test_from_pipeline_name() -> None:
     pipeline.register()
 
     new_pipeline = IngestionPipeline.from_pipeline_name("Test")
-    nodes = new_pipeline.run_local()
+    nodes = new_pipeline.run()
     assert len(nodes) == 2
     assert len(nodes[0].metadata) > 0
