@@ -98,6 +98,7 @@ def run_transformations(
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
+    cache_collection: Optional[str] = None,
     **kwargs: Any,
 ) -> List[BaseNode]:
     """Run a series of transformations on a set of nodes.
@@ -115,12 +116,12 @@ def run_transformations(
     for transform in transformations:
         if cache is not None:
             hash = get_transformation_hash(nodes, transform)
-            cached_nodes = cache.get(hash)
+            cached_nodes = cache.get(hash, collection=cache_collection)
             if cached_nodes is not None:
                 nodes = cached_nodes
             else:
                 nodes = transform(nodes, **kwargs)
-                cache.put(hash, nodes)
+                cache.put(hash, nodes, collection=cache_collection)
         else:
             nodes = transform(nodes, **kwargs)
 
@@ -132,6 +133,7 @@ async def arun_transformations(
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
+    cache_collection: Optional[str] = None,
     **kwargs: Any,
 ) -> List[BaseNode]:
     """Run a series of transformations on a set of nodes.
@@ -150,12 +152,12 @@ async def arun_transformations(
         if cache is not None:
             hash = get_transformation_hash(nodes, transform)
 
-            cached_nodes = cache.get(hash)
+            cached_nodes = cache.get(hash, collection=cache_collection)
             if cached_nodes is not None:
                 nodes = cached_nodes
             else:
                 nodes = await transform.acall(nodes, **kwargs)
-                cache.put(hash, nodes)
+                cache.put(hash, nodes, collection=cache_collection)
         else:
             nodes = await transform.acall(nodes, **kwargs)
 
@@ -475,6 +477,7 @@ class IngestionPipeline(BaseModel):
         show_progress: bool = False,
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
+        cache_collection: Optional[str] = None,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
         input_nodes: List[BaseNode] = []
@@ -494,7 +497,8 @@ class IngestionPipeline(BaseModel):
             input_nodes,
             self.transformations,
             show_progress=show_progress,
-            cache=self.cache,
+            cache=self.cache if not self.disable_cache else None,
+            cache_collection=cache_collection,
             **kwargs,
         )
 
@@ -508,6 +512,7 @@ class IngestionPipeline(BaseModel):
         show_progress: bool = False,
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
+        cache_collection: Optional[str] = None,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
         input_nodes: List[BaseNode] = []
@@ -527,7 +532,8 @@ class IngestionPipeline(BaseModel):
             input_nodes,
             self.transformations,
             show_progress=show_progress,
-            cache=self.cache,
+            cache=self.cache if not self.disable_cache else None,
+            cache_collection=cache_collection,
             **kwargs,
         )
 
