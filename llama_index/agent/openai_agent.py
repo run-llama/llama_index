@@ -3,11 +3,7 @@ import json
 import logging
 from abc import abstractmethod
 from threading import Thread
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
-
-from openai.types.chat.chat_completion_chunk import (
-    ChoiceDeltaToolCall,
-)
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast, get_args
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
@@ -24,7 +20,7 @@ from llama_index.chat_engine.types import (
 )
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai_utils import is_function_calling_model
+from llama_index.llms.openai_utils import OpenAIToolCall, is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
@@ -147,7 +143,7 @@ class BaseOpenAIAgent(BaseAgent):
         return self.memory.get_all()[-1].additional_kwargs.get("function_call", None)
 
     @property
-    def latest_tool_calls(self) -> Optional[List[ChoiceDeltaToolCall]]:
+    def latest_tool_calls(self) -> Optional[List[OpenAIToolCall]]:
         return self.memory.get_all()[-1].additional_kwargs.get("tool_calls", None)
 
     def reset(self) -> None:
@@ -316,8 +312,8 @@ class BaseOpenAIAgent(BaseAgent):
             if self.latest_tool_calls is not None:
                 for tool_call in self.latest_tool_calls:
                     # Some validation
-                    # if not isinstance(tool_call, dict):
-                    #     raise ValueError("Invalid tool_call object")
+                    if not isinstance(tool_call, get_args(OpenAIToolCall)):
+                        raise ValueError("Invalid tool_call object")
 
                     if tool_call.type != "function":
                         raise ValueError("Invalid tool type. Unsupported by OpenAI")
@@ -358,8 +354,8 @@ class BaseOpenAIAgent(BaseAgent):
             if self.latest_tool_calls is not None:
                 for tool_call in self.latest_tool_calls:
                     # Some validation
-                    # if not isinstance(tool_call, Dict):
-                    #     raise ValueError("Invalid tool_call object")
+                    if not isinstance(tool_call, get_args(OpenAIToolCall)):
+                        raise ValueError("Invalid tool_call object")
 
                     if tool_call.type != "function":
                         raise ValueError("Invalid tool type. Unsupported by OpenAI")
