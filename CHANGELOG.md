@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fix retriever node postprocessors for `CitationQueryEngine` (#8818)
+
 ## [0.8.66] - 2023-11-09
 
 ### New Features
