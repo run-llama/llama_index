@@ -21,10 +21,10 @@ import llama_index
 _logger = logging.getLogger(__name__)
 _DEFAULT_API_ENDPOINT = "autopush-generativelanguage.sandbox.googleapis.com"
 _USER_AGENT = f"llama_index/{llama_index.__version__}"
-_default_page_size = 20
-_default_text_service_model = "models/text-bison-001"
+_DEFAULT_PAGE_SIZE = 20
+_DEFAULT_TEXT_SERVICE_MODEL = "models/text-bison-001"
 _MAX_REQUEST_PER_CHUNK = 100
-_name_regex = re.compile(r"^corpora/([^/]+?)(/documents/([^/]+?)(/chunks/([^/]+?))?)?$")
+_NAME_REGEX = re.compile(r"^corpora/([^/]+?)(/documents/([^/]+?)(/chunks/([^/]+?))?)?$")
 
 
 @dataclass
@@ -39,7 +39,7 @@ class EntityName:
 
     @classmethod
     def from_str(cls, encoded: str) -> "EntityName":
-        matched = _name_regex.match(encoded)
+        matched = _NAME_REGEX.match(encoded)
         if not matched:
             raise ValueError(f"Invalid entity name: {encoded}")
 
@@ -139,7 +139,7 @@ class Config:
 
     api_endpoint: str = _DEFAULT_API_ENDPOINT
     user_agent: str = _USER_AGENT
-    page_size: int = _default_page_size
+    page_size: int = _DEFAULT_PAGE_SIZE
 
 
 def set_defaults(config: Config) -> None:
@@ -262,7 +262,7 @@ def list_documents(
         client = _default_retriever
     for document in client.list_documents(
         genai.ListDocumentsRequest(
-            parent=str(EntityName(corpus_id=corpus_id)), page_size=_default_page_size
+            parent=str(EntityName(corpus_id=corpus_id)), page_size=_DEFAULT_PAGE_SIZE
         )
     ):
         yield Document.from_document(document)
@@ -472,10 +472,12 @@ def generate_text_answer(
 ) -> TextAnswer:
     if client is None:
         client = _default_text_service
+    # TODO: Consider passing in the corpus ID instead of the actual
+    # passages.
     response = client.generate_text_answer(
         genai.GenerateTextAnswerRequest(
             question=genai.TextPrompt(text=prompt),
-            model=_default_text_service_model,
+            model=_DEFAULT_TEXT_SERVICE_MODEL,
             answer_style=answer_style,
             grounding_source=genai.GroundingSource(
                 passages=genai.InlinePassages(

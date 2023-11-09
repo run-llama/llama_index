@@ -142,6 +142,10 @@ class GoogleVectorStore(BasePydanticVectorStore):
 
         Returns:
             An instance of the vector store that points to the specified corpus.
+
+        Raises:
+            An exception if the corpus already exists or the user hits the
+            quota limit.
         """
         try:
             import llama_index.vector_stores.google.generativeai.genai_extension as genaix
