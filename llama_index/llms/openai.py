@@ -256,10 +256,20 @@ class OpenAI(LLM):
                 tool_calls.append(tc_delta)
             else:
                 # not the start of a new tool call, so update last item of tool_calls
-                t.function.arguments += tc_delta.function.arguments or ""
-                t.function.name += tc_delta.function.name or ""
-                t.id += tc_delta.id or ""
-                t.type += tc_delta.type or ""
+
+                # validations to get passed by mypy
+                assert t.function is not None
+                assert tc_delta.function is not None
+                assert t.function.arguments is not None
+                assert tc_delta.function.arguments is not None
+                assert t.function.name is not None
+                assert tc_delta.function.name is not None
+                assert t.id is not None
+                assert tc_delta.id is not None
+
+                t.function.arguments += tc_delta.function.arguments
+                t.function.name += tc_delta.function.name
+                t.id += tc_delta.id
         return tool_calls
 
     def _stream_chat(

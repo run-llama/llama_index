@@ -44,10 +44,16 @@ def call_function(
     tools: List[BaseTool], tool_call: OpenAIToolCall, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
+    # validations to get passed mypy
+    assert tool_call.id is not None
+    assert tool_call.function is not None
+    assert tool_call.function.name is not None
+    assert tool_call.function.arguments is not None
+
     id_ = tool_call.id
     function_call = tool_call.function
-    name = function_call.name
-    arguments_str = function_call.arguments
+    name = tool_call.function.name
+    arguments_str = tool_call.function.arguments
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
@@ -74,10 +80,16 @@ async def acall_function(
     tools: List[BaseTool], tool_call: OpenAIToolCall, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
+    # validations to get passed mypy
+    assert tool_call.id is not None
+    assert tool_call.function is not None
+    assert tool_call.function.name is not None
+    assert tool_call.function.arguments is not None
+
     id_ = tool_call.id
     function_call = tool_call.function
-    name = function_call.name
-    arguments_str = function_call.arguments
+    name = tool_call.function.name
+    arguments_str = tool_call.function.arguments
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
@@ -154,7 +166,7 @@ class BaseOpenAIAgent(BaseAgent):
         """Get tools."""
 
     def _should_continue(
-        self, tool_calls: Optional[List[dict]], n_function_calls: int
+        self, tool_calls: Optional[List[OpenAIToolCall]], n_function_calls: int
     ) -> bool:
         if n_function_calls > self._max_function_calls:
             return False
@@ -216,14 +228,19 @@ class BaseOpenAIAgent(BaseAgent):
         return chat_stream_response
 
     def _call_function(self, tools: List[BaseTool], tool_call: OpenAIToolCall) -> None:
-        function_call = tool_call.function
+        # validation to get passed mypy
+        assert tool_call.function is not None
+        assert tool_call.function.name is not None
+        assert tool_call.function.arguments is not None
+
+        function_name = tool_call.function.name
+        function_arguments_str = tool_call.function.arguments
+
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: get_function_by_name(
-                    tools, function_call.name
-                ).metadata,
+                EventPayload.FUNCTION_CALL: function_arguments_str,
+                EventPayload.TOOL: get_function_by_name(tools, function_name).metadata,
             },
         ) as event:
             function_message, tool_output = call_function(
@@ -236,14 +253,19 @@ class BaseOpenAIAgent(BaseAgent):
     async def _acall_function(
         self, tools: List[BaseTool], tool_call: OpenAIToolCall
     ) -> None:
-        function_call = tool_call.function
+        # validation to get passed mypy
+        assert tool_call.function is not None
+        assert tool_call.function.name is not None
+        assert tool_call.function.arguments is not None
+
+        function_name = tool_call.function.name
+        function_arguments_str = tool_call.function.arguments
+
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: get_function_by_name(
-                    tools, function_call.name
-                ).metadata,
+                EventPayload.FUNCTION_CALL: function_arguments_str,
+                EventPayload.TOOL: get_function_by_name(tools, function_name).metadata,
             },
         ) as event:
             function_message, tool_output = await acall_function(
