@@ -18,7 +18,7 @@ class MetadataReplacementPostProcessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "MetadataReplacementPostProcessor"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,

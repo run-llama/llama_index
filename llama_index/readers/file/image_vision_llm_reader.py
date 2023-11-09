@@ -87,6 +87,7 @@ class ImageVisionLLMReader(BaseReader):
             ImageDocument(
                 text=text_str,
                 image=image_str,
+                image_path=str(file),
                 metadata=extra_info or {},
             )
         ]

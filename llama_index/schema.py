@@ -5,6 +5,7 @@ import uuid
 from abc import abstractmethod
 from enum import Enum, auto
 from hashlib import sha256
+from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from typing_extensions import Self
@@ -24,6 +25,8 @@ DEFAULT_METADATA_TMPL = "{key}: {value}"
 # NOTE: for pretty printing
 TRUNCATE_LENGTH = 350
 WRAP_WIDTH = 70
+
+ImageType = Union[str, BytesIO]
 
 
 class BaseComponent(BaseModel):
@@ -420,6 +423,8 @@ class ImageNode(TextNode):
     # TODO: store reference instead of actual image
     # base64 encoded image str
     image: Optional[str] = None
+    image_path: Optional[str] = None
+    image_url: Optional[str] = None
 
     @classmethod
     def get_type(cls) -> str:
@@ -428,6 +433,21 @@ class ImageNode(TextNode):
     @classmethod
     def class_name(cls) -> str:
         return "ImageNode"
+
+    def resolve_image(self) -> ImageType:
+        """Resolve an image such that PIL can read it."""
+        if self.image is not None:
+            return self.image
+        elif self.image_path is not None:
+            return self.image_path
+        elif self.image_url is not None:
+            # load image from URL
+            import requests
+
+            response = requests.get(self.image_url)
+            return BytesIO(response.content)
+        else:
+            raise ValueError("No image found in node.")
 
 
 class IndexNode(TextNode):
@@ -646,11 +666,8 @@ class Document(TextNode):
         return "Document"
 
 
-class ImageDocument(Document):
+class ImageDocument(Document, ImageNode):
     """Data document containing an image."""
-
-    # base64 encoded image str
-    image: Optional[str] = None
 
     @classmethod
     def class_name(cls) -> str:

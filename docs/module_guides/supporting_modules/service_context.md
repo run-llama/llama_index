@@ -11,7 +11,7 @@ You can use it to set the [global configuration](#setting-global-configuration),
 
 The `ServiceContext` is a simple python dataclass that you can directly construct by passing in the desired components.
 
-```python
+```
 @dataclass
 class ServiceContext:
     # The LLM used to generate natural language responses to queries.
@@ -67,27 +67,30 @@ for convenience (so you don't have to manually construct them).
 Here's a complete example that sets up all objects using their default settings:
 
 ```python
-from llama_index import ServiceContext, LLMPredictor, OpenAIEmbedding, PromptHelper
+from llama_index import (
+    ServiceContext,
+    LLMPredictor,
+    OpenAIEmbedding,
+    PromptHelper,
+)
 from llama_index.llms import OpenAI
 from llama_index.node_parser import SentenceSplitter
 
-llm = OpenAI(model='text-davinci-003', temperature=0, max_tokens=256)
+llm = OpenAI(model="text-davinci-003", temperature=0, max_tokens=256)
 embed_model = OpenAIEmbedding()
-node_parser = SentenceSplitter(
-  chunk_size=1024, chunk_overlap=20
-)
+node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
 prompt_helper = PromptHelper(
-  context_window=4096,
-  num_output=256,
-  chunk_overlap_ratio=0.1,
-  chunk_size_limit=None
+    context_window=4096,
+    num_output=256,
+    chunk_overlap_ratio=0.1,
+    chunk_size_limit=None,
 )
 
 service_context = ServiceContext.from_defaults(
-  llm=llm,
-  embed_model=embed_model,
-  node_parser=node_parser,
-  prompt_helper=prompt_helper
+    llm=llm,
+    embed_model=embed_model,
+    node_parser=node_parser,
+    prompt_helper=prompt_helper,
 )
 ```
 
@@ -97,6 +100,7 @@ You can set a service context as the global default that applies to the entire L
 
 ```python
 from llama_index import set_global_service_context
+
 set_global_service_context(service_context)
 ```
 

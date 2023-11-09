@@ -21,6 +21,7 @@ class Song(BaseModel):
     title: str
     length_seconds: int
 
+
 class Album(BaseModel):
     name: str
     artist: str
@@ -38,23 +39,30 @@ and supplying a suitable prompt template.
 program = GuidancePydanticProgram(
     output_cls=Album,
     prompt_template_str="Generate an example album, with an artist and a list of songs. Using the movie {{movie_name}} as inspiration",
-    guidance_llm=OpenAI('text-davinci-003'),
+    guidance_llm=OpenAI("text-davinci-003"),
     verbose=True,
 )
-
 ```
 
 Now we can run the program by calling it with additional user input.
 Here let's go for something spooky and create an album inspired by the Shining.
 
 ```python
-output = program(movie_name='The Shining')
+output = program(movie_name="The Shining")
 ```
 
 We have our pydantic object:
 
 ```python
-Album(name='The Shining', artist='Jack Torrance', songs=[Song(title='All Work and No Play', length_seconds=180), Song(title='The Overlook Hotel', length_seconds=240), Song(title='The Shining', length_seconds=210)])
+Album(
+    name="The Shining",
+    artist="Jack Torrance",
+    songs=[
+        Song(title="All Work and No Play", length_seconds=180),
+        Song(title="The Overlook Hotel", length_seconds=240),
+        Song(title="The Shining", length_seconds=210),
+    ],
+)
 ```
 
 You can play with [this notebook](/examples/output_parsing/guidance_pydantic_program.ipynb) for more details.
@@ -69,18 +77,22 @@ intermediate response has the expected structure (so that they can be parsed cor
 As an example, we implement a `GuidanceQuestionGenerator` that can be plugged into a `SubQuestionQueryEngine` to make it more robust than using the default setting.
 
 ```python
-from llama_index.question_gen.guidance_generator import GuidanceQuestionGenerator
+from llama_index.question_gen.guidance_generator import (
+    GuidanceQuestionGenerator,
+)
 from guidance.llms import OpenAI as GuidanceOpenAI
 
 # define guidance based question generator
-question_gen = GuidanceQuestionGenerator.from_defaults(guidance_llm=GuidanceOpenAI('text-davinci-003'), verbose=False)
+question_gen = GuidanceQuestionGenerator.from_defaults(
+    guidance_llm=GuidanceOpenAI("text-davinci-003"), verbose=False
+)
 
 # define query engine tools
 query_engine_tools = ...
 
 # construct sub-question query engine
 s_engine = SubQuestionQueryEngine.from_defaults(
-    question_gen=question_gen  # use guidance based question_gen defined above
+    question_gen=question_gen,  # use guidance based question_gen defined above
     query_engine_tools=query_engine_tools,
 )
 ```

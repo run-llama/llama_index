@@ -151,7 +151,7 @@ class MilvusVectorStore(VectorStore):
         """Get client."""
         return self.milvusclient
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into Milvus.
 
         Args:

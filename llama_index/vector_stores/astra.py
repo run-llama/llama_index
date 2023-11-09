@@ -60,7 +60,7 @@ class AstraDBVectorStore(VectorStore):
 
         # Try to import astrapy for use
         try:
-            from astrapy.db import AstraDB, AstraDBCollection
+            from astrapy.db import AstraDB
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -75,19 +75,15 @@ class AstraDBVectorStore(VectorStore):
             api_endpoint=api_endpoint, token=token, namespace=namespace
         )
 
-        # Create the new collection
-        self._astra_db.create_collection(
+        # Create and connect to the newly created collection
+        self._astra_db_collection = self._astra_db.create_collection(
             collection_name=collection_name, dimension=embedding_dimension
-        )
-
-        # Connect to the newly created collection
-        self._astra_db_collection = AstraDBCollection(
-            collection_name=collection_name, astra_db=self._astra_db
         )
 
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 
