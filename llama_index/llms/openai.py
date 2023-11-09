@@ -283,7 +283,7 @@ class OpenAI(LLM):
                 else:
                     delta = {}
 
-                # check if this start of a function call
+                # check if this chunk is the start of a function call
                 if (delta.role == MessageRole.ASSISTANT) and (delta.content is None):
                     is_function = True
 
@@ -467,7 +467,7 @@ class OpenAI(LLM):
                 else:
                     delta = {}
 
-                # check if this start of a function call
+                # check if this chunk is the start of a function call
                 if (delta.role == MessageRole.ASSISTANT) and (delta.content is None):
                     is_function = True
 
