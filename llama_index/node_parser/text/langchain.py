@@ -5,7 +5,7 @@ from llama_index.callbacks import CallbackManager
 from llama_index.node_parser.interface import TextSplitter
 
 if TYPE_CHECKING:
-    from langchain.text_splitter import TextSplitter
+    from langchain.text_splitter import TextSplitter as LC_TextSplitter
 
 
 class LangchainNodeParser(TextSplitter):
@@ -15,18 +15,18 @@ class LangchainNodeParser(TextSplitter):
     TODO: Figure out how to make this metadata aware.
     """
 
-    _lc_splitter: "TextSplitter" = PrivateAttr()
+    _lc_splitter: "LC_TextSplitter" = PrivateAttr()
 
     def __init__(
         self,
-        lc_splitter: "TextSplitter",
+        lc_splitter: "LC_TextSplitter",
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
     ):
         """Initialize with parameters."""
         try:
-            from langchain.text_splitter import TextSplitter  # noqa
+            from langchain.text_splitter import TextSplitter as LC_TextSplitter  # noqa
         except ImportError:
             raise ImportError(
                 "Could not run `from langchain.text_splitter import TextSplitter`, "
