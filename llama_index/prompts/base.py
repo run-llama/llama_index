@@ -12,8 +12,6 @@ if TYPE_CHECKING:
     from llama_index.bridge.langchain import (
         ConditionalPromptSelector as LangchainSelector,
     )
-    from llama_index.llms.langchain import LangChainLLM
-    from llama_index.llms.langchain_utils import from_lc_messages
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
@@ -374,6 +372,10 @@ class LangchainPromptTemplate(BasePromptTemplate):
 
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
         """Partially format the prompt."""
+        from llama_index.bridge.langchain import (
+            ConditionalPromptSelector as LangchainSelector,
+        )
+
         mapped_kwargs = self._map_all_vars(kwargs)
         default_prompt = self.selector.default_prompt.partial(**mapped_kwargs)
         conditionals = [
@@ -391,6 +393,8 @@ class LangchainPromptTemplate(BasePromptTemplate):
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         """Format the prompt into a string."""
+        from llama_index.llms.langchain import LangChainLLM
+
         if llm is not None:
             # if llamaindex LLM is provided, and we require a langchain LLM,
             # then error. but otherwise if `requires_langchain_llm` is False,
@@ -412,6 +416,8 @@ class LangchainPromptTemplate(BasePromptTemplate):
         self, llm: Optional[LLM] = None, **kwargs: Any
     ) -> List[ChatMessage]:
         """Format the prompt into a list of chat messages."""
+        from llama_index.llms.langchain_utils import from_lc_messages
+
         if llm is not None:
             # if llamaindex LLM is provided, and we require a langchain LLM,
             # then error. but otherwise if `requires_langchain_llm` is False,
@@ -432,6 +438,8 @@ class LangchainPromptTemplate(BasePromptTemplate):
         return from_lc_messages(lc_messages)
 
     def get_template(self, llm: Optional[LLM] = None) -> str:
+        from llama_index.llms.langchain import LangChainLLM
+
         if llm is not None:
             # if llamaindex LLM is provided, and we require a langchain LLM,
             # then error. but otherwise if `requires_langchain_llm` is False,
