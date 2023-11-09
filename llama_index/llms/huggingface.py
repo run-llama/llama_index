@@ -483,7 +483,9 @@ class HuggingFaceInferenceAPI(LLM):
                 " extra, please run `pip install huggingface_hub[inference]>=0.19.0`."
             ) from exc
         if kwargs.get("model_name") is None:
-            task = kwargs.get("task", "")  # NOTE: empty string leads to error
+            task = kwargs.get("task", "")
+            # NOTE: task being None or empty string leads to ValueError,
+            # which ensures model is present
             kwargs["model_name"] = InferenceClient.get_recommended_model(task=task)
             logger.debug(
                 f"Using Hugging Face's recommended model {kwargs['model_name']}"
