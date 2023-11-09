@@ -23,7 +23,6 @@ def test_build_pipeline() -> None:
     )
 
     assert len(pipeline.transformations) == 3
-    assert len(pipeline.configured_transformations) == 3
     assert pipeline.name == "Test"
 
 

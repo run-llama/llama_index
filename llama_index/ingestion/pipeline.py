@@ -3,9 +3,6 @@ from typing import Any, List, Optional, Sequence
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.indices.service_context import ServiceContext
-from llama_index.ingestion.transformations import (
-    ConfiguredTransformation,
-)
 from llama_index.node_parser import SentenceAwareNodeParser
 from llama_index.readers.base import ReaderConfig
 from llama_index.schema import BaseNode, Document, TransformComponent
@@ -74,10 +71,6 @@ class IngestionPipeline(BaseModel):
         default=DEFAULT_PROJECT_NAME, description="Unique name of the project"
     )
 
-    configured_transformations: List[ConfiguredTransformation] = Field(
-        description="Serialized schemas of transformations to apply to the data"
-    )
-
     transformations: List[TransformComponent] = Field(
         description="Transformations to apply to the data"
     )
@@ -100,16 +93,9 @@ class IngestionPipeline(BaseModel):
         if transformations is None:
             transformations = self._get_default_transformations()
 
-        configured_transformations: List[ConfiguredTransformation] = []
-        for transformation in transformations:
-            configured_transformations.append(
-                ConfiguredTransformation.from_component(transformation)
-            )
-
         super().__init__(
             name=name,
             project_name=project_name,
-            configured_transformations=configured_transformations,
             transformations=transformations,
             reader=reader,
             documents=documents,
