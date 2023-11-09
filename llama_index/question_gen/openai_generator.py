@@ -84,8 +84,9 @@ class OpenAIQuestionGenerator(BaseQuestionGenerator):
     ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
-        question_list = self._program(query_str=query_str, tools_str=tools_str)
-        question_list = cast(SubQuestionList, question_list)
+        question_list = cast(
+            SubQuestionList, self._program(query_str=query_str, tools_str=tools_str)
+        )
         return question_list.items
 
     async def agenerate(
@@ -93,8 +94,9 @@ class OpenAIQuestionGenerator(BaseQuestionGenerator):
     ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
-        question_list = await self._program.acall(
-            query_str=query_str, tools_str=tools_str
+        question_list = cast(
+            SubQuestionList,
+            await self._program.acall(query_str=query_str, tools_str=tools_str),
         )
-        question_list = cast(SubQuestionList, question_list)
+        assert isinstance(question_list, SubQuestionList)
         return question_list.items
