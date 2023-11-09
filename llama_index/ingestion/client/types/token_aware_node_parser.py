@@ -8,7 +8,7 @@ import pydantic
 from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
 
 
-class TokenAwareNodeParser(pydantic.BaseModel):
+class TokenTextSplitter(pydantic.BaseModel):
     """
     Implementation of splitting text that looks at word tokens.
     """

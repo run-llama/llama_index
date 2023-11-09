@@ -86,7 +86,7 @@ class NodeParser(TransformComponent, ABC):
         return self.get_nodes_from_documents(nodes, **kwargs)
 
 
-class TextNodeParser(NodeParser):
+class TextSplitter(NodeParser):
     @abstractmethod
     def split_text(self, text: str) -> List[str]:
         ...
@@ -108,7 +108,7 @@ class TextNodeParser(NodeParser):
         return all_nodes
 
 
-class MetadataAwareTextNodeParser(TextNodeParser):
+class MetadataAwareTextSplitter(TextSplitter):
     @abstractmethod
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         ...

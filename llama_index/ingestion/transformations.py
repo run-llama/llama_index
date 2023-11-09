@@ -16,15 +16,15 @@ from llama_index.extractors import (
     TitleExtractor,
 )
 from llama_index.node_parser import (
-    CodeNodeParser,
+    CodeSplitter,
     HierarchicalNodeParser,
     HTMLNodeParser,
     JSONNodeParser,
     MarkdownNodeParser,
-    SentenceAwareNodeParser,
+    SentenceSplitter,
     SentenceWindowNodeParser,
     SimpleFileNodeParser,
-    TokenAwareNodeParser,
+    TokenTextSplitter,
 )
 from llama_index.schema import BaseComponent, BaseNode, Document
 
@@ -152,17 +152,17 @@ class ConfigurableTransformations(Enum):
     CODE_NODE_PARSER = ConfigurableTransformation(
         name="Code Node Parser",
         transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=CodeNodeParser,
+        component_type=CodeSplitter,
     )
     SENTENCE_AWARE_NODE_PARSER = ConfigurableTransformation(
         name="Sentence Aware Node Parser",
         transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=SentenceAwareNodeParser,
+        component_type=SentenceSplitter,
     )
     TOKEN_AWARE_NODE_PARSER = ConfigurableTransformation(
         name="Token Aware Node Parser",
         transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=TokenAwareNodeParser,
+        component_type=TokenTextSplitter,
     )
     HTML_NODE_PARSER = ConfigurableTransformation(
         name="HTML Node Parser",
@@ -242,10 +242,10 @@ class ConfiguredTransformation(GenericModel, Generic[T]):
         corresponding enum value in ConfigurableTransformations.
 
         This has the added bonus that you don't need to specify the generic type
-        like ConfiguredTransformation[SentenceAwareNodeParser]. The return value of
+        like ConfiguredTransformation[SentenceSplitter]. The return value of
         this ConfiguredTransformation.from_component(simple_node_parser) will be
-        ConfiguredTransformation[SentenceAwareNodeParser] if simple_node_parser is
-        a SentenceAwareNodeParser.
+        ConfiguredTransformation[SentenceSplitter] if simple_node_parser is
+        a SentenceSplitter.
         """
         return ConfigurableTransformations.from_component(
             component

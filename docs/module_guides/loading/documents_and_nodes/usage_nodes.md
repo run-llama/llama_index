@@ -8,9 +8,9 @@ Nodes are a first-class citizen in LlamaIndex. You can choose to define Nodes an
 For instance, you can do
 
 ```python
-from llama_index.node_parser import SentenceAwareNodeParser
+from llama_index.node_parser import SentenceSplitter
 
-parser = SentenceAwareNodeParser()
+parser = SentenceSplitter()
 
 nodes = parser.get_nodes_from_documents(documents)
 ```

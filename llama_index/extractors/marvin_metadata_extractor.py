@@ -42,7 +42,7 @@ class MarvinMetadataExtractor(BaseExtractor):
         ]
 
         #create node parser to parse nodes from document
-        node_parser = SentenceAwareNodeParser(
+        node_parser = SentenceSplitter(
             text_splitter=text_splitter
         )
 

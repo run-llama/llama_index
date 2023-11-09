@@ -8,7 +8,7 @@ from llama_index.extractors import (
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llms import MockLLM
-from llama_index.node_parser import SentenceAwareNodeParser
+from llama_index.node_parser import SentenceSplitter
 from llama_index.schema import TransformComponent
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 
@@ -20,7 +20,7 @@ def test_service_context_serialize() -> None:
         TitleExtractor(),
     ]
 
-    node_parser = SentenceAwareNodeParser(chunk_size=1, chunk_overlap=0)
+    node_parser = SentenceSplitter(chunk_size=1, chunk_overlap=0)
 
     transformations: List[TransformComponent] = [node_parser, *extractors]
 
@@ -46,9 +46,7 @@ def test_service_context_serialize() -> None:
 
     assert isinstance(loaded_service_context.llm, MockLLM)
     assert isinstance(loaded_service_context.embed_model, MockEmbedding)
-    assert isinstance(
-        loaded_service_context.transformations[0], SentenceAwareNodeParser
-    )
+    assert isinstance(loaded_service_context.transformations[0], SentenceSplitter)
     assert isinstance(loaded_service_context.prompt_helper, PromptHelper)
 
     assert len(loaded_service_context.transformations) == 4

@@ -1,18 +1,18 @@
 """Test text splitter."""
 import tiktoken
-from llama_index.node_parser.text import TokenAwareNodeParser
+from llama_index.node_parser.text import TokenTextSplitter
 from llama_index.node_parser.text.utils import truncate_text
 
 
 def test_split_token() -> None:
     """Test split normal token."""
     token = "foo bar"
-    text_splitter = TokenAwareNodeParser(chunk_size=1, chunk_overlap=0)
+    text_splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
     chunks = text_splitter.split_text(token)
     assert chunks == ["foo", "bar"]
 
     token = "foo bar hello world"
-    text_splitter = TokenAwareNodeParser(chunk_size=2, chunk_overlap=1)
+    text_splitter = TokenTextSplitter(chunk_size=2, chunk_overlap=1)
     chunks = text_splitter.split_text(token)
     assert chunks == ["foo bar", "bar hello", "hello world"]
 
@@ -20,7 +20,7 @@ def test_split_token() -> None:
 def test_truncate_token() -> None:
     """Test truncate normal token."""
     token = "foo bar"
-    text_splitter = TokenAwareNodeParser(chunk_size=1, chunk_overlap=0)
+    text_splitter = TokenTextSplitter(chunk_size=1, chunk_overlap=0)
     text = truncate_text(token, text_splitter)
     assert text == "foo"
 
@@ -29,7 +29,7 @@ def test_split_long_token() -> None:
     """Test split a really long token."""
     token = "a" * 100
     tokenizer = tiktoken.get_encoding("gpt2")
-    text_splitter = TokenAwareNodeParser(
+    text_splitter = TokenTextSplitter(
         chunk_size=20, chunk_overlap=0, tokenizer=tokenizer.encode
     )
     chunks = text_splitter.split_text(token)
@@ -37,7 +37,7 @@ def test_split_long_token() -> None:
     assert "".join(chunks).replace(" ", "") == token
 
     token = ("a" * 49) + "\n" + ("a" * 50)
-    text_splitter = TokenAwareNodeParser(
+    text_splitter = TokenTextSplitter(
         chunk_size=20, chunk_overlap=0, tokenizer=tokenizer.encode
     )
     chunks = text_splitter.split_text(token)
@@ -46,13 +46,13 @@ def test_split_long_token() -> None:
 
 
 def test_split_chinese(chinese_text: str) -> None:
-    text_splitter = TokenAwareNodeParser(chunk_size=512, chunk_overlap=0)
+    text_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=0)
     chunks = text_splitter.split_text(chinese_text)
     assert len(chunks) == 2
 
 
 def test_contiguous_text(contiguous_text: str) -> None:
-    splitter = TokenAwareNodeParser(chunk_size=100, chunk_overlap=0)
+    splitter = TokenTextSplitter(chunk_size=100, chunk_overlap=0)
     chunks = splitter.split_text(contiguous_text)
     assert len(chunks) == 10
 
@@ -61,7 +61,7 @@ def test_split_with_metadata(english_text: str) -> None:
     chunk_size = 100
     metadata_str = "word " * 50
     tokenizer = tiktoken.get_encoding("gpt2")
-    splitter = TokenAwareNodeParser(
+    splitter = TokenTextSplitter(
         chunk_size=chunk_size, chunk_overlap=0, tokenizer=tokenizer.encode
     )
 

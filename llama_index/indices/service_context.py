@@ -17,7 +17,7 @@ from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.text.sentence import (
     DEFAULT_CHUNK_SIZE,
     SENTENCE_CHUNK_OVERLAP,
-    SentenceAwareNodeParser,
+    SentenceSplitter,
 )
 from llama_index.prompts.base import BasePromptTemplate
 from llama_index.schema import TransformComponent
@@ -32,7 +32,7 @@ def _get_default_node_parser(
     callback_manager: Optional[CallbackManager] = None,
 ) -> NodeParser:
     """Get default node parser."""
-    return SentenceAwareNodeParser(
+    return SentenceSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         callback_manager=callback_manager or CallbackManager(),
