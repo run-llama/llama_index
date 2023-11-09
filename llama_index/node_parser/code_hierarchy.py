@@ -1,6 +1,10 @@
 from enum import Enum
 from typing import Dict, List, Optional, Sequence, Tuple
 
+from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
+from llama_index.node_parser.interface import NodeParser
+from llama_index.node_parser.node_utils import get_nodes_from_node
+
 try:
     from pydantic.v1 import BaseModel, Field
 except ImportError:
@@ -18,9 +22,6 @@ from llama_index.indices.keyword_table.base import (
     BaseKeywordTableIndex,
     KeywordTableRetrieverMode,
 )
-from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
-from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.node_utils import get_nodes_from_node
 from llama_index.schema import BaseNode, Document, NodeRelationship, TextNode
 from llama_index.text_splitter.code_splitter import CodeSplitter
 from llama_index.utils import get_tqdm_iterable
