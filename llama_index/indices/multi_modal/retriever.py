@@ -79,7 +79,7 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
         """Set similarity top k."""
         self._similarity_top_k = similarity_top_k
 
-    def _build_iamge_vector_store_query(
+    def _build_image_vector_store_query(
         self, query_bundle_with_embeddings: QueryBundle
     ) -> VectorStoreQuery:
         return VectorStoreQuery(
@@ -125,7 +125,7 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
         self,
         query_bundle_with_embeddings: QueryBundle,
     ) -> List[NodeWithScore]:
-        query = self._build_iamge_vector_store_query(query_bundle_with_embeddings)
+        query = self._build_image_vector_store_query(query_bundle_with_embeddings)
         query_result = self._image_vector_store.query(query, **self._kwargs)
         return self._build_node_list_from_query_result(query_result)
 
@@ -168,6 +168,6 @@ class MutliModalVectorIndexRetriever(VectorIndexRetriever):
         self,
         query_bundle_with_embeddings: QueryBundle,
     ) -> List[NodeWithScore]:
-        query = self._build_iamge_vector_store_query(query_bundle_with_embeddings)
+        query = self._build_image_vector_store_query(query_bundle_with_embeddings)
         query_result = await self._image_vector_store.aquery(query, **self._kwargs)
         return self._build_node_list_from_query_result(query_result)
