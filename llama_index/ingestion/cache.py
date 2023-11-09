@@ -74,6 +74,13 @@ class IngestionCache(BaseModel):
 
         return self._load_nodes(node_dicts[self.nodes_key])
 
+    def clear(self, collection: Optional[str] = None) -> None:
+        """Clear the cache."""
+        collection = collection or self.collection
+        data = self.cache.get_all(collection=collection)
+        for key in data:
+            self.cache.delete(key, collection=collection)
+
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
