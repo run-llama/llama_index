@@ -10,9 +10,9 @@ Node parsers can be used on their own:
 
 ```python
 from llama_index import Document
-from llama_index.node_parser import SentenceAwareNodeParser
+from llama_index.node_parser import SentenceSplitter
 
-node_parser = SentenceAwareNodeParser(chunk_size=1024, chunk_overlap=20)
+node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
 
 nodes = node_parser.get_nodes_from_documents([Document(text="long text")], show_progress=False)
 ```
@@ -24,12 +24,12 @@ Node parsers can be included in any set of transformations.
 ```python
 from llama_index import SimpleDirectoryReader
 from llama_index.ingestion import run_transformations
-from llama_index.node_parser import TokenAwareNodeParser
+from llama_index.node_parser import TokenTextSplitter
 
 documents = SimpleDirectoryReader("./data").load_data()
 
 transformations = [
-    TokenAwareNodeParser(),
+    TokenTextSplitter(),
     ...
 ]
 
@@ -45,11 +45,11 @@ Or set inside a `ServiceContext` to be used automatically when an index is const
 
 ```python
 from llama_index import SimpleDirectoryReader, VectorStoreIndex, ServiceContext
-from llama_index.node_parser import SentenceAwareNodeParser
+from llama_index.node_parser import SentenceSplitter
 
 documents = SimpleDirectoryReader("./data").load_data()
 
-node_parser = SentenceAwareNodeParser(chunk_size=1024, chunk_overlap=20)
+node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
 service_context = ServiceContext.from_defaults(node_parser=node_parser)
 
 index = VectorStoreIndex.from_documents(documents, service_context=service_context)

@@ -9,7 +9,7 @@ from tqdm.auto import tqdm
 from llama_index import VectorStoreIndex
 from llama_index.llms import ChatMessage, OpenAI
 from llama_index.llms.base import LLM
-from llama_index.node_parser import TokenAwareNodeParser
+from llama_index.node_parser import TokenTextSplitter
 from llama_index.schema import Document, MetadataMode
 
 
@@ -41,7 +41,7 @@ def generate_synthetic_queries_over_documents(
     qa_generate_user_msg: str = DEFAULT_QUERY_GEN_USER_PROMPT,
 ) -> List[str]:
     questions = []
-    node_parser = TokenAwareNodeParser(
+    node_parser = TokenTextSplitter(
         separator=" ",
         chunk_size=max_chunk_length,
         chunk_overlap=0,
@@ -118,7 +118,7 @@ def generate_ce_fine_tuning_dataset(
 ) -> List[CrossEncoderFinetuningDatasetSample]:
     ce_dataset_list = []
 
-    node_parser = TokenAwareNodeParser(
+    node_parser = TokenTextSplitter(
         separator=" ",
         chunk_size=max_chunk_length,
         chunk_overlap=0,

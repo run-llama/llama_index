@@ -6,7 +6,7 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_SIZE
-from llama_index.node_parser.interface import MetadataAwareTextNodeParser
+from llama_index.node_parser.interface import MetadataAwareTextSplitter
 from llama_index.node_parser.text.utils import (
     split_by_char,
     split_by_regex,
@@ -26,11 +26,11 @@ class _Split:
     is_sentence: bool  # save whether this is a full sentence
 
 
-class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
+class SentenceSplitter(MetadataAwareTextSplitter):
     """Parse text with a preference for complete sentences.
 
     In general, this class tries to keep sentences and paragraphs together. Therefore
-    compared to the original TokenAwareNodeParser, there are less likely to be
+    compared to the original TokenTextSplitter, there are less likely to be
     hanging sentences or parts of sentences at the end of the node chunk.
     """
 
@@ -120,7 +120,7 @@ class SentenceAwareNodeParser(MetadataAwareTextNodeParser):
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
-    ) -> "SentenceAwareNodeParser":
+    ) -> "SentenceSplitter":
         """Initialize with parameters."""
         callback_manager = callback_manager or CallbackManager([])
         return cls(

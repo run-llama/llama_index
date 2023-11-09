@@ -61,16 +61,16 @@ nodes = parser.get_nodes_from_documents(markdown_docs)
 
 ## Text-Based Node Parsers
 
-### CodeNodeParser
+### CodeSplitter
 
 Splits raw code-text based on the language it is written in.
 
 Check the full list of [supported languages here](https://github.com/grantjenks/py-tree-sitter-languages#license).
 
 ```python
-from llama_index.node_parser import CodeNodeParser
+from llama_index.node_parser import CodeSplitter
 
-parser = CodeNodeParser(
+parser = CodeSplitter(
     language="python",
     chunk_lines=40,  # lines per chunk
     chunk_lines_overlap=15,  # lines overlap between chunks
@@ -93,14 +93,14 @@ parser = LangchainNodeParser(
 nodes = parser.get_nodes_from_documents(documents)
 ```
 
-### SentenceAwareNodeParser
+### SentenceSplitter
 
-The `SentenceAwareNodeParser` attempts to split text while respecting the boundaries of sentences.
+The `SentenceSplitter` attempts to split text while respecting the boundaries of sentences.
 
 ```python
-from llama_index.node_parser import SentenceAwareNodeParser
+from llama_index.node_parser import SentenceSplitter
 
-parser = SentenceAwareNodeParser(
+parser = SentenceSplitter(
     chunk_size=1024,
     chunk_overlap=20,
 )
@@ -131,14 +131,14 @@ node_parser = SentenceWindowNodeParser.from_defaults(
 
 A full example can be found [here in combination with the `MetadataReplacementNodePostProcessor`](/examples/node_postprocessor/MetadataReplacementDemo.ipynb).
 
-### TokenAwareNodeParser
+### TokenTextSplitter
 
-The `TokenAwareNodeParser` attempts to split text while respecting the boundaries of sentences.
+The `TokenTextSplitter` attempts to split text while respecting the boundaries of sentences.
 
 ```python
-from llama_index.node_parser import TokenAwareNodeParser
+from llama_index.node_parser import TokenTextSplitter
 
-parser = TokenAwareNodeParser(
+parser = TokenTextSplitter(
     chunk_size=1024,
     chunk_overlap=20,
     separator=" ",

@@ -1,9 +1,9 @@
 from typing import Callable, List
 
-from llama_index.node_parser.interface import TextNodeParser
+from llama_index.node_parser.interface import TextSplitter
 
 
-def truncate_text(text: str, text_splitter: TextNodeParser) -> str:
+def truncate_text(text: str, text_splitter: TextSplitter) -> str:
     """Truncate text to fit within the chunk size."""
     chunks = text_splitter.split_text(text)
     return chunks[0]

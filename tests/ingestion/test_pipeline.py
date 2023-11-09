@@ -2,7 +2,7 @@ from llama_index.embeddings import OpenAIEmbedding
 from llama_index.extractors import KeywordExtractor
 from llama_index.ingestion.pipeline import IngestionPipeline
 from llama_index.llms import MockLLM
-from llama_index.node_parser import SentenceAwareNodeParser
+from llama_index.node_parser import SentenceSplitter
 from llama_index.readers import ReaderConfig, StringIterableReader
 from llama_index.schema import Document
 
@@ -14,7 +14,7 @@ def test_build_pipeline() -> None:
         ),
         documents=[Document.example()],
         transformations=[
-            SentenceAwareNodeParser(),
+            SentenceSplitter(),
             KeywordExtractor(llm=MockLLM()),
             OpenAIEmbedding(api_key="fake"),
         ],
@@ -30,7 +30,7 @@ def test_run_pipeline() -> None:
         ),
         documents=[Document.example()],
         transformations=[
-            SentenceAwareNodeParser(),
+            SentenceSplitter(),
             KeywordExtractor(llm=MockLLM()),
         ],
     )

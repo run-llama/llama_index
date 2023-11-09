@@ -147,9 +147,9 @@ def _get_nodes_from_buffer(
 
 def get_nodes_from_elements(elements: List[Element]) -> List[BaseNode]:
     """Get nodes and mappings."""
-    from llama_index.node_parser import SentenceAwareNodeParser
+    from llama_index.node_parser import SentenceSplitter
 
-    node_parser = SentenceAwareNodeParser()
+    node_parser = SentenceSplitter()
 
     nodes = []
     cur_text_el_buffer: List[str] = []
