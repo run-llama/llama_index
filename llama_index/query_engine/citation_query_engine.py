@@ -205,10 +205,18 @@ class CitationQueryEngine(BaseQueryEngine):
         return new_nodes
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        nodes = self._retriever.retrieve(query_bundle)
+        nodes = self._retriever.aretrieve(query_bundle)
 
         for postprocessor in self._node_postprocessors:
-            nodes = postprocessor.postprocess_nodes(nodes)
+            nodes = postprocessor.postprocess_nodes(nodes, query_bundle=query_bundle)
+
+        return nodes
+
+    async def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        nodes = self._retriever.aretrieve(query_bundle)
+
+        for postprocessor in self._node_postprocessors:
+            nodes = postprocessor.postprocess_nodes(nodes, query_bundle=query_bundle)
 
         return nodes
 
@@ -275,7 +283,7 @@ class CitationQueryEngine(BaseQueryEngine):
                 CBEventType.RETRIEVE,
                 payload={EventPayload.QUERY_STR: query_bundle.query_str},
             ) as retrieve_event:
-                nodes = self.retrieve(query_bundle)
+                nodes = await self.aretrieve(query_bundle)
                 nodes = self._create_citation_nodes(nodes)
 
                 retrieve_event.on_end(payload={EventPayload.NODES: nodes})
