@@ -10,7 +10,7 @@ If you haven't, [install LlamaIndex](/getting_started/installation.md) and compl
 
 LLMs are trained on enormous bodies of data but they aren't trained on **your** data. Retrieval-Augmented Generation (RAG) solves this problem by adding your data to the data LLMs already have access to. You will see references to RAG frequently in this documentation.
 
-In RAG, your data is loaded and and prepared for queries or "indexed". User queries act on the index, which filters your data down to the most relevant context. This context and your query then go to the LLM along with a prompt, and the LLM provides a response.
+In RAG, your data is loaded and prepared for queries or "indexed". User queries act on the index, which filters your data down to the most relevant context. This context and your query then go to the LLM along with a prompt, and the LLM provides a response.
 
 Even if what you're building is a chatbot or an agent, you'll want to know RAG techniques for getting data into your application.
 
