@@ -14,10 +14,15 @@ from llama_index.types import Model
 _logger = logging.getLogger(__name__)
 
 
-def _default_tool_choice(output_cls: Type[BaseModel]) -> Dict[str, Any]:
+def _default_tool_choice(
+    output_cls: Type[BaseModel], allow_multiple: bool = False
+) -> Dict[str, Any]:
     """Default OpenAI tool to choose."""
-    schema = output_cls.schema()
-    return resolve_tool_choice(schema["title"])
+    if allow_multiple:
+        return "auto"
+    else:
+        schema = output_cls.schema()
+        return resolve_tool_choice(schema["title"])
 
 
 def _get_json_str(raw_str: str, start_idx: int) -> Tuple[Optional[str], int]:
@@ -38,7 +43,7 @@ def _get_json_str(raw_str: str, start_idx: int) -> Tuple[Optional[str], int]:
 def _parse_tool_calls(
     tool_calls: List[dict],
     output_cls: Type[BaseModel],
-    output_multiple: bool = False,
+    allow_multiple: bool = False,
     verbose: bool = False,
 ) -> Union[BaseModel, List[BaseModel]]:
     outputs = []
@@ -56,7 +61,7 @@ def _parse_tool_calls(
 
         outputs.append(output)
 
-    if output_multiple:
+    if allow_multiple:
         return outputs
     else:
         if len(outputs) > 1:
@@ -81,6 +86,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         llm: LLM,
         prompt: BasePromptTemplate,
         tool_choice: Union[str, Dict[str, Any]],
+        allow_multiple: bool = False,
         verbose: bool = False,
     ) -> None:
         """Init params."""
@@ -88,6 +94,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self._llm = llm
         self._prompt = prompt
         self._verbose = verbose
+        self._allow_multiple = allow_multiple
         self._tool_choice = tool_choice
 
     @classmethod
@@ -98,6 +105,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         prompt: Optional[PromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
+        allow_multiple: bool = False,
         tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> "OpenAIPydanticProgram":
@@ -120,12 +128,15 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             raise ValueError("Must provide either prompt or prompt_template_str.")
         if prompt_template_str is not None:
             prompt = PromptTemplate(prompt_template_str)
-        tool_choice = tool_choice or _default_tool_choice(output_cls)
+
+        tool_choice = tool_choice or _default_tool_choice(output_cls, allow_multiple)
+
         return cls(
             output_cls=output_cls,
             llm=llm,
             prompt=cast(PromptTemplate, prompt),
             tool_choice=tool_choice,
+            allow_multiple=allow_multiple,
             verbose=verbose,
         )
 
@@ -144,7 +155,6 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     def __call__(
         self,
         *args: Any,
-        output_multiple: bool = False,
         **kwargs: Any,
     ) -> Union[BaseModel, List[BaseModel]]:
         openai_fn_spec = to_openai_tool(self._output_cls)
@@ -165,13 +175,15 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         tool_calls = message.additional_kwargs["tool_calls"]
         return _parse_tool_calls(
-            tool_calls, self.output_cls, output_multiple, self._verbose
+            tool_calls,
+            output_cls=self.output_cls,
+            allow_multiple=self._allow_multiple,
+            verbose=self._verbose,
         )
 
     async def acall(
         self,
         *args: Any,
-        output_multiple: bool = False,
         **kwargs: Any,
     ) -> Union[BaseModel, List[BaseModel]]:
         openai_fn_spec = to_openai_tool(self._output_cls)
@@ -192,7 +204,10 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         tool_calls = message.additional_kwargs["tool_calls"]
         return _parse_tool_calls(
-            tool_calls, self.output_cls, output_multiple, self._verbose
+            tool_calls,
+            output_cls=self.output_cls,
+            allow_multiple=self._allow_multiple,
+            verbose=self._verbose,
         )
 
     def stream_list(
@@ -201,21 +216,26 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         """Streams a list of objects."""
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
-        # openai_fn_spec = to_openai_function(self._output_cls)
         list_output_cls = create_list_model(self._output_cls)
         openai_fn_spec = to_openai_tool(list_output_cls)
 
         chat_response_gen = self._llm.stream_chat(
             messages=messages,
-            functions=[openai_fn_spec],
-            function_call=_default_tool_choice(list_output_cls),
+            tools=[openai_fn_spec],
+            tool_choice=self._tool_choice,
         )
         # extract function call arguments
         # obj_start_idx finds start position (before a new "{" in JSON)
         obj_start_idx: int = -1  # NOTE: uninitialized
         for stream_resp in chat_response_gen:
             kwargs = stream_resp.message.additional_kwargs
-            fn_args = kwargs["function_call"]["arguments"]
+            tool_calls = kwargs["tool_calls"]
+            if len(tool_calls) == 0:
+                continue
+
+            # NOTE: right now assume only one tool call
+            # TODO: handle parallel tool calls in streaming setting
+            fn_args = kwargs["tool_calls"][0]["function"]["arguments"]
 
             # this is inspired by `get_object` from `MultiTaskBase` in
             # the openai_function_call repo
