@@ -223,6 +223,47 @@ class OpenAI(LLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    def _update_tool_calls(
+        self,
+        tool_calls: List[ChoiceDeltaToolCall],
+        tc_delta: Optional[ChoiceDeltaToolCall],
+    ) -> List[ChoiceDeltaToolCall]:
+        """_summary_
+        openai provides the delta on one tool-at-a-time
+        we need to use the index on it to see if its updating one
+        for which we've already started to received content on, OR
+        if we need to start a new tool_call and accumulate that new
+        one thereafter, and so on.
+
+        Args:
+            tool_calls (List[ChoiceDeltaToolCall]): _description_
+            delta (ChoiceDeltaToolCall): _description_
+
+        Returns:
+            List[ChoiceDeltaToolCall]: _description_
+        """
+        if not tc_delta:
+            return tool_calls
+
+        if len(tool_calls) == 0:
+            t = tc_delta
+            tool_calls.append(t)
+        else:
+            # we need to either update latest tool_call or start a
+            # new tool_call and accumulate that with future delta chunks
+            t = tool_calls[-1]
+            if t.index != tc_delta.index:
+                # start a new tool and append to our running tool_calls list
+                tool_calls.append(tc_delta)
+            else:
+                # not the start of a new tool, so update last item of tool_calls
+                t.function.arguments += tc_delta.function.arguments or ""
+                t.function.name += tc_delta.function.name or ""
+                t.id += tc_delta.id or ""
+                t.type += tc_delta.type or ""
+                tool_calls[-1] = t
+        return tool_calls
+
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -247,71 +288,28 @@ class OpenAI(LLM):
                 else:
                     delta = {}
 
-                if response_id is None:
-                    response_id = response.id
-
-                if response_id != response.id:
-                    # start of a new response
-                    is_function = False
-                    response_ix = 0
+                # check if this start of a function call
+                if (delta.role == MessageRole.ASSISTANT) and (delta.content is None):
+                    is_function = True
 
                 # update using deltas
                 role = delta.role or MessageRole.ASSISTANT
                 content_delta = delta.content or ""
                 content += content_delta
 
-                # TODO: REFACTOR WITH FUNCTIONS
-                # openai provides the delta on one tool-at-a-time
-                # we need to use the index on it to see if its updating one
-                # for which we've already started to received content on, OR
-                # if we need to start a new tool_call and accumulate that new
-                # one thereafter, and so on.
-                tool_calls_delta = delta.tool_calls or None
-                if tool_calls_delta is not None:
-                    is_function = True
-                    t_delta = tool_calls_delta[0]
-                    if len(tool_calls) == 0:
-                        t = t_delta
-                        tool_calls.append(t)
-                    else:
-                        # we need to either update latest tool_call or start a
-                        # new tool_call and accumulate that with future chunks
-                        t = tool_calls[-1]
-                        # check if should start new t
-                        if t.index != t_delta.index:
-                            # start a new tool and append to our running
-                            # tool_calls list
-                            t = t_delta
-                            tool_calls.append(t)
-                        else:
-                            # not the start of a new tool, so update last tool
-                            t.function.arguments += t_delta.function.arguments or ""
-                            t.function.name += t_delta.function.name or ""
-                            t.id += t_delta.id or ""
-                            t.type += t_delta.type or ""
-                            tool_calls[-1] = t
-
                 additional_kwargs = {}
-                if len(tool_calls) > 0:
+                if is_function:
+                    if delta.tool_calls:
+                        tc_delta = delta.tool_calls[0]
+                        tool_calls = self._update_tool_calls(tool_calls, tc_delta)
                     additional_kwargs["tool_calls"] = [t.dict() for t in tool_calls]
 
-                if response_ix == 0:
-                    message = ChatMessage(
-                        role=role,
-                        content=content,
-                        additional_kwargs={"tool_calls": []},
-                    )
-                else:
-                    message = ChatMessage(
+                yield ChatResponse(
+                    message=ChatMessage(
                         role=role,
                         content=content,
                         additional_kwargs=additional_kwargs,
-                    )
-
-                response_ix += 1
-
-                yield ChatResponse(
-                    message=message,
+                    ),
                     delta=content_delta,
                     raw=response,
                     additional_kwargs=self._get_response_token_counts(response),
