@@ -5,6 +5,8 @@ from llama_index.node_parser.interface import TextSplitter
 
 logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
+
 
 def truncate_text(text: str, text_splitter: TextSplitter) -> str:
     """Truncate text to fit within the chunk size."""

@@ -16,11 +16,11 @@ from llama_index.vector_stores.types import (
 )
 
 
-class MutliModalVectorIndexRetriever(VectorIndexRetriever):
+class MultiModalVectorIndexRetriever(VectorIndexRetriever):
     """Multi Modal Vector index retriever.
 
     Args:
-        index (MutliModalVectorIndexRetriever): Multi Modal vector store index for images and texts.
+        index (MultiModalVectorIndexRetriever): Multi Modal vector store index for images and texts.
         similarity_top_k (int): number of top k results to return.
         vector_store_query_mode (str): vector store query mode
             See reference for VectorStoreQueryMode for full list of supported modes.
