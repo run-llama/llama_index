@@ -14,7 +14,9 @@ from llama_index.node_parser import SentenceSplitter
 
 node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
 
-nodes = node_parser.get_nodes_from_documents([Document(text="long text")], show_progress=False)
+nodes = node_parser.get_nodes_from_documents(
+    [Document(text="long text")], show_progress=False
+)
 ```
 
 ### Transformation Usage
@@ -28,15 +30,9 @@ from llama_index.node_parser import TokenTextSplitter
 
 documents = SimpleDirectoryReader("./data").load_data()
 
-transformations = [
-    TokenTextSplitter(),
-    ...
-]
+transformations = [TokenTextSplitter(), ...]
 
-nodes = run_transformations(
-    documents,
-    transformations
-)
+nodes = run_transformations(documents, transformations)
 ```
 
 ### Service Context Usage
@@ -52,5 +48,7 @@ documents = SimpleDirectoryReader("./data").load_data()
 node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
 service_context = ServiceContext.from_defaults(node_parser=node_parser)
 
-index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+index = VectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
 ```

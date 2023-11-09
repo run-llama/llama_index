@@ -29,9 +29,7 @@ The default tags are: `["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "b", "i",
 ```python
 from llama_index.node_parser import HTMLNodeParser
 
-parser = HTMLNodeParser(
-    tags=["p", "h1"]  # optional list of tags
-)
+parser = HTMLNodeParser(tags=["p", "h1"])  # optional list of tags
 nodes = parser.get_nodes_from_documents(html_docs)
 ```
 
@@ -74,7 +72,7 @@ parser = CodeSplitter(
     language="python",
     chunk_lines=40,  # lines per chunk
     chunk_lines_overlap=15,  # lines overlap between chunks
-    max_chars=1500  # max chars per chunk
+    max_chars=1500,  # max chars per chunk
 )
 nodes = parser.get_nodes_from_documents(documents)
 ```
@@ -87,9 +85,7 @@ You can also wrap any existing text splitter from langchain with a node parser.
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from llama_index.node_parser import LangchainNodeParser
 
-parser = LangchainNodeParser(
-    RecursiveCharacterTextSplitter()
-)
+parser = LangchainNodeParser(RecursiveCharacterTextSplitter())
 nodes = parser.get_nodes_from_documents(documents)
 ```
 
@@ -120,12 +116,12 @@ import nltk
 from llama_index.node_parser import SentenceWindowNodeParser
 
 node_parser = SentenceWindowNodeParser.from_defaults(
-  # how many sentences on either side to capture
-  window_size=3,
-  # the metadata key that holds the window of surrounding sentences
-  window_metadata_key="window",
-  # the metadata key that holds the original sentence
-  original_text_metadata_key="original_sentence"
+    # how many sentences on either side to capture
+    window_size=3,
+    # the metadata key that holds the window of surrounding sentences
+    window_metadata_key="window",
+    # the metadata key that holds the original sentence
+    original_text_metadata_key="original_sentence",
 )
 ```
 

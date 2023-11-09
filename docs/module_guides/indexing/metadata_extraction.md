@@ -59,6 +59,7 @@ If the provided extractors do not fit your needs, you can also define a custom e
 ```python
 from llama_index.extractors import BaseExtractor
 
+
 class CustomExtractor(BaseExtractor):
     def extract(self, nodes) -> List[Dict]:
         metadata_list = [
