@@ -24,7 +24,7 @@ from llama_index.llms.base import (
 class LangChainLLM(LLM):
     """Adapter for a LangChain LLM."""
 
-    _llm: "BaseLanguageModel" = PrivateAttr()
+    _llm: Any = PrivateAttr()
 
     def __init__(
         self,
