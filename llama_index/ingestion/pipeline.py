@@ -8,9 +8,6 @@ from llama_index.readers.base import ReaderConfig
 from llama_index.schema import BaseNode, Document, TransformComponent
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
-DEFAULT_PIPELINE_NAME = "pipeline"
-DEFAULT_PROJECT_NAME = "project"
-
 
 def run_transformations(
     nodes: List[BaseNode],
@@ -63,14 +60,6 @@ async def arun_transformations(
 class IngestionPipeline(BaseModel):
     """An ingestion pipeline that can be applied to data."""
 
-    name: str = Field(
-        default=DEFAULT_PIPELINE_NAME,
-        description="Unique name of the ingestion pipeline",
-    )
-    project_name: str = Field(
-        default=DEFAULT_PROJECT_NAME, description="Unique name of the project"
-    )
-
     transformations: List[TransformComponent] = Field(
         description="Transformations to apply to the data"
     )
@@ -83,8 +72,6 @@ class IngestionPipeline(BaseModel):
 
     def __init__(
         self,
-        name: str = DEFAULT_PIPELINE_NAME,
-        project_name: str = DEFAULT_PROJECT_NAME,
         transformations: Optional[List[TransformComponent]] = None,
         reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
@@ -94,8 +81,6 @@ class IngestionPipeline(BaseModel):
             transformations = self._get_default_transformations()
 
         super().__init__(
-            name=name,
-            project_name=project_name,
             transformations=transformations,
             reader=reader,
             documents=documents,
@@ -106,8 +91,6 @@ class IngestionPipeline(BaseModel):
     def from_service_context(
         cls,
         service_context: ServiceContext,
-        name: str = DEFAULT_PIPELINE_NAME,
-        project_name: str = DEFAULT_PROJECT_NAME,
         reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
@@ -118,8 +101,6 @@ class IngestionPipeline(BaseModel):
         ]
 
         return cls(
-            name=name,
-            project_name=project_name,
             transformations=transformations,
             reader=reader,
             documents=documents,
