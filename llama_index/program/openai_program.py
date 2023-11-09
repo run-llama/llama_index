@@ -196,7 +196,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             tool_choice=self._tool_choice,
         )
         message = chat_response.message
-        if "function_call" not in message.additional_kwargs:
+        if "tool_calls" not in message.additional_kwargs:
             raise ValueError(
                 "Expected function call in ai_message.additional_kwargs, "
                 "but none found."
@@ -222,7 +222,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         chat_response_gen = self._llm.stream_chat(
             messages=messages,
             tools=[openai_fn_spec],
-            tool_choice=self._tool_choice,
+            tool_choice=_default_tool_choice(list_output_cls),
         )
         # extract function call arguments
         # obj_start_idx finds start position (before a new "{" in JSON)
