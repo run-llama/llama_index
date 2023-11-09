@@ -1,3 +1,4 @@
+import re
 from hashlib import sha256
 from typing import Any, List, Optional, Sequence, cast
 
@@ -64,18 +65,15 @@ def deserialize_sink_component(
     return component_cls.from_dict(component_dict)
 
 
-def get_keys_to_remove(obj: dict) -> List[str]:
-    """Remove unstable key/value pairs."""
-    keys_to_remove = []
-    for key in obj:
-        # functions and objects stored in memory will be stored
-        # in inconsistent locations, so we remove them
-        if "object at 0x" in str(obj[key]):
-            keys_to_remove.append(key)
-        if isinstance(obj[key], dict):
-            keys_to_remove.extend(get_keys_to_remove(obj[key]))
+def remove_unstable_values(s: str) -> str:
+    """Remove unstable key/value pairs.
 
-    return keys_to_remove
+    Examples include:
+    - <__main__.Test object at 0x7fb9f3793f50>
+    - <function test_fn at 0x7fb9f37a8900>
+    """
+    pattern = r"<[\w\s_\. ]+ at 0x[a-z0-9]+>"
+    return re.sub(pattern, "", s)
 
 
 def get_transformation_hash(
@@ -87,13 +85,9 @@ def get_transformation_hash(
     )
 
     transformation_dict = transformation.to_dict()
+    transform_string = remove_unstable_values(str(transformation_dict))
 
-    # remove unstable values
-    keys_to_remove = get_keys_to_remove(transformation_dict)
-    for key in keys_to_remove:
-        transformation_dict.pop(key)
-
-    return sha256((nodes_str + str(transformation_dict)).encode("utf-8")).hexdigest()
+    return sha256((nodes_str + transform_string).encode("utf-8")).hexdigest()
 
 
 def run_transformations(
