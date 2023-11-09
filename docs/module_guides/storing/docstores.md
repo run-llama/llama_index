@@ -59,9 +59,7 @@ nodes = parser.get_nodes_from_documents(documents)
 
 # create (or load) docstore and add nodes
 docstore = RedisDocumentStore.from_host_and_port(
-  host="127.0.0.1",
-  port="6379",
-  namespace='llama_index'
+    host="127.0.0.1", port="6379", namespace="llama_index"
 )
 docstore.add_documents(nodes)
 
@@ -94,8 +92,8 @@ nodes = parser.get_nodes_from_documents(documents)
 
 # create (or load) docstore and add nodes
 docstore = FirestoreDocumentStore.from_dataabse(
-  project="project-id",
-  database="(default)",
+    project="project-id",
+    database="(default)",
 )
 docstore.add_documents(nodes)
 

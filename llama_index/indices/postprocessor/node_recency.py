@@ -61,7 +61,7 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "FixedRecencyPostprocessor"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -116,7 +116,7 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "EmbeddingRecencyPostprocessor"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -183,7 +183,7 @@ class TimeWeightedPostprocessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "TimeWeightedPostprocessor"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,

@@ -26,7 +26,7 @@ need additional environment keys + tokens setup depending on the LLM provider.
 
 If you don't wish to use OpenAI, the environment will automatically fallback to using `LlamaCPP` and `llama2-chat-13B` for text generation and `BAAI/bge-small-en` for retrieval and embeddings. These models will all run locally.
 
-In order to use `LlamaCPP`, follow the installation guide [here](/examples/llm/llama_2_llama_cpp.ipynb). You'll need to install the `llama-cpp-python` package, preferably compiled to support your GPU. This will use aronund 11.5GB of memory across the CPU and GPU.
+In order to use `LlamaCPP`, follow the installation guide [here](/examples/llm/llama_2_llama_cpp.ipynb). You'll need to install the `llama-cpp-python` package, preferably compiled to support your GPU. This will use around 11.5GB of memory across the CPU and GPU.
 
 In order to use the local embeddings, simply run `pip install sentence-transformers`. The local embedding model uses about 500MB of memory.
 

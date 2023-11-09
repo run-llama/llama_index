@@ -20,7 +20,6 @@ pip install trulens-eval
 
 ```python
 from trulens_eval import TruLlama
-
 ```
 
 ## Try it out!

@@ -130,6 +130,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     add_sparse_vector: bool
     text_key: str
     batch_size: int
+    remove_text_from_metadata: bool
 
     _pinecone_index: Any = PrivateAttr()
     _tokenizer: Optional[Callable] = PrivateAttr()
@@ -146,6 +147,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         tokenizer: Optional[Callable] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        remove_text_from_metadata: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -181,6 +183,45 @@ class PineconeVectorStore(BasePydanticVectorStore):
             add_sparse_vector=add_sparse_vector,
             text_key=text_key,
             batch_size=batch_size,
+            remove_text_from_metadata=remove_text_from_metadata,
+        )
+
+    @classmethod
+    def from_params(
+        cls,
+        api_key: Optional[str] = None,
+        index_name: Optional[str] = None,
+        environment: Optional[str] = None,
+        namespace: Optional[str] = None,
+        insert_kwargs: Optional[Dict] = None,
+        add_sparse_vector: bool = False,
+        tokenizer: Optional[Callable] = None,
+        text_key: str = DEFAULT_TEXT_KEY,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        remove_text_from_metadata: bool = False,
+        **kwargs: Any,
+    ) -> "PineconeVectorStore":
+        try:
+            import pinecone
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        pinecone.init(api_key=api_key, environment=environment)
+        pinecone_index = pinecone.Index(index_name)
+
+        return cls(
+            pinecone_index=pinecone_index,
+            api_key=api_key,
+            index_name=index_name,
+            environment=environment,
+            namespace=namespace,
+            insert_kwargs=insert_kwargs,
+            add_sparse_vector=add_sparse_vector,
+            tokenizer=tokenizer,
+            text_key=text_key,
+            batch_size=batch_size,
+            remove_text_from_metadata=remove_text_from_metadata,
+            **kwargs,
         )
 
     @classmethod
@@ -190,6 +231,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 
@@ -203,7 +245,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
             node_id = node.node_id
 
             metadata = node_to_metadata_dict(
-                node, remove_text=False, flat_metadata=self.flat_metadata
+                node,
+                remove_text=self.remove_text_from_metadata,
+                flat_metadata=self.flat_metadata,
             )
 
             entry = {

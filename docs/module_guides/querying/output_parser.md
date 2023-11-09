@@ -15,11 +15,14 @@ from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.output_parsers import GuardrailsOutputParser
 from llama_index.llm_predictor import StructuredLLMPredictor
 from llama_index.prompts import PromptTemplate
-from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT_TMPL, DEFAULT_REFINE_PROMPT_TMPL
+from llama_index.prompts.default_prompts import (
+    DEFAULT_TEXT_QA_PROMPT_TMPL,
+    DEFAULT_REFINE_PROMPT_TMPL,
+)
 
 
 # load documents, build index
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 index = VectorStoreIndex(documents, chunk_size=512)
 llm_predictor = StructuredLLMPredictor()
 
@@ -28,7 +31,7 @@ llm_predictor = StructuredLLMPredictor()
 # this is a special LLMPredictor that allows for structured outputs
 
 # define query / output spec
-rail_spec = ("""
+rail_spec = """
 <rail version="0.1">
 
 <output>
@@ -52,10 +55,12 @@ Query string here.
 @json_suffix_prompt_v2_wo_none
 </prompt>
 </rail>
-""")
+"""
 
 # define output parser
-output_parser = GuardrailsOutputParser.from_rail_string(rail_spec, llm=llm_predictor.llm)
+output_parser = GuardrailsOutputParser.from_rail_string(
+    rail_spec, llm=llm_predictor.llm
+)
 
 # format each prompt with output parser instructions
 fmt_qa_tmpl = output_parser.format(DEFAULT_TEXT_QA_PROMPT_TMPL)
@@ -66,9 +71,7 @@ refine_prompt = PromptTemplate(fmt_refine_tmpl, output_parser=output_parser)
 
 # obtain a structured response
 query_engine = index.as_query_engine(
-    service_context=ServiceContext.from_defaults(
-        llm_predictor=llm_predictor
-    ),
+    service_context=ServiceContext.from_defaults(llm_predictor=llm_predictor),
     text_qa_template=qa_prompt,
     refine_template=refine_prompt,
 )
@@ -76,7 +79,6 @@ response = query_engine.query(
     "What are the three items the author did growing up?",
 )
 print(response)
-
 ```
 
 Output:
@@ -94,23 +96,34 @@ from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.output_parsers import LangchainOutputParser
 from llama_index.llm_predictor import StructuredLLMPredictor
 from llama_index.prompts import PromptTemplate
-from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT_TMPL, DEFAULT_REFINE_PROMPT_TMPL
+from llama_index.prompts.default_prompts import (
+    DEFAULT_TEXT_QA_PROMPT_TMPL,
+    DEFAULT_REFINE_PROMPT_TMPL,
+)
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
 
 # load documents, build index
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 index = VectorStoreIndex.from_documents(documents)
 llm_predictor = StructuredLLMPredictor()
 
 # define output schema
 response_schemas = [
-    ResponseSchema(name="Education", description="Describes the author's educational experience/background."),
-    ResponseSchema(name="Work", description="Describes the author's work experience/background.")
+    ResponseSchema(
+        name="Education",
+        description="Describes the author's educational experience/background.",
+    ),
+    ResponseSchema(
+        name="Work",
+        description="Describes the author's work experience/background.",
+    ),
 ]
 
 # define output parser
-lc_output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
+lc_output_parser = StructuredOutputParser.from_response_schemas(
+    response_schemas
+)
 output_parser = LangchainOutputParser(lc_output_parser)
 
 # format each prompt with output parser instructions
@@ -121,9 +134,7 @@ refine_prompt = PromptTemplate(fmt_refine_tmpl, output_parser=output_parser)
 
 # query index
 query_engine = index.as_query_engine(
-    service_context=ServiceContext.from_defaults(
-        llm_predictor=llm_predictor
-    ),
+    service_context=ServiceContext.from_defaults(llm_predictor=llm_predictor),
     text_qa_template=qa_prompt,
     refine_template=refine_prompt,
 )

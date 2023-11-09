@@ -28,10 +28,12 @@ To use HyDE, an example code snippet is shown below.
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.indices.query.query_transform.base import HyDEQueryTransform
-from llama_index.query_engine.transform_query_engine import TransformQueryEngine
+from llama_index.query_engine.transform_query_engine import (
+    TransformQueryEngine,
+)
 
 # load documents, build index
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 index = VectorStoreIndex(documents)
 
 # run query with HyDE query transform
@@ -41,7 +43,6 @@ query_engine = index.as_query_engine()
 query_engine = TransformQueryEngine(query_engine, query_transform=hyde)
 response = query_engine.query(query_str)
 print(response)
-
 ```
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
@@ -64,10 +65,12 @@ An example image is shown below.
 Here's a corresponding example code snippet over a composed graph.
 
 ```python
-
 # Setting: a summary index composed over multiple vector indices
 # llm_predictor_chatgpt corresponds to the ChatGPT LLM interface
-from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import (
+    DecomposeQueryTransform,
+)
+
 decompose_transform = DecomposeQueryTransform(
     llm_predictor_chatgpt, verbose=True
 )
@@ -80,12 +83,10 @@ decompose_transform = DecomposeQueryTransform(
 vector_query_engine = vector_index.as_query_engine()
 vector_query_engine = TransformQueryEngine(
     vector_query_engine,
-    query_transform=decompose_transform
-    transform_extra_info={'index_summary': vector_index.index_struct.summary}
+    query_transform=decompose_transform,
+    transform_extra_info={"index_summary": vector_index.index_struct.summary},
 )
-custom_query_engines = {
-    vector_index.index_id: vector_query_engine
-}
+custom_query_engines = {vector_index.index_id: vector_query_engine}
 
 # query
 query_str = (
@@ -111,20 +112,24 @@ An example image is shown below.
 Here's a corresponding example code snippet.
 
 ```python
-from llama_index.indices.query.query_transform.base import StepDecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import (
+    StepDecomposeQueryTransform,
+)
+
 # gpt-4
 step_decompose_transform = StepDecomposeQueryTransform(
     llm_predictor, verbose=True
 )
 
 query_engine = index.as_query_engine()
-query_engine = MultiStepQueryEngine(query_engine, query_transform=step_decompose_transform)
+query_engine = MultiStepQueryEngine(
+    query_engine, query_transform=step_decompose_transform
+)
 
 response = query_engine.query(
     "Who was in the first batch of the accelerator program the author started?",
 )
 print(str(response))
-
 ```
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/vector_indices/SimpleIndexDemo-multistep.ipynb) for a full walkthrough.

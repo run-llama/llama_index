@@ -1,6 +1,9 @@
+import logging
 from typing import Callable, List
 
 from llama_index.node_parser.interface import TextSplitter
+
+logger = logging.getLogger(__name__)
 
 
 def truncate_text(text: str, text_splitter: TextSplitter) -> str:
@@ -46,7 +49,14 @@ def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
     try:
         nltk.data.find("tokenizers/punkt")
     except LookupError:
-        nltk.download("punkt", download_dir=nltk_data_dir)
+        try:
+            nltk.download("punkt", download_dir=nltk_data_dir)
+        except FileExistsError:
+            logger.info(
+                "Tried to re-download NLTK files but already exists. "
+                "This could happen in multi-theaded deployments, "
+                "should be benign"
+            )
 
     tokenizer = nltk.tokenize.PunktSentenceTokenizer()
 

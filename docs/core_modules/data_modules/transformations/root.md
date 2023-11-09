@@ -24,7 +24,7 @@ documents = ...
 
 transformations = [
     SentenceSplitter(chunk_size=256),
-    OpenAIEmbedding(embed_batch_size=10)
+    OpenAIEmbedding(embed_batch_size=10),
 ]
 
 nodes = run_transformations(

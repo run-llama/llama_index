@@ -15,7 +15,7 @@ To learn how to build an index, see [Indexing](/module_guides/indexing/indexing.
 Ask a question over your data
 
 ```python
-response = query_engine.query('Who is Paul Graham?')
+response = query_engine.query("Who is Paul Graham?")
 ```
 
 ## Configuring a Query Engine
@@ -26,7 +26,7 @@ You can directly build and configure a query engine from an index in 1 line of c
 
 ```python
 query_engine = index.as_query_engine(
-    response_mode='tree_summarize',
+    response_mode="tree_summarize",
     verbose=True,
 )
 ```
@@ -108,7 +108,11 @@ You can also define a custom query engine. Simply subclass the `CustomQueryEngin
 ```python
 from llama_index.query_engine import CustomQueryEngine
 from llama_index.retrievers import BaseRetriever
-from llama_index.response_synthesizers import get_response_synthesizer, BaseSynthesizer
+from llama_index.response_synthesizers import (
+    get_response_synthesizer,
+    BaseSynthesizer,
+)
+
 
 class RAGQueryEngine(CustomQueryEngine):
     """RAG Query Engine."""
@@ -120,7 +124,6 @@ class RAGQueryEngine(CustomQueryEngine):
         nodes = self.retriever.retrieve(query_str)
         response_obj = self.response_synthesizer.synthesize(query_str, nodes)
         return response_obj
-
 ```
 
 See the [Custom Query Engine guide](/examples/query_engine/custom_query_engine.ipynb) for more details.

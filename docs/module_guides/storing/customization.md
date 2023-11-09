@@ -5,7 +5,7 @@ By default, LlamaIndex hides away the complexities and let you query your data i
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 
-documents = SimpleDirectoryReader('data').load_data()
+documents = SimpleDirectoryReader("data").load_data()
 index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()
 response = query_engine.query("Summarize the documents.")
@@ -57,19 +57,20 @@ index.storage_context.persist(persist_dir="<persist_dir>")
 
 # to load index later, make sure you setup the storage context
 # this will loaded the persisted stores from persist_dir
-storage_context = StorageContext.from_defaults(
-    persist_dir="<persist_dir>"
-)
+storage_context = StorageContext.from_defaults(persist_dir="<persist_dir>")
 
 # then load the index object
 from llama_index import load_index_from_storage
+
 loaded_index = load_index_from_storage(storage_context)
 
 # if loading an index from a persist_dir containing multiple indexes
 loaded_index = load_index_from_storage(storage_context, index_id="<index_id>")
 
 # if loading multiple indexes from a persist dir
-loaded_indicies = load_index_from_storage(storage_context, index_ids=["<index_id>", ...])
+loaded_indicies = load_index_from_storage(
+    storage_context, index_ids=["<index_id>", ...]
+)
 ```
 
 You can customize the underlying storage with a one-line change to instantiate different document stores, index stores, and vector stores.
@@ -111,10 +112,7 @@ from llama_index.vector_stores import PineconeVectorStore
 api_key = "api_key"
 pinecone.init(api_key=api_key, environment="us-west1-gcp")
 pinecone.create_index(
-    "quickstart",
-    dimension=1536,
-    metric="euclidean",
-    pod_type="p1"
+    "quickstart", dimension=1536, metric="euclidean", pod_type="p1"
 )
 index = pinecone.Index("quickstart")
 
@@ -128,7 +126,9 @@ storage_context = StorageContext.from_defaults(vector_store=vector_store)
 documents = SimpleDirectoryReader("./data").load_data()
 
 # create index, which will insert documents/vectors to pinecone
-index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(
+    documents, storage_context=storage_context
+)
 ```
 
 If you have an existing vector store with data already loaded in,

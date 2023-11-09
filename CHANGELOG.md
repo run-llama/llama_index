@@ -1,9 +1,96 @@
 # ChangeLog
 
+## [0.8.65] - 2023-11-08
+
+### New Features
+
+- `OpenAIAgent` parallel function calling (#8738)
+
+### New Features
+
+- Properly supporting Hugging Face recommended model (#8784)
+
+### Bug Fixes / Nits
+
+- Fixed missing import for `embeddings.__all__` (#8779)
+
+### Breaking Changes / Deprecations
+
+- Use `tool_choice` over `function_call` and `tool` over `functions` in `OpenAI(LLM)` (#8738)
+- Deprecate `to_openai_function` in favor of `to_openai_tool` (#8738)
+
+## [0.8.64] - 2023-11-06
+
+### New Features
+
+- `OpenAIAgent` parallel function calling (#8738)
+- Add AI assistant agent (#8735)
+- OpenAI GPT4v Abstraction (#8719)
+- Add support for `Lantern` VectorStore (#8714)
+
+### Bug Fixes / Nits
+
+- Fix returning zero nodes in elastic search vector store (#8746)
+- Add try/except for `SimpleDirectoryReader` loop to avoid crashing on a single document (#8744)
+- Fix for `deployment_name` in async embeddings (#8748)
+
+## [0.8.63] - 2023-11-05
+
+### New Features
+
+- added native sync and async client support for the lasted `openai` client package (#8712)
+- added support for `AzureOpenAIEmbedding` (#8712)
+
+### Bug Fixes / Nits
+
+- Fixed errors about "no host supplied" with `download_loader` (#8723)
+
+### Breaking Changes
+
+- `OpenAIEmbedding` no longer supports azure, moved into the `AzureOpenAIEmbedding` class (#8712)
+
+## [0.8.62.post1] - 2023-11-05
+
+### Breaking Changes
+
+- add new devday models (#8713)
+- moved `max_docs` parameter from constructor to `lazy_load_data()` for `SimpleMongoReader` (#8686)
+
+## [0.8.61] - 2023-11-05
+
+### New Features
+
+- [experimental] Hyperparameter tuner (#8687)
+
+### Bug Fixes / Nits
+
+- Fix typo error in CohereAIModelName class: cohere light models was missing v3 (#8684)
+- Update deeplake.py (#8683)
+
+## [0.8.60] - 2023-11-04
+
+### New Features
+
+- prompt optimization guide (#8659)
+- VoyageEmbedding (#8634)
+- Multilingual support for `YoutubeTranscriptReader` (#8673)
+- emotion prompt guide (#8674)
+
+### Bug Fixes / Nits
+
+- Adds mistral 7b instruct v0.1 to available anyscale models (#8652)
+- Make pgvector's setup (extension, schema, and table creation) optional (#8656)
+- Allow init of stores_text variable for Pinecone vector store (#8633)
+- fix: azure ad support (#8667)
+- Fix nltk bug in multi-threaded environments (#8668)
+- Fix google colab link in cohereai notebook (#8677)
+- passing max_tokens to the `Cohere` llm (#8672)
+
 ## [0.8.59] - 2023-11-02
 
 - Deepmemory support (#8625)
 - Add CohereAI embeddings (#8650)
+- Add Azure AD (Microsoft Entra ID) support (#8667)
 
 ## [0.8.58] - 2023-11-02
 
@@ -16,6 +103,7 @@
 
 ### New Features
 
+- Add `VoyageAIEmbedding` integration (#8634)
 - Add fine-tuning evaluator notebooks (#8596)
 - Add `SingleStoreDB` integration (#7991)
 - Add support for ChromaDB PersistentClient (#8582)

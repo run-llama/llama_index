@@ -1,6 +1,6 @@
 # How to Build a Chatbot
 
-LlamaIndex serves as a bridge between your data and Language Learning Models (LLMs), providing a toolkit that enables you to establish a query interface around your data for a variety of tasks, such as question-answering and summarization.
+LlamaIndex serves as a bridge between your data and Large Language Models (LLMs), providing a toolkit that enables you to establish a query interface around your data for a variety of tasks, such as question-answering and summarization.
 
 In this tutorial, we'll walk you through building a context-augmented chatbot using a [Data Agent](https://gpt-index.readthedocs.io/en/stable/core_modules/agent_modules/agents/root.html). This agent, powered by LLMs, is capable of intelligently executing tasks over your data. The end result is a chatbot agent equipped with a robust set of data interface tools provided by LlamaIndex to answer queries about your data.
 
@@ -28,7 +28,7 @@ nest_asyncio.apply()
 
 Let's first download the raw 10-k files, from 2019-2022.
 
-```python
+```
 # NOTE: the code examples assume you're operating within a Jupyter notebook.
 # download files
 !mkdir data
@@ -40,7 +40,7 @@ To parse the HTML files into formatted text, we use the [Unstructured](https://g
 
 First we install the necessary packages:
 
-```python
+```
 !pip install llama-hub unstructured
 ```
 
@@ -98,7 +98,9 @@ from llama_index import load_index_from_storage
 
 index_set = {}
 for year in years:
-    storage_context = StorageContext.from_defaults(persist_dir=f"./storage/{year}")
+    storage_context = StorageContext.from_defaults(
+        persist_dir=f"./storage/{year}"
+    )
     cur_index = load_index_from_storage(
         storage_context, service_context=service_context
     )
@@ -189,7 +191,9 @@ If we test it with a query regarding the 10-k of a given year, the agent will us
 the relevant vector index Tool.
 
 ```python
-response = agent.chat("What were some of the biggest risk factors in 2020 for Uber?")
+response = agent.chat(
+    "What were some of the biggest risk factors in 2020 for Uber?"
+)
 print(str(response))
 ```
 

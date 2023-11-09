@@ -70,7 +70,7 @@ class DynamoDBVectorStore(VectorStore):
         item = cast(Dict[str, List[float]], item)
         return item[self._key_value]
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index."""
         response = []
         for node in nodes:
