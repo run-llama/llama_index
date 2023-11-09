@@ -416,6 +416,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
         self, llm: Optional[LLM] = None, **kwargs: Any
     ) -> List[ChatMessage]:
         """Format the prompt into a list of chat messages."""
+        from llama_index.llms.langchain import LangChainLLM
         from llama_index.llms.langchain_utils import from_lc_messages
 
         if llm is not None:

@@ -40,7 +40,7 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
     try:
         from llama_index.bridge.langchain import Embeddings as LCEmbeddings
     except ImportError:
-        LCEmbeddings = None
+        LCEmbeddings = None  # type: ignore
 
     if embed_model == "default":
         try:

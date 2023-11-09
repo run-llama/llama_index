@@ -4,7 +4,6 @@ from llama_index.indices.query.base import BaseQueryEngine
 
 if TYPE_CHECKING:
     from llama_index.langchain_helpers.agents.tools import (
-        IndexToolConfig,
         LlamaIndexTool,
     )
 from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
@@ -87,6 +86,11 @@ class QueryEngineTool(AsyncBaseTool):
         )
 
     def as_langchain_tool(self) -> "LlamaIndexTool":
+        from llama_index.langchain_helpers.agents.tools import (
+            IndexToolConfig,
+            LlamaIndexTool,
+        )
+
         tool_config = IndexToolConfig(
             query_engine=self.query_engine,
             name=self.metadata.name,

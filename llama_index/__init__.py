@@ -65,8 +65,6 @@ from llama_index.indices.struct_store.sql import (
 )
 from llama_index.indices.tree import GPTTreeIndex, TreeIndex
 from llama_index.indices.vector_store import GPTVectorStoreIndex, VectorStoreIndex
-
-# langchain helper
 from llama_index.llm_predictor import LLMPredictor
 
 # token predictor

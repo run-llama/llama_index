@@ -19,7 +19,7 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
 
         from llama_index.llms.langchain import LangChainLLM
     except ImportError:
-        BaseLanguageModel = None
+        BaseLanguageModel = None  # type: ignore
 
     if llm == "default":
         # return default OpenAI model. If it fails, return LlamaCPP

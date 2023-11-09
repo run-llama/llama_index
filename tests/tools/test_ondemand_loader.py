@@ -7,7 +7,7 @@ import pytest
 try:
     import langchain
 except ImportError:
-    langchain = None
+    langchain = None  # type: ignore
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.indices.service_context import ServiceContext

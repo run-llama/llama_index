@@ -13,7 +13,7 @@ try:
         ResponseSchema,
     )
 except ImportError:
-    langchain = None
+    langchain = None  # type: ignore
 
 
 @pytest.mark.skipif(langchain is None, reason="langchain not installed")
