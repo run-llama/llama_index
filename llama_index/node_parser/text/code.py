@@ -1,10 +1,9 @@
 """Code splitter."""
-from typing import Any, List, Optional
+from typing import Any, List
 
 from llama_index.bridge.pydantic import Field
-from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.text_splitter.types import TextSplitter
+from llama_index.node_parser.interface import TextSplitter
 
 DEFAULT_CHUNK_LINES = 40
 DEFAULT_LINES_OVERLAP = 15
@@ -24,33 +23,32 @@ class CodeSplitter(TextSplitter):
     chunk_lines: int = Field(
         default=DEFAULT_CHUNK_LINES,
         description="The number of lines to include in each chunk.",
+        gt=0,
     )
     chunk_lines_overlap: int = Field(
         default=DEFAULT_LINES_OVERLAP,
         description="How many lines of code each chunk overlaps with.",
+        gt=0,
     )
     max_chars: int = Field(
-        default=DEFAULT_MAX_CHARS, description="Maximum number of characters per chunk."
-    )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
+        default=DEFAULT_MAX_CHARS,
+        description="Maximum number of characters per chunk.",
+        gt=0,
     )
 
-    def __init__(
-        self,
+    @classmethod
+    def from_defaults(
+        cls,
         language: str,
-        chunk_lines: int = 40,
-        chunk_lines_overlap: int = 15,
-        max_chars: int = 1500,
-        callback_manager: Optional[CallbackManager] = None,
-    ):
-        callback_manager = callback_manager or CallbackManager([])
-        super().__init__(
+        chunk_lines: int = DEFAULT_CHUNK_LINES,
+        chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
+        max_chars: int = DEFAULT_MAX_CHARS,
+    ) -> "CodeSplitter":
+        return cls(
             language=language,
             chunk_lines=chunk_lines,
             chunk_lines_overlap=chunk_lines_overlap,
             max_chars=max_chars,
-            callback_manager=callback_manager,
         )
 
     @classmethod

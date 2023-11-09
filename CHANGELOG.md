@@ -1,5 +1,39 @@
 # ChangeLog
 
+## [0.8.65] - 2023-11-08
+
+### New Features
+
+- `OpenAIAgent` parallel function calling (#8738)
+
+### New Features
+
+- Properly supporting Hugging Face recommended model (#8784)
+
+### Bug Fixes / Nits
+
+- Fixed missing import for `embeddings.__all__` (#8779)
+
+### Breaking Changes / Deprecations
+
+- Use `tool_choice` over `function_call` and `tool` over `functions` in `OpenAI(LLM)` (#8738)
+- Deprecate `to_openai_function` in favor of `to_openai_tool` (#8738)
+
+## [0.8.64] - 2023-11-06
+
+### New Features
+
+- `OpenAIAgent` parallel function calling (#8738)
+- Add AI assistant agent (#8735)
+- OpenAI GPT4v Abstraction (#8719)
+- Add support for `Lantern` VectorStore (#8714)
+
+### Bug Fixes / Nits
+
+- Fix returning zero nodes in elastic search vector store (#8746)
+- Add try/except for `SimpleDirectoryReader` loop to avoid crashing on a single document (#8744)
+- Fix for `deployment_name` in async embeddings (#8748)
+
 ## [0.8.63] - 2023-11-05
 
 ### New Features

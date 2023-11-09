@@ -15,9 +15,9 @@ from langchain.text_splitter import TokenTextSplitter as LCTokenTextSplitter
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from llama_index import SimpleDirectoryReader
+from llama_index.node_parser.interface import TextSplitter
 from llama_index.schema import Document
 from llama_index.text_splitter import CodeSplitter, SentenceSplitter, TokenTextSplitter
-from llama_index.text_splitter.types import TextSplitter
 
 DEFAULT_TEXT = "The quick brown fox jumps over the lazy dog."
 
@@ -28,7 +28,7 @@ n_cols = st.sidebar.number_input("Columns", value=2, min_value=1, max_value=3)
 assert isinstance(n_cols, int)
 
 
-@st.cache_resource(ttl="1h")
+@st.cache_resource(ttl=3600)
 def load_document(uploaded_files: List[UploadedFile]) -> List[Document]:
     # Read documents
     temp_dir = tempfile.TemporaryDirectory()

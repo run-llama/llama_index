@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 if TYPE_CHECKING:
     from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 from llama_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.clip import ClipEmbedding
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.huggingface_utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
@@ -50,6 +51,10 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
                 f"{e!s}"
                 "\n******"
             )
+
+    # for image embeddings
+    if embed_model == "clip":
+        embed_model = ClipEmbedding()
 
     if isinstance(embed_model, str):
         splits = embed_model.split(":", 1)

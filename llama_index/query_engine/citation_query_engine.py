@@ -7,6 +7,7 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.node_parser import SentenceSplitter, TextSplitter
 from llama_index.prompts import PromptTemplate
 from llama_index.prompts.base import BasePromptTemplate
 from llama_index.prompts.mixin import PromptMixinType
@@ -17,8 +18,6 @@ from llama_index.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.schema import NodeWithScore, TextNode
-from llama_index.text_splitter import get_default_text_splitter
-from llama_index.text_splitter.types import TextSplitter
 
 CITATION_QA_TEMPLATE = PromptTemplate(
     "Please provide an answer based solely on the provided sources. "
@@ -86,7 +85,7 @@ class CitationQueryEngine(BaseQueryEngine):
             Size of citation chunks, default=512. Useful for controlling
             granularity of sources.
         citation_chunk_overlap (int): Overlap of citation nodes, default=20.
-        text_splitter (Optional[TextSplitterType]):
+        text_splitter (Optional[TextSplitter]):
             A text splitter for creating citation source nodes. Default is
             a SentenceSplitter.
         callback_manager (Optional[CallbackManager]): A callback manager.
@@ -102,7 +101,7 @@ class CitationQueryEngine(BaseQueryEngine):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self.text_splitter = text_splitter or get_default_text_splitter(
+        self.text_splitter = text_splitter or SentenceSplitter(
             chunk_size=citation_chunk_size, chunk_overlap=citation_chunk_overlap
         )
         self._retriever = retriever

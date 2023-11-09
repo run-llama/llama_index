@@ -3,6 +3,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
 import openai
+from deprecated import deprecated
 from openai.types.chat import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from tenacity import (
@@ -25,7 +26,7 @@ DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
 DEFAULT_OPENAI_API_VERSION = ""
 
 
-GPT4_MODELS = {
+GPT4_MODELS: Dict[str, int] = {
     # stable model names:
     #   resolves to gpt-4-0314 before 2023-06-27,
     #   resolves to gpt-4-0613 after
@@ -44,12 +45,12 @@ GPT4_MODELS = {
     "gpt-4-32k-0314": 32768,
 }
 
-AZURE_TURBO_MODELS = {
+AZURE_TURBO_MODELS: Dict[str, int] = {
     "gpt-35-turbo-16k": 16384,
     "gpt-35-turbo": 4096,
 }
 
-TURBO_MODELS = {
+TURBO_MODELS: Dict[str, int] = {
     # stable model names:
     #   resolves to gpt-3.5-turbo-0301 before 2023-06-27,
     #   resolves to gpt-3.5-turbo-0613 until 2023-12-11,
@@ -68,14 +69,14 @@ TURBO_MODELS = {
     "gpt-3.5-turbo-0301": 4096,
 }
 
-GPT3_5_MODELS = {
+GPT3_5_MODELS: Dict[str, int] = {
     "text-davinci-003": 4097,
     "text-davinci-002": 4097,
     # instruct models
     "gpt-3.5-turbo-instruct": 4096,
 }
 
-GPT3_MODELS = {
+GPT3_MODELS: Dict[str, int] = {
     "text-ada-001": 2049,
     "text-babbage-001": 2040,
     "text-curie-001": 2049,
@@ -237,13 +238,13 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
     # NOTE: Azure OpenAI returns function calling messages without a content key
     content = openai_message.content
 
-    function_call = (
-        openai_message.function_call.dict() if openai_message.function_call else None
-    )
+    function_call = None  # deprecated in OpenAI v 1.1.0
 
-    additional_kwargs = (
-        {"function_call": function_call} if function_call is not None else {}
-    )
+    additional_kwargs: Dict[str, Any] = {}
+    if openai_message.tool_calls is not None:
+        # TODO change this to retain tool_calls as List[typed Objects] insteaad of dicts
+        tool_calls = [tool_call.dict() for tool_call in openai_message.tool_calls]
+        additional_kwargs.update(tool_calls=tool_calls)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
@@ -273,14 +274,29 @@ def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage
     return [from_openai_message_dict(message_dict) for message_dict in message_dicts]
 
 
+@deprecated("Deprecated in favor of `to_openai_tool`, which should be used instead.")
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
-    """Convert pydantic class to OpenAI function."""
+    """Deprecated in favor of `to_openai_tool`.
+
+    Convert pydantic class to OpenAI function.
+    """
     schema = pydantic_class.schema()
     return {
         "name": schema["title"],
         "description": schema["description"],
         "parameters": pydantic_class.schema(),
     }
+
+
+def to_openai_tool(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
+    """Convert pydantic class to OpenAI tool."""
+    schema = pydantic_class.schema()
+    function = {
+        "name": schema["title"],
+        "description": schema["description"],
+        "parameters": pydantic_class.schema(),
+    }
+    return {"type": "function", "function": function}
 
 
 def resolve_openai_credentials(

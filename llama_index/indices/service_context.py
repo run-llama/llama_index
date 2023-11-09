@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 import llama_index
 from llama_index.bridge.pydantic import BaseModel
@@ -14,25 +14,28 @@ from llama_index.llms.base import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.sentence_window import SentenceWindowNodeParser
-from llama_index.node_parser.simple import SimpleNodeParser
+from llama_index.node_parser.text.sentence import (
+    DEFAULT_CHUNK_SIZE,
+    SENTENCE_CHUNK_OVERLAP,
+    SentenceSplitter,
+)
 from llama_index.prompts.base import BasePromptTemplate
-from llama_index.text_splitter.types import TextSplitter
+from llama_index.schema import TransformComponent
 from llama_index.types import PydanticProgramMode
 
 logger = logging.getLogger(__name__)
 
 
 def _get_default_node_parser(
-    chunk_size: Optional[int] = None,
-    chunk_overlap: Optional[int] = None,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    chunk_overlap: int = SENTENCE_CHUNK_OVERLAP,
     callback_manager: Optional[CallbackManager] = None,
 ) -> NodeParser:
     """Get default node parser."""
-    return SimpleNodeParser.from_defaults(
+    return SentenceSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        callback_manager=callback_manager,
+        callback_manager=callback_manager or CallbackManager(),
     )
 
 
@@ -54,10 +57,7 @@ class ServiceContextData(BaseModel):
     llm_predictor: dict
     prompt_helper: dict
     embed_model: dict
-    node_parser: dict
-    text_splitter: Optional[dict]
-    metadata_extractor: Optional[dict]
-    extractors: Optional[list]
+    transformations: List[dict]
 
 
 @dataclass
@@ -78,7 +78,7 @@ class ServiceContext:
     llm_predictor: BaseLLMPredictor
     prompt_helper: PromptHelper
     embed_model: BaseEmbedding
-    node_parser: NodeParser
+    transformations: List[TransformComponent]
     llama_logger: LlamaLogger
     callback_manager: CallbackManager
 
@@ -90,6 +90,7 @@ class ServiceContext:
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[EmbedType] = "default",
         node_parser: Optional[NodeParser] = None,
+        transformations: Optional[List[TransformComponent]] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -165,6 +166,8 @@ class ServiceContext:
                 llm_predictor.query_wrapper_prompt = query_wrapper_prompt
 
         # NOTE: the embed_model isn't used in all indices
+        # NOTE: embed model should be a transformation, but the way the service
+        # context works, we can't put in there yet.
         embed_model = resolve_embed_model(embed_model)
         embed_model.callback_manager = callback_manager
 
@@ -175,10 +178,12 @@ class ServiceContext:
         )
 
         node_parser = node_parser or _get_default_node_parser(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
+            chunk_size=chunk_size or DEFAULT_CHUNK_SIZE,
+            chunk_overlap=chunk_overlap or SENTENCE_CHUNK_OVERLAP,
             callback_manager=callback_manager,
         )
+
+        transformations = transformations or [node_parser]
 
         llama_logger = llama_logger or LlamaLogger()
 
@@ -186,7 +191,7 @@ class ServiceContext:
             llm_predictor=llm_predictor,
             embed_model=embed_model,
             prompt_helper=prompt_helper,
-            node_parser=node_parser,
+            transformations=transformations,
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
         )
@@ -200,6 +205,7 @@ class ServiceContext:
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[EmbedType] = "default",
         node_parser: Optional[NodeParser] = None,
+        transformations: Optional[List[TransformComponent]] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -251,13 +257,20 @@ class ServiceContext:
                 num_output=num_output,
             )
 
-        node_parser = node_parser or service_context.node_parser
-        if chunk_size is not None or chunk_overlap is not None:
-            node_parser = _get_default_node_parser(
-                chunk_size=chunk_size,
-                chunk_overlap=chunk_overlap,
+        transformations = transformations or []
+        node_parser_found = False
+        for transform in service_context.transformations:
+            if isinstance(transform, NodeParser):
+                node_parser_found = True
+                break
+
+        if not node_parser_found:
+            node_parser = node_parser or _get_default_node_parser(
+                chunk_size=chunk_size or DEFAULT_CHUNK_SIZE,
+                chunk_overlap=chunk_overlap or SENTENCE_CHUNK_OVERLAP,
                 callback_manager=callback_manager,
             )
+            transformations = [node_parser, *transformations]
 
         llama_logger = llama_logger or service_context.llama_logger
 
@@ -265,7 +278,7 @@ class ServiceContext:
             llm_predictor=llm_predictor,
             embed_model=embed_model,
             prompt_helper=prompt_helper,
-            node_parser=node_parser,
+            transformations=transformations,
             llama_logger=llama_logger,  # deprecated
             callback_manager=callback_manager,
         )
@@ -285,80 +298,43 @@ class ServiceContext:
 
         prompt_helper_dict = self.prompt_helper.to_dict()
 
-        node_parser_dict = self.node_parser.to_dict()
-
-        metadata_extractor_dict = None
-        extractor_dicts = None
-        text_splitter_dict = None
-        if isinstance(self.node_parser, SimpleNodeParser) and isinstance(
-            self.node_parser.text_splitter, TextSplitter
-        ):
-            text_splitter_dict = self.node_parser.text_splitter.to_dict()
-
-        if isinstance(self.node_parser, (SimpleNodeParser, SentenceWindowNodeParser)):
-            if self.node_parser.metadata_extractor:
-                metadata_extractor_dict = self.node_parser.metadata_extractor.to_dict()
-                extractor_dicts = []
-                for extractor in self.node_parser.metadata_extractor.extractors:
-                    extractor_dicts.append(extractor.to_dict())
+        tranform_list_dict = [x.to_dict() for x in self.transformations]
 
         return ServiceContextData(
             llm=llm_dict,
             llm_predictor=llm_predictor_dict,
             prompt_helper=prompt_helper_dict,
             embed_model=embed_model_dict,
-            node_parser=node_parser_dict,
-            text_splitter=text_splitter_dict,
-            metadata_extractor=metadata_extractor_dict,
-            extractors=extractor_dicts,
+            transformations=tranform_list_dict,
         ).dict()
 
     @classmethod
     def from_dict(cls, data: dict) -> "ServiceContext":
         from llama_index.embeddings.loading import load_embed_model
+        from llama_index.extractors.loading import load_extractor
         from llama_index.llm_predictor.loading import load_predictor
-        from llama_index.llms.loading import load_llm
-        from llama_index.node_parser.extractors.loading import load_extractor
         from llama_index.node_parser.loading import load_parser
-        from llama_index.text_splitter.loading import load_text_splitter
 
         service_context_data = ServiceContextData.parse_obj(data)
 
-        llm = load_llm(service_context_data.llm)
-        llm_predictor = load_predictor(service_context_data.llm_predictor, llm=llm)
+        llm_predictor = load_predictor(service_context_data.llm_predictor)
 
         embed_model = load_embed_model(service_context_data.embed_model)
 
         prompt_helper = PromptHelper.from_dict(service_context_data.prompt_helper)
 
-        extractors = None
-        if service_context_data.extractors:
-            extractors = []
-            for extractor_dict in service_context_data.extractors:
-                extractors.append(load_extractor(extractor_dict, llm=llm))
-
-        metadata_extractor = None
-        if service_context_data.metadata_extractor:
-            metadata_extractor = load_extractor(
-                service_context_data.metadata_extractor,
-                extractors=extractors,
-            )
-
-        text_splitter = None
-        if service_context_data.text_splitter:
-            text_splitter = load_text_splitter(service_context_data.text_splitter)
-
-        node_parser = load_parser(
-            service_context_data.node_parser,
-            text_splitter=text_splitter,
-            metadata_extractor=metadata_extractor,
-        )
+        transformations: List[TransformComponent] = []
+        for transform in service_context_data.transformations:
+            try:
+                transformations.append(load_parser(transform))
+            except ValueError:
+                transformations.append(load_extractor(transform))
 
         return cls.from_defaults(
             llm_predictor=llm_predictor,
             prompt_helper=prompt_helper,
             embed_model=embed_model,
-            node_parser=node_parser,
+            transformations=transformations,
         )
 
 

@@ -1,5 +1,6 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
+import mimetypes
 import os
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,8 @@ DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".pdf": PDFReader,
     ".docx": DocxReader,
     ".pptx": PptxReader,
+    ".ppt": PptxReader,
+    ".pptm": PptxReader,
     ".jpg": ImageReader,
     ".png": ImageReader,
     ".jpeg": ImageReader,
@@ -43,6 +46,9 @@ def default_file_metadata_func(file_path: str) -> Dict:
     """
     return {
         "file_path": file_path,
+        "file_name": os.path.basename(file_path),
+        "file_type": mimetypes.guess_type(file_path)[0],
+        "file_size": os.path.getsize(file_path),
         "creation_date": datetime.fromtimestamp(
             Path(file_path).stat().st_ctime
         ).strftime("%Y-%m-%d"),
@@ -224,7 +230,15 @@ class SimpleDirectoryReader(BaseReader):
                     reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
                     self.file_extractor[file_suffix] = reader_cls()
                 reader = self.file_extractor[file_suffix]
-                docs = reader.load_data(input_file, extra_info=metadata)
+
+                try:
+                    docs = reader.load_data(input_file, extra_info=metadata)
+                except Exception as e:
+                    print(
+                        f"Failed to load file {input_file} with error: {e}. Skipping...",
+                        flush=True,
+                    )
+                    continue
 
                 # iterate over docs if needed
                 if self.filename_as_id:
@@ -250,6 +264,9 @@ class SimpleDirectoryReader(BaseReader):
             # TimeWeightedPostprocessor, but excluded for embedding and LLMprompts
             doc.excluded_embed_metadata_keys.extend(
                 [
+                    "file_name",
+                    "file_type",
+                    "file_size",
                     "creation_date",
                     "last_modified_date",
                     "last_accessed_date",
@@ -257,6 +274,9 @@ class SimpleDirectoryReader(BaseReader):
             )
             doc.excluded_llm_metadata_keys.extend(
                 [
+                    "file_name",
+                    "file_type",
+                    "file_size",
                     "creation_date",
                     "last_modified_date",
                     "last_accessed_date",

@@ -7,7 +7,7 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
 
 import logging
 from logging import NullHandler
-from typing import Optional
+from typing import Callable, Optional
 
 # import global eval handler
 from llama_index.callbacks.global_handlers import set_global_handler
@@ -139,6 +139,9 @@ from llama_index.token_counter.mock_embed_model import MockEmbedding
 # sql wrapper
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
+# global tokenizer
+from llama_index.utils import get_tokenizer, set_global_tokenizer
+
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
@@ -231,6 +234,8 @@ __all__ = [
     "get_response_synthesizer",
     "set_global_service_context",
     "set_global_handler",
+    "set_global_tokenizer",
+    "get_tokenizer",
 ]
 
 # eval global toggle
@@ -243,3 +248,6 @@ SQLContextBuilder = SQLDocumentContextBuilder
 
 # global service context for ServiceContext.from_defaults()
 global_service_context: Optional[ServiceContext] = None
+
+# global tokenizer
+global_tokenizer: Optional[Callable[[str], list]] = None

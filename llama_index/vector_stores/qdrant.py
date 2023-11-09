@@ -71,9 +71,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
             raise ImportError(import_err_msg)
 
         if client is None:
-            raise ValueError("Missing Qdrant client!")
+            client_kwargs = client_kwargs or {}
+            self._client = (
+                qdrant_client.QdrantClient(url=url, api_key=api_key, **client_kwargs),
+            )
+        else:
+            self._client = cast(qdrant_client.QdrantClient, client)
 
-        self._client = cast(qdrant_client.QdrantClient, client)
         self._collection_initialized = self._collection_exists(collection_name)
 
         super().__init__(
@@ -83,37 +87,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             batch_size=batch_size,
             prefer_grpc=prefer_grpc,
             client_kwargs=client_kwargs or {},
-        )
-
-    @classmethod
-    def from_params(
-        cls,
-        collection_name: str,
-        url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        client_kwargs: Optional[dict] = None,
-        batch_size: int = 100,
-        prefer_grpc: bool = False,
-        **kwargs: Any,
-    ) -> "QdrantVectorStore":
-        """Create a connection to a remote Qdrant vector store from a config."""
-        try:
-            import qdrant_client
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        client_kwargs = client_kwargs or {}
-        return cls(
-            collection_name=collection_name,
-            client=qdrant_client.QdrantClient(
-                url=url, api_key=api_key, prefer_grpc=prefer_grpc, **client_kwargs
-            ),
-            batch_size=batch_size,
-            prefer_grpc=prefer_grpc,
-            client_kwargs=client_kwargs,
-            url=url,
-            api_key=api_key,
-            **kwargs,
         )
 
     @classmethod

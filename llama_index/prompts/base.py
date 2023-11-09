@@ -276,7 +276,7 @@ class SelectorPromptTemplate(BasePromptTemplate):
             output_parser=output_parser,
         )
 
-    def _select(self, llm: Optional[LLM] = None) -> BasePromptTemplate:
+    def select(self, llm: Optional[LLM] = None) -> BasePromptTemplate:
         # ensure output parser is up to date
         self.default_template.output_parser = self.output_parser
 
@@ -307,18 +307,18 @@ class SelectorPromptTemplate(BasePromptTemplate):
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
         """Format the prompt into a string."""
-        prompt = self._select(llm=llm)
+        prompt = self.select(llm=llm)
         return prompt.format(**kwargs)
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
     ) -> List[ChatMessage]:
         """Format the prompt into a list of chat messages."""
-        prompt = self._select(llm=llm)
+        prompt = self.select(llm=llm)
         return prompt.format_messages(**kwargs)
 
     def get_template(self, llm: Optional[LLM] = None) -> str:
-        prompt = self._select(llm=llm)
+        prompt = self.select(llm=llm)
         return prompt.get_template(llm=llm)
 
 

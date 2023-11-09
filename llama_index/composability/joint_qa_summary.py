@@ -6,6 +6,7 @@ from typing import Optional, Sequence
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store import VectorStoreIndex
+from llama_index.ingestion import run_transformations
 from llama_index.query_engine.router_query_engine import RouterQueryEngine
 from llama_index.schema import Document
 from llama_index.storage.storage_context import StorageContext
@@ -55,7 +56,9 @@ class QASummaryQueryEngineBuilder:
     ) -> RouterQueryEngine:
         """Build query engine."""
         # parse nodes
-        nodes = self._service_context.node_parser.get_nodes_from_documents(documents)
+        nodes = run_transformations(
+            documents, self._service_context.transformations  # type: ignore
+        )
 
         # ingest nodes
         self._storage_context.docstore.add_documents(nodes, allow_update=True)
