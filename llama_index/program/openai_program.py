@@ -4,7 +4,7 @@ from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, cas
 from llama_index.agent.openai_agent import resolve_tool_choice
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai_utils import to_openai_tool
+from llama_index.llms.openai_utils import OpenAIToolCall, to_openai_tool
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.program.utils import create_list_model
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
@@ -40,23 +40,23 @@ def _get_json_str(raw_str: str, start_idx: int) -> Tuple[Optional[str], int]:
 
 
 def _parse_tool_calls(
-    tool_calls: List[dict],
+    tool_calls: List[OpenAIToolCall],
     output_cls: Type[Model],
     allow_multiple: bool = False,
     verbose: bool = False,
 ) -> Union[Model, List[Model]]:
     outputs = []
     for tool_call in tool_calls:
-        function_call = tool_call["function"]
+        function_call = tool_call.function
         if verbose:
-            name = function_call["name"]
-            arguments_str = function_call["arguments"]
+            name = function_call.name
+            arguments_str = function_call.arguments
             print(f"Function call: {name} with args: {arguments_str}")
 
-        if isinstance(function_call["arguments"], dict):
-            output = output_cls.parse_obj(function_call["arguments"])
+        if isinstance(function_call.arguments, dict):
+            output = output_cls.parse_obj(function_call.arguments)
         else:
-            output = output_cls.parse_raw(function_call["arguments"])
+            output = output_cls.parse_raw(function_call.arguments)
 
         outputs.append(output)
 
@@ -232,7 +232,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
             # NOTE: right now assume only one tool call
             # TODO: handle parallel tool calls in streaming setting
-            fn_args = kwargs["tool_calls"][0]["function"]["arguments"]
+            fn_args = kwargs["tool_calls"][0].function.arguments
 
             # this is inspired by `get_object` from `MultiTaskBase` in
             # the openai_function_call repo
