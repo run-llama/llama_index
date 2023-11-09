@@ -2,6 +2,7 @@ from llama_index.constants import DATA_KEY, TYPE_KEY
 from llama_index.schema import (
     BaseNode,
     Document,
+    ImageDocument,
     ImageNode,
     IndexNode,
     NodeRelationship,
@@ -27,6 +28,8 @@ def json_to_doc(doc_dict: dict) -> BaseNode:
     else:
         if doc_type == Document.get_type():
             doc = Document.parse_obj(data_dict)
+        elif doc_type == ImageDocument.get_type():
+            doc = ImageDocument.parse_obj(data_dict)
         elif doc_type == TextNode.get_type():
             doc = TextNode.parse_obj(data_dict)
         elif doc_type == ImageNode.get_type():
