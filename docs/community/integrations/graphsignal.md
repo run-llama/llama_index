@@ -18,7 +18,9 @@ pip install graphsignal
 import graphsignal
 
 # Provide an API key directly or via GRAPHSIGNAL_API_KEY environment variable
-graphsignal.configure(api_key='my-api-key', deployment='my-llama-index-app-prod')
+graphsignal.configure(
+    api_key="my-api-key", deployment="my-llama-index-app-prod"
+)
 ```
 
 You can get an API key [here](https://app.graphsignal.com/).
@@ -30,7 +32,7 @@ See the [Quick Start guide](https://graphsignal.com/docs/guides/quick-start/), [
 To additionally trace any function or code, you can use a decorator or a context manager:
 
 ```python
-with graphsignal.start_trace('load-external-data'):
+with graphsignal.start_trace("load-external-data"):
     reader.load_data()
 ```
 

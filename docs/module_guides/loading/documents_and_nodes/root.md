@@ -29,13 +29,11 @@ documents = [Document(text=t) for t in text_list]
 
 # build index
 index = VectorStoreIndex.from_documents(documents)
-
 ```
 
 #### Nodes
 
 ```python
-
 from llama_index.node_parser import SentenceSplitter
 
 # load documents
@@ -47,7 +45,6 @@ nodes = parser.get_nodes_from_documents(documents)
 
 # build index
 index = VectorStoreIndex(nodes)
-
 ```
 
 ### Document/Node Usage

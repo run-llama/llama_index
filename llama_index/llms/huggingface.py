@@ -182,6 +182,12 @@ class HuggingFaceLLM(CustomLLM):
             tokenizer_name, **tokenizer_kwargs
         )
 
+        if tokenizer_name != model_name:
+            logger.warning(
+                f"The model `{model_name}` and tokenizer `{tokenizer_name}` "
+                f"are different, please ensure that they are compatible."
+            )
+
         # setup stopping criteria
         stopping_ids_list = stopping_ids or []
 
@@ -202,7 +208,10 @@ class HuggingFaceLLM(CustomLLM):
         if isinstance(query_wrapper_prompt, PromptTemplate):
             query_wrapper_prompt = query_wrapper_prompt.template
 
-        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
+        self._messages_to_prompt = (
+            messages_to_prompt or self._tokenizer_messages_to_prompt
+        )
+
         super().__init__(
             context_window=context_window,
             max_new_tokens=max_new_tokens,
@@ -231,6 +240,15 @@ class HuggingFaceLLM(CustomLLM):
             num_output=self.max_new_tokens,
             model_name=self.model_name,
         )
+
+    def _tokenizer_messages_to_prompt(self, messages: Sequence[ChatMessage]) -> str:
+        """Use the tokenizer to convert messages to prompt. Fallback to generic."""
+        if hasattr(self._tokenizer, "apply_chat_template"):
+            messages_dict = [message.dict() for message in messages]
+            tokens = self._tokenizer.apply_chat_template(messages_dict)
+            return self._tokenizer.decode(tokens)
+
+        return generic_messages_to_prompt(messages)
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
@@ -383,7 +401,7 @@ class HuggingFaceInferenceAPI(LLM):
             "The model to run inference with. Can be a model id hosted on the Hugging"
             " Face Hub, e.g. bigcode/starcoder or a URL to a deployed Inference"
             " Endpoint. Defaults to None, in which case a recommended model is"
-            " automatically selected for the task."
+            " automatically selected for the task (see Field below)."
         ),
     )
     token: Union[str, bool, None] = Field(
@@ -411,6 +429,13 @@ class HuggingFaceInferenceAPI(LLM):
     )
     cookies: Dict[str, str] = Field(
         default=None, description="Additional cookies to send to the server."
+    )
+    task: Optional[str] = Field(
+        default=None,
+        description=(
+            "Optional task to pick Hugging Face's recommended model, used when"
+            " model_name is left as default of None."
+        ),
     )
     _sync_client: "InferenceClient" = PrivateAttr()
     _async_client: "AsyncInferenceClient" = PrivateAttr()
@@ -460,7 +485,6 @@ class HuggingFaceInferenceAPI(LLM):
         Args:
             kwargs: See the class-level Fields.
         """
-        super().__init__(**kwargs)  # Populate pydantic Fields
         try:
             from huggingface_hub import (
                 AsyncInferenceClient,
@@ -470,8 +494,18 @@ class HuggingFaceInferenceAPI(LLM):
         except ModuleNotFoundError as exc:
             raise ImportError(
                 f"{type(self).__name__} requires huggingface_hub with its inference"
-                " extras, please run `pip install huggingface_hub[inference]`."
+                " extra, please run `pip install huggingface_hub[inference]>=0.19.0`."
             ) from exc
+        if kwargs.get("model_name") is None:
+            task = kwargs.get("task", "")
+            # NOTE: task being None or empty string leads to ValueError,
+            # which ensures model is present
+            kwargs["model_name"] = InferenceClient.get_recommended_model(task=task)
+            logger.debug(
+                f"Using Hugging Face's recommended model {kwargs['model_name']}"
+                f" given task {task}."
+            )
+        super().__init__(**kwargs)  # Populate pydantic Fields
         self._sync_client = InferenceClient(**self._get_inference_client_kwargs())
         self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
         self._get_model_info = model_info

@@ -123,7 +123,7 @@ class RocksetVectorStore(VectorStore):
     def client(self) -> Any:
         return self.rs
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Stores vectors in the collection.
 
         Args:

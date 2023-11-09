@@ -17,7 +17,6 @@ In this example, we will analyze Wikipedia articles of different cities: Boston,
 The below code snippet downloads the relevant data into files.
 
 ```python
-
 from pathlib import Path
 import requests
 
@@ -25,26 +24,25 @@ wiki_titles = ["Toronto", "Seattle", "Chicago", "Boston", "Houston"]
 
 for title in wiki_titles:
     response = requests.get(
-        'https://en.wikipedia.org/w/api.php',
+        "https://en.wikipedia.org/w/api.php",
         params={
-            'action': 'query',
-            'format': 'json',
-            'titles': title,
-            'prop': 'extracts',
+            "action": "query",
+            "format": "json",
+            "titles": title,
+            "prop": "extracts",
             # 'exintro': True,
-            'explaintext': True,
-        }
+            "explaintext": True,
+        },
     ).json()
-    page = next(iter(response['query']['pages'].values()))
-    wiki_text = page['extract']
+    page = next(iter(response["query"]["pages"].values()))
+    wiki_text = page["extract"]
 
-    data_path = Path('data')
+    data_path = Path("data")
     if not data_path.exists():
         Path.mkdir(data_path)
 
-    with open(data_path / f"{title}.txt", 'w') as fp:
+    with open(data_path / f"{title}.txt", "w") as fp:
         fp.write(wiki_text)
-
 ```
 
 The next snippet loads all files into Document objects.
@@ -53,8 +51,9 @@ The next snippet loads all files into Document objects.
 # Load all wiki documents
 city_docs = {}
 for wiki_title in wiki_titles:
-    city_docs[wiki_title] = SimpleDirectoryReader(input_files=[f"data/{wiki_title}.txt"]).load_data()
-
+    city_docs[wiki_title] = SimpleDirectoryReader(
+        input_files=[f"data/{wiki_title}.txt"]
+    ).load_data()
 ```
 
 ### Defining the Set of Indexes
@@ -70,9 +69,7 @@ from llama_index.llms import OpenAI
 
 # set service context
 llm_gpt4 = OpenAI(temperature=0, model="gpt-4")
-service_context = ServiceContext.from_defaults(
-    llm=llm_gpt4, chunk_size=1024
-)
+service_context = ServiceContext.from_defaults(llm=llm_gpt4, chunk_size=1024)
 
 # Build city document index
 vector_indices = {}
@@ -87,15 +84,18 @@ for wiki_title in wiki_titles:
     # set id for vector index
     vector_indices[wiki_title].index_struct.index_id = wiki_title
     # persist to disk
-    storage_context.persist(persist_dir=f'./storage/{wiki_title}')
+    storage_context.persist(persist_dir=f"./storage/{wiki_title}")
 ```
 
 Querying a vector index lets us easily perform semantic search over a given city's documents.
 
 ```python
-response = vector_indices["Toronto"].as_query_engine().query("What are the sports teams in Toronto?")
+response = (
+    vector_indices["Toronto"]
+    .as_query_engine()
+    .query("What are the sports teams in Toronto?")
+)
 print(str(response))
-
 ```
 
 Example response:
@@ -131,18 +131,19 @@ graph = ComposableGraph.from_indices(
     SimpleKeywordTableIndex,
     [index for _, index in vector_indices.items()],
     [summary for _, summary in index_summaries.items()],
-    max_keywords_per_chunk=50
+    max_keywords_per_chunk=50,
 )
 
 # get root index
-root_index = graph.get_index(graph.index_struct.root_id, SimpleKeywordTableIndex)
+root_index = graph.get_index(
+    graph.index_struct.root_id, SimpleKeywordTableIndex
+)
 # set id of root index
 root_index.set_index_id("compare_contrast")
 root_summary = (
     "This index contains Wikipedia articles about multiple cities. "
     "Use this index if you want to compare multiple cities. "
 )
-
 ```
 
 Querying this graph (with a query transform module), allows us to easily compare/contrast between different cities.
@@ -151,26 +152,31 @@ An example is shown below.
 ```python
 # define decompose_transform
 from llama_index import LLMPredictor
-from llama_index.indices.query.query_transform.base import DecomposeQueryTransform
+from llama_index.indices.query.query_transform.base import (
+    DecomposeQueryTransform,
+)
 
 decompose_transform = DecomposeQueryTransform(
     LLMPredictor(llm=llm_gpt4), verbose=True
 )
 
 # define custom query engines
-from llama_index.query_engine.transform_query_engine import TransformQueryEngine
+from llama_index.query_engine.transform_query_engine import (
+    TransformQueryEngine,
+)
+
 custom_query_engines = {}
 for index in vector_indices.values():
     query_engine = index.as_query_engine(service_context=service_context)
     query_engine = TransformQueryEngine(
         query_engine,
         query_transform=decompose_transform,
-        transform_extra_info={'index_summary': index.index_struct.summary},
+        transform_extra_info={"index_summary": index.index_struct.summary},
     )
     custom_query_engines[index.index_id] = query_engine
 custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
-    retriever_mode='simple',
-    response_mode='tree_summarize',
+    retriever_mode="simple",
+    response_mode="tree_summarize",
     service_context=service_context,
 )
 
@@ -178,9 +184,7 @@ custom_query_engines[graph.root_id] = graph.root_index.as_query_engine(
 query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
 
 # query the graph
-query_str = (
-    "Compare and contrast the arts and culture of Houston and Boston. "
-)
+query_str = "Compare and contrast the arts and culture of Houston and Boston. "
 response_chatgpt = query_engine.query(query_str)
 ```
 
@@ -213,7 +217,9 @@ for wiki_title in wiki_titles:
     summary = index_summaries[wiki_title]
 
     query_engine = index.as_query_engine(service_context=service_context)
-    vector_tool = QueryEngineTool.from_defaults(query_engine, description=summary)
+    vector_tool = QueryEngineTool.from_defaults(
+        query_engine, description=summary
+    )
     query_engine_tools.append(vector_tool)
 
 
@@ -222,7 +228,9 @@ graph_description = (
     "This tool contains Wikipedia articles about multiple cities. "
     "Use this tool if you want to compare multiple cities. "
 )
-graph_tool = QueryEngineTool.from_defaults(graph_query_engine, description=graph_description)
+graph_tool = QueryEngineTool.from_defaults(
+    graph_query_engine, description=graph_description
+)
 query_engine_tools.append(graph_tool)
 ```
 
@@ -236,7 +244,7 @@ from llama_index.selectors.llm_selectors import LLMSingleSelector
 
 router_query_engine = RouterQueryEngine(
     selector=LLMSingleSelector.from_defaults(service_context=service_context),
-    query_engine_tools=query_engine_tools
+    query_engine_tools=query_engine_tools,
 )
 ```
 
@@ -255,16 +263,14 @@ Let's take a look at a few examples!
 response = router_query_engine.query(
     "Compare and contrast the arts and culture of Houston and Boston.",
 )
-print(str(response)
+print(str(response))
 ```
 
 **Asking Questions about specific Cities**
 
 ```python
-
 response = router_query_engine.query("What are the sports teams in Toronto?")
 print(str(response))
-
 ```
 
 This "outer" abstraction is able to handle different queries by routing to the right underlying abstractions.

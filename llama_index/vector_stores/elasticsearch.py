@@ -128,6 +128,9 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
 
 
 def _to_llama_similarities(scores: List[float]) -> List[float]:
+    if scores is None or len(scores) == 0:
+        return []
+
     scores_to_norm: np.ndarray = np.array(scores)
     return np.exp(scores_to_norm - np.max(scores_to_norm)).tolist()
 
@@ -270,6 +273,7 @@ class ElasticsearchStore(VectorStore):
         nodes: List[BaseNode],
         *,
         create_index_if_not_exists: bool = True,
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to Elasticsearch index.
 
@@ -296,6 +300,7 @@ class ElasticsearchStore(VectorStore):
         nodes: List[BaseNode],
         *,
         create_index_if_not_exists: bool = True,
+        **add_kwargs: Any,
     ) -> List[str]:
         """Asynchronous method to add nodes to Elasticsearch index.
 

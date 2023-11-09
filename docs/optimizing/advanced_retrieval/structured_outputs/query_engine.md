@@ -20,6 +20,7 @@ First, you need to define the object you want to extract.
 from typing import List
 from pydantic import BaseModel
 
+
 class Biography(BaseModel):
     """Data model for a biography."""
 
@@ -31,7 +32,9 @@ class Biography(BaseModel):
 Then, you create your query engine.
 
 ```python
-query_engine = index.as_query_engine(response_mode="tree_summarize", output_cls=Biography)
+query_engine = index.as_query_engine(
+    response_mode="tree_summarize", output_cls=Biography
+)
 ```
 
 Lastly, you can get a response and inspect the output.
@@ -40,11 +43,11 @@ Lastly, you can get a response and inspect the output.
 response = query_engine.query("Who is Paul Graham?")
 
 print(response.name)
-> 'Paul Graham'
+# > 'Paul Graham'
 print(response.best_known_for)
-> ['working on Bel', 'co-founding Viaweb', 'creating the programming language Arc']
+# > ['working on Bel', 'co-founding Viaweb', 'creating the programming language Arc']
 print(response.extra_info)
-> "Paul Graham is a computer scientist, entrepreneur, and writer. He is best known for ..."
+# > "Paul Graham is a computer scientist, entrepreneur, and writer. He is best known      for ..."
 ```
 
 ## Modules

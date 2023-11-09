@@ -9,7 +9,7 @@ By default, all of our [data loaders](/module_guides/loading/connector/root.md) 
 ```python
 from llama_index import SimpleDirectoryReader
 
-documents = SimpleDirectoryReader('./data').load_data()
+documents = SimpleDirectoryReader("./data").load_data()
 ```
 
 You can also choose to construct documents manually. LlamaIndex exposes the `Document` struct.
@@ -43,28 +43,28 @@ There are a few ways to set up this dictionary:
 
 ```python
 document = Document(
-    text='text',
-    metadata={
-        'filename': '<doc_file_name>',
-        'category': '<category>'
-    }
+    text="text",
+    metadata={"filename": "<doc_file_name>", "category": "<category>"},
 )
 ```
 
 2. After the document is created:
 
 ```python
-document.metadata = {'filename': '<doc_file_name>'}
+document.metadata = {"filename": "<doc_file_name>"}
 ```
 
 3. Set the filename automatically using the `SimpleDirectoryReader` and `file_metadata` hook. This will automatically run the hook on each document to set the `metadata` field:
 
 ```python
 from llama_index import SimpleDirectoryReader
-filename_fn = lambda filename: {'file_name': filename}
+
+filename_fn = lambda filename: {"file_name": filename}
 
 # automatically sets the metadata of each document according to filename_fn
-documents = SimpleDirectoryReader('./data', file_metadata=filename_fn).load_data()
+documents = SimpleDirectoryReader(
+    "./data", file_metadata=filename_fn
+).load_data()
 ```
 
 ### Customizing the id
@@ -97,13 +97,14 @@ Typically, a document might have many metadata keys, but you might not want all 
 We can exclude it like so:
 
 ```python
-document.excluded_llm_metadata_keys = ['file_name']
+document.excluded_llm_metadata_keys = ["file_name"]
 ```
 
 Then, we can test what the LLM will actually end up reading using the `get_content()` function and specifying `MetadataMode.LLM`:
 
 ```python
 from llama_index.schema import MetadataMode
+
 print(document.get_content(metadata_mode=MetadataMode.LLM))
 ```
 
@@ -112,13 +113,14 @@ print(document.get_content(metadata_mode=MetadataMode.LLM))
 Similar to customing the metadata visible to the LLM, we can also customize the metadata visible to embeddings. In this case, you can specifically exclude metadata visible to the embedding model, in case you DON'T want particular text to bias the embeddings.
 
 ```python
-document.excluded_embed_metadata_keys = ['file_name']
+document.excluded_embed_metadata_keys = ["file_name"]
 ```
 
 Then, we can test what the embedding model will actually end up reading using the `get_content()` function and specifying `MetadataMode.EMBED`:
 
 ```python
 from llama_index.schema import MetadataMode
+
 print(document.get_content(metadata_mode=MetadataMode.EMBED))
 ```
 
@@ -151,16 +153,22 @@ document = Document(
     metadata={
         "file_name": "super_secret_document.txt",
         "category": "finance",
-        "author": "LlamaIndex"
+        "author": "LlamaIndex",
     },
-    excluded_llm_metadata_keys=['file_name'],
+    excluded_llm_metadata_keys=["file_name"],
     metadata_seperator="::",
     metadata_template="{key}=>{value}",
     text_template="Metadata: {metadata_str}\n-----\nContent: {content}",
 )
 
-print("The LLM sees this: \n", document.get_content(metadata_mode=MetadataMode.LLM))
-print("The Embedding model sees this: \n", document.get_content(metadata_mode=MetadataMode.EMBED))
+print(
+    "The LLM sees this: \n",
+    document.get_content(metadata_mode=MetadataMode.LLM),
+)
+print(
+    "The Embedding model sees this: \n",
+    document.get_content(metadata_mode=MetadataMode.EMBED),
+)
 ```
 
 ### Advanced - Automatic Metadata Extraction

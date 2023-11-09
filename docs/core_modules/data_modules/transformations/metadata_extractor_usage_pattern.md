@@ -12,10 +12,7 @@ Our metadata extractor modules include the following "feature extractors":
 Then you can chain the `Metadata Extractor`s with our node parser:
 
 ```python
-from llama_index.extractors import (
-    TitleExtractor,
-    QuestionsAnsweredExtractor
-)
+from llama_index.extractors import TitleExtractor, QuestionsAnsweredExtractor
 from llama_index.node_parser import TokenTextSplitter
 
 node_parser = TokenTextSplitter(
@@ -42,11 +39,7 @@ or insert into the service context:
 from llama_index import ServiceContext
 
 service_context = ServiceContext.from_defaults(
-    transformations=[
-        node_parser,
-        title_extractor,
-        qa_extractor
-    ]
+    transformations=[node_parser, title_extractor, qa_extractor]
 )
 ```
 

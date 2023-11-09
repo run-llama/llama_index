@@ -117,11 +117,9 @@ class CachedOpenAIApiKeys:
 
         os.environ["OPENAI_API_KEY"] = str(self.set_env_key_to)
         os.environ["OPENAI_API_TYPE"] = str(self.set_env_type_to)
-        openai.api_key = self.set_library_key_to
-        openai.api_type = self.set_library_type_to
 
         if self.set_fake_key:
-            openai.api_key = "sk-" + "a" * 48
+            os.environ["OPENAI_API_KEY"] = "sk-" + "a" * 48
 
     # No matter what, set the environment variable back to what it was
     def __exit__(self, *exc: object) -> None:
