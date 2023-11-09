@@ -268,13 +268,10 @@ class OpenAI(LLM):
         message_dicts = to_openai_message_dicts(messages)
 
         def gen() -> ChatResponseGen:
-            tool_index = 0
             content = ""
             tool_calls: List[ChoiceDeltaToolCall] = []
-            response_id = None
 
             is_function = False
-            response_ix = 0
             for response in self._client.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
@@ -455,13 +452,10 @@ class OpenAI(LLM):
         message_dicts = to_openai_message_dicts(messages)
 
         async def gen() -> ChatResponseAsyncGen:
-            tool_index = 0
             content = ""
             tool_calls: List[ChoiceDeltaToolCall] = []
-            response_id = None
 
             is_function = False
-            response_ix = 0
             async for response in await self._aclient.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
@@ -473,58 +467,26 @@ class OpenAI(LLM):
                 else:
                     delta = {}
 
-                if response_id is None:
-                    response_id = response.id
+                # check if this start of a function call
+                if (delta.role == MessageRole.ASSISTANT) and (delta.content is None):
+                    is_function = True
 
-                if response_id != response.id:
-                    is_function = False
-                    response_ix = 0
-
+                # update using deltas
                 role = delta.role or MessageRole.ASSISTANT
                 content_delta = delta.content or ""
                 content += content_delta
 
-                # TODO: REFACTOR WITH HELPER FUNCTIONS
-                tool_calls_delta = delta.tool_calls or None
-                if tool_calls_delta is not None:
-                    is_function = True
-                    t_delta = tool_calls_delta[0]
-                    if len(tool_calls) == 0:
-                        t = t_delta
-                        tool_calls.append(t)
-                    else:
-                        t = tool_calls[-1]
-                        if t.index != t_delta.index:
-                            t = t_delta
-                            tool_calls.append(t)
-                        else:
-                            t.function.arguments += t_delta.function.arguments or ""
-                            t.function.name += t_delta.function.name or ""
-                            t.id += t_delta.id or ""
-                            t.type += t_delta.type or ""
-                            tool_calls[-1] = t
-
                 additional_kwargs = {}
-                if len(tool_calls) > 0:
+                if is_function:
+                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = [t.dict() for t in tool_calls]
 
-                if response_ix == 0:
-                    message = ChatMessage(
-                        role=role,
-                        content=content,
-                        additional_kwargs={"tool_calls": []},
-                    )
-                else:
-                    message = ChatMessage(
+                yield ChatResponse(
+                    message=ChatMessage(
                         role=role,
                         content=content,
                         additional_kwargs=additional_kwargs,
-                    )
-
-                response_ix += 1
-
-                yield ChatResponse(
-                    message=message,
+                    ),
                     delta=content_delta,
                     raw=response,
                     additional_kwargs=self._get_response_token_counts(response),
