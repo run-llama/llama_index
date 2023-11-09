@@ -1,8 +1,10 @@
+from hashlib import sha256
 from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.indices.service_context import ServiceContext
+from llama_index.ingestion.cache import IngestionCache
 from llama_index.ingestion.client import (
     ConfigurableDataSinkNames,
     ConfigurableDataSourceNames,
@@ -27,7 +29,13 @@ from llama_index.ingestion.transformations import (
 )
 from llama_index.node_parser import SentenceAwareNodeParser
 from llama_index.readers.base import ReaderConfig
-from llama_index.schema import BaseComponent, BaseNode, Document, TransformComponent
+from llama_index.schema import (
+    BaseComponent,
+    BaseNode,
+    Document,
+    MetadataMode,
+    TransformComponent,
+)
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
 DEFAULT_PIPELINE_NAME = "pipeline"
@@ -56,10 +64,40 @@ def deserialize_sink_component(
     return component_cls.from_dict(component_dict)
 
 
+def get_keys_to_remove(obj: dict) -> List[str]:
+    keys_to_remove = []
+    for key in obj:
+        if "object at 0x" in str(obj[key]):
+            keys_to_remove.append(key)
+        if isinstance(obj[key], dict):
+            keys_to_remove.extend(get_keys_to_remove(obj[key]))
+
+    return keys_to_remove
+
+
+def get_transformation_hash(
+    nodes: List[BaseNode], transformation: TransformComponent
+) -> str:
+    """Get the hash of a transformation."""
+    nodes_str = "".join(
+        [str(node.get_content(metadata_mode=MetadataMode.ALL)) for node in nodes]
+    )
+
+    transformation_dict = transformation.to_dict()
+
+    # remove unstable values
+    keys_to_remove = get_keys_to_remove(transformation_dict)
+    for key in keys_to_remove:
+        transformation_dict.pop(key)
+
+    return sha256((nodes_str + str(transformation_dict)).encode("utf-8")).hexdigest()
+
+
 def run_transformations(
     nodes: List[BaseNode],
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
+    cache: Optional[IngestionCache] = None,
     **kwargs: Any,
 ) -> List[BaseNode]:
     """Run a series of transformations on a set of nodes.
@@ -75,7 +113,16 @@ def run_transformations(
         nodes = list(nodes)
 
     for transform in transformations:
-        nodes = transform(nodes, **kwargs)
+        if cache is not None:
+            hash = get_transformation_hash(nodes, transform)
+            cached_nodes = cache.get(hash)
+            if cached_nodes is not None:
+                nodes = cached_nodes
+            else:
+                nodes = transform(nodes, **kwargs)
+                cache.put(hash, nodes)
+        else:
+            nodes = transform(nodes, **kwargs)
 
     return nodes
 
@@ -84,6 +131,7 @@ async def arun_transformations(
     nodes: List[BaseNode],
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
+    cache: Optional[IngestionCache] = None,
     **kwargs: Any,
 ) -> List[BaseNode]:
     """Run a series of transformations on a set of nodes.
@@ -99,7 +147,17 @@ async def arun_transformations(
         nodes = list(nodes)
 
     for transform in transformations:
-        nodes = await transform.acall(nodes, **kwargs)
+        if cache is not None:
+            hash = get_transformation_hash(nodes, transform)
+
+            cached_nodes = cache.get(hash)
+            if cached_nodes is not None:
+                nodes = cached_nodes
+            else:
+                nodes = await transform.acall(nodes, **kwargs)
+                cache.put(hash, nodes)
+        else:
+            nodes = await transform.acall(nodes, **kwargs)
 
     return nodes
 
@@ -129,6 +187,11 @@ class IngestionPipeline(BaseModel):
     vector_store: Optional[BasePydanticVectorStore] = Field(
         description="Vector store to use to store the data"
     )
+    cache: IngestionCache = Field(
+        default_factory=IngestionCache,
+        description="Cache to use to store the data",
+    )
+    disable_cache: bool = Field(default=False, description="Disable the cache")
 
     def __init__(
         self,
@@ -138,6 +201,7 @@ class IngestionPipeline(BaseModel):
         reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
+        cache: Optional[IngestionCache] = None,
         base_url: str = BASE_URL,
     ) -> None:
         if transformations is None:
@@ -157,6 +221,7 @@ class IngestionPipeline(BaseModel):
             reader=reader,
             documents=documents,
             vector_store=vector_store,
+            cache=cache or IngestionCache(),
             base_url=base_url,
         )
 
@@ -169,6 +234,7 @@ class IngestionPipeline(BaseModel):
         reader: Optional[ReaderConfig] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
+        cache: Optional[IngestionCache] = None,
     ) -> "IngestionPipeline":
         transformations = [
             *service_context.transformations,
@@ -182,6 +248,7 @@ class IngestionPipeline(BaseModel):
             reader=reader,
             documents=documents,
             vector_store=vector_store,
+            cache=cache,
         )
 
     @classmethod
@@ -190,6 +257,7 @@ class IngestionPipeline(BaseModel):
         name: str,
         project_name: str = DEFAULT_PROJECT_NAME,
         base_url: str = BASE_URL,
+        cache: Optional[IngestionCache] = None,
     ) -> "IngestionPipeline":
         client = PlatformApi(base_url=base_url)
 
@@ -255,6 +323,7 @@ class IngestionPipeline(BaseModel):
             documents=documents,
             vector_store=vector_stores[0] if len(vector_stores) > 0 else None,
             base_url=base_url,
+            cache=cache,
         )
 
     def _get_default_transformations(self) -> List[TransformComponent]:
@@ -401,7 +470,7 @@ class IngestionPipeline(BaseModel):
 
         return pipeline_execution.id
 
-    def run_local(
+    def run(
         self,
         show_progress: bool = False,
         documents: Optional[List[Document]] = None,
@@ -425,10 +494,46 @@ class IngestionPipeline(BaseModel):
             input_nodes,
             self.transformations,
             show_progress=show_progress,
+            cache=self.cache,
             **kwargs,
         )
 
         if self.vector_store is not None:
             self.vector_store.add([n for n in nodes if n.embedding is not None])
+
+        return nodes
+
+    async def arun(
+        self,
+        show_progress: bool = False,
+        documents: Optional[List[Document]] = None,
+        nodes: Optional[List[BaseNode]] = None,
+        **kwargs: Any,
+    ) -> Sequence[BaseNode]:
+        input_nodes: List[BaseNode] = []
+        if documents is not None:
+            input_nodes += documents
+
+        if nodes is not None:
+            input_nodes += nodes
+
+        if self.documents is not None:
+            input_nodes += self.documents
+
+        if self.reader is not None:
+            input_nodes += self.reader.read()
+
+        nodes = arun_transformations(
+            input_nodes,
+            self.transformations,
+            show_progress=show_progress,
+            cache=self.cache,
+            **kwargs,
+        )
+
+        if self.vector_store is not None:
+            await self.vector_store.async_add(
+                [n for n in nodes if n.embedding is not None]
+            )
 
         return nodes
