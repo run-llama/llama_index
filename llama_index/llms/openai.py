@@ -257,7 +257,6 @@ class OpenAI(LLM):
                 t.function.name += tc_delta.function.name or ""
                 t.id += tc_delta.id or ""
                 t.type += tc_delta.type or ""
-                tool_calls[-1] = t
         return tool_calls
 
     def _stream_chat(
