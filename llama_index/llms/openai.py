@@ -226,14 +226,10 @@ class OpenAI(LLM):
     def _update_tool_calls(
         self,
         tool_calls: List[ChoiceDeltaToolCall],
-        tc_delta: Optional[ChoiceDeltaToolCall],
+        tool_calls_delta: List[ChoiceDeltaToolCall],
     ) -> List[ChoiceDeltaToolCall]:
-        """_summary_
-        openai provides the delta on one tool-at-a-time
-        we need to use the index on it to see if its updating one
-        for which we've already started to received content on, OR
-        if we need to start a new tool_call and accumulate that new
-        one thereafter, and so on.
+        """Use the tool_calls_delta objects received from openai to update the
+        running tool_calls object.
 
         Args:
             tool_calls (List[ChoiceDeltaToolCall]): _description_
@@ -242,21 +238,21 @@ class OpenAI(LLM):
         Returns:
             List[ChoiceDeltaToolCall]: _description_
         """
-        if not tc_delta:
-            return tool_calls
+        # openai provides chunks consisting of tool_call deltas one tool at a time
+        tc_delta = tool_calls_delta[0]
 
         if len(tool_calls) == 0:
-            t = tc_delta
-            tool_calls.append(t)
+            tool_calls.append(tc_delta)
         else:
             # we need to either update latest tool_call or start a
-            # new tool_call and accumulate that with future delta chunks
+            # new tool_call (i.e., multiple tools in this turn) and
+            # accumulate that new tool_call with future delta chunks
             t = tool_calls[-1]
             if t.index != tc_delta.index:
-                # start a new tool and append to our running tool_calls list
+                # the start of a new tool call, so append to our running tool_calls list
                 tool_calls.append(tc_delta)
             else:
-                # not the start of a new tool, so update last item of tool_calls
+                # not the start of a new tool call, so update last item of tool_calls
                 t.function.arguments += tc_delta.function.arguments or ""
                 t.function.name += tc_delta.function.name or ""
                 t.id += tc_delta.id or ""
@@ -300,8 +296,9 @@ class OpenAI(LLM):
                 additional_kwargs = {}
                 if is_function:
                     if delta.tool_calls:
-                        tc_delta = delta.tool_calls[0]
-                        tool_calls = self._update_tool_calls(tool_calls, tc_delta)
+                        tool_calls = self._update_tool_calls(
+                            tool_calls, delta.tool_calls
+                        )
                     additional_kwargs["tool_calls"] = [t.dict() for t in tool_calls]
 
                 yield ChatResponse(
