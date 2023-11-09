@@ -66,7 +66,7 @@ class GooglePaLMEmbedding(BaseEmbedding):
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        return await self._model._get_text_embedding(text)
+        return self._model._get_text_embedding(text)
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
