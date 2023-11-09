@@ -3,7 +3,8 @@ from typing import List, Optional
 import fsspec
 
 from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.schema import BaseNode, Document, ImageNode, IndexNode, TextNode
+from llama_index.schema import BaseNode
+from llama_index.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.storage.kvstore import (
     FirestoreKVStore as FirestoreCache,
 )
@@ -34,24 +35,6 @@ class IngestionCache(BaseModel):
     )
     cache: BaseCache = Field(default_factory=SimpleCache, description="Cache to use.")
 
-    def _load_nodes(self, node_dicts: List[dict]) -> List[BaseNode]:
-        nodes: List[BaseNode] = []
-
-        for node_dict in node_dicts:
-            class_name = node_dict.get("class_name", None)
-            if class_name == TextNode.class_name():
-                nodes.append(TextNode.from_dict({**node_dict}))
-            elif class_name == ImageNode.class_name():
-                nodes.append(ImageNode.from_dict({**node_dict}))
-            elif class_name == IndexNode.class_name():
-                nodes.append(IndexNode.from_dict({**node_dict}))
-            elif class_name == Document.class_name():
-                nodes.append(Document.from_dict({**node_dict}))
-            else:
-                raise ValueError(f"Unknown node class name: {class_name}")
-
-        return nodes
-
     # TODO: add async get/put methods?
     def put(
         self, key: str, nodes: List[BaseNode], collection: Optional[str] = None
@@ -59,7 +42,7 @@ class IngestionCache(BaseModel):
         """Put a value into the cache."""
         collection = collection or self.collection
 
-        val = {self.nodes_key: [node.to_dict() for node in nodes]}
+        val = {self.nodes_key: [doc_to_json(node) for node in nodes]}
         self.cache.put(key, val, collection=collection)
 
     def get(
@@ -72,7 +55,7 @@ class IngestionCache(BaseModel):
         if node_dicts is None:
             return None
 
-        return self._load_nodes(node_dicts[self.nodes_key])
+        return [json_to_doc(node_dict) for node_dict in node_dicts[self.nodes_key]]
 
     def clear(self, collection: Optional[str] = None) -> None:
         """Clear the cache."""
