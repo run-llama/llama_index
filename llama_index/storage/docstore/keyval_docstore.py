@@ -86,7 +86,8 @@ class KVDocumentStore(BaseDocumentStore):
             metadata = {"doc_hash": node.hash}
             if isinstance(node, TextNode) and node.ref_doc_id is not None:
                 ref_doc_info = self.get_ref_doc_info(node.ref_doc_id) or RefDocInfo()
-                ref_doc_info.node_ids.append(node.node_id)
+                if node.node_id not in ref_doc_info.node_ids:
+                    ref_doc_info.node_ids.append(node.node_id)
                 if not ref_doc_info.metadata:
                     ref_doc_info.metadata = node.metadata or {}
                 self._kvstore.put(

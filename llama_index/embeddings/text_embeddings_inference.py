@@ -27,6 +27,10 @@ class TextEmbeddingsInference(BaseEmbedding):
         default=60.0,
         description="Timeout in seconds for the request.",
     )
+    truncate_text: bool = Field(
+        default=True,
+        description="Whether to truncate text or not when generating embeddings.",
+    )
 
     def __init__(
         self,
@@ -36,6 +40,7 @@ class TextEmbeddingsInference(BaseEmbedding):
         query_instruction: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         timeout: float = 60.0,
+        truncate_text: bool = True,
         callback_manager: Optional[CallbackManager] = None,
     ):
         try:
@@ -53,6 +58,7 @@ class TextEmbeddingsInference(BaseEmbedding):
             query_instruction=query_instruction,
             embed_batch_size=embed_batch_size,
             timeout=timeout,
+            truncate_text=truncate_text,
             callback_manager=callback_manager,
         )
 
@@ -64,7 +70,7 @@ class TextEmbeddingsInference(BaseEmbedding):
         import httpx
 
         headers = {"Content-Type": "application/json"}
-        json_data = {"inputs": texts}
+        json_data = {"inputs": texts, "truncate": self.truncate_text}
 
         with httpx.Client() as client:
             response = client.post(
@@ -74,13 +80,14 @@ class TextEmbeddingsInference(BaseEmbedding):
                 timeout=self.timeout,
             )
 
+        print(str(response))
         return response.json()
 
     async def _acall_api(self, texts: List[str]) -> List[List[float]]:
         import httpx
 
         headers = {"Content-Type": "application/json"}
-        json_data = {"inputs": texts}
+        json_data = {"inputs": texts, "truncate": self.truncate_text}
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
