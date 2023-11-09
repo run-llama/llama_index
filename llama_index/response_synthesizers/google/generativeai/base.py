@@ -7,11 +7,15 @@ https://developers.generativeai.google/guide
 """
 
 import logging
-from typing import Any, List, Sequence, cast
+from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import BaseModel  # type: ignore
+from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.mixin import PromptDictType
-from llama_index.response_synthesizers.base import BaseSynthesizer
+from llama_index.response.schema import Response
+from llama_index.response_synthesizers.base import BaseSynthesizer, QueryTextType
+from llama_index.schema import MetadataMode, NodeWithScore, TextNode
 from llama_index.types import RESPONSE_TEXT_TYPE
 from llama_index.vector_stores.google.generativeai import google_service_context
 
@@ -120,7 +124,68 @@ GoogleTextSynthesizer.get_response(
         text_chunks: Sequence[str],
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
+        # TODO: Implement a true async version.
         return self.get_response(query_str, text_chunks, **response_kwargs)
+
+    def synthesize(
+        self,
+        query: QueryTextType,
+        nodes: List[NodeWithScore],
+        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+        **response_kwargs: Any,
+    ) -> Response:
+        if len(nodes) == 0:
+            return Response("Empty Response")
+
+        if isinstance(query, str):
+            query = QueryBundle(query_str=query)
+
+        with self._callback_manager.event(
+            CBEventType.SYNTHESIZE, payload={EventPayload.QUERY_STR: query.query_str}
+        ) as event:
+            internal_response = self.get_response(
+                query_str=query.query_str,
+                text_chunks=[
+                    n.node.get_content(metadata_mode=MetadataMode.LLM) for n in nodes
+                ],
+                **response_kwargs,
+            )
+
+            additional_source_nodes = list(additional_source_nodes or [])
+
+            external_response = self._prepare_external_response(
+                internal_response, additional_source_nodes
+            )
+
+            event.on_end(payload={EventPayload.RESPONSE: external_response})
+
+        return external_response
+
+    async def asynthesize(
+        self,
+        query: QueryTextType,
+        nodes: List[NodeWithScore],
+        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+        **response_kwargs: Any,
+    ) -> Response:
+        # TODO: Implement a true async version.
+        return self.synthesize(query, nodes, additional_source_nodes, **response_kwargs)
+
+    def _prepare_external_response(
+        self,
+        response: SynthesizedResponse,
+        source_nodes: List[NodeWithScore],
+    ) -> Response:
+        return Response(
+            response=response.answer,
+            source_nodes=[
+                NodeWithScore(
+                    node=TextNode(text="\n".join(response.attributed_passages)),
+                    score=response.answerable_probability,
+                ),
+                *source_nodes,
+            ],
+        )
 
     def _get_prompts(self) -> PromptDictType:
         # Not used.
