@@ -66,6 +66,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         if self.image_namespace not in storage_context.vector_stores:
             storage_context.add_vector_store(SimpleVectorStore(), self.image_namespace)
 
+        self._image_vector_store = storage_context.vector_stores[self.image_namespace]
+
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -74,6 +76,26 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             show_progress=show_progress,
             use_async=use_async,
             store_nodes_override=store_nodes_override,
+            **kwargs,
+        )
+
+    @property
+    def image_vector_store(self) -> VectorStore:
+        return self._image_vector_store
+
+    @property
+    def image_embed_model(self) -> EmbedType:
+        return self._image_embed_model
+
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        # NOTE: lazy import
+        from llama_index.indices.multi_modal.retriever import (
+            MutliModalVectorIndexRetriever,
+        )
+
+        return MutliModalVectorIndexRetriever(
+            self,
+            node_ids=list(self.index_struct.nodes_dict.values()),
             **kwargs,
         )
 
@@ -101,9 +123,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             image_embed_model=image_embed_model,
             **kwargs,
         )
-
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        raise NotImplementedError("Retriever not yet implemented for MultiModalIndex.")
 
     def _get_node_with_embedding(
         self,
