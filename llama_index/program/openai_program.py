@@ -48,6 +48,10 @@ def _parse_tool_calls(
     outputs = []
     for tool_call in tool_calls:
         function_call = tool_call.function
+        # validations to get passed mypy
+        assert function_call is not None
+        assert function_call.name is not None
+        assert function_call.arguments is not None
         if verbose:
             name = function_call.name
             arguments_str = function_call.arguments
