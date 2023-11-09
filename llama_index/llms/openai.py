@@ -228,15 +228,15 @@ class OpenAI(LLM):
         tool_calls: List[ChoiceDeltaToolCall],
         tool_calls_delta: Optional[List[ChoiceDeltaToolCall]],
     ) -> List[ChoiceDeltaToolCall]:
-        """Use the tool_calls_delta objects received from openai to update the
-        running tool_calls object.
+        """Use the tool_calls_delta objects received from openai stream chunks
+        to update the running tool_calls object.
 
         Args:
-            tool_calls (List[ChoiceDeltaToolCall]): _description_
-            delta (ChoiceDeltaToolCall): _description_
+            tool_calls (List[ChoiceDeltaToolCall]): the list of tool calls
+            tool_calls_delta (ChoiceDeltaToolCall): the delta to update tool_calls
 
         Returns:
-            List[ChoiceDeltaToolCall]: _description_
+            List[ChoiceDeltaToolCall]: the updated tool calls
         """
         # openai provides chunks consisting of tool_call deltas one tool at a time
         if tool_calls_delta is None:
