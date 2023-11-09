@@ -55,7 +55,8 @@ Once you've ingested your data, LlamaIndex will help you index the data into a s
 [**Retrievers**](/module_guides/querying/retriever/root.md):
 A retriever defines how to efficiently retrieve relevant context from an index when given a query. Your retrieval strategy is key to the relevancy of the data retrieved and the efficiency with which it's done.
 
-Routers: A router determines which retriever will be used to retrieve relevant context from the knowledge base. More specifically, the RouterRetriever class, are responsible for selecting one or multiple candidate retrievers to execute a query. They use a selector to choose the best option based on each candidate's metadata and the query.
+[**Routers**](/module_guides/querying/router/root.md):
+A router determines which retriever will be used to retrieve relevant context from the knowledge base. More specifically, the `RouterRetriever` class, are responsible for selecting one or multiple candidate retrievers to execute a query. They use a selector to choose the best option based on each candidate's metadata and the query.
 
 [**Node Postprocessors**](/module_guides/querying/node_postprocessors/root.md):
 A node postprocessor takes in a set of retrieved nodes and applies transformations, filtering, or re-ranking logic to them.
