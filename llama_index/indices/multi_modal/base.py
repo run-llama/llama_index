@@ -90,10 +90,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         # NOTE: lazy import
         from llama_index.indices.multi_modal.retriever import (
-            MutliModalVectorIndexRetriever,
+            MultiModalVectorIndexRetriever,
         )
 
-        return MutliModalVectorIndexRetriever(
+        return MultiModalVectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
             **kwargs,
