@@ -113,7 +113,7 @@ class IngestionPipeline(BaseModel):
             resolve_embed_model("default"),
         ]
 
-    def run_local(
+    def run(
         self,
         show_progress: bool = False,
         documents: Optional[List[Document]] = None,
