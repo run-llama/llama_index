@@ -5,6 +5,10 @@ from abc import abstractmethod
 from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
+from openai.types.chat.chat_completion_chunk import (
+    ChoiceDeltaToolCall,
+)
+
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
@@ -41,13 +45,13 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 
 def call_function(
-    tools: List[BaseTool], tool_call: dict, verbose: bool = False
+    tools: List[BaseTool], tool_call: Any, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
-    id_ = tool_call["id"]
-    function_call = tool_call["function"]
-    name = function_call["name"]
-    arguments_str = function_call["arguments"]
+    id_ = tool_call.id
+    function_call = tool_call.function
+    name = function_call.name
+    arguments_str = function_call.arguments
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
@@ -71,13 +75,13 @@ def call_function(
 
 
 async def acall_function(
-    tools: List[BaseTool], tool_call: dict, verbose: bool = False
+    tools: List[BaseTool], tool_call: Any, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
-    id_ = tool_call["id"]
-    function_call = tool_call["function"]
-    name = function_call["name"]
-    arguments_str = function_call["arguments"]
+    id_ = tool_call.id
+    function_call = tool_call.function
+    name = function_call.name
+    arguments_str = function_call.arguments
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
@@ -143,7 +147,7 @@ class BaseOpenAIAgent(BaseAgent):
         return self.memory.get_all()[-1].additional_kwargs.get("function_call", None)
 
     @property
-    def latest_tool_calls(self) -> Optional[List[dict]]:
+    def latest_tool_calls(self) -> Optional[List[ChoiceDeltaToolCall]]:
         return self.memory.get_all()[-1].additional_kwargs.get("tool_calls", None)
 
     def reset(self) -> None:
@@ -215,14 +219,14 @@ class BaseOpenAIAgent(BaseAgent):
         # return response stream
         return chat_stream_response
 
-    def _call_function(self, tools: List[BaseTool], tool_call: dict) -> None:
-        function_call = tool_call["function"]
+    def _call_function(self, tools: List[BaseTool], tool_call: Any) -> None:
+        function_call = tool_call.function
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: function_call["arguments"],
+                EventPayload.FUNCTION_CALL: function_call.arguments,
                 EventPayload.TOOL: get_function_by_name(
-                    tools, function_call["name"]
+                    tools, function_call.name
                 ).metadata,
             },
         ) as event:
@@ -233,14 +237,14 @@ class BaseOpenAIAgent(BaseAgent):
         self.sources.append(tool_output)
         self.memory.put(function_message)
 
-    async def _acall_function(self, tools: List[BaseTool], tool_call: dict) -> None:
-        function_call = tool_call["function"]
+    async def _acall_function(self, tools: List[BaseTool], tool_call: Any) -> None:
+        function_call = tool_call.function
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: function_call["arguments"],
+                EventPayload.FUNCTION_CALL: function_call.arguments,
                 EventPayload.TOOL: get_function_by_name(
-                    tools, function_call["name"]
+                    tools, function_call.name
                 ).metadata,
             },
         ) as event:
@@ -312,10 +316,10 @@ class BaseOpenAIAgent(BaseAgent):
             if self.latest_tool_calls is not None:
                 for tool_call in self.latest_tool_calls:
                     # Some validation
-                    if not isinstance(tool_call, dict):
-                        raise ValueError("Invalid tool_call object")
+                    # if not isinstance(tool_call, dict):
+                    #     raise ValueError("Invalid tool_call object")
 
-                    if tool_call["type"] != "function":
+                    if tool_call.type != "function":
                         raise ValueError("Invalid tool type. Unsupported by OpenAI")
                     # TODO: maybe execute this with multi-threading
                     self._call_function(tools, tool_call)
@@ -354,10 +358,10 @@ class BaseOpenAIAgent(BaseAgent):
             if self.latest_tool_calls is not None:
                 for tool_call in self.latest_tool_calls:
                     # Some validation
-                    if not isinstance(tool_call, dict):
-                        raise ValueError("Invalid tool_call object")
+                    # if not isinstance(tool_call, Dict):
+                    #     raise ValueError("Invalid tool_call object")
 
-                    if tool_call["type"] != "function":
+                    if tool_call.type != "function":
                         raise ValueError("Invalid tool type. Unsupported by OpenAI")
 
                     # TODO: maybe execute this with multi-threading

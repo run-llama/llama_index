@@ -242,8 +242,7 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
 
     additional_kwargs: Dict[str, Any] = {}
     if openai_message.tool_calls is not None:
-        # TODO change this to retain tool_calls as List[typed Objects] insteaad of dicts
-        tool_calls = [tool_call.dict() for tool_call in openai_message.tool_calls]
+        tool_calls = openai_message.tool_calls
         additional_kwargs.update(tool_calls=tool_calls)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
