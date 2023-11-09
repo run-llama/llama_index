@@ -22,6 +22,8 @@ DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".pdf": PDFReader,
     ".docx": DocxReader,
     ".pptx": PptxReader,
+    ".ppt": PptxReader,
+    ".pptm": PptxReader,
     ".jpg": ImageReader,
     ".png": ImageReader,
     ".jpeg": ImageReader,
