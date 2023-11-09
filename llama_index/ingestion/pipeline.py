@@ -65,8 +65,11 @@ def deserialize_sink_component(
 
 
 def get_keys_to_remove(obj: dict) -> List[str]:
+    """Remove unstable key/value pairs."""
     keys_to_remove = []
     for key in obj:
+        # functions and objects stored in memory will be stored
+        # in inconsistent locations, so we remove them
         if "object at 0x" in str(obj[key]):
             keys_to_remove.append(key)
         if isinstance(obj[key], dict):
