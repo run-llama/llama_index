@@ -321,7 +321,7 @@ class SelectorPromptTemplate(BasePromptTemplate):
 
 
 class LangchainPromptTemplate(BasePromptTemplate):
-    selector: "LangchainSelector"
+    selector: Any
     requires_langchain_llm: bool = False
 
     def __init__(
