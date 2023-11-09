@@ -18,7 +18,7 @@ through the `load_data` function, e.g.:
 ```python
 from llama_index import SimpleDirectoryReader
 
-documents = SimpleDirectoryReader('./data').load_data()
+documents = SimpleDirectoryReader("./data").load_data()
 ```
 
 You can also choose to construct documents manually. LlamaIndex exposes the `Document` struct.
@@ -62,15 +62,21 @@ from llama_index.schema import TextNode, NodeRelationship, RelatedNodeInfo
 node1 = TextNode(text="<text_chunk>", id_="<node_id>")
 node2 = TextNode(text="<text_chunk>", id_="<node_id>")
 # set relationships
-node1.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=node2.node_id)
-node2.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=node1.node_id)
+node1.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(
+    node_id=node2.node_id
+)
+node2.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(
+    node_id=node1.node_id
+)
 nodes = [node1, node2]
 ```
 
 The `RelatedNodeInfo` class can also store additional `metadata` if needed:
 
 ```python
-node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id=node1.node_id, metadata={"key": "val"})
+node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(
+    node_id=node1.node_id, metadata={"key": "val"}
+)
 ```
 
 ## 3. Index Construction
@@ -149,11 +155,8 @@ When creating documents, you can also attach useful metadata. Any metadata added
 
 ```python
 document = Document(
-    text='text',
-    metadata={
-        'filename': '<doc_file_name>',
-        'category': '<category>'
-    }
+    text="text",
+    metadata={"filename": "<doc_file_name>", "category": "<category>"},
 )
 ```
 
@@ -165,7 +168,11 @@ By default, we use OpenAI's `text-davinci-003` model. You may choose to use anot
 an index.
 
 ```python
-from llama_index import VectorStoreIndex, ServiceContext, set_global_service_context
+from llama_index import (
+    VectorStoreIndex,
+    ServiceContext,
+    set_global_service_context,
+)
 from llama_index.llms import OpenAI
 
 ...
@@ -178,15 +185,14 @@ service_context = ServiceContext.from_defaults(llm=llm)
 set_global_service_context(service_context)
 
 # build index
-index = VectorStoreIndex.from_documents(
-    documents
-)
+index = VectorStoreIndex.from_documents(documents)
 ```
 
 To save costs, you may want to use a local model.
 
 ```python
 from llama_index import ServiceContext
+
 service_context = ServiceContext.from_defaults(llm="local")
 ```
 
@@ -200,6 +206,7 @@ If you wanted the service context from the last section to always be the default
 
 ```python
 from llama_index import set_global_service_context
+
 set_global_service_context(service_context)
 ```
 
@@ -254,13 +261,12 @@ index = load_index_from_storage(storage_context)
 ServiceContext during `load_index_from_storage` or ensure you have a global service context.
 
 ```python
-
 service_context = ServiceContext.from_defaults(llm=llm)
 set_global_service_context(service_context)
 
 # when first building the index
 index = VectorStoreIndex.from_documents(
-    documents, # service_context=service_context -> optional if not using global
+    documents,  # service_context=service_context -> optional if not using global
 )
 
 ...
@@ -270,7 +276,6 @@ index = load_index_from_storage(
     StorageContext.from_defaults(persist_dir="<persist_dir>")
     # service_context=service_context -> optional if not using global
 )
-
 ```
 
 ## 4. [Optional, Advanced] Building indices on top of other indices
@@ -293,7 +298,9 @@ query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do growing up?")
 print(response)
 
-response = query_engine.query("Write an email to the user given their background information.")
+response = query_engine.query(
+    "Write an email to the user given their background information."
+)
 print(response)
 ```
 
@@ -327,10 +334,7 @@ response_synthesizer = get_response_synthesizer()
 query_engine = RetrieverQueryEngine(
     retriever=retriever,
     response_synthesizer=response_synthesizer,
-    node_postprocessors=[
-        SimilarityPostprocessor(similarity_cutoff=0.7)
-    ]
-
+    node_postprocessors=[SimilarityPostprocessor(similarity_cutoff=0.7)],
 )
 
 # query
@@ -353,10 +357,10 @@ For instance, a summary index supports the default `SummaryIndexRetriever` that 
 For convenience, you can also use the following shorthand:
 
 ```python
-    # SummaryIndexRetriever
-    retriever = index.as_retriever(retriever_mode='default')
-    # SummaryIndexEmbeddingRetriever
-    retriever = index.as_retriever(retriever_mode='embedding')
+# SummaryIndexRetriever
+retriever = index.as_retriever(retriever_mode="default")
+# SummaryIndexEmbeddingRetriever
+retriever = index.as_retriever(retriever_mode="embedding")
 ```
 
 After choosing your desired retriever, you can construct your query engine:
@@ -377,7 +381,9 @@ After a retriever fetches relevant nodes, a `BaseSynthesizer` synthesizes the fi
 You can configure it via
 
 ```python
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode=<response_mode>)
+query_engine = RetrieverQueryEngine.from_args(
+    retriever, response_mode="<response_mode>"
+)
 ```
 
 Right now, we support the following options:
@@ -403,19 +409,27 @@ index = SummaryIndex.from_documents(documents)
 retriever = index.as_retriever()
 
 # default
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='default')
+query_engine = RetrieverQueryEngine.from_args(
+    retriever, response_mode="default"
+)
 response = query_engine.query("What did the author do growing up?")
 
 # compact
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='compact')
+query_engine = RetrieverQueryEngine.from_args(
+    retriever, response_mode="compact"
+)
 response = query_engine.query("What did the author do growing up?")
 
 # tree summarize
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='tree_summarize')
+query_engine = RetrieverQueryEngine.from_args(
+    retriever, response_mode="tree_summarize"
+)
 response = query_engine.query("What did the author do growing up?")
 
 # no text
-query_engine = RetrieverQueryEngine.from_args(retriever, response_mode='no_text')
+query_engine = RetrieverQueryEngine.from_args(
+    retriever, response_mode="no_text"
+)
 response = query_engine.query("What did the author do growing up?")
 ```
 
@@ -437,8 +451,7 @@ To configure the desired node postprocessors:
 ```python
 node_postprocessors = [
     KeywordNodePostprocessor(
-        required_keywords=["Combinator"],
-        exclude_keywords=["Italy"]
+        required_keywords=["Combinator"], exclude_keywords=["Italy"]
     )
 ]
 query_engine = RetrieverQueryEngine.from_args(
