@@ -226,7 +226,7 @@ class OpenAI(LLM):
     def _update_tool_calls(
         self,
         tool_calls: List[ChoiceDeltaToolCall],
-        tool_calls_delta: List[ChoiceDeltaToolCall],
+        tool_calls_delta: Optional[List[ChoiceDeltaToolCall]],
     ) -> List[ChoiceDeltaToolCall]:
         """Use the tool_calls_delta objects received from openai to update the
         running tool_calls object.
@@ -239,6 +239,9 @@ class OpenAI(LLM):
             List[ChoiceDeltaToolCall]: _description_
         """
         # openai provides chunks consisting of tool_call deltas one tool at a time
+        if tool_calls_delta is None:
+            return tool_calls
+
         tc_delta = tool_calls_delta[0]
 
         if len(tool_calls) == 0:
@@ -294,10 +297,7 @@ class OpenAI(LLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    if delta.tool_calls:
-                        tool_calls = self._update_tool_calls(
-                            tool_calls, delta.tool_calls
-                        )
+                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = [t.dict() for t in tool_calls]
 
                 yield ChatResponse(
