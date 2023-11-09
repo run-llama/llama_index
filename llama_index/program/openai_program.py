@@ -2,7 +2,6 @@ import logging
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, cast
 
 from llama_index.agent.openai_agent import resolve_tool_choice
-from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import to_openai_tool
@@ -15,8 +14,8 @@ _logger = logging.getLogger(__name__)
 
 
 def _default_tool_choice(
-    output_cls: Type[BaseModel], allow_multiple: bool = False
-) -> Dict[str, Any]:
+    output_cls: Type[Model], allow_multiple: bool = False
+) -> Union[str, Dict[str, Any]]:
     """Default OpenAI tool to choose."""
     if allow_multiple:
         return "auto"
@@ -42,10 +41,10 @@ def _get_json_str(raw_str: str, start_idx: int) -> Tuple[Optional[str], int]:
 
 def _parse_tool_calls(
     tool_calls: List[dict],
-    output_cls: Type[BaseModel],
+    output_cls: Type[Model],
     allow_multiple: bool = False,
     verbose: bool = False,
-) -> Union[BaseModel, List[BaseModel]]:
+) -> Union[Model, List[Model]]:
     outputs = []
     for tool_call in tool_calls:
         function_call = tool_call["function"]
@@ -141,7 +140,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         )
 
     @property
-    def output_cls(self) -> Type[BaseModel]:
+    def output_cls(self) -> Type[Model]:
         return self._output_cls
 
     @property
@@ -156,7 +155,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[BaseModel, List[BaseModel]]:
+    ) -> Union[Model, List[Model]]:
         openai_fn_spec = to_openai_tool(self._output_cls)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
@@ -185,7 +184,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[BaseModel, List[BaseModel]]:
+    ) -> Union[Model, List[Model]]:
         openai_fn_spec = to_openai_tool(self._output_cls)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
@@ -210,9 +209,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             verbose=self._verbose,
         )
 
-    def stream_list(
-        self, *args: Any, **kwargs: Any
-    ) -> Generator[BaseModel, None, None]:
+    def stream_list(self, *args: Any, **kwargs: Any) -> Generator[Model, None, None]:
         """Streams a list of objects."""
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
