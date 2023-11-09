@@ -66,7 +66,7 @@ rows = [
 ]
 for row in rows:
     stmt = insert(city_stats_table).values(**row)
-    with engine.connect() as connection:
+    with engine.begin() as connection:
         cursor = connection.execute(stmt)
 ```
 
