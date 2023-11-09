@@ -50,7 +50,7 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
             completion_to_prompt=completion_to_prompt,
             model_kwargs={"n_gpu_layers": 1},
         )
-    elif isinstance(llm, BaseLanguageModel):
+    elif BaseLanguageModel is not None and isinstance(llm, BaseLanguageModel):
         # NOTE: if it's a langchain model, wrap it in a LangChainLLM
         llm = LangChainLLM(llm=llm)
     elif llm is None:

@@ -6,7 +6,6 @@ from typing import Any
 import pytest
 from llama_index.llms import MockLLM
 from llama_index.llms.base import ChatMessage, MessageRole
-from llama_index.llms.langchain import LangChainLLM
 from llama_index.prompts import (
     ChatPromptTemplate,
     LangchainPromptTemplate,
@@ -23,6 +22,7 @@ try:
         ConditionalPromptSelector as LangchainSelector,
     )
     from llama_index.bridge.langchain import PromptTemplate as LangchainTemplate
+    from llama_index.llms.langchain import LangChainLLM
 except ImportError:
     langchain = None  # type: ignore
 

@@ -21,11 +21,7 @@ from llama_index.llms.everlyai import EverlyAI
 from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
 from llama_index.llms.huggingface import HuggingFaceInferenceAPI, HuggingFaceLLM
 from llama_index.llms.konko import Konko
-
-try:
-    from llama_index.llms.langchain import LangChainLLM
-except ImportError:
-    LangChainLLM = None
+from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.litellm import LiteLLM
 from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.llms.localai import LocalAI

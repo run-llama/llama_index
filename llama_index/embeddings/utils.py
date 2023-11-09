@@ -37,6 +37,11 @@ def load_embedding(file_path: str) -> List[float]:
 
 def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbedding:
     """Resolve embed model."""
+    try:
+        from llama_index.bridge.langchain import Embeddings as LCEmbeddings
+    except ImportError:
+        LCEmbeddings = None
+
     if embed_model == "default":
         try:
             embed_model = OpenAIEmbedding()
@@ -77,7 +82,7 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
                 model_name=model_name, cache_folder=cache_folder
             )
 
-    if isinstance(embed_model, LCEmbeddings):
+    if LCEmbeddings is not None and isinstance(embed_model, LCEmbeddings):
         embed_model = LangchainEmbedding(embed_model)
 
     if embed_model is None:

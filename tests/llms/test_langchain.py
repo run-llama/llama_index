@@ -2,7 +2,6 @@ from typing import List
 
 import pytest
 from llama_index.llms.base import ChatMessage, MessageRole
-from llama_index.llms.langchain import LangChainLLM
 
 try:
     import langchain
@@ -17,6 +16,7 @@ try:
         OpenAI,
         SystemMessage,
     )
+    from llama_index.llms.langchain import LangChainLLM
     from llama_index.llms.langchain_utils import from_lc_messages, to_lc_messages
 except ImportError:
     langchain = None  # type: ignore

@@ -102,6 +102,8 @@ class FunctionTool(AsyncBaseTool):
         **langchain_tool_kwargs: Any,
     ) -> "Tool":
         """To langchain tool."""
+        from llama_index.bridge.langchain import Tool
+
         langchain_tool_kwargs = self._process_langchain_tool_kwargs(
             langchain_tool_kwargs
         )
@@ -116,6 +118,8 @@ class FunctionTool(AsyncBaseTool):
         **langchain_tool_kwargs: Any,
     ) -> "StructuredTool":
         """To langchain structured tool."""
+        from llama_index.bridge.langchain import StructuredTool
+
         langchain_tool_kwargs = self._process_langchain_tool_kwargs(
             langchain_tool_kwargs
         )
