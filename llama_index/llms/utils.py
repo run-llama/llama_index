@@ -20,7 +20,7 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
             llm = OpenAI()
         except ValueError as e:
             raise ValueError(
-                "******\n"
+                "\n******\n"
                 "Could not load OpenAI model. "
                 "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
                 "Original error:\n"

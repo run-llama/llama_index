@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
@@ -364,3 +365,10 @@ def resolve_from_aliases(*args: Optional[str]) -> Optional[str]:
         if arg is not None:
             return arg
     return None
+
+
+def validate_openai_api_key(api_key: Optional[str] = None) -> None:
+    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+
+    if not openai_api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
