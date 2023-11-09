@@ -341,7 +341,12 @@ class OpenAIAssistantAgent(BaseAgent):
         function_call: Union[str, dict] = "auto",
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
-        raise NotImplementedError("async chat not implemented")
+        return self._chat(
+            message,
+            chat_history=chat_history,
+            function_call=function_call,
+            mode=mode,
+        )
 
     @trace_method("chat")
     def chat(
