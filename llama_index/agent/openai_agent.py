@@ -41,7 +41,7 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 
 def call_function(
-    tools: List[BaseTool], tool_call: Any, verbose: bool = False
+    tools: List[BaseTool], tool_call: OpenAIToolCall, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     id_ = tool_call.id
@@ -71,7 +71,7 @@ def call_function(
 
 
 async def acall_function(
-    tools: List[BaseTool], tool_call: Any, verbose: bool = False
+    tools: List[BaseTool], tool_call: OpenAIToolCall, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     id_ = tool_call.id
@@ -215,7 +215,7 @@ class BaseOpenAIAgent(BaseAgent):
         # return response stream
         return chat_stream_response
 
-    def _call_function(self, tools: List[BaseTool], tool_call: Any) -> None:
+    def _call_function(self, tools: List[BaseTool], tool_call: OpenAIToolCall) -> None:
         function_call = tool_call.function
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
@@ -233,7 +233,9 @@ class BaseOpenAIAgent(BaseAgent):
         self.sources.append(tool_output)
         self.memory.put(function_message)
 
-    async def _acall_function(self, tools: List[BaseTool], tool_call: Any) -> None:
+    async def _acall_function(
+        self, tools: List[BaseTool], tool_call: OpenAIToolCall
+    ) -> None:
         function_call = tool_call.function
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
