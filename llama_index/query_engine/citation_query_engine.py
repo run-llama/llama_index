@@ -212,7 +212,7 @@ class CitationQueryEngine(BaseQueryEngine):
 
         return nodes
 
-    async def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+    async def aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = await self._retriever.aretrieve(query_bundle)
 
         for postprocessor in self._node_postprocessors:
