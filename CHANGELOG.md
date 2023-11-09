@@ -1,5 +1,16 @@
 # ChangeLog
 
+## [0.8.66] - 2023-11-09
+
+### New Features
+
+- Support parallel function calling with new OpenAI client in `OpenAIPydanticProgram` (#8793)
+
+### Bug Fixes / Nits
+
+- Fix bug in pydantic programs with new OpenAI client (#8793)
+- Fixed bug with un-listable fsspec objects (#8795)
+
 ## [0.8.65] - 2023-11-08
 
 ### New Features
