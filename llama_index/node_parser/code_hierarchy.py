@@ -1,5 +1,6 @@
+from collections import defaultdict
 from enum import Enum
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.node_parser.extractors.metadata_extractors import MetadataExtractor
 from llama_index.node_parser.interface import NodeParser
@@ -444,6 +445,60 @@ class CodeHierarchyNodeParser(NodeParser):
             upstream_children_documents=upstream_children_documents,
             all_documents=all_documents,
         )
+
+    @staticmethod
+    def get_code_hierarchy_from_nodes(
+        nodes: Sequence[BaseNode],
+    ) -> str:
+        """
+        Creates a code hierarchy appropriate to put into a tool description or context
+        to make it easier to search for code.
+
+        Call after `get_nodes_from_documents` and pass that output to this function.
+        """
+        out: Dict[str, Any] = defaultdict(dict)
+
+        def get_subdict(keys: list[str]) -> Dict[str, Any]:
+            # Get the dictionary we are operating on
+            this_dict = out
+            for key in keys:
+                if key not in this_dict:
+                    this_dict[key] = defaultdict(dict)
+                this_dict = this_dict[key]
+            return this_dict
+
+        def recur_inclusive_scope(node: BaseNode, i: int, keys: list[str]) -> None:
+            if "inclusive_scopes" not in node.metadata:
+                raise KeyError("inclusive_scopes not in node.metadata")
+            if i >= len(node.metadata["inclusive_scopes"]):
+                return
+            scope = node.metadata["inclusive_scopes"][i]
+
+            this_dict = get_subdict(keys)
+
+            if scope["name"] not in this_dict:
+                this_dict[scope["name"]] = defaultdict(dict)
+
+            recur_inclusive_scope(node, i + 1, [*keys, scope["name"]])
+
+        def dict_to_markdown(d, depth=0):
+            markdown = ""
+            indent = "  " * depth  # Two spaces per depth level
+
+            for key, value in d.items():
+                if isinstance(value, dict):  # Check if value is a dict
+                    # Add the key with a bullet point and increase depth for nested dicts
+                    markdown += f"{indent}- {key}\n{dict_to_markdown(value, depth + 1)}"
+                else:
+                    # Handle non-dict items if necessary
+                    markdown += f"{indent}- {key}: {value}\n"
+
+            return markdown
+
+        for node in nodes:
+            recur_inclusive_scope(node, 0, node.metadata["filepath"].split("/"))
+
+        return dict_to_markdown(out)
 
     def get_nodes_from_documents(
         self,
