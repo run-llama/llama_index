@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -93,7 +93,7 @@ class OpenAIMultiModal(MultiModalLLM):
         )
         self._client, self._aclient = self._get_clients(**kwargs)
 
-    def _get_clients(self, **kwargs: Any) -> tuple[SyncOpenAI, AsyncOpenAI]:
+    def _get_clients(self, **kwargs: Any) -> Tuple[SyncOpenAI, AsyncOpenAI]:
         client = SyncOpenAI(**self._get_credential_kwargs())
         aclient = AsyncOpenAI(**self._get_credential_kwargs())
         return client, aclient
