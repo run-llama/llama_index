@@ -16,20 +16,21 @@ In LlamaIndex, there are several classes of transformations:
 Using transformations directly is easy!
 
 ```python
-from llama_index.ingesstion import run_transformations
+from llama_index.ingesstion import IngestionPipeline
 from llama_index.embeddings import OpenAIEmbedding
 from llama_index.node_parser import SentenceSplitter
 
 documents = ...
 
-transformations = [
-    SentenceSplitter(chunk_size=256),
-    OpenAIEmbedding(embed_batch_size=10),
-]
+pipeline = IngestionPipeline(
+    transformations=[
+        SentenceSplitter(chunk_size=256),
+        OpenAIEmbedding(embed_batch_size=10),
+    ]
+)
 
-nodes = run_transformations(
-    documents,
-    transformations,
+nodes = pipeline.run(
+    documents=documents,
     in_place=True,
     show_progress=True,
 )

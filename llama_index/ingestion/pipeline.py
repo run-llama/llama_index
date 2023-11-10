@@ -179,6 +179,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
         cache_collection: Optional[str] = None,
+        in_place: bool = True,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
         input_nodes: List[BaseNode] = []
@@ -200,6 +201,7 @@ class IngestionPipeline(BaseModel):
             show_progress=show_progress,
             cache=self.cache if not self.disable_cache else None,
             cache_collection=cache_collection,
+            in_place=in_place,
             **kwargs,
         )
 
@@ -214,6 +216,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
         cache_collection: Optional[str] = None,
+        in_place: bool = True,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
         input_nodes: List[BaseNode] = []
@@ -235,6 +238,7 @@ class IngestionPipeline(BaseModel):
             show_progress=show_progress,
             cache=self.cache if not self.disable_cache else None,
             cache_collection=cache_collection,
+            in_place=in_place,
             **kwargs,
         )
 

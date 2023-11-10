@@ -37,7 +37,11 @@ transformations = [
 Then, we can run our transformations on input documents or nodes:
 
 ```python
-from llama_index.ingestion import run_transformations
+from llama_index.ingestion import IngestionPipline
+
+pipeline = IngestionPipline(transformations=transformations)
+
+nodes = pipeline.run(documents=documents)
 ```
 
 Here is an sample of extracted metadata:

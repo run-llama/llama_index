@@ -25,11 +25,14 @@ title_extractor = TitleExtractor(nodes=5)
 qa_extractor = QuestionsAnsweredExtractor(questions=3)
 
 # assume documents are defined -> extract nodes
-from llama_index.ingestion import run_transformations
+from llama_index.ingestion import IngestionPipeline
 
-nodes = run_transformations(
-    documents,
-    [node_parser, title_extractor, qa_extractor],
+pipeline = IngestionPipeline(
+    transformations=[node_parser, title_extractor, qa_extractor]
+)
+
+nodes = pipeline.run(
+    documents=documents,
     in_place=True,
     show_progress=True,
 )

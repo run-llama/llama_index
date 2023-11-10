@@ -21,18 +21,18 @@ nodes = node_parser.get_nodes_from_documents(
 
 ### Transformation Usage
 
-Node parsers can be included in any set of transformations.
+Node parsers can be included in any set of transformations with an ingestion pipeline.
 
 ```python
 from llama_index import SimpleDirectoryReader
-from llama_index.ingestion import run_transformations
+from llama_index.ingestion import IngestionPipeline
 from llama_index.node_parser import TokenTextSplitter
 
 documents = SimpleDirectoryReader("./data").load_data()
 
-transformations = [TokenTextSplitter(), ...]
+pipeline = IngestionPipeline(transformations=[TokenTextSplitter(), ...])
 
-nodes = run_transformations(documents, transformations)
+nodes = pipeline.run(documents=documents)
 ```
 
 ### Service Context Usage
