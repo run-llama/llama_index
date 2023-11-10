@@ -10,12 +10,12 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.common.struct_store.schema import SQLContextContainer
 from llama_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.base import BaseStructStoreIndex
 from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
 from llama_index.schema import BaseNode
+from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
 

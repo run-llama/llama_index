@@ -5,7 +5,6 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.service_context import ServiceContext
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.mixin import PromptMixinType
@@ -16,6 +15,7 @@ from llama_index.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 
 
 class RetrieverQueryEngine(BaseQueryEngine):

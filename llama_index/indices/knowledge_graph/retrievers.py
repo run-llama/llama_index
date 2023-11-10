@@ -8,7 +8,6 @@ from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
-from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from llama_index.schema import (
@@ -18,6 +17,7 @@ from llama_index.schema import (
     QueryBundle,
     TextNode,
 )
+from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import print_text, truncate_text
 

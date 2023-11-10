@@ -47,10 +47,6 @@ from llama_index.indices.common.struct_store.base import SQLDocumentContextBuild
 
 # prompt helper
 from llama_index.indices.prompt_helper import PromptHelper
-from llama_index.indices.service_context import (
-    ServiceContext,
-    set_global_service_context,
-)
 from llama_index.llm_predictor import LLMPredictor
 
 # token predictor
@@ -73,6 +69,10 @@ from llama_index.response.schema import Response
 # Response Synthesizer
 from llama_index.response_synthesizers.factory import get_response_synthesizer
 from llama_index.schema import Document, QueryBundle
+from llama_index.service_context import (
+    ServiceContext,
+    set_global_service_context,
+)
 
 # storage
 from llama_index.storage.storage_context import StorageContext

@@ -6,10 +6,10 @@ from typing import Any, Dict, Generator, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.json_query import JSONQueryEngine, JSONType
 from llama_index.response.schema import Response
 from llama_index.schema import QueryBundle
+from llama_index.service_context import ServiceContext
 
 TEST_PARAMS = [
     # synthesize_response, call_apredict

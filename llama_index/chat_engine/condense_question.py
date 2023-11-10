@@ -10,13 +10,13 @@ from llama_index.chat_engine.types import (
 )
 from llama_index.chat_engine.utils import response_gen_from_query_engine
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
+from llama_index.service_context import ServiceContext
 from llama_index.tools import ToolOutput
 
 logger = logging.getLogger(__name__)

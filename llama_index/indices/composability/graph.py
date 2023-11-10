@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional, Sequence, Type, cast
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import IndexNode, NodeRelationship, ObjectType, RelatedNodeInfo
+from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 
 

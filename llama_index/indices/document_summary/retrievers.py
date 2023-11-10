@@ -9,7 +9,6 @@ from typing import Any, Callable, List, Optional
 
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
@@ -17,6 +16,7 @@ from llama_index.indices.utils import (
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import VectorStoreQuery
 
 logger = logging.getLogger(__name__)

@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 from llama_index.bridge.pydantic import Field
-from llama_index.indices.service_context import ServiceContext
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 
 # NOTE: currently not being used
 # DEFAULT_INFER_RECENCY_TMPL = (

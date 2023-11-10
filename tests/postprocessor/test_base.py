@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Dict, cast
 
 import pytest
-from llama_index.indices.service_context import ServiceContext
 from llama_index.postprocessor.node import (
     KeywordNodePostprocessor,
     PrevNextNodePostprocessor,
@@ -23,6 +22,7 @@ from llama_index.schema import (
     RelatedNodeInfo,
     TextNode,
 )
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
 spacy_installed = bool(find_spec("spacy"))

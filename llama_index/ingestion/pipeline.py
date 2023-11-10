@@ -4,11 +4,11 @@ from typing import Any, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.indices.service_context import ServiceContext
 from llama_index.ingestion.cache import IngestionCache
 from llama_index.node_parser import SentenceSplitter
 from llama_index.readers.base import ReaderConfig
 from llama_index.schema import BaseNode, Document, MetadataMode, TransformComponent
+from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
 

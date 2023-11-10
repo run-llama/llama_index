@@ -8,7 +8,6 @@ from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.common_tree.base import GPTTreeIndexBuilder
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.inserter import TreeIndexInserter
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
@@ -16,6 +15,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from llama_index.schema import BaseNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 
 

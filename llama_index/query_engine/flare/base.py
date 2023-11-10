@@ -8,7 +8,6 @@ from typing import Any, Dict, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.query_engine.flare.answer_inserter import (
@@ -21,6 +20,7 @@ from llama_index.query_engine.flare.output_parser import (
 )
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import QueryBundle
+from llama_index.service_context import ServiceContext
 from llama_index.utils import print_text
 
 # These prompts are taken from the FLARE repo:

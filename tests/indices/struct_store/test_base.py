@@ -3,7 +3,6 @@
 from typing import Any, Dict, List, Tuple
 
 from llama_index.indices.list.base import SummaryIndex
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.sql import (
     SQLContextContainerBuilder,
     SQLStructStoreIndex,
@@ -17,6 +16,7 @@ from llama_index.schema import (
     RelatedNodeInfo,
     TextNode,
 )
+from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import (
     Column,

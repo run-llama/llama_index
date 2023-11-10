@@ -3,7 +3,6 @@ from typing import Any, List, Optional, cast
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser import (
@@ -15,6 +14,7 @@ from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
 )
 from llama_index.output_parsers.base import OutputParserException, StructuredOutput
 from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreInfo,

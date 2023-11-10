@@ -9,7 +9,6 @@ from sqlalchemy import Table
 
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.service_context import ServiceContext
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate
@@ -18,6 +17,7 @@ from llama_index.prompts.default_prompts import (
 )
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType, TextNode
+from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
 logger = logging.getLogger(__name__)

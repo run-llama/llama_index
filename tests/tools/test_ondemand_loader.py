@@ -10,9 +10,9 @@ except ImportError:
     langchain = None  # type: ignore
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.readers.string_iterable import StringIterableReader
+from llama_index.service_context import ServiceContext
 from llama_index.tools.ondemand_loader_tool import OnDemandLoaderTool
 
 

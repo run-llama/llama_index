@@ -2,7 +2,6 @@
 from typing import Callable, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
@@ -12,6 +11,7 @@ from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 
 
 class LLMRerank(BaseNodePostprocessor):
