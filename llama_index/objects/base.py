@@ -4,12 +4,12 @@ from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
 
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryType
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.objects.base_node_mapping import (
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
 )
+from llama_index.schema import QueryType
 
 OT = TypeVar("OT")
 

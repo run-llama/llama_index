@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Union, cast
 from sqlalchemy import Table
 
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
@@ -26,6 +25,7 @@ from llama_index.response.schema import Response
 from llama_index.response_synthesizers import (
     get_response_synthesizer,
 )
+from llama_index.schema import QueryBundle
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
 logger = logging.getLogger(__name__)

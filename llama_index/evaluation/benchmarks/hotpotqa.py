@@ -11,9 +11,8 @@ import tqdm
 
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-from llama_index.schema import NodeWithScore, TextNode
+from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.utils import get_cache_dir
 
 DEV_DISTRACTOR_URL = """http://curtis.ml.cmu.edu/datasets/\

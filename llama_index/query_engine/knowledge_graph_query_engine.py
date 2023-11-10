@@ -9,13 +9,12 @@ from llama_index.graph_stores.registry import (
     GraphStoreType,
 )
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
-from llama_index.schema import NodeWithScore, TextNode
+from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import print_text
 

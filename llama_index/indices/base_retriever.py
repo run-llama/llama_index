@@ -1,10 +1,9 @@
 from abc import abstractmethod
 from typing import List, Optional
 
-from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, QueryBundle, QueryType
 
 
 class BaseRetriever(PromptMixin):

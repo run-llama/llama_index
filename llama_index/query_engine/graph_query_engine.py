@@ -3,9 +3,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.response.schema import RESPONSE_TYPE
-from llama_index.schema import IndexNode, NodeWithScore, TextNode
+from llama_index.schema import IndexNode, NodeWithScore, QueryBundle, TextNode
 
 
 class ComposableGraphQueryEngine(BaseQueryEngine):

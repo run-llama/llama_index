@@ -3,9 +3,8 @@ from typing import Callable, List, Optional, cast
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore, QueryBundle
 from llama_index.storage.docstore.types import BaseDocumentStore
 from llama_index.utils import get_tokenizer
 

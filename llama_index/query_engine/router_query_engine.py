@@ -7,7 +7,6 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.objects.base import ObjectRetriever
 from llama_index.prompts.default_prompt_selectors import (
@@ -21,7 +20,7 @@ from llama_index.response.schema import (
     StreamingResponse,
 )
 from llama_index.response_synthesizers import TreeSummarize
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, QueryBundle
 from llama_index.selectors.types import BaseSelector
 from llama_index.selectors.utils import get_selector_from_context
 from llama_index.tools.query_engine import QueryEngineTool

@@ -6,9 +6,8 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.schema import MetadataMode, NodeWithScore
+from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
 
 logger = logging.getLogger(__name__)
 

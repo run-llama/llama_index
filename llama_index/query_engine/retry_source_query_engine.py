@@ -5,12 +5,11 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.evaluation import BaseEvaluator
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.response.schema import RESPONSE_TYPE, Response
-from llama_index.schema import Document
+from llama_index.schema import Document, QueryBundle
 
 logger = logging.getLogger(__name__)
 

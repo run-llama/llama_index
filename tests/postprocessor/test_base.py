@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Dict, cast
 
 import pytest
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.postprocessor.node import (
     KeywordNodePostprocessor,
@@ -20,6 +19,7 @@ from llama_index.schema import (
     MetadataMode,
     NodeRelationship,
     NodeWithScore,
+    QueryBundle,
     RelatedNodeInfo,
     TextNode,
 )

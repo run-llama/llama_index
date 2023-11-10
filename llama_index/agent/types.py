@@ -4,10 +4,10 @@ from typing import List, Optional
 from llama_index.callbacks import trace_method
 from llama_index.chat_engine.types import BaseChatEngine, StreamingAgentChatResponse
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.base import ChatMessage
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.schema import QueryBundle
 
 
 class BaseAgent(BaseChatEngine, BaseQueryEngine):

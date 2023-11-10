@@ -5,10 +5,9 @@ from typing import Any, List, cast
 
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.utils import get_sorted_node_list
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, QueryBundle
 
 logger = logging.getLogger(__name__)
 

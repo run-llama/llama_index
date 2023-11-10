@@ -8,9 +8,9 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.query_transform.feedback_transform import (
     FeedbackQueryTransformation,
 )
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.schema import QueryBundle
 
 logger = logging.getLogger(__name__)
 

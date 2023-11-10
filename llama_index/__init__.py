@@ -34,9 +34,6 @@ from llama_index.indices.loading import (
 
 # prompt helper
 from llama_index.indices.prompt_helper import PromptHelper
-
-# QueryBundle
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import (
     ServiceContext,
     set_global_service_context,
@@ -66,8 +63,9 @@ from llama_index.response.schema import Response
 # Response Synthesizer
 from llama_index.response_synthesizers.factory import get_response_synthesizer
 
+# QueryBundle
 # readers
-from llama_index.schema import Document
+from llama_index.schema import Document, QueryBundle
 
 # storage
 from llama_index.storage.storage_context import StorageContext
