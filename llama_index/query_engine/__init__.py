@@ -1,4 +1,4 @@
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 
 # SQL
 from llama_index.indices.struct_store.sql_query import (

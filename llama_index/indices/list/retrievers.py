@@ -2,11 +2,9 @@
 import logging
 from typing import Any, Callable, List, Optional, Tuple
 
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.core import BaseRetriever
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
@@ -15,7 +13,8 @@ from llama_index.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_CHOICE_SELECT_PROMPT,
 )
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 
 logger = logging.getLogger(__name__)
 

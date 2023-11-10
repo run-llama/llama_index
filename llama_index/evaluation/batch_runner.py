@@ -1,9 +1,9 @@
 import asyncio
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
+from llama_index.core import BaseQueryEngine
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.evaluation.eval_utils import asyncio_module
-from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.response.schema import RESPONSE_TYPE, Response
 
 

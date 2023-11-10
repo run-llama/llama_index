@@ -6,9 +6,8 @@ from typing import Any, Dict, List, Optional
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.embeddings.mutli_modal_base import MultiModalEmbedding
 from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,

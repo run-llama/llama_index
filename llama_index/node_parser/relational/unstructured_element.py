@@ -103,7 +103,7 @@ def extract_table_summaries(
 ) -> None:
     """Go through elements, extract out summaries that are tables."""
     from llama_index.indices.list.base import SummaryIndex
-    from llama_index.indices.service_context import ServiceContext
+    from llama_index.service_context import ServiceContext
 
     llm = llm or OpenAI()
     llm = cast(LLM, llm)

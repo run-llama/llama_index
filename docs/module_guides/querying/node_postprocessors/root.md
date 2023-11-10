@@ -17,7 +17,7 @@ Confused about where node postprocessor fits in the pipeline? Read about [high-l
 An example of using a node postprocessors is below:
 
 ```python
-from llama_index.indices.postprocessor import (
+from llama_index.postprocessor import (
     SimilarityPostprocessor,
     CohereRerank,
 )
@@ -47,7 +47,7 @@ Most commonly, node-postprocessors will be used in a query engine, where they ar
 
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.indices.postprocessor import TimeWeightedPostprocessor
+from llama_index.postprocessor import TimeWeightedPostprocessor
 
 documents = SimpleDirectoryReader("./data").load_data()
 
@@ -70,7 +70,7 @@ response = query_engine.query("query string")
 Or used as a standalone object for filtering retrieved nodes:
 
 ```python
-from llama_index.indices.postprocessor import SimilarityPostprocessor
+from llama_index.postprocessor import SimilarityPostprocessor
 
 nodes = index.as_retriever().retrieve("test query str")
 
@@ -84,7 +84,7 @@ filtered_nodes = processor.postprocess_nodes(nodes)
 As you may have noticed, the postprocessors take `NodeWithScore` objects as inputs, which is just a wrapper class with a `Node` and a `score` value.
 
 ```python
-from llama_index.indices.postprocessor import SimilarityPostprocessor
+from llama_index.postprocessor import SimilarityPostprocessor
 from llama_index.schema import Node, NodeWithScore
 
 nodes = [
@@ -116,7 +116,7 @@ A dummy node-postprocessor can be implemented in just a few lines of code:
 
 ```python
 from llama_index import QueryBundle
-from llama_index.indices.postprocessor.base import BaseNodePostprocessor
+from llama_index.postprocessor.base import BaseNodePostprocessor
 from llama_index.schema import NodeWithScore
 
 

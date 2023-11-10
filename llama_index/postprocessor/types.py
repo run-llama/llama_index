@@ -3,9 +3,8 @@ from typing import List, Optional
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.schema import BaseComponent, NodeWithScore
+from llama_index.schema import BaseComponent, NodeWithScore, QueryBundle
 
 
 class BaseNodePostprocessor(BaseComponent, ABC):
