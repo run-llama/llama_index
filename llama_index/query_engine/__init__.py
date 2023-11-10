@@ -14,6 +14,7 @@ from llama_index.query_engine.graph_query_engine import ComposableGraphQueryEngi
 from llama_index.query_engine.knowledge_graph_query_engine import (
     KnowledgeGraphQueryEngine,
 )
+from llama_index.query_engine.multi_modal_query_engine import MultiModalQueryEngine
 from llama_index.query_engine.multistep_query_engine import MultiStepQueryEngine
 from llama_index.query_engine.pandas_query_engine import PandasQueryEngine
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
@@ -57,6 +58,7 @@ __all__ = [
     "KnowledgeGraphQueryEngine",
     "BaseQueryEngine",
     "CustomQueryEngine",
+    "MultiModalQueryEngine",
     # SQL
     "SQLTableRetrieverQueryEngine",
     "NLSQLTableQueryEngine",
