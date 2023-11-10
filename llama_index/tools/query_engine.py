@@ -1,7 +1,11 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.langchain_helpers.agents.tools import IndexToolConfig, LlamaIndexTool
+
+if TYPE_CHECKING:
+    from llama_index.langchain_helpers.agents.tools import (
+        LlamaIndexTool,
+    )
 from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 
 DEFAULT_NAME = "query_engine_tool"
@@ -81,7 +85,12 @@ class QueryEngineTool(AsyncBaseTool):
             raw_output=response,
         )
 
-    def as_langchain_tool(self) -> LlamaIndexTool:
+    def as_langchain_tool(self) -> "LlamaIndexTool":
+        from llama_index.langchain_helpers.agents.tools import (
+            IndexToolConfig,
+            LlamaIndexTool,
+        )
+
         tool_config = IndexToolConfig(
             query_engine=self.query_engine,
             name=self.metadata.name,

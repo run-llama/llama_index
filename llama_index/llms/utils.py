@@ -1,19 +1,26 @@
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
-from langchain.base_language import BaseLanguageModel
+if TYPE_CHECKING:
+    from langchain.base_language import BaseLanguageModel
 
 from llama_index.llms.base import LLM
-from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.llms.llama_utils import completion_to_prompt, messages_to_prompt
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
 
-LLMType = Union[str, LLM, BaseLanguageModel]
+LLMType = Union[str, LLM, "BaseLanguageModel"]
 
 
 def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
     """Resolve LLM from string or LLM instance."""
+    try:
+        from langchain.base_language import BaseLanguageModel
+
+        from llama_index.llms.langchain import LangChainLLM
+    except ImportError:
+        BaseLanguageModel = None  # type: ignore
+
     if llm == "default":
         # return default OpenAI model. If it fails, return LlamaCPP
         try:
@@ -43,7 +50,7 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
             completion_to_prompt=completion_to_prompt,
             model_kwargs={"n_gpu_layers": 1},
         )
-    elif isinstance(llm, BaseLanguageModel):
+    elif BaseLanguageModel is not None and isinstance(llm, BaseLanguageModel):
         # NOTE: if it's a langchain model, wrap it in a LangChainLLM
         llm = LangChainLLM(llm=llm)
     elif llm is None:
