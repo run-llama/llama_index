@@ -4,6 +4,11 @@ import pytest
 from llama_index.llms.base import ChatMessage, MessageRole
 
 try:
+    import cohere
+except ImportError:
+    cohere = None  # type: ignore
+
+try:
     import langchain
     from llama_index.bridge.langchain import (
         AIMessage,
@@ -68,13 +73,9 @@ def test_from_lc_messages() -> None:
         assert messages[i].content == lc_messages[i].content
 
 
-try:
-    import cohere
-except ImportError:
-    cohere = None  # type: ignore
-
-
-@pytest.mark.skipif(cohere is None, reason="cohere not installed")
+@pytest.mark.skipif(
+    cohere is None or langchain is None, reason="cohere or langchain not installed"
+)
 def test_metadata_sets_model_name() -> None:
     chat_gpt = LangChainLLM(
         llm=ChatOpenAI(model="gpt-4-0613", openai_api_key="model-name-tests")
