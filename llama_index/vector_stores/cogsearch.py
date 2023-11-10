@@ -5,7 +5,7 @@ import logging
 from enum import auto
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
@@ -15,7 +15,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -569,23 +568,8 @@ class CognitiveSearchVectorStore(VectorStore):
             score = result["@search.score"]
             chunk = result[self._field_mapping["chunk"]]
 
-            try:
-                node = metadata_dict_to_node(metadata)
-                node.set_content(chunk)
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    metadata
-                )
-
-                node = TextNode(
-                    text=chunk,
-                    id_=node_id,
-                    metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
+            node = metadata_dict_to_node(metadata)
+            node.set_content(chunk)
 
             logger.debug(f"Retrieved node id {node_id} with node data of {node}")
 

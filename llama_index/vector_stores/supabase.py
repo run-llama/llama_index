@@ -3,7 +3,7 @@ import math
 from typing import Any, List
 
 from llama_index.constants import DEFAULT_EMBEDDING_DIM
-from llama_index.schema import BaseNode, TextNode
+from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
@@ -11,7 +11,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -164,24 +163,7 @@ class SupabaseVectorStore(VectorStore):
         nodes = []
         for id_, distance, metadata in results:
             """shape of the result is [(vector, distance, metadata)]"""
-            text = metadata.pop("text", None)
-
-            try:
-                node = metadata_dict_to_node(metadata)
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    metadata
-                )
-                node = TextNode(
-                    id_=id_,
-                    text=text,
-                    metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
-
+            node = metadata_dict_to_node(metadata)
             nodes.append(node)
             similarities.append(1.0 - math.exp(-distance))
             ids.append(id_)

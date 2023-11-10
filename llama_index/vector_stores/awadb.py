@@ -7,14 +7,13 @@ import logging
 import uuid
 from typing import Any, List, Optional, Set
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -180,23 +179,8 @@ class AwaDBVectorStore(VectorStore):
                     continue
                 meta_data[item_key] = item_detail[item_key]
 
-            try:
-                node = metadata_dict_to_node(meta_data)
-                node.set_content(content)
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    meta_data
-                )
-
-                node = TextNode(
-                    text=content,
-                    id_=node_id,
-                    metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
+            node = metadata_dict_to_node(meta_data)
+            node.set_content(content)
 
             nodes.append(node)
 

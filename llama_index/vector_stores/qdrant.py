@@ -7,7 +7,7 @@ import logging
 from typing import Any, List, Optional, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.schema import BaseNode, TextNode
+from llama_index.schema import BaseNode
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
@@ -15,7 +15,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -409,23 +408,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         for point in response:
             payload = cast(Payload, point.payload)
-            try:
-                node = metadata_dict_to_node(payload)
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    payload
-                )
-
-                node = TextNode(
-                    id_=str(point.id),
-                    text=payload.get("text"),
-                    metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
+            node = metadata_dict_to_node(payload)
             nodes.append(node)
             similarities.append(point.score)
             ids.append(str(point.id))

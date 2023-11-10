@@ -7,14 +7,13 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -210,23 +209,8 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
             id = res["document"].pop(self._id_key)
             metadata_dict = res["document"].pop(self._metadata_key)
 
-            try:
-                node = metadata_dict_to_node(metadata_dict)
-                node.set_content(text)
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    metadata_dict
-                )
-
-                node = TextNode(
-                    text=text,
-                    id_=id,
-                    metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
+            node = metadata_dict_to_node(metadata_dict)
+            node.set_content(text)
             top_k_ids.append(id)
             top_k_nodes.append(node)
             top_k_scores.append(score)

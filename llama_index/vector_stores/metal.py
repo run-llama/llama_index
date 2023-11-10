@@ -1,7 +1,7 @@
 import math
 from typing import Any, List
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
@@ -9,7 +9,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -80,24 +79,8 @@ class MetalVectorStore(VectorStore):
             id_ = item["id"]
 
             # load additional Node data
-            try:
-                node = metadata_dict_to_node(item["metadata"])
-                node.text = text
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    item["metadata"]
-                )
-
-                node = TextNode(
-                    text=text,
-                    id_=id_,
-                    metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
-
+            node = metadata_dict_to_node(item["metadata"])
+            node.text = text
             nodes.append(node)
             ids.append(id_)
 

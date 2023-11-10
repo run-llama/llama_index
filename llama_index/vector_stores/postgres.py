@@ -2,7 +2,7 @@ import logging
 from typing import Any, List, NamedTuple, Optional, Type
 
 from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -504,16 +504,8 @@ class PGVectorStore(BasePydanticVectorStore):
         similarities = []
         ids = []
         for db_embedding_row in rows:
-            try:
-                node = metadata_dict_to_node(db_embedding_row.metadata)
-                node.set_content(str(db_embedding_row.text))
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                node = TextNode(
-                    id_=db_embedding_row.node_id,
-                    text=db_embedding_row.text,
-                    metadata=db_embedding_row.metadata,
-                )
+            node = metadata_dict_to_node(db_embedding_row.metadata)
+            node.set_content(str(db_embedding_row.text))
             similarities.append(db_embedding_row.similarity)
             ids.append(db_embedding_row.node_id)
             nodes.append(node)

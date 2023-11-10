@@ -2,7 +2,7 @@
 import logging
 from typing import Any, List, Optional
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     VectorStore,
@@ -14,7 +14,6 @@ from llama_index.vector_stores.utils import (
     DEFAULT_DOC_ID_KEY,
     DEFAULT_EMBEDDING_KEY,
     DEFAULT_TEXT_KEY,
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -241,22 +240,8 @@ class EpsillaVectorStore(VectorStore):
         similarities = []
         ids = []
         for res in results:
-            try:
-                node = metadata_dict_to_node({"_node_content": res["metadata"]})
-                node.text = res[DEFAULT_TEXT_KEY]
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    res["metadata"]
-                )
-                node = TextNode(
-                    id=res["id"],
-                    text=res[DEFAULT_TEXT_KEY],
-                    metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
+            node = metadata_dict_to_node({"_node_content": res["metadata"]})
+            node.text = res[DEFAULT_TEXT_KEY]
             nodes.append(node)
             similarities.append(res["@distance"])
             ids.append(res["id"])

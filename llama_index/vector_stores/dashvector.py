@@ -2,7 +2,7 @@
 import logging
 from typing import Any, List, Optional, cast
 
-from llama_index.schema import BaseNode, TextNode
+from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
@@ -11,8 +11,6 @@ from llama_index.vector_stores.types import (
 )
 from llama_index.vector_stores.utils import (
     DEFAULT_DOC_ID_KEY,
-    DEFAULT_TEXT_KEY,
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -140,24 +138,7 @@ class DashVectorStore(VectorStore):
         top_k_nodes = []
         top_k_scores = []
         for doc in rsp:
-            try:
-                node = metadata_dict_to_node(doc.fields)
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    doc.fields
-                )
-
-                text = doc.fields[DEFAULT_TEXT_KEY]
-                node = TextNode(
-                    id_=doc.id,
-                    text=text,
-                    metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
+            node = metadata_dict_to_node(doc.fields)
             top_k_ids.append(doc.id)
             top_k_nodes.append(node)
             top_k_scores.append(doc.score)

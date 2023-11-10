@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
 from llama_index.constants import DEFAULT_EMBEDDING_DIM
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
@@ -149,16 +149,8 @@ class TimescaleVectorStore(VectorStore):
         similarities = []
         ids = []
         for row in rows:
-            try:
-                node = metadata_dict_to_node(row[client.SEARCH_RESULT_METADATA_IDX])
-                node.set_content(str(row[client.SEARCH_RESULT_CONTENTS_IDX]))
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                node = TextNode(
-                    id_=row[client.SEARCH_RESULT_ID_IDX],
-                    text=row[client.SEARCH_RESULT_CONTENTS_IDX],
-                    metadata=row[client.SEARCH_RESULT_METADATA_IDX],
-                )
+            node = metadata_dict_to_node(row[client.SEARCH_RESULT_METADATA_IDX])
+            node.set_content(str(row[client.SEARCH_RESULT_CONTENTS_IDX]))
             similarities.append(row[client.SEARCH_RESULT_DISTANCE_IDX])
             ids.append(row[client.SEARCH_RESULT_ID_IDX])
             nodes.append(node)

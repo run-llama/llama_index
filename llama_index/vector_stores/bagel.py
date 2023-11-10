@@ -2,7 +2,7 @@ import logging
 import math
 from typing import Any, List
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
@@ -10,7 +10,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -154,23 +153,8 @@ class BagelVectorStore(VectorStore):
             results["metadatas"][0],
             results["distances"][0],
         ):
-            try:
-                node = metadata_dict_to_node(metadata)
-                node.set_content(text)
-            except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    metadata
-                )
-
-                node = TextNode(
-                    text=text,
-                    id_=node_id,
-                    metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
+            node = metadata_dict_to_node(metadata)
+            node.set_content(text)
 
             nodes.append(node)
             similarities.append(1.0 - math.exp(-distance))
