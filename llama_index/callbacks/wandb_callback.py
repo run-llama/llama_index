@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from wandb import Settings as WBSettings
     from wandb.sdk.data_types import trace_tree
 
-    from llama_index import (
+    from llama_index.indices import (
         ComposableGraph,
         GPTEmptyIndex,
         GPTKeywordTableIndex,
@@ -129,7 +129,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 "Please install it with `pip install wandb`."
             )
 
-        from llama_index import (
+        from llama_index.indices import (
             ComposableGraph,
             GPTEmptyIndex,
             GPTKeywordTableIndex,

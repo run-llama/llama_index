@@ -1,6 +1,7 @@
 """LlamaIndex data structures."""
 
 # indices
+from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.document_summary import (
     DocumentSummaryIndex,
     GPTDocumentSummaryIndex,
@@ -57,6 +58,7 @@ __all__ = [
     "SQLStructStoreIndex",
     "MultiModalVectorStoreIndex",
     "EmptyIndex",
+    "ComposableGraph",
     # legacy
     "GPTKnowledgeGraphIndex",
     "GPTKeywordTableIndex",
