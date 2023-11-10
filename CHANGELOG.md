@@ -1,6 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.67] - 2023-11-10
+
+### New Features
+
+- Advanced Multi Modal Retrieval Example and docs (#8822, #8823)
 
 ### Bug Fixes / Nits
 
