@@ -21,26 +21,9 @@ from llama_index.indices.common.struct_store.base import SQLDocumentContextBuild
 
 # for composability
 from llama_index.indices.composability.graph import ComposableGraph
-from llama_index.indices.document_summary import (
-    DocumentSummaryIndex,
-    GPTDocumentSummaryIndex,
-)
-from llama_index.indices.empty import EmptyIndex, GPTEmptyIndex
 
 # indices
-from llama_index.indices.keyword_table import (
-    GPTKeywordTableIndex,
-    GPTRAKEKeywordTableIndex,
-    GPTSimpleKeywordTableIndex,
-    KeywordTableIndex,
-    RAKEKeywordTableIndex,
-    SimpleKeywordTableIndex,
-)
-from llama_index.indices.knowledge_graph import (
-    GPTKnowledgeGraphIndex,
-    KnowledgeGraphIndex,
-)
-from llama_index.indices.list import GPTListIndex, ListIndex, SummaryIndex
+from llama_index.indices.list import ListIndex, SummaryIndex
 
 # loading
 from llama_index.indices.loading import (
@@ -57,11 +40,6 @@ from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import (
     ServiceContext,
     set_global_service_context,
-)
-from llama_index.indices.struct_store.pandas import GPTPandasIndex, PandasIndex
-from llama_index.indices.struct_store.sql import (
-    GPTSQLStructStoreIndex,
-    SQLStructStoreIndex,
 )
 from llama_index.indices.tree import GPTTreeIndex, TreeIndex
 from llama_index.indices.vector_store import GPTVectorStoreIndex, VectorStoreIndex
@@ -112,28 +90,11 @@ __all__ = [
     # indices
     "SummaryIndex",
     "VectorStoreIndex",
-    "SimpleKeywordTableIndex",
-    "KeywordTableIndex",
-    "RAKEKeywordTableIndex",
     "TreeIndex",
-    "SQLStructStoreIndex",
-    "PandasIndex",
-    "EmptyIndex",
-    "DocumentSummaryIndex",
-    "KnowledgeGraphIndex",
     # indices - legacy names
-    "GPTKeywordTableIndex",
-    "GPTKnowledgeGraphIndex",
-    "GPTSimpleKeywordTableIndex",
-    "GPTRAKEKeywordTableIndex",
-    "GPTListIndex",
     "ListIndex",
-    "GPTEmptyIndex",
     "GPTTreeIndex",
     "GPTVectorStoreIndex",
-    "GPTPandasIndex",
-    "GPTSQLStructStoreIndex",
-    "GPTDocumentSummaryIndex",
     "Prompt",
     "PromptTemplate",
     "BasePromptTemplate",
