@@ -3,7 +3,6 @@ from enum import Enum
 from typing import (
     Any,
     AsyncGenerator,
-    Dict,
     Generator,
     Generic,
     List,
@@ -29,10 +28,6 @@ RESPONSE_TEXT_TYPE = Union[BaseModel, str, TokenGen]
 @runtime_checkable
 class BaseOutputParser(Protocol):
     """Output parser class."""
-
-    @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
-        schema.update(type="object", default={})
 
     @abstractmethod
     def parse(self, output: str) -> Any:
