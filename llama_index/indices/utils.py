@@ -4,7 +4,7 @@ import re
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.mutli_modal_base import MultiModalEmbedding
+from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.schema import BaseNode, ImageNode, MetadataMode
 from llama_index.utils import globals_helper, truncate_text
 from llama_index.vector_stores.types import VectorStoreQueryResult
