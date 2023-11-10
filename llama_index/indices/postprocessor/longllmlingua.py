@@ -1,12 +1,9 @@
 """Optimization related classes and functions."""
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices.postprocessor.types import BaseNodePostprocessor
-from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.schema import MetadataMode, NodeWithScore, TextNode
 
@@ -75,7 +72,7 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "LongLLMLinguaPostprocessor"
 
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,

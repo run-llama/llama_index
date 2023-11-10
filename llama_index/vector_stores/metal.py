@@ -39,7 +39,7 @@ class MetalVectorStore(VectorStore):
             "`metal_sdk` package not found, please run `pip install metal_sdk`"
         )
         try:
-            import metal_sdk
+            import metal_sdk  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
         from metal_sdk.metal import Metal
@@ -111,7 +111,7 @@ class MetalVectorStore(VectorStore):
         """Return Metal client."""
         return self.metal_client
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
 
         Args:

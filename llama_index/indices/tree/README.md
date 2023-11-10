@@ -24,7 +24,7 @@ Simply use the root nodes as context to synthesize an answer to the query. This 
 from llama_index import TreeIndex, SimpleDirectoryReader
 
 # build index
-documents = SimpleDirectoryReader('data').load_data()
+documents = SimpleDirectoryReader("data").load_data()
 index = TreeIndex.from_documents(documents)
 # query
 query_engine = index.as_query_engine()

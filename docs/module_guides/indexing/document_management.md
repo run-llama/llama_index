@@ -18,7 +18,7 @@ An example code snippet is given below:
 from llama_index import SummaryIndex, Document
 
 index = SummaryIndex([])
-text_chunks = ['text_chunk_1', 'text_chunk_2', 'text_chunk_3']
+text_chunks = ["text_chunk_1", "text_chunk_2", "text_chunk_3"]
 
 doc_chunks = []
 for i, text in enumerate(text_chunks):
@@ -49,7 +49,7 @@ If a Document is already present within an index, you can "update" a Document wi
 doc_chunks[0].text = "Brand new document text"
 index.update_ref_doc(
     doc_chunks[0],
-    update_kwargs={"delete_kwargs": {'delete_from_docstore': True}}
+    update_kwargs={"delete_kwargs": {"delete_from_docstore": True}},
 )
 ```
 
@@ -65,15 +65,19 @@ The `refresh()` function will only update documents who have the same doc `id_`,
 
 ```python
 # modify first document, with the same doc_id
-doc_chunks[0] = Document(text='Super new document text', id_="doc_id_0")
+doc_chunks[0] = Document(text="Super new document text", id_="doc_id_0")
 
 # add a new document
-doc_chunks.append(Document(text="This isn't in the index yet, but it will be soon!", id_="doc_id_3"))
+doc_chunks.append(
+    Document(
+        text="This isn't in the index yet, but it will be soon!",
+        id_="doc_id_3",
+    )
+)
 
 # refresh the index
 refreshed_docs = index.refresh_ref_docs(
-    doc_chunks,
-    update_kwargs={"delete_kwargs": {'delete_from_docstore': True}}
+    doc_chunks, update_kwargs={"delete_kwargs": {"delete_from_docstore": True}}
 )
 
 # refreshed_docs[0] and refreshed_docs[-1] should be true
@@ -85,7 +89,7 @@ If you `print()` the output of `refresh()`, you would see which input documents 
 
 ```python
 print(refreshed_docs)
-> [True, False, False, True]
+# > [True, False, False, True]
 ```
 
 This is most useful when you are reading from a directory that is constantly updating with new information.
@@ -98,10 +102,12 @@ Any index that uses the docstore (i.e. all indexes except for most vector store 
 
 ```python
 print(index.ref_doc_info)
+"""
 > {'doc_id_1': RefDocInfo(node_ids=['071a66a8-3c47-49ad-84fa-7010c6277479'], metadata={}),
    'doc_id_2': RefDocInfo(node_ids=['9563e84b-f934-41c3-acfd-22e88492c869'], metadata={}),
    'doc_id_0': RefDocInfo(node_ids=['b53e6c2f-16f7-4024-af4c-42890e945f36'], metadata={}),
    'doc_id_3': RefDocInfo(node_ids=['6bedb29f-15db-4c7c-9885-7490e10aa33f'], metadata={})}
+"""
 ```
 
 Each entry in the output shows the ingested doc `id_`s as keys, and their associated `node_ids` of the nodes they were split into.

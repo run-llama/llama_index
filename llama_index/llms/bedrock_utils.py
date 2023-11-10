@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Any, Callable, Sequence
 
@@ -17,8 +16,6 @@ from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
     MessageRole,
-    llm_chat_callback,
-    llm_completion_callback,
 )
 from llama_index.llms.generic_utils import (
     completion_response_to_chat_response,
@@ -98,7 +95,7 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
     try:
-        import boto3
+        import boto3  # noqa
     except ImportError as e:
         raise ImportError(
             "You must install the `boto3` package to use Bedrock."
@@ -109,11 +106,7 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(
-            retry_if_exception_type(client.exceptions.ThrottlingException)
-            | retry_if_exception_type(client.exceptions.ModelTimeoutException)
-            | retry_if_exception_type(client.exceptions.ModelTimeoutException)
-        ),
+        retry=(retry_if_exception_type(client.exceptions.ThrottlingException)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -127,11 +120,6 @@ def completion_with_retry(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    if stream:
-        return client.invoke_model_with_response_stream(
-            modelId=model, body=request_body
-        )
-    return client.invoke_model(modelId=model, body=request_body)
     retry_decorator = _create_retry_decorator(client=client, max_retries=max_retries)
 
     @retry_decorator

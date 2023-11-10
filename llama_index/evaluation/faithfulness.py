@@ -1,13 +1,13 @@
 """Faithfulness evaluation."""
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Sequence
 
 from llama_index import ServiceContext
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices import SummaryIndex
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import Document
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(

@@ -4,7 +4,7 @@ from enum import Enum
 from os import getenv
 from time import sleep
 from types import ModuleType
-from typing import Any, List, Optional, Type, TypeVar
+from typing import Any, List, Type, TypeVar
 
 from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
@@ -123,7 +123,7 @@ class RocksetVectorStore(VectorStore):
     def client(self) -> Any:
         return self.rs
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Stores vectors in the collection.
 
         Args:

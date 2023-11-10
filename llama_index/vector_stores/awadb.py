@@ -49,7 +49,7 @@ class AwaDBVectorStore(VectorStore):
         self,
         table_name: str = DEFAULT_TABLE_NAME,
         log_and_data_dir: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Initialize with AwaDB client.
            If table_name is not specified,
@@ -83,6 +83,7 @@ class AwaDBVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to AwaDB.
 

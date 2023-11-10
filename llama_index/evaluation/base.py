@@ -1,10 +1,10 @@
 """Evaluator."""
 import asyncio
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptMixin, PromptMixinType
 from llama_index.response.schema import Response
 
 
@@ -24,6 +24,13 @@ class EvaluationResult(BaseModel):
         None, description="Feedback or reasoning for the response"
     )
     score: Optional[float] = Field(None, description="Score for the response")
+    pairwise_source: Optional[str] = Field(
+        None,
+        description=(
+            "Used only for pairwise and specifies whether it is from original order of"
+            " presented answers or flipped order"
+        ),
+    )
 
 
 class BaseEvaluator(PromptMixin):

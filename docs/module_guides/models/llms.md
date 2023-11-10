@@ -21,7 +21,7 @@ The following code snippet shows how you can get started using LLMs.
 from llama_index.llms import OpenAI
 
 # non-streaming
-resp = OpenAI().complete('Paul Graham is ')
+resp = OpenAI().complete("Paul Graham is ")
 print(resp)
 ```
 
@@ -73,7 +73,8 @@ Since open source LLMs require large amounts of resources, the quantization is r
 | [llama2-13b-chat](https://colab.research.google.com/drive/1S3eCZ8goKjFktF9hIakzcHqDE72g0Ggb?usp=sharing) (replicate)                 | ✅                  | ✅                  | 🛑                       | ✅       | 🛑                | 🛑          | Our ReAct prompt expects structured outputs, which llama-13b struggles at                                                                                                           |
 | [llama2-70b-chat](https://colab.research.google.com/drive/1BeOuVI8StygKFTLSpZ0vGCouxar2V5UW?usp=sharing) (replicate)                 | ✅                  | ✅                  | ✅                       | ✅       | 🛑                | ⚠️          | There are still some issues with parsing structured outputs, especially with pydantic programs.                                                                                     |
 | [Mistral-7B-instruct-v0.1 4bit](https://colab.research.google.com/drive/1ZAdrabTJmZ_etDp10rjij_zME2Q3umAQ?usp=sharing) (huggingface) | ✅                  | 🛑                  | 🛑                       | ⚠️       | ⚠️                | ⚠️          | Mistral seems slightly more reliable for structured outputs compared to Llama2. Likely with some prompt engineering, it may do better.                                              |
-| [zephyr-7b-alpha](https://colab.research.google.com/drive/16Ygf2IyGNkb725ZqtRmFQjwWBuzFX_kl?usp=sharing) (huggingface)               | ✅                  | ✅                  | ✅                       | ✅       | ✅                | ⚠️          | Overall, `zyphyr-7b` is appears to be more reliable than other open-source models of this size. Although it still hallucinates a bit, especially as an agent.                       |
+| [zephyr-7b-alpha](https://colab.research.google.com/drive/16Ygf2IyGNkb725ZqtRmFQjwWBuzFX_kl?usp=sharing) (huggingface)               | ✅                  | ✅                  | ✅                       | ✅       | ✅                | ⚠️          | Overall, `zyphyr-7b-alpha` is appears to be more reliable than other open-source models of this size. Although it still hallucinates a bit, especially as an agent.                 |
+| [zephyr-7b-beta](https://colab.research.google.com/drive/1UoPcoiA5EOBghxWKWduQhChliMHxla7U?usp=sharing) (huggingface)                | ✅                  | ✅                  | ✅                       | ✅       | 🛑                | ✅          | Compared to `zyphyr-7b-alpha`, `zyphyr-7b-beta` appears to perform well as an agent however it fails for Pydantic Programs                                                          |
 
 ## Modules
 

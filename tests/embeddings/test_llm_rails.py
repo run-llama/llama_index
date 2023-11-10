@@ -1,5 +1,5 @@
 import pytest
-from llama_index.embeddings.llm_rails import LLMRailsEmbeddings
+from llama_index.embeddings.llm_rails import LLMRailsEmbedding
 
 
 @pytest.fixture()
@@ -16,4 +16,4 @@ def api_key() -> str:
 
 def test_llm_rails_embedding_constructor(model_id: str, api_key: str) -> None:
     """Test LLMRails embedding constructor."""
-    LLMRailsEmbeddings(model_id=model_id, api_key=api_key)
+    LLMRailsEmbedding(model_id=model_id, api_key=api_key)

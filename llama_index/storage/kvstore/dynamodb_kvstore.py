@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 

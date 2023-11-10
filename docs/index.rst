@@ -41,7 +41,7 @@ To install the library:
 
 ``pip install llama-index``
 
-We recommend starting at `how to read these docs </getting_started/reading.html>`_, which will point you to the right place based on your experience level.
+We recommend starting at `how to read these docs <./getting_started/reading.html>`_, which will point you to the right place based on your experience level.
 
 🗺️ Ecosystem
 ************
@@ -93,6 +93,7 @@ Associated projects
    use_cases/chatbots.md
    use_cases/agents.md
    use_cases/extraction.md
+   use_cases/multimodal.md
 
 .. toctree::
    :maxdepth: 2
@@ -121,13 +122,13 @@ Associated projects
    optimizing/fine-tuning/fine-tuning.md
    optimizing/production_rag.md
    optimizing/building_rag_from_scratch.md
-
 .. toctree::
    :maxdepth: 2
    :caption: Module Guides
    :hidden:
 
    module_guides/models/models.md
+   module_guides/models/prompts.md
    module_guides/loading/loading.md
    module_guides/indexing/indexing.md
    module_guides/storing/storing.md

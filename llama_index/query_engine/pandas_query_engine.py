@@ -75,7 +75,7 @@ def default_output_processor(
             pd.reset_option("display.max_colwidth")
             return output_str
 
-        except Exception as e:
+        except Exception:
             raise
     except Exception as e:
         err_string = (

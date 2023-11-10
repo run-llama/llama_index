@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import List, Optional
 
 from llama_index.indices.query.schema import QueryBundle, QueryType

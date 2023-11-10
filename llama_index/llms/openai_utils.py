@@ -1,16 +1,22 @@
 import logging
-import os
+import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import openai
-from openai import ChatCompletion, Completion
+from deprecated import deprecated
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from tenacity import (
     before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
+    stop_after_delay,
     wait_exponential,
+    wait_random_exponential,
 )
+from tenacity.stop import stop_base
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.base import ChatMessage
@@ -27,6 +33,10 @@ GPT4_MODELS = {
     #   resolves to gpt-4-0613 after
     "gpt-4": 8192,
     "gpt-4-32k": 32768,
+    # 1106 model (Turbo, JSON mode)
+    "gpt-4-1106-preview": 128000,
+    # multimodal model
+    "gpt-4-vision-preview": 128000,
     # 0613 models (function calling):
     #   https://openai.com/blog/function-calling-and-other-api-updates
     "gpt-4-0613": 8192,
@@ -44,10 +54,14 @@ AZURE_TURBO_MODELS = {
 TURBO_MODELS = {
     # stable model names:
     #   resolves to gpt-3.5-turbo-0301 before 2023-06-27,
-    #   resolves to gpt-3.5-turbo-0613 after
+    #   resolves to gpt-3.5-turbo-0613 until 2023-12-11,
+    #   resolves to gpt-3.5-turbo-1106 after
     "gpt-3.5-turbo": 4096,
-    # resolves to gpt-3.5-turbo-16k-0613
+    # resolves to gpt-3.5-turbo-16k-0613 until 2023-12-11
+    # resolves to gpt-3.5-turbo-1106 after
     "gpt-3.5-turbo-16k": 16384,
+    # 1106 model (JSON mode)
+    "gpt-3.5-turbo-1106": 16384,
     # 0613 models (function calling):
     #   https://openai.com/blog/function-calling-and-other-api-updates
     "gpt-3.5-turbo-0613": 4096,
@@ -104,54 +118,43 @@ https://platform.openai.com/account/api-keys
 
 logger = logging.getLogger(__name__)
 
-CompletionClientType = Union[Type[Completion], Type[ChatCompletion]]
+OpenAIToolCall = Union[ChatCompletionMessageToolCall, ChoiceDeltaToolCall]
 
 
-def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
-    min_seconds = 4
-    max_seconds = 10
-    # Wait 2^x * 1 second between each retry starting with
-    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+def create_retry_decorator(
+    max_retries: int,
+    random_exponential: bool = False,
+    stop_after_delay_seconds: Optional[float] = None,
+    min_seconds: float = 4,
+    max_seconds: float = 10,
+) -> Callable[[Any], Any]:
+    wait_strategy = (
+        wait_random_exponential(min=min_seconds, max=max_seconds)
+        if random_exponential
+        else wait_exponential(multiplier=1, min=min_seconds, max=max_seconds)
+    )
+
+    stop_strategy: stop_base = stop_after_attempt(max_retries)
+    if stop_after_delay_seconds is not None:
+        stop_strategy = stop_strategy | stop_after_delay(stop_after_delay_seconds)
+
     return retry(
         reraise=True,
-        stop=stop_after_attempt(max_retries),
-        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        stop=stop_strategy,
+        wait=wait_strategy,
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(
+                (
+                    openai.APITimeoutError,
+                    openai.APIError,
+                    openai.APIConnectionError,
+                    openai.RateLimitError,
+                    openai.APIStatusError,
+                )
+            )
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-
-
-def completion_with_retry(is_chat_model: bool, max_retries: int, **kwargs: Any) -> Any:
-    """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator(max_retries=max_retries)
-
-    @retry_decorator
-    def _completion_with_retry(**kwargs: Any) -> Any:
-        client = get_completion_endpoint(is_chat_model)
-        return client.create(**kwargs)
-
-    return _completion_with_retry(**kwargs)
-
-
-async def acompletion_with_retry(
-    is_chat_model: bool, max_retries: int, **kwargs: Any
-) -> Any:
-    """Use tenacity to retry the async completion call."""
-    retry_decorator = _create_retry_decorator(max_retries=max_retries)
-
-    @retry_decorator
-    async def _completion_with_retry(**kwargs: Any) -> Any:
-        # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-        client = get_completion_endpoint(is_chat_model)
-        return await client.acreate(**kwargs)
-
-    return await _completion_with_retry(**kwargs)
 
 
 def openai_modelname_to_contextsize(modelname: str) -> int:
@@ -200,14 +203,9 @@ def is_function_calling_model(model: str) -> bool:
     return is_chat_model_ and not is_old
 
 
-def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
-    if is_chat_model:
-        return openai.ChatCompletion
-    else:
-        return openai.Completion
-
-
-def to_openai_message_dict(message: ChatMessage, drop_none: bool = False) -> dict:
+def to_openai_message_dict(
+    message: ChatMessage, drop_none: bool = False
+) -> ChatCompletionMessageParam:
     """Convert generic message to OpenAI message dict."""
     message_dict = {
         "role": message.role,
@@ -225,16 +223,39 @@ def to_openai_message_dict(message: ChatMessage, drop_none: bool = False) -> dic
         for key in null_keys:
             message_dict.pop(key)
 
-    return message_dict
+    return message_dict  # type: ignore
 
 
 def to_openai_message_dicts(
     messages: Sequence[ChatMessage], drop_none: bool = False
-) -> List[dict]:
+) -> List[ChatCompletionMessageParam]:
     """Convert generic messages to OpenAI message dicts."""
     return [
         to_openai_message_dict(message, drop_none=drop_none) for message in messages
     ]
+
+
+def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
+    """Convert openai message dict to generic message."""
+    role = openai_message.role
+    # NOTE: Azure OpenAI returns function calling messages without a content key
+    content = openai_message.content
+
+    function_call = None  # deprecated in OpenAI v 1.1.0
+
+    additional_kwargs: Dict[str, Any] = {}
+    if openai_message.tool_calls is not None:
+        tool_calls: List[ChatCompletionMessageToolCall] = openai_message.tool_calls
+        additional_kwargs.update(tool_calls=tool_calls)
+
+    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+
+
+def from_openai_messages(
+    openai_messages: Sequence[ChatCompletionMessage],
+) -> List[ChatMessage]:
+    """Convert openai message dicts to generic messages."""
+    return [from_openai_message(message) for message in openai_messages]
 
 
 def from_openai_message_dict(message_dict: dict) -> ChatMessage:
@@ -255,22 +276,31 @@ def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage
     return [from_openai_message_dict(message_dict) for message_dict in message_dicts]
 
 
+@deprecated("Deprecated in favor of `to_openai_tool`, which should be used instead.")
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
-    """Convert pydantic class to OpenAI function."""
+    """Deprecated in favor of `to_openai_tool`.
+
+    Convert pydantic class to OpenAI function.
+    """
+    return to_openai_tool(pydantic_class)
+
+
+def to_openai_tool(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
+    """Convert pydantic class to OpenAI tool."""
     schema = pydantic_class.schema()
-    return {
+    function = {
         "name": schema["title"],
         "description": schema["description"],
         "parameters": pydantic_class.schema(),
     }
+    return {"type": "function", "function": function}
 
 
 def resolve_openai_credentials(
     api_key: Optional[str] = None,
-    api_type: Optional[str] = None,
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
-) -> Tuple[str, str, str, str]:
+) -> Tuple[Optional[str], str, str]:
     """ "Resolve OpenAI credentials.
 
     The order of precedence is:
@@ -281,29 +311,49 @@ def resolve_openai_credentials(
     """
     # resolve from param or env
     api_key = get_from_param_or_env("api_key", api_key, "OPENAI_API_KEY", "")
-    api_type = get_from_param_or_env("api_type", api_type, "OPENAI_API_TYPE", "")
     api_base = get_from_param_or_env("api_base", api_base, "OPENAI_API_BASE", "")
     api_version = get_from_param_or_env(
         "api_version", api_version, "OPENAI_API_VERSION", ""
     )
 
     # resolve from openai module or default
-    api_key = api_key or openai.api_key
-    api_type = api_type or openai.api_type or DEFAULT_OPENAI_API_TYPE
-    api_base = api_base or openai.api_base or DEFAULT_OPENAI_API_BASE
-    api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
+    final_api_key = api_key or openai.api_key or ""
+    final_api_base = api_base or openai.base_url or DEFAULT_OPENAI_API_BASE
+    final_api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
 
-    if not api_key:
-        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
-
-    return api_key, api_type, api_base, api_version
+    return final_api_key, str(final_api_base), final_api_version
 
 
-def validate_openai_api_key(api_key: Optional[str] = None) -> None:
-    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "") or openai.api_key
+def refresh_openai_azuread_token(
+    azure_ad_token: Any = None,
+) -> Any:
+    """
+    Checks the validity of the associated token, if any, and tries to refresh it
+    using the credentials available in the current context. Different authentication
+    methods are tried, in order, until a successful one is found as defined at the
+    package `azure-indentity`.
+    """
+    try:
+        from azure.core.exceptions import ClientAuthenticationError
+        from azure.identity import DefaultAzureCredential
+    except ImportError as ex:
+        raise ValueError(
+            "Using API type `azure_ad` or `azuread` requires the package"
+            " `azure-identity` to be installed."
+        ) from ex
 
-    if not openai_api_key:
-        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+    if not azure_ad_token or azure_ad_token.expires_on < time.time() + 60:
+        try:
+            credential = DefaultAzureCredential()
+            azure_ad_token = credential.get_token(
+                "https://cognitiveservices.azure.com/.default"
+            )
+        except ClientAuthenticationError as err:
+            raise ValueError(
+                "Unable to acquire a valid Microsoft Entra ID (former Azure AD) token for "
+                f"the resource due to the following error: {err.message}"
+            ) from err
+    return azure_ad_token
 
 
 def resolve_from_aliases(*args: Optional[str]) -> Optional[str]:

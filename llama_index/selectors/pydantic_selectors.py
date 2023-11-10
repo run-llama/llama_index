@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Sequence
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.openai import OpenAI
 from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.selectors.llm_selectors import _build_choices_text
 from llama_index.selectors.prompts import (
     DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,

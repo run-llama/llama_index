@@ -20,8 +20,7 @@ Used to ensure certain keywords are either excluded or included.
 from llama_index.indices.postprocessor import KeywordNodePostprocessor
 
 postprocessor = KeywordNodePostprocessor(
-  required_keywords=["word1", "word2"],
-  exclude_keywords=["word3", "word4"]
+    required_keywords=["word1", "word2"], exclude_keywords=["word3", "word4"]
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -35,7 +34,7 @@ Used to replace the node content with a field from the node metadata. If the fie
 from llama_index.indices.postprocessor import MetadataReplacementPostProcessor
 
 postprocessor = MetadataReplacementPostProcessor(
-  target_metadata_key="window",
+    target_metadata_key="window",
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -67,9 +66,9 @@ The threshold cutoff can be specified instead, which uses a raw similarity cutof
 from llama_index.indices.postprocessor import SentenceEmbeddingOptimizer
 
 postprocessor = SentenceEmbeddingOptimizer(
-  embed_model=service_context.embed_model,
-  percentile_cutoff=0.5,
-  # threshold_cutoff=0.7
+    embed_model=service_context.embed_model,
+    percentile_cutoff=0.5,
+    # threshold_cutoff=0.7
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -87,9 +86,7 @@ Uses the "Cohere ReRank" functionality to re-order nodes, and returns the top N 
 from llama_index.indices import CohereRerank
 
 postprocessor = CohereRerank(
-  top_n=2
-  model="rerank-english-v2.0",
-  api_key="YOUR COHERE API KEY"
+    top_n=2, model="rerank-english-v2.0", api_key="YOUR COHERE API KEY"
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -106,8 +103,7 @@ from llama_index.indices.postprocessor import SentenceTransformerRerank
 
 # We choose a model with relatively high speed and decent accuracy.
 postprocessor = SentenceTransformerRerank(
-  model="cross-encoder/ms-marco-MiniLM-L-2-v2",
-  top_n=3
+    model="cross-encoder/ms-marco-MiniLM-L-2-v2", top_n=3
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -124,10 +120,7 @@ Uses a LLM to re-order nodes by asking the LLM to return the relevant documents 
 ```python
 from llama_index.indices.postprocessor import LLMRerank
 
-postprocessor = LLMRerank(
-  top_n=2
-  service_context=service_context,
-)
+postprocessor = LLMRerank(top_n=2, service_context=service_context)
 
 postprocessor.postprocess_nodes(nodes)
 ```
@@ -142,8 +135,7 @@ This postproccesor returns the top K nodes sorted by date. This assumes there is
 from llama_index.indices.postprocessor import FixedRecencyPostprocessor
 
 postprocessor = FixedRecencyPostprocessor(
-  tok_k=1,
-  date_key="date"  # the key in the metadata to find the date
+    tok_k=1, date_key="date"  # the key in the metadata to find the date
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -161,9 +153,7 @@ This postproccesor returns the top K nodes after sorting by date and removing ol
 from llama_index.indices.postprocessor import EmbeddingRecencyPostprocessor
 
 postprocessor = EmbeddingRecencyPostprocessor(
-  service_context=service_context,
-  date_key="date",
-  similarity_cutoff=0.7
+    service_context=service_context, date_key="date", similarity_cutoff=0.7
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -178,10 +168,7 @@ This postproccesor returns the top K nodes applying a time-weighted rerank to ea
 ```python
 from llama_index.indices.postprocessor import TimeWeightedPostprocessor
 
-postprocessor = TimeWeightedPostprocessor(
-  time_decay=0.99,
-  top_k=1
-)
+postprocessor = TimeWeightedPostprocessor(time_decay=0.99, top_k=1)
 
 postprocessor.postprocess_nodes(nodes)
 ```
@@ -198,7 +185,7 @@ The PII (Personal Identifiable Information) postprocssor removes information tha
 from llama_index.indices.postprocessor import PIINodePostprocessor
 
 postprocessor = PIINodePostprocessor(
-  service_context=service_context,  # this should be setup with an LLM you trust
+    service_context=service_context  # this should be setup with an LLM you trust
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -228,9 +215,9 @@ This is useful when you know the relationships point to important data (either b
 from llama_index.indices.postprocessor import PrevNextNodePostprocessor
 
 postprocessor = PrevNextNodePostprocessor(
-  docstore=index.docstore,
-  num_nodes=1,  # number of nodes to fetch when looking forawrds or backwards
-  mode="next"   # can be either 'next', 'previous', or 'both'
+    docstore=index.docstore,
+    num_nodes=1,  # number of nodes to fetch when looking forawrds or backwards
+    mode="next",  # can be either 'next', 'previous', or 'both'
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -246,10 +233,10 @@ The same as PrevNextNodePostprocessor, but lets the LLM decide the mode (next, p
 from llama_index.indices.postprocessor import AutoPrevNextNodePostprocessor
 
 postprocessor = AutoPrevNextNodePostprocessor(
-  docstore=index.docstore,
-  service_context=service_context
-  num_nodes=1,  # number of nodes to fetch when looking forawrds or backwards)
-
+    docstore=index.docstore,
+    service_context=service_context,
+    num_nodes=1,  # number of nodes to fetch when looking forawrds or backwards)
+)
 postprocessor.postprocess_nodes(nodes)
 ```
 

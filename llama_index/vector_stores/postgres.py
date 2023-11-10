@@ -109,6 +109,7 @@ class PGVectorStore(BasePydanticVectorStore):
     hybrid_search: bool
     text_search_config: str
     cache_ok: bool
+    perform_setup: bool
     debug: bool
 
     _base: Any = PrivateAttr()
@@ -129,14 +130,15 @@ class PGVectorStore(BasePydanticVectorStore):
         text_search_config: str = "english",
         embed_dim: int = 1536,
         cache_ok: bool = False,
+        perform_setup: bool = True,
         debug: bool = False,
     ) -> None:
         try:
-            import asyncpg
-            import pgvector
-            import psycopg2
+            import asyncpg  # noqa
+            import pgvector  # noqa
+            import psycopg2  # noqa
             import sqlalchemy
-            import sqlalchemy.ext.asyncio
+            import sqlalchemy.ext.asyncio  # noqa
         except ImportError:
             raise ImportError(
                 "`sqlalchemy[asyncio]`, `pgvector`, `psycopg2-binary` and `asyncpg` "
@@ -175,6 +177,7 @@ class PGVectorStore(BasePydanticVectorStore):
             text_search_config=text_search_config,
             embed_dim=embed_dim,
             cache_ok=cache_ok,
+            perform_setup=perform_setup,
             debug=debug,
         )
 
@@ -207,6 +210,7 @@ class PGVectorStore(BasePydanticVectorStore):
         text_search_config: str = "english",
         embed_dim: int = 1536,
         cache_ok: bool = False,
+        perform_setup: bool = True,
         debug: bool = False,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
@@ -226,6 +230,7 @@ class PGVectorStore(BasePydanticVectorStore):
             text_search_config=text_search_config,
             embed_dim=embed_dim,
             cache_ok=cache_ok,
+            perform_setup=perform_setup,
             debug=debug,
         )
 
@@ -269,9 +274,10 @@ class PGVectorStore(BasePydanticVectorStore):
     def _initialize(self) -> None:
         if not self._is_initialized:
             self._connect()
-            self._create_extension()
-            self._create_schema_if_not_exists()
-            self._create_tables_if_not_exists()
+            if self.perform_setup:
+                self._create_extension()
+                self._create_schema_if_not_exists()
+                self._create_tables_if_not_exists()
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
@@ -286,7 +292,7 @@ class PGVectorStore(BasePydanticVectorStore):
             ),
         )
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         self._initialize()
         ids = []
         with self._session() as session, session.begin():
@@ -521,8 +527,6 @@ class PGVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        import sqlalchemy
-
         self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
             results = await self._async_hybrid_query(query)

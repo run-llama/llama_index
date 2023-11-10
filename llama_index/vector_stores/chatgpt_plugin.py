@@ -94,6 +94,7 @@ class ChatGPTRetrievalPluginClient(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index."""
         headers = {"Authorization": f"Bearer {self._bearer_token}"}

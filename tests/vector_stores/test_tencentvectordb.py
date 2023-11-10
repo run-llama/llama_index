@@ -4,7 +4,7 @@ from typing import List
 import pytest
 
 try:
-    import tcvectordb
+    import tcvectordb  # noqa: F401
 
     tcvectordb_init = True
 except ImportError:

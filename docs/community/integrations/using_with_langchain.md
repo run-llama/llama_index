@@ -21,17 +21,19 @@ LlamaIndex provides Tool abstractions so that you can use a LlamaIndex query eng
 For instance, you can choose to create a "Tool" from an `QueryEngine` directly as follows:
 
 ```python
-from llama_index.langchain_helpers.agents import IndexToolConfig, LlamaIndexTool
+from llama_index.langchain_helpers.agents import (
+    IndexToolConfig,
+    LlamaIndexTool,
+)
 
 tool_config = IndexToolConfig(
     query_engine=query_engine,
     name=f"Vector Index",
     description=f"useful for when you want to answer queries about X",
-    tool_kwargs={"return_direct": True}
+    tool_kwargs={"return_direct": True},
 )
 
 tool = LlamaIndexTool.from_tool_config(tool_config)
-
 ```
 
 ### Llama Demo Notebook: Tool + Memory module

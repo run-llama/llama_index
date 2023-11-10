@@ -24,14 +24,14 @@ class ImageReader(BaseReader):
         self,
         parser_config: Optional[Dict] = None,
         keep_image: bool = False,
-        parse_text: bool = True,
+        parse_text: bool = False,
     ):
         """Init parser."""
         if parser_config is None and parse_text:
             try:
-                import sentencepiece
-                import torch
-                from PIL import Image
+                import sentencepiece  # noqa
+                import torch  # noqa
+                from PIL import Image  # noqa
                 from transformers import DonutProcessor, VisionEncoderDecoderModel
             except ImportError:
                 raise ImportError(
@@ -109,5 +109,10 @@ class ImageReader(BaseReader):
             text_str = re.sub(r"<.*?>", "", sequence, count=1).strip()
 
         return [
-            ImageDocument(text=text_str, image=image_str, metadata=extra_info or {})
+            ImageDocument(
+                text=text_str,
+                image=image_str,
+                image_path=str(file),
+                metadata=extra_info or {},
+            )
         ]

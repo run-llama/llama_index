@@ -4,7 +4,7 @@ from typing import List, Optional
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.schema import BaseComponent, NodeWithScore
 
 
@@ -33,8 +33,23 @@ class BaseNodePostprocessor(BaseComponent, ABC):
     def class_name(cls) -> str:
         return "BaseNodePostprocessor"
 
-    @abstractmethod
     def postprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+        query_str: Optional[str] = None,
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes."""
+        if query_str is not None and query_bundle is not None:
+            raise ValueError("Cannot specify both query_str and query_bundle")
+        elif query_str is not None:
+            query_bundle = QueryBundle(query_str)
+        else:
+            pass
+        return self._postprocess_nodes(nodes, query_bundle)
+
+    @abstractmethod
+    def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
