@@ -96,9 +96,10 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
         )
+
         llm_response = self._multi_modal_llm.complete(
             prompt=fmt_prompt,
-            image_documents=image_nodes,
+            image_documents=[image_node.node for image_node in image_nodes],
         )
         return Response(
             response=str(llm_response),

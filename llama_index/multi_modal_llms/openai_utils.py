@@ -38,6 +38,15 @@ def to_openai_multi_modal_payload(
                 "type": "image_url",
                 "image_url": image_document.image_url,
             }
+        elif image_document.image_path and image_document.image_path != "":
+            base64_image = encode_image(image_document.image_path)
+            image_content = {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{base64_image}",
+                    "detail": image_detail,
+                },
+            }
         elif (
             "file_path" in image_document.metadata
             and image_document.metadata["file_path"] != ""
