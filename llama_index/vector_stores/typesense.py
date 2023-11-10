@@ -7,7 +7,7 @@ An index that that is built on top of an existing vector store.
 import logging
 from typing import Any, Callable, List, Optional, cast
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.utils import get_tokenizer
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -18,7 +18,6 @@ from llama_index.vector_stores.types import (
 )
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -235,21 +234,8 @@ class TypesenseVectorStore(VectorStore):
             if query.mode is not VectorStoreQueryMode.TEXT_SEARCH:
                 score = hit["vector_distance"]
 
-            try:
-                node = metadata_dict_to_node(document[self._metadata_key])
-                node.text = text
-            except Exception:
-                extra_info, node_info, relationships = legacy_metadata_dict_to_node(
-                    document[self._metadata_key], text_key=self._text_key
-                )
-                node = TextNode(
-                    text=text,
-                    id_=id,
-                    metadata=extra_info,
-                    start_chart_idx=node_info.get("start", None),
-                    end_chart_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
+            node = metadata_dict_to_node(document[self._metadata_key])
+            node.text = text
 
             top_k_ids.append(id)
             top_k_nodes.append(node)

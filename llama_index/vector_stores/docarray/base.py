@@ -5,14 +5,13 @@ from typing import Any, Dict, List, Optional, Type
 import numpy as np
 
 from llama_index.bridge.pydantic import Field
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
@@ -178,23 +177,8 @@ class DocArrayVectorStore(VectorStore, ABC):
             )
         nodes, ids = [], []
         for doc in docs:
-            try:
-                node = metadata_dict_to_node(doc.metadata)
-                node.text = doc.text
-            except Exception:
-                # TODO: legacy metadata support
-                metadata, node_info, relationships = legacy_metadata_dict_to_node(
-                    doc.metadata
-                )
-                node = TextNode(
-                    id_=doc.id,
-                    text=doc.text,
-                    metadata=metadata,
-                    start_char_idx=node_info.get("start", None),
-                    end_char_idx=node_info.get("end", None),
-                    relationships=relationships,
-                )
-
+            node = metadata_dict_to_node(doc.metadata)
+            node.text = doc.text
             nodes.append(node)
             ids.append(doc.id)
         logger.info(f"Found {len(nodes)} results for the query")
