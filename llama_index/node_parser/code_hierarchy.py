@@ -525,6 +525,21 @@ class CodeHierarchyNodeParser(NodeParser):
                             # same id as the original_node
                             new_split_nodes[0].id_ = original_node.id_
 
+                            # Add the UUID of the next node to the end of all nodes
+                            for i, new_split_node in enumerate(new_split_nodes[:-1]):
+                                new_split_node.text = (
+                                    new_split_node.text
+                                    + "\n"
+                                    + self._create_comment_line(new_split_nodes[i + 1])
+                                ).strip()
+
+                            # Add the UUID of the previous node to the beginning of all nodes
+                            for i, new_split_node in enumerate(new_split_nodes[1:]):
+                                new_split_node.text = (
+                                    self._create_comment_line(new_split_nodes[i])
+                                    + new_split_node.text
+                                ).strip()
+
                             # Add the parent child info to all the new_nodes_
                             # derived from node
                             for new_split_node in new_split_nodes:
@@ -650,6 +665,31 @@ class CodeHierarchyNodeParser(NodeParser):
     def _get_comment_text(node: TextNode) -> str:
         """Gets just the natural language text for a skeletonize comment."""
         return f"Code replaced for brevity. See node_id {node.node_id}"
+
+    @classmethod
+    def _create_comment_line(cls, node: TextNode) -> str:
+        """
+        Creates a comment line for a node.
+
+        Sometimes we don't use this in a loop because it requires recalculating
+        a lot of the same information. But it is handy.
+        """
+        # Create the text to replace the child_node.text with
+        language = node.metadata["language"]
+        if language not in _COMMENT_OPTIONS:
+            # TODO: Create a contribution message
+            raise KeyError("Language not yet supported. Please contribute!")
+        comment_options = _COMMENT_OPTIONS[language]
+        (
+            indentation_char,
+            indentation_count_per_lvl,
+            first_indentation_lvl,
+        ) = cls._get_indentation(node.text)
+        return (
+            indentation_char * indentation_count_per_lvl * (first_indentation_lvl + 1)
+            + comment_options.comment_template.format(cls._get_comment_text(node))
+            + "\n"
+        )
 
     @classmethod
     def _get_replacement_text(cls, child_node: TextNode) -> str:
