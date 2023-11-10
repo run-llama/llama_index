@@ -14,23 +14,36 @@ from llama_index.callbacks.global_handlers import set_global_handler
 from llama_index.data_structs.struct_type import IndexStructType
 
 # embeddings
-from llama_index.embeddings.openai import OpenAIEmbedding
-
-# structured
-from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
-
-# for composability
-from llama_index.indices.composability.graph import ComposableGraph
+from llama_index.embeddings import OpenAIEmbedding
 
 # indices
-from llama_index.indices.list import ListIndex, SummaryIndex
-
 # loading
-from llama_index.indices.loading import (
+from llama_index.indices import (
+    ComposableGraph,
+    DocumentSummaryIndex,
+    GPTDocumentSummaryIndex,
+    GPTKeywordTableIndex,
+    GPTKnowledgeGraphIndex,
+    GPTListIndex,
+    GPTRAKEKeywordTableIndex,
+    GPTSimpleKeywordTableIndex,
+    GPTTreeIndex,
+    GPTVectorStoreIndex,
+    KeywordTableIndex,
+    KnowledgeGraphIndex,
+    ListIndex,
+    RAKEKeywordTableIndex,
+    SimpleKeywordTableIndex,
+    SummaryIndex,
+    TreeIndex,
+    VectorStoreIndex,
     load_graph_from_storage,
     load_index_from_storage,
     load_indices_from_storage,
 )
+
+# structured
+from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
 
 # prompt helper
 from llama_index.indices.prompt_helper import PromptHelper
@@ -38,8 +51,6 @@ from llama_index.indices.service_context import (
     ServiceContext,
     set_global_service_context,
 )
-from llama_index.indices.tree import GPTTreeIndex, TreeIndex
-from llama_index.indices.vector_store import GPTVectorStoreIndex, VectorStoreIndex
 from llama_index.llm_predictor import LLMPredictor
 
 # token predictor
@@ -54,17 +65,13 @@ from llama_index.prompts import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.readers import SimpleDirectoryReader
-from llama_index.readers.download import download_loader
+from llama_index.readers import SimpleDirectoryReader, download_loader
 
 # response
 from llama_index.response.schema import Response
 
 # Response Synthesizer
 from llama_index.response_synthesizers.factory import get_response_synthesizer
-
-# QueryBundle
-# readers
 from llama_index.schema import Document, QueryBundle
 
 # storage
@@ -88,11 +95,22 @@ __all__ = [
     # indices
     "SummaryIndex",
     "VectorStoreIndex",
+    "SimpleKeywordTableIndex",
+    "KeywordTableIndex",
+    "RAKEKeywordTableIndex",
     "TreeIndex",
+    "DocumentSummaryIndex",
+    "KnowledgeGraphIndex",
     # indices - legacy names
+    "GPTKeywordTableIndex",
+    "GPTKnowledgeGraphIndex",
+    "GPTSimpleKeywordTableIndex",
+    "GPTRAKEKeywordTableIndex",
+    "GPTListIndex",
     "ListIndex",
     "GPTTreeIndex",
     "GPTVectorStoreIndex",
+    "GPTDocumentSummaryIndex",
     "Prompt",
     "PromptTemplate",
     "BasePromptTemplate",
