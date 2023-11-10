@@ -3,8 +3,8 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import MetadataMode, NodeWithScore, TextNode
 
 logger = logging.getLogger(__name__)

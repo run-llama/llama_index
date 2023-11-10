@@ -3,9 +3,9 @@ import json
 from copy import deepcopy
 from typing import Callable, Dict, List, Optional, Tuple
 
-from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.base import PromptTemplate
 from llama_index.schema import MetadataMode, NodeWithScore
 

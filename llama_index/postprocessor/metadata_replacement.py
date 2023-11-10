@@ -1,8 +1,8 @@
 from typing import List, Optional
 
 from llama_index.bridge.pydantic import Field
-from llama_index.indices.postprocessor.types import BaseNodePostprocessor
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import MetadataMode, NodeWithScore
 
 
