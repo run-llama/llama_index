@@ -481,7 +481,7 @@ class CodeHierarchyNodeParser(NodeParser):
 
             recur_inclusive_scope(node, i + 1, [*keys, scope["name"]])
 
-        def dict_to_markdown(d, depth=0):
+        def dict_to_markdown(d: dict[str, Any], depth: int = 0) -> str:
             markdown = ""
             indent = "  " * depth  # Two spaces per depth level
 
