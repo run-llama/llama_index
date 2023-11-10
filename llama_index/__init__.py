@@ -70,9 +70,6 @@ from llama_index.llm_predictor import LLMPredictor
 # token predictor
 from llama_index.llm_predictor.mock import MockLLMPredictor
 
-# vellum
-from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
-
 # prompts
 from llama_index.prompts import (
     BasePromptTemplate,
@@ -82,43 +79,7 @@ from llama_index.prompts import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.prompts.prompts import (
-    KeywordExtractPrompt,
-    QueryKeywordExtractPrompt,
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    SummaryPrompt,
-    TreeInsertPrompt,
-    TreeSelectMultiplePrompt,
-    TreeSelectPrompt,
-)
-from llama_index.readers import (
-    BeautifulSoupWebReader,
-    ChromaReader,
-    DeepLakeReader,
-    DiscordReader,
-    FaissReader,
-    GithubRepositoryReader,
-    GoogleDocsReader,
-    JSONReader,
-    MboxReader,
-    MilvusReader,
-    NotionPageReader,
-    ObsidianReader,
-    PineconeReader,
-    PsychicReader,
-    QdrantReader,
-    RssReader,
-    SimpleDirectoryReader,
-    SimpleMongoReader,
-    SimpleWebPageReader,
-    SlackReader,
-    StringIterableReader,
-    TrafilaturaWebReader,
-    TwitterTweetReader,
-    WeaviateReader,
-    WikipediaReader,
-)
+from llama_index.readers import SimpleDirectoryReader
 from llama_index.readers.download import download_loader
 
 # response
