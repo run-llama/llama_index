@@ -22,7 +22,7 @@ Check out our guides below:
 maxdepth: 1
 ---
 /examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
-[Old] Multi-modal retrieval with CLIP </examples/multi_modal/multi_modal_retrieval.ipynb>
+Multi-modal retrieval with CLIP </examples/multi_modal/multi_modal_retrieval.ipynb>
 ```
 
 ### Retrieval-Augmented Image Captioning
