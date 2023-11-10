@@ -4,8 +4,8 @@ from typing import Any, List
 from unittest.mock import patch
 
 from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.indices.postprocessor.optimizer import SentenceEmbeddingOptimizer
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.postprocessor.optimizer import SentenceEmbeddingOptimizer
 from llama_index.schema import NodeWithScore, TextNode
 
 

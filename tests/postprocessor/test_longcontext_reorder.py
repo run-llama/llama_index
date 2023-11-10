@@ -1,6 +1,6 @@
 from typing import List
 
-from llama_index.indices.postprocessor.node import LongContextReorder
+from llama_index.postprocessor.node import LongContextReorder
 from llama_index.schema import Node, NodeWithScore
 
 

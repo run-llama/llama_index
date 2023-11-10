@@ -3,10 +3,10 @@
 from typing import Any, List
 from unittest.mock import patch
 
-from llama_index.indices.postprocessor.llm_rerank import LLMRerank
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor import LLMPredictor
+from llama_index.postprocessor.llm_rerank import LLMRerank
 from llama_index.prompts import BasePromptTemplate
 from llama_index.schema import BaseNode, NodeWithScore, TextNode
 
