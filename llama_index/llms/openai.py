@@ -53,7 +53,6 @@ from llama_index.llms.openai_utils import (
     openai_modelname_to_contextsize,
     resolve_openai_credentials,
     to_openai_message_dicts,
-    validate_openai_api_key,
 )
 
 
@@ -80,7 +79,7 @@ class OpenAI(LLM):
         gte=0,
     )
     timeout: float = Field(
-        default=61.0,
+        default=60.0,
         description="The timeout, in seconds, for API requests.",
         gte=0,
     )
@@ -99,7 +98,7 @@ class OpenAI(LLM):
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 3,
-        timeout: float = 61.0,
+        timeout: float = 60.0,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
@@ -113,8 +112,6 @@ class OpenAI(LLM):
             api_base=api_base,
             api_version=api_version,
         )
-
-        validate_openai_api_key(api_key=api_key)
 
         super().__init__(
             model=model,

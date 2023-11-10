@@ -234,7 +234,7 @@ class OpenAIEmbedding(BaseEmbedding):
     max_retries: int = Field(
         default=10, description="Maximum number of retries.", gte=0
     )
-    timeout: float = Field(default=61, description="Timeout for each request.", gte=0)
+    timeout: float = Field(default=60.0, description="Timeout for each request.", gte=0)
 
     _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
     _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
@@ -251,7 +251,7 @@ class OpenAIEmbedding(BaseEmbedding):
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         max_retries: int = 10,
-        timeout: float = 61,
+        timeout: float = 60.0,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
