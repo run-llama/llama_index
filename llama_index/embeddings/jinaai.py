@@ -1,13 +1,14 @@
 """Jina embeddings file."""
 
-import requests
-import aiohttp
-
 from typing import Any, List, Optional
-from llama_index.llms.generic_utils import get_from_param_or_env
+
+import aiohttp
+import requests
+
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.llms.generic_utils import get_from_param_or_env
 
 MAX_BATCH_SIZE = 2048
 
