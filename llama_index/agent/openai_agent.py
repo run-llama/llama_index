@@ -3,7 +3,7 @@ import json
 import logging
 from abc import abstractmethod
 from threading import Thread
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast, get_args
 
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
@@ -20,7 +20,7 @@ from llama_index.chat_engine.types import (
 )
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai_utils import is_function_calling_model
+from llama_index.llms.openai_utils import OpenAIToolCall, is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
@@ -41,13 +41,19 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 
 def call_function(
-    tools: List[BaseTool], tool_call: dict, verbose: bool = False
+    tools: List[BaseTool], tool_call: OpenAIToolCall, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
-    id_ = tool_call["id"]
-    function_call = tool_call["function"]
-    name = function_call["name"]
-    arguments_str = function_call["arguments"]
+    # validations to get passed mypy
+    assert tool_call.id is not None
+    assert tool_call.function is not None
+    assert tool_call.function.name is not None
+    assert tool_call.function.arguments is not None
+
+    id_ = tool_call.id
+    function_call = tool_call.function
+    name = tool_call.function.name
+    arguments_str = tool_call.function.arguments
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
@@ -71,13 +77,19 @@ def call_function(
 
 
 async def acall_function(
-    tools: List[BaseTool], tool_call: dict, verbose: bool = False
+    tools: List[BaseTool], tool_call: OpenAIToolCall, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
-    id_ = tool_call["id"]
-    function_call = tool_call["function"]
-    name = function_call["name"]
-    arguments_str = function_call["arguments"]
+    # validations to get passed mypy
+    assert tool_call.id is not None
+    assert tool_call.function is not None
+    assert tool_call.function.name is not None
+    assert tool_call.function.arguments is not None
+
+    id_ = tool_call.id
+    function_call = tool_call.function
+    name = tool_call.function.name
+    arguments_str = tool_call.function.arguments
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
@@ -143,7 +155,7 @@ class BaseOpenAIAgent(BaseAgent):
         return self.memory.get_all()[-1].additional_kwargs.get("function_call", None)
 
     @property
-    def latest_tool_calls(self) -> Optional[List[dict]]:
+    def latest_tool_calls(self) -> Optional[List[OpenAIToolCall]]:
         return self.memory.get_all()[-1].additional_kwargs.get("tool_calls", None)
 
     def reset(self) -> None:
@@ -154,7 +166,7 @@ class BaseOpenAIAgent(BaseAgent):
         """Get tools."""
 
     def _should_continue(
-        self, tool_calls: Optional[List[dict]], n_function_calls: int
+        self, tool_calls: Optional[List[OpenAIToolCall]], n_function_calls: int
     ) -> bool:
         if n_function_calls > self._max_function_calls:
             return False
@@ -215,14 +227,19 @@ class BaseOpenAIAgent(BaseAgent):
         # return response stream
         return chat_stream_response
 
-    def _call_function(self, tools: List[BaseTool], tool_call: dict) -> None:
-        function_call = tool_call["function"]
+    def _call_function(self, tools: List[BaseTool], tool_call: OpenAIToolCall) -> None:
+        function_call = tool_call.function
+        # validations to get passed mypy
+        assert function_call is not None
+        assert function_call.name is not None
+        assert function_call.arguments is not None
+
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: function_call["arguments"],
+                EventPayload.FUNCTION_CALL: function_call.arguments,
                 EventPayload.TOOL: get_function_by_name(
-                    tools, function_call["name"]
+                    tools, function_call.name
                 ).metadata,
             },
         ) as event:
@@ -233,14 +250,21 @@ class BaseOpenAIAgent(BaseAgent):
         self.sources.append(tool_output)
         self.memory.put(function_message)
 
-    async def _acall_function(self, tools: List[BaseTool], tool_call: dict) -> None:
-        function_call = tool_call["function"]
+    async def _acall_function(
+        self, tools: List[BaseTool], tool_call: OpenAIToolCall
+    ) -> None:
+        function_call = tool_call.function
+        # validations to get passed mypy
+        assert function_call is not None
+        assert function_call.name is not None
+        assert function_call.arguments is not None
+
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: function_call["arguments"],
+                EventPayload.FUNCTION_CALL: function_call.arguments,
                 EventPayload.TOOL: get_function_by_name(
-                    tools, function_call["name"]
+                    tools, function_call.name
                 ).metadata,
             },
         ) as event:
@@ -312,10 +336,10 @@ class BaseOpenAIAgent(BaseAgent):
             if self.latest_tool_calls is not None:
                 for tool_call in self.latest_tool_calls:
                     # Some validation
-                    if not isinstance(tool_call, dict):
+                    if not isinstance(tool_call, get_args(OpenAIToolCall)):
                         raise ValueError("Invalid tool_call object")
 
-                    if tool_call["type"] != "function":
+                    if tool_call.type != "function":
                         raise ValueError("Invalid tool type. Unsupported by OpenAI")
                     # TODO: maybe execute this with multi-threading
                     self._call_function(tools, tool_call)
@@ -354,10 +378,10 @@ class BaseOpenAIAgent(BaseAgent):
             if self.latest_tool_calls is not None:
                 for tool_call in self.latest_tool_calls:
                     # Some validation
-                    if not isinstance(tool_call, dict):
+                    if not isinstance(tool_call, get_args(OpenAIToolCall)):
                         raise ValueError("Invalid tool_call object")
 
-                    if tool_call["type"] != "function":
+                    if tool_call.type != "function":
                         raise ValueError("Invalid tool type. Unsupported by OpenAI")
 
                     # TODO: maybe execute this with multi-threading
