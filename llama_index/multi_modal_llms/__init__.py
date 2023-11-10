@@ -1,4 +1,6 @@
 from llama_index.multi_modal_llms.base import (
+    ChatMessage,
+    MessageRole,
     MultiModalCompletionResponse,
     MultiModalCompletionResponseAsyncGen,
     MultiModalCompletionResponseGen,
@@ -14,4 +16,6 @@ __all__ = [
     "MultiModalCompletionResponseAsyncGen",
     "MultiModalLLMMetadata",
     "MultiModalLLM",
+    "ChatMessage",
+    "MessageRole",
 ]

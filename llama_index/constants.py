@@ -19,6 +19,7 @@ AI21_J2_CONTEXT_WINDOW = 8192
 TYPE_KEY = "__type__"
 DATA_KEY = "__data__"
 VECTOR_STORE_KEY = "vector_store"
+IMAGE_STORE_KEY = "image_store"
 GRAPH_STORE_KEY = "graph_store"
 INDEX_STORE_KEY = "index_store"
 DOC_STORE_KEY = "doc_store"

@@ -14,8 +14,6 @@ class SimpleMongoReader(BaseReader):
     Args:
         host (str): Mongo host.
         port (int): Mongo port.
-        max_docs (int): Maximum number of documents to load. Defaults to 0 (no limit).
-
     """
 
     def __init__(
@@ -23,7 +21,6 @@ class SimpleMongoReader(BaseReader):
         host: Optional[str] = None,
         port: Optional[int] = None,
         uri: Optional[str] = None,
-        max_docs: int = 0,
     ) -> None:
         """Initialize with parameters."""
         try:
@@ -42,7 +39,6 @@ class SimpleMongoReader(BaseReader):
             raise ValueError("Either `host` and `port` or `uri` must be provided.")
 
         self.client = client
-        self.max_docs = max_docs
 
     def _flatten(self, texts: List[Union[str, List[str]]]) -> List[str]:
         result = []
@@ -57,6 +53,7 @@ class SimpleMongoReader(BaseReader):
         field_names: List[str] = ["text"],
         separator: str = "",
         query_dict: Optional[Dict] = None,
+        max_docs: int = 0,
         metadata_names: Optional[List[str]] = None,
     ) -> Iterable[Document]:
         """Load data from the input directory.
@@ -68,8 +65,11 @@ class SimpleMongoReader(BaseReader):
                 Defaults to ["text"]
             separator (str): separator to be used between fields.
                 Defaults to ""
-            query_dict (Optional[Dict]): query to filter documents.
+            query_dict (Optional[Dict]): query to filter documents. Read more
+            at [official docs](https://www.mongodb.com/docs/manual/reference/method/db.collection.find/#std-label-method-find-query)
                 Defaults to None
+            max_docs (int): maximum number of documents to load.
+                Defaults to 0 (no limit)
             metadata_names (Optional[List[str]]): names of the fields to be added
                 to the metadata attribute of the Document. Defaults to None
 
@@ -78,7 +78,7 @@ class SimpleMongoReader(BaseReader):
 
         """
         db = self.client[db_name]
-        cursor = db[collection_name].find(filter=query_dict or {}, limit=self.max_docs)
+        cursor = db[collection_name].find(filter=query_dict or {}, limit=max_docs)
 
         for item in cursor:
             try:

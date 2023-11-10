@@ -110,8 +110,6 @@ def get_module_info(
     """Get module info."""
     if isinstance(local_dir_path, str):
         local_dir_path = Path(local_dir_path)
-    if isinstance(remote_dir_path, str):
-        remote_dir_path = Path(remote_dir_path)
 
     local_library_path = f"{local_dir_path}/{library_path}]"
     module_id = None  # e.g. `web/simple_web`
@@ -161,8 +159,6 @@ def download_module_and_reqs(
     """Load module."""
     if isinstance(local_dir_path, str):
         local_dir_path = Path(local_dir_path)
-    if isinstance(remote_dir_path, str):
-        remote_dir_path = Path(remote_dir_path)
 
     module_path = f"{local_dir_path}/{module_id}"
     if refresh_cache or not os.path.exists(module_path):
