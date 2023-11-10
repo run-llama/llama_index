@@ -93,6 +93,7 @@ Associated projects
    use_cases/chatbots.md
    use_cases/agents.md
    use_cases/extraction.md
+   use_cases/multimodal.md
 
 .. toctree::
    :maxdepth: 2
