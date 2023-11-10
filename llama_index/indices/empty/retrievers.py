@@ -1,7 +1,7 @@
 """Default query for EmptyIndex."""
 from typing import Any, List, Optional
 
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.core import BaseRetriever
 from llama_index.indices.empty.base import EmptyIndex
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT

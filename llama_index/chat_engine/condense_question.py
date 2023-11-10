@@ -9,7 +9,7 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.chat_engine.utils import response_gen_from_query_engine
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.generic_utils import messages_to_history_str

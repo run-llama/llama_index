@@ -4,7 +4,7 @@ import logging
 from collections import defaultdict
 from typing import Dict, List, Tuple, cast
 
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.core import BaseRetriever
 from llama_index.indices.utils import truncate_text
 from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
 from llama_index.schema import BaseNode, NodeWithScore, QueryBundle

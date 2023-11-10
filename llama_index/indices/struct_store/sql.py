@@ -5,11 +5,10 @@ from typing import Any, Optional, Sequence, Union
 
 from sqlalchemy import Table
 
+from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.table import SQLStructTable
-from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.common.struct_store.schema import SQLContextContainer
 from llama_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
-from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.struct_store.base import BaseStructStoreIndex
 from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,

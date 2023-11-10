@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import requests
 
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 from llama_index.response.schema import Response
 from llama_index.schema import QueryBundle
 

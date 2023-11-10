@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Optional
 
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 
 if TYPE_CHECKING:
     from llama_index.langchain_helpers.agents.tools import (

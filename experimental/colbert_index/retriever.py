@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.core import BaseRetriever
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.vector_stores.types import MetadataFilters
 

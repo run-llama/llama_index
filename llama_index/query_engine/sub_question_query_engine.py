@@ -6,7 +6,7 @@ from llama_index.async_utils import run_async_tasks
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.openai_generator import OpenAIQuestionGenerator

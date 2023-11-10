@@ -4,7 +4,7 @@ import logging
 from typing import Callable, Dict, Optional, Union
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.indices.struct_store.sql_query import (
     BaseSQLTableQueryEngine,

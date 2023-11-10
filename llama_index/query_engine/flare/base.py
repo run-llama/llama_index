@@ -7,7 +7,7 @@ Active Retrieval Augmented Generation.
 from typing import Any, Dict, Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.query_engine.flare.answer_inserter import (

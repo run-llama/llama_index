@@ -2,7 +2,7 @@ import logging
 from typing import Any, List, Optional, cast
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.core import BaseRetriever
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser import (

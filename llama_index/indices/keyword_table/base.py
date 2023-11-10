@@ -13,9 +13,9 @@ from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Set, Union
 
 from llama_index.async_utils import run_async_tasks
+from llama_index.core import BaseRetriever
 from llama_index.data_structs.data_structs import KeywordTable
 from llama_index.indices.base import BaseIndex
-from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (

@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_JSON_PATH_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType

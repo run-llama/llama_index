@@ -7,8 +7,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from sqlalchemy import Table
 
+from llama_index.core import BaseRetriever
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate
