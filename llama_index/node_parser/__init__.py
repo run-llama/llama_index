@@ -1,6 +1,5 @@
 """Node parsers."""
 
-from llama_index.node_parser.code_hierarchy import CodeHierarchyNodeParser
 from llama_index.node_parser.hierarchical import (
     HierarchicalNodeParser,
     get_leaf_nodes,
@@ -14,7 +13,6 @@ from llama_index.node_parser.unstructured_element import (
 )
 
 __all__ = [
-    "CodeHierarchyNodeParser",
     "SimpleNodeParser",
     "SentenceWindowNodeParser",
     "NodeParser",
