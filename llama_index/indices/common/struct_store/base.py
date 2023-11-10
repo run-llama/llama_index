@@ -6,7 +6,6 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.table import StructDatapoint
-from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.node_parser.interface import TextSplitter
 from llama_index.prompts import BasePromptTemplate
@@ -20,6 +19,7 @@ from llama_index.prompts.default_prompts import (
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode
+from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.utils import truncate_text
 

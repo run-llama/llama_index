@@ -5,24 +5,24 @@ from pathlib import Path
 from typing import Dict, cast
 
 import pytest
-from llama_index.indices.postprocessor.node import (
+from llama_index.postprocessor.node import (
     KeywordNodePostprocessor,
     PrevNextNodePostprocessor,
 )
-from llama_index.indices.postprocessor.node_recency import (
+from llama_index.postprocessor.node_recency import (
     EmbeddingRecencyPostprocessor,
     FixedRecencyPostprocessor,
     TimeWeightedPostprocessor,
 )
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import (
     MetadataMode,
     NodeRelationship,
     NodeWithScore,
+    QueryBundle,
     RelatedNodeInfo,
     TextNode,
 )
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
 
 spacy_installed = bool(find_spec("spacy"))

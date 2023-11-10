@@ -1,4 +1,4 @@
-from llama_index.indices.postprocessor import MetadataReplacementPostProcessor
+from llama_index.postprocessor import MetadataReplacementPostProcessor
 from llama_index.schema import NodeWithScore, TextNode
 
 
