@@ -3,9 +3,10 @@
 ## [0.8.68] - 2023-11-11
 
 ### New Features
+
 - openai assistant agent + advanced retrieval cookbook (#8863)
 - add retrieval API benchmark (#8850)
-- Add JinaEmbedding class  (#8704)
+- Add JinaEmbedding class (#8704)
 
 ### Bug Fixes / Nits
 
