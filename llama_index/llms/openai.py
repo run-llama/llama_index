@@ -73,7 +73,16 @@ class OpenAI(LLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
     )
-    max_retries: int = Field(description="The maximum number of API retries.")
+    max_retries: int = Field(
+        default=3,
+        description="The maximum number of API retries.",
+        gte=0,
+    )
+    timeout: float = Field(
+        default=60.0,
+        description="The timeout, in seconds, for API requests.",
+        gte=0,
+    )
 
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
     api_base: str = Field(description="The base URL for OpenAI API.")
@@ -88,7 +97,8 @@ class OpenAI(LLM):
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
-        max_retries: int = 10,
+        max_retries: int = 3,
+        timeout: float = 60.0,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
@@ -113,6 +123,7 @@ class OpenAI(LLM):
             api_key=api_key,
             api_version=api_version,
             api_base=api_base,
+            timeout=timeout,
             **kwargs,
         )
 
@@ -195,6 +206,7 @@ class OpenAI(LLM):
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
+            "timeout": self.timeout,
             **kwargs,
         }
 

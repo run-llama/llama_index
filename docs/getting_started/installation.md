@@ -24,11 +24,11 @@ need additional environment keys + tokens setup depending on the LLM provider.
 
 ## Local Model Setup
 
-If you don't wish to use OpenAI, the environment will automatically fallback to using `LlamaCPP` and `llama2-chat-13B` for text generation and `BAAI/bge-small-en` for retrieval and embeddings. These models will all run locally.
+If you don't wish to use OpenAI, consider setting up a local LLM and embedding model in the service context.
 
-In order to use `LlamaCPP`, follow the installation guide [here](/examples/llm/llama_2_llama_cpp.ipynb). You'll need to install the `llama-cpp-python` package, preferably compiled to support your GPU. This will use around 11.5GB of memory across the CPU and GPU.
+A full guide to using and configuring LLMs available [here](/module_guides/models/llms.md).
 
-In order to use the local embeddings, simply run `pip install sentence-transformers`. The local embedding model uses about 500MB of memory.
+A full guide to using and configuring embedding models is available [here](/module_guides/models/embeddings.md).
 
 ## Installation from Source
 

@@ -1,5 +1,13 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Improved default timeouts/retries for OpenAI (#8819)
+- Add back key validation for OpenAI (#8819)
+- Disable automatic LLM/Embedding model downloads, give informative error (#8819)
+
 ## [0.8.67] - 2023-11-10
 
 ### New Features
