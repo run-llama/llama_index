@@ -231,9 +231,15 @@ class SimpleDirectoryReader(BaseReader):
                     self.file_extractor[file_suffix] = reader_cls()
                 reader = self.file_extractor[file_suffix]
 
+                # load data -- catch all errors except for ImportError
                 try:
                     docs = reader.load_data(input_file, extra_info=metadata)
+                except ImportError as e:
+                    # ensure that ImportError is raised so user knows
+                    # about missing dependencies
+                    raise ImportError(str(e))
                 except Exception as e:
+                    # otherwise, just skip the file and report the error
                     print(
                         f"Failed to load file {input_file} with error: {e}. Skipping...",
                         flush=True,
