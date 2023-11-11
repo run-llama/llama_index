@@ -35,11 +35,17 @@ def download_loader(
     Returns:
         A Loader.
     """
+    # Only one of the `custom_dir` or `custom_path` is supported.
+    if custom_path is not None:
+        custom_dir = None
+    else:
+        custom_dir = "llamahub_modules"
+
     reader_cls = download_llama_module(
         loader_class,
         llama_hub_url=loader_hub_url,
         refresh_cache=refresh_cache,
-        custom_dir="llamahub_modules",
+        custom_dir=custom_dir,
         custom_path=custom_path,
         use_gpt_index_import=use_gpt_index_import,
     )
