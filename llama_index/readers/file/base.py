@@ -145,6 +145,11 @@ class SimpleDirectoryReader(BaseReader):
         self.file_metadata = file_metadata or default_file_metadata_func
         self.filename_as_id = filename_as_id
 
+    def is_hidden(self, path: Path) -> bool:
+        return any(
+            part.startswith(".") and part not in [".", ".."] for part in path.parts
+        )
+
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
         all_files = set()
@@ -171,8 +176,7 @@ class SimpleDirectoryReader(BaseReader):
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
             is_dir = ref.is_dir()
-            hidden_parts = [part for part in ref.parts if part.startswith(".")]
-            skip_because_hidden = self.exclude_hidden and any(hidden_parts)
+            skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
             )
