@@ -3,8 +3,6 @@ import random
 from dataclasses import asdict, dataclass
 from typing import Any, List, Optional, Tuple
 
-from sklearn.metrics.pairwise import cosine_similarity
-
 from llama_index.embeddings.common import EmbeddingQAFinetuneDataset
 
 
@@ -27,13 +25,15 @@ def generate_embeddings(embed_model: Any, text: str) -> List[float]:
 
 
 def generate_hard_negatives(
-    queries,
-    relevant_contexts,
-    embed_model,
-    num_negatives=5,
-    method="random",
-    top_k_dissimilar=100,
+    queries: List[str],
+    relevant_contexts: List[str],
+    embed_model: Optional[Any],
+    num_negatives: int = 5,
+    method: str = "random",
+    top_k_dissimilar: int = 100,
 ):
+    from sklearn.metrics.pairwise import cosine_similarity
+
     hard_negatives = []
 
     if method == "cosine_similarity":
