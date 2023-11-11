@@ -35,11 +35,11 @@ def download_loader(
     Returns:
         A Loader.
     """
-    custom_dir = "llamahub_modules"
-
     # Only one of the `custom_dir` or `custom_path` is supported.
     if custom_path is not None:
         custom_dir = None
+    else:
+        custom_dir = "llamahub_modules"
 
     reader_cls = download_llama_module(
         loader_class,
