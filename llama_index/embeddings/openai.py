@@ -11,7 +11,6 @@ from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.llms.openai_utils import (
     create_retry_decorator,
     resolve_openai_credentials,
-    validate_openai_api_key,
 )
 
 embedding_retry_decorator = create_retry_decorator(
@@ -262,8 +261,6 @@ class OpenAIEmbedding(BaseEmbedding):
             api_base=api_base,
             api_version=api_version,
         )
-
-        validate_openai_api_key(api_key=api_key)
 
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)

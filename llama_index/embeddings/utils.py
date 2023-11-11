@@ -12,6 +12,7 @@ from llama_index.embeddings.huggingface_utils import (
 from llama_index.embeddings.instructor import InstructorEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.llms.openai_utils import validate_openai_api_key
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 from llama_index.utils import get_cache_dir
 
@@ -38,6 +39,7 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
     if embed_model == "default":
         try:
             embed_model = OpenAIEmbedding()
+            validate_openai_api_key(embed_model.api_key)
         except ValueError as e:
             raise ValueError(
                 "\n******\n"

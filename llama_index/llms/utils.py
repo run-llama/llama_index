@@ -8,6 +8,7 @@ from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.llms.llama_utils import completion_to_prompt, messages_to_prompt
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_utils import validate_openai_api_key
 
 LLMType = Union[str, LLM, BaseLanguageModel]
 
@@ -18,6 +19,7 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
         # return default OpenAI model. If it fails, return LlamaCPP
         try:
             llm = OpenAI()
+            validate_openai_api_key(llm.api_key)
         except ValueError as e:
             raise ValueError(
                 "\n******\n"
