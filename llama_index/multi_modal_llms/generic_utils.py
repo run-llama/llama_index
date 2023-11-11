@@ -1,9 +1,10 @@
 import base64
+from typing import List
 
 from llama_index.schema import ImageDocument
 
 
-def load_image_urls(image_urls: list[str]) -> list[ImageDocument]:
+def load_image_urls(image_urls: List[str]) -> List[ImageDocument]:
     # load remote image urls into image documents
     image_documents = []
     for i in range(len(image_urls)):

@@ -4,12 +4,13 @@ An index that that is built on top of multiple vector stores for different modal
 
 """
 import logging
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.data_structs.data_structs import IndexDict, MultiModelIndexDict
-from llama_index.embeddings.mutli_modal_base import MultiModalEmbedding
+from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     async_embed_image_nodes,
@@ -96,6 +97,20 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         return MultiModalVectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
+            **kwargs,
+        )
+
+    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        """As query engine."""
+        from llama_index.indices.multi_modal.retriever import (
+            MultiModalVectorIndexRetriever,
+        )
+        from llama_index.query_engine.multi_modal import SimpleMultiModalQueryEngine
+
+        retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever())
+
+        return SimpleMultiModalQueryEngine(
+            retriever,
             **kwargs,
         )
 
