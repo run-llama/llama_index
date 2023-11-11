@@ -173,7 +173,7 @@ class OpenAIAssistantAgent(BaseAgent):
         openai_tools = openai_tools or []
         tools = tools or []
         tool_fns = [
-            {"type": "function", "function": t.metadata.to_openai_function()}
+            t.metadata.to_openai_function()
             for t in tools
         ]
         all_openai_tools = openai_tools + tool_fns
