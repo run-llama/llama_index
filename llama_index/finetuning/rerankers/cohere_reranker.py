@@ -49,6 +49,6 @@ class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
             base_model=base_model,
         )
 
-    def get_finetuned_model(self, finetune_model: CustomModel) -> str:
+    def get_finetuned_model(self, finetune_model: Any) -> str:
         """Gets finetuned model id."""
         return finetune_model.id
