@@ -145,7 +145,7 @@ class SimpleDirectoryReader(BaseReader):
         self.file_metadata = file_metadata or default_file_metadata_func
         self.filename_as_id = filename_as_id
 
-    def is_hidden(self, path):
+    def is_hidden(self, path: Path) -> bool:
         return any(
             part.startswith(".") and part not in [".", ".."] for part in path.parts
         )
