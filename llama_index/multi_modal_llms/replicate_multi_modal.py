@@ -96,9 +96,7 @@ class ReplicateMultiModal(MultiModalLLM):
             try:
                 return {
                     self.prompt_key: prompt,
-                    self.image_key: open(
-                        image_document.image_path, "rb"
-                    ),
+                    self.image_key: open(image_document.image_path, "rb"),
                     **self._model_kwargs,
                     **kwargs,
                 }
