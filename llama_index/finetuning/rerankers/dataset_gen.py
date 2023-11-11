@@ -31,7 +31,7 @@ def generate_hard_negatives(
     num_negatives: int = 5,
     method: str = "random",
     top_k_dissimilar: int = 100,
-):
+) -> Any:
     from sklearn.metrics.pairwise import cosine_similarity
 
     hard_negatives = []
@@ -114,7 +114,6 @@ def generate_cohere_reranker_finetuning_dataset(
         hard_negatives = generate_hard_negatives(
             queries,
             relevant_contexts,
-            num_negatives,
             embed_model,
             num_negatives,
             hard_negatives_gen_method,

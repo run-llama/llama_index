@@ -35,6 +35,8 @@ class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
         base_model: str = "english",
     ) -> Any:
         """Finetune model."""
+        from cohere.custom_model_dataset import JsonlDataset
+
         if val_file_name:
             # Uploading both train file and eval file
             dataset = JsonlDataset(train_file=train_file_name, eval_file=val_file_name)
