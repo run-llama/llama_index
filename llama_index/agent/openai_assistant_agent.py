@@ -172,10 +172,7 @@ class OpenAIAssistantAgent(BaseAgent):
         # not to be confused with the tools we pass in for function calling
         openai_tools = openai_tools or []
         tools = tools or []
-        tool_fns = [
-            t.metadata.to_openai_function()
-            for t in tools
-        ]
+        tool_fns = [t.metadata.to_openai_tool() for t in tools]
         all_openai_tools = openai_tools + tool_fns
 
         # initialize client
