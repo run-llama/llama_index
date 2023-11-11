@@ -6,7 +6,7 @@ from llama_index.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     Embedding,
 )
-from llama_index.embeddings.mutli_modal_base import MultiModalEmbedding
+from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.schema import ImageType
 
 logger = logging.getLogger(__name__)

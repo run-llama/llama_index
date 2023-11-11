@@ -1,5 +1,5 @@
 import logging
-from typing import List, Sequence
+from typing import Any, Dict, List, Sequence
 
 from openai.types.chat import ChatCompletionMessageParam
 
@@ -32,14 +32,20 @@ def to_openai_multi_modal_payload(
 ) -> List[ChatCompletionMessageParam]:
     completion_content = [{"type": "text", "text": prompt}]
     for image_document in image_documents:
-        image_content = {}
-        if (
-            "image_url" in image_document.metadata
-            and image_document.metadata["image_url"] != ""
-        ):
+        image_content: Dict[str, Any] = {}
+        if image_document.image_url and image_document.image_url != "":
             image_content = {
                 "type": "image_url",
-                "image_url": image_document.metadata["image_url"],
+                "image_url": image_document.image_url,
+            }
+        elif image_document.image_path and image_document.image_path != "":
+            base64_image = encode_image(image_document.image_path)
+            image_content = {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{base64_image}",
+                    "detail": image_detail,
+                },
             }
         elif (
             "file_path" in image_document.metadata

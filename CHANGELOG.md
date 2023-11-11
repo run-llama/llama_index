@@ -1,10 +1,15 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.67] - 2023-11-10
+
+### New Features
+
+- Advanced Multi Modal Retrieval Example and docs (#8822, #8823)
 
 ### Bug Fixes / Nits
 
 - Fix retriever node postprocessors for `CitationQueryEngine` (#8818)
+- Fix `cannot pickle 'builtins.CoreBPE' object` in most scenarios (#8835)
 
 ## [0.8.66] - 2023-11-09
 
