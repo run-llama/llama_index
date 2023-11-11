@@ -3,7 +3,7 @@ import random
 from dataclasses import asdict, dataclass
 from typing import Any, List, Optional, Tuple
 
-from llama_index.embeddings.common import EmbeddingQAFinetuneDataset
+from llama_index.finetuning import EmbeddingQAFinetuneDataset
 
 
 @dataclass
