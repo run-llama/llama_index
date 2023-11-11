@@ -30,6 +30,7 @@ maxdepth: 1
 ---
 /examples/agent/openai_assistant_agent.ipynb
 /examples/agent/openai_retrieval_benchmark.ipynb
+/examples/agent/openai_assistant_query_cookbook.ipynb
 ```
 
 ## ReAct Agent
