@@ -33,7 +33,7 @@ class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
         model_name: str = "exp_finetune",
         model_type: str = "RERANK",
         base_model: str = "english",
-    ) -> CustomModel:
+    ) -> Any:
         """Finetune model."""
         if val_file_name:
             # Uploading both train file and eval file
