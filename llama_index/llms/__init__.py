@@ -30,6 +30,7 @@ from llama_index.llms.monsterapi import MonsterLLM
 from llama_index.llms.ollama import Ollama
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_like import OpenAILike
+from llama_index.llms.openllm import OpenLLM, OpenLLMAPI
 from llama_index.llms.palm import PaLM
 from llama_index.llms.portkey import Portkey
 from llama_index.llms.predibase import PredibaseLLM
@@ -71,6 +72,8 @@ __all__ = [
     "Ollama",
     "OpenAI",
     "OpenAILike",
+    "OpenLLM",
+    "OpenLLMAPI",
     "PaLM",
     "Portkey",
     "PredibaseLLM",
