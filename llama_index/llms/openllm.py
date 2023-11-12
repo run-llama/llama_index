@@ -47,23 +47,25 @@ class OpenLLM(LLM):
     model_id: str = Field(
         description="Given Model ID from HuggingFace Hub. This can be either a pretrained ID or local path. This is synonymous to HuggingFace's '.from_pretrained' first argument"
     )
-    model_version: str = Field(
+    model_version: Optional[str] = Field(
         description="Optional model version to save the model as."
     )
-    model_tag: str = Field(description="Optional tag to save to BentoML store.")
-    prompt_template: str = Field(
+    model_tag: Optional[str] = Field(
+        description="Optional tag to save to BentoML store."
+    )
+    prompt_template: Optional[str] = Field(
         description="Optional prompt template to pass for this LLM."
     )
-    system_message: str = Field(
+    system_message: Optional[str] = Field(
         description="Optional system message to pass for this LLM."
     )
-    backend: str = Field(
+    backend: Optional[Literal["vllm", "pt"]] = Field(
         description="Optional backend to pass for this LLM. By default, it will use vLLM if vLLM is available in local system. Otherwise, it will fallback to PyTorch."
     )
-    quantize: str = Field(
+    quantize: Optional[Literal["awq", "gptq", "int8", "int4", "squeezellm"]] = Field(
         description="Optional quantization methods to use with this LLM. See OpenLLM's --quantize options from `openllm start` for more information."
     )
-    serialization: str = Field(
+    serialization: Literal["safetensors", "legacy"] = Field(
         description="Optional serialization methods for this LLM to be save as. Default to 'safetensors', but will fallback to PyTorch pickle `.bin` on some models."
     )
     trust_remote_code: bool = Field(
