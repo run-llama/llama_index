@@ -117,9 +117,8 @@ class OpenLLM(LLM):
         if messages_to_prompt is None:
             messages_to_prompt = self._tokenizer_messages_to_prompt
         self._messages_to_prompt = messages_to_prompt
-        assert (
-            self._llm.bentomodel
-        )  # NOTE: We need to do this here to ensure model is saved and revision is set correctly.
+        # NOTE: We need to do this here to ensure model is saved and revision is set correctly.
+        assert self._llm.bentomodel
 
         super().__init__(
             model_id=model_id,
@@ -128,7 +127,7 @@ class OpenLLM(LLM):
             prompt_template=prompt_template,
             system_message=system_message,
             backend=self._llm.__llm_backend__,
-            quantize=self._llm._quantise,
+            quantize=self._llm.quantise,
             serialization=self._llm._serialisation,
             trust_remote_code=self._llm.trust_remote_code,
             callback_manager=callback_manager,
