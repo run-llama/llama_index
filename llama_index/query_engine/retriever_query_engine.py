@@ -169,16 +169,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
-            with self.callback_manager.event(
-                CBEventType.RETRIEVE,
-                payload={EventPayload.QUERY_STR: query_bundle.query_str},
-            ) as retrieve_event:
-                nodes = self.retrieve(query_bundle)
-
-                retrieve_event.on_end(
-                    payload={EventPayload.NODES: nodes},
-                )
-
+            nodes = self.retrieve(query_bundle)
             response = self._response_synthesizer.synthesize(
                 query=query_bundle,
                 nodes=nodes,
@@ -193,15 +184,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
-            with self.callback_manager.event(
-                CBEventType.RETRIEVE,
-                payload={EventPayload.QUERY_STR: query_bundle.query_str},
-            ) as retrieve_event:
-                nodes = await self.aretrieve(query_bundle)
-
-                retrieve_event.on_end(
-                    payload={EventPayload.NODES: nodes},
-                )
+            nodes = await self.aretrieve(query_bundle)
 
             response = await self._response_synthesizer.asynthesize(
                 query=query_bundle,
