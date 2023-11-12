@@ -180,7 +180,7 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
             self._node_data_buffer.extend(self._trace_data.node_datas)
             self._trace_data = TraceData()
             if self._callback is not None:
-                self._callback(self._query_data_buffer)
+                self._callback(self._query_data_buffer, self._node_data_buffer)
 
     def on_event_start(
         self,
