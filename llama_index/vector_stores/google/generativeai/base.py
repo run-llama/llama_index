@@ -172,7 +172,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
     def client(self) -> Any:
         return self._client
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes with embedding to vector store.
 
         If a node has a source node, the source node's ID will be used to create
