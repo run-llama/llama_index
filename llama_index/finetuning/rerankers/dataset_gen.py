@@ -1,22 +1,21 @@
-import json
 import random
-from dataclasses import asdict, dataclass
 from typing import Any, List, Optional, Tuple
+
+from pydantic import BaseModel
 
 from llama_index.finetuning import EmbeddingQAFinetuneDataset
 
 
-@dataclass
-class CohereRerankerFinetuneDataset:
-    """Class for keeping track of CohereAI Reranker finetuning training/ validation Dataset."""
+class CohereRerankerFinetuneDataset(BaseModel):
+    """Class for keeping track of CohereAI Reranker finetuning training/validation Dataset."""
 
     query: str
-    relevant_passages: list
-    hard_negatives: list
+    relevant_passages: List[str]
+    hard_negatives: List[str]
 
     def to_jsonl(self) -> str:
-        """Convert the dataclass instance to a JSONL string."""
-        return json.dumps(asdict(self)) + "\n"
+        """Convert the BaseModel instance to a JSONL string."""
+        return self.json() + "\n"
 
 
 def generate_embeddings(embed_model: Any, text: str) -> List[float]:
@@ -129,7 +128,7 @@ def generate_cohere_reranker_finetuning_dataset(
         ):
             # Instantiate a CohereRerankerFinetuneDataset object for the current entry
             entry = CohereRerankerFinetuneDataset(
-                query=query, relevant_passages=[context], hard_negatives=hard_negative
+                query=query, relevant_passages=[context], hard_negatives=[hard_negative]
             )
             # Write the JSONL string to the file
             outfile.write(entry.to_jsonl())
