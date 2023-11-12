@@ -134,6 +134,20 @@ GoogleTextSynthesizer.get_response(
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> Response:
+        """Returns a grounded response based on provided passages.
+
+        Returns:
+            Response's `source_nodes` will begin with a list of attributed
+            passages. These passages are the ones that were used to construct
+            the grounded response. These passages will always have no score,
+            the only way to mark them as attributed passages. Then, the list
+            will follow with the originally provided passages, which will have
+            a score from the retrieval.
+
+            Response's `metadata` may also have have an entry with key
+            `answerable_probability`, which is the probability that the grounded
+            answer is likely correct.
+        """
         if len(nodes) == 0:
             return Response("Empty Response")
 
@@ -154,7 +168,7 @@ GoogleTextSynthesizer.get_response(
             additional_source_nodes = list(additional_source_nodes or [])
 
             external_response = self._prepare_external_response(
-                internal_response, additional_source_nodes
+                internal_response, nodes + additional_source_nodes
             )
 
             event.on_end(payload={EventPayload.RESPONSE: external_response})
@@ -179,12 +193,13 @@ GoogleTextSynthesizer.get_response(
         return Response(
             response=response.answer,
             source_nodes=[
-                NodeWithScore(
-                    node=TextNode(text="\n".join(response.attributed_passages)),
-                    score=response.answerable_probability,
-                ),
-                *source_nodes,
-            ],
+                NodeWithScore(node=TextNode(text=passage))
+                for passage in response.attributed_passages
+            ]
+            + source_nodes,
+            metadata={
+                "answerable_probability": response.answerable_probability,
+            },
         )
 
     def _get_prompts(self) -> PromptDictType:

@@ -102,7 +102,7 @@ def test_synthesize(mock_generate_text_answer: MagicMock) -> None:
                 passage_ids=["corpora/123/documents/456/chunks/789"],
             ),
         ],
-        answerable_probability=0.7,
+        answerable_probability=0.9,
     )
 
     # Act
@@ -112,7 +112,7 @@ def test_synthesize(mock_generate_text_answer: MagicMock) -> None:
         nodes=[
             NodeWithScore(
                 node=TextNode(text="It's 42"),
-                score=0,
+                score=0.5,
             ),
         ],
         additional_source_nodes=[
@@ -125,12 +125,23 @@ def test_synthesize(mock_generate_text_answer: MagicMock) -> None:
 
     # Assert
     assert response.response == "42"
-    assert len(response.source_nodes) == 2
+    assert len(response.source_nodes) == 4
 
-    first_source = response.source_nodes[0]
-    assert first_source.node.text == "Meaning of life is 42\nOr maybe not"
-    assert first_source.score == pytest.approx(0.7)
+    first_attributed_source = response.source_nodes[0]
+    assert first_attributed_source.node.text == "Meaning of life is 42"
+    assert first_attributed_source.score is None
 
-    second_source = response.source_nodes[1]
-    assert second_source.node.text == "Additional node"
-    assert second_source.score == pytest.approx(0.4)
+    second_attributed_source = response.source_nodes[1]
+    assert second_attributed_source.node.text == "Or maybe not"
+    assert second_attributed_source.score is None
+
+    first_input_source = response.source_nodes[2]
+    assert first_input_source.node.text == "It's 42"
+    assert first_input_source.score == pytest.approx(0.5)
+
+    first_additional_source = response.source_nodes[3]
+    assert first_additional_source.node.text == "Additional node"
+    assert first_additional_source.score == pytest.approx(0.4)
+
+    assert response.metadata is not None
+    assert response.metadata.get("answerable_probability", None) == pytest.approx(0.9)
