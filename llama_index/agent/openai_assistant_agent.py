@@ -172,10 +172,7 @@ class OpenAIAssistantAgent(BaseAgent):
         # not to be confused with the tools we pass in for function calling
         openai_tools = openai_tools or []
         tools = tools or []
-        tool_fns = [
-            {"type": "function", "function": t.metadata.to_openai_function()}
-            for t in tools
-        ]
+        tool_fns = [t.metadata.to_openai_tool() for t in tools]
         all_openai_tools = openai_tools + tool_fns
 
         # initialize client
@@ -341,7 +338,12 @@ class OpenAIAssistantAgent(BaseAgent):
         function_call: Union[str, dict] = "auto",
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
-        raise NotImplementedError("async chat not implemented")
+        return self._chat(
+            message,
+            chat_history=chat_history,
+            function_call=function_call,
+            mode=mode,
+        )
 
     @trace_method("chat")
     def chat(

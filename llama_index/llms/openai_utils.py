@@ -1,9 +1,12 @@
 import logging
+import os
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import openai
-from openai.types.chat import ChatCompletionMessageParam
+from deprecated import deprecated
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from tenacity import (
     before_sleep_log,
@@ -115,6 +118,8 @@ https://platform.openai.com/account/api-keys
 """
 
 logger = logging.getLogger(__name__)
+
+OpenAIToolCall = Union[ChatCompletionMessageToolCall, ChoiceDeltaToolCall]
 
 
 def create_retry_decorator(
@@ -237,13 +242,12 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
     # NOTE: Azure OpenAI returns function calling messages without a content key
     content = openai_message.content
 
-    function_call = (
-        openai_message.function_call.dict() if openai_message.function_call else None
-    )
+    function_call = None  # deprecated in OpenAI v 1.1.0
 
-    additional_kwargs = (
-        {"function_call": function_call} if function_call is not None else {}
-    )
+    additional_kwargs: Dict[str, Any] = {}
+    if openai_message.tool_calls is not None:
+        tool_calls: List[ChatCompletionMessageToolCall] = openai_message.tool_calls
+        additional_kwargs.update(tool_calls=tool_calls)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
@@ -273,14 +277,24 @@ def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage
     return [from_openai_message_dict(message_dict) for message_dict in message_dicts]
 
 
+@deprecated("Deprecated in favor of `to_openai_tool`, which should be used instead.")
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
-    """Convert pydantic class to OpenAI function."""
+    """Deprecated in favor of `to_openai_tool`.
+
+    Convert pydantic class to OpenAI function.
+    """
+    return to_openai_tool(pydantic_class)
+
+
+def to_openai_tool(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
+    """Convert pydantic class to OpenAI tool."""
     schema = pydantic_class.schema()
-    return {
+    function = {
         "name": schema["title"],
         "description": schema["description"],
         "parameters": pydantic_class.schema(),
     }
+    return {"type": "function", "function": function}
 
 
 def resolve_openai_credentials(
@@ -348,3 +362,10 @@ def resolve_from_aliases(*args: Optional[str]) -> Optional[str]:
         if arg is not None:
             return arg
     return None
+
+
+def validate_openai_api_key(api_key: Optional[str] = None) -> None:
+    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+
+    if not openai_api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
