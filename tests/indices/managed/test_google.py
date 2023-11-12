@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.response.schema import PydanticResponse
+from llama_index.response.schema import Response
 from llama_index.schema import Document
 
 try:
@@ -12,7 +12,6 @@ except ImportError:
     has_google = False
 
 from llama_index.indices.managed.google.generativeai import GoogleIndex
-from llama_index.response_synthesizers.google.generativeai import SynthesizedResponse
 
 SKIP_TEST_REASON = "Google GenerativeAI is not installed"
 
@@ -145,7 +144,11 @@ def test_as_query_engine(
         attributed_passages=[
             genai.AttributedPassage(
                 text="Meaning of life is 42.",
-                passage_ids=["corpora/123/documents/456/chunks/789"],
+                passage_ids=["corpora/123/documents/456/chunks/777"],
+            ),
+            genai.AttributedPassage(
+                text="Or maybe not",
+                passage_ids=["corpora/123/documents/456/chunks/888"],
             ),
         ],
         answerable_probability=0.8,
@@ -162,13 +165,15 @@ def test_as_query_engine(
     assert query_corpus_request.name == "corpora/123"
     assert query_corpus_request.query == "What is the meaning of life?"
 
-    assert isinstance(response, PydanticResponse)
-    reply = response.response
-    assert isinstance(reply, SynthesizedResponse)
+    assert isinstance(response, Response)
 
-    assert reply.answer == "42"
-    assert reply.attributed_passages == ["Meaning of life is 42."]
-    assert reply.answerable_probability == pytest.approx(0.8)
+    assert response.response == "42"
+
+    assert len(response.source_nodes) > 0
+    attribution_node = response.source_nodes[0]
+    assert "Meaning of life is 42." in attribution_node.node.text
+    assert "Or maybe not" in attribution_node.node.text
+    assert attribution_node.score == pytest.approx(0.8)
 
     assert mock_generate_text_answer.call_count == 1
     generate_text_answer_request = mock_generate_text_answer.call_args.args[0]
