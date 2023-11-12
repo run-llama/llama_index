@@ -1,9 +1,10 @@
 import asyncio
 import logging
+import threading
+from queue import Queue
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
     Callable,
     Dict,
     List,
@@ -148,40 +149,91 @@ class OpenLLM(LLM):
         """Use the tokenizer to convert messages to prompt. Fallback to generic."""
         if hasattr(self._llm.tokenizer, "apply_chat_template"):
             return self._llm.tokenizer.apply_chat_template(
-                [message.dict() for message in messages], tokenize=False
+                [message.dict() for message in messages],
+                tokenize=False,
+                add_generation_prompt=True,
             )
         return generic_messages_to_prompt(messages)
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        """Completion endpoint."""
-        return asyncio.get_event_loop().run_until_complete(
-            self.acomplete(prompt, **kwargs)
-        )
+        return asyncio.run(self.acomplete(prompt, **kwargs))
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        async def gen() -> AsyncGenerator[CompletionResponse, None]:
-            async for message in self.astream_complete(prompt, **kwargs):
-                yield message
+        queue = Queue()
 
-        return asyncio.get_event_loop().run_until_complete(gen())
+        # End-of-stream marker object
+        end_marker = object()
+
+        # Async function to run the async generator and put items into the queue
+        async def run_async_generator(loop):
+            async for message in self.astream_complete(prompt, **kwargs):
+                queue.put(message)
+            queue.put(end_marker)
+            loop.stop()
+
+        # Function to start or get the current loop
+        def start_or_get_loop():
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            return loop
+
+        loop = start_or_get_loop()
+        threading.Thread(
+            target=lambda: loop.run_until_complete(run_async_generator(loop))
+        ).start()
+
+        # Yield items from the queue synchronously
+        while True:
+            item = queue.get()
+            if item is end_marker:
+                break
+            yield item
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        return asyncio.get_event_loop().run_until_complete(
-            self.achat(messages, **kwargs)
-        )
+        return asyncio.run(self.achat(messages, **kwargs))
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        async def gen() -> AsyncGenerator[ChatResponse, None]:
-            async for message in self.astream_chat(messages, **kwargs):
-                yield message
+        queue = Queue()
 
-        return asyncio.get_event_loop().run_until_complete(gen())
+        # End-of-stream marker object
+        end_marker = object()
+
+        # Async function to run the async generator and put items into the queue
+        async def run_async_generator(loop):
+            async for message in self.astream_chat(messages, **kwargs):
+                queue.put(message)
+            queue.put(end_marker)
+            loop.stop()
+
+        # Function to start or get the current loop
+        def start_or_get_loop():
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            return loop
+
+        loop = start_or_get_loop()
+        threading.Thread(
+            target=lambda: loop.run_until_complete(run_async_generator(loop))
+        ).start()
+
+        # Yield items from the queue synchronously
+        while True:
+            item = queue.get()
+            if item is end_marker:
+                break
+            yield item
 
     @llm_chat_callback()
     async def achat(
