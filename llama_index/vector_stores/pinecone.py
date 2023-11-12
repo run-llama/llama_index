@@ -56,6 +56,8 @@ def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
     # return sparse_emb list
     return sparse_emb
 
+def check_sparse_embeddings(nodes: List[BaseNode]) -> bool:
+    return all(node.sparse_embedding is not None for node in nodes)
 
 def generate_sparse_vectors(
     context_batch: List[str], tokenizer: Callable
@@ -241,6 +243,12 @@ class PineconeVectorStore(BasePydanticVectorStore):
         """
         ids = []
         entries = []
+
+        #check if the LIst of nodes has sparse_embeddings
+        #if it does, then we need to add the sparse_embeddings to the index
+
+        contains_sparse_embeddings = check_sparse_embeddings(nodes)
+
         for node in nodes:
             node_id = node.node_id
 
@@ -256,11 +264,16 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 METADATA_KEY: metadata,
             }
             if self.add_sparse_vector and self._tokenizer is not None:
-                sparse_vector = generate_sparse_vectors(
-                    [node.get_content(metadata_mode=MetadataMode.EMBED)],
-                    self._tokenizer,
-                )[0]
-                entry[SPARSE_VECTOR_KEY] = sparse_vector
+
+                if not contains_sparse_embeddings:
+                    entry[SPARSE_VECTOR_KEY] = node.sparse_embedding
+
+                else:
+                    sparse_vector = generate_sparse_vectors(
+                        [node.get_content(metadata_mode=MetadataMode.EMBED)],
+                        self._tokenizer,
+                    )[0]
+                    entry[SPARSE_VECTOR_KEY] = sparse_vector
 
             ids.append(node_id)
             entries.append(entry)

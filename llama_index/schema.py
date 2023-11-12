@@ -135,7 +135,10 @@ class BaseNode(BaseComponent):
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
     )
     embedding: Optional[List[float]] = Field(
-        default=None, description="Embedding of the node."
+        default=None, description="Dense embedding of the node."
+    )
+    sparse_embedding: Optional[Dict[str, float]] = Field(
+        default=None, description="Sparse embedding of the node."
     )
 
     """"
@@ -279,6 +282,16 @@ class BaseNode(BaseComponent):
         if self.embedding is None:
             raise ValueError("embedding not set.")
         return self.embedding
+    
+    def get_sparse_embedding(self) -> Dict[str, float]:
+        """Get sparse embedding.
+
+        Errors if sparse_embedding is None.
+
+        """
+        if self.sparse_embedding is None:
+            raise ValueError("sparse_embedding not set.")
+        return self.sparse_embedding
 
     def as_related_node_info(self) -> RelatedNodeInfo:
         """Get node as RelatedNodeInfo."""
