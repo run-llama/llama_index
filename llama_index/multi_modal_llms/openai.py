@@ -7,9 +7,11 @@ from openai.types.chat import ChatCompletionMessageParam
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.llms.base import ChatResponse, llm_chat_callback
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
+from llama_index.llms.openai_utils import from_openai_message
 from llama_index.multi_modal_llms import (
     MultiModalCompletionResponse,
     MultiModalCompletionResponseAsyncGen,
@@ -165,6 +167,33 @@ class OpenAIMultiModal(MultiModalLLM):
 
         return MultiModalCompletionResponse(
             text=response.choices[0].message.content,
+            raw=response,
+            additional_kwargs=self._get_response_token_counts(response),
+        )
+
+    @llm_chat_callback()
+    def chat(self, message: str = "", **kwargs: Any) -> ChatResponse:
+        chat_fn = self._chat
+        return chat_fn(message, **kwargs)
+
+    def _chat(
+        self,
+        message: str = "",
+        image_documents: Sequence[ImageDocument] = [],
+        **kwargs: Any,
+    ) -> ChatResponse:
+        message_dict = self._get_multi_modal_input_dict(message, image_documents)
+        response = self._client.chat.completions.create(
+            model=self.model,
+            messages=message_dict,
+            stream=False,
+        )
+
+        openai_message = response.choices[0].message
+        message = from_openai_message(openai_message)
+
+        return ChatResponse(
+            message=message,
             raw=response,
             additional_kwargs=self._get_response_token_counts(response),
         )

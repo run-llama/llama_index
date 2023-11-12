@@ -2,7 +2,8 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, AsyncGenerator, Generator, Optional, Sequence
 
-from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.bridge.pydantic import BaseModel, Field, validator
+from llama_index.callbacks import CallbackManager
 from llama_index.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_INPUT_FILES,
@@ -104,6 +105,16 @@ class MultiModalLLM(BaseComponent):
 
     class Config:
         arbitrary_types_allowed = True
+
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager, exclude=True
+    )
+
+    @validator("callback_manager", pre=True)
+    def _validate_callback_manager(cls, v: CallbackManager) -> CallbackManager:
+        if v is None:
+            return CallbackManager([])
+        return v
 
     @property
     @abstractmethod

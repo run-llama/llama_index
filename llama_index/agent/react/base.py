@@ -11,6 +11,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    Union,
     cast,
 )
 
@@ -36,7 +37,10 @@ from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
+from llama_index.multi_modal_llms.base import MultiModalLLM
+from llama_index.multi_modal_llms.openai import OpenAIMultiModal
 from llama_index.objects.base import ObjectRetriever
+from llama_index.schema import ImageDocument
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import async_unit_generator, print_text, unit_generator
@@ -56,7 +60,7 @@ class ReActAgent(BaseAgent):
     def __init__(
         self,
         tools: Sequence[BaseTool],
-        llm: LLM,
+        llm: Union[LLM, MultiModalLLM],
         memory: BaseMemory,
         max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
@@ -331,13 +335,20 @@ class ReActAgent(BaseAgent):
 
     @trace_method("chat")
     def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        image_documents: Optional[Sequence[ImageDocument]] = None,
     ) -> AgentChatResponse:
         """Chat."""
         # get tools
         # TODO: do get tools dynamically at every iteration of the agent loop
         self.sources = []
         tools = self.get_tools(message)
+
+        if image_documents is not None:
+            if not isinstance(self._llm, OpenAIMultiModal):
+                raise ValueError("Cannot use image_documents with non multimodal llm")
 
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -353,8 +364,15 @@ class ReActAgent(BaseAgent):
                 chat_history=self._memory.get(),
                 current_reasoning=current_reasoning,
             )
+
             # send prompt
-            chat_response = self._llm.chat(input_chat)
+            if isinstance(self._llm, OpenAIMultiModal):
+                chat_response = self._llm.achat(
+                    message, image_documents=image_documents
+                )
+            else:
+                chat_response = self._llm.achat(input_chat)
+
             # given react prompt outputs, call tools or return response
             reasoning_steps, is_done = self._process_actions(
                 tools, output=chat_response
@@ -371,12 +389,19 @@ class ReActAgent(BaseAgent):
 
     @trace_method("chat")
     async def achat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        image_documents: Optional[Sequence[OpenAIMultiModal]] = None,
     ) -> AgentChatResponse:
         # get tools
         # TODO: do get tools dynamically at every iteration of the agent loop
         self.sources = []
         tools = self.get_tools(message)
+
+        if image_documents is not None:
+            if not isinstance(self._llm, OpenAIMultiModal):
+                raise ValueError("Cannot use image_documents with non multimodal llm")
 
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -393,7 +418,13 @@ class ReActAgent(BaseAgent):
                 current_reasoning=current_reasoning,
             )
             # send prompt
-            chat_response = await self._llm.achat(input_chat)
+            if isinstance(self._llm, OpenAIMultiModal):
+                chat_response = self._llm.achat(
+                    message, image_documents=image_documents
+                )
+            else:
+                chat_response = self._llm.achat(input_chat)
+
             # given react prompt outputs, call tools or return response
             reasoning_steps, is_done = await self._aprocess_actions(
                 tools, output=chat_response
