@@ -11,7 +11,7 @@ class CohereRerankerFinetuneDataset(BaseModel):
 
     query: str
     relevant_passages: List[str]
-    hard_negatives: List[str]
+    hard_negatives: Any
 
     def to_jsonl(self) -> str:
         """Convert the BaseModel instance to a JSONL string."""
@@ -100,16 +100,15 @@ def get_query_context_lists(
 
 def generate_cohere_reranker_finetuning_dataset(
     query_context_pairs: EmbeddingQAFinetuneDataset,
-    embed_model: Optional[Any],
-    num_negatives: int = 5,
+    num_negatives: int = 0,
     top_k_dissimilar: int = 100,
-    hard_negatives_required: bool = False,
     hard_negatives_gen_method: str = "random",
     finetune_dataset_file_name: str = "train.jsonl",
+    embed_model: Optional[Any] = None,
 ) -> Any:
     queries, relevant_contexts = get_query_context_lists(query_context_pairs)
 
-    if hard_negatives_required:
+    if num_negatives:
         hard_negatives = generate_hard_negatives(
             queries,
             relevant_contexts,
@@ -128,7 +127,7 @@ def generate_cohere_reranker_finetuning_dataset(
         ):
             # Instantiate a CohereRerankerFinetuneDataset object for the current entry
             entry = CohereRerankerFinetuneDataset(
-                query=query, relevant_passages=[context], hard_negatives=[hard_negative]
+                query=query, relevant_passages=[context], hard_negatives=hard_negative
             )
             # Write the JSONL string to the file
             outfile.write(entry.to_jsonl())
