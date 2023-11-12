@@ -111,6 +111,7 @@ class OpenLLM(LLM):
             quantize=quantize,
             serialisation=serialization,
             trust_remote_code=trust_remote_code,
+            embedded=True,
             **attrs,
         )
         if messages_to_prompt is None:
