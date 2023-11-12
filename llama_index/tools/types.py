@@ -1,3 +1,4 @@
+import json
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
@@ -25,7 +26,11 @@ class ToolMetadata:
         """Get fn schema as string."""
         if self.fn_schema is None:
             raise ValueError("fn_schema is None.")
-        return str(self.fn_schema.schema())
+        schema = self.fn_schema.schema()
+        schema = {
+            k: v for k, v in schema.items() if k in ["type", "properties", "required"]
+        }
+        return json.dumps(schema)
 
     def get_name(self) -> str:
         """Get name."""
