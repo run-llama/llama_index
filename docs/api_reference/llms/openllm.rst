@@ -1,4 +1,6 @@
 OpenLLM
 =======
 
-.. autopydantic_model:: llama_index.llms.openllm.HuggingFaceLLM
+.. autopydantic_model:: llama_index.llms.openllm.OpenLLM
+
+.. autopydantic_model:: llama_index.llms.openllm.OpenLLMAPI
