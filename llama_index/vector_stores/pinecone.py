@@ -244,9 +244,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
         ids = []
         entries = []
 
-        #check if the LIst of nodes has sparse_embeddings
-        #if it does, then we need to add the sparse_embeddings to the index
-
         contains_sparse_embeddings = check_sparse_embeddings(nodes)
 
         for node in nodes:
@@ -263,12 +260,12 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 VECTOR_KEY: node.get_embedding(),
                 METADATA_KEY: metadata,
             }
-            if self.add_sparse_vector and self._tokenizer is not None:
+            if self.add_sparse_vector:
 
                 if not contains_sparse_embeddings:
                     entry[SPARSE_VECTOR_KEY] = node.sparse_embedding
 
-                else:
+                elif self._tokenizer is not None:
                     sparse_vector = generate_sparse_vectors(
                         [node.get_content(metadata_mode=MetadataMode.EMBED)],
                         self._tokenizer,
