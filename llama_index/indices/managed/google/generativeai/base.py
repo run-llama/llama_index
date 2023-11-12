@@ -171,7 +171,19 @@ class GoogleIndex(BaseManagedIndex):
             answer_style: See `google.ai.generativelanguage.AnswerStyle`
 
         Returns:
-            A query engine that uses Google's AQA model.
+            A query engine that uses Google's AQA model. The query engine will
+            return a `Response` object.
+
+            `Response`'s `source_nodes` will begin with a list of attributed
+            passages. These passages are the ones that were used to construct
+            the grounded response. These passages will always have no score,
+            the only way to mark them as attributed passages. Then, the list
+            will follow with the originally provided passages, which will have
+            a score from the retrieval.
+
+            `Response`'s `metadata` may also have have an entry with key
+            `answerable_probability`, which is the probability that the grounded
+            answer is likely correct.
         """
         return super().as_query_engine(
             retriever=self.as_retriever(**kwargs),

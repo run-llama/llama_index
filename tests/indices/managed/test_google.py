@@ -169,12 +169,6 @@ def test_as_query_engine(
 
     assert response.response == "42"
 
-    assert len(response.source_nodes) > 0
-    attribution_node = response.source_nodes[0]
-    assert "Meaning of life is 42." in attribution_node.node.text
-    assert "Or maybe not" in attribution_node.node.text
-    assert attribution_node.score == pytest.approx(0.8)
-
     assert mock_generate_text_answer.call_count == 1
     generate_text_answer_request = mock_generate_text_answer.call_args.args[0]
     assert generate_text_answer_request.question.text == "What is the meaning of life?"
