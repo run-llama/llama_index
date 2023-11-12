@@ -173,4 +173,4 @@ def test_tool_fn_schema() -> None:
         name="a useful tool", description="test", fn_schema=TestSchema
     )
     parameter_dict = json.loads(metadata.fn_schema_str)
-    assert set(parameter_dict.keys()) == set("type", "properties", "required")
+    assert set(parameter_dict.keys()) == {"type", "properties", "required"}
