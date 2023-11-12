@@ -110,9 +110,9 @@ class OpenLLM(LLM):
             trust_remote_code=trust_remote_code,
             **attrs,
         )
-        if message_to_prompt is None:
-            message_to_prompt = self._tokenizer_messages_to_prompt
-        self._messages_to_prompt = message_to_prompt
+        if messages_to_prompt is None:
+            messages_to_prompt = self._tokenizer_messages_to_prompt
+        self._messages_to_prompt = messages_to_prompt
 
         super().__init__(
             model_id=model_id,
