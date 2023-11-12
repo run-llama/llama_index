@@ -21,7 +21,7 @@ class ToolMetadata:
     name: Optional[str] = None
     fn_schema: Optional[Type[BaseModel]] = DefaultToolFnSchema
 
-    def get_parameters_dict(self) -> str:
+    def get_parameters_dict(self) -> dict:
         if self.fn_schema is None:
             parameters = {
                 "type": "object",
