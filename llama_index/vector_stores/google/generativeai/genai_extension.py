@@ -468,7 +468,7 @@ class Passage:
 class TextAnswer:
     answer: str
     attributed_passages: List[Passage]
-    answerable_probability: float
+    answerable_probability: Optional[float]
 
 
 def generate_text_answer(
