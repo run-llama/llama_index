@@ -149,12 +149,12 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
 
     def __init__(
         self,
-        callback: Optional[Callable[[List[QueryData]], None]] = None,
+        callback: Optional[Callable[[List[QueryData], List[NodeData]], None]] = None,
     ) -> None:
         """Initializes the OpenInferenceCallbackHandler.
 
         Args:
-            callback (Optional[Callable[[List[QueryData]], None]], optional): A
+            callback (Optional[Callable[[List[QueryData], List[NodeData]], None]], optional): A
             callback function that will be called when a query trace is
             completed, often used for logging or persisting query data.
         """
