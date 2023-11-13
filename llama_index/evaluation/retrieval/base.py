@@ -20,6 +20,15 @@ class RetrievalEvalMode(str, Enum):
     TEXT = "text"
     IMAGE = "image"
 
+    @classmethod
+    def from_str(cls, label):
+        if label == "text":
+            return RetrievalEvalMode.TEXT
+        elif label == "image":
+            return RetrievalEvalMode.IMAGE
+        else:
+            raise NotImplementedError
+
 
 class RetrievalEvalResult(BaseModel):
     """Retrieval eval result.
@@ -154,7 +163,7 @@ class BaseRetrievalEvaluator(BaseModel):
                 return await self.aevaluate(query, expected_ids=expected_ids, mode=mode)
 
         response_jobs = []
-        mode = dataset.mode
+        mode = RetrievalEvalMode.from_str(dataset.mode)
         for query_id, query in dataset.queries.items():
             expected_ids = dataset.relevant_docs[query_id]
             response_jobs.append(eval_worker(query, expected_ids, mode))
