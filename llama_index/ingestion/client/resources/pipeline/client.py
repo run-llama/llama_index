@@ -29,6 +29,7 @@ from llama_index.ingestion.client.types.data_source_create import DataSourceCrea
 from llama_index.ingestion.client.types.eval_dataset_execution import (
     EvalDatasetExecution,
 )
+from llama_index.ingestion.client.types.eval_execution_params import EvalExecutionParams
 from llama_index.ingestion.client.types.eval_question_result import EvalQuestionResult
 from llama_index.ingestion.client.types.http_validation_error import HttpValidationError
 from llama_index.ingestion.client.types.pipeline import Pipeline
@@ -42,19 +43,16 @@ class PipelineClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def get_pipeline_by_name_api_pipeline_get(
-        self,
-        *,
-        pipeline_name: typing.Optional[str] = None,
-        project_name: typing.Optional[str] = None,
+    def get_pipeline_by_name(
+        self, *, pipeline_name: str, project_name: str
     ) -> typing.List[Pipeline]:
         """
         Get a pipeline by name.
 
         Parameters:
-            - pipeline_name: typing.Optional[str].
+            - pipeline_name: str.
 
-            - project_name: typing.Optional[str].
+            - project_name: str.
         """
         _response = self._client_wrapper.httpx_client.request(
             "GET",
@@ -204,7 +202,7 @@ class PipelineClient:
         Can optionally supply a configured_transformation_execution_id to run a specific execution.
         In absence of a configured_transformation_execution_id, the last
         configured_transformation_execution will be run (which may end up triggering runs
-        for it's prior steps as well).
+        for it's prior steps as well)
 
         Parameters:
             - pipeline_id: str.
@@ -298,20 +296,22 @@ class PipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def get_eval_dataset_executions_api_pipeline_pipeline_id_eval_dataset_execution_get(
-        self, pipeline_id: str
+    def get_eval_dataset_executions(
+        self, pipeline_id: str, eval_dataset_id: str
     ) -> typing.List[EvalDatasetExecution]:
         """
         Get the status of an EvalDatasetExecution.
 
         Parameters:
             - pipeline_id: str.
+
+            - eval_dataset_id: str.
         """
         _response = self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/eval_dataset_execution",
+                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/execute",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
@@ -326,8 +326,13 @@ class PipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def execute_eval_dataset_api_pipeline_pipeline_id_eval_dataset_execution_post(
-        self, pipeline_id: str, *, eval_dataset_id: str, question_ids: typing.List[str]
+    def execute_eval_dataset(
+        self,
+        pipeline_id: str,
+        eval_dataset_id: str,
+        *,
+        eval_question_ids: typing.List[str],
+        params: EvalExecutionParams,
     ) -> EvalDatasetExecution:
         """
         Execute a dataset.
@@ -337,16 +342,18 @@ class PipelineClient:
 
             - eval_dataset_id: str.
 
-            - question_ids: typing.List[str].
+            - eval_question_ids: typing.List[str].
+
+            - params: EvalExecutionParams.
         """
         _response = self._client_wrapper.httpx_client.request(
             "POST",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/eval_dataset_execution",
+                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/execute",
             ),
             json=jsonable_encoder(
-                {"eval_dataset_id": eval_dataset_id, "question_ids": question_ids}
+                {"eval_question_ids": eval_question_ids, "params": params}
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
@@ -362,7 +369,7 @@ class PipelineClient:
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
     def get_eval_dataset_execution(
-        self, pipeline_id: str, eval_dataset_execution_id: str
+        self, pipeline_id: str, eval_dataset_id: str, eval_dataset_execution_id: str
     ) -> EvalDatasetExecution:
         """
         Get the status of an EvalDatasetExecution.
@@ -370,13 +377,15 @@ class PipelineClient:
         Parameters:
             - pipeline_id: str.
 
+            - eval_dataset_id: str.
+
             - eval_dataset_execution_id: str.
         """
         _response = self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/eval_dataset_execution/{eval_dataset_execution_id}",
+                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/execute/{eval_dataset_execution_id}",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
@@ -391,30 +400,28 @@ class PipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def get_eval_question_result(
-        self, pipeline_id: str, eval_dataset_id: str, eval_question_id: str
-    ) -> EvalQuestionResult:
+    def get_eval_dataset_execution_result(
+        self, pipeline_id: str, eval_dataset_id: str
+    ) -> typing.List[EvalQuestionResult]:
         """
-        Get the result of an EvalQuestionExecution.
+        Get the result of an EvalDatasetExecution.
 
         Parameters:
             - pipeline_id: str.
 
             - eval_dataset_id: str.
-
-            - eval_question_id: str.
         """
         _response = self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/eval_question/{eval_question_id}/result",
+                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/execute/result",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(EvalQuestionResult, _response.json())  # type: ignore
+            return pydantic.parse_obj_as(typing.List[EvalQuestionResult], _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:
@@ -428,19 +435,16 @@ class AsyncPipelineClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def get_pipeline_by_name_api_pipeline_get(
-        self,
-        *,
-        pipeline_name: typing.Optional[str] = None,
-        project_name: typing.Optional[str] = None,
+    async def get_pipeline_by_name(
+        self, *, pipeline_name: str, project_name: str
     ) -> typing.List[Pipeline]:
         """
         Get a pipeline by name.
 
         Parameters:
-            - pipeline_name: typing.Optional[str].
+            - pipeline_name: str.
 
-            - project_name: typing.Optional[str].
+            - project_name: str.
         """
         _response = await self._client_wrapper.httpx_client.request(
             "GET",
@@ -590,7 +594,7 @@ class AsyncPipelineClient:
         Can optionally supply a configured_transformation_execution_id to run a specific execution.
         In absence of a configured_transformation_execution_id, the last
         configured_transformation_execution will be run (which may end up triggering runs
-        for it's prior steps as well).
+        for it's prior steps as well)
 
         Parameters:
             - pipeline_id: str.
@@ -684,20 +688,22 @@ class AsyncPipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def get_eval_dataset_executions_api_pipeline_pipeline_id_eval_dataset_execution_get(
-        self, pipeline_id: str
+    async def get_eval_dataset_executions(
+        self, pipeline_id: str, eval_dataset_id: str
     ) -> typing.List[EvalDatasetExecution]:
         """
         Get the status of an EvalDatasetExecution.
 
         Parameters:
             - pipeline_id: str.
+
+            - eval_dataset_id: str.
         """
         _response = await self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/eval_dataset_execution",
+                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/execute",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
@@ -712,8 +718,13 @@ class AsyncPipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def execute_eval_dataset_api_pipeline_pipeline_id_eval_dataset_execution_post(
-        self, pipeline_id: str, *, eval_dataset_id: str, question_ids: typing.List[str]
+    async def execute_eval_dataset(
+        self,
+        pipeline_id: str,
+        eval_dataset_id: str,
+        *,
+        eval_question_ids: typing.List[str],
+        params: EvalExecutionParams,
     ) -> EvalDatasetExecution:
         """
         Execute a dataset.
@@ -723,16 +734,18 @@ class AsyncPipelineClient:
 
             - eval_dataset_id: str.
 
-            - question_ids: typing.List[str].
+            - eval_question_ids: typing.List[str].
+
+            - params: EvalExecutionParams.
         """
         _response = await self._client_wrapper.httpx_client.request(
             "POST",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/eval_dataset_execution",
+                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/execute",
             ),
             json=jsonable_encoder(
-                {"eval_dataset_id": eval_dataset_id, "question_ids": question_ids}
+                {"eval_question_ids": eval_question_ids, "params": params}
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
@@ -748,7 +761,7 @@ class AsyncPipelineClient:
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
     async def get_eval_dataset_execution(
-        self, pipeline_id: str, eval_dataset_execution_id: str
+        self, pipeline_id: str, eval_dataset_id: str, eval_dataset_execution_id: str
     ) -> EvalDatasetExecution:
         """
         Get the status of an EvalDatasetExecution.
@@ -756,13 +769,15 @@ class AsyncPipelineClient:
         Parameters:
             - pipeline_id: str.
 
+            - eval_dataset_id: str.
+
             - eval_dataset_execution_id: str.
         """
         _response = await self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/eval_dataset_execution/{eval_dataset_execution_id}",
+                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/execute/{eval_dataset_execution_id}",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
@@ -777,30 +792,28 @@ class AsyncPipelineClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def get_eval_question_result(
-        self, pipeline_id: str, eval_dataset_id: str, eval_question_id: str
-    ) -> EvalQuestionResult:
+    async def get_eval_dataset_execution_result(
+        self, pipeline_id: str, eval_dataset_id: str
+    ) -> typing.List[EvalQuestionResult]:
         """
-        Get the result of an EvalQuestionExecution.
+        Get the result of an EvalDatasetExecution.
 
         Parameters:
             - pipeline_id: str.
 
             - eval_dataset_id: str.
-
-            - eval_question_id: str.
         """
         _response = await self._client_wrapper.httpx_client.request(
             "GET",
             urllib.parse.urljoin(
                 f"{self._client_wrapper.get_base_url()}/",
-                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/eval_question/{eval_question_id}/result",
+                f"api/pipeline/{pipeline_id}/eval_dataset/{eval_dataset_id}/execute/result",
             ),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(EvalQuestionResult, _response.json())  # type: ignore
+            return pydantic.parse_obj_as(typing.List[EvalQuestionResult], _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:

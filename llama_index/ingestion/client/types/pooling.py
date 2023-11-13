@@ -21,4 +21,3 @@ class Pooling(str, enum.Enum):
             return cls()
         if self is Pooling.MEAN:
             return mean()
-        return None

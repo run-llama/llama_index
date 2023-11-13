@@ -33,9 +33,7 @@ class DataSinkClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def create_data_sink_api_data_sink_post(
-        self, *, request: DataSinkCreate
-    ) -> DataSink:
+    def create_data_sink(self, *, request: DataSinkCreate) -> DataSink:
         """
         Create a new data sink.
 
@@ -61,9 +59,7 @@ class DataSinkClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def upsert_data_sink_api_data_sink_put(
-        self, *, request: DataSinkCreate
-    ) -> DataSink:
+    def upsert_data_sink(self, *, request: DataSinkCreate) -> DataSink:
         """
         Upserts a data sink.
         Updates if a data sink with the same name and user_id already exists. Otherwise, creates a new data sink.
@@ -125,7 +121,7 @@ class DataSinkClient:
         name: typing.Optional[str] = OMIT,
     ) -> DataSink:
         """
-        Get a data sink by ID.
+        Update a data sink by ID.
 
         Parameters:
             - data_sink_id: str.
@@ -163,7 +159,7 @@ class DataSinkClient:
 
     def delete_data_sink(self, data_sink_id: str) -> None:
         """
-        Get a data sink by ID.
+        Delete a data sink by ID.
 
         Parameters:
             - data_sink_id: str.
@@ -192,9 +188,7 @@ class AsyncDataSinkClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def create_data_sink_api_data_sink_post(
-        self, *, request: DataSinkCreate
-    ) -> DataSink:
+    async def create_data_sink(self, *, request: DataSinkCreate) -> DataSink:
         """
         Create a new data sink.
 
@@ -220,9 +214,7 @@ class AsyncDataSinkClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def upsert_data_sink_api_data_sink_put(
-        self, *, request: DataSinkCreate
-    ) -> DataSink:
+    async def upsert_data_sink(self, *, request: DataSinkCreate) -> DataSink:
         """
         Upserts a data sink.
         Updates if a data sink with the same name and user_id already exists. Otherwise, creates a new data sink.
@@ -284,7 +276,7 @@ class AsyncDataSinkClient:
         name: typing.Optional[str] = OMIT,
     ) -> DataSink:
         """
-        Get a data sink by ID.
+        Update a data sink by ID.
 
         Parameters:
             - data_sink_id: str.
@@ -322,7 +314,7 @@ class AsyncDataSinkClient:
 
     async def delete_data_sink(self, data_sink_id: str) -> None:
         """
-        Get a data sink by ID.
+        Delete a data sink by ID.
 
         Parameters:
             - data_sink_id: str.

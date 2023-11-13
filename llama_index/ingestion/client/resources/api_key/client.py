@@ -26,7 +26,7 @@ class ApiKeyClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def get_keys_api_api_key_get(self) -> typing.List[ApiKey]:
+    def get_keys(self) -> typing.List[ApiKey]:
         """
         Get all API Keys for a user.
         """
@@ -46,9 +46,7 @@ class ApiKeyClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def generate_key_api_api_key_post(
-        self, *, name: typing.Optional[str] = OMIT
-    ) -> ApiKey:
+    def generate_key(self, *, name: typing.Optional[str] = OMIT) -> ApiKey:
         """
         Generate a new API Key.
 
@@ -82,7 +80,7 @@ class AsyncApiKeyClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def get_keys_api_api_key_get(self) -> typing.List[ApiKey]:
+    async def get_keys(self) -> typing.List[ApiKey]:
         """
         Get all API Keys for a user.
         """
@@ -102,9 +100,7 @@ class AsyncApiKeyClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def generate_key_api_api_key_post(
-        self, *, name: typing.Optional[str] = OMIT
-    ) -> ApiKey:
+    async def generate_key(self, *, name: typing.Optional[str] = OMIT) -> ApiKey:
         """
         Generate a new API Key.
 

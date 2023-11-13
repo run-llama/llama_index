@@ -5,7 +5,7 @@ import typing
 
 import pydantic
 
-from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
+from ..core.datetime_utils import serialize_datetime
 
 
 class OpenAiEmbedding(pydantic.BaseModel):
@@ -29,10 +29,6 @@ class OpenAiEmbedding(pydantic.BaseModel):
             - OpenAIEmbeddingModelType.BABBAGE
             - OpenAIEmbeddingModelType.ADA
             - OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002
-
-        deployment_name (Optional[str]): Optional deployment of model. Defaults to None.
-            If this value is not None, mode and model will be ignored.
-            Only available for using AzureOpenAI.
     """
 
     model_name: typing.Optional[str] = pydantic.Field(
@@ -42,14 +38,15 @@ class OpenAiEmbedding(pydantic.BaseModel):
         description="The batch size for embedding calls."
     )
     callback_manager: typing.Optional[typing.Dict[str, typing.Any]]
-    deployment_name: typing.Optional[str]
     additional_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = pydantic.Field(
         description="Additional kwargs for the OpenAI API."
     )
-    api_key: typing.Optional[str] = pydantic.Field(description="The OpenAI API key.")
-    api_type: typing.Optional[str] = pydantic.Field(description="The OpenAI API type.")
+    api_key: str = pydantic.Field(description="The OpenAI API key.")
     api_base: str = pydantic.Field(description="The base URL for OpenAI API.")
-    api_version: str = pydantic.Field(description="The API version for OpenAI API.")
+    api_version: str = pydantic.Field(description="The version for OpenAI API.")
+    max_retries: typing.Optional[int] = pydantic.Field(
+        description="Maximum number of retries."
+    )
     class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
@@ -70,5 +67,4 @@ class OpenAiEmbedding(pydantic.BaseModel):
 
     class Config:
         frozen = True
-        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

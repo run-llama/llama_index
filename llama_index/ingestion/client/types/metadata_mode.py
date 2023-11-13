@@ -31,4 +31,3 @@ class MetadataMode(str, enum.Enum):
             return three()
         if self is MetadataMode.FOUR:
             return four()
-        return None

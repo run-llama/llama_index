@@ -5,7 +5,7 @@ import typing
 
 import pydantic
 
-from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
+from ..core.datetime_utils import serialize_datetime
 
 
 class PgVectorStore(pydantic.BaseModel):
@@ -23,6 +23,7 @@ class PgVectorStore(pydantic.BaseModel):
     hybrid_search: bool
     text_search_config: str
     cache_ok: bool
+    perform_setup: bool
     debug: bool
     flat_metadata: typing.Optional[bool]
     class_name: typing.Optional[str]
@@ -45,5 +46,4 @@ class PgVectorStore(pydantic.BaseModel):
 
     class Config:
         frozen = True
-        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

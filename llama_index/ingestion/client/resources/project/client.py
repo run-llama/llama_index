@@ -33,11 +33,11 @@ class ProjectClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def get_project_by_name_api_project_get(
+    def list_projects(
         self, *, project_name: typing.Optional[str] = None
     ) -> typing.List[Project]:
         """
-        Get a project by name.
+        List projects or get one by name
 
         Parameters:
             - project_name: typing.Optional[str].
@@ -61,7 +61,7 @@ class ProjectClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def create_project_api_project_post(self, *, request: ProjectCreate) -> Project:
+    def create_project(self, *, request: ProjectCreate) -> Project:
         """
         Create a new project.
 
@@ -87,7 +87,7 @@ class ProjectClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def upsert_project_api_project_put(self, *, request: ProjectCreate) -> Project:
+    def upsert_project(self, *, request: ProjectCreate) -> Project:
         """
         Upsert a project.
         Updates if a project with the same name already exists. Otherwise, creates a new project.
@@ -292,11 +292,11 @@ class AsyncProjectClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def get_project_by_name_api_project_get(
+    async def list_projects(
         self, *, project_name: typing.Optional[str] = None
     ) -> typing.List[Project]:
         """
-        Get a project by name.
+        List projects or get one by name
 
         Parameters:
             - project_name: typing.Optional[str].
@@ -320,9 +320,7 @@ class AsyncProjectClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def create_project_api_project_post(
-        self, *, request: ProjectCreate
-    ) -> Project:
+    async def create_project(self, *, request: ProjectCreate) -> Project:
         """
         Create a new project.
 
@@ -348,9 +346,7 @@ class AsyncProjectClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def upsert_project_api_project_put(
-        self, *, request: ProjectCreate
-    ) -> Project:
+    async def upsert_project(self, *, request: ProjectCreate) -> Project:
         """
         Upsert a project.
         Updates if a project with the same name already exists. Otherwise, creates a new project.

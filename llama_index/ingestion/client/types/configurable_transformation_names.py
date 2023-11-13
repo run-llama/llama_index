@@ -83,4 +83,3 @@ class ConfigurableTransformationNames(str, enum.Enum):
             return openai_embedding()
         if self is ConfigurableTransformationNames.HUGGINGFACE_EMBEDDING:
             return huggingface_embedding()
-        return None

@@ -6,33 +6,21 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
+from .eval_llm_model_data import EvalLlmModelData
+from .supported_eval_llm_model_names import SupportedEvalLlmModelNames
 
 
-class QdrantVectorStore(pydantic.BaseModel):
+class SupportedEvalLlmModel(pydantic.BaseModel):
     """
-    Qdrant Vector Store.
-
-    In this vector store, embeddings and docs are stored within a
-    Qdrant collection.
-
-    During query time, the index uses Qdrant to query for the top
-    k most similar nodes.
-
-    Args:
-        collection_name: (str): name of the Qdrant collection
-        client (Optional[Any]): QdrantClient instance from `qdrant-client` package
+    Response Schema for a supported eval LLM model.
     """
 
-    stores_text: typing.Optional[bool]
-    is_embedding_query: typing.Optional[bool]
-    flat_metadata: typing.Optional[bool]
-    collection_name: str
-    url: typing.Optional[str]
-    api_key: typing.Optional[str]
-    batch_size: int
-    prefer_grpc: bool
-    client_kwargs: typing.Optional[typing.Dict[str, typing.Any]]
-    class_name: typing.Optional[str]
+    name: SupportedEvalLlmModelNames = pydantic.Field(
+        description="The name of the supported eval LLM model."
+    )
+    details: EvalLlmModelData = pydantic.Field(
+        description="The details of the supported eval LLM model."
+    )
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

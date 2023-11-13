@@ -5,15 +5,18 @@ import typing
 
 import pydantic
 
-from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
-
+from ..core.datetime_utils import serialize_datetime
 from .etl_job_names import EtlJobNames
+from .eval_dataset_execution_run_config_per_op_value import (
+    EvalDatasetExecutionRunConfigPerOpValue,
+)
+from .eval_execution_params import EvalExecutionParams
 from .status_enum import StatusEnum
 
 
 class EvalDatasetExecution(pydantic.BaseModel):
     """
-    Schema for job that evaluates a pipeline against an EvalDataset.
+    Schema for job that evaluates an EvalDataset against a pipeline.
     """
 
     id: typing.Optional[str] = pydantic.Field(description="Unique identifier")
@@ -27,17 +30,20 @@ class EvalDatasetExecution(pydantic.BaseModel):
     status: StatusEnum
     started_at: typing.Optional[dt.datetime]
     ended_at: typing.Optional[dt.datetime]
-    partitions: typing.Optional[typing.Dict[str, str]] = pydantic.Field(
-        description="Partition information"
-    )
+    run_config_per_op: typing.Dict[
+        str, EvalDatasetExecutionRunConfigPerOpValue
+    ] = pydantic.Field(description="Run config that was given to the Dagster job")
     pipeline_id: str = pydantic.Field(
         description="The ID for the Pipeline this execution ran against."
     )
     eval_dataset_id: str = pydantic.Field(
         description="The ID for the EvalDataset this execution ran against."
     )
-    question_ids: typing.List[str] = pydantic.Field(
+    eval_question_ids: typing.List[str] = pydantic.Field(
         description="The IDs for the EvalQuestions this execution ran against."
+    )
+    eval_execution_params: EvalExecutionParams = pydantic.Field(
+        description="The parameters for the eval execution."
     )
 
     def json(self, **kwargs: typing.Any) -> str:
@@ -58,5 +64,4 @@ class EvalDatasetExecution(pydantic.BaseModel):
 
     class Config:
         frozen = True
-        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

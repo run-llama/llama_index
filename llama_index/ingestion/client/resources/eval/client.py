@@ -17,7 +17,11 @@ from llama_index.ingestion.client.errors.unprocessable_entity_error import (
 )
 from llama_index.ingestion.client.types.eval_dataset import EvalDataset
 from llama_index.ingestion.client.types.eval_question import EvalQuestion
+from llama_index.ingestion.client.types.eval_question_create import EvalQuestionCreate
 from llama_index.ingestion.client.types.http_validation_error import HttpValidationError
+from llama_index.ingestion.client.types.supported_eval_llm_model import (
+    SupportedEvalLlmModel,
+)
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -29,7 +33,7 @@ class EvalClient:
 
     def get_dataset(self, dataset_id: str) -> EvalDataset:
         """
-        Get a project by name.
+        Get a dataset by ID.
 
         Parameters:
             - dataset_id: str.
@@ -134,14 +138,16 @@ class EvalClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def create_question(self, dataset_id: str, *, content: str) -> EvalQuestion:
+    def create_question(
+        self, dataset_id: str, *, request: EvalQuestionCreate
+    ) -> EvalQuestion:
         """
         Create a new question.
 
         Parameters:
             - dataset_id: str.
 
-            - content: str.
+            - request: EvalQuestionCreate.
         """
         _response = self._client_wrapper.httpx_client.request(
             "POST",
@@ -149,12 +155,43 @@ class EvalClient:
                 f"{self._client_wrapper.get_base_url()}/",
                 f"api/eval/dataset/{dataset_id}/question",
             ),
-            json=jsonable_encoder({"content": content}),
+            json=jsonable_encoder(request),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
             return pydantic.parse_obj_as(EvalQuestion, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    def create_questions(
+        self, dataset_id: str, *, request: typing.List[EvalQuestionCreate]
+    ) -> typing.List[EvalQuestion]:
+        """
+        Create a new question.
+
+        Parameters:
+            - dataset_id: str.
+
+            - request: typing.List[EvalQuestionCreate].
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "POST",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/eval/dataset/{dataset_id}/questions",
+            ),
+            json=jsonable_encoder(request),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(typing.List[EvalQuestion], _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:
@@ -215,6 +252,26 @@ class EvalClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
+    def get_supported_models(self) -> typing.List[SupportedEvalLlmModel]:
+        """
+        Get all supported models.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/", "api/eval/models"
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(typing.List[SupportedEvalLlmModel], _response.json())  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
 
 class AsyncEvalClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -222,7 +279,7 @@ class AsyncEvalClient:
 
     async def get_dataset(self, dataset_id: str) -> EvalDataset:
         """
-        Get a project by name.
+        Get a dataset by ID.
 
         Parameters:
             - dataset_id: str.
@@ -327,14 +384,16 @@ class AsyncEvalClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def create_question(self, dataset_id: str, *, content: str) -> EvalQuestion:
+    async def create_question(
+        self, dataset_id: str, *, request: EvalQuestionCreate
+    ) -> EvalQuestion:
         """
         Create a new question.
 
         Parameters:
             - dataset_id: str.
 
-            - content: str.
+            - request: EvalQuestionCreate.
         """
         _response = await self._client_wrapper.httpx_client.request(
             "POST",
@@ -342,12 +401,43 @@ class AsyncEvalClient:
                 f"{self._client_wrapper.get_base_url()}/",
                 f"api/eval/dataset/{dataset_id}/question",
             ),
-            json=jsonable_encoder({"content": content}),
+            json=jsonable_encoder(request),
             headers=self._client_wrapper.get_headers(),
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
             return pydantic.parse_obj_as(EvalQuestion, _response.json())  # type: ignore
+        if _response.status_code == 422:
+            raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def create_questions(
+        self, dataset_id: str, *, request: typing.List[EvalQuestionCreate]
+    ) -> typing.List[EvalQuestion]:
+        """
+        Create a new question.
+
+        Parameters:
+            - dataset_id: str.
+
+            - request: typing.List[EvalQuestionCreate].
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "POST",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/",
+                f"api/eval/dataset/{dataset_id}/questions",
+            ),
+            json=jsonable_encoder(request),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(typing.List[EvalQuestion], _response.json())  # type: ignore
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
         try:
@@ -402,6 +492,26 @@ class AsyncEvalClient:
             return
         if _response.status_code == 422:
             raise UnprocessableEntityError(pydantic.parse_obj_as(HttpValidationError, _response.json()))  # type: ignore
+        try:
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, body=_response.text)
+        raise ApiError(status_code=_response.status_code, body=_response_json)
+
+    async def get_supported_models(self) -> typing.List[SupportedEvalLlmModel]:
+        """
+        Get all supported models.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "GET",
+            urllib.parse.urljoin(
+                f"{self._client_wrapper.get_base_url()}/", "api/eval/models"
+            ),
+            headers=self._client_wrapper.get_headers(),
+            timeout=60,
+        )
+        if 200 <= _response.status_code < 300:
+            return pydantic.parse_obj_as(typing.List[SupportedEvalLlmModel], _response.json())  # type: ignore
         try:
             _response_json = _response.json()
         except JSONDecodeError:

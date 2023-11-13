@@ -8,31 +8,16 @@ import pydantic
 from ..core.datetime_utils import serialize_datetime
 
 
-class QdrantVectorStore(pydantic.BaseModel):
+class RunTransformAssetConfig(pydantic.BaseModel):
     """
-    Qdrant Vector Store.
-
-    In this vector store, embeddings and docs are stored within a
-    Qdrant collection.
-
-    During query time, the index uses Qdrant to query for the top
-    k most similar nodes.
-
-    Args:
-        collection_name: (str): name of the Qdrant collection
-        client (Optional[Any]): QdrantClient instance from `qdrant-client` package
+    Dagster asset configuration for run_transform asset.
     """
 
-    stores_text: typing.Optional[bool]
-    is_embedding_query: typing.Optional[bool]
-    flat_metadata: typing.Optional[bool]
-    collection_name: str
-    url: typing.Optional[str]
-    api_key: typing.Optional[str]
-    batch_size: int
-    prefer_grpc: bool
-    client_kwargs: typing.Optional[typing.Dict[str, typing.Any]]
-    class_name: typing.Optional[str]
+    pipeline_id: str
+    configured_transformation_id: str
+    should_initiate_next_transform: typing.Optional[bool] = pydantic.Field(
+        description="Whether to kick of the job to run the next configured transformation in the pipeline after this one succeeds"
+    )
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {

@@ -5,8 +5,7 @@ import typing
 
 import pydantic
 
-from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
-
+from ..core.datetime_utils import serialize_datetime
 from .configurable_data_source_names import ConfigurableDataSourceNames
 from .data_source_component import DataSourceComponent
 
@@ -45,5 +44,4 @@ class DataSource(pydantic.BaseModel):
 
     class Config:
         frozen = True
-        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}
