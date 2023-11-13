@@ -16,7 +16,10 @@ from llama_index.evaluation.retrieval.base import (
     BaseRetrievalEvaluator,
     RetrievalEvalResult,
 )
-from llama_index.evaluation.retrieval.evaluator import RetrieverEvaluator
+from llama_index.evaluation.retrieval.evaluator import (
+    MultiModalRetrieverEvaluator,
+    RetrieverEvaluator,
+)
 from llama_index.evaluation.retrieval.metrics import (
     MRR,
     HitRate,
@@ -57,6 +60,7 @@ __all__ = [
     "BaseRetrievalEvaluator",
     "RetrievalEvalResult",
     "RetrieverEvaluator",
+    "MultiModalRetrieverEvaluator",
     "RetrievalMetricResult",
     "resolve_metrics",
     "HitRate",
