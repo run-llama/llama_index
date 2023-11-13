@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Tuple
 from pydantic import BaseModel
 
 from llama_index.finetuning import EmbeddingQAFinetuneDataset
+from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 
 
 class CohereRerankerFinetuneDataset(BaseModel):
@@ -29,10 +30,7 @@ def generate_hard_negatives(
     embed_model: Optional[Any],
     num_negatives: int = 5,
     method: str = "random",
-    top_k_dissimilar: int = 100,
 ) -> Any:
-    from sklearn.metrics.pairwise import cosine_similarity
-
     hard_negatives = []
 
     if method == "cosine_similarity":
@@ -42,14 +40,13 @@ def generate_hard_negatives(
         relevant_contexts_embeddings = [
             generate_embeddings(embed_model, context) for context in relevant_contexts
         ]
-        # Calculate cosine similarity between queries and context embeddings
-        similarity_matrix = cosine_similarity(
-            query_embeddings, relevant_contexts_embeddings
-        )
-    for i, _ in enumerate(queries):
+
+    for query_index, _ in enumerate(queries):
         if method == "random":
             # Exclude the correct context
-            potential_negatives = relevant_contexts[:i] + relevant_contexts[i + 1 :]
+            potential_negatives = (
+                relevant_contexts[:query_index] + relevant_contexts[query_index + 1 :]
+            )
             # Randomly select hard negatives
             hard_negatives.append(
                 random.sample(
@@ -58,24 +55,24 @@ def generate_hard_negatives(
             )
 
         elif method == "cosine_similarity":
-            # Exclude the similarity score for the correct context
-            potential_negatives_scores = list(enumerate(similarity_matrix[i]))
-            potential_negatives_scores.pop(i)  # remove the correct context score
-            # Sort based on similarity scores
-            potential_negatives_scores.sort(key=lambda x: x[1], reverse=False)
-            # Take the top 'top_k_dissimilar' least similar contexts
-            least_similar_contexts = [
-                relevant_contexts[idx]
-                for idx, _ in potential_negatives_scores[:top_k_dissimilar]
+            query_embedding = query_embeddings[query_index]
+            # Use get_top_k_embeddings to select num_negatives closest but not correct contexts
+            _, relevant_contexts_indices = get_top_k_embeddings(
+                query_embedding,
+                relevant_contexts_embeddings,
+            )
+
+            # Filter out the correct context to only include hard negatives
+            hard_negative_indices = [
+                idx for idx in relevant_contexts_indices if idx != query_index
+            ][:num_negatives]
+
+            # Map indices to actual contexts to get the hard negatives
+            hard_negatives_for_query = [
+                relevant_contexts[idx] for idx in hard_negative_indices
             ]
 
-            # Randomly select hard negatives from the least similar contexts
-            hard_negatives.append(
-                random.sample(
-                    least_similar_contexts,
-                    min(num_negatives, len(least_similar_contexts)),
-                )
-            )
+            hard_negatives.append(hard_negatives_for_query)
     return hard_negatives
 
 
@@ -115,7 +112,6 @@ def generate_cohere_reranker_finetuning_dataset(
             embed_model,
             num_negatives,
             hard_negatives_gen_method,
-            top_k_dissimilar,
         )
     else:
         hard_negatives = [[] for _ in queries]
