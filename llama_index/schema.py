@@ -47,8 +47,8 @@ class BaseComponent(BaseModel):
         state = self.dict()
 
         # Remove common unpicklable entries
-        state.pop("tokenizer", None)
-        state.pop("tokenizer_fn", None)
+        state["__dict__"].pop("tokenizer", None)
+        state["__dict__"].pop("tokenizer_fn", None)
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
