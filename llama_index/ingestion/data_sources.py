@@ -1,5 +1,7 @@
 from enum import Enum
-from typing import Generic, Type, TypeVar
+from typing import Generic, Optional, Type, TypeVar
+
+from unique_names_generator import get_random_name
 
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
 from llama_index.readers import (
@@ -147,7 +149,7 @@ class ConfigurableDataSources(Enum):
         )
 
     def build_configured_data_source(
-        self, component: BaseComponent
+        self, component: BaseComponent, name: Optional[str] = None
     ) -> "ConfiguredDataSource":
         component_type = self.value.component_type
         if not isinstance(component, component_type):
@@ -160,8 +162,12 @@ class ConfigurableDataSources(Enum):
             return ConfiguredDataSource[ReaderConfig](
                 component=reader_config
             )  # type: ignore
+
+        if name is None:
+            suffix = get_random_name(separator="-", style="lowercase")
+            name = self.value.name + f" [{suffix}]]"
         return ConfiguredDataSource[component_type](  # type: ignore
-            component=component, name=self.value.name
+            component=component, name=name
         )
 
 
@@ -177,7 +183,9 @@ class ConfiguredDataSource(GenericModel, Generic[T]):
     component: T = Field(description="Component that implements the data source")
 
     @classmethod
-    def from_component(cls, component: BaseComponent) -> "ConfiguredDataSource":
+    def from_component(
+        cls, component: BaseComponent, name: Optional[str] = None
+    ) -> "ConfiguredDataSource":
         """
         Build a ConfiguredDataSource from a component.
 
@@ -193,7 +201,7 @@ class ConfiguredDataSource(GenericModel, Generic[T]):
         """
         return ConfigurableDataSources.from_component(
             component
-        ).build_configured_data_source(component)
+        ).build_configured_data_source(component, name)
 
     @property
     def configurable_data_source_type(self) -> ConfigurableDataSources:
