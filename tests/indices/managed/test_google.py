@@ -62,15 +62,20 @@ def test_create_corpus(mock_create_corpus: MagicMock) -> None:
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_corpus")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_document")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.batch_create_chunks")
+@patch("google.ai.generativelanguage.RetrieverServiceClient.get_document")
 def test_from_documents(
+    mock_get_document: MagicMock,
     mock_batch_create_chunk: MagicMock,
     mock_create_document: MagicMock,
     mock_create_corpus: MagicMock,
 ) -> None:
+    from google.api_core import exceptions as gapi_exception
+
     def fake_create_corpus(request: genai.CreateCorpusRequest) -> genai.Corpus:
         return request.corpus
 
     # Arrange
+    mock_get_document.side_effect = gapi_exception.NotFound("")
     mock_create_corpus.side_effect = fake_create_corpus
     mock_create_document.return_value = genai.Document(name="corpora/123/documents/456")
     mock_batch_create_chunk.side_effect = [
