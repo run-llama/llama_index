@@ -1,11 +1,15 @@
 """Test pandas index."""
 
 from typing import Any, Dict, cast
+from pathlib import Path
 
 import pandas as pd
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.query_engine.pandas_query_engine import PandasQueryEngine
+from llama_index.query_engine.pandas_query_engine import (
+    PandasQueryEngine,
+    default_output_processor,
+)
 
 
 def test_pandas_query_engine(mock_service_context: ServiceContext) -> None:
@@ -54,3 +58,21 @@ With its welcoming atmosphere, top-notch education, and multicultural charm, Tor
         correst_rsp_str = str(df["description"])
         pd.reset_option("display.max_colwidth")
         assert str(response) == correst_rsp_str
+
+
+def test_default_output_processor_rce(tmp_path: Path) -> None:
+    """Test that output processor prevents RCE. https://github.com/run-llama/llama_index/issues/7054"""
+
+    df = pd.DataFrame(
+        {
+            "city": ["Toronto", "Tokyo", "Berlin"],
+            "population": [2930000, 13960000, 3645000],
+        }
+    )
+
+    tmp_file = tmp_path / "pwnnnnn"
+
+    injected_code = f"__import__('os').system('touch {tmp_file}')"
+    default_output_processor(injected_code, df)
+
+    assert not tmp_file.is_file(), "file has been created via RCE!"
