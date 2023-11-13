@@ -118,7 +118,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     @classmethod
     def class_name(cls) -> str:
-        return "QdraantVectorStore"
+        return "QdrantVectorStore"
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
