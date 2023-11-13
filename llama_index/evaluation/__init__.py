@@ -1,6 +1,9 @@
 """Evaluation modules."""
 
-from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.evaluation.base import (
+    BaseEvaluator,
+    EvaluationResult,
+)
 from llama_index.evaluation.batch_runner import BatchEvalRunner
 from llama_index.evaluation.correctness import CorrectnessEvaluator
 from llama_index.evaluation.dataset_generation import (
@@ -36,6 +39,7 @@ from llama_index.finetuning.embeddings.common import (
 
 # aliases for generate_qa_embedding_pairs
 generate_question_context_pairs = generate_qa_embedding_pairs
+LabelledQADataset = EmbeddingQAFinetuneDataset
 
 __all__ = [
     "BaseEvaluator",
@@ -66,4 +70,5 @@ __all__ = [
     "HitRate",
     "MRR",
     "get_retrieval_results_df",
+    "LabelledQADataset",
 ]

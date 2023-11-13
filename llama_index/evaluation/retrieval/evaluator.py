@@ -6,12 +6,13 @@ from llama_index.bridge.pydantic import Field
 from llama_index.core import BaseRetriever
 from llama_index.evaluation.retrieval.base import (
     BaseRetrievalEvaluator,
+    RetrievalEvalMode,
 )
 from llama_index.evaluation.retrieval.metrics_base import (
     BaseRetrievalMetric,
 )
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.schema import ImageNode
+from llama_index.schema import BaseNode, ImageNode
 
 
 class RetrieverEvaluator(BaseRetrievalEvaluator):
@@ -36,7 +37,9 @@ class RetrieverEvaluator(BaseRetrievalEvaluator):
         """Init params."""
         super().__init__(metrics=metrics, retriever=retriever, **kwargs)
 
-    async def _aget_retrieved_ids(self, query: str) -> List[str]:
+    async def _aget_retrieved_ids(
+        self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
+    ) -> List[str]:
         """Get retrieved ids."""
         retrieved_nodes = await self.retriever.aretrieve(query)
         return [node.node.node_id for node in retrieved_nodes]
@@ -64,7 +67,9 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
         """Init params."""
         super().__init__(metrics=metrics, retriever=retriever, **kwargs)
 
-    async def _aget_retrieved_ids(self, query: str, mode: str = "text") -> List[str]:
+    async def _aget_retrieved_ids(
+        self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
+    ) -> List[str]:
         """Get retrieved ids."""
         retrieved_nodes = await self.retriever.aretrieve(query)
         image_nodes: List[ImageNode] = []

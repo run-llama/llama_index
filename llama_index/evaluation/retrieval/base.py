@@ -84,7 +84,7 @@ class BaseRetrievalEvaluator(BaseModel):
 
     @abstractmethod
     async def _aget_retrieved_ids(
-        self, query: str, mode: "RetrievalEvalMode" = "text"
+        self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
     ) -> List[str]:
         """Get retrieved ids."""
         raise NotImplementedError
@@ -93,7 +93,7 @@ class BaseRetrievalEvaluator(BaseModel):
         self,
         query: str,
         expected_ids: List[str],
-        mode: "RetrievalEvalMode" = "text",
+        mode: RetrievalEvalMode = RetrievalEvalMode.TEXT,
         **kwargs: Any,
     ) -> RetrievalEvalResult:
         """Run evaluation results with query string and expected ids.
@@ -115,7 +115,7 @@ class BaseRetrievalEvaluator(BaseModel):
         self,
         query: str,
         expected_ids: List[str],
-        mode: "RetrievalEvalMode" = "text",
+        mode: RetrievalEvalMode = RetrievalEvalMode.TEXT,
         **kwargs: Any,
     ) -> RetrievalEvalResult:
         """Run evaluation with query string, retrieved contexts,
@@ -148,7 +148,7 @@ class BaseRetrievalEvaluator(BaseModel):
         semaphore = asyncio.Semaphore(workers)
 
         async def eval_worker(
-            query: str, expected_ids: List[str], mode: "RetrievalEvalMode"
+            query: str, expected_ids: List[str], mode: RetrievalEvalMode
         ) -> RetrievalEvalResult:
             async with semaphore:
                 return await self.aevaluate(query, expected_ids=expected_ids, mode=mode)
