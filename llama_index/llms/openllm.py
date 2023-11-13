@@ -1,7 +1,5 @@
 import asyncio
 import logging
-import threading
-from queue import Queue
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -38,8 +36,23 @@ from llama_index.llms.generic_utils import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from openllm import LLM, AsyncHTTPClient, HTTPClient
-    from openllm_client._schemas import Metadata
+    from typing import Generic, TypeVar
+
+    M = TypeVar("M")
+    T = TypeVar("T")
+    try:
+        from openllm import LLM, AsyncHTTPClient, HTTPClient
+    except ImportError:
+        # NOTE: For the sake of type checking, we will annotate LLM as Any
+        class LLM(Generic[M, T]):
+            ...
+
+    AsyncHTTPClient = HTTPClient = Any  # Any is also a type
+
+    try:
+        from openllm_client._schemas import Metadata
+    except ImportError:
+        Metadata = Any
 
 
 class OpenLLM(LLM):
@@ -101,7 +114,7 @@ class OpenLLM(LLM):
             raise ImportError(
                 "OpenLLM is not installed. Please install OpenLLM via `pip install openllm`"
             )
-        self._llm = openllm.LLM(
+        self._llm = openllm.LLM[Any, Any](
             model_id,
             model_version=model_version,
             model_tag=model_tag,
@@ -159,81 +172,39 @@ class OpenLLM(LLM):
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         return asyncio.run(self.acomplete(prompt, **kwargs))
 
-    @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        queue = Queue()
-
-        # End-of-stream marker object
-        end_marker = object()
-
-        # Async function to run the async generator and put items into the queue
-        async def run_async_generator(loop):
-            async for message in self.astream_complete(prompt, **kwargs):
-                queue.put(message)
-            queue.put(end_marker)
-            loop.stop()
-
-        # Function to start or get the current loop
-        def start_or_get_loop():
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            return loop
-
-        loop = start_or_get_loop()
-        threading.Thread(
-            target=lambda: loop.run_until_complete(run_async_generator(loop))
-        ).start()
-
-        # Yield items from the queue synchronously
-        while True:
-            item = queue.get()
-            if item is end_marker:
-                break
-            yield item
-
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         return asyncio.run(self.achat(messages, **kwargs))
+
+    @property
+    def _loop(self) -> asyncio.AbstractEventLoop:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.get_event_loop()
+        return loop
+
+    @llm_completion_callback()
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        generator = self.astream_complete(prompt, **kwargs)
+        # Yield items from the queue synchronously
+        while True:
+            try:
+                yield self._loop.run_until_complete(generator.__anext__())
+            except StopAsyncIteration:
+                break
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        queue = Queue()
-
-        # End-of-stream marker object
-        end_marker = object()
-
-        # Async function to run the async generator and put items into the queue
-        async def run_async_generator(loop):
-            async for message in self.astream_chat(messages, **kwargs):
-                queue.put(message)
-            queue.put(end_marker)
-            loop.stop()
-
-        # Function to start or get the current loop
-        def start_or_get_loop():
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            return loop
-
-        loop = start_or_get_loop()
-        threading.Thread(
-            target=lambda: loop.run_until_complete(run_async_generator(loop))
-        ).start()
-
+        generator = self.astream_chat(messages, **kwargs)
         # Yield items from the queue synchronously
         while True:
-            item = queue.get()
-            if item is end_marker:
+            try:
+                yield self._loop.run_until_complete(generator.__anext__())
+            except StopAsyncIteration:
                 break
-            yield item
 
     @llm_chat_callback()
     async def achat(
@@ -243,17 +214,6 @@ class OpenLLM(LLM):
     ) -> ChatResponse:
         response = await self.acomplete(self._messages_to_prompt(messages), **kwargs)
         return completion_response_to_chat_response(response)
-
-    @llm_chat_callback()
-    async def astream_chat(
-        self,
-        messages: Sequence[ChatMessage],
-        **kwargs: Any,
-    ) -> ChatResponseAsyncGen:
-        async for response_chunk in self.astream_complete(
-            self._messages_to_prompt(messages), **kwargs
-        ):
-            yield completion_response_to_chat_response(response_chunk)
 
     @llm_completion_callback()
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
@@ -274,6 +234,17 @@ class OpenLLM(LLM):
             },
         )
 
+    @llm_chat_callback()
+    async def astream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponseAsyncGen:
+        async for response_chunk in self.astream_complete(
+            self._messages_to_prompt(messages), **kwargs
+        ):
+            yield completion_response_to_chat_response(response_chunk)
+
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, **kwargs: Any
@@ -288,7 +259,7 @@ class OpenLLM(LLM):
             for output in response_chunk.outputs:
                 texts[output.index].append(output.text)
             yield CompletionResponse(
-                text="".join(texts[0]),
+                text=response_chunk.outputs[0].text,
                 delta=response_chunk.outputs[0].text,
                 raw=response_chunk.model_dump(),
                 additional_kwargs={
@@ -296,6 +267,7 @@ class OpenLLM(LLM):
                     "prompt_logprobs": response_chunk.prompt_logprobs,
                     "finished": response_chunk.finished,
                     "outputs": {
+                        "text": response_chunk.outputs[0].text,
                         "token_ids": response_chunk.outputs[0].token_ids,
                         "cumulative_logprob": response_chunk.outputs[
                             0
