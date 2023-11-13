@@ -93,10 +93,12 @@ def upload_questions(
     client = PlatformApi(base_url=base_url, token=token)
 
     project = client.project.upsert_project(request=ProjectCreate(name=project_name))
+    assert project.id is not None
 
     eval_dataset = client.project.create_eval_dataset_for_project(
         project_id=project.id, name=dataset_name
     )
+    assert eval_dataset.id is not None
 
     eval_questions = client.eval.create_questions(
         dataset_id=eval_dataset.id,
