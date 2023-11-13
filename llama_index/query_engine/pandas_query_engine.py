@@ -13,6 +13,7 @@ from typing import Any, Callable, Optional
 import numpy as np
 import pandas as pd
 
+from llama_index.exec_utils import safe_eval, safe_exec
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
@@ -22,7 +23,6 @@ from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import Response
 from llama_index.utils import print_text
-from llama_index.exec_utils import safe_eval, safe_exec
 
 logger = logging.getLogger(__name__)
 

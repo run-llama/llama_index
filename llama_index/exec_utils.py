@@ -1,7 +1,7 @@
 import copy
-
-from typing import Any, Mapping
 from types import CodeType
+from typing import Any, Mapping
+
 from typing_extensions import Buffer, TypeAlias
 
 ReadableBuffer: TypeAlias = Buffer
@@ -83,7 +83,7 @@ def safe_eval(
     __locals: Mapping[str, object] | None = None,
 ) -> Any:
     """
-    eval within safe global context
+    eval within safe global context.
     """
     return eval(__source, _get_restricted_globals(__globals), __locals)
 
@@ -94,6 +94,6 @@ def safe_exec(
     __locals: Mapping[str, object] | None = None,
 ) -> None:
     """
-    eval within safe global context
+    eval within safe global context.
     """
     return exec(__source, _get_restricted_globals(__globals), __locals)

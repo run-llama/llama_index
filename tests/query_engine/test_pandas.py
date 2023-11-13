@@ -1,7 +1,7 @@
 """Test pandas index."""
 
-from typing import Any, Dict, cast
 from pathlib import Path
+from typing import Any, Dict, cast
 
 import pandas as pd
 from llama_index.indices.query.schema import QueryBundle
@@ -61,8 +61,10 @@ With its welcoming atmosphere, top-notch education, and multicultural charm, Tor
 
 
 def test_default_output_processor_rce(tmp_path: Path) -> None:
-    """Test that output processor prevents RCE. https://github.com/run-llama/llama_index/issues/7054"""
-
+    """
+    Test that output processor prevents RCE.
+    https://github.com/run-llama/llama_index/issues/7054 .
+    """
     df = pd.DataFrame(
         {
             "city": ["Toronto", "Tokyo", "Berlin"],
