@@ -13,6 +13,7 @@ from typing import Any, Dict, Iterator, List, MutableSequence, Optional
 
 import google.ai.generativelanguage as genai
 from google.api_core import client_options as client_options_lib
+from google.api_core import exceptions as gapi_exception
 from google.api_core import gapic_v1
 from google.protobuf import timestamp_pb2
 
@@ -211,7 +212,11 @@ def get_corpus(
             genai.GetCorpusRequest(name=str(EntityName(corpus_id=corpus_id)))
         )
         return Corpus.from_corpus(corpus)
-    except Exception:
+    except Exception as e:
+        # If the corpus does not exist, the server returns a permission error.
+        if not isinstance(e, gapi_exception.PermissionDenied):
+            raise
+        _logger.warning(f"Corpus {corpus_id} not found: {e}")
         return None
 
 
@@ -283,7 +288,10 @@ def get_document(
             )
         )
         return Document.from_document(document)
-    except Exception:
+    except Exception as e:
+        if not isinstance(e, gapi_exception.NotFound):
+            raise
+        _logger.warning(f"Document {document_id} in corpus {corpus_id} not found: {e}")
         return None
 
 

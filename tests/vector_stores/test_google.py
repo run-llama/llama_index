@@ -77,18 +77,23 @@ def test_class_name() -> None:
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.batch_create_chunks")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_document")
+@patch("google.ai.generativelanguage.RetrieverServiceClient.get_document")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
 def test_add(
     mock_get_corpus: MagicMock,
+    mock_get_document: MagicMock,
     mock_create_document: MagicMock,
     mock_batch_create_chunks: MagicMock,
 ) -> None:
+    from google.api_core import exceptions as gapi_exception
+
     # Arrange
     # We will use a max requests per batch to be 2.
     # Then, we send 3 requests.
     # We expect to have 2 batches where the last batch has only 1 request.
     genaix._MAX_REQUEST_PER_CHUNK = 2
     mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
+    mock_get_document.side_effect = gapi_exception.NotFound("")
     mock_create_document.return_value = genai.Document(name="corpora/123/documents/456")
     mock_batch_create_chunks.side_effect = [
         genai.BatchCreateChunksResponse(
