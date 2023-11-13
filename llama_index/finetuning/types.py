@@ -54,5 +54,5 @@ class BaseCohereRerankerFinetuningEngine(ABC):
         """Goes off and does stuff."""
 
     @abstractmethod
-    def get_finetuned_model(self, model: Any) -> str:
+    def get_finetuned_model(self) -> Any:
         """Gets finetuned model."""
