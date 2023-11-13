@@ -43,7 +43,7 @@ from llama_index.vector_stores.types import BasePydanticVectorStore
 DEFAULT_PIPELINE_NAME = "pipeline"
 DEFAULT_PROJECT_NAME = "project"
 BASE_URL = "http://localhost:8000"
-PLATFORM_API_KEY = os.environ.get("PLATFORM_API_KEY", "")
+PLATFORM_API_KEY = os.environ.get("PLATFORM_API_KEY", None)
 
 
 def deserialize_transformation_component(
