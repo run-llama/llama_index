@@ -129,6 +129,7 @@ Pinecone recommends upserting 100 vectors at a time. We\'re going to do that aft
 import random
 import itertools
 
+
 def chunks(iterable, batch_size=100):
     """A helper function to break an iterable into chunks of size batch_size."""
     it = iter(iterable)
