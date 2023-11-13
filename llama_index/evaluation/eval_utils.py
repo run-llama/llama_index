@@ -80,7 +80,7 @@ def get_results_df(
     return pd.DataFrame(metric_dict)
 
 
-def upload_questions(
+def upload_eval_dataset(
     dataset_name: str,
     questions: List[str],
     project_name: str = DEFAULT_PROJECT_NAME,

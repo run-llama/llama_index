@@ -7,7 +7,7 @@ from llama_index.evaluation.dataset_generation import (
     DatasetGenerator,
     QueryResponseDataset,
 )
-from llama_index.evaluation.eval_utils import upload_questions
+from llama_index.evaluation.eval_utils import upload_eval_dataset
 from llama_index.evaluation.faithfulness import FaithfulnessEvaluator, ResponseEvaluator
 from llama_index.evaluation.guideline import GuidelineEvaluator
 from llama_index.evaluation.notebook_utils import get_retrieval_results_df
@@ -64,5 +64,5 @@ __all__ = [
     "MRR",
     "get_retrieval_results_df",
     # platform api
-    "upload_questions",
+    "upload_eval_dataset",
 ]
