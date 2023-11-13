@@ -1,3 +1,4 @@
+import os
 import re
 from hashlib import sha256
 from typing import Any, List, Optional, Sequence, cast
@@ -42,6 +43,7 @@ from llama_index.vector_stores.types import BasePydanticVectorStore
 DEFAULT_PIPELINE_NAME = "pipeline"
 DEFAULT_PROJECT_NAME = "project"
 BASE_URL = "http://localhost:8000"
+PLATFORM_API_KEY = os.environ.get("PLATFORM_API_KEY", "")
 
 
 def deserialize_transformation_component(
@@ -192,6 +194,10 @@ class IngestionPipeline(BaseModel):
     )
     disable_cache: bool = Field(default=False, description="Disable the cache")
 
+    platform_api_key: str = Field(
+        default=PLATFORM_API_KEY, description="Platform API key"
+    )
+
     def __init__(
         self,
         name: str = DEFAULT_PIPELINE_NAME,
@@ -202,6 +208,7 @@ class IngestionPipeline(BaseModel):
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
         base_url: str = BASE_URL,
+        platform_api_key: str = PLATFORM_API_KEY,
     ) -> None:
         if transformations is None:
             transformations = self._get_default_transformations()
@@ -222,6 +229,7 @@ class IngestionPipeline(BaseModel):
             vector_store=vector_store,
             cache=cache or IngestionCache(),
             base_url=base_url,
+            platform_api_key=platform_api_key,
         )
 
     @classmethod
@@ -257,8 +265,9 @@ class IngestionPipeline(BaseModel):
         project_name: str = DEFAULT_PROJECT_NAME,
         base_url: str = BASE_URL,
         cache: Optional[IngestionCache] = None,
+        platform_api_key: str = PLATFORM_API_KEY,
     ) -> "IngestionPipeline":
-        client = PlatformApi(base_url=base_url)
+        client = PlatformApi(base_url=base_url, token=platform_api_key)
 
         projects: List[Project] = client.project.get_project_by_name_api_project_get(
             project_name=project_name
@@ -323,6 +332,7 @@ class IngestionPipeline(BaseModel):
             vector_store=vector_stores[0] if len(vector_stores) > 0 else None,
             base_url=base_url,
             cache=cache,
+            platform_api_key=platform_api_key,
         )
 
     def _get_default_transformations(self) -> List[TransformComponent]:
@@ -337,7 +347,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
     ) -> str:
-        client = PlatformApi(base_url=BASE_URL)
+        client = PlatformApi(base_url=self.base_url, token=self.platform_api_key)
 
         input_nodes: List[BaseNode] = cast(List[BaseNode], self.documents) or []
         if documents is not None:
@@ -438,7 +448,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
     ) -> str:
-        client = PlatformApi(base_url=BASE_URL)
+        client = PlatformApi(base_url=self.base_url, token=self.platform_api_key)
 
         input_nodes: List[BaseNode] = []
         if documents is not None:
