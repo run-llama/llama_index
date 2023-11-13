@@ -2,7 +2,7 @@ import pytest
 from llama_index.ingestion.data_sources import (
     ConfigurableDataSources,
     ConfiguredDataSource,
-    RawFile,
+    GoogleSheetsReader,
 )
 from llama_index.schema import Document
 
@@ -32,7 +32,7 @@ def test_can_build_configured_data_source_from_component() -> None:
     )
     assert not isinstance(
         configured_data_source,
-        ConfiguredDataSource[RawFile],  # type: ignore
+        ConfiguredDataSource[GoogleSheetsReader],  # type: ignore
     )
     assert (
         configured_data_source.configurable_data_source_type.value.component_type
@@ -51,7 +51,7 @@ def test_build_configured_data_source() -> None:
     )
 
     with pytest.raises(ValueError):
-        ConfigurableDataSources.RAW_FILE.build_configured_data_source(document)
+        ConfigurableDataSources.GOOGLE_DOCS.build_configured_data_source(document)
 
 
 def test_unique_configurable_data_source_names() -> None:

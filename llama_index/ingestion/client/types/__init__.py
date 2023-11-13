@@ -73,7 +73,6 @@ from .project_create import ProjectCreate
 from .pydantic_program_mode import PydanticProgramMode
 from .qdrant_vector_store import QdrantVectorStore
 from .questions_answered_extractor import QuestionsAnsweredExtractor
-from .raw_file import RawFile
 from .reader_config import ReaderConfig
 from .related_node_info import RelatedNodeInfo
 from .rss_reader import RssReader
@@ -167,7 +166,6 @@ __all__ = [
     "PydanticProgramMode",
     "QdrantVectorStore",
     "QuestionsAnsweredExtractor",
-    "RawFile",
     "ReaderConfig",
     "RelatedNodeInfo",
     "RssReader",

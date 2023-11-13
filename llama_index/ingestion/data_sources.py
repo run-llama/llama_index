@@ -23,18 +23,6 @@ from llama_index.readers.google_readers.gsheets import GoogleSheetsReader
 from llama_index.schema import BaseComponent, Document, TextNode
 
 
-class RawFile(BaseComponent):
-    """A raw file."""
-
-    file_bytes: bytes = Field(description="The raw file bytes.")
-
-    @classmethod
-    def from_path(cls, path: str) -> "RawFile":
-        """Load a raw file from a path."""
-        with open(path, "rb") as f:
-            return cls(file_bytes=f.read())
-
-
 class DataSource(BaseModel):
     """
     A class containing metadata for a type of data source.
@@ -61,11 +49,6 @@ class ConfigurableDataSources(Enum):
     TEXT_NODE = DataSource(
         name="TextNode",
         component_type=TextNode,
-    )
-
-    RAW_FILE = DataSource(
-        name="Raw File",
-        component_type=RawFile,
     )
 
     DISCORD = DataSource(
