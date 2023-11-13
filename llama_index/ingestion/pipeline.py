@@ -389,7 +389,7 @@ class IngestionPipeline(BaseModel):
         if self.reader is not None:
             if self.reader.reader.is_remote:
                 configured_data_source = ConfiguredDataSource.from_component(
-                    self.reader
+                    self.reader,
                 )
                 source_type = ConfigurableDataSourceNames[
                     configured_data_source.configurable_data_source_type.name
