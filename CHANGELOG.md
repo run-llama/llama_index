@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fixed bug in loading pickled objects (#8880)
+
 ## [0.8.68] - 2023-11-11
 
 ### New Features

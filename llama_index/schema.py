@@ -43,10 +43,10 @@ class BaseComponent(BaseModel):
         """
 
     def __getstate__(self) -> Dict[str, Any]:
-        state = self.dict()
+        state = super().__getstate__()
         # Remove common unpicklable entries
-        state.pop("tokenizer", None)
-        state.pop("tokenizer_fn", None)
+        state["__dict__"].pop("tokenizer", None)
+        state["__dict__"].pop("tokenizer_fn", None)
         return state
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
