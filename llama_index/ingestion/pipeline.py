@@ -194,7 +194,7 @@ class IngestionPipeline(BaseModel):
     )
     disable_cache: bool = Field(default=False, description="Disable the cache")
 
-    platform_api_key: str = Field(
+    platform_api_key: Optional[str] = Field(
         default=PLATFORM_API_KEY, description="Platform API key"
     )
 
@@ -208,7 +208,7 @@ class IngestionPipeline(BaseModel):
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
         base_url: str = BASE_URL,
-        platform_api_key: str = PLATFORM_API_KEY,
+        platform_api_key: Optional[str] = PLATFORM_API_KEY,
     ) -> None:
         if transformations is None:
             transformations = self._get_default_transformations()
@@ -265,7 +265,7 @@ class IngestionPipeline(BaseModel):
         project_name: str = DEFAULT_PROJECT_NAME,
         base_url: str = BASE_URL,
         cache: Optional[IngestionCache] = None,
-        platform_api_key: str = PLATFORM_API_KEY,
+        platform_api_key: Optional[str] = PLATFORM_API_KEY,
     ) -> "IngestionPipeline":
         client = PlatformApi(base_url=base_url, token=platform_api_key)
 
