@@ -2,7 +2,9 @@ import copy
 
 from typing import Any, Mapping
 from types import CodeType
-from _typeshed import ReadableBuffer
+from typing_extensions import Buffer, TypeAlias
+
+ReadableBuffer: TypeAlias = Buffer
 
 ALLOWED_IMPORTS = {"math", "time"}
 
@@ -69,7 +71,7 @@ ALLOWED_BUILTINS = {
 }
 
 
-def _get_restricted_globals(external_globals):
+def _get_restricted_globals(__globals):
     restricted_globals = copy.deepcopy(ALLOWED_BUILTINS)
     restricted_globals.update(__globals)
     return restricted_globals
@@ -83,7 +85,7 @@ def safe_eval(
     """
     eval within safe global context
     """
-    eval(__source, _get_restricted_globals(__globals), __locals)
+    return eval(__source, _get_restricted_globals(__globals), __locals)
 
 
 def safe_exec(
@@ -94,4 +96,4 @@ def safe_exec(
     """
     eval within safe global context
     """
-    exec(__source, _get_restricted_globals(__globals), __locals)
+    return exec(__source, _get_restricted_globals(__globals), __locals)

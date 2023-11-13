@@ -22,6 +22,7 @@ from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import Response
 from llama_index.utils import print_text
+from llama_index.exec_utils import safe_eval, safe_exec
 
 logger = logging.getLogger(__name__)
 
@@ -59,19 +60,19 @@ def default_output_processor(
     try:
         tree = ast.parse(output)
         module = ast.Module(tree.body[:-1], type_ignores=[])
-        exec(ast.unparse(module), {}, local_vars)  # type: ignore
+        safe_exec(ast.unparse(module), {}, local_vars)  # type: ignore
         module_end = ast.Module(tree.body[-1:], type_ignores=[])
         module_end_str = ast.unparse(module_end)  # type: ignore
         if module_end_str.strip("'\"") != module_end_str:
             # if there's leading/trailing quotes, then we need to eval
             # string to get the actual expression
-            module_end_str = eval(module_end_str, {"np": np}, local_vars)
+            module_end_str = safe_eval(module_end_str, {"np": np}, local_vars)
         try:
             # str(pd.dataframe) will truncate output by display.max_colwidth
             # set width temporarily to extract more text
             if "max_colwidth" in output_kwargs:
                 pd.set_option("display.max_colwidth", output_kwargs["max_colwidth"])
-            output_str = str(eval(module_end_str, {"np": np}, local_vars))
+            output_str = str(safe_eval(module_end_str, {"np": np}, local_vars))
             pd.reset_option("display.max_colwidth")
             return output_str
 
