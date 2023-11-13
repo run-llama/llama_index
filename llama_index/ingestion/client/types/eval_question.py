@@ -22,6 +22,9 @@ class EvalQuestion(pydantic.BaseModel):
     )
     content: str
     eval_dataset_id: str
+    eval_dataset_index: int = pydantic.Field(
+        description="The index at which this question is positioned relative to the other questions in the linked EvalDataset. Client is responsible for setting this correctly."
+    )
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {
@@ -41,4 +44,5 @@ class EvalQuestion(pydantic.BaseModel):
 
     class Config:
         frozen = True
+        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}
