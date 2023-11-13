@@ -1,5 +1,31 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fixed bug in loading pickled objects (#8880)
+
+## [0.8.68] - 2023-11-11
+
+### New Features
+
+- openai assistant agent + advanced retrieval cookbook (#8863)
+- add retrieval API benchmark (#8850)
+- Add JinaEmbedding class (#8704)
+
+### Bug Fixes / Nits
+
+- Improved default timeouts/retries for OpenAI (#8819)
+- Add back key validation for OpenAI (#8819)
+- Disable automatic LLM/Embedding model downloads, give informative error (#8819)
+- fix openai assistant tool creation + retrieval notebook (#8862)
+- Quick fix Replicate MultiModal example (#8861)
+- fix: paths treated as hidden (#8860)
+- fix Replicate multi-modal LLM + notebook (#8854)
+- Feature/citation metadata (#8722)
+- Fix ImageNode type from NodeWithScore for SimpleMultiModalQueryEngine (#8844)
+
 ## [0.8.67] - 2023-11-10
 
 ### New Features
