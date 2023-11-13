@@ -1,5 +1,9 @@
 # Fleet Context Embeddings - Building a Hybrid Search Engine for the Llamaindex Library
 
+In this guide, we will be using Fleet Context to download the embeddings for LlamaIndex's documentation and build a hybrid dense/sparse vector retrieval engine on top of it.
+
+<br><br>
+
 ## Pre-requisites
 ``` python
 !pip install llama-index 
