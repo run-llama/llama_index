@@ -35,4 +35,3 @@ class PydanticProgramMode(str, enum.Enum):
             return guidance()
         if self is PydanticProgramMode.LM_FORMAT_ENFORCER:
             return lm_format_enforcer()
-        return None

@@ -17,7 +17,7 @@ class HealthClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def api_health_get(self) -> typing.Dict[str, str]:
+    def health(self) -> typing.Dict[str, str]:
         """
         Health check endpoint.
         """
@@ -42,7 +42,7 @@ class AsyncHealthClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def api_health_get(self) -> typing.Dict[str, str]:
+    async def health(self) -> typing.Dict[str, str]:
         """
         Health check endpoint.
         """

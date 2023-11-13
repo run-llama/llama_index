@@ -269,7 +269,7 @@ class IngestionPipeline(BaseModel):
     ) -> "IngestionPipeline":
         client = PlatformApi(base_url=base_url, token=platform_api_key)
 
-        projects: List[Project] = client.project.get_project_by_name_api_project_get(
+        projects: List[Project] = client.project.list_projects(
             project_name=project_name
         )
         if len(projects) < 0:
@@ -278,9 +278,7 @@ class IngestionPipeline(BaseModel):
         project = projects[0]
         assert project.id is not None, "Project ID should not be None"
 
-        pipelines: List[
-            Pipeline
-        ] = client.pipeline.get_pipeline_by_name_api_pipeline_get(
+        pipelines: List[Pipeline] = client.pipeline.get_pipeline_by_name(
             pipeline_name=name, project_name=project_name
         )
         if len(pipelines) < 0:
@@ -418,7 +416,7 @@ class IngestionPipeline(BaseModel):
                 )
             )
 
-        project = client.project.upsert_project_api_project_put(
+        project = client.project.upsert_project(
             request=ProjectCreate(name=self.project_name)
         )
         assert project.id is not None, "Project ID should not be None"

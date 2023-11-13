@@ -2,7 +2,7 @@
 
 import typing
 
-from .code_node_parser import CodeSplitter
+from .code_splitter import CodeSplitter
 from .entity_extractor import EntityExtractor
 from .hierarchical_node_parser import HierarchicalNodeParser
 from .html_node_parser import HtmlNodeParser
@@ -13,12 +13,12 @@ from .markdown_node_parser import MarkdownNodeParser
 from .marvin_metadata_extractor import MarvinMetadataExtractor
 from .open_ai_embedding import OpenAiEmbedding
 from .questions_answered_extractor import QuestionsAnsweredExtractor
-from .sentence_aware_node_parser import SentenceSplitter
+from .sentence_splitter import SentenceSplitter
 from .sentence_window_node_parser import SentenceWindowNodeParser
 from .simple_file_node_parser import SimpleFileNodeParser
 from .summary_extractor import SummaryExtractor
 from .title_extractor import TitleExtractor
-from .token_aware_node_parser import TokenTextSplitter
+from .token_text_splitter import TokenTextSplitter
 
 ConfiguredTransformationItemComponentOne = typing.Union[
     KeywordExtractor,

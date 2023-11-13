@@ -8,7 +8,7 @@ T_Result = typing.TypeVar("T_Result")
 
 class StatusEnum(str, enum.Enum):
     """
-    Enum for representing the status of a job.
+    Enum for representing the status of a job
     """
 
     PENDING = "PENDING"
@@ -31,4 +31,3 @@ class StatusEnum(str, enum.Enum):
             return error()
         if self is StatusEnum.CANCELED:
             return canceled()
-        return None

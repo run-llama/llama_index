@@ -5,7 +5,7 @@ import typing
 
 import pydantic
 
-from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
+from ..core.datetime_utils import serialize_datetime
 
 
 class JsonNodeParser(pydantic.BaseModel):
@@ -46,5 +46,4 @@ class JsonNodeParser(pydantic.BaseModel):
 
     class Config:
         frozen = True
-        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

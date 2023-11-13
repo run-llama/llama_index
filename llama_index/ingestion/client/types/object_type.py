@@ -31,4 +31,3 @@ class ObjectType(str, enum.Enum):
             return three()
         if self is ObjectType.FOUR:
             return four()
-        return None

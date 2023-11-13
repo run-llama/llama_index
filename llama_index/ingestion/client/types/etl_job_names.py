@@ -27,4 +27,3 @@ class EtlJobNames(str, enum.Enum):
             return run_transform_job()
         if self is EtlJobNames.EVAL_DATASET_JOB:
             return eval_dataset_job()
-        return None

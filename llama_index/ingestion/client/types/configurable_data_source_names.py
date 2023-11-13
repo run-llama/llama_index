@@ -83,4 +83,3 @@ class ConfigurableDataSourceNames(str, enum.Enum):
             return google_sheets()
         if self is ConfigurableDataSourceNames.READER:
             return reader()
-        return None

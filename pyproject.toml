@@ -136,6 +136,7 @@ sphinx-autobuild = "^2021.3.14"
 [tool.ruff]
 exclude = [
     "examples",
+    "llama_index/ingestion/client",
     "notebooks",
 ]
 ignore = [

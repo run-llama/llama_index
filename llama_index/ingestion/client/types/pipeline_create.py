@@ -5,8 +5,7 @@ import typing
 
 import pydantic
 
-from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
-
+from ..core.datetime_utils import serialize_datetime
 from .configured_transformation_item import ConfiguredTransformationItem
 from .data_sink_create import DataSinkCreate
 from .data_source_create import DataSourceCreate
@@ -52,5 +51,4 @@ class PipelineCreate(pydantic.BaseModel):
 
     class Config:
         frozen = True
-        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

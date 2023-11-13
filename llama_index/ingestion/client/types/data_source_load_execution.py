@@ -5,8 +5,10 @@ import typing
 
 import pydantic
 
-from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
-
+from ..core.datetime_utils import serialize_datetime
+from .data_source_load_execution_run_config_per_op_value import (
+    DataSourceLoadExecutionRunConfigPerOpValue,
+)
 from .etl_job_names import EtlJobNames
 from .status_enum import StatusEnum
 
@@ -27,6 +29,9 @@ class DataSourceLoadExecution(pydantic.BaseModel):
     status: StatusEnum
     started_at: typing.Optional[dt.datetime]
     ended_at: typing.Optional[dt.datetime]
+    run_config_per_op: typing.Dict[
+        str, DataSourceLoadExecutionRunConfigPerOpValue
+    ] = pydantic.Field(description="Run config that was given to the Dagster job")
     partitions: typing.Optional[typing.Dict[str, str]] = pydantic.Field(
         description="Partition information"
     )
@@ -52,5 +57,4 @@ class DataSourceLoadExecution(pydantic.BaseModel):
 
     class Config:
         frozen = True
-        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

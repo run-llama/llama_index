@@ -5,8 +5,7 @@ import typing
 
 import pydantic
 
-from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
-
+from ..core.datetime_utils import serialize_datetime
 from .text_node_relationships_value import TextNodeRelationshipsValue
 
 
@@ -74,6 +73,5 @@ class TextNode(pydantic.BaseModel):
 
     class Config:
         frozen = True
-        smart_union = True
         allow_population_by_field_name = True
         json_encoders = {dt.datetime: serialize_datetime}

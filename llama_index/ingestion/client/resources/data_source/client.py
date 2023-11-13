@@ -37,9 +37,7 @@ class DataSourceClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def create_data_source_api_data_source_post(
-        self, *, request: DataSourceCreate
-    ) -> DataSource:
+    def create_data_source(self, *, request: DataSourceCreate) -> DataSource:
         """
         Create a new data source.
 
@@ -65,9 +63,7 @@ class DataSourceClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def upsert_data_source_api_data_source_put(
-        self, *, request: DataSourceCreate
-    ) -> DataSource:
+    def upsert_data_source(self, *, request: DataSourceCreate) -> DataSource:
         """
         Upserts a data source.
         Updates if a data source with the same name and user_id already exists.Otherwise, creates a new data source.
@@ -129,7 +125,7 @@ class DataSourceClient:
         name: typing.Optional[str] = OMIT,
     ) -> DataSource:
         """
-        Get a data source by ID.
+        Update a data source by ID.
 
         Parameters:
             - data_source_id: str.
@@ -167,7 +163,7 @@ class DataSourceClient:
 
     def delete_data_source(self, data_source_id: str) -> None:
         """
-        Get a data source by ID.
+        Delete a data source by ID.
 
         Parameters:
             - data_source_id: str.
@@ -308,9 +304,7 @@ class AsyncDataSourceClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def create_data_source_api_data_source_post(
-        self, *, request: DataSourceCreate
-    ) -> DataSource:
+    async def create_data_source(self, *, request: DataSourceCreate) -> DataSource:
         """
         Create a new data source.
 
@@ -336,9 +330,7 @@ class AsyncDataSourceClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def upsert_data_source_api_data_source_put(
-        self, *, request: DataSourceCreate
-    ) -> DataSource:
+    async def upsert_data_source(self, *, request: DataSourceCreate) -> DataSource:
         """
         Upserts a data source.
         Updates if a data source with the same name and user_id already exists.Otherwise, creates a new data source.
@@ -400,7 +392,7 @@ class AsyncDataSourceClient:
         name: typing.Optional[str] = OMIT,
     ) -> DataSource:
         """
-        Get a data source by ID.
+        Update a data source by ID.
 
         Parameters:
             - data_source_id: str.
@@ -438,7 +430,7 @@ class AsyncDataSourceClient:
 
     async def delete_data_source(self, data_source_id: str) -> None:
         """
-        Get a data source by ID.
+        Delete a data source by ID.
 
         Parameters:
             - data_source_id: str.

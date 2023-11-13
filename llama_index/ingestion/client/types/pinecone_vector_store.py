@@ -5,7 +5,7 @@ import typing
 
 import pydantic
 
-from llama_index.ingestion.client.core.datetime_utils import serialize_datetime
+from ..core.datetime_utils import serialize_datetime
 
 
 class PineconeVectorStore(pydantic.BaseModel):
@@ -36,6 +36,7 @@ class PineconeVectorStore(pydantic.BaseModel):
     add_sparse_vector: bool
     text_key: str
     batch_size: int
+    remove_text_from_metadata: bool
     class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
@@ -56,5 +57,4 @@ class PineconeVectorStore(pydantic.BaseModel):
 
     class Config:
         frozen = True
-        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}
