@@ -1,15 +1,32 @@
 import copy
-from types import CodeType
-from typing import Any, Mapping
+from collections.abc import Buffer
+from types import CodeType, ModuleType
+from typing import Any, Mapping, Sequence, Union
 
-from typing_extensions import Buffer, TypeAlias
+from typing_extensions import TypeAlias
 
 ReadableBuffer: TypeAlias = Buffer
 
-ALLOWED_IMPORTS = {"math", "time"}
+ALLOWED_IMPORTS = {
+    "math",
+    "time",
+    "datetime",
+    "pandas",
+    "scipy",
+    "numpy",
+    "matplotlib",
+    "plotly",
+    "seaborn",
+}
 
 
-def _restricted_import(name, globals=None, locals=None, fromlist=(), level=0):
+def _restricted_import(
+    name: str,
+    globals: Mapping[str, object] | None = None,
+    locals: Mapping[str, object] | None = None,
+    fromlist: Sequence[str] = (),
+    level: int = 0,
+) -> ModuleType:
     if name in ALLOWED_IMPORTS:
         return __import__(name, globals, locals, fromlist, level)
     raise ImportError(f"Import of module '{name}' is not allowed")
@@ -71,16 +88,16 @@ ALLOWED_BUILTINS = {
 }
 
 
-def _get_restricted_globals(__globals):
+def _get_restricted_globals(__globals: Union[dict, None]) -> Any:
     restricted_globals = copy.deepcopy(ALLOWED_BUILTINS)
     restricted_globals.update(__globals)
     return restricted_globals
 
 
 def safe_eval(
-    __source: str | ReadableBuffer | CodeType,
-    __globals: dict[str, Any] | None = None,
-    __locals: Mapping[str, object] | None = None,
+    __source: Union[str, ReadableBuffer, CodeType],
+    __globals: Union[dict[str, Any], None] = None,
+    __locals: Union[Mapping[str, object], None] = None,
 ) -> Any:
     """
     eval within safe global context.
@@ -89,9 +106,9 @@ def safe_eval(
 
 
 def safe_exec(
-    __source: str | ReadableBuffer | CodeType,
-    __globals: dict[str, Any] | None = None,
-    __locals: Mapping[str, object] | None = None,
+    __source: Union[str, ReadableBuffer, CodeType],
+    __globals: Union[dict[str, Any], None] = None,
+    __locals: Union[Mapping[str, object], None] = None,
 ) -> None:
     """
     eval within safe global context.
