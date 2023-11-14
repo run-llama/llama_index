@@ -1,9 +1,10 @@
 """Notebook utils."""
 
 from collections import defaultdict
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import pandas as pd
+from pandas.io.formats.style import Styler
 
 from llama_index.evaluation.retrieval.base import RetrievalEvalResult
 
@@ -32,3 +33,42 @@ def get_retrieval_results_df(
             avg_metrics_dict[metric_key].append(results_df[metric_key].mean())
 
     return pd.DataFrame({"retrievers": names, **avg_metrics_dict})
+
+
+def get_eval_results_df(
+    names, results_arr, metric=Optional[str]
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Organizes EvaluationResults into a deep dataframe and computes the mean
+    score.
+
+    result:
+        result_df: pd.DataFrame representing all the evaluation results
+        mean_df: pd.DataFrame of average scores groupby names
+    """
+    if len(names) != len(results_arr):
+        raise ValueError("names and results_arr must have same length.")
+
+    qs = []
+    ss = []
+    fs = []
+    for res in results_arr:
+        qs.append(res.query)
+        ss.append(res.score)
+        fs.append(res.feedback)
+
+    deep_df = pd.DataFrame({"rag": names, "query": qs, "scores": ss, "feedbacks": fs})
+    mean_df = pd.DataFrame(deep_df.groupby(["rag"])["scores"].mean()).T
+    if metric:
+        mean_df.index = [f"mean_{metric}_score"]
+
+    return deep_df, mean_df
+
+
+def df_make_pretty(df: pd.DataFrame) -> Styler:
+    """Wraps overflow text and returns a Style object."""
+    return df.style.set_properties(
+        **{
+            "inline-size": "300px",
+            "overflow-wrap": "break-word",
+        },
+    )
