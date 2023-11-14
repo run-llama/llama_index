@@ -36,18 +36,11 @@ from llama_index.llms.generic_utils import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from typing import TypeAlias, TypeVar
+    from typing import TypeVar
 
     M = TypeVar("M")
     T = TypeVar("T")
-
-    try:
-        from openllm_client import AsyncHTTPClient, HTTPClient
-        from openllm_client._schemas import Metadata
-    except ImportError:
-        Metadata: TypeAlias = Any
-        AsyncHTTPClient: TypeAlias = Any  # Any is also a type
-        HTTPClient: TypeAlias = Any
+    Metadata = Any
 
 
 class OpenLLM(LLM):
@@ -86,12 +79,9 @@ class OpenLLM(LLM):
         try:
             import openllm
 
-            _LlmType: TypeAlias = openllm.LLM[Any, Any]
+            _llm: openllm.LLM[Any, Any]
         except ImportError:
-            _LlmType = Any
-
-        _llm: _LlmType
-
+            _llm: Any
     else:
         _llm: Any = PrivateAttr()
 
@@ -295,8 +285,14 @@ class OpenLLMAPI(LLM):
     api_version: Literal["v1"] = Field(description="OpenLLM Server API version.")
 
     if TYPE_CHECKING:
-        _sync_client: HTTPClient
-        _async_client: AsyncHTTPClient
+        try:
+            from openllm_client import AsyncHTTPClient, HTTPClient
+
+            _sync_client: HTTPClient
+            _async_client: AsyncHTTPClient
+        except ImportError:
+            _sync_client: Any
+            _async_client: Any
     else:
         _sync_client: Any = PrivateAttr()
         _async_client: Any = PrivateAttr()
