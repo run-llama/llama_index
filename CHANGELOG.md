@@ -1,10 +1,11 @@
 # ChangeLog
 
-## Unreleased
+## [0.8.69.post1] - 2023-11-13
 
 ### Bug Fixes / Nits
 
 - Increase max weaivate delete size to max of 10,000 (#8887)
+- Final pickling remnant fix (#8902)
 
 ## [0.8.69] - 2023-11-13
 
