@@ -43,16 +43,23 @@ class BaseComponent(BaseModel):
         """
 
     def __getstate__(self) -> Dict[str, Any]:
-        # using super().__getstate__() would also include problematic private variables
-        state = self.dict()
+        state = super().__getstate__()
 
-        # Remove common unpicklable entries
-        state.pop("tokenizer", None)
-        state.pop("tokenizer_fn", None)
+        # tiktoken is not pickleable
+        state["__dict__"].pop("tokenizer", None)
+
+        # remove local functions
+        keys_to_remove = []
+        for key in state["__dict__"]:
+            if key.endswith("_fn"):
+                keys_to_remove.append(key)
+        for key in keys_to_remove:
+            state["__dict__"].pop(key, None)
+
+        # remove private attributes
+        state["__private_attribute_values__"] = {}
+
         return state
-
-    def __setstate__(self, state: Dict[str, Any]) -> None:
-        self.__dict__.update(state)
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = self.dict(**kwargs)
