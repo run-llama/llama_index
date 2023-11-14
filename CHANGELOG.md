@@ -4,6 +4,12 @@
 
 ### Bug Fixes / Nits
 
+- Increase max weaivate delete size to max of 10,000 (#8887)
+
+## [0.8.69] - 2023-11-13
+
+### Bug Fixes / Nits
+
 - Fixed bug in loading pickled objects (#8880)
 - Fix `custom_path` vs `custom_dir` in `download_loader` (#8865)
 
