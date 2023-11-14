@@ -43,11 +43,16 @@ class BaseComponent(BaseModel):
         """
 
     def __getstate__(self) -> Dict[str, Any]:
+        # using super().__getstate__() would also include problematic private variables
         state = self.dict()
+
         # Remove common unpicklable entries
-        state.pop("tokenizer", None)
-        state.pop("tokenizer_fn", None)
+        state["__dict__"].pop("tokenizer", None)
+        state["__dict__"].pop("tokenizer_fn", None)
         return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        self.__dict__.update(state)
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = self.dict(**kwargs)

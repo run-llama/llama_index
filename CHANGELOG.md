@@ -1,5 +1,12 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fixed bug in loading pickled objects (#8880)
+- Fix `custom_path` vs `custom_dir` in `download_loader` (#8865)
+
 ## [0.8.68] - 2023-11-11
 
 ### New Features
