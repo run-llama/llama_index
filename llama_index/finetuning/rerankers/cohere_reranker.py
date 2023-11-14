@@ -59,4 +59,8 @@ class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
 
     def get_finetuned_model(self) -> Any:
         """Gets finetuned model id."""
+        if self._finetune_model is None:
+            raise RuntimeError(
+                "Finetuned model is not set yet. Please run the finetune method first."
+            )
         return self._finetune_model
