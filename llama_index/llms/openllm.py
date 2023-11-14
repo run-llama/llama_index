@@ -36,23 +36,18 @@ from llama_index.llms.generic_utils import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from typing import Generic, TypeVar
+    from typing import TypeAlias, TypeVar
 
     M = TypeVar("M")
     T = TypeVar("T")
-    try:
-        from openllm import LLM, AsyncHTTPClient, HTTPClient
-    except ImportError:
-        # NOTE: For the sake of type checking, we will annotate LLM as Any
-        class LLM(Generic[M, T]):
-            ...
-
-    AsyncHTTPClient = HTTPClient = Any  # Any is also a type
 
     try:
+        from openllm_client import AsyncHTTPClient, HTTPClient
         from openllm_client._schemas import Metadata
     except ImportError:
-        Metadata = Any
+        Metadata: TypeAlias = Any
+        AsyncHTTPClient: TypeAlias = Any  # Any is also a type
+        HTTPClient: TypeAlias = Any
 
 
 class OpenLLM(LLM):
@@ -86,7 +81,17 @@ class OpenLLM(LLM):
         description="Optional flag to trust remote code. This is synonymous to Transformers' `trust_remote_code`. Default to False."
     )
     if TYPE_CHECKING:
-        _llm: LLM[Any, Any]
+        from typing import Generic
+
+        try:
+            import openllm
+
+            _LlmType: TypeAlias = openllm.LLM[Any, Any]
+        except ImportError:
+            _LlmType = Any
+
+        _llm: _LlmType
+
     else:
         _llm: Any = PrivateAttr()
 
