@@ -36,6 +36,8 @@ class BaseRetriever(PromptMixin):
         """
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
+        else:
+            query_bundle = str_or_query_bundle
         with self.callback_manager.as_trace("query"):
             with self.callback_manager.event(
                 CBEventType.RETRIEVE,
@@ -48,9 +50,11 @@ class BaseRetriever(PromptMixin):
         return nodes
 
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
+        if isinstance(str_or_query_bundle, str):
+            query_bundle = QueryBundle(str_or_query_bundle)
+        else:
+            query_bundle = str_or_query_bundle
         with self.callback_manager.as_trace("query"):
-            if isinstance(str_or_query_bundle, str):
-                query_bundle = QueryBundle(str_or_query_bundle)
             with self.callback_manager.event(
                 CBEventType.RETRIEVE,
                 payload={EventPayload.QUERY_STR: query_bundle.query_str},
