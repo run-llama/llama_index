@@ -1,6 +1,8 @@
 from abc import abstractmethod
 from typing import List, Optional
 
+from llama_index.callbacks.base import CallbackManager
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
@@ -9,6 +11,9 @@ from llama_index.schema import NodeWithScore
 
 class BaseRetriever(PromptMixin):
     """Base retriever."""
+
+    def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
+        self.callback_manager = callback_manager or CallbackManager([])
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -30,13 +35,31 @@ class BaseRetriever(PromptMixin):
 
         """
         if isinstance(str_or_query_bundle, str):
-            str_or_query_bundle = QueryBundle(str_or_query_bundle)
-        return self._retrieve(str_or_query_bundle)
+            query_bundle = QueryBundle(str_or_query_bundle)
+        with self.callback_manager.as_trace("query"):
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
+                nodes = self._retrieve(query_bundle)
+                retrieve_event.on_end(
+                    payload={EventPayload.NODES: nodes},
+                )
+        return nodes
 
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
-        if isinstance(str_or_query_bundle, str):
-            str_or_query_bundle = QueryBundle(str_or_query_bundle)
-        return await self._aretrieve(str_or_query_bundle)
+        with self.callback_manager.as_trace("query"):
+            if isinstance(str_or_query_bundle, str):
+                query_bundle = QueryBundle(str_or_query_bundle)
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
+                nodes = await self._aretrieve(query_bundle)
+                retrieve_event.on_end(
+                    payload={EventPayload.NODES: nodes},
+                )
+        return nodes
 
     @abstractmethod
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:

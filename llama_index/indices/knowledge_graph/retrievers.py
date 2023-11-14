@@ -4,6 +4,7 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
@@ -84,6 +85,7 @@ class KGTableRetriever(BaseRetriever):
         graph_store_query_depth: int = 2,
         use_global_node_triplets: bool = False,
         max_knowledge_sequence: int = REL_TEXT_LIMIT,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -113,6 +115,7 @@ class KGTableRetriever(BaseRetriever):
         except Exception as e:
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
+        super().__init__(callback_manager)
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
@@ -408,6 +411,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         graph_traversal_depth: int = 2,
         max_knowledge_sequence: int = REL_TEXT_LIMIT,
         verbose: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the retriever."""
@@ -480,6 +484,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         except Exception as e:
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
+        super().__init__(callback_manager)
 
     def _process_entities(
         self,

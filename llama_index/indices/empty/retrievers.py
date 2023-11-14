@@ -1,6 +1,7 @@
 """Default query for EmptyIndex."""
 from typing import Any, List, Optional
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.empty.base import EmptyIndex
 from llama_index.indices.query.schema import QueryBundle
@@ -24,11 +25,13 @@ class EmptyIndexRetriever(BaseRetriever):
         self,
         index: EmptyIndex,
         input_prompt: Optional[BasePromptTemplate] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._index = index
         self._input_prompt = input_prompt or DEFAULT_SIMPLE_INPUT_PROMPT
+        super().__init__(callback_manager)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve relevant nodes."""

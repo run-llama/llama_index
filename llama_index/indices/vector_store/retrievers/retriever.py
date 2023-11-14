@@ -4,7 +4,6 @@
 from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.base_retriever import BaseRetriever
@@ -63,8 +62,8 @@ class VectorIndexRetriever(BaseRetriever):
         self._doc_ids = doc_ids
         self._filters = filters
         self._sparse_top_k = sparse_top_k
-        self.callback_manager = callback_manager or CallbackManager([])
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
+        super().__init__(callback_manager)
 
     @property
     def similarity_top_k(self) -> int:
@@ -80,48 +79,25 @@ class VectorIndexRetriever(BaseRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        with self.callback_manager.event(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.QUERY_STR: query_bundle.query_str},
-        ) as retrieve_event:
-            if self._vector_store.is_embedding_query:
-                if (
-                    query_bundle.embedding is None
-                    and len(query_bundle.embedding_strs) > 0
-                ):
-                    query_bundle.embedding = self._service_context.embed_model.get_agg_embedding_from_queries(
+        if self._vector_store.is_embedding_query:
+            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
+                query_bundle.embedding = (
+                    self._service_context.embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
                     )
-            nodes = self._get_nodes_with_embeddings(query_bundle)
-
-            retrieve_event.on_end(
-                payload={EventPayload.NODES: nodes},
-            )
-        return nodes
+                )
+        return self._get_nodes_with_embeddings(query_bundle)
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        with self.callback_manager.event(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.QUERY_STR: query_bundle.query_str},
-        ) as retrieve_event:
-            if self._vector_store.is_embedding_query:
-                if (
-                    query_bundle.embedding is None
-                    and len(query_bundle.embedding_strs) > 0
-                ):
-                    embed_model = self._service_context.embed_model
-                    query_bundle.embedding = (
-                        await embed_model.aget_agg_embedding_from_queries(
-                            query_bundle.embedding_strs
-                        )
+        if self._vector_store.is_embedding_query:
+            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
+                embed_model = self._service_context.embed_model
+                query_bundle.embedding = (
+                    await embed_model.aget_agg_embedding_from_queries(
+                        query_bundle.embedding_strs
                     )
-            nodes = await self._aget_nodes_with_embeddings(query_bundle)
-
-            retrieve_event.on_end(
-                payload={EventPayload.NODES: nodes},
-            )
-
-        return nodes
+                )
+        return await self._aget_nodes_with_embeddings(query_bundle)
 
     def _build_vector_store_query(
         self, query_bundle_with_embeddings: QueryBundle

@@ -3,6 +3,7 @@
 import asyncio
 from typing import Any, Dict, List, Optional
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
@@ -44,6 +45,7 @@ class MultiModalVectorIndexRetriever(VectorIndexRetriever):
         node_ids: Optional[List[str]] = None,
         doc_ids: Optional[List[str]] = None,
         sparse_top_k: Optional[int] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -68,6 +70,7 @@ class MultiModalVectorIndexRetriever(VectorIndexRetriever):
         self._sparse_top_k = sparse_top_k
 
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @property
     def similarity_top_k(self) -> int:
