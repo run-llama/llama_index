@@ -78,6 +78,16 @@ class MultiModalVectorIndexRetriever(VectorIndexRetriever):
         """Set similarity top k."""
         self._similarity_top_k = similarity_top_k
 
+    @property
+    def image_similarity_top_k(self) -> int:
+        """Return image similarity top k."""
+        return self._image_similarity_top_k
+
+    @image_similarity_top_k.setter
+    def image_similarity_top_k(self, image_similarity_top_k: int) -> None:
+        """Set image similarity top k."""
+        self._image_similarity_top_k = image_similarity_top_k
+
     def _build_image_vector_store_query(
         self, query_bundle_with_embeddings: QueryBundle
     ) -> VectorStoreQuery:
