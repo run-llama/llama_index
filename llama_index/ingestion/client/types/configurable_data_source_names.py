@@ -13,7 +13,6 @@ class ConfigurableDataSourceNames(str, enum.Enum):
 
     DOCUMENT = "DOCUMENT"
     TEXT_NODE = "TEXT_NODE"
-    RAW_FILE = "RAW_FILE"
     DISCORD = "DISCORD"
     ELASTICSEARCH = "ELASTICSEARCH"
     NOTION_PAGE = "NOTION_PAGE"
@@ -33,7 +32,6 @@ class ConfigurableDataSourceNames(str, enum.Enum):
         self,
         document: typing.Callable[[], T_Result],
         text_node: typing.Callable[[], T_Result],
-        raw_file: typing.Callable[[], T_Result],
         discord: typing.Callable[[], T_Result],
         elasticsearch: typing.Callable[[], T_Result],
         notion_page: typing.Callable[[], T_Result],
@@ -53,8 +51,6 @@ class ConfigurableDataSourceNames(str, enum.Enum):
             return document()
         if self is ConfigurableDataSourceNames.TEXT_NODE:
             return text_node()
-        if self is ConfigurableDataSourceNames.RAW_FILE:
-            return raw_file()
         if self is ConfigurableDataSourceNames.DISCORD:
             return discord()
         if self is ConfigurableDataSourceNames.ELASTICSEARCH:

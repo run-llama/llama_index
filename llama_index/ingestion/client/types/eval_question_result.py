@@ -6,6 +6,7 @@ import typing
 import pydantic
 
 from ..core.datetime_utils import serialize_datetime
+from .eval_execution_params import EvalExecutionParams
 from .text_node import TextNode
 
 
@@ -27,6 +28,15 @@ class EvalQuestionResult(pydantic.BaseModel):
     eval_metrics: typing.Dict[str, typing.Any] = pydantic.Field(
         description="The eval metrics for the question."
     )
+    eval_dataset_execution_id: str = pydantic.Field(
+        description="The ID of the EvalDatasetExecution that this result was generated from."
+    )
+    eval_dataset_execution_params: EvalExecutionParams = pydantic.Field(
+        description="The EvalExecutionParams that were used when this result was generated."
+    )
+    eval_finished_at: dt.datetime = pydantic.Field(
+        description="The timestamp when the eval finished."
+    )
     class_name: typing.Optional[str]
 
     def json(self, **kwargs: typing.Any) -> str:
@@ -47,4 +57,5 @@ class EvalQuestionResult(pydantic.BaseModel):
 
     class Config:
         frozen = True
+        smart_union = True
         json_encoders = {dt.datetime: serialize_datetime}

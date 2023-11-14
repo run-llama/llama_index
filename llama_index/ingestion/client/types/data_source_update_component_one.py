@@ -9,7 +9,6 @@ from .elasticsearch_reader import ElasticsearchReader
 from .google_docs_reader import GoogleDocsReader
 from .google_sheets_reader import GoogleSheetsReader
 from .notion_page_reader import NotionPageReader
-from .raw_file import RawFile
 from .reader_config import ReaderConfig
 from .rss_reader import RssReader
 from .simple_web_page_reader import SimpleWebPageReader
@@ -23,7 +22,6 @@ from .youtube_transcript_reader import YoutubeTranscriptReader
 DataSourceUpdateComponentOne = typing.Union[
     Document,
     TextNode,
-    RawFile,
     DiscordReader,
     ElasticsearchReader,
     NotionPageReader,
