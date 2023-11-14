@@ -27,6 +27,8 @@ class QueryBundle(DataClassJsonMixin):
     """
 
     query_str: str
+    # using single image as query input
+    image_path: Optional[str] = None
     custom_embedding_strs: Optional[List[str]] = None
     embedding: Optional[List[float]] = None
 
@@ -37,6 +39,16 @@ class QueryBundle(DataClassJsonMixin):
             if len(self.query_str) == 0:
                 return []
             return [self.query_str]
+        else:
+            return self.custom_embedding_strs
+
+    @property
+    def embedding_image(self) -> List[str]:
+        """Use custom embedding strs if specified, otherwise use image path."""
+        if self.custom_embedding_strs is None:
+            if len(self.image_path) == 0:
+                return []
+            return [self.image_path]
         else:
             return self.custom_embedding_strs
 

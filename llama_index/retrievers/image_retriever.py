@@ -1,6 +1,5 @@
 """Base vector store index query."""
 
-from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
@@ -15,7 +14,6 @@ from llama_index.vector_stores.types import (
 class BaseImageRetriever(BaseRetriever):
     """Base Image retriever Abastraction.
 
-
     Args:
         BaseImageRetriever
         similarity_top_k (int): number of top k results to return.
@@ -24,25 +22,24 @@ class BaseImageRetriever(BaseRetriever):
 
     def __init__(
         self,
-        image_similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         filters: Optional[MetadataFilters] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._image_similarity_top_k = image_similarity_top_k
+        self.similarity_top_k = similarity_top_k
         self._filters = filters
         self._kwargs: Dict[str, Any] = kwargs
 
     @property
-    def image_similarity_top_k(self) -> int:
+    def similarity_top_k(self) -> int:
         """Return similarity top k."""
-        return self._image_similarity_top_k
+        return self.similarity_top_k
 
     @classmethod
     def class_name(cls) -> str:
         return "BaseImageRetriever"
 
-    @abstractmethod
     def _retrieve(
         self,
         query_bundle: QueryBundle,
@@ -60,7 +57,6 @@ class BaseImageRetriever(BaseRetriever):
         """
 
     # Async Methods
-    @abstractmethod
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         return await self._aimage_retrieve(query_bundle)
 
