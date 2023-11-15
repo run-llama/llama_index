@@ -92,7 +92,6 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
-
         context_str = "\n\n".join([r.get_content() for r in text_nodes])
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
@@ -115,7 +114,6 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
-
         context_str = "\n\n".join([r.get_content() for r in text_nodes])
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
