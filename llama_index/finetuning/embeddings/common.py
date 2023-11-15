@@ -67,6 +67,7 @@ context information provided."
 # generate queries as a convenience function
 def generate_qa_embedding_pairs(
     nodes: List[TextNode],
+    llm: Optional[LLMType],
     qa_generate_prompt_tmpl: str = DEFAULT_QA_GENERATE_PROMPT_TMPL,
     num_questions_per_chunk: int = 2,
 ) -> EmbeddingQAFinetuneDataset:
