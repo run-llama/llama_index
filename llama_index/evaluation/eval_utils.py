@@ -18,7 +18,6 @@ from llama_index.ingestion.client import ProjectCreate
 from llama_index.ingestion.client.client import PlatformApi
 from llama_index.ingestion.client.types.eval_question_create import EvalQuestionCreate
 from llama_index.ingestion.pipeline import (
-    DEFAULT_API_KEY,
     DEFAULT_BASE_URL,
     DEFAULT_PROJECT_NAME,
 )
@@ -92,9 +91,7 @@ def upload_eval_dataset(
     platform_base_url = platform_base_url or os.environ.get(
         "PLATFORM_BASE_URL", DEFAULT_BASE_URL
     )
-    platform_api_key = platform_api_key or os.environ.get(
-        "PLATFORM_API_KEY", DEFAULT_API_KEY
-    )
+    platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
 
     client = PlatformApi(base_url=platform_base_url, token=platform_api_key)
 
