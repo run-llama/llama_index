@@ -173,3 +173,18 @@ Cross-Encoder Finetuning </examples/finetuning/cross_encoder_finetuning/cross_en
 Finetuning Llama 2 for Text-to-SQL <https://medium.com/llamaindex-blog/easily-finetune-llama-2-for-your-text-to-sql-applications-ecd53640e10d>
 Finetuning GPT-3.5 to Distill GPT-4 <https://colab.research.google.com/drive/1vWeJBXdFEObuihO7Z8ui2CAYkdHQORqo?usp=sharing>
 ```
+
+## Cohere Custom Reranker
+
+By training a custom reranker with CohereAI, we can attempt to improve re-ranking performance on our own private data.
+
+Re-ranking is a crucial step in advanced retrieval processes. This step involves using a separate model to re-organize nodes retrieved from initial retrieval phase. The goal is to ensure that the most relevant nodes are prioritized and appear first.
+
+In this example, we use the `cohere` custom reranker training module to create a reranker on your domain or specific dataset to improve retrieval performance.
+
+```{toctree}
+---
+maxdepth: 1
+---
+Cohere Custom Reranker </examples/finetuning/rerankers/cohere_custom_reranker.ipynb>
+```
