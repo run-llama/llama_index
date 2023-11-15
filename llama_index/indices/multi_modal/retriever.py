@@ -4,7 +4,7 @@ import asyncio
 from typing import Any, Dict, List, Optional
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
 from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
 from llama_index.schema import NodeWithScore, QueryBundle
@@ -51,7 +51,7 @@ class MultiModalVectorIndexRetriever(VectorIndexRetriever):
         # separate image vector store for image retrieval
         self._image_vector_store = self._index.image_vector_store
 
-        assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
+        assert isinstance(self._index.image_embed_model, BaseEmbedding)
         self._image_embed_model = self._index.image_embed_model
 
         self._service_context = self._index.service_context
@@ -77,6 +77,16 @@ class MultiModalVectorIndexRetriever(VectorIndexRetriever):
     def similarity_top_k(self, similarity_top_k: int) -> None:
         """Set similarity top k."""
         self._similarity_top_k = similarity_top_k
+
+    @property
+    def image_similarity_top_k(self) -> int:
+        """Return image similarity top k."""
+        return self._image_similarity_top_k
+
+    @image_similarity_top_k.setter
+    def image_similarity_top_k(self, image_similarity_top_k: int) -> None:
+        """Set image similarity top k."""
+        self._image_similarity_top_k = image_similarity_top_k
 
     def _build_image_vector_store_query(
         self, query_bundle_with_embeddings: QueryBundle
