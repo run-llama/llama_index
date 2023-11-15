@@ -104,6 +104,7 @@ def upload_eval_dataset(
     for dataset in existing_datasets:
         if dataset.name == dataset_name:
             if overwrite:
+                assert dataset.id is not None
                 client.eval.delete_dataset(dataset_id=dataset.id)
                 break
             elif not append:
