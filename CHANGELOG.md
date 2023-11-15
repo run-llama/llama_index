@@ -11,7 +11,7 @@
 - Packaging/Installation changes with PyPi (reduced bloat, new install options)
 - More predictable and consistent import paths
 - Plus, in beta: MultiModal RAG Modules for handling text and images!
-- Find more details at: https://pretty-sodium-5e0.notion.site/Alpha-Preview-LlamaIndex-v0-9-8f815bfdd4c346c1a696e013fccefe5e
+- Find more details at: `https://medium.com/@llama_index/719f03282945`
 
 ## [0.8.69.post1] - 2023-11-13
 
