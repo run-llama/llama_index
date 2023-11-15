@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from llama_index import SimpleDirectoryReader
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.multi_modal import MultiModalVectorIndexRetriever
@@ -94,21 +93,6 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
     ) -> RESPONSE_TYPE:
         image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
 
-        # hack
-        additional_image_nodes = []
-        node_parser = SimpleNodeParser.from_defaults()
-        for text_node in text_nodes:
-            if "image_path" in text_node.metadata:
-                image_path = text_node.metadata["image_path"]
-                img_doc = SimpleDirectoryReader(input_files=[image_path]).load_data()
-                img_nodes = node_parser.get_nodes_from_documents(img_doc)
-                additional_image_nodes += [
-                    NodeWithScore(node=n, score=text_node.score) for n in img_nodes
-                ]
-
-        if not image_nodes:
-            image_nodes = additional_image_nodes
-
         context_str = "\n\n".join([r.get_content() for r in text_nodes])
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
@@ -131,20 +115,6 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
-
-        # hack
-        additional_image_nodes = []
-        node_parser = SimpleNodeParser.from_defaults()
-        for text_node in text_nodes:
-            if "image_path" in text_node.metadata:
-                image_path = text_node.metadata["image_path"]
-                img_doc = SimpleDirectoryReader(input_files=[image_path]).load_data()
-                img_nodes = node_parser.get_nodes_from_documents(img_doc)
-                additional_image_nodes += [
-                    NodeWithScore(node=n, score=text_node.score) for n in img_nodes
-                ]
-        if not image_nodes:
-            image_nodes = additional_image_nodes
 
         context_str = "\n\n".join([r.get_content() for r in text_nodes])
         fmt_prompt = self._text_qa_template.format(

@@ -150,12 +150,25 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         Embeddings are called in batches.
 
         """
+        id_to_text_embed_map = None
+
         if is_image:
             id_to_embed_map = embed_image_nodes(
                 nodes,
                 embed_model=self._image_embed_model,
                 show_progress=show_progress,
             )
+
+            # text field is populate, so embed them
+            if all(node.text for node in nodes):
+                id_to_text_embed_map = embed_nodes(
+                    nodes,
+                    embed_model=self._service_context.embed_model,
+                    show_progress=show_progress,
+                )
+                # TODO: refactor this change of image embed model to same as text
+                self._image_embed_model = self._service_context.embed_model
+
         else:
             id_to_embed_map = embed_nodes(
                 nodes,
@@ -168,6 +181,12 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             embedding = id_to_embed_map[node.node_id]
             result = node.copy()
             result.embedding = embedding
+            if is_image and id_to_text_embed_map:
+                text_embedding = id_to_text_embed_map[node.node_id]
+                result.text_embedding = text_embedding
+                result.embedding = (
+                    text_embedding  # TODO: re-factor to make use of both embeddings
+                )
             results.append(result)
         return results
 
@@ -183,12 +202,25 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         Embeddings are called in batches.
 
         """
+        id_to_text_embed_map = None
+
         if is_image:
             id_to_embed_map = await async_embed_image_nodes(
                 nodes,
                 embed_model=self._image_embed_model,
                 show_progress=show_progress,
             )
+
+            # text field is populated, so embed them
+            if all(node.text for node in nodes):
+                id_to_text_embed_map = await async_embed_nodes(
+                    nodes,
+                    embed_model=self._service_context.embed_model,
+                    show_progress=show_progress,
+                )
+                # TODO: refactor this change of image embed model to same as text
+                self._image_embed_model = self._service_context.embed_model
+
         else:
             id_to_embed_map = await async_embed_nodes(
                 nodes,
@@ -201,6 +233,12 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             embedding = id_to_embed_map[node.node_id]
             result = node.copy()
             result.embedding = embedding
+            if is_image and id_to_text_embed_map:
+                text_embedding = id_to_text_embed_map[node.node_id]
+                result.text_embedding = text_embedding
+                result.embedding = (
+                    text_embedding  # TODO: re-factor to make use of both embeddings
+                )
             results.append(result)
         return results
 

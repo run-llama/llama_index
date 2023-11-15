@@ -4,7 +4,6 @@ import asyncio
 from typing import Any, Dict, List, Optional
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
 from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
 from llama_index.schema import NodeWithScore, QueryBundle
@@ -51,7 +50,7 @@ class MultiModalVectorIndexRetriever(VectorIndexRetriever):
         # separate image vector store for image retrieval
         self._image_vector_store = self._index.image_vector_store
 
-        assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
+        # assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
         self._image_embed_model = self._index.image_embed_model
 
         self._service_context = self._index.service_context
