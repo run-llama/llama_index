@@ -111,13 +111,14 @@ def display_query_and_multimodal_response(
     query_str: str, response: Response, plot_height: int = 2, plot_width: int = 5
 ) -> None:
     """For displaying a query and its multi-modal response."""
-    num_subplots = len(response.metadata["image_nodes"])
+    image_nodes = response.metadata["image_nodse"] or []
+    num_subplots = len(image_nodes)
 
     f, axarr = plt.subplots(1, num_subplots)
     f.set_figheight(plot_height)
     f.set_figwidth(plot_width)
     ix = 0
-    for ix, scored_img_node in enumerate(response.metadata["image_nodes"]):
+    for ix, scored_img_node in enumerate(image_nodes):
         img_node = scored_img_node.node
         image = None
         if img_node.image_url:
