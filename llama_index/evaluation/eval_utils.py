@@ -87,6 +87,7 @@ def upload_eval_dataset(
     base_url: str = BASE_URL,
     token: Optional[str] = None,
     overwrite: bool = False,
+    append: bool = False,
 ) -> None:
     """Upload questions to platform dataset."""
     token = token or PLATFORM_API_KEY
@@ -97,20 +98,31 @@ def upload_eval_dataset(
     assert project.id is not None
 
     existing_datasets = client.project.get_datasets_for_project(project_id=project.id)
+
+    # check if dataset already exists
+    cur_dataset = None
     for dataset in existing_datasets:
         if dataset.name == dataset_name:
             if overwrite:
                 client.eval.delete_dataset(dataset_id=dataset.id)
                 break
-            else:
+            elif not append:
                 raise ValueError(
                     f"Dataset {dataset_name} already exists in project {project_name}."
-                    " Set overwrite=True to overwrite."
+                    " Set overwrite=True to overwrite or append=True to append."
                 )
+            else:
+                cur_dataset = dataset
+                break
 
-    eval_dataset = client.project.create_eval_dataset_for_project(
-        project_id=project.id, name=dataset_name
-    )
+    # either create new dataset or use existing one
+    if cur_dataset is None:
+        eval_dataset = client.project.create_eval_dataset_for_project(
+            project_id=project.id, name=dataset_name
+        )
+    else:
+        eval_dataset = cur_dataset
+
     assert eval_dataset.id is not None
 
     eval_questions = client.eval.create_questions(
