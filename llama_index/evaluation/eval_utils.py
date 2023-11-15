@@ -5,6 +5,7 @@ NOTE: These are beta functions, might change.
 """
 
 import asyncio
+import os
 from collections import defaultdict
 from typing import Any, List, Optional
 
@@ -17,9 +18,9 @@ from llama_index.ingestion.client import ProjectCreate
 from llama_index.ingestion.client.client import PlatformApi
 from llama_index.ingestion.client.types.eval_question_create import EvalQuestionCreate
 from llama_index.ingestion.pipeline import (
-    BASE_URL,
+    DEFAULT_API_KEY,
+    DEFAULT_BASE_URL,
     DEFAULT_PROJECT_NAME,
-    PLATFORM_API_KEY,
 )
 
 
@@ -84,13 +85,18 @@ def upload_eval_dataset(
     dataset_name: str,
     questions: List[str],
     project_name: str = DEFAULT_PROJECT_NAME,
-    base_url: str = BASE_URL,
-    token: Optional[str] = None,
+    platform_base_url: Optional[str] = None,
+    platform_api_key: Optional[str] = None,
 ) -> None:
     """Upload questions to platform dataset."""
-    token = token or PLATFORM_API_KEY
+    platform_base_url = platform_base_url or os.environ.get(
+        "PLATFORM_BASE_URL", DEFAULT_BASE_URL
+    )
+    platform_api_key = platform_api_key or os.environ.get(
+        "PLATFORM_API_KEY", DEFAULT_API_KEY
+    )
 
-    client = PlatformApi(base_url=base_url, token=token)
+    client = PlatformApi(base_url=platform_base_url, token=platform_api_key)
 
     project = client.project.upsert_project(request=ProjectCreate(name=project_name))
     assert project.id is not None
