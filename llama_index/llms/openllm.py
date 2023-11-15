@@ -81,7 +81,7 @@ class OpenLLM(LLM):
 
             _llm: openllm.LLM[Any, Any]
         except ImportError:
-            _llm: Any
+            _llm: Any  # type: ignore[no-redef]
     else:
         _llm: Any = PrivateAttr()
 
@@ -291,8 +291,8 @@ class OpenLLMAPI(LLM):
             _sync_client: HTTPClient
             _async_client: AsyncHTTPClient
         except ImportError:
-            _sync_client: Any
-            _async_client: Any
+            _sync_client: Any  # type: ignore[no-redef]
+            _async_client: Any  # type: ignore[no-redef]
     else:
         _sync_client: Any = PrivateAttr()
         _async_client: Any = PrivateAttr()
