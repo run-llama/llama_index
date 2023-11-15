@@ -12,15 +12,6 @@ from llama_index.schema import NodeWithScore
 class MultiModalRetriever(BaseRetriever, BaseImageRetriever):
     """Multi Modal base retriever."""
 
-    # def __init__(
-    #     self,
-    #     text_similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
-    #     image_similarity_top_k: int = DEFAULT_IMAGE_SIMILARITY_TOP_K,
-    #     **kwargs: Any,
-    # ) -> None:
-    #     self._text_similarity_top_k = text_similarity_top_k
-    #     self._image_similarity_top_k = image_similarity_top_k
-
     def retrieve(
         self, query_bundle: QueryBundle, is_image_input: bool
     ) -> List[NodeWithScore]:
