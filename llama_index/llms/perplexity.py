@@ -52,10 +52,16 @@ class Perplexity(LLM):
         api_base: Optional[str] = "https://api.perplexity.ai",
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
+        context_window: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "authorization": f"Bearer {api_key}",
+        }
         super().__init__(
             model=model,
             temperature=temperature,
@@ -65,13 +71,10 @@ class Perplexity(LLM):
             callback_manager=callback_manager,
             api_key=api_key,
             api_base=api_base,
+            headers=headers,
+            context_window=context_window,
             **kwargs,
         )
-        self.headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "authorization": f"Bearer {self.api_key}",
-        }
 
     @classmethod
     def class_name(cls) -> str:
@@ -80,7 +83,9 @@ class Perplexity(LLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=self._get_context_window(),
+            context_window=self.context_window
+            if self.context_window is not None
+            else self._get_context_window(),
             num_output=self.max_tokens
             or -1,  # You can replace this with the appropriate value
             is_chat_model=self._is_chat_model(),
@@ -89,12 +94,13 @@ class Perplexity(LLM):
 
     def _get_context_window(self) -> int:
         model_context_windows = {
-            "codellama-34b-instruct": 4096,
+            "codellama-34b-instruct": 16384,
             "llama-2-13b-chat": 4096,
             "llama-2-70b-chat": 4096,
             "mistral-7b-instruct": 4096,
             "replit-code-v1.5-3b": 4096,
             "openhermes-2-mistral-7b": 4096,
+            "openhermes-2.5-mistral-7b": 4096,
             "pplx-7b-chat-alpha": 4096,
             "pplx-70b-chat-alpha": 4096,
         }
