@@ -52,10 +52,11 @@ class QueryEngineTool(AsyncBaseTool):
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         if args is not None and len(args) > 0:
             query_str = str(args[0])
-        elif kwargs is not None and len(kwargs) > 0:
-            query_str = str(kwargs)
+        elif kwargs is not None and "input" in kwargs:
+            # NOTE: this assumes our default function schema of `input`
+            query_str = kwargs["input"]
         else:
-            raise ValueError("Cannot call query engine without inputs")
+            raise ValueError("Cannot call query engine without specifying `input` parameter.")
 
         response = self._query_engine.query(query_str)
         return ToolOutput(
@@ -68,8 +69,9 @@ class QueryEngineTool(AsyncBaseTool):
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         if args is not None and len(args) > 0:
             query_str = str(args[0])
-        elif kwargs is not None and len(kwargs) > 0:
-            query_str = str(kwargs)
+        elif kwargs is not None and "input" in kwargs:
+            # NOTE: this assumes our default function schema of `input`
+            query_str = kwargs["input"]
         else:
             raise ValueError("Cannot call query engine without inputs")
 
