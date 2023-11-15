@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.indices.postprocessor import SentenceTransformerRerank
+from llama_index.indices.postprocessor import CohereRerank, SentenceTransformerRerank
 from llama_index.llms.base import LLM
 
 
@@ -47,12 +47,12 @@ class BaseCrossEncoderFinetuningEngine(ABC):
 
 
 class BaseCohereRerankerFinetuningEngine(ABC):
-    """Base Cross Encoder Finetuning Engine."""
+    """Base Cohere Reranker Finetuning Engine."""
 
     @abstractmethod
     def finetune(self) -> None:
         """Goes off and does stuff."""
 
     @abstractmethod
-    def get_finetuned_model(self) -> Any:
+    def get_finetuned_model(self, top_n: int = 5) -> CohereRerank:
         """Gets finetuned model."""

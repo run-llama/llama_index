@@ -1,8 +1,10 @@
 """Cohere Reranker Finetuning Engine."""
 import importlib.util
-from typing import Any
+import os
+from typing import Optional
 
 from llama_index.finetuning.types import BaseCohereRerankerFinetuningEngine
+from llama_index.indices.postprocessor import CohereRerank
 
 
 class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
@@ -10,12 +12,12 @@ class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
 
     def __init__(
         self,
-        cohere_api_key: str,
         train_file_name: str = "train.jsonl",
-        val_file_name: Any = None,
+        val_file_name: Optional[str] = None,
         model_name: str = "exp_finetune",
         model_type: str = "RERANK",
         base_model: str = "english",
+        api_key: Optional[str] = None,
     ) -> None:
         """Init params."""
         # This will be None if 'cohere' module is not available
@@ -29,7 +31,14 @@ class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
                 "Cannot import cohere. Please install the package using `pip install cohere`."
             )
 
-        self._model = cohere.Client(cohere_api_key)
+        try:
+            self.api_key = api_key or os.environ["COHERE_API_KEY"]
+        except IndexError:
+            raise ValueError(
+                "Must pass in cohere api key or "
+                "specify via COHERE_API_KEY environment variable "
+            )
+        self._model = cohere.Client(self.api_key)
         self._train_file_name = train_file_name
         self._val_file_name = val_file_name
         self._model_name = model_name
@@ -57,10 +66,12 @@ class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
             base_model=self._base_model,
         )
 
-    def get_finetuned_model(self) -> Any:
+    def get_finetuned_model(self, top_n: int = 5) -> CohereRerank:
         """Gets finetuned model id."""
         if self._finetune_model is None:
             raise RuntimeError(
                 "Finetuned model is not set yet. Please run the finetune method first."
             )
-        return self._finetune_model
+        return CohereRerank(
+            model=self._finetune_model.id, top_n=top_n, api_key=self.api_key
+        )
