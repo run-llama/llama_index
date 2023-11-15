@@ -85,7 +85,7 @@ The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_
     response = query_engine.query("What did the author do growing up?")
     print(response)
 
-`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about `retrievers <../module_guides/querying/retrievers.html>_` and `query engines <../module_guides/putting_it_all_together/query_engine/root.html>_`
+`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about `retrievers <../module_guides/querying/retriever/retrievers.html>`_ and `query engines <../module_guides/querying/retriever/root.html>`_
 
 -----------------
 
@@ -127,7 +127,7 @@ You can learn more about `customizing LLMs <../module_guides/models/llms.html>`_
     response = query_engine.query("What did the author do growing up?")
     print(response)
 
-You can learn more about `query engines <../module_guides/querying/querying.html>`_ and `response modes <../module_guides/putting_it_all_together/query_engine/response_modes.html>`_.
+You can learn more about `query engines <../module_guides/querying/querying.html>`_ and `response modes <../module_guides/deploying/query_engine/response_modes.html>`_.
 
 -----------------
 
@@ -145,7 +145,7 @@ You can learn more about `query engines <../module_guides/querying/querying.html
     response = query_engine.query("What did the author do growing up?")
     response.print_response_stream()
 
-You can learn more about `streaming responses <../module_guides/putting_it_all_together/query_engine/streaming.html>`_.
+You can learn more about `streaming responses <../module_guides/deploying/query_engine/streaming.html>`_.
 
 -----------------
 
@@ -165,7 +165,7 @@ You can learn more about `streaming responses <../module_guides/putting_it_all_t
     response = query_engine.chat("Oh interesting, tell me more.")
     print(response)
 
-Learn more about the `chat engine <../module_guides/putting_it_all_together/chat_engines/usage_pattern.html>`_.
+Learn more about the `chat engine <../module_guides/deploying/chat_engines/usage_pattern.html>`_.
 
 -----------------
 
