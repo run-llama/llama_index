@@ -11,7 +11,6 @@ from llama_index.llms.base import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.schema import MetadataMode, TextNode
 
-
 class EmbeddingQAFinetuneDataset(BaseModel):
     """Embedding QA Finetuning Dataset.
 
@@ -78,7 +77,16 @@ def generate_qa_embedding_pairs(
         for node in nodes
     }
 
-    llm = llm or OpenAI(model="gpt-3.5-turbo")
+    # if we don't pass in default llm then error is not raised
+    #llm = llm or OpenAI(model="gpt-3.5-turbo")
+    if llm == None:
+        raise ValueError(
+            "\n******\n"
+                "llm must be passed!" 
+            "\n******\n"
+            )
+    else:
+        llm = llm
 
     queries = {}
     relevant_docs = {}
