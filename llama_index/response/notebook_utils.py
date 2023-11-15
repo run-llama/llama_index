@@ -111,7 +111,7 @@ def display_query_and_multimodal_response(
     query_str: str, response: Response, plot_height: int = 2, plot_width: int = 5
 ) -> None:
     """For displaying a query and its multi-modal response."""
-    image_nodes = response.metadata["image_nodse"] or []
+    image_nodes = response.metadata["image_nodes"] or {}
     num_subplots = len(image_nodes)
 
     f, axarr = plt.subplots(1, num_subplots)
