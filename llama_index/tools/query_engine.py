@@ -28,9 +28,11 @@ class QueryEngineTool(AsyncBaseTool):
         self,
         query_engine: BaseQueryEngine,
         metadata: ToolMetadata,
+        resolve_input_errors: bool = True,
     ) -> None:
         self._query_engine = query_engine
         self._metadata = metadata
+        self._resolve_input_errors = resolve_input_errors
 
     @classmethod
     def from_defaults(
@@ -38,12 +40,17 @@ class QueryEngineTool(AsyncBaseTool):
         query_engine: BaseQueryEngine,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        resolve_input_errors: bool = True,
     ) -> "QueryEngineTool":
         name = name or DEFAULT_NAME
         description = description or DEFAULT_DESCRIPTION
 
         metadata = ToolMetadata(name=name, description=description)
-        return cls(query_engine=query_engine, metadata=metadata)
+        return cls(
+            query_engine=query_engine,
+            metadata=metadata,
+            resolve_input_errors=resolve_input_errors,
+        )
 
     @property
     def query_engine(self) -> BaseQueryEngine:
@@ -56,10 +63,15 @@ class QueryEngineTool(AsyncBaseTool):
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         if args is not None and len(args) > 0:
             query_str = str(args[0])
-        elif kwargs is not None and len(kwargs) > 0:
+        elif kwargs is not None and "input" in kwargs:
+            # NOTE: this assumes our default function schema of `input`
+            query_str = kwargs["input"]
+        elif kwargs is not None and self._resolve_input_errors:
             query_str = str(kwargs)
         else:
-            raise ValueError("Cannot call query engine without inputs")
+            raise ValueError(
+                "Cannot call query engine without specifying `input` parameter."
+            )
 
         response = self._query_engine.query(query_str)
         return ToolOutput(
@@ -72,7 +84,10 @@ class QueryEngineTool(AsyncBaseTool):
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         if args is not None and len(args) > 0:
             query_str = str(args[0])
-        elif kwargs is not None and len(kwargs) > 0:
+        elif kwargs is not None and "input" in kwargs:
+            # NOTE: this assumes our default function schema of `input`
+            query_str = kwargs["input"]
+        elif kwargs is not None and self._resolve_input_errors:
             query_str = str(kwargs)
         else:
             raise ValueError("Cannot call query engine without inputs")
