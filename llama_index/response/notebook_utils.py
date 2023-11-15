@@ -111,19 +111,6 @@ def display_query_and_multimodal_response(
     query_str: str, response: Response, plot_height: int = 2, plot_width: int = 5
 ) -> None:
     """For displaying a query and its multi-modal response."""
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        raise ImportError(
-            "This method requires the matplotlib module. Please run `pip install matplotlib`."
-        )
-    try:
-        from PIL import Image
-    except ImportError:
-        raise ImportError(
-            "This method requires the pillow module. Please run `pip install pillow`."
-        )
-
     num_subplots = len(response.metadata["image_nodes"])
 
     f, axarr = plt.subplots(1, num_subplots)
