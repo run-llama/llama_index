@@ -155,12 +155,12 @@ class ConfigurableTransformations(Enum):
         component_type=CodeSplitter,
     )
     SENTENCE_AWARE_NODE_PARSER = ConfigurableTransformation(
-        name="Sentence Aware Node Parser",
+        name="Sentence Splitter",
         transformation_category=TransformationCategories.NODE_PARSER,
         component_type=SentenceSplitter,
     )
     TOKEN_AWARE_NODE_PARSER = ConfigurableTransformation(
-        name="Token Aware Node Parser",
+        name="Token Text Splitter",
         transformation_category=TransformationCategories.NODE_PARSER,
         component_type=TokenTextSplitter,
     )
