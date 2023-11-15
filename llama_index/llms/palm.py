@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import (
     CompletionResponse,
     CompletionResponseGen,
@@ -12,12 +13,20 @@ from llama_index.llms.base import (
 )
 from llama_index.llms.custom import CustomLLM
 
+DEFAULT_PALM_MODEL = "models/text-bison-001"
+
 
 class PaLM(CustomLLM):
     """PaLM LLM."""
 
-    model_name: str = Field(description="The PaLM model to use.")
-    num_output: int = Field(description="The number of tokens to generate.")
+    model_name: str = Field(
+        default=DEFAULT_PALM_MODEL, description="The PaLM model to use."
+    )
+    num_output: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description="The number of tokens to generate.",
+        gt=0,
+    )
     generate_kwargs: dict = Field(
         default_factory=dict, description="Kwargs for generation."
     )
@@ -27,7 +36,7 @@ class PaLM(CustomLLM):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: Optional[str] = "models/text-bison-001",
+        model_name: Optional[str] = DEFAULT_PALM_MODEL,
         num_output: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         **generate_kwargs: Any,

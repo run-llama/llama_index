@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.indices.postprocessor import SentenceTransformerRerank
 from llama_index.llms.base import LLM
+from llama_index.postprocessor import SentenceTransformerRerank
 
 
 class BaseLLMFinetuneEngine(ABC):

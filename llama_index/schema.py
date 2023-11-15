@@ -3,11 +3,13 @@ import json
 import textwrap
 import uuid
 from abc import abstractmethod
+from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
+from dataclasses_json import DataClassJsonMixin
 from typing_extensions import Self
 
 from llama_index.bridge.pydantic import BaseModel, Field, root_validator
@@ -32,8 +34,17 @@ ImageType = Union[str, BytesIO]
 class BaseComponent(BaseModel):
     """Base component object to capture class names."""
 
+    class Config:
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], model: "BaseComponent") -> None:
+            """Add class name to schema."""
+            schema["properties"]["class_name"] = {
+                "title": "Class Name",
+                "type": "string",
+                "default": model.class_name(),
+            }
+
     @classmethod
-    @abstractmethod
     def class_name(cls) -> str:
         """
         Get the class name, used as a unique ID in serialization.
@@ -41,6 +52,15 @@ class BaseComponent(BaseModel):
         This provides a key that makes serialization robust against actual class
         name changes.
         """
+        return "base_component"
+
+    def json(self, **kwargs: Any) -> str:
+        return self.to_json(**kwargs)
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().dict(**kwargs)
+        data["class_name"] = self.class_name()
+        return data
 
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
@@ -83,6 +103,21 @@ class BaseComponent(BaseModel):
     def from_json(cls, data_str: str, **kwargs: Any) -> Self:  # type: ignore
         data = json.loads(data_str)
         return cls.from_dict(data, **kwargs)
+
+
+class TransformComponent(BaseComponent):
+    """Base class for transform components."""
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @abstractmethod
+    def __call__(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+        """Transform nodes."""
+
+    async def acall(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+        """Async transform nodes."""
+        return self.__call__(nodes, **kwargs)
 
 
 class NodeRelationship(str, Enum):
@@ -658,3 +693,36 @@ class ImageDocument(Document, ImageNode):
     @classmethod
     def class_name(cls) -> str:
         return "ImageDocument"
+
+
+@dataclass
+class QueryBundle(DataClassJsonMixin):
+    """
+    Query bundle.
+
+    This dataclass contains the original query string and associated transformations.
+
+    Args:
+        query_str (str): the original user-specified query string.
+            This is currently used by all non embedding-based queries.
+        embedding_strs (list[str]): list of strings used for embedding the query.
+            This is currently used by all embedding-based queries.
+        embedding (list[float]): the stored embedding for the query.
+    """
+
+    query_str: str
+    custom_embedding_strs: Optional[List[str]] = None
+    embedding: Optional[List[float]] = None
+
+    @property
+    def embedding_strs(self) -> List[str]:
+        """Use custom embedding strs if specified, otherwise use query str."""
+        if self.custom_embedding_strs is None:
+            if len(self.query_str) == 0:
+                return []
+            return [self.query_str]
+        else:
+            return self.custom_embedding_strs
+
+
+QueryType = Union[str, QueryBundle]

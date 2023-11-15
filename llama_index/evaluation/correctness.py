@@ -2,7 +2,6 @@
 from typing import Any, Optional, Sequence, Union
 
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import (
     BasePromptTemplate,
     ChatMessage,
@@ -11,6 +10,7 @@ from llama_index.prompts import (
     PromptTemplate,
 )
 from llama_index.prompts.mixin import PromptDictType
+from llama_index.service_context import ServiceContext
 
 DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.

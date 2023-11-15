@@ -3,13 +3,13 @@
 from typing import Any, List, Sequence
 
 from llama_index.bridge.pydantic import Field
+from llama_index.core import BaseRetriever
 from llama_index.evaluation.retrieval.base import (
     BaseRetrievalEvaluator,
 )
 from llama_index.evaluation.retrieval.metrics_base import (
     BaseRetrievalMetric,
 )
-from llama_index.indices.base_retriever import BaseRetriever
 
 
 class RetrieverEvaluator(BaseRetrievalEvaluator):

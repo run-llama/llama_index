@@ -6,9 +6,8 @@ from typing import List, Optional
 
 import requests
 
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.schema import NodeWithScore, TextNode
+from llama_index.core import BaseRetriever
+from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 
 logger = logging.getLogger(__name__)
 

@@ -3,6 +3,7 @@ from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anyscale import Anyscale
 from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.llms.base import (
+    LLM,
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -47,6 +48,7 @@ __all__ = [
     "ChatMessage",
     "ChatResponse",
     "ChatResponseAsyncGen",
+    "LLM",
     "ChatResponseGen",
     "Clarifai",
     "Cohere",

@@ -3,9 +3,9 @@ try:
 except ImportError:
     MockLLM = None  # type: ignore
 import pytest
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.question_gen.guidance_generator import GuidanceQuestionGenerator
 from llama_index.question_gen.types import SubQuestion
+from llama_index.schema import QueryBundle
 from llama_index.tools.types import ToolMetadata
 
 
