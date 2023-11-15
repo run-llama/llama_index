@@ -4,16 +4,17 @@ from typing import Any, List
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
-    BaseEmbedding,
     Embedding,
 )
+from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.schema import ImageType
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_CLIP_MODEL = "ViT-B/32"
 
 
-class ClipEmbedding(BaseEmbedding):
+class ClipEmbedding(MultiModalEmbedding):
     """CLIP embedding models for text and image.
 
     This class provides an interface to generate embeddings using a model
@@ -82,6 +83,8 @@ class ClipEmbedding(BaseEmbedding):
             logger.error(f"Error while loading clip model.")
             raise ValueError("Unable to fetch the requested embeddings model") from e
 
+    # TEXT EMBEDDINGS
+
     async def _aget_query_embedding(self, query: str) -> Embedding:
         return self._get_query_embedding(query)
 
@@ -107,30 +110,23 @@ class ClipEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> Embedding:
         return self._get_text_embedding(query)
 
-    def _get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
-        results = []
-        for img_file_path in img_file_paths:
-            try:
-                import torch
-                from PIL import Image
-            except ImportError:
-                raise ImportError(
-                    "ClipEmbedding requires `pip install torch` and `pip install pillow`."
-                )
-            with torch.no_grad():
-                image = (
-                    self._preprocess(Image.open(img_file_path))
-                    .unsqueeze(0)
-                    .to(self._device)
-                )
-                results.append(self._model.encode_image(image).tolist()[0])
-        return results
+    # IMAGE EMBEDDINGS
 
-    def get_image_embeddings(self, img_file_paths: List[str]) -> List[Embedding]:
-        return self._get_image_embeddings(img_file_paths)
-
-    def _get_image_embedding(self, img_file_path: str) -> Embedding:
-        return self._get_image_embeddings([img_file_path])[0]
-
-    def get_image_embedding(self, img_file_path: str) -> Embedding:
+    async def _aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
         return self._get_image_embedding(img_file_path)
+
+    def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:
+        try:
+            import torch
+            from PIL import Image
+        except ImportError:
+            raise ImportError(
+                "ClipEmbedding requires `pip install torch` and `pip install pillow`."
+            )
+        with torch.no_grad():
+            image = (
+                self._preprocess(Image.open(img_file_path))
+                .unsqueeze(0)
+                .to(self._device)
+            )
+            return self._model.encode_image(image).tolist()[0]

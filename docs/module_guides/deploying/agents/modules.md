@@ -18,6 +18,19 @@ maxdepth: 1
 /examples/agent/openai_agent_context_retrieval.ipynb
 /examples/query_engine/recursive_retriever_agents.ipynb
 /examples/agent/multi_document_agents.ipynb
+/examples/agent/agent_builder.ipynb
+/examples/agent/openai_agent_parallel_function_calling.ipynb
+```
+
+## [Beta] OpenAI Assistant Agent
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/agent/openai_assistant_agent.ipynb
+/examples/agent/openai_retrieval_benchmark.ipynb
+/examples/agent/openai_assistant_query_cookbook.ipynb
 ```
 
 ## ReAct Agent

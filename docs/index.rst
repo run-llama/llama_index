@@ -93,6 +93,7 @@ Associated projects
    use_cases/chatbots.md
    use_cases/agents.md
    use_cases/extraction.md
+   use_cases/multimodal.md
 
 .. toctree::
    :maxdepth: 2
@@ -120,6 +121,7 @@ Associated projects
    optimizing/evaluation/evaluation.md
    optimizing/fine-tuning/fine-tuning.md
    optimizing/production_rag.md
+   optimizing/building_rag_from_scratch.md
 .. toctree::
    :maxdepth: 2
    :caption: Module Guides

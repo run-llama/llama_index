@@ -1,5 +1,95 @@
 # ChangeLog
 
+## [0.8.69.post1] - 2023-11-13
+
+### Bug Fixes / Nits
+
+- Increase max weaivate delete size to max of 10,000 (#8887)
+- Final pickling remnant fix (#8902)
+
+## [0.8.69] - 2023-11-13
+
+### Bug Fixes / Nits
+
+- Fixed bug in loading pickled objects (#8880)
+- Fix `custom_path` vs `custom_dir` in `download_loader` (#8865)
+
+## [0.8.68] - 2023-11-11
+
+### New Features
+
+- openai assistant agent + advanced retrieval cookbook (#8863)
+- add retrieval API benchmark (#8850)
+- Add JinaEmbedding class (#8704)
+
+### Bug Fixes / Nits
+
+- Improved default timeouts/retries for OpenAI (#8819)
+- Add back key validation for OpenAI (#8819)
+- Disable automatic LLM/Embedding model downloads, give informative error (#8819)
+- fix openai assistant tool creation + retrieval notebook (#8862)
+- Quick fix Replicate MultiModal example (#8861)
+- fix: paths treated as hidden (#8860)
+- fix Replicate multi-modal LLM + notebook (#8854)
+- Feature/citation metadata (#8722)
+- Fix ImageNode type from NodeWithScore for SimpleMultiModalQueryEngine (#8844)
+
+## [0.8.67] - 2023-11-10
+
+### New Features
+
+- Advanced Multi Modal Retrieval Example and docs (#8822, #8823)
+
+### Bug Fixes / Nits
+
+- Fix retriever node postprocessors for `CitationQueryEngine` (#8818)
+- Fix `cannot pickle 'builtins.CoreBPE' object` in most scenarios (#8835)
+
+## [0.8.66] - 2023-11-09
+
+### New Features
+
+- Support parallel function calling with new OpenAI client in `OpenAIPydanticProgram` (#8793)
+
+### Bug Fixes / Nits
+
+- Fix bug in pydantic programs with new OpenAI client (#8793)
+- Fixed bug with un-listable fsspec objects (#8795)
+
+## [0.8.65] - 2023-11-08
+
+### New Features
+
+- `OpenAIAgent` parallel function calling (#8738)
+
+### New Features
+
+- Properly supporting Hugging Face recommended model (#8784)
+
+### Bug Fixes / Nits
+
+- Fixed missing import for `embeddings.__all__` (#8779)
+
+### Breaking Changes / Deprecations
+
+- Use `tool_choice` over `function_call` and `tool` over `functions` in `OpenAI(LLM)` (#8738)
+- Deprecate `to_openai_function` in favor of `to_openai_tool` (#8738)
+
+## [0.8.64] - 2023-11-06
+
+### New Features
+
+- `OpenAIAgent` parallel function calling (#8738)
+- Add AI assistant agent (#8735)
+- OpenAI GPT4v Abstraction (#8719)
+- Add support for `Lantern` VectorStore (#8714)
+
+### Bug Fixes / Nits
+
+- Fix returning zero nodes in elastic search vector store (#8746)
+- Add try/except for `SimpleDirectoryReader` loop to avoid crashing on a single document (#8744)
+- Fix for `deployment_name` in async embeddings (#8748)
+
 ## [0.8.63] - 2023-11-05
 
 ### New Features

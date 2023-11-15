@@ -59,7 +59,8 @@ class AzureOpenAI(OpenAI):
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
-        max_retries: int = 10,
+        max_retries: int = 3,
+        timeout: float = 60.0,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
         # azure specific
@@ -94,6 +95,7 @@ class AzureOpenAI(OpenAI):
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
+            timeout=timeout,
             api_key=api_key,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,

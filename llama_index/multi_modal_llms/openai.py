@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -34,6 +34,9 @@ class OpenAIMultiModal(MultiModalLLM):
     )
     prompt_key: str = Field(description="The key to use for the prompt in API calls.")
     image_key: str = Field(description="The key to use for the image in API calls.")
+    image_detail: str = Field(
+        description="The level of details for image in API calls."
+    )
 
     max_retries: int = Field(
         default=10, description="Maximum number of retries.", gte=0
@@ -60,6 +63,7 @@ class OpenAIMultiModal(MultiModalLLM):
         prompt_key: str = "text",
         image_key: str = "image_url",
         max_retries: int = 10,
+        image_detail: str = "low",
         api_key: Optional[str] = None,
         api_base: Optional[str] = "https://api.openai.com/v1",
         messages_to_prompt: Optional[Callable] = None,
@@ -69,8 +73,6 @@ class OpenAIMultiModal(MultiModalLLM):
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
-        # self._client = SyncOpenAI(**self._get_credential_kwargs(**kwargs))
-        # self._aclient = AsyncOpenAI(**self._get_credential_kwargs(**kwargs))
         api_key = api_key
         api_base = api_base
 
@@ -83,6 +85,7 @@ class OpenAIMultiModal(MultiModalLLM):
             context_window=context_window,
             prompt_key=prompt_key,
             image_key=image_key,
+            image_detail=image_detail,
             max_retries=max_retries,
             api_key=api_key,
             api_base=api_base,
@@ -90,7 +93,7 @@ class OpenAIMultiModal(MultiModalLLM):
         )
         self._client, self._aclient = self._get_clients(**kwargs)
 
-    def _get_clients(self, **kwargs: Any) -> tuple[SyncOpenAI, AsyncOpenAI]:
+    def _get_clients(self, **kwargs: Any) -> Tuple[SyncOpenAI, AsyncOpenAI]:
         client = SyncOpenAI(**self._get_credential_kwargs())
         aclient = AsyncOpenAI(**self._get_credential_kwargs())
         return client, aclient
@@ -122,6 +125,7 @@ class OpenAIMultiModal(MultiModalLLM):
         return to_openai_multi_modal_payload(
             prompt=prompt,
             image_documents=image_documents,
+            image_detail=self.image_detail,
         )
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:

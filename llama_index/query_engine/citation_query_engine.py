@@ -16,7 +16,7 @@ from llama_index.response_synthesizers import (
     ResponseMode,
     get_response_synthesizer,
 )
-from llama_index.schema import NodeWithScore, TextNode
+from llama_index.schema import MetadataMode, NodeWithScore, TextNode
 from llama_index.text_splitter import get_default_text_splitter
 from llama_index.text_splitter.types import TextSplitter
 
@@ -90,6 +90,8 @@ class CitationQueryEngine(BaseQueryEngine):
             A text splitter for creating citation source nodes. Default is
             a SentenceSplitter.
         callback_manager (Optional[CallbackManager]): A callback manager.
+        metadata_mode (MetadataMode): A MetadataMode object that controls how
+            metadata is included in the citation prompt.
     """
 
     def __init__(
@@ -101,6 +103,7 @@ class CitationQueryEngine(BaseQueryEngine):
         text_splitter: Optional[TextSplitter] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        metadata_mode: MetadataMode = MetadataMode.NONE,
     ) -> None:
         self.text_splitter = text_splitter or get_default_text_splitter(
             chunk_size=citation_chunk_size, chunk_overlap=citation_chunk_overlap
@@ -111,6 +114,7 @@ class CitationQueryEngine(BaseQueryEngine):
             callback_manager=callback_manager,
         )
         self._node_postprocessors = node_postprocessors or []
+        self._metadata_mode = metadata_mode
 
         callback_manager = callback_manager or CallbackManager()
         for node_postprocessor in self._node_postprocessors:
@@ -135,6 +139,7 @@ class CitationQueryEngine(BaseQueryEngine):
         use_async: bool = False,
         streaming: bool = False,
         # class-specific args
+        metadata_mode: MetadataMode = MetadataMode.NONE,
         **kwargs: Any,
     ) -> "CitationQueryEngine":
         """Initialize a CitationQueryEngine object.".
@@ -182,6 +187,7 @@ class CitationQueryEngine(BaseQueryEngine):
             citation_chunk_overlap=citation_chunk_overlap,
             text_splitter=text_splitter,
             node_postprocessors=node_postprocessors,
+            metadata_mode=metadata_mode,
         )
 
     def _get_prompt_modules(self) -> PromptMixinType:
@@ -192,7 +198,9 @@ class CitationQueryEngine(BaseQueryEngine):
         """Modify retrieved nodes to be granular sources."""
         new_nodes: List[NodeWithScore] = []
         for node in nodes:
-            text_chunks = self.text_splitter.split_text(node.node.get_content())
+            text_chunks = self.text_splitter.split_text(
+                node.node.get_content(metadata_mode=self._metadata_mode)
+            )
 
             for text_chunk in text_chunks:
                 text = f"Source {len(new_nodes)+1}:\n{text_chunk}\n"
@@ -208,7 +216,15 @@ class CitationQueryEngine(BaseQueryEngine):
         nodes = self._retriever.retrieve(query_bundle)
 
         for postprocessor in self._node_postprocessors:
-            nodes = postprocessor.postprocess_nodes(nodes)
+            nodes = postprocessor.postprocess_nodes(nodes, query_bundle=query_bundle)
+
+        return nodes
+
+    async def aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        nodes = await self._retriever.aretrieve(query_bundle)
+
+        for postprocessor in self._node_postprocessors:
+            nodes = postprocessor.postprocess_nodes(nodes, query_bundle=query_bundle)
 
         return nodes
 
@@ -275,7 +291,7 @@ class CitationQueryEngine(BaseQueryEngine):
                 CBEventType.RETRIEVE,
                 payload={EventPayload.QUERY_STR: query_bundle.query_str},
             ) as retrieve_event:
-                nodes = self.retrieve(query_bundle)
+                nodes = await self.aretrieve(query_bundle)
                 nodes = self._create_citation_nodes(nodes)
 
                 retrieve_event.on_end(payload={EventPayload.NODES: nodes})
