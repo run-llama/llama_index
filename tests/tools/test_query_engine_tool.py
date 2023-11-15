@@ -1,15 +1,9 @@
 """Test tools."""
-from typing import Any, Coroutine, cast
-import pytest
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.mixin import PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE, PydanticResponse, Response, StreamingResponse
-from llama_index.tools.function_tool import FunctionTool
-from llama_index.tools.query_engine import QueryEngineTool
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.query_engine.custom import CustomQueryEngine
+from typing import cast
 
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.query_engine.custom import CustomQueryEngine
+from llama_index.tools.query_engine import QueryEngineTool
 
 
 class MockQueryEngine(CustomQueryEngine):
@@ -23,10 +17,8 @@ class MockQueryEngine(CustomQueryEngine):
 def test_query_engine_tool() -> None:
     """Test query engine tool."""
     query_engine = MockQueryEngine()
-    
-    query_tool = QueryEngineTool.from_defaults(
-        query_engine
-    )
+
+    query_tool = QueryEngineTool.from_defaults(query_engine)
 
     # make sure both input formats work given function schema that assumes defaults
     response = query_tool("hello world")

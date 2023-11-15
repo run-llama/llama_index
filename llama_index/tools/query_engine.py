@@ -56,7 +56,9 @@ class QueryEngineTool(AsyncBaseTool):
             # NOTE: this assumes our default function schema of `input`
             query_str = kwargs["input"]
         else:
-            raise ValueError("Cannot call query engine without specifying `input` parameter.")
+            raise ValueError(
+                "Cannot call query engine without specifying `input` parameter."
+            )
 
         response = self._query_engine.query(query_str)
         return ToolOutput(
