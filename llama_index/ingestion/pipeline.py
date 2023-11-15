@@ -43,7 +43,6 @@ from llama_index.vector_stores.types import BasePydanticVectorStore
 DEFAULT_PIPELINE_NAME = "pipeline"
 DEFAULT_PROJECT_NAME = "project"
 DEFAULT_BASE_URL = "http://localhost:8000"
-DEFAULT_API_KEY = None
 
 
 def deserialize_transformation_component(
@@ -224,9 +223,7 @@ class IngestionPipeline(BaseModel):
         platform_base_url = platform_base_url or os.environ.get(
             "PLATFORM_BASE_URL", DEFAULT_BASE_URL
         )
-        platform_api_key = platform_api_key or os.environ.get(
-            "PLATFORM_API_KEY", DEFAULT_API_KEY
-        )
+        platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
 
         super().__init__(
             name=name,
