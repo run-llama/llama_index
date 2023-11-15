@@ -1,70 +1,49 @@
-"""Base vector store index query."""
+from abc import abstractmethod
+from typing import List
 
-from typing import Any, Dict, List, Optional
-
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.query.schema import QueryBundle, QueryType
+from llama_index.prompts.mixin import PromptMixin
 from llama_index.schema import NodeWithScore
-from llama_index.vector_stores.types import (
-    MetadataFilters,
-)
 
 
-class BaseImageRetriever(BaseRetriever):
-    """Base Image retriever Abastraction.
+class BaseImageRetriever(PromptMixin):
+    """Base Image Retriever Abstraction."""
 
-    Args:
-        BaseImageRetriever
-        similarity_top_k (int): number of top k results to return.
-        filters (Optional[MetadataFilters]): metadata filters, defaults to None
-    """
+    def image_retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
+        """Retrieve image nodes given query or image input.
 
-    def __init__(
-        self,
-        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
-        filters: Optional[MetadataFilters] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize params."""
-        self.similarity_top_k = similarity_top_k
-        self._filters = filters
-        self._kwargs: Dict[str, Any] = kwargs
+        Args:
+            str_or_query_bundle (QueryType): Either a query string or
+                a QueryBundle object.
 
-    @property
-    def similarity_top_k(self) -> int:
-        """Return similarity top k."""
-        return self.similarity_top_k
+        """
+        if isinstance(str_or_query_bundle, str):
+            str_or_query_bundle = QueryBundle(str_or_query_bundle)
+        return self._image_retrieve(str_or_query_bundle)
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "BaseImageRetriever"
-
-    def _retrieve(
-        self,
-        query_bundle: QueryBundle,
-    ) -> List[NodeWithScore]:
-        return self._image_retrieve(query_bundle)
-
+    @abstractmethod
     def _image_retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        """Retrieve image nodes or documents given query.
+        """Retrieve image nodes or documents given query or image.
 
         Implemented by the user.
 
         """
 
     # Async Methods
-    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        return await self._aimage_retrieve(query_bundle)
+    async def aimage_retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        if isinstance(str_or_query_bundle, str):
+            str_or_query_bundle = QueryBundle(str_or_query_bundle)
+        return await self._aimage_retrieve(str_or_query_bundle)
 
+    @abstractmethod
     async def _aimage_retrieve(
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        """Async retrieve image nodes or documents given query.
+        """Async retrieve image nodes or documents given query or image.
 
         Implemented by the user.
 
