@@ -7,9 +7,9 @@ from typing import Dict, List, Optional, Tuple
 from tqdm import tqdm
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import LLM
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.schema import MetadataMode, TextNode
+
 
 class EmbeddingQAFinetuneDataset(BaseModel):
     """Embedding QA Finetuning Dataset.
@@ -67,7 +67,7 @@ context information provided."
 # generate queries as a convenience function
 def generate_qa_embedding_pairs(
     nodes: List[TextNode],
-    llm: Optional[LLM] = None,
+    llm: Optional[LLMType] = "default",
     qa_generate_prompt_tmpl: str = DEFAULT_QA_GENERATE_PROMPT_TMPL,
     num_questions_per_chunk: int = 2,
 ) -> EmbeddingQAFinetuneDataset:
@@ -77,16 +77,7 @@ def generate_qa_embedding_pairs(
         for node in nodes
     }
 
-    # if we don't pass in default llm then error is not raised
-    #llm = llm or OpenAI(model="gpt-3.5-turbo")
-    if llm == None:
-        raise ValueError(
-            "\n******\n"
-                "llm must be passed!" 
-            "\n******\n"
-            )
-    else:
-        llm = llm
+    llm = resolve_llm(llm)
 
     queries = {}
     relevant_docs = {}
