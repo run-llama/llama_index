@@ -52,12 +52,12 @@ In this example, you load your documents, then create a SimpleNodeParser configu
 
 ```python
 from llama_index import SimpleDirectoryReader, VectorStoreIndex, ServiceContext
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.text_splitter import SentenceSplitter
 
 documents = SimpleDirectoryReader("./data").load_data()
 
-node_parser = SimpleNodeParser.from_defaults(chunk_size=512, chunk_overlap=10)
-service_context = ServiceContext.from_defaults(node_parser=node_parser)
+text_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=10)
+service_context = ServiceContext.from_defaults(text_splitter=text_splitter)
 
 index = VectorStoreIndex.from_documents(
     documents, service_context=service_context
@@ -82,6 +82,28 @@ node2 = TextNode(text="<text_chunk>", id_="<node_id>")
 
 index = VectorStoreIndex([node1, node2])
 ```
+
+## Creating Nodes from Documents directly
+
+Using an `IngestionPipeline`, you can have more control over how nodes are created.
+
+```python
+from llama_index import Document
+from llama_index.text_splitter import SentenceSplitter
+from llama_index.ingestion import IngestionPipeline
+
+# create the pipeline with transformations
+pipeline = IngestionPipeline(
+    transformations=[
+        SentenceSplitter(chunk_size=25, chunk_overlap=0),
+    ]
+)
+
+# run the pipeline
+nodes = pipeline.run(documents=[Document.example()])
+```
+
+You can learn more about the [`IngestionPipeline` here.](/module_guides/loading/ingestion_pipeline/root.md)
 
 ## Customizing Documents
 

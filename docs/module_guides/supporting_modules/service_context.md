@@ -74,11 +74,11 @@ from llama_index import (
     PromptHelper,
 )
 from llama_index.llms import OpenAI
-from llama_index.node_parser import SentenceSplitter
+from llama_index.text_splitter import SentenceSplitter
 
 llm = OpenAI(model="text-davinci-003", temperature=0, max_tokens=256)
 embed_model = OpenAIEmbedding()
-node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
+text_splitter = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
 prompt_helper = PromptHelper(
     context_window=4096,
     num_output=256,
@@ -89,7 +89,7 @@ prompt_helper = PromptHelper(
 service_context = ServiceContext.from_defaults(
     llm=llm,
     embed_model=embed_model,
-    node_parser=node_parser,
+    text_splitter=text_splitter,
     prompt_helper=prompt_helper,
 )
 ```

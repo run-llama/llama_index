@@ -13,7 +13,7 @@ from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.llms.base import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.logger import LlamaLogger
-from llama_index.node_parser.interface import NodeParser
+from llama_index.node_parser.interface import NodeParser, TextSplitter
 from llama_index.node_parser.text.sentence import (
     DEFAULT_CHUNK_SIZE,
     SENTENCE_CHUNK_OVERLAP,
@@ -90,6 +90,7 @@ class ServiceContext:
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[EmbedType] = "default",
         node_parser: Optional[NodeParser] = None,
+        text_splitter: Optional[TextSplitter] = None,
         transformations: Optional[List[TransformComponent]] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -144,6 +145,7 @@ class ServiceContext:
                 prompt_helper=prompt_helper,
                 embed_model=embed_model,
                 node_parser=node_parser,
+                text_splitter=text_splitter,
                 llama_logger=llama_logger,
                 callback_manager=callback_manager,
                 chunk_size=chunk_size,
@@ -177,10 +179,17 @@ class ServiceContext:
             num_output=num_output,
         )
 
-        node_parser = node_parser or _get_default_node_parser(
-            chunk_size=chunk_size or DEFAULT_CHUNK_SIZE,
-            chunk_overlap=chunk_overlap or SENTENCE_CHUNK_OVERLAP,
-            callback_manager=callback_manager,
+        if text_splitter is not None and node_parser is not None:
+            raise ValueError("Cannot specify both text_splitter and node_parser")
+
+        node_parser = (
+            text_splitter  # text splitter extends node parser
+            or node_parser
+            or _get_default_node_parser(
+                chunk_size=chunk_size or DEFAULT_CHUNK_SIZE,
+                chunk_overlap=chunk_overlap or SENTENCE_CHUNK_OVERLAP,
+                callback_manager=callback_manager,
+            )
         )
 
         transformations = transformations or [node_parser]
@@ -205,6 +214,7 @@ class ServiceContext:
         prompt_helper: Optional[PromptHelper] = None,
         embed_model: Optional[EmbedType] = "default",
         node_parser: Optional[NodeParser] = None,
+        text_splitter: Optional[TextSplitter] = None,
         transformations: Optional[List[TransformComponent]] = None,
         llama_logger: Optional[LlamaLogger] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -264,11 +274,18 @@ class ServiceContext:
                 node_parser_found = True
                 break
 
+        if text_splitter is not None and node_parser is not None:
+            raise ValueError("Cannot specify both text_splitter and node_parser")
+
         if not node_parser_found:
-            node_parser = node_parser or _get_default_node_parser(
-                chunk_size=chunk_size or DEFAULT_CHUNK_SIZE,
-                chunk_overlap=chunk_overlap or SENTENCE_CHUNK_OVERLAP,
-                callback_manager=callback_manager,
+            node_parser = (
+                text_splitter  # text splitter extends node parser
+                or node_parser
+                or _get_default_node_parser(
+                    chunk_size=chunk_size or DEFAULT_CHUNK_SIZE,
+                    chunk_overlap=chunk_overlap or SENTENCE_CHUNK_OVERLAP,
+                    callback_manager=callback_manager,
+                )
             )
             transformations = [node_parser, *transformations]
 

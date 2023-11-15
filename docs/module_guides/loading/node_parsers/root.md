@@ -41,12 +41,12 @@ Or set inside a `ServiceContext` to be used automatically when an index is const
 
 ```python
 from llama_index import SimpleDirectoryReader, VectorStoreIndex, ServiceContext
-from llama_index.node_parser import SentenceSplitter
+from llama_index.text_splitter import SentenceSplitter
 
 documents = SimpleDirectoryReader("./data").load_data()
 
-node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
-service_context = ServiceContext.from_defaults(node_parser=node_parser)
+text_splitter = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
+service_context = ServiceContext.from_defaults(text_splitter=text_splitter)
 
 index = VectorStoreIndex.from_documents(
     documents, service_context=service_context
