@@ -6,8 +6,10 @@ from typing import Any, Dict, List, Optional
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
+from llama_index.indices.multi_modal.base_multi_modal_retriever import (
+    MultiModalRetriever,
+)
 from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
 from llama_index.schema import NodeWithScore
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -16,7 +18,7 @@ from llama_index.vector_stores.types import (
 )
 
 
-class MultiModalVectorIndexRetriever(VectorIndexRetriever):
+class MultiModalVectorIndexRetriever(MultiModalRetriever):
     """Multi Modal Vector index retriever.
 
     Args:
@@ -97,9 +99,10 @@ class MultiModalVectorIndexRetriever(VectorIndexRetriever):
     def _retrieve(
         self,
         query_bundle: QueryBundle,
+        is_image_input: bool,
     ) -> List[NodeWithScore]:
         res = self._text_retrieve(query_bundle)
-        res.extend(self._image_retrieve(query_bundle))
+        res.extend(self._image_retrieve(query_bundle, is_image_input))
         return res
 
     def _text_retrieve(
@@ -111,6 +114,7 @@ class MultiModalVectorIndexRetriever(VectorIndexRetriever):
     def _image_retrieve(
         self,
         query_bundle: QueryBundle,
+        is_image_input: bool,
     ) -> List[NodeWithScore]:
         if self._image_vector_store.is_embedding_query:
             # change the embedding for query bundle to Multi Modal Text encoder
@@ -131,12 +135,14 @@ class MultiModalVectorIndexRetriever(VectorIndexRetriever):
 
     # Async Methods
 
-    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+    async def _aretrieve(
+        self, query_bundle: QueryBundle, is_image_input: bool
+    ) -> List[NodeWithScore]:
         # Run the two retrievals in async, and return their results as a concatenated list
         results: List[NodeWithScore] = []
         tasks = [
             self._atext_retrieve(query_bundle),
-            self._aimage_retrieve(query_bundle),
+            self._aimage_retrieve(query_bundle, is_image_input),
         ]
 
         task_results = await asyncio.gather(*tasks)
@@ -154,6 +160,7 @@ class MultiModalVectorIndexRetriever(VectorIndexRetriever):
     async def _aimage_retrieve(
         self,
         query_bundle: QueryBundle,
+        is_image_input,
     ) -> List[NodeWithScore]:
         if self._image_vector_store.is_embedding_query:
             # change the embedding for query bundle to Multi Modal Text encoder
