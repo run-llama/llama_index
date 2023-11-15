@@ -1,8 +1,8 @@
 from typing import List, Optional
 
+from llama_index.node_parser.text import TokenTextSplitter
+from llama_index.node_parser.text.utils import truncate_text
 from llama_index.schema import BaseNode
-from llama_index.text_splitter import TokenTextSplitter
-from llama_index.text_splitter.utils import truncate_text
 
 
 def get_numbered_text_from_nodes(

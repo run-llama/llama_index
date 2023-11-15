@@ -5,7 +5,7 @@ from llama_index.finetuning.cross_encoders.dataset_gen import (
     CrossEncoderFinetuningDatasetSample,
 )
 from llama_index.finetuning.types import BaseCrossEncoderFinetuningEngine
-from llama_index.indices.postprocessor import SentenceTransformerRerank
+from llama_index.postprocessor import SentenceTransformerRerank
 
 
 class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):

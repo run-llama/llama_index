@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Tuple
 
+import httpx
 from openai import AsyncAzureOpenAI
 from openai import AzureOpenAI as SyncAzureOpenAI
 
@@ -59,7 +60,8 @@ class AzureOpenAI(OpenAI):
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
-        max_retries: int = 10,
+        max_retries: int = 3,
+        timeout: float = 60.0,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
         # azure specific
@@ -71,6 +73,8 @@ class AzureOpenAI(OpenAI):
         deployment_name: Optional[str] = None,
         deployment_id: Optional[str] = None,
         deployment: Optional[str] = None,
+        # custom httpx client
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
         engine = resolve_from_aliases(
@@ -87,6 +91,10 @@ class AzureOpenAI(OpenAI):
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
         )
 
+        # Use the custom httpx client if provided.
+        # Otherwise the value will be None.
+        self._http_client = http_client
+
         super().__init__(
             engine=engine,
             model=model,
@@ -94,6 +102,7 @@ class AzureOpenAI(OpenAI):
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
+            timeout=timeout,
             api_key=api_key,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
@@ -138,6 +147,7 @@ class AzureOpenAI(OpenAI):
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,
+            "http_client": self._http_client,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:

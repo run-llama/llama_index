@@ -3,7 +3,11 @@ from typing import Any, Callable, Dict, Iterator, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+    DEFAULT_TEMPERATURE,
+)
 from llama_index.llms.base import (
     ChatMessage,
     ChatResponse,
@@ -27,11 +31,20 @@ from llama_index.llms.generic_utils import (
 class Ollama(CustomLLM):
     base_url: str = Field(description="Base url the model is hosted under.")
     model: str = Field(description="The Ollama model to use.")
-    temperature: float = Field(description="The temperature to use for sampling.")
-    context_window: int = Field(
-        description="The maximum number of context tokens for the model."
+    temperature: float = Field(
+        default=DEFAULT_TEMPERATURE,
+        description="The temperature to use for sampling.",
+        gte=0.0,
+        lte=1.0,
     )
-    prompt_key: str = Field(description="The key to use for the prompt in API calls.")
+    context_window: int = Field(
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The maximum number of context tokens for the model.",
+        gt=0,
+    )
+    prompt_key: str = Field(
+        default="prompt", description="The key to use for the prompt in API calls."
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Ollama API."
     )

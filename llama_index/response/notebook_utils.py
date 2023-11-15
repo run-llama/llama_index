@@ -1,7 +1,10 @@
 """Utils for jupyter notebook."""
+import os
 from typing import Any, Dict, Tuple
 
+import matplotlib.pyplot as plt
 from IPython.display import Markdown, display
+from PIL import Image
 
 from llama_index.img_utils import b64_2_img
 from llama_index.response.schema import Response
@@ -9,6 +12,8 @@ from llama_index.schema import ImageNode, MetadataMode, NodeWithScore
 from llama_index.utils import truncate_text
 
 DEFAULT_THUMBNAIL_SIZE = (512, 512)
+DEFAULT_IMAGE_MATRIX = (3, 3)
+DEFAULT_SHOW_TOP_K = 3
 
 
 def display_image(img_str: str, size: Tuple[int, int] = DEFAULT_THUMBNAIL_SIZE) -> None:
@@ -16,6 +21,28 @@ def display_image(img_str: str, size: Tuple[int, int] = DEFAULT_THUMBNAIL_SIZE) 
     img = b64_2_img(img_str)
     img.thumbnail(size)
     display(img)
+
+
+def display_image_uris(
+    image_paths: list[str],
+    image_matrix: Tuple[int, int] = DEFAULT_IMAGE_MATRIX,
+    top_k: int = DEFAULT_SHOW_TOP_K,
+) -> None:
+    """Display base64 encoded image str as image for jupyter notebook."""
+    images_shown = 0
+    plt.figure(figsize=(16, 9))
+    for img_path in image_paths[:top_k]:
+        if os.path.isfile(img_path):
+            image = Image.open(img_path)
+
+            plt.subplot(image_matrix[0], image_matrix[1], images_shown + 1)
+            plt.imshow(image)
+            plt.xticks([])
+            plt.yticks([])
+
+            images_shown += 1
+            if images_shown >= image_matrix[0] * image_matrix[1]:
+                break
 
 
 def display_source_node(

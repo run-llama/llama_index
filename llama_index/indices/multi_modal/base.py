@@ -6,12 +6,10 @@ An index that that is built on top of multiple vector stores for different modal
 import logging
 from typing import Any, List, Optional, Sequence, cast
 
+from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, MultiModelIndexDict
 from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     async_embed_image_nodes,
     async_embed_nodes,
@@ -20,6 +18,7 @@ from llama_index.indices.utils import (
 )
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.schema import BaseNode, ImageNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import DEFAULT_VECTOR_STORE, SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore

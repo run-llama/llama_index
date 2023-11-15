@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Dict, Sequence
 
 from llama_index.llms.base import ChatMessage, MessageRole
 
@@ -6,7 +6,7 @@ HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
 
 
-CLAUDE_MODELS = {
+CLAUDE_MODELS: Dict[str, int] = {
     "claude-instant-1": 100000,
     "claude-instant-1.2": 100000,
     "claude-2": 100000,

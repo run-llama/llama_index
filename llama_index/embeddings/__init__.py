@@ -5,7 +5,7 @@ from llama_index.embeddings.adapter import (
     LinearAdapterEmbeddingModel,
 )
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
-from llama_index.embeddings.base import SimilarityMode
+from llama_index.embeddings.base import BaseEmbedding, SimilarityMode
 from llama_index.embeddings.bedrock import BedrockEmbedding
 from llama_index.embeddings.clarifai import ClarifaiEmbedding
 from llama_index.embeddings.clip import ClipEmbedding
@@ -39,6 +39,7 @@ __all__ = [
     "ClarifaiEmbedding",
     "ClipEmbedding",
     "CohereEmbedding",
+    "BaseEmbedding",
     "DEFAULT_HUGGINGFACE_EMBEDDING_MODEL",
     "ElasticsearchEmbedding",
     "GoogleUnivSentEncoderEmbedding",
