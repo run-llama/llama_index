@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple
 import pandas as pd
 from pandas.io.formats.style import Styler
 
+from llama_index.evaluation import EvaluationResult
 from llama_index.evaluation.retrieval.base import RetrievalEvalResult
 
 DEFAULT_METRIC_KEYS = ["hit_rate", "mrr"]
@@ -36,7 +37,7 @@ def get_retrieval_results_df(
 
 
 def get_eval_results_df(
-    names, results_arr, metric=Optional[str]
+    names: List[str], results_arr: List[EvaluationResult], metric=Optional[str]
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Organizes EvaluationResults into a deep dataframe and computes the mean
     score.
