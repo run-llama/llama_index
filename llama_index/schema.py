@@ -63,10 +63,22 @@ class BaseComponent(BaseModel):
         return data
 
     def __getstate__(self) -> Dict[str, Any]:
-        state = self.dict()
-        # Remove common unpicklable entries
-        state.pop("tokenizer", None)
-        state.pop("tokenizer_fn", None)
+        state = super().__getstate__()
+
+        # tiktoken is not pickleable
+        state["__dict__"].pop("tokenizer", None)
+
+        # remove local functions
+        keys_to_remove = []
+        for key in state["__dict__"]:
+            if key.endswith("_fn"):
+                keys_to_remove.append(key)
+        for key in keys_to_remove:
+            state["__dict__"].pop(key, None)
+
+        # remove private attributes
+        state["__private_attribute_values__"] = {}
+
         return state
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:

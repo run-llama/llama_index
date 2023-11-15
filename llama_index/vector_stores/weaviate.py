@@ -212,6 +212,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             self._client.query.get(self.index_name)
             .with_additional(["id"])
             .with_where(where_filter)
+            .with_limit(10000)  # 10,000 is the max weaviate can fetch
         )
 
         query_result = query.do()

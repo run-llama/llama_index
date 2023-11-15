@@ -8,12 +8,12 @@ from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.clip import ClipEmbedding
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.huggingface_utils import (
-    DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
     INSTRUCTOR_MODELS,
 )
 from llama_index.embeddings.instructor import InstructorEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.llms.openai_utils import validate_openai_api_key
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 from llama_index.utils import get_cache_dir
 
@@ -45,15 +45,18 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
     if embed_model == "default":
         try:
             embed_model = OpenAIEmbedding()
+            validate_openai_api_key(embed_model.api_key)
         except ValueError as e:
-            embed_model = "local"
-            print(
-                "******\n"
-                "Could not load OpenAIEmbedding. Using HuggingFaceBgeEmbeddings "
-                f"with model_name={DEFAULT_HUGGINGFACE_EMBEDDING_MODEL}. "
+            raise ValueError(
+                "\n******\n"
+                "Could not load OpenAI embedding model. "
                 "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
                 "Original error:\n"
                 f"{e!s}"
+                "\nConsider using embed_model='local'.\n"
+                "Visit our documentation for more embedding options: "
+                "https://docs.llamaindex.ai/en/stable/module_guides/models/"
+                "embeddings.html#modules"
                 "\n******"
             )
 
