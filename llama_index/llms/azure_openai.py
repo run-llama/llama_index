@@ -92,8 +92,8 @@ class AzureOpenAI(OpenAI):
         )
 
         # Use the custom httpx client if provided.
-        # Otherwise a default one will be created.
-        self._http_client = http_client or httpx.Client()
+        # Otherwise the value will be None.
+        self._http_client = http_client
 
         super().__init__(
             engine=engine,
