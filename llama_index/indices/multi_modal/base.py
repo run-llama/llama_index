@@ -6,12 +6,10 @@ An index that that is built on top of multiple vector stores for different modal
 import logging
 from typing import Any, List, Optional, Sequence, cast
 
+from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, MultiModelIndexDict
 from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import (
     async_embed_image_nodes,
     async_embed_nodes,
@@ -20,6 +18,7 @@ from llama_index.indices.utils import (
 )
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.schema import BaseNode, ImageNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import DEFAULT_VECTOR_STORE, SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
@@ -144,6 +143,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
         is_image: bool = False,
+        is_image_to_text: bool = False,
     ) -> List[BaseNode]:
         """Get tuples of id, node, and embedding.
 
@@ -151,12 +151,25 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         Embeddings are called in batches.
 
         """
+        id_to_text_embed_map = None
+
         if is_image:
             id_to_embed_map = embed_image_nodes(
                 nodes,
                 embed_model=self._image_embed_model,
                 show_progress=show_progress,
             )
+
+            # text field is populate, so embed them
+            if is_image_to_text:
+                id_to_text_embed_map = embed_nodes(
+                    nodes,
+                    embed_model=self._service_context.embed_model,
+                    show_progress=show_progress,
+                )
+                # TODO: refactor this change of image embed model to same as text
+                self._image_embed_model = self._service_context.embed_model
+
         else:
             id_to_embed_map = embed_nodes(
                 nodes,
@@ -169,6 +182,12 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             embedding = id_to_embed_map[node.node_id]
             result = node.copy()
             result.embedding = embedding
+            if is_image and id_to_text_embed_map:
+                text_embedding = id_to_text_embed_map[node.node_id]
+                result.text_embedding = text_embedding
+                result.embedding = (
+                    text_embedding  # TODO: re-factor to make use of both embeddings
+                )
             results.append(result)
         return results
 
@@ -177,6 +196,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
         is_image: bool = False,
+        is_image_to_text: bool = False,
     ) -> List[BaseNode]:
         """Asynchronously get tuples of id, node, and embedding.
 
@@ -184,12 +204,24 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         Embeddings are called in batches.
 
         """
+        id_to_text_embed_map = None
+
         if is_image:
             id_to_embed_map = await async_embed_image_nodes(
                 nodes,
                 embed_model=self._image_embed_model,
                 show_progress=show_progress,
             )
+
+            if is_image_to_text:
+                id_to_text_embed_map = await async_embed_nodes(
+                    nodes,
+                    embed_model=self._service_context.embed_model,
+                    show_progress=show_progress,
+                )
+                # TODO: refactor this change of image embed model to same as text
+                self._image_embed_model = self._service_context.embed_model
+
         else:
             id_to_embed_map = await async_embed_nodes(
                 nodes,
@@ -202,6 +234,12 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             embedding = id_to_embed_map[node.node_id]
             result = node.copy()
             result.embedding = embedding
+            if is_image and id_to_text_embed_map:
+                text_embedding = id_to_text_embed_map[node.node_id]
+                result.text_embedding = text_embedding
+                result.embedding = (
+                    text_embedding  # TODO: re-factor to make use of both embeddings
+                )
             results.append(result)
         return results
 
@@ -234,8 +272,9 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         ].async_add(text_nodes, **insert_kwargs)
 
         # embed image nodes as images directly
+        is_image_to_text = all(node.text for node in image_nodes)
         image_nodes = await self._aget_node_with_embedding(
-            image_nodes, show_progress, is_image=True
+            image_nodes, show_progress, is_image=True, is_image_to_text=is_image_to_text
         )
         new_img_ids = await self.storage_context.vector_stores[
             self.image_namespace
@@ -285,8 +324,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         )
 
         # embed image nodes as images directly
+        # check if we should use text embedding for images instead of default
+        is_image_to_text = all(node.text for node in image_nodes)
         image_nodes = self._get_node_with_embedding(
-            image_nodes, show_progress, is_image=True
+            image_nodes, show_progress, is_image=True, is_image_to_text=is_image_to_text
         )
         new_img_ids = self.storage_context.vector_stores[self.image_namespace].add(
             image_nodes, **insert_kwargs

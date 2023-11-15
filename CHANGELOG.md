@@ -1,6 +1,26 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.0] - 2023-11-15
+
+### New Features / Breaking Changes / Deprecations
+
+- New `IngestionPipline` concept for ingesting and transforming data
+- Data ingestion and transforms are now automatically cached
+- Updated interface for node parsing/text splitting/metadata extraction modules
+- Changes to the default tokenizer, as well as customizing the tokenizer
+- Packaging/Installation changes with PyPi (reduced bloat, new install options)
+- More predictable and consistent import paths
+- Plus, in beta: MultiModal RAG Modules for handling text and images!
+- Find more details at: `https://medium.com/@llama_index/719f03282945`
+
+## [0.8.69.post1] - 2023-11-13
+
+### Bug Fixes / Nits
+
+- Increase max weaivate delete size to max of 10,000 (#8887)
+- Final pickling remnant fix (#8902)
+
+## [0.8.69] - 2023-11-13
 
 ### Bug Fixes / Nits
 

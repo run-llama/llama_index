@@ -17,14 +17,27 @@ from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 
+DEFAULT_MONSTER_TEMP = 0.75
+
 
 class MonsterLLM(CustomLLM):
     model: str = Field(description="The MonsterAPI model to use.")
     monster_api_key: Optional[str] = Field(description="The MonsterAPI key to use.")
-    max_new_tokens: int = Field(description="The number of tokens to generate.")
-    temperature: float = Field(description="The temperature to use for sampling.")
+    max_new_tokens: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description="The number of tokens to generate.",
+        gt=0,
+    )
+    temperature: float = Field(
+        default=DEFAULT_MONSTER_TEMP,
+        description="The temperature to use for sampling.",
+        gte=0.0,
+        lte=1.0,
+    )
     context_window: int = Field(
-        description="The number of context tokens available to the LLM."
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The number of context tokens available to the LLM.",
+        gt=0,
     )
 
     messages_to_prompt: Callable = Field(
@@ -41,7 +54,7 @@ class MonsterLLM(CustomLLM):
         model: str,
         monster_api_key: Optional[str] = None,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
-        temperature: float = 0.75,
+        temperature: float = DEFAULT_MONSTER_TEMP,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         callback_manager: Optional[CallbackManager] = None,
         messages_to_prompt: Optional[Callable] = None,

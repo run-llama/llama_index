@@ -2,6 +2,7 @@
 
 import asyncio
 from abc import abstractmethod
+from enum import Enum
 from typing import Any, Dict, List
 
 from llama_index.bridge.pydantic import BaseModel, Field
@@ -11,6 +12,22 @@ from llama_index.evaluation.retrieval.metrics_base import (
     RetrievalMetricResult,
 )
 from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
+
+
+class RetrievalEvalMode(str, Enum):
+    """Evaluation of retrieval modality."""
+
+    TEXT = "text"
+    IMAGE = "image"
+
+    @classmethod
+    def from_str(cls, label: str) -> "RetrievalEvalMode":
+        if label == "text":
+            return RetrievalEvalMode.TEXT
+        elif label == "image":
+            return RetrievalEvalMode.IMAGE
+        else:
+            raise NotImplementedError
 
 
 class RetrievalEvalResult(BaseModel):
@@ -33,7 +50,9 @@ class RetrievalEvalResult(BaseModel):
     query: str = Field(..., description="Query string")
     expected_ids: List[str] = Field(..., description="Expected ids")
     retrieved_ids: List[str] = Field(..., description="Retrieved ids")
-
+    mode: "RetrievalEvalMode" = Field(
+        default=RetrievalEvalMode.TEXT, description="text or image"
+    )
     metric_dict: Dict[str, RetrievalMetricResult] = Field(
         ..., description="Metric dictionary for the evaluation"
     )
@@ -73,12 +92,18 @@ class BaseRetrievalEvaluator(BaseModel):
         return cls(metrics=metrics, **kwargs)
 
     @abstractmethod
-    async def _aget_retrieved_ids(self, query: str) -> List[str]:
+    async def _aget_retrieved_ids(
+        self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
+    ) -> List[str]:
         """Get retrieved ids."""
         raise NotImplementedError
 
     def evaluate(
-        self, query: str, expected_ids: List[str], **kwargs: Any
+        self,
+        query: str,
+        expected_ids: List[str],
+        mode: RetrievalEvalMode = RetrievalEvalMode.TEXT,
+        **kwargs: Any,
     ) -> RetrievalEvalResult:
         """Run evaluation results with query string and expected ids.
 
@@ -91,7 +116,7 @@ class BaseRetrievalEvaluator(BaseModel):
 
         """
         return asyncio.run(
-            self.aevaluate(query=query, expected_ids=expected_ids, **kwargs)
+            self.aevaluate(query=query, expected_ids=expected_ids, mode=mode, **kwargs)
         )
 
     # @abstractmethod
@@ -99,6 +124,7 @@ class BaseRetrievalEvaluator(BaseModel):
         self,
         query: str,
         expected_ids: List[str],
+        mode: RetrievalEvalMode = RetrievalEvalMode.TEXT,
         **kwargs: Any,
     ) -> RetrievalEvalResult:
         """Run evaluation with query string, retrieved contexts,
@@ -107,7 +133,7 @@ class BaseRetrievalEvaluator(BaseModel):
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
         """
-        retrieved_ids = await self._aget_retrieved_ids(query)
+        retrieved_ids = await self._aget_retrieved_ids(query, mode)
         metric_dict = {}
         for metric in self.metrics:
             eval_result = metric.compute(query, expected_ids, retrieved_ids)
@@ -116,6 +142,7 @@ class BaseRetrievalEvaluator(BaseModel):
             query=query,
             expected_ids=expected_ids,
             retrieved_ids=retrieved_ids,
+            mode=mode,
             metric_dict=metric_dict,
         )
 
@@ -130,16 +157,16 @@ class BaseRetrievalEvaluator(BaseModel):
         semaphore = asyncio.Semaphore(workers)
 
         async def eval_worker(
-            query: str,
-            expected_ids: List[str],
+            query: str, expected_ids: List[str], mode: RetrievalEvalMode
         ) -> RetrievalEvalResult:
             async with semaphore:
-                return await self.aevaluate(query, expected_ids=expected_ids)
+                return await self.aevaluate(query, expected_ids=expected_ids, mode=mode)
 
         response_jobs = []
+        mode = RetrievalEvalMode.from_str(dataset.mode)
         for query_id, query in dataset.queries.items():
             expected_ids = dataset.relevant_docs[query_id]
-            response_jobs.append(eval_worker(query, expected_ids))
+            response_jobs.append(eval_worker(query, expected_ids, mode))
         if show_progress:
             from tqdm.asyncio import tqdm_asyncio
 

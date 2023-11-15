@@ -2,10 +2,8 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.schema import BaseNode, IndexNode, NodeWithScore, TextNode
+from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle, TextNode
 from llama_index.utils import print_text
 
 DEFAULT_QUERY_RESPONSE_TMPL = "Query: {query_str}\nResponse: {response}"

@@ -1,8 +1,8 @@
 from typing import Dict, List
 
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.schema import Document
+from llama_index.service_context import ServiceContext
 
 
 def test_query(

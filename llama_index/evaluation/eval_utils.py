@@ -11,8 +11,8 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 
+from llama_index.core import BaseQueryEngine
 from llama_index.evaluation.base import EvaluationResult
-from llama_index.indices.query.base import BaseQueryEngine
 
 
 def asyncio_module(show_progress: bool = False) -> Any:

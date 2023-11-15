@@ -12,11 +12,11 @@ from typing import Any, Optional, Sequence, Type
 
 import requests
 
+from llama_index.core import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
-from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
-from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 
 _logger = logging.getLogger(__name__)

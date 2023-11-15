@@ -13,7 +13,7 @@ from llama_index.token_counter.utils import (
     mock_extract_kg_triplets_response,
 )
 from llama_index.types import TokenAsyncGen, TokenGen
-from llama_index.utils import globals_helper
+from llama_index.utils import get_tokenizer
 
 # TODO: consolidate with unit tests in tests/mock_utils/mock_predict.py
 
@@ -21,7 +21,7 @@ from llama_index.utils import globals_helper
 def _mock_summary_predict(max_tokens: int, prompt_args: Dict) -> str:
     """Mock summary predict."""
     # tokens in response shouldn't be larger than tokens in `context_str`
-    num_text_tokens = len(globals_helper.tokenizer(prompt_args["context_str"]))
+    num_text_tokens = len(get_tokenizer()(prompt_args["context_str"]))
     token_limit = min(num_text_tokens, max_tokens)
     return " ".join(["summary"] * token_limit)
 
@@ -45,7 +45,7 @@ def _mock_query_select_multiple(num_chunks: int) -> str:
 def _mock_answer(max_tokens: int, prompt_args: Dict) -> str:
     """Mock answer."""
     # tokens in response shouldn't be larger than tokens in `text`
-    num_ctx_tokens = len(globals_helper.tokenizer(prompt_args["context_str"]))
+    num_ctx_tokens = len(get_tokenizer()(prompt_args["context_str"]))
     token_limit = min(num_ctx_tokens, max_tokens)
     return " ".join(["answer"] * token_limit)
 
@@ -59,8 +59,8 @@ def _mock_refine(max_tokens: int, prompt: BasePromptTemplate, prompt_args: Dict)
         existing_answer = prompt.kwargs["existing_answer"]
     else:
         existing_answer = prompt_args["existing_answer"]
-    num_ctx_tokens = len(globals_helper.tokenizer(prompt_args["context_msg"]))
-    num_exist_tokens = len(globals_helper.tokenizer(existing_answer))
+    num_ctx_tokens = len(get_tokenizer()(prompt_args["context_msg"]))
+    num_exist_tokens = len(get_tokenizer()(existing_answer))
     token_limit = min(num_ctx_tokens + num_exist_tokens, max_tokens)
     return " ".join(["answer"] * token_limit)
 

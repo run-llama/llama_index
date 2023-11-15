@@ -4,7 +4,10 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence,
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+)
 from llama_index.llms import ChatResponseAsyncGen, CompletionResponseAsyncGen
 from llama_index.llms.base import (
     LLM,
@@ -28,6 +31,7 @@ from llama_index.llms.generic_utils import (
 )
 from llama_index.prompts.base import PromptTemplate
 
+DEFAULT_HUGGINGFACE_MODEL = "StabilityAI/stablelm-tuned-alpha-3b"
 if TYPE_CHECKING:
     try:
         from huggingface_hub import AsyncInferenceClient, InferenceClient
@@ -46,22 +50,31 @@ class HuggingFaceLLM(CustomLLM):
     """HuggingFace LLM."""
 
     model_name: str = Field(
+        default=DEFAULT_HUGGINGFACE_MODEL,
         description=(
             "The model name to use from HuggingFace. "
             "Unused if `model` is passed in directly."
-        )
+        ),
     )
     context_window: int = Field(
-        description="The maximum number of tokens available for input."
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The maximum number of tokens available for input.",
+        gt=0,
     )
-    max_new_tokens: int = Field(description="The maximum number of tokens to generate.")
+    max_new_tokens: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description="The maximum number of tokens to generate.",
+        gt=0,
+    )
     system_prompt: str = Field(
+        default="",
         description=(
             "The system prompt, containing any extra instructions or context. "
             "The model card on HuggingFace should specify if this is needed."
         ),
     )
     query_wrapper_prompt: str = Field(
+        default="{query_str}",
         description=(
             "The query wrapper prompt, containing the query placeholder. "
             "The model card on HuggingFace should specify if this is needed. "
@@ -69,13 +82,14 @@ class HuggingFaceLLM(CustomLLM):
         ),
     )
     tokenizer_name: str = Field(
+        default=DEFAULT_HUGGINGFACE_MODEL,
         description=(
             "The name of the tokenizer to use from HuggingFace. "
             "Unused if `tokenizer` is passed in directly."
-        )
+        ),
     )
-    device_map: Optional[str] = Field(
-        description="The device_map to use. Defaults to 'auto'."
+    device_map: str = Field(
+        default="auto", description="The device_map to use. Defaults to 'auto'."
     )
     stopping_ids: List[int] = Field(
         default_factory=list,
@@ -110,12 +124,12 @@ class HuggingFaceLLM(CustomLLM):
 
     def __init__(
         self,
-        context_window: int = 4096,
-        max_new_tokens: int = 256,
+        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         system_prompt: str = "",
         query_wrapper_prompt: Union[str, PromptTemplate] = "{query_str}",
-        tokenizer_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
-        model_name: str = "StabilityAI/stablelm-tuned-alpha-3b",
+        tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        model_name: str = DEFAULT_HUGGINGFACE_MODEL,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
         device_map: Optional[str] = "auto",
