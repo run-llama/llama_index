@@ -1,5 +1,18 @@
 # ChangeLog
 
+## [0.9.0] - 2023-11-15
+
+### New Features / Breaking Changes / Deprecations
+
+- New `IngestionPipline` concept for ingesting and transforming data
+- Data ingestion and transforms are now automatically cached
+- Updated interface for node parsing/text splitting/metadata extraction modules
+- Changes to the default tokenizer, as well as customizing the tokenizer
+- Packaging/Installation changes with PyPi (reduced bloat, new install options)
+- More predictable and consistent import paths
+- Plus, in beta: MultiModal RAG Modules for handling text and images!
+- Find more details at: https://pretty-sodium-5e0.notion.site/Alpha-Preview-LlamaIndex-v0-9-8f815bfdd4c346c1a696e013fccefe5e
+
 ## [0.8.69.post1] - 2023-11-13
 
 ### Bug Fixes / Nits

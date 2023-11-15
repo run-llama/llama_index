@@ -1,8 +1,9 @@
 """Embedding utils for LlamaIndex."""
 import os
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
-from llama_index.bridge.langchain import Embeddings as LCEmbeddings
+if TYPE_CHECKING:
+    from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.clip import ClipEmbedding
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
@@ -16,7 +17,7 @@ from llama_index.llms.openai_utils import validate_openai_api_key
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 from llama_index.utils import get_cache_dir
 
-EmbedType = Union[BaseEmbedding, LCEmbeddings, str]
+EmbedType = Union[BaseEmbedding, "LCEmbeddings", str]
 
 
 def save_embedding(embedding: List[float], file_path: str) -> None:
@@ -36,6 +37,11 @@ def load_embedding(file_path: str) -> List[float]:
 
 def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbedding:
     """Resolve embed model."""
+    try:
+        from llama_index.bridge.langchain import Embeddings as LCEmbeddings
+    except ImportError:
+        LCEmbeddings = None  # type: ignore
+
     if embed_model == "default":
         try:
             embed_model = OpenAIEmbedding()
@@ -79,7 +85,7 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
                 model_name=model_name, cache_folder=cache_folder
             )
 
-    if isinstance(embed_model, LCEmbeddings):
+    if LCEmbeddings is not None and isinstance(embed_model, LCEmbeddings):
         embed_model = LangchainEmbedding(embed_model)
 
     if embed_model is None:

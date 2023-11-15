@@ -1,11 +1,13 @@
 """Langchain Embedding Wrapper Module."""
 
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+
+if TYPE_CHECKING:
+    from llama_index.bridge.langchain import Embeddings as LCEmbeddings
 
 
 class LangchainEmbedding(BaseEmbedding):
@@ -16,12 +18,12 @@ class LangchainEmbedding(BaseEmbedding):
             embeddings class.
     """
 
-    _langchain_embedding: LCEmbeddings = PrivateAttr()
+    _langchain_embedding: "LCEmbeddings" = PrivateAttr()
     _async_not_implemented_warned: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
-        langchain_embeddings: LCEmbeddings,
+        langchain_embeddings: "LCEmbeddings",
         model_name: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,

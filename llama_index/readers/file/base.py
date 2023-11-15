@@ -1,5 +1,6 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
+import mimetypes
 import os
 from datetime import datetime
 from pathlib import Path
@@ -45,6 +46,9 @@ def default_file_metadata_func(file_path: str) -> Dict:
     """
     return {
         "file_path": file_path,
+        "file_name": os.path.basename(file_path),
+        "file_type": mimetypes.guess_type(file_path)[0],
+        "file_size": os.path.getsize(file_path),
         "creation_date": datetime.fromtimestamp(
             Path(file_path).stat().st_ctime
         ).strftime("%Y-%m-%d"),
@@ -270,6 +274,9 @@ class SimpleDirectoryReader(BaseReader):
             # TimeWeightedPostprocessor, but excluded for embedding and LLMprompts
             doc.excluded_embed_metadata_keys.extend(
                 [
+                    "file_name",
+                    "file_type",
+                    "file_size",
                     "creation_date",
                     "last_modified_date",
                     "last_accessed_date",
@@ -277,6 +284,9 @@ class SimpleDirectoryReader(BaseReader):
             )
             doc.excluded_llm_metadata_keys.extend(
                 [
+                    "file_name",
+                    "file_type",
+                    "file_size",
                     "creation_date",
                     "last_modified_date",
                     "last_accessed_date",
