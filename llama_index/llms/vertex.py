@@ -33,7 +33,7 @@ class Vertex(LLM):
     model: str = Field(description="The vertex model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
-    examples: Optional[ChatMessage] = Field(
+    examples: Optional[Sequence[ChatMessage]] = Field(
         description="Example messages for the chat model."
     )
     max_retries: int = Field(default=10, description="The maximum number of retries.")
@@ -53,7 +53,7 @@ class Vertex(LLM):
         project: Optional[str] = None,
         location: Optional[str] = None,
         credential: Optional[str] = None,
-        examples: Optional[ChatMessage] = None,
+        examples: Optional[Sequence[ChatMessage]] = None,
         temperature: float = 0.1,
         max_tokens: int = 512,
         max_retries: int = 10,
