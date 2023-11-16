@@ -1,5 +1,12 @@
 # ChangeLog
 
+## [0.9.2] - 2023-11-16
+
+### New Features
+
+- Added new notebook guide for Multi-Modal Rag Evaluation (#8945)
+- Added `MultiModalRelevancyEvaluator`, and `MultiModalFaithfulnessEvaluator` (#8945)
+
 ## [0.9.1] - 2023-11-15
 
 ### New Features
