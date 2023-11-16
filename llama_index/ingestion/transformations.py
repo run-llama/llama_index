@@ -150,7 +150,7 @@ class ConfigurableTransformations(Enum):
         component_type=HierarchicalNodeParser,
     )
     CODE_NODE_PARSER = ConfigurableTransformation(
-        name="Code Node Parser",
+        name="Code Splitter",
         transformation_category=TransformationCategories.NODE_PARSER,
         component_type=CodeSplitter,
     )
