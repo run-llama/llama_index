@@ -133,8 +133,12 @@ def display_query_and_multimodal_response(
             raise ValueError(
                 "A retrieved image must have image_path or image_url specified."
             )
-        axarr[ix].imshow(image)
-        axarr[ix].set_title(f"Retrieved Position: {ix}", pad=10, fontsize=9)
+        if num_subplots > 1:
+            axarr[ix].imshow(image)
+            axarr[ix].set_title(f"Retrieved Position: {ix}", pad=10, fontsize=9)
+        else:
+            axarr.imshow(image)
+            axarr.set_title(f"Retrieved Position: {ix}", pad=10, fontsize=9)
 
     f.tight_layout()
     print(f"Query: {query_str}\n=======")
