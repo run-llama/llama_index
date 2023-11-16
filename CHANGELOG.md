@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.1] - 2023-11-15
 
 ### New Features
 
