@@ -265,16 +265,15 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         # embed all nodes as text - incclude image nodes that have text attached
         text_nodes = await self._aget_node_with_embedding(
-            text_nodes, show_progress, is_image=False
+            text_nodes, show_progress, is_image=False, is_image_to_text=False
         )
         new_text_ids = await self.storage_context.vector_stores[
             DEFAULT_VECTOR_STORE
         ].async_add(text_nodes, **insert_kwargs)
 
         # embed image nodes as images directly
-        is_image_to_text = all(node.text for node in image_nodes)
         image_nodes = await self._aget_node_with_embedding(
-            image_nodes, show_progress, is_image=True, is_image_to_text=is_image_to_text
+            image_nodes, show_progress, is_image=True, is_image_to_text=False
         )
         new_img_ids = await self.storage_context.vector_stores[
             self.image_namespace
@@ -317,7 +316,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         # embed all nodes as text - incclude image nodes that have text attached
         text_nodes = self._get_node_with_embedding(
-            text_nodes, show_progress, is_image=False
+            text_nodes, show_progress, is_image=False, is_image_to_text=False
         )
         new_text_ids = self.storage_context.vector_stores[DEFAULT_VECTOR_STORE].add(
             text_nodes, **insert_kwargs
@@ -325,9 +324,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         # embed image nodes as images directly
         # check if we should use text embedding for images instead of default
-        is_image_to_text = all(node.text for node in image_nodes)
         image_nodes = self._get_node_with_embedding(
-            image_nodes, show_progress, is_image=True, is_image_to_text=is_image_to_text
+            image_nodes, show_progress, is_image=True, is_image_to_text=False
         )
         new_img_ids = self.storage_context.vector_stores[self.image_namespace].add(
             image_nodes, **insert_kwargs
