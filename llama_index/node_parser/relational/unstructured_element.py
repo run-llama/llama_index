@@ -3,10 +3,9 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 
 import pandas as pd
-from pydantic import BaseModel, ValidationError
 from tqdm import tqdm
 
-from llama_index.bridge.pydantic import Field
+from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llms.openai import LLM, OpenAI
 from llama_index.node_parser.interface import NodeParser
