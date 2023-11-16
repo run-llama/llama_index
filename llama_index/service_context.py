@@ -272,6 +272,7 @@ class ServiceContext:
         for transform in service_context.transformations:
             if isinstance(transform, NodeParser):
                 node_parser_found = True
+                node_parser = transform
                 break
 
         if text_splitter is not None and node_parser is not None:
@@ -287,7 +288,8 @@ class ServiceContext:
                     callback_manager=callback_manager,
                 )
             )
-            transformations = [node_parser, *transformations]
+
+        transformations = transformations or service_context.transformations
 
         llama_logger = llama_logger or service_context.llama_logger
 

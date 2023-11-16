@@ -52,6 +52,7 @@ class AzureOpenAI(OpenAI):
     _azure_ad_token: Any = PrivateAttr()
     _client: SyncAzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
