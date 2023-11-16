@@ -42,8 +42,7 @@ from llama_index.vector_stores.types import BasePydanticVectorStore
 
 DEFAULT_PIPELINE_NAME = "pipeline"
 DEFAULT_PROJECT_NAME = "project"
-BASE_URL = "http://localhost:8000"
-PLATFORM_API_KEY = os.environ.get("PLATFORM_API_KEY", None)
+DEFAULT_BASE_URL = "http://localhost:8000"
 
 
 def deserialize_transformation_component(
@@ -173,7 +172,6 @@ class IngestionPipeline(BaseModel):
     project_name: str = Field(
         default=DEFAULT_PROJECT_NAME, description="Unique name of the project"
     )
-    base_url: str = Field(default=BASE_URL, description="Base URL for the platform")
 
     configured_transformations: List[ConfiguredTransformation] = Field(
         description="Serialized schemas of transformations to apply to the data"
@@ -194,8 +192,11 @@ class IngestionPipeline(BaseModel):
     )
     disable_cache: bool = Field(default=False, description="Disable the cache")
 
+    platform_base_url: str = Field(
+        default=None, description="Base URL for the platform"
+    )
     platform_api_key: Optional[str] = Field(
-        default=PLATFORM_API_KEY, description="Platform API key"
+        default=None, description="Platform API key"
     )
 
     def __init__(
@@ -207,8 +208,8 @@ class IngestionPipeline(BaseModel):
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
-        base_url: str = BASE_URL,
-        platform_api_key: Optional[str] = PLATFORM_API_KEY,
+        platform_base_url: str = None,
+        platform_api_key: Optional[str] = None,
     ) -> None:
         if transformations is None:
             transformations = self._get_default_transformations()
@@ -219,6 +220,11 @@ class IngestionPipeline(BaseModel):
                 ConfiguredTransformation.from_component(transformation)
             )
 
+        platform_base_url = platform_base_url or os.environ.get(
+            "PLATFORM_BASE_URL", DEFAULT_BASE_URL
+        )
+        platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
+
         super().__init__(
             name=name,
             project_name=project_name,
@@ -228,7 +234,7 @@ class IngestionPipeline(BaseModel):
             documents=documents,
             vector_store=vector_store,
             cache=cache or IngestionCache(),
-            base_url=base_url,
+            platform_base_url=platform_base_url,
             platform_api_key=platform_api_key,
         )
 
@@ -263,11 +269,13 @@ class IngestionPipeline(BaseModel):
         cls,
         name: str,
         project_name: str = DEFAULT_PROJECT_NAME,
-        base_url: str = BASE_URL,
+        platform_base_url: Optional[str] = None,
         cache: Optional[IngestionCache] = None,
-        platform_api_key: Optional[str] = PLATFORM_API_KEY,
+        platform_api_key: Optional[str] = None,
     ) -> "IngestionPipeline":
-        client = PlatformApi(base_url=base_url, token=platform_api_key)
+        client = PlatformApi(
+            platform_base_url=platform_base_url, token=platform_api_key
+        )
 
         projects: List[Project] = client.project.list_projects(
             project_name=project_name
@@ -328,7 +336,7 @@ class IngestionPipeline(BaseModel):
             reader=readers[0] if len(readers) > 0 else None,
             documents=documents,
             vector_store=vector_stores[0] if len(vector_stores) > 0 else None,
-            base_url=base_url,
+            platform_base_url=platform_base_url,
             cache=cache,
             platform_api_key=platform_api_key,
         )
@@ -345,7 +353,9 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
     ) -> str:
-        client = PlatformApi(base_url=self.base_url, token=self.platform_api_key)
+        client = PlatformApi(
+            base_url=self.platform_base_url, token=self.platform_api_key
+        )
 
         input_nodes: List[BaseNode] = cast(List[BaseNode], self.documents) or []
         if documents is not None:
@@ -446,7 +456,9 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
     ) -> str:
-        client = PlatformApi(base_url=self.base_url, token=self.platform_api_key)
+        client = PlatformApi(
+            base_url=self.platform_base_url, token=self.platform_api_key
+        )
 
         input_nodes: List[BaseNode] = []
         if documents is not None:
