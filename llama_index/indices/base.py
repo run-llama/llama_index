@@ -384,6 +384,14 @@ class BaseIndex(Generic[IS], ABC):
                 **kwargs,
             )
 
+        elif chat_mode == ChatMode.C3:
+            from llama_index.chat_engine import C3ChatEngine
+
+            return C3ChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                **kwargs,
+            )
+
         elif chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
             # NOTE: lazy import
             from llama_index.agent import OpenAIAgent, ReActAgent
