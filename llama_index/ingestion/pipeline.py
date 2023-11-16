@@ -281,9 +281,7 @@ class IngestionPipeline(BaseModel):
         )
         platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
 
-        client = PlatformApi(
-            platform_base_url=platform_base_url, token=platform_api_key
-        )
+        client = PlatformApi(base_url=platform_base_url, token=platform_api_key)
 
         projects: List[Project] = client.project.list_projects(
             project_name=project_name

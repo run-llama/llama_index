@@ -109,10 +109,10 @@ class BaseIndex(Generic[IS], ABC):
 
             if remote_pipeline_name is not None:
                 pipeline = IngestionPipeline.from_pipeline_name(
+                    remote_pipeline_name,
                     project_name=project_name,
-                    pipeline_name=remote_pipeline_name,
-                    platform_api_key=os.environ.get("PLATFORM_API_KEY"),
-                    platform_base_url=os.environ.get("PLATFORM_BASE_URL"),
+                    platform_api_key=os.environ.get("PLATFORM_API_KEY", ""),
+                    platform_base_url=os.environ.get("PLATFORM_BASE_URL", ""),
                     disable_cache=True,
                 )
             else:
@@ -121,8 +121,8 @@ class BaseIndex(Generic[IS], ABC):
                     or ung.get_random_name(separator="-", style="lowercase"),
                     project_name=project_name,
                     transformations=service_context.transformations,
-                    platform_api_key=os.environ.get("PLATFORM_API_KEY"),
-                    platform_base_url=os.environ.get("PLATFORM_BASE_URL"),
+                    platform_api_key=os.environ.get("PLATFORM_API_KEY", ""),
+                    platform_base_url=os.environ.get("PLATFORM_BASE_URL", ""),
                     disable_cache=True,
                 )
 
@@ -151,7 +151,7 @@ class BaseIndex(Generic[IS], ABC):
                     pipeline.transformations.pop()
 
             nodes = pipeline.run(
-                documents=documents,
+                documents=documents,  # type: ignore
                 show_progress=show_progress,
                 **kwargs,
             )
