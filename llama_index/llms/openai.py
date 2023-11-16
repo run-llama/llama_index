@@ -17,8 +17,8 @@ from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
-    ChoiceDeltaToolCall,
     ChoiceDelta,
+    ChoiceDeltaToolCall,
 )
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
