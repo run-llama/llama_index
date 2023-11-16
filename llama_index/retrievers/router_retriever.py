@@ -92,7 +92,7 @@ class RouterRetriever(BaseRetriever):
                 cur_results = selected_retriever.retrieve(query_bundle)
                 retrieved_results = {n.node.node_id: n for n in cur_results}
 
-            query_event.on_end(payload={EventPayload.NODES: retrieved_results})
+            query_event.on_end(payload={EventPayload.NODES: retrieved_results.values()})
 
         return list(retrieved_results.values())
 
@@ -128,6 +128,6 @@ class RouterRetriever(BaseRetriever):
                 cur_results = await selected_retriever.aretrieve(query_bundle)
                 retrieved_results = {n.node.node_id: n for n in cur_results}
 
-            query_event.on_end(payload={EventPayload.NODES: retrieved_results})
+            query_event.on_end(payload={EventPayload.NODES: retrieved_results.values()})
 
         return list(retrieved_results.values())
