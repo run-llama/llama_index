@@ -7,11 +7,11 @@ from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
-from llama_index.indices.multi_modal.base_multi_modal_retriever import (
+from llama_index.indices.multi_modal.base_retriever import (
     MultiModalRetriever,
 )
 from llama_index.indices.utils import log_vector_store_query_result
-from llama_index.schema import NodeWithScore, ObjectType, QueryBundle
+from llama_index.schema import NodeWithScore, ObjectType, QueryBundle, QueryType
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
@@ -144,6 +144,11 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
                 )
         return self._get_text_nodes_with_embeddings(query_bundle)
 
+    def text_retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
+        if isinstance(str_or_query_bundle, str):
+            str_or_query_bundle = QueryBundle(str_or_query_bundle)
+        return self._text_retrieve(str_or_query_bundle)
+
     def _image_retrieve(
         self,
         query_bundle: QueryBundle,
@@ -156,6 +161,11 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
                 )
             )
         return self._get_image_nodes_with_image_embeddings(query_bundle)
+
+    def image_retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
+        if isinstance(str_or_query_bundle, str):
+            str_or_query_bundle = QueryBundle(str_or_query_bundle)
+        return self._image_retrieve(str_or_query_bundle)
 
     def _get_image_nodes_with_image_embeddings(
         self,
@@ -216,7 +226,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
 
         return node_with_scores
 
-    # Async Methods
+    # Async Retrieval Methods
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # Run the two retrievals in async, and return their results as a concatenated list
@@ -245,6 +255,13 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
             )
         return await self._aget_text_nodes_with_embeddings(query_bundle)
 
+    async def atext_retrieve(
+        self, str_or_query_bundle: QueryType
+    ) -> List[NodeWithScore]:
+        if isinstance(str_or_query_bundle, str):
+            str_or_query_bundle = QueryBundle(str_or_query_bundle)
+        return await self._atext_retrieve(str_or_query_bundle)
+
     async def _aimage_retrieve(
         self,
         query_bundle: QueryBundle,
@@ -257,6 +274,13 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
                 )
             )
         return await self._aget_image_nodes_with_image_embeddings(query_bundle)
+
+    async def aimage_retrieve(
+        self, str_or_query_bundle: QueryType
+    ) -> List[NodeWithScore]:
+        if isinstance(str_or_query_bundle, str):
+            str_or_query_bundle = QueryBundle(str_or_query_bundle)
+        return await self._aimage_retrieve(str_or_query_bundle)
 
     async def _aget_image_nodes_with_image_embeddings(
         self,
