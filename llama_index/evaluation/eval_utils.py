@@ -84,7 +84,7 @@ def upload_eval_dataset(
     dataset_name: str,
     questions: List[str],
     project_name: str = DEFAULT_PROJECT_NAME,
-    platform_base_url: Optional[str] = None,
+    platform_base_url: str = DEFAULT_BASE_URL,
     platform_api_key: Optional[str] = None,
     overwrite: bool = False,
     append: bool = False,

@@ -89,7 +89,7 @@ class BaseIndex(Generic[IS], ABC):
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
         remote_pipeline_name: Optional[str] = None,
-        project_name: Optional[str] = DEFAULT_PROJECT_NAME,
+        project_name: str = DEFAULT_PROJECT_NAME,
         **kwargs: Any,
     ) -> IndexType:
         """Create index from documents.
@@ -144,7 +144,7 @@ class BaseIndex(Generic[IS], ABC):
                     pipeline.transformations.append(service_context.embed_model)
 
                 # Register the pipeline -- it will print the URL to the pipeline
-                pipeline.register(documents=documents)
+                pipeline.register(documents=documents)  # type: ignore
 
                 # remove the embeddings
                 if embeddings_found:

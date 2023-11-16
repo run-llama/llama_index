@@ -209,7 +209,7 @@ class IngestionPipeline(BaseModel):
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
         disable_cache: bool = False,
-        platform_base_url: str = None,
+        platform_base_url: str = DEFAULT_BASE_URL,
         platform_api_key: Optional[str] = None,
     ) -> None:
         if transformations is None:
@@ -271,7 +271,7 @@ class IngestionPipeline(BaseModel):
         cls,
         name: str,
         project_name: str = DEFAULT_PROJECT_NAME,
-        platform_base_url: Optional[str] = None,
+        platform_base_url: str = DEFAULT_BASE_URL,
         cache: Optional[IngestionCache] = None,
         platform_api_key: Optional[str] = None,
         disable_cache: bool = False,
