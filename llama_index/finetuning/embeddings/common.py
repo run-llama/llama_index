@@ -2,13 +2,12 @@
 import json
 import re
 import uuid
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from tqdm import tqdm
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import LLM
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.utils import LLM
 from llama_index.schema import MetadataMode, TextNode
 
 
@@ -69,7 +68,7 @@ context information provided."
 # generate queries as a convenience function
 def generate_qa_embedding_pairs(
     nodes: List[TextNode],
-    llm: Optional[LLM] = None,
+    llm: LLM,
     qa_generate_prompt_tmpl: str = DEFAULT_QA_GENERATE_PROMPT_TMPL,
     num_questions_per_chunk: int = 2,
 ) -> EmbeddingQAFinetuneDataset:
@@ -78,8 +77,6 @@ def generate_qa_embedding_pairs(
         node.node_id: node.get_content(metadata_mode=MetadataMode.NONE)
         for node in nodes
     }
-
-    llm = llm or OpenAI(model="gpt-3.5-turbo")
 
     queries = {}
     relevant_docs = {}
