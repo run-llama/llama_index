@@ -40,8 +40,7 @@ class BaseImageRetriever(PromptMixin):
             str_or_query_bundle = QueryBundle(query_str=str_or_query_bundle)
         return await self._aimage_retrieve(str_or_query_bundle)
 
-    # @abstractmethod
-    # TODO: make this abstract
+    @abstractmethod
     async def _aimage_retrieve(
         self,
         query_bundle: QueryBundle,
@@ -51,4 +50,3 @@ class BaseImageRetriever(PromptMixin):
         Implemented by the user.
 
         """
-        return self._image_retrieve(query_bundle)
