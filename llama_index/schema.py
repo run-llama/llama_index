@@ -679,6 +679,16 @@ class Document(TextNode):
             id_=doc._id,
         )
 
+    def to_vectorflow(self, client: Any) -> None:
+        """Send a document to vectorflow, since they don't have a document object."""
+        # write document to temp file
+        import tempfile
+
+        with tempfile.NamedTemporaryFile() as f:
+            f.write(self.text.encode("utf-8"))
+            f.flush()
+            client.embed(f.name)
+
     @classmethod
     def example(cls) -> "Document":
         return Document(
