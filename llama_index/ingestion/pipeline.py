@@ -274,7 +274,13 @@ class IngestionPipeline(BaseModel):
         platform_base_url: Optional[str] = None,
         cache: Optional[IngestionCache] = None,
         platform_api_key: Optional[str] = None,
+        disable_cache: bool = False,
     ) -> "IngestionPipeline":
+        platform_base_url = platform_base_url or os.environ.get(
+            "PLATFORM_BASE_URL", DEFAULT_BASE_URL
+        )
+        platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
+
         client = PlatformApi(
             platform_base_url=platform_base_url, token=platform_api_key
         )
@@ -340,6 +346,7 @@ class IngestionPipeline(BaseModel):
             vector_store=vector_stores[0] if len(vector_stores) > 0 else None,
             platform_base_url=platform_base_url,
             cache=cache,
+            disable_cache=disable_cache,
             platform_api_key=platform_api_key,
         )
 

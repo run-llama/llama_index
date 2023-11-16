@@ -12,7 +12,7 @@ from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
-from llama_index.ingestion import IngestionPipeline
+from llama_index.ingestion.pipeline import DEFAULT_PROJECT_NAME, IngestionPipeline
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.schema import BaseNode, Document
@@ -84,7 +84,8 @@ class BaseIndex(Generic[IS], ABC):
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
-        api_key: Optional[str] = None,
+        remote_pipeline_name: Optional[str] = None,
+        project_name: Optional[str] = DEFAULT_PROJECT_NAME,
         **kwargs: Any,
     ) -> IndexType:
         """Create index from documents.
@@ -102,12 +103,24 @@ class BaseIndex(Generic[IS], ABC):
             for doc in documents:
                 docstore.set_document_hash(doc.get_doc_id(), doc.hash)
 
-            pipeline = IngestionPipeline(
-                name=ung.get_random_name(separator="-", style="lowercase"),
-                transformations=service_context.transformations,
-                platform_api_key=api_key or os.environ.get("PLATFORM_API_KEY"),
-                disable_cache=True,
-            )
+            if remote_pipeline_name is not None:
+                pipeline = IngestionPipeline.from_pipeline_name(
+                    project_name=project_name,
+                    pipeline_name=remote_pipeline_name,
+                    platform_api_key=os.environ.get("PLATFORM_API_KEY"),
+                    platform_base_url=os.environ.get("PLATFORM_BASE_URL"),
+                    disable_cache=True,
+                )
+            else:
+                pipeline = IngestionPipeline(
+                    name=remote_pipeline_name
+                    or ung.get_random_name(separator="-", style="lowercase"),
+                    project_name=project_name,
+                    transformations=service_context.transformations,
+                    platform_api_key=os.environ.get("PLATFORM_API_KEY"),
+                    platform_base_url=os.environ.get("PLATFORM_BASE_URL"),
+                    disable_cache=True,
+                )
 
             # check for empty and false
             should_upload = (
