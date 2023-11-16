@@ -264,7 +264,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         # embed all nodes as text - incclude image nodes that have text attached
         text_nodes = await self._aget_node_with_embedding(
-            text_nodes, show_progress, is_image=False, is_image_to_text=False
+            text_nodes, show_progress, is_image=False
         )
         new_text_ids = await self.storage_context.vector_stores[
             DEFAULT_VECTOR_STORE
@@ -275,7 +275,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             image_nodes,
             show_progress,
             is_image=True,
-            is_image_to_text=self._is_image_to_text,
         )
         new_img_ids = await self.storage_context.vector_stores[
             self.image_namespace
@@ -318,7 +317,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         # embed all nodes as text - incclude image nodes that have text attached
         text_nodes = self._get_node_with_embedding(
-            text_nodes, show_progress, is_image=False, is_image_to_text=False
+            text_nodes, show_progress, is_image=False
         )
         new_text_ids = self.storage_context.vector_stores[DEFAULT_VECTOR_STORE].add(
             text_nodes, **insert_kwargs
@@ -330,7 +329,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             image_nodes,
             show_progress,
             is_image=True,
-            is_image_to_text=self._is_image_to_text,
         )
         new_img_ids = self.storage_context.vector_stores[self.image_namespace].add(
             image_nodes, **insert_kwargs
