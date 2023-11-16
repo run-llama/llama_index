@@ -194,7 +194,7 @@ class IngestionPipeline(BaseModel):
     disable_cache: bool = Field(default=False, description="Disable the cache")
 
     platform_base_url: str = Field(
-        default=None, description="Base URL for the platform"
+        default=DEFAULT_BASE_URL, description="Base URL for the platform"
     )
     platform_api_key: Optional[str] = Field(
         default=None, description="Platform API key"
