@@ -1,5 +1,19 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Added Cohere Reranker fine-tuning (#8859)
+- Support for custom httpx client in `AzureOpenAI` LLM (#8920)
+
+### Bug Fixes / Nits
+
+- Fixed issue with `set_global_service_context` not propagating settings (#8940)
+- Fixed issue with building index with Google Palm embeddings (#8936)
+- Fixed small issue with parsing ImageDocuments/Nodes that have no text (#8938)
+- Optimize `QueryEngineTool` for agents (#8933)
+
 ## [0.9.0] - 2023-11-15
 
 ### New Features / Breaking Changes / Deprecations
