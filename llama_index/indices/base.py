@@ -1,14 +1,22 @@
 """Base index classes."""
 import logging
+import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, cast
 
+import unique_names_generator as ung
+
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.data_structs.data_structs import IndexStruct
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
-from llama_index.ingestion import run_transformations
+from llama_index.ingestion.pipeline import (
+    DEFAULT_PROJECT_NAME,
+    IngestionPipeline,
+    run_transformations,
+)
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.schema import BaseNode, Document
@@ -80,6 +88,8 @@ class BaseIndex(Generic[IS], ABC):
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
+        remote_pipeline_name: Optional[str] = None,
+        project_name: str = DEFAULT_PROJECT_NAME,
         **kwargs: Any,
     ) -> IndexType:
         """Create index from documents.
@@ -97,9 +107,51 @@ class BaseIndex(Generic[IS], ABC):
             for doc in documents:
                 docstore.set_document_hash(doc.get_doc_id(), doc.hash)
 
-            nodes = run_transformations(
-                documents,  # type: ignore
-                service_context.transformations,
+            if remote_pipeline_name is not None:
+                pipeline = IngestionPipeline.from_pipeline_name(
+                    remote_pipeline_name,
+                    project_name=project_name,
+                    disable_cache=True,
+                )
+            else:
+                pipeline = IngestionPipeline(
+                    name=remote_pipeline_name
+                    or ung.get_random_name(separator="-", style="lowercase"),
+                    project_name=project_name,
+                    transformations=service_context.transformations,
+                    disable_cache=True,
+                )
+
+            # check for empty and false
+            should_upload = (
+                os.environ.get("PLATFORM_AUTO_UPLOAD", "false").lower() != "false"
+            )
+
+            if should_upload:
+                # we should upload the embeddings, only if
+                # they are not already in the pipeline
+                print(
+                    "Uploading a copy of the ingestion pipeline to the platform.",
+                    flush=True,
+                )
+                embeddings_found = False
+                for transformation in pipeline.transformations:
+                    if isinstance(transformation, BaseEmbedding):
+                        embeddings_found = True
+                        break
+
+                if not embeddings_found:
+                    pipeline.transformations.append(service_context.embed_model)
+
+                # Register the pipeline -- it will print the URL to the pipeline
+                pipeline.register(documents=documents)  # type: ignore
+
+                # remove the embeddings
+                if embeddings_found:
+                    pipeline.transformations.pop()
+
+            nodes = pipeline.run(
+                documents=documents,  # type: ignore
                 show_progress=show_progress,
                 **kwargs,
             )

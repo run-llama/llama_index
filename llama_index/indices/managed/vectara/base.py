@@ -16,6 +16,7 @@ from llama_index.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.indices.service_context import ServiceContext
+from llama_index.ingestion.pipeline import DEFAULT_PROJECT_NAME
 from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
 from llama_index.storage.storage_context import StorageContext
 
@@ -296,6 +297,8 @@ class VectaraIndex(BaseManagedIndex):
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
+        remote_pipeline_name: Optional[str] = None,
+        project_name: str = DEFAULT_PROJECT_NAME,
         **kwargs: Any,
     ) -> IndexType:
         """Build a Vectara index from a sequence of documents."""

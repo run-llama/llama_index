@@ -208,7 +208,8 @@ class IngestionPipeline(BaseModel):
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
-        platform_base_url: str = None,
+        disable_cache: bool = False,
+        platform_base_url: str = DEFAULT_BASE_URL,
         platform_api_key: Optional[str] = None,
     ) -> None:
         if transformations is None:
@@ -234,6 +235,7 @@ class IngestionPipeline(BaseModel):
             documents=documents,
             vector_store=vector_store,
             cache=cache or IngestionCache(),
+            disable_cache=disable_cache,
             platform_base_url=platform_base_url,
             platform_api_key=platform_api_key,
         )
@@ -272,10 +274,16 @@ class IngestionPipeline(BaseModel):
         platform_base_url: Optional[str] = None,
         cache: Optional[IngestionCache] = None,
         platform_api_key: Optional[str] = None,
+        disable_cache: bool = False,
     ) -> "IngestionPipeline":
-        client = PlatformApi(
-            platform_base_url=platform_base_url, token=platform_api_key
+        platform_base_url = platform_base_url or os.environ.get(
+            "PLATFORM_BASE_URL", DEFAULT_BASE_URL
         )
+        assert platform_base_url is not None
+
+        platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
+
+        client = PlatformApi(base_url=platform_base_url, token=platform_api_key)
 
         projects: List[Project] = client.project.list_projects(
             project_name=project_name
@@ -338,6 +346,7 @@ class IngestionPipeline(BaseModel):
             vector_store=vector_stores[0] if len(vector_stores) > 0 else None,
             platform_base_url=platform_base_url,
             cache=cache,
+            disable_cache=disable_cache,
             platform_api_key=platform_api_key,
         )
 
