@@ -1,4 +1,4 @@
-"""Relevancy evaluation."""
+"""Faithfulness evaluation."""
 from __future__ import annotations
 
 from typing import Any, List, Sequence
@@ -12,20 +12,40 @@ from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
-    "Your task is to evaluate if the response for the query \
-    is in line with the images and textual context information provided.\n"
-    "You have two options to answer. Either YES/ NO.\n"
-    "Answer - YES, if the response for the query \
-    is in line with context information otherwise NO.\n"
-    "Query and Response: \n {query_str}\n"
-    "Context: \n {context_str}\n"
+    "Please tell if a given piece of information "
+    "is supported by the visual as well as textual context information.\n"
+    "You need to answer with either YES or NO.\n"
+    "Answer YES if any of the image(s) and textual context supports the information, even "
+    "if most of the context is unrelated. "
+    "Some examples are provided below with only text context, but please do use\n"
+    "any images for context if they are provided.\n\n"
+    "Information: Apple pie is generally double-crusted.\n"
+    "Context: An apple pie is a fruit pie in which the principal filling "
+    "ingredient is apples. \n"
+    "Apple pie is often served with whipped cream, ice cream "
+    "('apple pie à la mode'), custard or cheddar cheese.\n"
+    "It is generally double-crusted, with pastry both above "
+    "and below the filling; the upper crust may be solid or "
+    "latticed (woven of crosswise strips).\n"
+    "Answer: YES\n"
+    "Information: Apple pies tastes bad.\n"
+    "Context: An apple pie is a fruit pie in which the principal filling "
+    "ingredient is apples. \n"
+    "Apple pie is often served with whipped cream, ice cream "
+    "('apple pie à la mode'), custard or cheddar cheese.\n"
+    "It is generally double-crusted, with pastry both above "
+    "and below the filling; the upper crust may be solid or "
+    "latticed (woven of crosswise strips).\n"
+    "Answer: NO\n"
+    "Information: {query_str}\n"
+    "Context: {context_str}\n"
     "Answer: "
 )
 
 DEFAULT_REFINE_TEMPLATE = PromptTemplate(
-    "We want to understand if the following query and response is"
-    "in line with the textual and visual context information: \n {query_str}\n"
-    "We have provided an existing YES/NO answer: \n {existing_answer}\n"
+    "We want to understand if the following information is present "
+    "in the context information: {query_str}\n"
+    "We have provided an existing YES/NO answer: {existing_answer}\n"
     "We have the opportunity to refine the existing answer "
     "(only if needed) with some more context below.\n"
     "------------\n"
@@ -37,22 +57,23 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
 )
 
 
-class MultiModalRelevancyEvaluator(BaseEvaluator):
-    """Relevancy evaluator.
+class MultiModalFaithfulnessEvaluator(BaseEvaluator):
+    """Multi-Modal Faithfulness evaluator.
 
-    Evaluates the relevancy of retrieved image and textual contexts and response to a query.
-    This evaluator considers the query string, retrieved contexts, and response string.
+    Evaluates whether a response is faithful to the contexts
+    (i.e. whether the response is supported by the contexts or hallucinated.)
+
+    This evaluator only considers the response string and the list of context strings.
 
     Args:
         multi_modal_llm(Optional[MultiModalLLM]):
             The Multi-Modal LLM Judge to use for evaluations.
-        raise_error(Optional[bool]):
-            Whether to raise an error if the response is invalid.
+        raise_error(bool): Whether to raise an error when the response is invalid.
             Defaults to False.
         eval_template(Optional[Union[str, BasePromptTemplate]]):
             The template to use for evaluation.
         refine_template(Optional[Union[str, BasePromptTemplate]]):
-            The template to use for refinement.
+            The template to use for refining the evaluation.
     """
 
     def __init__(
@@ -103,16 +124,15 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
         image_urls: List[str] | None = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Evaluate whether the multi-modal contexts and response are relevant to the query."""
+        """Evaluate whether the response is faithful to the multi-modal contexts."""
+        del query  # Unused
         del kwargs  # Unused
-
-        if query is None or contexts is None or response is None:
-            raise ValueError("query, contexts, and response must be provided")
+        if contexts is None or response is None:
+            raise ValueError("contexts and response must be provided")
 
         context_str = "\n\n".join(contexts)
-        evaluation_query_str = f"Question: {query}\nResponse: {response}"
         fmt_prompt = self._eval_template.format(
-            context_str=context_str, query_str=evaluation_query_str
+            context_str=context_str, query_str=response
         )
 
         image_documents = []
@@ -123,6 +143,8 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
                 ).load_data()
             node_parser = SentenceSplitter.from_defaults()
             image_nodes = node_parser.get_nodes_from_documents(image_documents)
+        if image_urls:
+            ...
 
         response_obj = self._multi_modal_llm.complete(
             prompt=fmt_prompt,
@@ -134,13 +156,13 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
         if "yes" in raw_response_txt.lower():
             passing = True
         else:
+            passing = False
             if self._raise_error:
                 raise ValueError("The response is invalid")
-            passing = False
 
         return EvaluationResult(
-            query=query,
             response=response,
+            contexts=contexts,
             passing=passing,
             score=1.0 if passing else 0.0,
             feedback=raw_response_txt,
@@ -155,16 +177,15 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
         image_urls: List[str] | None = None,
         **kwargs: Any,
     ) -> EvaluationResult:
-        """Async evaluate whether the multi-modal contexts and response are relevant to the query."""
+        """Async evaluate whether the response is faithful to the multi-modal contexts."""
+        del query  # Unused
         del kwargs  # Unused
-
-        if query is None or contexts is None or response is None:
-            raise ValueError("query, contexts, and response must be provided")
+        if contexts is None or response is None:
+            raise ValueError("contexts and response must be provided")
 
         context_str = "\n\n".join(contexts)
-        evaluation_query_str = f"Question: {query}\nResponse: {response}"
         fmt_prompt = self._eval_template.format(
-            context_str=context_str, query_str=evaluation_query_str
+            context_str=context_str, query_str=response
         )
 
         image_documents = []
@@ -188,13 +209,13 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
         if "yes" in raw_response_txt.lower():
             passing = True
         else:
+            passing = False
             if self._raise_error:
                 raise ValueError("The response is invalid")
-            passing = False
 
         return EvaluationResult(
-            query=query,
             response=response,
+            contexts=contexts,
             passing=passing,
             score=1.0 if passing else 0.0,
             feedback=raw_response_txt,
