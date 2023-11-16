@@ -12,7 +12,11 @@ from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
-from llama_index.ingestion.pipeline import DEFAULT_PROJECT_NAME, IngestionPipeline
+from llama_index.ingestion.pipeline import (
+    DEFAULT_PROJECT_NAME,
+    IngestionPipeline,
+    run_transformations,
+)
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.schema import BaseNode, Document
