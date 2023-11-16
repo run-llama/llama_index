@@ -1,15 +1,14 @@
 """Faithfulness evaluation."""
 from __future__ import annotations
 
-from typing import Any, List, Sequence
+from typing import Any, List, Optional, Sequence, Union
 
-from llama_index import SimpleDirectoryReader
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.multi_modal_llms.base import MultiModalLLM
 from llama_index.multi_modal_llms.openai import OpenAIMultiModal
-from llama_index.node_parser import SentenceSplitter
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
+from llama_index.schema import ImageNode
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Please tell if a given piece of information "
@@ -78,10 +77,10 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        multi_modal_llm: MultiModalLLM | None = None,
+        multi_modal_llm: Optional[MultiModalLLM] = None,
         raise_error: bool = False,
-        eval_template: str | BasePromptTemplate | None = None,
-        refine_template: str | BasePromptTemplate | None = None,
+        eval_template: Union[str, BasePromptTemplate, None] = None,
+        refine_template: Union[str, BasePromptTemplate, None] = None,
     ) -> None:
         """Init params."""
         self._multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
@@ -117,11 +116,11 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
 
     def evaluate(
         self,
-        query: str | None = None,
-        response: str | None = None,
-        contexts: Sequence[str] | None = None,
-        image_paths: List[str] | None = None,
-        image_urls: List[str] | None = None,
+        query: Union[str, None] = None,
+        response: Union[str, None] = None,
+        contexts: Union[Sequence[str], None] = None,
+        image_paths: Union[List[str], None] = None,
+        image_urls: Union[List[str], None] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
         """Evaluate whether the response is faithful to the multi-modal contexts."""
@@ -135,16 +134,12 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             context_str=context_str, query_str=response
         )
 
-        image_documents = []
         if image_paths:
-            for image_path in image_paths:
-                image_documents += SimpleDirectoryReader(
-                    input_files=[image_path]
-                ).load_data()
-            node_parser = SentenceSplitter.from_defaults()
-            image_nodes = node_parser.get_nodes_from_documents(image_documents)
+            image_nodes = [
+                ImageNode(image_path=image_path) for image_path in image_paths
+            ]
         if image_urls:
-            ...
+            image_nodes = [ImageNode(image_url=image_url) for image_url in image_urls]
 
         response_obj = self._multi_modal_llm.complete(
             prompt=fmt_prompt,
@@ -170,11 +165,11 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
 
     async def aevaluate(
         self,
-        query: str | None = None,
-        response: str | None = None,
-        contexts: Sequence[str] | None = None,
-        image_paths: List[str] | None = None,
-        image_urls: List[str] | None = None,
+        query: Union[str, None] = None,
+        response: Union[str, None] = None,
+        contexts: Union[Sequence[str], None] = None,
+        image_paths: Union[List[str], None] = None,
+        image_urls: Union[List[str], None] = None,
         **kwargs: Any,
     ) -> EvaluationResult:
         """Async evaluate whether the response is faithful to the multi-modal contexts."""
@@ -188,16 +183,12 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             context_str=context_str, query_str=response
         )
 
-        image_documents = []
         if image_paths:
-            for image_path in image_paths:
-                image_documents += SimpleDirectoryReader(
-                    input_files=[image_path]
-                ).load_data()
-            node_parser = SentenceSplitter.from_defaults()
-            image_nodes = node_parser.get_nodes_from_documents(image_documents)
+            image_nodes = [
+                ImageNode(image_path=image_path) for image_path in image_paths
+            ]
         if image_urls:
-            ...
+            image_nodes = [ImageNode(image_url=image_url) for image_url in image_urls]
 
         response_obj = await self._multi_modal_llm.acomplete(
             prompt=fmt_prompt,

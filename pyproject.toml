@@ -146,6 +146,7 @@ ignore = [
     "F541",  # Messes with prompts.py
     "TCH002",
     "UP006",  # Messes with pydantic
+    "UP007",
 ]
 # Feel free to add more here
 select = [
