@@ -19,7 +19,6 @@ from llama_index.ingestion.client.client import PlatformApi
 from llama_index.ingestion.client.types.eval_question_create import EvalQuestionCreate
 from llama_index.ingestion.pipeline import (
     DEFAULT_BASE_URL,
-    DEFAULT_PROJECT_NAME,
 )
 
 
@@ -83,8 +82,8 @@ def get_results_df(
 def upload_eval_dataset(
     dataset_name: str,
     questions: List[str],
-    project_name: str = DEFAULT_PROJECT_NAME,
-    platform_base_url: str = DEFAULT_BASE_URL,
+    project_name: Optional[str] = None,
+    platform_base_url: Optional[str] = None,
     platform_api_key: Optional[str] = None,
     overwrite: bool = False,
     append: bool = False,
@@ -93,6 +92,8 @@ def upload_eval_dataset(
     platform_base_url = platform_base_url or os.environ.get(
         "PLATFORM_BASE_URL", DEFAULT_BASE_URL
     )
+    assert platform_base_url is not None
+
     platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
 
     client = PlatformApi(base_url=platform_base_url, token=platform_api_key)

@@ -111,8 +111,6 @@ class BaseIndex(Generic[IS], ABC):
                 pipeline = IngestionPipeline.from_pipeline_name(
                     remote_pipeline_name,
                     project_name=project_name,
-                    platform_api_key=os.environ.get("PLATFORM_API_KEY", ""),
-                    platform_base_url=os.environ.get("PLATFORM_BASE_URL", ""),
                     disable_cache=True,
                 )
             else:
@@ -121,8 +119,6 @@ class BaseIndex(Generic[IS], ABC):
                     or ung.get_random_name(separator="-", style="lowercase"),
                     project_name=project_name,
                     transformations=service_context.transformations,
-                    platform_api_key=os.environ.get("PLATFORM_API_KEY", ""),
-                    platform_base_url=os.environ.get("PLATFORM_BASE_URL", ""),
                     disable_cache=True,
                 )
 
@@ -134,6 +130,10 @@ class BaseIndex(Generic[IS], ABC):
             if should_upload:
                 # we should upload the embeddings, only if
                 # they are not already in the pipeline
+                print(
+                    "Uploading a copy of the ingestion pipeline to the platform.",
+                    flush=True,
+                )
                 embeddings_found = False
                 for transformation in pipeline.transformations:
                     if isinstance(transformation, BaseEmbedding):
