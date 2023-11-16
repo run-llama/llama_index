@@ -1,8 +1,7 @@
 import random
 from typing import Any, List, Optional, Tuple
 
-from pydantic import BaseModel
-
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.finetuning import EmbeddingQAFinetuneDataset
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 
