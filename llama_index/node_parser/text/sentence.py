@@ -170,7 +170,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         Has a preference for complete sentences, phrases, and minimal overlap.
         """
         if text == "":
-            return []
+            return [text]
 
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
