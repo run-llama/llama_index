@@ -51,3 +51,4 @@ class BaseImageRetriever(PromptMixin):
         Implemented by the user.
 
         """
+        return self._image_retrieve(query_bundle)

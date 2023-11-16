@@ -236,7 +236,14 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        return await self.aretrieve(query_bundle)
+        if self._vector_store.is_embedding_query:
+            # change the embedding for query bundle to Multi Modal Text encoder
+            query_bundle.embedding = (
+                await self._service_context.embed_model.aget_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
+                )
+            )
+        return await self._aget_text_nodes_with_embeddings(query_bundle)
 
     async def _aimage_retrieve(
         self,
