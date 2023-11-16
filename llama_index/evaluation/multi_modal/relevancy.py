@@ -24,7 +24,7 @@ DEFAULT_EVAL_TEMPLATE = PromptTemplate(
 
 DEFAULT_REFINE_TEMPLATE = PromptTemplate(
     "We want to understand if the following query and response is"
-    "in line with the context information: \n {query_str}\n"
+    "in line with the textual and visual context information: \n {query_str}\n"
     "We have provided an existing YES/NO answer: \n {existing_answer}\n"
     "We have the opportunity to refine the existing answer "
     "(only if needed) with some more context below.\n"
@@ -38,7 +38,7 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
 
 
 class MultiModalRelevancyEvaluator(BaseEvaluator):
-    """Relenvancy evaluator.
+    """Relevancy evaluator.
 
     Evaluates the relevancy of retrieved image and textual contexts and response to a query.
     This evaluator considers the query string, retrieved contexts, and response string.
