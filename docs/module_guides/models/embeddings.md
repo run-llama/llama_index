@@ -26,6 +26,7 @@ To save costs, you may want to use a local model.
 
 ```python
 from llama_index import ServiceContext
+
 service_context = ServiceContext.from_defaults(embed_model="local")
 ```
 
@@ -48,6 +49,7 @@ service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
 # optionally set a global service context to avoid passing it into other objects every time
 from llama_index import set_global_service_context
+
 set_global_service_context(service_context)
 
 documents = SimpleDirectoryReader("./data").load_data()
@@ -80,6 +82,7 @@ The easiest way to use a local model is:
 
 ```python
 from llama_index import ServiceContext
+
 service_context = ServiceContext.from_defaults(embed_model="local")
 ```
 
@@ -89,7 +92,7 @@ To configure the model used (from Hugging Face hub), add the model name separate
 from llama_index import ServiceContext
 
 service_context = ServiceContext.from_defaults(
-  embed_model="local:BAAI/bge-large-en"
+    embed_model="local:BAAI/bge-large-en"
 )
 ```
 
@@ -108,16 +111,16 @@ Creation with specifying the model and output path:
 ```python
 from llama_index.embeddings import OptimumEmbedding
 
-OptimumEmbedding.create_and_save_optimum_model("BAAI/bge-small-en-v1.5", "./bge_onnx")
+OptimumEmbedding.create_and_save_optimum_model(
+    "BAAI/bge-small-en-v1.5", "./bge_onnx"
+)
 ```
 
 And then usage:
 
 ```python
 embed_model = OptimumEmbedding(folder_name="./bge_onnx")
-service_context = ServiceContext.from_defaults(
-  embed_model=embed_model
-)
+service_context = ServiceContext.from_defaults(embed_model=embed_model)
 ```
 
 ### LangChain Integrations
@@ -148,28 +151,31 @@ from typing import Any, List
 from InstructorEmbedding import INSTRUCTOR
 from llama_index.embeddings.base import BaseEmbedding
 
+
 class InstructorEmbeddings(BaseEmbedding):
-  def __init__(
-    self,
-    instructor_model_name: str = "hkunlp/instructor-large",
-    instruction: str = "Represent the Computer Science documentation or question:",
-    **kwargs: Any,
-  ) -> None:
-    self._model = INSTRUCTOR(instructor_model_name)
-    self._instruction = instruction
-    super().__init__(**kwargs)
+    def __init__(
+        self,
+        instructor_model_name: str = "hkunlp/instructor-large",
+        instruction: str = "Represent the Computer Science documentation or question:",
+        **kwargs: Any,
+    ) -> None:
+        self._model = INSTRUCTOR(instructor_model_name)
+        self._instruction = instruction
+        super().__init__(**kwargs)
 
-    def _get_query_embedding(self, query: str) -> List[float]:
-      embeddings = self._model.encode([[self._instruction, query]])
-      return embeddings[0]
+        def _get_query_embedding(self, query: str) -> List[float]:
+            embeddings = self._model.encode([[self._instruction, query]])
+            return embeddings[0]
 
-    def _get_text_embedding(self, text: str) -> List[float]:
-      embeddings = self._model.encode([[self._instruction, text]])
-      return embeddings[0]
+        def _get_text_embedding(self, text: str) -> List[float]:
+            embeddings = self._model.encode([[self._instruction, text]])
+            return embeddings[0]
 
-    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-      embeddings = self._model.encode([[self._instruction, text] for text in texts])
-      return embeddings
+        def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+            embeddings = self._model.encode(
+                [[self._instruction, text] for text in texts]
+            )
+            return embeddings
 ```
 
 ## Standalone Usage
@@ -177,7 +183,9 @@ class InstructorEmbeddings(BaseEmbedding):
 You can also use embeddings as a standalone module for your project, existing application, or general testing and exploration.
 
 ```python
-embeddings = embed_model.get_text_embedding("It is raining cats and dogs here!")
+embeddings = embed_model.get_text_embedding(
+    "It is raining cats and dogs here!"
+)
 ```
 
 ## Modules
@@ -199,4 +207,6 @@ maxdepth: 1
 /examples/embeddings/clarifai.ipynb
 /examples/embeddings/llm_rails.ipynb
 /examples/embeddings/text_embedding_inference.ipynb
+/examples/embeddings/google_palm.ipynb
+/examples/embeddings/jinaai_embeddings.ipynb
 ```

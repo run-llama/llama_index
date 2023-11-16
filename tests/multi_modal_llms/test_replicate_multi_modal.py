@@ -42,6 +42,5 @@ def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
 
     llm = ReplicateMultiModal(model="llava")
     prompt = "test prompt"
-    response = llm.complete(prompt, [ImageDocument()], 0)
-    print(response)
+    response = llm.complete(prompt, [ImageDocument()])
     assert "".join(response["output"]) == "Yes, you are allowed "

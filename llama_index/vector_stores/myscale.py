@@ -7,7 +7,6 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.myscale import (
     MyScaleSettings,
     escape_str,
@@ -20,6 +19,7 @@ from llama_index.schema import (
     RelatedNodeInfo,
     TextNode,
 )
+from llama_index.service_context import ServiceContext
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     VectorStore,
@@ -214,6 +214,7 @@ class MyScaleVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 

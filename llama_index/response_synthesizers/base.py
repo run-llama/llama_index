@@ -13,8 +13,6 @@ from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.mixin import PromptMixin
 from llama_index.response.schema import (
     RESPONSE_TYPE,
@@ -22,7 +20,8 @@ from llama_index.response.schema import (
     Response,
     StreamingResponse,
 )
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 logger = logging.getLogger(__name__)

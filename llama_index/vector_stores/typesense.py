@@ -7,8 +7,8 @@ An index that that is built on top of an existing vector store.
 import logging
 from typing import Any, Callable, List, Optional, cast
 
-from llama_index import utils
 from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.utils import get_tokenizer
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
@@ -75,7 +75,7 @@ class TypesenseVectorStore(VectorStore):
                     f"got {type(client)}"
                 )
             self._client = cast(typesense.Client, client)
-        self._tokenizer = tokenizer or utils.globals_helper.tokenizer
+        self._tokenizer = tokenizer or get_tokenizer()
         self._text_key = text_key
         self._collection_name = collection_name
         self._collection = self._client.collections[self._collection_name]
@@ -130,6 +130,7 @@ class TypesenseVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 

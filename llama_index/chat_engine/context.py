@@ -9,16 +9,15 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
     ToolOutput,
 )
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.postprocessor.types import BaseNodePostprocessor
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
+from llama_index.core import BaseRetriever
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.schema import MetadataMode, NodeWithScore
+from llama_index.postprocessor.types import BaseNodePostprocessor
+from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 
-DEFAULT_CONTEXT_TEMPALTE = (
+DEFAULT_CONTEXT_TEMPLATE = (
     "Context information is below."
     "\n--------------------\n"
     "{context_str}"
@@ -48,7 +47,7 @@ class ContextChatEngine(BaseChatEngine):
         self._memory = memory
         self._prefix_messages = prefix_messages
         self._node_postprocessors = node_postprocessors or []
-        self._context_template = context_template or DEFAULT_CONTEXT_TEMPALTE
+        self._context_template = context_template or DEFAULT_CONTEXT_TEMPLATE
 
         self.callback_manager = callback_manager or CallbackManager([])
         for node_postprocessor in self._node_postprocessors:

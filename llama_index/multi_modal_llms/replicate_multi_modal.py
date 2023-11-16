@@ -91,57 +91,43 @@ class ReplicateMultiModal(MultiModalLLM):
     def _get_multi_modal_input_dict(
         self, prompt: str, image_document: ImageDocument, **kwargs: Any
     ) -> Dict[str, Any]:
-        if image_document and image_document.metadata:
-            if "file_path" in image_document.metadata:
-                # load local image file and pass file handler to replicate
-                try:
-                    return {
-                        self.prompt_key: prompt,
-                        self.image_key: open(
-                            image_document.metadata["file_path"], "rb"
-                        ),
-                        **self._model_kwargs,
-                        **kwargs,
-                    }
-                except FileNotFoundError:
-                    raise FileNotFoundError(
-                        "Could not load local image file. Please check whether the file exists"
-                    )
-            elif "image_url" in image_document.metadata:
-                # load remote image url and pass file url to replicate
+        if image_document.image_path:
+            # load local image file and pass file handler to replicate
+            try:
                 return {
                     self.prompt_key: prompt,
-                    self.image_key: image_document.metadata["image_url"],
+                    self.image_key: open(image_document.image_path, "rb"),
                     **self._model_kwargs,
                     **kwargs,
                 }
-            else:
+            except FileNotFoundError:
                 raise FileNotFoundError(
-                    "Could not load image file. Please check whether the file exists"
+                    "Could not load local image file. Please check whether the file exists"
                 )
-        return {}
+        elif image_document.image_url:
+            # load remote image url and pass file url to replicate
+            return {
+                self.prompt_key: prompt,
+                self.image_key: image_document.image_url,
+                **self._model_kwargs,
+                **kwargs,
+            }
+        else:
+            raise FileNotFoundError(
+                "Could not load image file. Please check whether the file exists"
+            )
 
     def complete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponse:
-        response_gen = self.stream_complete(
-            prompt, image_documents, image_idx, **kwargs
-        )
+        response_gen = self.stream_complete(prompt, image_documents, **kwargs)
         response_list = list(response_gen)
         final_response = response_list[-1]
         final_response.delta = None
         return final_response
 
     def stream_complete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponseGen:
         try:
             import replicate
@@ -151,9 +137,18 @@ class ReplicateMultiModal(MultiModalLLM):
                 "Please install replicate with `pip install replicate`"
             )
 
+        # TODO: at the current moment, only support uploading one image document
+        if len(image_documents) > 1:
+            raise NotImplementedError(
+                "ReplicateMultiModal currently only supports uploading one image document"
+            )
+
         prompt = self._completion_to_prompt(prompt)
         input_dict = self._get_multi_modal_input_dict(
-            prompt, image_documents[image_idx], **kwargs
+            # using the first image for single image completion
+            prompt,
+            image_documents[0],
+            **kwargs
         )
 
         response_iter = replicate.run(self.model, input=input_dict)
@@ -170,19 +165,11 @@ class ReplicateMultiModal(MultiModalLLM):
         return gen()
 
     async def acomplete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponse:
         raise NotImplementedError
 
     async def astream_complete(
-        self,
-        prompt: str,
-        image_documents: Sequence[ImageDocument],
-        image_idx: int,
-        **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponseAsyncGen:
         raise NotImplementedError

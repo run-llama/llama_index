@@ -8,9 +8,9 @@ Nodes are a first-class citizen in LlamaIndex. You can choose to define Nodes an
 For instance, you can do
 
 ```python
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceSplitter
 
-parser = SimpleNodeParser.from_defaults()
+parser = SentenceSplitter()
 
 nodes = parser.get_nodes_from_documents(documents)
 ```
@@ -23,15 +23,21 @@ from llama_index.schema import TextNode, NodeRelationship, RelatedNodeInfo
 node1 = TextNode(text="<text_chunk>", id_="<node_id>")
 node2 = TextNode(text="<text_chunk>", id_="<node_id>")
 # set relationships
-node1.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(node_id=node2.node_id)
-node2.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=node1.node_id)
+node1.relationships[NodeRelationship.NEXT] = RelatedNodeInfo(
+    node_id=node2.node_id
+)
+node2.relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(
+    node_id=node1.node_id
+)
 nodes = [node1, node2]
 ```
 
 The `RelatedNodeInfo` class can also store additional `metadata` if needed:
 
 ```python
-node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(node_id=node1.node_id, metadata={"key": "val"})
+node2.relationships[NodeRelationship.PARENT] = RelatedNodeInfo(
+    node_id=node1.node_id, metadata={"key": "val"}
+)
 ```
 
 ### Customizing the ID
@@ -45,5 +51,4 @@ You can also get and set the `node_id` of any `TextNode` directly.
 ```python
 print(node.node_id)
 node.node_id = "My new node_id!"
-
 ```

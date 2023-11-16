@@ -22,7 +22,7 @@ Get started with:
 ```python
 from llama_index import download_loader
 
-GoogleDocsReader = download_loader('GoogleDocsReader')
+GoogleDocsReader = download_loader("GoogleDocsReader")
 loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=[...])
 ```

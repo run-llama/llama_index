@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
-from openai.openai_object import OpenAIObject
+from openai.resources import Completions
 from tenacity import (
     before_sleep_log,
     retry,
@@ -23,7 +23,7 @@ INVALID_API_KEY_ERROR_MESSAGE = """Invalid LLM API key."""
 
 logger = logging.getLogger(__name__)
 
-CompletionClientType = Type[OpenAIObject]
+CompletionClientType = Type[Completions]
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:

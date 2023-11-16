@@ -2,6 +2,7 @@ import logging
 from typing import Any, List
 
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 from llama_index.embeddings.base import BaseEmbedding
 
@@ -19,6 +20,7 @@ class LLMRailsEmbedding(BaseEmbedding):
 
     model_id: str
     api_key: str
+    session: requests.Session
 
     @classmethod
     def class_name(self) -> str:
@@ -30,7 +32,18 @@ class LLMRailsEmbedding(BaseEmbedding):
         model_id: str = "embedding-english-v1",  # or embedding-multi-v1
         **kwargs: Any,
     ):
-        super().__init__(model_id=model_id, api_key=api_key, **kwargs)
+        retry = Retry(
+            total=3,
+            connect=3,
+            read=2,
+            allowed_methods=["POST"],
+            backoff_factor=2,
+            status_forcelist=[502, 503, 504],
+        )
+        session = requests.Session()
+        session.mount("https://api.llmrails.com", HTTPAdapter(max_retries=retry))
+        session.headers = {"X-API-KEY": api_key}
+        super().__init__(model_id=model_id, api_key=api_key, session=session, **kwargs)
 
     def _get_embedding(self, text: str) -> List[float]:
         """
@@ -43,9 +56,8 @@ class LLMRailsEmbedding(BaseEmbedding):
             List[float]: The embedding for the input query text.
         """
         try:
-            response = requests.post(
+            response = self.session.post(
                 "https://api.llmrails.com/v1/embeddings",
-                headers={"X-API-KEY": self.api_key},
                 json={"input": [text], "model": self.model_id},
             )
 

@@ -67,6 +67,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    collection_name: Optional[str]
     host: Optional[str]
     port: Optional[str]
     ssl: bool
@@ -78,7 +79,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        chroma_collection: Any,
+        chroma_collection: Optional[Any] = None,
+        collection_name: Optional[str] = None,
         host: Optional[str] = None,
         port: Optional[str] = None,
         ssl: bool = False,
@@ -89,18 +91,25 @@ class ChromaVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Init params."""
         try:
-            import chromadb  # noqa
+            import chromadb
         except ImportError:
             raise ImportError(import_err_msg)
         from chromadb.api.models.Collection import Collection
 
-        self._collection = cast(Collection, chroma_collection)
+        if chroma_collection is None:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            self._collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            self._collection = cast(Collection, chroma_collection)
 
         super().__init__(
             host=host,
             port=port,
             ssl=ssl,
             headers=headers,
+            collection_name=collection_name,
             persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
         )
@@ -150,7 +159,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "ChromaVectorStore"
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
 
         Args:

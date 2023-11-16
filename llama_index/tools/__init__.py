@@ -1,5 +1,6 @@
 """Tools."""
 
+from llama_index.tools.download import download_tool
 from llama_index.tools.function_tool import FunctionTool
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.query_plan import QueryPlanTool
@@ -22,4 +23,5 @@ __all__ = [
     "ToolOutput",
     "FunctionTool",
     "QueryPlanTool",
+    "download_tool",
 ]

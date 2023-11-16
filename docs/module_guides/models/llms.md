@@ -21,7 +21,7 @@ The following code snippet shows how you can get started using LLMs.
 from llama_index.llms import OpenAI
 
 # non-streaming
-resp = OpenAI().complete('Paul Graham is ')
+resp = OpenAI().complete("Paul Graham is ")
 print(resp)
 ```
 
@@ -31,6 +31,32 @@ maxdepth: 1
 ---
 llms/usage_standalone.md
 llms/usage_custom.md
+```
+
+## A Note on Tokenization
+
+By default, LlamaIndex uses a global tokenizer for all token counting. This defaults to `cl100k` from tiktoken, which is the tokenizer to match the default LLM `gpt-3.5-turbo`.
+
+If you change the LLM, you may need to update this tokenizer to ensure accurate token counts, chunking, and prompting.
+
+The single requirement for a tokenizer is that it is a callable function, that takes a string, and returns a list.
+
+You can set a global tokenizer like so:
+
+```python
+from llama_index import set_global_tokenizer
+
+# tiktoken
+import tiktoken
+
+set_global_tokenizer(tiktoken.encoding_for_model("gpt-3.5-turbo").encode)
+
+# huggingface
+from transformers import AutoTokenizer
+
+set_global_tokenizer(
+    AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta").encode
+)
 ```
 
 ## LLM Compatibility Tracking

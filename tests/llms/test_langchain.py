@@ -1,22 +1,33 @@
 from typing import List
 
 import pytest
-from llama_index.bridge.langchain import (
-    AIMessage,
-    BaseMessage,
-    ChatOpenAI,
-    Cohere,
-    FakeListLLM,
-    FunctionMessage,
-    HumanMessage,
-    OpenAI,
-    SystemMessage,
-)
 from llama_index.llms.base import ChatMessage, MessageRole
-from llama_index.llms.langchain import LangChainLLM
-from llama_index.llms.langchain_utils import from_lc_messages, to_lc_messages
+
+try:
+    import cohere
+except ImportError:
+    cohere = None  # type: ignore
+
+try:
+    import langchain
+    from llama_index.bridge.langchain import (
+        AIMessage,
+        BaseMessage,
+        ChatOpenAI,
+        Cohere,
+        FakeListLLM,
+        FunctionMessage,
+        HumanMessage,
+        OpenAI,
+        SystemMessage,
+    )
+    from llama_index.llms.langchain import LangChainLLM
+    from llama_index.llms.langchain_utils import from_lc_messages, to_lc_messages
+except ImportError:
+    langchain = None  # type: ignore
 
 
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
 def test_basic() -> None:
     lc_llm = FakeListLLM(responses=["test response 1", "test response 2"])
     llm = LangChainLLM(llm=lc_llm)
@@ -28,6 +39,7 @@ def test_basic() -> None:
     llm.chat([message])
 
 
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
 def test_to_lc_messages() -> None:
     lc_messages: List[BaseMessage] = [
         SystemMessage(content="test system message"),
@@ -42,6 +54,7 @@ def test_to_lc_messages() -> None:
         assert messages[i].content == lc_messages[i].content
 
 
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
 def test_from_lc_messages() -> None:
     messages = [
         ChatMessage(content="test system message", role=MessageRole.SYSTEM),
@@ -60,13 +73,9 @@ def test_from_lc_messages() -> None:
         assert messages[i].content == lc_messages[i].content
 
 
-try:
-    import cohere
-except ImportError:
-    cohere = None  # type: ignore
-
-
-@pytest.mark.skipif(cohere is None, reason="cohere not installed")
+@pytest.mark.skipif(
+    cohere is None or langchain is None, reason="cohere or langchain not installed"
+)
 def test_metadata_sets_model_name() -> None:
     chat_gpt = LangChainLLM(
         llm=ChatOpenAI(model="gpt-4-0613", openai_api_key="model-name-tests")

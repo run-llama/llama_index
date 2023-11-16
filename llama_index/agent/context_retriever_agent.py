@@ -11,7 +11,7 @@ from llama_index.callbacks import CallbackManager
 from llama_index.chat_engine.types import (
     AgentChatResponse,
 )
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.core import BaseRetriever
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
@@ -167,7 +167,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        function_call: Union[str, dict] = "auto",
+        tool_choice: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         """Chat."""
         formatted_message = self._build_formatted_message(message)
@@ -175,14 +175,14 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
             print_text(formatted_message + "\n", color="yellow")
 
         return super().chat(
-            formatted_message, chat_history=chat_history, function_call=function_call
+            formatted_message, chat_history=chat_history, tool_choice=tool_choice
         )
 
     async def achat(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        function_call: Union[str, dict] = "auto",
+        tool_choice: Union[str, dict] = "auto",
     ) -> AgentChatResponse:
         """Chat."""
         formatted_message = self._build_formatted_message(message)
@@ -190,7 +190,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
             print_text(formatted_message + "\n", color="yellow")
 
         return await super().achat(
-            formatted_message, chat_history=chat_history, function_call=function_call
+            formatted_message, chat_history=chat_history, tool_choice=tool_choice
         )
 
     def get_tools(self, message: str) -> List[BaseTool]:

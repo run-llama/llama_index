@@ -4,13 +4,13 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, cast
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
+from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexStruct
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.service_context import ServiceContext
+from llama_index.ingestion import run_transformations
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.schema import BaseNode, Document
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 
@@ -95,8 +95,12 @@ class BaseIndex(Generic[IS], ABC):
         with service_context.callback_manager.as_trace("index_construction"):
             for doc in documents:
                 docstore.set_document_hash(doc.get_doc_id(), doc.hash)
-            nodes = service_context.node_parser.get_nodes_from_documents(
-                documents, show_progress=show_progress
+
+            nodes = run_transformations(
+                documents,  # type: ignore
+                service_context.transformations,
+                show_progress=show_progress,
+                **kwargs,
             )
 
             return cls(
@@ -184,9 +188,12 @@ class BaseIndex(Generic[IS], ABC):
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
         with self._service_context.callback_manager.as_trace("insert"):
-            nodes = self.service_context.node_parser.get_nodes_from_documents(
-                [document]
+            nodes = run_transformations(
+                [document],
+                self._service_context.transformations,
+                show_progress=self._show_progress,
             )
+
             self.insert_nodes(nodes, **insert_kwargs)
             self.docstore.set_document_hash(document.get_doc_id(), document.hash)
 
