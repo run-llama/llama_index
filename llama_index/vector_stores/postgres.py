@@ -185,7 +185,7 @@ class PGVectorStore(BasePydanticVectorStore):
             cache_ok=cache_ok,
             perform_setup=perform_setup,
             debug=debug,
-            use_jsonb=use_jsonb,
+            use_jsonb=use_jsonb
         )
 
     async def close(self) -> None:
