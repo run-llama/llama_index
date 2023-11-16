@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple
 from tqdm import tqdm
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.utils import LLMType, resolve_llm
+from llama_index.llms.utils import LLMType
 from llama_index.schema import MetadataMode, TextNode
 
 
