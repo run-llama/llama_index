@@ -2,12 +2,12 @@
 import json
 import re
 import uuid
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from tqdm import tqdm
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.utils import LLMType
+from llama_index.llms.utils import LLM
 from llama_index.schema import MetadataMode, TextNode
 
 
@@ -67,7 +67,7 @@ context information provided."
 # generate queries as a convenience function
 def generate_qa_embedding_pairs(
     nodes: List[TextNode],
-    llm: Optional[LLMType],
+    llm: LLM,
     qa_generate_prompt_tmpl: str = DEFAULT_QA_GENERATE_PROMPT_TMPL,
     num_questions_per_chunk: int = 2,
 ) -> EmbeddingQAFinetuneDataset:
