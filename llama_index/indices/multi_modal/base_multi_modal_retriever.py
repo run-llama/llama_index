@@ -74,11 +74,12 @@ class MultiModalRetriever(BaseRetriever, BaseImageRetriever):
     ) -> List[NodeWithScore]:
         return await super()._aretrieve(query_bundle)
 
-    async def text_retrieve(
-        self,
-        query_bundle: QueryBundle,
+    async def atext_retrieve(
+        self, str_or_query_bundle: QueryType
     ) -> List[NodeWithScore]:
-        return await self._atext_retrieve(query_bundle)
+        if isinstance(str_or_query_bundle, str):
+            str_or_query_bundle = QueryBundle(str_or_query_bundle)
+        return await self._atext_retrieve(str_or_query_bundle)
 
     async def _aimage_retrieve(
         self,
@@ -87,7 +88,8 @@ class MultiModalRetriever(BaseRetriever, BaseImageRetriever):
         return await super()._aimage_retrieve(query_bundle)
 
     async def aimage_retrieve(
-        self,
-        query_bundle: QueryBundle,
+        self, str_or_query_bundle: QueryType
     ) -> List[NodeWithScore]:
-        return await self._aimage_retrieve(query_bundle)
+        if isinstance(str_or_query_bundle, str):
+            str_or_query_bundle = QueryBundle(str_or_query_bundle)
+        return await self._aimage_retrieve(str_or_query_bundle)
