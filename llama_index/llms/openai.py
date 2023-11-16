@@ -18,6 +18,7 @@ from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
     ChoiceDeltaToolCall,
+    ChoiceDelta,
 )
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -313,7 +314,7 @@ class OpenAI(LLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    delta = {}
+                    delta = ChoiceDelta()
 
                 # check if this chunk is the start of a function call
                 if (delta.role == MessageRole.ASSISTANT) and (delta.content is None):
