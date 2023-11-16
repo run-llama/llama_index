@@ -5,7 +5,7 @@ from llama_index.embeddings.adapter import (
     LinearAdapterEmbeddingModel,
 )
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
-from llama_index.embeddings.base import SimilarityMode
+from llama_index.embeddings.base import BaseEmbedding, SimilarityMode
 from llama_index.embeddings.bedrock import BedrockEmbedding
 from llama_index.embeddings.clarifai import ClarifaiEmbedding
 from llama_index.embeddings.clip import ClipEmbedding
@@ -15,6 +15,7 @@ from llama_index.embeddings.elasticsearch import (
     ElasticsearchEmbeddings,
 )
 from llama_index.embeddings.google import GoogleUnivSentEncoderEmbedding
+from llama_index.embeddings.google_palm import GooglePaLMEmbedding
 from llama_index.embeddings.gradient import GradientEmbedding
 from llama_index.embeddings.huggingface import (
     HuggingFaceEmbedding,
@@ -38,6 +39,7 @@ __all__ = [
     "ClarifaiEmbedding",
     "ClipEmbedding",
     "CohereEmbedding",
+    "BaseEmbedding",
     "DEFAULT_HUGGINGFACE_EMBEDDING_MODEL",
     "ElasticsearchEmbedding",
     "GoogleUnivSentEncoderEmbedding",
@@ -52,6 +54,7 @@ __all__ = [
     "AzureOpenAIEmbedding",
     "OptimumEmbedding",
     "Pooling",
+    "GooglePaLMEmbedding",
     "SimilarityMode",
     "TextEmbeddingsInference",
     "resolve_embed_model",

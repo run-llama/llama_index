@@ -1,10 +1,8 @@
 """Markdown node parser."""
 import re
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import build_nodes_from_splits
 from llama_index.schema import BaseNode, MetadataMode, TextNode
@@ -21,16 +19,6 @@ class MarkdownNodeParser(NodeParser):
         include_prev_next_rel (bool): whether to include prev/next relationships
 
     """
-
-    include_metadata: bool = Field(
-        default=True, description="Whether or not to consider metadata when splitting."
-    )
-    include_prev_next_rel: bool = Field(
-        default=True, description="Include prev/next node relationships."
-    )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
 
     @classmethod
     def from_defaults(
@@ -52,30 +40,18 @@ class MarkdownNodeParser(NodeParser):
         """Get class name."""
         return "MarkdownNodeParser"
 
-    def get_nodes_from_documents(
+    def _parse_nodes(
         self,
-        documents: Sequence[TextNode],
+        nodes: Sequence[BaseNode],
         show_progress: bool = False,
+        **kwargs: Any,
     ) -> List[BaseNode]:
-        """Parse document into nodes.
+        all_nodes: List[BaseNode] = []
+        nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
 
-        Args:
-            documents (Sequence[TextNode]): TextNodes or Documents to parse
-
-        """
-        with self.callback_manager.event(
-            CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
-        ) as event:
-            all_nodes: List[BaseNode] = []
-            documents_with_progress = get_tqdm_iterable(
-                documents, show_progress, "Parsing documents into nodes"
-            )
-
-            for document in documents_with_progress:
-                nodes = self.get_nodes_from_node(document)
-                all_nodes.extend(nodes)
-
-            event.on_end(payload={EventPayload.NODES: all_nodes})
+        for node in nodes_with_progress:
+            nodes = self.get_nodes_from_node(node)
+            all_nodes.extend(nodes)
 
         return all_nodes
 
@@ -137,9 +113,7 @@ class MarkdownNodeParser(NodeParser):
         metadata: dict,
     ) -> TextNode:
         """Build node from single text split."""
-        node = build_nodes_from_splits(
-            [text_split], node, self.include_metadata, self.include_prev_next_rel
-        )[0]
+        node = build_nodes_from_splits([text_split], node)[0]
 
         if self.include_metadata:
             node.metadata = {**node.metadata, **metadata}

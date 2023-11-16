@@ -2,7 +2,6 @@ import asyncio
 from typing import Any, Dict, Tuple
 
 import pytest
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.base import default_output_parser
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.indices.struct_store.sql_query import (
@@ -11,6 +10,7 @@ from llama_index.indices.struct_store.sql_query import (
     SQLStructStoreQueryEngine,
 )
 from llama_index.schema import Document
+from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
 from sqlalchemy.exc import OperationalError

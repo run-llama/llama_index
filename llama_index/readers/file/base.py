@@ -1,5 +1,6 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
+import mimetypes
 import os
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,8 @@ DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".pdf": PDFReader,
     ".docx": DocxReader,
     ".pptx": PptxReader,
+    ".ppt": PptxReader,
+    ".pptm": PptxReader,
     ".jpg": ImageReader,
     ".png": ImageReader,
     ".jpeg": ImageReader,
@@ -43,6 +46,9 @@ def default_file_metadata_func(file_path: str) -> Dict:
     """
     return {
         "file_path": file_path,
+        "file_name": os.path.basename(file_path),
+        "file_type": mimetypes.guess_type(file_path)[0],
+        "file_size": os.path.getsize(file_path),
         "creation_date": datetime.fromtimestamp(
             Path(file_path).stat().st_ctime
         ).strftime("%Y-%m-%d"),
@@ -143,6 +149,11 @@ class SimpleDirectoryReader(BaseReader):
         self.file_metadata = file_metadata or default_file_metadata_func
         self.filename_as_id = filename_as_id
 
+    def is_hidden(self, path: Path) -> bool:
+        return any(
+            part.startswith(".") and part not in [".", ".."] for part in path.parts
+        )
+
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
         all_files = set()
@@ -169,8 +180,7 @@ class SimpleDirectoryReader(BaseReader):
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
             is_dir = ref.is_dir()
-            hidden_parts = [part for part in ref.parts if part.startswith(".")]
-            skip_because_hidden = self.exclude_hidden and any(hidden_parts)
+            skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
             )
@@ -225,9 +235,15 @@ class SimpleDirectoryReader(BaseReader):
                     self.file_extractor[file_suffix] = reader_cls()
                 reader = self.file_extractor[file_suffix]
 
+                # load data -- catch all errors except for ImportError
                 try:
                     docs = reader.load_data(input_file, extra_info=metadata)
+                except ImportError as e:
+                    # ensure that ImportError is raised so user knows
+                    # about missing dependencies
+                    raise ImportError(str(e))
                 except Exception as e:
+                    # otherwise, just skip the file and report the error
                     print(
                         f"Failed to load file {input_file} with error: {e}. Skipping...",
                         flush=True,
@@ -258,6 +274,9 @@ class SimpleDirectoryReader(BaseReader):
             # TimeWeightedPostprocessor, but excluded for embedding and LLMprompts
             doc.excluded_embed_metadata_keys.extend(
                 [
+                    "file_name",
+                    "file_type",
+                    "file_size",
                     "creation_date",
                     "last_modified_date",
                     "last_accessed_date",
@@ -265,6 +284,9 @@ class SimpleDirectoryReader(BaseReader):
             )
             doc.excluded_llm_metadata_keys.extend(
                 [
+                    "file_name",
+                    "file_type",
+                    "file_size",
                     "creation_date",
                     "last_modified_date",
                     "last_accessed_date",

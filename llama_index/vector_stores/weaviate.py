@@ -92,14 +92,21 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         """Initialize params."""
         try:
             import weaviate  # noqa
-            from weaviate import Client
+            from weaviate import AuthApiKey, Client
         except ImportError:
             raise ImportError(import_err_msg)
 
         if weaviate_client is None:
-            raise ValueError("Missing Weaviate client!")
+            if isinstance(auth_config, dict):
+                auth_config = AuthApiKey(**auth_config)
 
-        self._client = cast(Client, weaviate_client)
+            client_kwargs = client_kwargs or {}
+            self._client = Client(
+                url=url, auth_client_secret=auth_config, **client_kwargs
+            )
+        else:
+            self._client = cast(Client, weaviate_client)
+
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
             logger.warning("class_prefix is deprecated, please use index_name")
@@ -120,7 +127,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             url=url,
             index_name=index_name,
             text_key=text_key,
-            auth_config=auth_config or {},
+            auth_config=auth_config.__dict__ if auth_config else {},
             client_kwargs=client_kwargs or {},
         )
 
@@ -205,6 +212,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             self._client.query.get(self.index_name)
             .with_additional(["id"])
             .with_where(where_filter)
+            .with_limit(10000)  # 10,000 is the max weaviate can fetch
         )
 
         query_result = query.do()

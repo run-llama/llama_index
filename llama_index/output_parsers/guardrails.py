@@ -12,13 +12,14 @@ except ImportError:
     PromptCallable = None
 
 from copy import deepcopy
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from llama_index.bridge.langchain import BaseLLM
+if TYPE_CHECKING:
+    from llama_index.bridge.langchain import BaseLLM
 from llama_index.types import BaseOutputParser
 
 
-def get_callable(llm: Optional[BaseLLM]) -> Optional[Callable]:
+def get_callable(llm: Optional["BaseLLM"]) -> Optional[Callable]:
     """Get callable."""
     if llm is None:
         return None
@@ -32,7 +33,7 @@ class GuardrailsOutputParser(BaseOutputParser):
     def __init__(
         self,
         guard: Guard,
-        llm: Optional[BaseLLM] = None,
+        llm: Optional["BaseLLM"] = None,
         format_key: Optional[str] = None,
     ):
         """Initialize a Guardrails output parser."""
@@ -43,7 +44,7 @@ class GuardrailsOutputParser(BaseOutputParser):
     @classmethod
     @deprecated(version="0.8.46")
     def from_rail(
-        cls, rail: str, llm: Optional[BaseLLM] = None
+        cls, rail: str, llm: Optional["BaseLLM"] = None
     ) -> "GuardrailsOutputParser":
         """From rail."""
         if Guard is None:
@@ -56,7 +57,7 @@ class GuardrailsOutputParser(BaseOutputParser):
     @classmethod
     @deprecated(version="0.8.46")
     def from_rail_string(
-        cls, rail_string: str, llm: Optional[BaseLLM] = None
+        cls, rail_string: str, llm: Optional["BaseLLM"] = None
     ) -> "GuardrailsOutputParser":
         """From rail string."""
         if Guard is None:
@@ -69,7 +70,7 @@ class GuardrailsOutputParser(BaseOutputParser):
     def parse(
         self,
         output: str,
-        llm: Optional[BaseLLM] = None,
+        llm: Optional["BaseLLM"] = None,
         num_reasks: Optional[int] = 1,
         *args: Any,
         **kwargs: Any

@@ -132,20 +132,35 @@ class SimpleVectorStore(VectorStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> Dict[str, VectorStore]:
         """Load from namespaced persist dir."""
-        vector_stores: Dict[str, VectorStore] = {}
-        for fname in os.listdir(persist_dir):
-            if fname.endswith(DEFAULT_PERSIST_FNAME):
-                namespace = fname.split(NAMESPACE_SEP)[0]
+        listing_fn = os.listdir if fs is None else fs.listdir
 
-                # handle backwards compatibility with stores that were persisted
-                if namespace == DEFAULT_PERSIST_FNAME:
-                    vector_stores[DEFAULT_VECTOR_STORE] = cls.from_persist_dir(
-                        persist_dir=persist_dir, fs=fs
-                    )
-                else:
-                    vector_stores[namespace] = cls.from_persist_dir(
-                        persist_dir=persist_dir, namespace=namespace, fs=fs
-                    )
+        vector_stores: Dict[str, VectorStore] = {}
+
+        try:
+            for fname in listing_fn(persist_dir):
+                if fname.endswith(DEFAULT_PERSIST_FNAME):
+                    namespace = fname.split(NAMESPACE_SEP)[0]
+
+                    # handle backwards compatibility with stores that were persisted
+                    if namespace == DEFAULT_PERSIST_FNAME:
+                        vector_stores[DEFAULT_VECTOR_STORE] = cls.from_persist_dir(
+                            persist_dir=persist_dir, fs=fs
+                        )
+                    else:
+                        vector_stores[namespace] = cls.from_persist_dir(
+                            persist_dir=persist_dir, namespace=namespace, fs=fs
+                        )
+        except Exception:
+            # failed to listdir, so assume there is only one store
+            try:
+                vector_stores[DEFAULT_VECTOR_STORE] = cls.from_persist_dir(
+                    persist_dir=persist_dir, fs=fs, namespace=DEFAULT_VECTOR_STORE
+                )
+            except Exception:
+                # no namespace backwards compat
+                vector_stores[DEFAULT_VECTOR_STORE] = cls.from_persist_dir(
+                    persist_dir=persist_dir, fs=fs
+                )
 
         return vector_stores
 

@@ -181,5 +181,5 @@ Take a look here!
 ---
 maxdepth: 1
 ---
-/examples/metadata_extraction/MetadataExtractionSEC.ipynb
+/core_modules/data_modules/transformations/metadata_extractor_usage_pattern.md
 ```
