@@ -209,7 +209,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
-        platform_base_url: str = None,
+        platform_base_url: Optional[str] = None,
         platform_api_key: Optional[str] = None,
     ) -> None:
         if transformations is None:
