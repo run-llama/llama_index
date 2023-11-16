@@ -208,6 +208,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
+        disable_cache: bool = False,
         platform_base_url: str = None,
         platform_api_key: Optional[str] = None,
     ) -> None:
@@ -234,6 +235,7 @@ class IngestionPipeline(BaseModel):
             documents=documents,
             vector_store=vector_store,
             cache=cache or IngestionCache(),
+            disable_cache=disable_cache,
             platform_base_url=platform_base_url,
             platform_api_key=platform_api_key,
         )
