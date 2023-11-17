@@ -40,9 +40,10 @@ from llama_index.schema import (
 )
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
-DEFAULT_PIPELINE_NAME = "pipeline"
-DEFAULT_PROJECT_NAME = "project"
+DEFAULT_PIPELINE_NAME = "default"
+DEFAULT_PROJECT_NAME = "default"
 DEFAULT_BASE_URL = "http://localhost:8000"
+DEFAULT_APP_URL = "http://localhost:3000"
 
 
 def deserialize_transformation_component(
@@ -193,7 +194,10 @@ class IngestionPipeline(BaseModel):
     disable_cache: bool = Field(default=False, description="Disable the cache")
 
     platform_base_url: str = Field(
-        default=None, description="Base URL for the platform"
+        default=None, description="Base URL for the platform API"
+    )
+    platform_app_url: str = Field(
+        default=None, description="Base URL for the platform app"
     )
     platform_api_key: Optional[str] = Field(
         default=None, description="Platform API key"
@@ -209,7 +213,8 @@ class IngestionPipeline(BaseModel):
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
         disable_cache: bool = False,
-        platform_base_url: str = DEFAULT_BASE_URL,
+        platform_base_url: Optional[str] = None,
+        platform_app_url: Optional[str] = None,
         platform_api_key: Optional[str] = None,
     ) -> None:
         if transformations is None:
@@ -223,6 +228,9 @@ class IngestionPipeline(BaseModel):
 
         platform_base_url = platform_base_url or os.environ.get(
             "PLATFORM_BASE_URL", DEFAULT_BASE_URL
+        )
+        platform_app_url = platform_app_url or os.environ.get(
+            "PLATFORM_APP_URL", DEFAULT_APP_URL
         )
         platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
 
@@ -238,6 +246,7 @@ class IngestionPipeline(BaseModel):
             disable_cache=disable_cache,
             platform_base_url=platform_base_url,
             platform_api_key=platform_api_key,
+            platform_app_url=platform_app_url,
         )
 
     @classmethod
@@ -274,6 +283,7 @@ class IngestionPipeline(BaseModel):
         platform_base_url: Optional[str] = None,
         cache: Optional[IngestionCache] = None,
         platform_api_key: Optional[str] = None,
+        platform_app_url: Optional[str] = None,
         disable_cache: bool = False,
     ) -> "IngestionPipeline":
         platform_base_url = platform_base_url or os.environ.get(
@@ -282,6 +292,7 @@ class IngestionPipeline(BaseModel):
         assert platform_base_url is not None
 
         platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
+        platform_app_url = platform_app_url or os.environ.get("PLATFORM_APP_URL", None)
 
         client = PlatformApi(base_url=platform_base_url, token=platform_api_key)
 
@@ -348,6 +359,7 @@ class IngestionPipeline(BaseModel):
             cache=cache,
             disable_cache=disable_cache,
             platform_api_key=platform_api_key,
+            platform_app_url=platform_app_url,
         )
 
     def _get_default_transformations(self) -> List[TransformComponent]:
@@ -455,7 +467,7 @@ class IngestionPipeline(BaseModel):
         # Print playground URL if not running remote
         if verbose:
             print(
-                f"Pipeline available at: http://localhost:3000/playground/{pipeline.id}"
+                f"Pipeline available at: {self.platform_app_url}/project/{project.id}/playground/{pipeline.id}"
             )
 
         return pipeline.id
@@ -492,7 +504,7 @@ class IngestionPipeline(BaseModel):
         ), "Pipeline execution ID should not be None"
 
         print(
-            "Find your remote results here: https://llamalink.llamaindex.ai/"
+            f"Find your remote results here: {self.platform_app_url}/"
             f"pipelines/execution?id={pipeline_execution.id}"
         )
 

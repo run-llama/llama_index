@@ -17,9 +17,7 @@ from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.ingestion.client import ProjectCreate
 from llama_index.ingestion.client.client import PlatformApi
 from llama_index.ingestion.client.types.eval_question_create import EvalQuestionCreate
-from llama_index.ingestion.pipeline import (
-    DEFAULT_BASE_URL,
-)
+from llama_index.ingestion.pipeline import DEFAULT_BASE_URL, DEFAULT_PROJECT_NAME
 
 
 def asyncio_module(show_progress: bool = False) -> Any:
@@ -82,7 +80,7 @@ def get_results_df(
 def upload_eval_dataset(
     dataset_name: str,
     questions: List[str],
-    project_name: Optional[str] = None,
+    project_name: str = DEFAULT_PROJECT_NAME,
     platform_base_url: Optional[str] = None,
     platform_api_key: Optional[str] = None,
     overwrite: bool = False,
