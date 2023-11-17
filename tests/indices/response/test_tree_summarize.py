@@ -4,12 +4,12 @@ from typing import List, Sequence
 from unittest.mock import Mock
 
 import pytest
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response_synthesizers import TreeSummarize
 from llama_index.service_context import ServiceContext
-from pydantic import BaseModel
 
 
 @pytest.fixture()

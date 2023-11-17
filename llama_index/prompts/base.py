@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
-from pydantic import Field
+from llama_index.bridge.pydantic import Field
 
 if TYPE_CHECKING:
     from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate

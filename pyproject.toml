@@ -38,7 +38,7 @@ name = "llama-index"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.9.1"
+version = "0.9.2"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -146,6 +146,7 @@ ignore = [
     "F541",  # Messes with prompts.py
     "TCH002",
     "UP006",  # Messes with pydantic
+    "UP007",  # Wants | over Union, which breaks 3.8
 ]
 # Feel free to add more here
 select = [

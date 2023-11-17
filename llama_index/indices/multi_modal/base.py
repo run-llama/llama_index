@@ -51,13 +51,14 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         # Image-related kwargs
         image_vector_store: Optional[VectorStore] = None,
         image_embed_model: EmbedType = "clip",
+        is_image_to_text: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         image_embed_model = resolve_embed_model(image_embed_model)
         assert isinstance(image_embed_model, MultiModalEmbedding)
         self._image_embed_model = image_embed_model
-
+        self._is_image_to_text = is_image_to_text
         storage_context = storage_context or StorageContext.from_defaults()
 
         if image_vector_store is not None:
@@ -143,7 +144,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
         is_image: bool = False,
-        is_image_to_text: bool = False,
     ) -> List[BaseNode]:
         """Get tuples of id, node, and embedding.
 
@@ -161,7 +161,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             )
 
             # text field is populate, so embed them
-            if is_image_to_text:
+            if self._is_image_to_text:
                 id_to_text_embed_map = embed_nodes(
                     nodes,
                     embed_model=self._service_context.embed_model,
@@ -196,7 +196,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
         is_image: bool = False,
-        is_image_to_text: bool = False,
     ) -> List[BaseNode]:
         """Asynchronously get tuples of id, node, and embedding.
 
@@ -213,7 +212,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                 show_progress=show_progress,
             )
 
-            if is_image_to_text:
+            if self._is_image_to_text:
                 id_to_text_embed_map = await async_embed_nodes(
                     nodes,
                     embed_model=self._service_context.embed_model,
@@ -272,9 +271,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         ].async_add(text_nodes, **insert_kwargs)
 
         # embed image nodes as images directly
-        is_image_to_text = all(node.text for node in image_nodes)
         image_nodes = await self._aget_node_with_embedding(
-            image_nodes, show_progress, is_image=True, is_image_to_text=is_image_to_text
+            image_nodes,
+            show_progress,
+            is_image=True,
         )
         new_img_ids = await self.storage_context.vector_stores[
             self.image_namespace
@@ -325,9 +325,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         # embed image nodes as images directly
         # check if we should use text embedding for images instead of default
-        is_image_to_text = all(node.text for node in image_nodes)
         image_nodes = self._get_node_with_embedding(
-            image_nodes, show_progress, is_image=True, is_image_to_text=is_image_to_text
+            image_nodes,
+            show_progress,
+            is_image=True,
         )
         new_img_ids = self.storage_context.vector_stores[self.image_namespace].add(
             image_nodes, **insert_kwargs

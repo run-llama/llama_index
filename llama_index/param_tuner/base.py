@@ -6,9 +6,7 @@ from abc import abstractmethod
 from copy import deepcopy
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
-from pydantic import BaseModel, Field
-
-from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.utils import get_tqdm_iterable
 
 

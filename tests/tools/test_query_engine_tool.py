@@ -17,7 +17,7 @@ class MockQueryEngine(CustomQueryEngine):
 
 def test_query_engine_tool() -> None:
     """Test query engine tool."""
-    query_engine = MockQueryEngine()
+    query_engine = MockQueryEngine()  # type: ignore[call-arg]
 
     query_tool = QueryEngineTool.from_defaults(query_engine)
 
