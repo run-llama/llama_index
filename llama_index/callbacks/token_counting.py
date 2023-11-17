@@ -23,7 +23,11 @@ class TokenCountingEvent:
 def get_llm_token_counts(
     token_counter: TokenCounter, payload: Dict[str, Any], event_id: str = ""
 ) -> TokenCountingEvent:
+    import pdb
+
     from llama_index.llms import ChatMessage
+
+    pdb.set_trace()
 
     if EventPayload.PROMPT in payload:
         prompt = str(payload.get(EventPayload.PROMPT))
@@ -46,10 +50,10 @@ def get_llm_token_counts(
 
         # try getting attached token counts first
         try:
-            usage_dict = response.additional_kwargs  # type: ignore
+            usage = response.raw["usage"]  # type: ignore
 
-            messages_tokens = usage_dict["prompt_tokens"]
-            response_tokens = usage_dict["completion_tokens"]
+            messages_tokens = usage.prompt_tokens
+            response_tokens = usage.completion_tokens
 
             if messages_tokens == 0 or response_tokens == 0:
                 raise ValueError("Invalid token counts!")
