@@ -86,7 +86,7 @@ class BaseComponent(BaseModel):
         # Use the __dict__ and __init__ method to set state
         # so that all variable initialize
         try:
-            self.__init__(**state["__dict__"])
+            self.__init__(**state["__dict__"])  # type: ignore
         except Exception:
             # Fall back to the default __setstate__ method
             super().__setstate__(state)
