@@ -11,12 +11,12 @@ from typing import Any, List, Optional
 
 import numpy as np
 import pandas as pd
+from llama_index_client import ProjectCreate
+from llama_index_client.client import PlatformApi
+from llama_index_client.types.eval_question_create import EvalQuestionCreate
 
 from llama_index.evaluation.base import EvaluationResult
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.ingestion.client import ProjectCreate
-from llama_index.ingestion.client.client import PlatformApi
-from llama_index.ingestion.client.types.eval_question_create import EvalQuestionCreate
 from llama_index.ingestion.pipeline import DEFAULT_BASE_URL, DEFAULT_PROJECT_NAME
 
 
