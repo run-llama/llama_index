@@ -23,11 +23,7 @@ class TokenCountingEvent:
 def get_llm_token_counts(
     token_counter: TokenCounter, payload: Dict[str, Any], event_id: str = ""
 ) -> TokenCountingEvent:
-    import pdb
-
     from llama_index.llms import ChatMessage
-
-    pdb.set_trace()
 
     if EventPayload.PROMPT in payload:
         prompt = str(payload.get(EventPayload.PROMPT))
