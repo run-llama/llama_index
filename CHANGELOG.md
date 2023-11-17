@@ -10,6 +10,7 @@
 
 - Fix token counting for new openai client (#8981)
 - Fix small pydantic bug in postgres vector db (#8962)
+- Fixed `chunk_overlap` and `doc_id` bugs in `HierarchicalNodeParser` (#8983)
 
 ## [0.9.2] - 2023-11-16
 
