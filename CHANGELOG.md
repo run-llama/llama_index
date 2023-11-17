@@ -19,6 +19,7 @@
 - Fixed issue with `set_global_service_context` not propagating settings (#8940)
 - Fixed issue with building index with Google Palm embeddings (#8936)
 - Fixed small issue with parsing ImageDocuments/Nodes that have no text (#8938)
+- Fixed issue with large data inserts in Astra DB (#8937)
 - Optimize `QueryEngineTool` for agents (#8933)
 
 ## [0.9.0] - 2023-11-15
