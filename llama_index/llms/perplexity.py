@@ -1,7 +1,6 @@
 import json
 from typing import Any, Dict, Optional, Sequence
 
-import aiohttp
 import httpx
 import requests
 
@@ -253,6 +252,8 @@ class Perplexity(LLM):
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
+        import aiohttp
+
         url = f"{self.api_base}/completions"
         payload = {
             "model": self.model,
@@ -329,6 +330,8 @@ class Perplexity(LLM):
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
+        import aiohttp
+
         url = f"{self.api_base}/chat/completions"
         payload = {
             "model": self.model,
