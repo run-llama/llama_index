@@ -1,5 +1,16 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Add perplexity LLM integration (#8734)
+
+### Bug Fixes / Nits
+
+- Fix token counting for new openai client (#8981)
+- Fix small pydantic bug in postgres vector db (#8962)
+
 ## [0.9.2] - 2023-11-16
 
 ### New Features
