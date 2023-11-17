@@ -1,5 +1,40 @@
 # ChangeLog
 
+## [0.9.2] - 2023-11-16
+
+### New Features
+
+- Added new notebook guide for Multi-Modal Rag Evaluation (#8945)
+- Added `MultiModalRelevancyEvaluator`, and `MultiModalFaithfulnessEvaluator` (#8945)
+
+## [0.9.1] - 2023-11-15
+
+### New Features
+
+- Added Cohere Reranker fine-tuning (#8859)
+- Support for custom httpx client in `AzureOpenAI` LLM (#8920)
+
+### Bug Fixes / Nits
+
+- Fixed issue with `set_global_service_context` not propagating settings (#8940)
+- Fixed issue with building index with Google Palm embeddings (#8936)
+- Fixed small issue with parsing ImageDocuments/Nodes that have no text (#8938)
+- Fixed issue with large data inserts in Astra DB (#8937)
+- Optimize `QueryEngineTool` for agents (#8933)
+
+## [0.9.0] - 2023-11-15
+
+### New Features / Breaking Changes / Deprecations
+
+- New `IngestionPipline` concept for ingesting and transforming data
+- Data ingestion and transforms are now automatically cached
+- Updated interface for node parsing/text splitting/metadata extraction modules
+- Changes to the default tokenizer, as well as customizing the tokenizer
+- Packaging/Installation changes with PyPi (reduced bloat, new install options)
+- More predictable and consistent import paths
+- Plus, in beta: MultiModal RAG Modules for handling text and images!
+- Find more details at: `https://medium.com/@llama_index/719f03282945`
+
 ## [0.8.69.post1] - 2023-11-13
 
 ### Bug Fixes / Nits

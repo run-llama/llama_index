@@ -3,6 +3,7 @@ from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anyscale import Anyscale
 from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.llms.base import (
+    LLM,
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -30,6 +31,7 @@ from llama_index.llms.monsterapi import MonsterLLM
 from llama_index.llms.ollama import Ollama
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_like import OpenAILike
+from llama_index.llms.openllm import OpenLLM, OpenLLMAPI
 from llama_index.llms.palm import PaLM
 from llama_index.llms.perplexity import Perplexity
 from llama_index.llms.portkey import Portkey
@@ -48,6 +50,7 @@ __all__ = [
     "ChatMessage",
     "ChatResponse",
     "ChatResponseAsyncGen",
+    "LLM",
     "ChatResponseGen",
     "Clarifai",
     "Cohere",
@@ -72,6 +75,8 @@ __all__ = [
     "Ollama",
     "OpenAI",
     "OpenAILike",
+    "OpenLLM",
+    "OpenLLMAPI",
     "PaLM",
     "Perplexity",
     "Portkey",

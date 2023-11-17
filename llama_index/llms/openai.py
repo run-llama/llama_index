@@ -17,11 +17,15 @@ from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
+    ChoiceDelta,
     ChoiceDeltaToolCall,
 )
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import (
+    DEFAULT_TEMPERATURE,
+)
 from llama_index.llms.base import (
     LLM,
     ChatMessage,
@@ -55,6 +59,8 @@ from llama_index.llms.openai_utils import (
     to_openai_message_dicts,
 )
 
+DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
+
 
 @runtime_checkable
 class Tokenizer(Protocol):
@@ -65,10 +71,18 @@ class Tokenizer(Protocol):
 
 
 class OpenAI(LLM):
-    model: str = Field(description="The OpenAI model to use.")
-    temperature: float = Field(description="The temperature to use during generation.")
+    model: str = Field(
+        default=DEFAULT_OPENAI_MODEL, description="The OpenAI model to use."
+    )
+    temperature: float = Field(
+        default=DEFAULT_TEMPERATURE,
+        description="The temperature to use during generation.",
+        gte=0.0,
+        lte=1.0,
+    )
     max_tokens: Optional[int] = Field(
-        default=None, description="The maximum number of tokens to generate."
+        description="The maximum number of tokens to generate.",
+        gt=0,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
@@ -93,8 +107,8 @@ class OpenAI(LLM):
 
     def __init__(
         self,
-        model: str = "gpt-3.5-turbo",
-        temperature: float = 0.1,
+        model: str = DEFAULT_OPENAI_MODEL,
+        temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 3,
@@ -300,7 +314,7 @@ class OpenAI(LLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    delta = {}
+                    delta = ChoiceDelta()
 
                 # check if this chunk is the start of a function call
                 if (delta.role == MessageRole.ASSISTANT) and (delta.content is None):

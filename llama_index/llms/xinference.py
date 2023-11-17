@@ -22,15 +22,20 @@ from llama_index.llms.xinference_utils import (
 
 # an approximation of the ratio between llama and GPT2 tokens
 TOKEN_RATIO = 2.5
+DEFAULT_XINFERENCE_TEMP = 1.0
 
 
 class Xinference(CustomLLM):
     model_uid: str = Field(description="The Xinference model to use.")
     endpoint: str = Field(description="The Xinference endpoint URL to use.")
-    temperature: float = Field(description="The temperature to use for sampling.")
-    max_tokens: int = Field(description="The maximum new tokens to generate as answer.")
+    temperature: float = Field(
+        description="The temperature to use for sampling.", gte=0.0, lte=1.0
+    )
+    max_tokens: int = Field(
+        description="The maximum new tokens to generate as answer.", gt=0
+    )
     context_window: int = Field(
-        description="The maximum number of context tokens for the model."
+        description="The maximum number of context tokens for the model.", gt=0
     )
     model_description: Dict[str, Any] = Field(
         description="The model description from Xinference."
@@ -42,7 +47,7 @@ class Xinference(CustomLLM):
         self,
         model_uid: str,
         endpoint: str,
-        temperature: float = 1.0,
+        temperature: float = DEFAULT_XINFERENCE_TEMP,
         max_tokens: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:

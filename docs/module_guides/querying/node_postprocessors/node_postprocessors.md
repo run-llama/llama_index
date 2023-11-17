@@ -5,7 +5,7 @@
 Used to remove nodes that are below a similarity score threshold.
 
 ```python
-from llama_index.indices.postprocessor import SimilarityPostprocessor
+from llama_index.postprocessor import SimilarityPostprocessor
 
 postprocessor = SimilarityPostprocessor(similarity_cutoff=0.7)
 
@@ -17,7 +17,7 @@ postprocessor.postprocess_nodes(nodes)
 Used to ensure certain keywords are either excluded or included.
 
 ```python
-from llama_index.indices.postprocessor import KeywordNodePostprocessor
+from llama_index.postprocessor import KeywordNodePostprocessor
 
 postprocessor = KeywordNodePostprocessor(
     required_keywords=["word1", "word2"], exclude_keywords=["word3", "word4"]
@@ -31,7 +31,7 @@ postprocessor.postprocess_nodes(nodes)
 Used to replace the node content with a field from the node metadata. If the field is not present in the metadata, then the node text remains unchanged. Most useful when used in combination with the `SentenceWindowNodeParser`.
 
 ```python
-from llama_index.indices.postprocessor import MetadataReplacementPostProcessor
+from llama_index.postprocessor import MetadataReplacementPostProcessor
 
 postprocessor = MetadataReplacementPostProcessor(
     target_metadata_key="window",
@@ -47,7 +47,7 @@ Models struggle to access significant details found in the center of extended co
 This module will re-order the retrieved nodes, which can be helpful in cases where a large top-k is needed.
 
 ```python
-from llama_index.indices.postprocessor import LongContextReorder
+from llama_index.postprocessor import LongContextReorder
 
 postprocessor = LongContextReorder()
 
@@ -63,7 +63,7 @@ The percentile cutoff is a measure for using the top percentage of relevant sent
 The threshold cutoff can be specified instead, which uses a raw similarity cutoff for picking which sentences to keep.
 
 ```python
-from llama_index.indices.postprocessor import SentenceEmbeddingOptimizer
+from llama_index.postprocessor import SentenceEmbeddingOptimizer
 
 postprocessor = SentenceEmbeddingOptimizer(
     embed_model=service_context.embed_model,
@@ -99,7 +99,7 @@ Full notebook guide is available [here](/examples/node_postprocessor/CohereReran
 Uses the cross-encoders from the `sentence-transformer` package to re-order nodes, and returns the top N nodes.
 
 ```python
-from llama_index.indices.postprocessor import SentenceTransformerRerank
+from llama_index.postprocessor import SentenceTransformerRerank
 
 # We choose a model with relatively high speed and decent accuracy.
 postprocessor = SentenceTransformerRerank(
@@ -118,7 +118,7 @@ Please also refer to the [`sentence-transformer` docs](https://www.sbert.net/doc
 Uses a LLM to re-order nodes by asking the LLM to return the relevant documents and a score of how relevant they are. Returns the top N ranked nodes.
 
 ```python
-from llama_index.indices.postprocessor import LLMRerank
+from llama_index.postprocessor import LLMRerank
 
 postprocessor = LLMRerank(top_n=2, service_context=service_context)
 
@@ -132,7 +132,7 @@ Full notebook guide is available [her for Gatsby](/examples/node_postprocessor/L
 This postproccesor returns the top K nodes sorted by date. This assumes there is a `date` field to parse in the metadata of each node.
 
 ```python
-from llama_index.indices.postprocessor import FixedRecencyPostprocessor
+from llama_index.postprocessor import FixedRecencyPostprocessor
 
 postprocessor = FixedRecencyPostprocessor(
     tok_k=1, date_key="date"  # the key in the metadata to find the date
@@ -150,7 +150,7 @@ A full notebook guide is available [here](/examples/node_postprocessor/RecencyPo
 This postproccesor returns the top K nodes after sorting by date and removing older nodes that are too similar after measuring embedding similarity.
 
 ```python
-from llama_index.indices.postprocessor import EmbeddingRecencyPostprocessor
+from llama_index.postprocessor import EmbeddingRecencyPostprocessor
 
 postprocessor = EmbeddingRecencyPostprocessor(
     service_context=service_context, date_key="date", similarity_cutoff=0.7
@@ -166,7 +166,7 @@ A full notebook guide is available [here](/examples/node_postprocessor/RecencyPo
 This postproccesor returns the top K nodes applying a time-weighted rerank to each node. Each time a node is retrieved, the time it was retrieved is recorded. This biases search to favor information that has not be returned in a query yet.
 
 ```python
-from llama_index.indices.postprocessor import TimeWeightedPostprocessor
+from llama_index.postprocessor import TimeWeightedPostprocessor
 
 postprocessor = TimeWeightedPostprocessor(time_decay=0.99, top_k=1)
 
@@ -182,7 +182,7 @@ The PII (Personal Identifiable Information) postprocssor removes information tha
 ### LLM Version
 
 ```python
-from llama_index.indices.postprocessor import PIINodePostprocessor
+from llama_index.postprocessor import PIINodePostprocessor
 
 postprocessor = PIINodePostprocessor(
     service_context=service_context  # this should be setup with an LLM you trust
@@ -196,7 +196,7 @@ postprocessor.postprocess_nodes(nodes)
 This version uses the default local model from Hugging Face that is loaded when you run `pipeline("ner")`.
 
 ```python
-from llama_index.indices.postprocessor import NERPIINodePostprocessor
+from llama_index.postprocessor import NERPIINodePostprocessor
 
 postprocessor = NERPIINodePostprocessor()
 
@@ -212,7 +212,7 @@ Uses pre-defined settings to read the `Node` relationships and fetch either all 
 This is useful when you know the relationships point to important data (either before, after, or both) that should be sent to the LLM if that node is retrieved.
 
 ```python
-from llama_index.indices.postprocessor import PrevNextNodePostprocessor
+from llama_index.postprocessor import PrevNextNodePostprocessor
 
 postprocessor = PrevNextNodePostprocessor(
     docstore=index.docstore,
@@ -230,7 +230,7 @@ postprocessor.postprocess_nodes(nodes)
 The same as PrevNextNodePostprocessor, but lets the LLM decide the mode (next, previous, or both).
 
 ```python
-from llama_index.indices.postprocessor import AutoPrevNextNodePostprocessor
+from llama_index.postprocessor import AutoPrevNextNodePostprocessor
 
 postprocessor = AutoPrevNextNodePostprocessor(
     docstore=index.docstore,

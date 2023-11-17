@@ -10,7 +10,7 @@ from llama_index.utils import (
     ErrorToRetry,
     _get_colored_text,
     get_color_mapping,
-    globals_helper,
+    get_tokenizer,
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
@@ -24,7 +24,7 @@ def test_tokenizer() -> None:
 
     """
     text = "hello world foo bar"
-    tokenizer = globals_helper.tokenizer
+    tokenizer = get_tokenizer()
     assert len(tokenizer(text)) == 4
 
 

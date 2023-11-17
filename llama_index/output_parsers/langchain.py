@@ -1,9 +1,10 @@
 """Base output parser class."""
 
 from string import Formatter
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-from llama_index.bridge.langchain import BaseOutputParser as LCOutputParser
+if TYPE_CHECKING:
+    from llama_index.bridge.langchain import BaseOutputParser as LCOutputParser
 from llama_index.types import BaseOutputParser
 
 
@@ -11,7 +12,7 @@ class LangchainOutputParser(BaseOutputParser):
     """Langchain output parser."""
 
     def __init__(
-        self, output_parser: LCOutputParser, format_key: Optional[str] = None
+        self, output_parser: "LCOutputParser", format_key: Optional[str] = None
     ) -> None:
         """Init params."""
         self._output_parser = output_parser

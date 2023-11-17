@@ -22,6 +22,8 @@ RECOGNIZED_EMBEDDINGS: Dict[str, Type[BaseEmbedding]] = {
 
 def load_embed_model(data: dict) -> BaseEmbedding:
     """Load Embedding by name."""
+    if isinstance(data, BaseEmbedding):
+        return data
     name = data.get("class_name", None)
     if name is None:
         raise ValueError("Embedding loading requires a class_name")

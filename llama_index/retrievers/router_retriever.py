@@ -5,13 +5,12 @@ import logging
 from typing import List, Optional, Sequence
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
+from llama_index.core import BaseRetriever
 from llama_index.prompts.mixin import PromptMixinType
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.selectors.types import BaseSelector
 from llama_index.selectors.utils import get_selector_from_context
+from llama_index.service_context import ServiceContext
 from llama_index.tools.retriever_tool import RetrieverTool
 
 logger = logging.getLogger(__name__)
@@ -93,7 +92,7 @@ class RouterRetriever(BaseRetriever):
                 cur_results = selected_retriever.retrieve(query_bundle)
                 retrieved_results = {n.node.node_id: n for n in cur_results}
 
-            query_event.on_end(payload={EventPayload.NODES: retrieved_results})
+            query_event.on_end(payload={EventPayload.NODES: retrieved_results.values()})
 
         return list(retrieved_results.values())
 
@@ -129,6 +128,6 @@ class RouterRetriever(BaseRetriever):
                 cur_results = await selected_retriever.aretrieve(query_bundle)
                 retrieved_results = {n.node.node_id: n for n in cur_results}
 
-            query_event.on_end(payload={EventPayload.NODES: retrieved_results})
+            query_event.on_end(payload={EventPayload.NODES: retrieved_results.values()})
 
         return list(retrieved_results.values())
