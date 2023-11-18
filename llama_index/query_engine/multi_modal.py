@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.multi_modal import MultiModalVectorIndexRetriever
+from llama_index.indices.multi_modal.base_retriever import MultiModalRetriever
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.multi_modal_llms.base import MultiModalLLM
@@ -28,26 +28,26 @@ def _get_image_and_text_nodes(
     return image_nodes, text_nodes
 
 
-class SimpleMultiModalQueryEngine(BaseQueryEngine):
-    """Simple Multi Modal Retriever query engine.
+class MultiModalQueryEngine(BaseQueryEngine):
+    """Multi Modal Retriever query engine.
 
     Assumes that retrieved text context fits within context window of LLM, along with images.
 
     Args:
-        retriever (MultiModalVectorIndexRetriever): A retriever object.
-        llm (Optional[LLM])
+        multi_modal_retriever (MultiModalRetriever): A multi_modal_retriever object.
+        multi_modal_llm (Optional[MultiModalLLM])
         callback_manager (Optional[CallbackManager]): A callback manager.
     """
 
     def __init__(
         self,
-        retriever: MultiModalVectorIndexRetriever,
+        multi_modal_retriever: MultiModalRetriever,
         multi_modal_llm: Optional[MultiModalLLM] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self._retriever = retriever
+        self._multi_modal_retriever = multi_modal_retriever
         self._multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
             model="gpt-4-vision-preview", max_new_tokens=1000
         )

@@ -16,6 +16,8 @@ class PromptType(str, Enum):
     TREE_SELECT_MULTIPLE = "tree_select_multiple"
     # question-answer
     QUESTION_ANSWER = "text_qa"
+    # multi-modal question-answer
+    MULTI_MODAL_QUESTION_ANSWER = "multi_modal_qa"
     # refine
     REFINE = "refine"
     # keyword extract
