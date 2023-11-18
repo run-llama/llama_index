@@ -384,10 +384,10 @@ class BaseIndex(Generic[IS], ABC):
                 **kwargs,
             )
 
-        elif chat_mode == ChatMode.C3:
-            from llama_index.chat_engine import C3ChatEngine
+        elif chat_mode == ChatMode.CONDENSE_PLUS_CONTEXT:
+            from llama_index.chat_engine import CondensePlusContextChatEngine
 
-            return C3ChatEngine.from_defaults(
+            return CondensePlusContextChatEngine.from_defaults(
                 retriever=self.as_retriever(**kwargs),
                 **kwargs,
             )

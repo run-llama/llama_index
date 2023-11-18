@@ -1,7 +1,7 @@
 from typing import Any, List
 from unittest.mock import Mock
 
-from llama_index.chat_engine.c3 import C3ChatEngine
+from llama_index.chat_engine.condense_plus_context import CondensePlusContextChatEngine
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
@@ -10,7 +10,7 @@ from llama_index.prompts.base import BasePromptTemplate
 from llama_index.schema import NodeWithScore, TextNode
 
 
-def test_c3_chat_engine(
+def test_condense_plus_context_chat_engine(
     mock_service_context: ServiceContext,
 ) -> None:
     mock_retriever = Mock(spec=BaseRetriever)
@@ -54,7 +54,7 @@ def test_c3_chat_engine(
         "Standalone question: "
     )
 
-    engine = C3ChatEngine(
+    engine = CondensePlusContextChatEngine(
         retriever=mock_retriever,
         llm=mock_service_context.llm,
         llm_predictor=mock_llm_predictor,

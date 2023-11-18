@@ -47,8 +47,8 @@ DEFAULT_CONDENSE_PROMPT_TEMPLATE = """
   Standalone question:"""
 
 
-class C3ChatEngine(BaseChatEngine):
-    """Condensed Conversation & Context (C3) Chat Engine.
+class CondensePlusContextChatEngine(BaseChatEngine):
+    """Condensed Conversation & Context Chat Engine.
 
     First condense a conversation and latest user message to a standalone question
     Then build a context for the standalone question from a retriever,
@@ -98,7 +98,7 @@ class C3ChatEngine(BaseChatEngine):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
         **kwargs: Any,
-    ) -> "C3ChatEngine":
+    ) -> "CondensePlusContextChatEngine":
         """Initialize a C3ChatEngine from default parameters."""
         service_context = service_context or ServiceContext.from_defaults()
         if not isinstance(service_context.llm_predictor, LLMPredictor):

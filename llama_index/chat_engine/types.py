@@ -255,8 +255,8 @@ class ChatMode(str, Enum):
     in the system prompt to generate a response.
     """
 
-    C3 = "c3"
-    """Corresponds to `C3ChatEngine`.
+    CONDENSE_PLUS_CONTEXT = "condense_plus_context"
+    """Corresponds to `CondensePlusContextChatEngine`.
 
     First condense a conversation and latest user message to a standalone question.
     Then build a context for the standalone question from a retriever,
