@@ -2,7 +2,6 @@
 
 from typing import Any, List, Optional
 
-import aiohttp
 import requests
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -93,6 +92,8 @@ class JinaEmbedding(BaseEmbedding):
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
+        import aiohttp
+
         async with aiohttp.ClientSession(trust_env=True) as session:
             headers = {
                 "Authorization": f"Bearer {self.api_key}",

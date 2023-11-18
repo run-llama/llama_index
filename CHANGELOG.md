@@ -1,5 +1,17 @@
 # ChangeLog
 
+## [0.9.3] - 2023-11-17
+
+### New Features
+
+- Add perplexity LLM integration (#8734)
+
+### Bug Fixes / Nits
+
+- Fix token counting for new openai client (#8981)
+- Fix small pydantic bug in postgres vector db (#8962)
+- Fixed `chunk_overlap` and `doc_id` bugs in `HierarchicalNodeParser` (#8983)
+
 ## [0.9.2] - 2023-11-16
 
 ### New Features
@@ -19,6 +31,7 @@
 - Fixed issue with `set_global_service_context` not propagating settings (#8940)
 - Fixed issue with building index with Google Palm embeddings (#8936)
 - Fixed small issue with parsing ImageDocuments/Nodes that have no text (#8938)
+- Fixed issue with large data inserts in Astra DB (#8937)
 - Optimize `QueryEngineTool` for agents (#8933)
 
 ## [0.9.0] - 2023-11-15
