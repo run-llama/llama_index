@@ -41,7 +41,10 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 
 def call_tool_with_error_handling(
-    tool: BaseTool, input_dict: Dict, error_message: Optional[str] = None
+    tool: BaseTool,
+    input_dict: Dict,
+    error_message: Optional[str] = None,
+    raise_error: bool = False,
 ) -> ToolOutput:
     """Call tool with error handling.
 
@@ -51,6 +54,8 @@ def call_tool_with_error_handling(
     try:
         return tool(**input_dict)
     except Exception as e:
+        if raise_error:
+            raise e
         error_message = error_message or f"Error: {e!s}"
         return ToolOutput(
             content=error_message,
@@ -64,7 +69,6 @@ def call_function(
     tools: List[BaseTool],
     tool_call: OpenAIToolCall,
     verbose: bool = False,
-    raise_error: bool = False,
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     # validations to get passed mypy
