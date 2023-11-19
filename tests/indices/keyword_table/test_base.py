@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 import pytest
 from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableIndex
-from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import Document
+from llama_index.service_context import ServiceContext
 
 from tests.mock_utils.mock_utils import mock_extract_keywords
 

@@ -3,11 +3,8 @@ from typing import Any, List, Optional, Sequence
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.postprocessor.types import BaseNodePostprocessor
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
+from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE
@@ -16,7 +13,8 @@ from llama_index.response_synthesizers import (
     ResponseMode,
     get_response_synthesizer,
 )
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 
 
 class RetrieverQueryEngine(BaseQueryEngine):

@@ -1,15 +1,15 @@
 import os
 
 # import socket
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import openai
 import pytest
-from llama_index.indices.service_context import ServiceContext
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.mock import MockLLM
-from llama_index.text_splitter import SentenceSplitter, TokenTextSplitter
+from llama_index.node_parser.text import SentenceSplitter, TokenTextSplitter
+from llama_index.service_context import ServiceContext
 
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_predict import (
@@ -35,7 +35,9 @@ def allow_networking(monkeypatch: pytest.MonkeyPatch) -> None:
 def patch_token_text_splitter(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(SentenceSplitter, "split_text", patch_token_splitter_newline)
     monkeypatch.setattr(
-        SentenceSplitter, "split_text_metadata_aware", patch_token_splitter_newline
+        SentenceSplitter,
+        "split_text_metadata_aware",
+        patch_token_splitter_newline,
     )
     monkeypatch.setattr(TokenTextSplitter, "split_text", patch_token_splitter_newline)
     monkeypatch.setattr(
@@ -123,3 +125,30 @@ class CachedOpenAIApiKeys:
     def __exit__(self, *exc: object) -> None:
         os.environ["OPENAI_API_KEY"] = str(self.api_env_variable_was)
         os.environ["OPENAI_API_TYPE"] = str(self.api_env_type_was)
+        openai.api_key = self.openai_api_key_was
+        openai.api_type = self.openai_api_type_was
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--integration",
+        action="store_true",
+        default=False,
+        help="run integration tests",
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line("markers", "integration: mark test as integration")
+
+
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: List[pytest.Item]
+) -> None:
+    if config.getoption("--integration"):
+        # --integration given in cli: do not skip integration tests
+        return
+    skip_integration = pytest.mark.skip(reason="need --integration option to run")
+    for item in items:
+        if "integration" in item.keywords:
+            item.add_marker(skip_integration)

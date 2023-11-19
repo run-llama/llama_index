@@ -3,8 +3,8 @@ from typing import Any, Dict, Optional, Sequence
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.mixin import PromptDictType
+from llama_index.schema import QueryBundle
 from llama_index.selectors.types import (
     BaseSelector,
     SelectorResult,

@@ -233,6 +233,7 @@ class OpenAIEmbedding(BaseEmbedding):
     max_retries: int = Field(
         default=10, description="Maximum number of retries.", gte=0
     )
+    timeout: float = Field(default=60.0, description="Timeout for each request.", gte=0)
 
     _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
     _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
@@ -249,6 +250,7 @@ class OpenAIEmbedding(BaseEmbedding):
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         max_retries: int = 10,
+        timeout: float = 60.0,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -263,6 +265,11 @@ class OpenAIEmbedding(BaseEmbedding):
         self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
         self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
 
+        if "model_name" in kwargs:
+            model_name = kwargs.pop("model_name")
+        else:
+            model_name = model
+
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
@@ -272,6 +279,7 @@ class OpenAIEmbedding(BaseEmbedding):
             api_base=api_base,
             api_version=api_version,
             max_retries=max_retries,
+            timeout=timeout,
             **kwargs,
         )
 
@@ -292,6 +300,7 @@ class OpenAIEmbedding(BaseEmbedding):
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
+            "timeout": self.timeout,
         }
 
     def _get_query_embedding(self, query: str) -> List[float]:

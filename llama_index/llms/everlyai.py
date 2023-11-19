@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.everlyai_utils import everlyai_modelname_to_contextsize
 from llama_index.llms.generic_utils import get_from_param_or_env
@@ -14,8 +15,8 @@ class EverlyAI(OpenAI):
     def __init__(
         self,
         model: str = DEFAULT_MODEL,
-        temperature: float = 0.1,
-        max_tokens: int = 256,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: int = DEFAULT_NUM_OUTPUTS,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,

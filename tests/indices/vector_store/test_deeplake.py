@@ -3,9 +3,9 @@
 from typing import List
 
 import pytest
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.schema import Document, TextNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores import DeepLakeVectorStore
 

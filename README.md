@@ -95,6 +95,14 @@ llm = Replicate(
     additional_kwargs={"top_p": 1, "max_new_tokens": 300},
 )
 
+# set tokenizer to match LLM
+from llama_index import set_global_tokenizer
+from transformers import AutoTokenizer
+
+set_global_tokenizer(
+    AutoTokenizer.from_pretrained("NousResearch/Llama-2-7b-chat-hf").encode
+)
+
 from llama_index.embeddings import HuggingFaceEmbedding
 from llama_index import ServiceContext
 
