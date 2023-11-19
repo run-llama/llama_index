@@ -2,7 +2,7 @@ from typing import Any, List, Sequence
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.agent.openai_agent import OpenAIAgent
+from llama_index.agent.openai_agent import OpenAIAgent, call_tool_with_error_handling
 from llama_index.chat_engine.types import AgentChatResponse
 from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.mock import MockLLM
@@ -100,3 +100,23 @@ def test_chat_no_functions(MockSyncOpenAI: MagicMock) -> None:
     response = agent.chat("What is 1 + 1?")
     assert isinstance(response, AgentChatResponse)
     assert response.response == "\n\nThis is a test!"
+
+
+def test_call_tool_with_error_handling() -> None:
+    """Test call tool with error handling."""
+
+    def _add(a: int, b: int) -> int:
+        return a + b
+
+    tool = FunctionTool.from_defaults(fn=_add)
+
+    output = call_tool_with_error_handling(
+        tool, {"a": 1, "b": 1}, error_message="Error!"
+    )
+    assert output.content == "2"
+
+    # try error
+    output = call_tool_with_error_handling(
+        tool, {"a": "1", "b": 1}, error_message="Error!"
+    )
+    assert output.content == "Error!"
