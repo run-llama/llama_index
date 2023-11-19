@@ -21,6 +21,11 @@ https://platform.openai.com/account/api-keys
 """
 INVALID_API_KEY_ERROR_MESSAGE = """Invalid LLM API key."""
 
+try:
+    from litellm.utils import Message
+except ModuleNotFoundError:
+    Message = Any
+
 logger = logging.getLogger(__name__)
 
 CompletionClientType = Type[Completions]
@@ -163,10 +168,6 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     # NOTE: Azure OpenAI returns function calling messages without a content key
     content = message_dict.get("content", None)
 
-    print('\n\nmessage_dict:', message_dict)
-    module_path = message_dict.__class__.__module__
-    print(f'Module Path: {module_path}', '\n\n')
-
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
     additional_kwargs.pop("content", None)
@@ -174,7 +175,7 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
 
-def from_litellm_message(message) -> ChatMessage:
+def from_litellm_message(message: Message) -> ChatMessage:
     """Convert litellm.utils.Message instance to generic message."""
     role = message.get("role")
     # NOTE: Azure OpenAI returns function calling messages without a content key
