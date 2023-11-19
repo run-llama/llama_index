@@ -1,6 +1,6 @@
 import copy
 from types import CodeType, ModuleType
-from typing import Any, Mapping, Sequence, Union, Dict
+from typing import Any, Dict, Mapping, Sequence, Union
 
 ALLOWED_IMPORTS = {
     "math",
@@ -85,7 +85,8 @@ ALLOWED_BUILTINS = {
 
 def _get_restricted_globals(__globals: Union[dict, None]) -> Any:
     restricted_globals = copy.deepcopy(ALLOWED_BUILTINS)
-    restricted_globals.update(__globals)
+    if __globals:
+        restricted_globals.update(__globals)
     return restricted_globals
 
 
