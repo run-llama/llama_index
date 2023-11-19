@@ -1,11 +1,6 @@
 import copy
-from collections.abc import Buffer
 from types import CodeType, ModuleType
-from typing import Any, Mapping, Sequence, Union
-
-from typing_extensions import TypeAlias
-
-ReadableBuffer: TypeAlias = Buffer
+from typing import Any, Mapping, Sequence, Union, Dict
 
 ALLOWED_IMPORTS = {
     "math",
@@ -22,8 +17,8 @@ ALLOWED_IMPORTS = {
 
 def _restricted_import(
     name: str,
-    globals: Mapping[str, object] | None = None,
-    locals: Mapping[str, object] | None = None,
+    globals: Union[Mapping[str, object], None] = None,
+    locals: Union[Mapping[str, object], None] = None,
     fromlist: Sequence[str] = (),
     level: int = 0,
 ) -> ModuleType:
@@ -95,8 +90,8 @@ def _get_restricted_globals(__globals: Union[dict, None]) -> Any:
 
 
 def safe_eval(
-    __source: Union[str, ReadableBuffer, CodeType],
-    __globals: Union[dict[str, Any], None] = None,
+    __source: Union[str, bytes, CodeType],
+    __globals: Union[Dict[str, Any], None] = None,
     __locals: Union[Mapping[str, object], None] = None,
 ) -> Any:
     """
@@ -106,8 +101,8 @@ def safe_eval(
 
 
 def safe_exec(
-    __source: Union[str, ReadableBuffer, CodeType],
-    __globals: Union[dict[str, Any], None] = None,
+    __source: Union[str, bytes, CodeType],
+    __globals: Union[Dict[str, Any], None] = None,
     __locals: Union[Mapping[str, object], None] = None,
 ) -> None:
     """
