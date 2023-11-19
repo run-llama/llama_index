@@ -85,3 +85,11 @@ class VoyageEmbedding(BaseEmbedding):
         return await self._model.aget_embeddings(
             texts, model=self.model_name, input_type="document"
         )
+
+    def get_general_text_embedding(
+        self, text: str, input_type: Optional[str] = None
+    ) -> List[float]:
+        """Get general text embedding with input_type."""
+        return self._model.get_embedding(
+            text, model=self.model_name, input_type=input_type
+        )
