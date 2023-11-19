@@ -55,7 +55,7 @@ def call_tool_with_error_handling(
         return tool(**input_dict)
     except Exception as e:
         if raise_error:
-            raise e
+            raise
         error_message = error_message or f"Error: {e!s}"
         return ToolOutput(
             content=error_message,
