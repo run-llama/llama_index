@@ -103,7 +103,7 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         modelname = modelname.split(":")[0]
 
     try:
-        context_size = int(litellm.get_max_tokens(modelname)["max_tokens"])
+        context_size = int(litellm.get_max_tokens(modelname))
     except Exception:
         context_size = 2048  # by default assume models have at least 2048 tokens
 
@@ -163,11 +163,24 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     # NOTE: Azure OpenAI returns function calling messages without a content key
     content = message_dict.get("content", None)
 
+    print('\n\nmessage_dict:', message_dict)
+    module_path = message_dict.__class__.__module__
+    print(f'Module Path: {module_path}', '\n\n')
+
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
     additional_kwargs.pop("content", None)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+
+
+def from_litellm_message(message) -> ChatMessage:
+    """Convert litellm.utils.Message instance to generic message."""
+    role = message.get("role")
+    # NOTE: Azure OpenAI returns function calling messages without a content key
+    content = message.get("content", None)
+
+    return ChatMessage(role=role, content=content)
 
 
 def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage]:

@@ -29,7 +29,7 @@ from llama_index.llms.generic_utils import (
 from llama_index.llms.litellm_utils import (
     acompletion_with_retry,
     completion_with_retry,
-    from_openai_message_dict,
+    from_litellm_message,
     is_function_calling_model,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
@@ -207,7 +207,7 @@ class LiteLLM(LLM):
             **all_kwargs,
         )
         message_dict = response["choices"][0]["message"]
-        message = from_openai_message_dict(message_dict)
+        message = from_litellm_message(message_dict)
 
         return ChatResponse(
             message=message,
@@ -377,7 +377,7 @@ class LiteLLM(LLM):
             **all_kwargs,
         )
         message_dict = response["choices"][0]["message"]
-        message = from_openai_message_dict(message_dict)
+        message = from_litellm_message(message_dict)
 
         return ChatResponse(
             message=message,
