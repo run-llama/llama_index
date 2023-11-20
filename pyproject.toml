@@ -137,6 +137,9 @@ sphinx-autobuild = "^2021.3.14"
 sphinx-reredirects = "^0.1.3"
 sphinx-rtd-theme = "^1.3.0"
 
+[tool.poetry.scripts]
+download_llama_pack = 'llama_index.llama_pack.command_line:main'
+
 [tool.ruff]
 exclude = [
     "examples",
