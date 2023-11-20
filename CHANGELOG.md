@@ -12,6 +12,7 @@
 - Fixed various bugs with LiteLLM and the new OpenAI client (#9003)
 - Added context window attribute to perplexity llm (#9012)
 - Add `node_parser` attribute back to service context (#9013)
+- Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
 
 ## [0.9.3] - 2023-11-17
 
