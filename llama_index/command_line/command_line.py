@@ -1,5 +1,5 @@
 import argparse
-from typing import Optional
+from typing import Any, Optional
 
 from llama_index.llama_pack.download import LLAMA_HUB_URL, download_llama_pack
 
@@ -9,8 +9,8 @@ def handle_download_llama_pack(
     download_dir: Optional[str] = None,
     llama_hub_url: str = LLAMA_HUB_URL,
     refresh_cache: bool = False,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> None:
     assert llama_pack_class is not None
     assert download_dir is not None
 
@@ -23,7 +23,7 @@ def handle_download_llama_pack(
     print(f"Successfully downloaded {llama_pack_class} to {download_dir}")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="LlamaIndex CLI tool.")
 
     # Subparsers for the main commands
