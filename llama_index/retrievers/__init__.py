@@ -1,4 +1,4 @@
-from llama_index.core import BaseRetriever
+from llama_index.core import BaseImageRetriever, BaseRetriever
 from llama_index.indices.empty.retrievers import EmptyIndexRetriever
 from llama_index.indices.keyword_table.retrievers import KeywordTableSimpleRetriever
 from llama_index.indices.knowledge_graph.retrievers import (
@@ -31,7 +31,6 @@ from llama_index.indices.vector_store.retrievers import (
 from llama_index.retrievers.auto_merging_retriever import AutoMergingRetriever
 from llama_index.retrievers.bm25_retriever import BM25Retriever
 from llama_index.retrievers.fusion_retriever import QueryFusionRetriever
-from llama_index.retrievers.image_retriever import BaseImageRetriever
 from llama_index.retrievers.recursive_retriever import RecursiveRetriever
 from llama_index.retrievers.router_retriever import RouterRetriever
 from llama_index.retrievers.transform_retriever import TransformRetriever

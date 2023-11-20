@@ -4,12 +4,12 @@ import asyncio
 from typing import Any, Dict, List, Optional
 
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.core import (
+    MultiModalRetriever,
+)
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
-from llama_index.indices.multi_modal.base_retriever import (
-    MultiModalRetriever,
-)
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.schema import NodeWithScore, ObjectType, QueryBundle, QueryType
 from llama_index.vector_stores.types import (
