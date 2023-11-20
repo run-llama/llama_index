@@ -49,7 +49,7 @@
 
 ### New Features / Breaking Changes / Deprecations
 
-- New `IngestionPipline` concept for ingesting and transforming data
+- New `IngestionPipeline` concept for ingesting and transforming data
 - Data ingestion and transforms are now automatically cached
 - Updated interface for node parsing/text splitting/metadata extraction modules
 - Changes to the default tokenizer, as well as customizing the tokenizer
