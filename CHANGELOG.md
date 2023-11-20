@@ -11,6 +11,7 @@
 
 - Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)
 - Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
+- Restored `mypy` for Python 3.8 (#9031)
 
 ## [0.9.4] - 2023-11-19
 
