@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
+
 ## [0.9.4] - 2023-11-19
 
 ### New Features
