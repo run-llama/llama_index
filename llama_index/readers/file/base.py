@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, Generator, List, Optional, Type
+from tqdm import tqdm
 
 from llama_index.readers.base import BaseReader
 from llama_index.readers.file.docs_reader import DocxReader, HWPReader, PDFReader
@@ -211,14 +212,23 @@ class SimpleDirectoryReader(BaseReader):
 
         return new_input_files
 
-    def load_data(self) -> List[Document]:
+    def load_data(self, show_progress: bool = False) -> List[Document]:
         """Load data from the input directory.
+
+        Args:
+            show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
 
         Returns:
             List[Document]: A list of documents.
         """
         documents = []
-        for input_file in self.input_files:
+        
+        files_to_process = self.input_files
+        
+        if show_progress:
+            files_to_process = tqdm(self.input_files, desc="Loading files", unit="file")
+
+        for input_file in files_to_process:
             metadata: Optional[dict] = None
             if self.file_metadata is not None:
                 metadata = self.file_metadata(str(input_file))
