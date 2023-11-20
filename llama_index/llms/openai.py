@@ -161,7 +161,13 @@ class OpenAI(LLM):
         return "openai_llm"
 
     @property
-    def _tokenizer(self) -> Tokenizer:
+    def _tokenizer(self) -> Optional[Tokenizer]:
+        """
+        Get a tokenizer for this model, or None if a tokenizing method is unknown.
+
+        OpenAI can do this using the tiktoken package, subclasses may not have
+        this convenience.
+        """
         return tiktoken.encoding_for_model(self._get_model_name())
 
     @property
@@ -385,16 +391,17 @@ class OpenAI(LLM):
         return gen()
 
     def _update_max_tokens(self, all_kwargs: Dict[str, Any], prompt: str) -> None:
-        if self.max_tokens is not None:
+        """Infer max_tokens for the payload, if possible."""
+        if self.max_tokens is not None or self._tokenizer is None:
             return
         # NOTE: non-chat completion endpoint requires max_tokens to be set
-        context_window = self.metadata.context_window
-        tokens = self._tokenizer.encode(prompt)
-        max_tokens = context_window - len(tokens)
+        num_tokens = len(self._tokenizer.encode(prompt))
+        max_tokens = self.metadata.context_window - num_tokens
         if max_tokens <= 0:
             raise ValueError(
-                f"The prompt is too long for the model. "
-                f"Please use a prompt that is less than {context_window} tokens."
+                f"The prompt has {num_tokens} tokens, which is too long for"
+                " the model. Please use a prompt that fits within"
+                f" {self.metadata.context_window} tokens."
             )
         all_kwargs["max_tokens"] = max_tokens
 
