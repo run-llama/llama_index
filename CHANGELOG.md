@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+
+- Fixed bug with AzureOpenAI logic for inferring if stream chunk is a tool call (#9018)
+
 ### New Features
 
 - Added callback manager to each retriever (#8871)
