@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- Added callback manager to each retriever (#8871)
+
 ### Bug Fixes / Nits
 
 - Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
