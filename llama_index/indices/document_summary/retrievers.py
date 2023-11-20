@@ -7,6 +7,7 @@ This module contains retrievers for document summary indices.
 import logging
 from typing import Any, Callable, List, Optional
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.core import BaseRetriever
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.indices.utils import (
@@ -46,6 +47,7 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
         service_context: Optional[ServiceContext] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
@@ -61,6 +63,7 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
             parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
         )
         self._service_context = service_context or index.service_context
+        super().__init__(callback_manager)
 
     def _retrieve(
         self,
@@ -115,7 +118,11 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
     """
 
     def __init__(
-        self, index: DocumentSummaryIndex, similarity_top_k: int = 1, **kwargs: Any
+        self,
+        index: DocumentSummaryIndex,
+        similarity_top_k: int = 1,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         self._index = index
@@ -123,8 +130,8 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         self._service_context = self._index.service_context
         self._docstore = self._index.docstore
         self._index_struct = self._index.index_struct
-
         self._similarity_top_k = similarity_top_k
+        super().__init__(callback_manager)
 
     def _retrieve(
         self,
