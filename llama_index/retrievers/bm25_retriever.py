@@ -3,12 +3,11 @@ from typing import Callable, List, Optional, cast
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
+from llama_index.core import BaseRetriever
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore, QueryBundle
 from llama_index.storage.docstore.types import BaseDocumentStore
-from llama_index.utils import globals_helper
+from llama_index.utils import get_tokenizer
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +55,7 @@ class BM25Retriever(BaseRetriever):
             nodes is not None
         ), "Please pass exactly one of index, nodes, or docstore."
 
-        tokenizer = tokenizer or globals_helper.tokenizer
+        tokenizer = tokenizer or get_tokenizer()
         return cls(
             nodes=nodes,
             tokenizer=tokenizer,

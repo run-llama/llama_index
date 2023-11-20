@@ -5,8 +5,6 @@ Node Parser
    :members:
    :inherited-members:
 
-..  autopydantic_model:: llama_index.node_parser.extractors.metadata_extractors.MetadataExtractor
-
 ..  autopydantic_model:: llama_index.node_parser.extractors.metadata_extractors.SummaryExtractor
 
 ..  autopydantic_model:: llama_index.node_parser.extractors.metadata_extractors.QuestionsAnsweredExtractor
@@ -17,4 +15,4 @@ Node Parser
 
 ..  autopydantic_model:: llama_index.node_parser.extractors.metadata_extractors.EntityExtractor
 
-..  autopydantic_model:: llama_index.node_parser.extractors.metadata_extractors.MetadataFeatureExtractor
+..  autopydantic_model:: llama_index.node_parser.extractors.metadata_extractors.BaseExtractor

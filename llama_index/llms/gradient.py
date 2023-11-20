@@ -4,6 +4,7 @@ from typing_extensions import override
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llms import (
     CompletionResponse,
     CompletionResponseGen,
@@ -19,6 +20,7 @@ class _BaseGradientLLM(CustomLLM):
 
     # Config
     max_tokens: Optional[int] = Field(
+        default=DEFAULT_NUM_OUTPUTS,
         description="The number of tokens to generate.",
         gt=0,
         lt=512,

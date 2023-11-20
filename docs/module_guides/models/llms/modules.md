@@ -220,3 +220,21 @@ maxdepth: 1
 ---
 /examples/llm/vertex.ipynb
 ```
+
+## Perplexity
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/perplexity.ipynb
+```
+
+## OpenLLM
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/openllm.ipynb
+```

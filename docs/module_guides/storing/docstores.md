@@ -17,10 +17,10 @@ We support MongoDB as an alternative document store backend that persists data a
 
 ```python
 from llama_index.storage.docstore import MongoDocumentStore
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceSplitter
 
 # create parser and parse document into nodes
-parser = SimpleNodeParser.from_defaults()
+parser = SentenceSplitter()
 nodes = parser.get_nodes_from_documents(documents)
 
 # create (or load) docstore and add nodes
@@ -51,10 +51,10 @@ We support Redis as an alternative document store backend that persists data as 
 
 ```python
 from llama_index.storage.docstore import RedisDocumentStore
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceSplitter
 
 # create parser and parse document into nodes
-parser = SimpleNodeParser.from_defaults()
+parser = SentenceSplitter()
 nodes = parser.get_nodes_from_documents(documents)
 
 # create (or load) docstore and add nodes
@@ -84,10 +84,10 @@ We support Firestore as an alternative document store backend that persists data
 
 ```python
 from llama_index.storage.docstore import FirestoreDocumentStore
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.node_parser import SentenceSplitter
 
 # create parser and parse document into nodes
-parser = SimpleNodeParser.from_defaults()
+parser = SentenceSplitter()
 nodes = parser.get_nodes_from_documents(documents)
 
 # create (or load) docstore and add nodes

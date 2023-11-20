@@ -5,11 +5,11 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, cast
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.core import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import truncate_text
 from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
-from llama_index.schema import BaseNode, NodeWithScore
+from llama_index.schema import BaseNode, NodeWithScore, QueryBundle
 from llama_index.storage.storage_context import StorageContext
 
 logger = logging.getLogger(__name__)
