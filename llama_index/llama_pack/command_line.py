@@ -9,6 +9,7 @@ def main():
     parser.add_argument(
         "llama-pack-class",
         type=str,
+        dest="llama_pack_class",
         help=(
             "The name of the llama-pack class you want to download, "
             "such as `GmailOpenAIAgentPack`."
@@ -17,6 +18,7 @@ def main():
     parser.add_argument(
         "download-dir",
         type=str,
+        dest="download_dir",
         help="Custom dirpath to download the pack into.",
     )
     parser.add_argument(
