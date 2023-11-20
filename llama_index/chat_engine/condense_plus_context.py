@@ -99,7 +99,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
-        """Initialize a C3ChatEngine from default parameters."""
+        """Initialize a CondensePlusContextChatEngine from default parameters."""
         service_context = service_context or ServiceContext.from_defaults()
         if not isinstance(service_context.llm_predictor, LLMPredictor):
             raise ValueError("llm_predictor must be a LLMPredictor instance")

@@ -2,17 +2,24 @@
 
 ## Unreleased
 
+### Bug Fixes / Nits
+
+- Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
+
+## [0.9.4] - 2023-11-19
+
 ### New Features
 
 - Added `CondensePlusContextChatEngine` (#8949)
 
-### Bug Fixes / Nits
+### Smaller Features / Bug Fixes / Nits
 
 - Fixed bug with `OpenAIAgent` inserting errors into chat history (#9000)
 - Fixed various bugs with LiteLLM and the new OpenAI client (#9003)
 - Added context window attribute to perplexity llm (#9012)
 - Add `node_parser` attribute back to service context (#9013)
-- Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
+- Refactor MM retriever classes (#8998)
+- Fix TextNode instantiation on SupabaseVectorIndexDemo (#8994)
 
 ## [0.9.3] - 2023-11-17
 
