@@ -15,6 +15,7 @@ disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
 exclude = ["build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
+python_version = "3.8"
 
 [tool.poetry]
 authors = ["Jerry Liu <jerry@llamaindex.ai>"]
