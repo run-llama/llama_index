@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)
+
 ## [0.9.4] - 2023-11-19
 
 ### New Features
