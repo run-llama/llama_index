@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- More precise testing of `OpenAILike` (#9026)
+
 ### Bug Fixes / Nits
 
 - Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)
