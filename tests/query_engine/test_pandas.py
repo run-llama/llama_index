@@ -6,7 +6,6 @@ from typing import Any, Dict, cast
 
 import pandas as pd
 import pytest
-
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.query_engine.pandas_query_engine import (
@@ -87,7 +86,8 @@ def test_default_output_processor_e2e(tmp_path: Path) -> None:
     """
     RCE Attack from https://github.com/run-llama/llama_index/issues/7054 .
     """
-    if not os.getenv("OPENAI_API_KEY"):
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key or api_key == "sk-" + ("a" * 48):
         pytest.skip("OPENAI_API_KEY is not defined")
 
     import logging
