@@ -1,5 +1,16 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Added `CondensePlusContextChatEngine` (#8949)
+
+### Bug Fixes / Nits
+
+- Fixed bug with `OpenAIAgent` inserting errors into chat history (#9000)
+- Fixed various bugs with LiteLLM and the new OpenAI client (#9003)
+
 ## [0.9.3] - 2023-11-17
 
 ### New Features
