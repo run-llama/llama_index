@@ -7,7 +7,7 @@ def main():
     # Create a parser for downloading llama-packs
     parser = argparse.ArgumentParser(description="Download llama-packs")
     parser.add_argument(
-        "llama_pack_class",
+        "llama-pack-class",
         type=str,
         help=(
             "The name of the llama-pack class you want to download, "
@@ -15,18 +15,18 @@ def main():
         ),
     )
     parser.add_argument(
-        "download_dir",
+        "download-dir",
         type=str,
         help="Custom dirpath to download the pack into.",
     )
     parser.add_argument(
-        "--llama_hub_url",
+        "--llama-hub-url",
         type=str,
         default=LLAMA_HUB_URL,
         help="URL to llama hub.",
     )
     parser.add_argument(
-        "--refresh_cache",
+        "--refresh-cache",
         action="store_true",
         help=(
             "If true, the local cache will be skipped and the pack "
