@@ -8,7 +8,7 @@ from llama_index.llms.openai import OpenAI, Tokenizer
 
 class OpenAILike(OpenAI):
     """
-    OpenAILike is a thin wrapper around the OpenAI model that makes it compatible with \
+    OpenAILike is a thin wrapper around the OpenAI model that makes it compatible with
     3rd party tools that provide an openai-compatible api.
 
     Currently, llama_index prevents using custom models with their OpenAI class
@@ -22,19 +22,25 @@ class OpenAILike(OpenAI):
 
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
-        description="The maximum number of context tokens for the model.",
+        description=LLMMetadata.__fields__["context_window"].field_info.description,
     )
     is_chat_model: bool = Field(
-        default=False, description="Indicates that the custom model is a chat_model."
+        default=False,
+        description=LLMMetadata.__fields__["is_chat_model"].field_info.description,
     )
     is_function_calling_model: bool = Field(
         default=False,
-        description="Indicates that the custom model is a function calling model.",
+        description=LLMMetadata.__fields__[
+            "is_function_calling_model"
+        ].field_info.description,
     )
     tokenizer: Optional[Tokenizer] = Field(
         default=None,
-        description="An instance of a tokenizer object that has an encode method. "
-        "If not provided, will default to the huggingface tokenizer for the model.",
+        description=(
+            "An instance of a tokenizer object that has an encode method, or the name"
+            " of a tokenizer model from Hugging Face. If left as None, then this"
+            " disables inference of max_tokens."
+        ),
     )
 
     @property
