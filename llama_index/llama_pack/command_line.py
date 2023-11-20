@@ -7,18 +7,16 @@ def main():
     # Create a parser for downloading llama-packs
     parser = argparse.ArgumentParser(description="Download llama-packs")
     parser.add_argument(
-        "llama-pack-class",
+        "llama_pack_class",
         type=str,
-        dest="llama_pack_class",
         help=(
             "The name of the llama-pack class you want to download, "
             "such as `GmailOpenAIAgentPack`."
         ),
     )
     parser.add_argument(
-        "download-dir",
+        "download_dir",
         type=str,
-        dest="download_dir",
         help="Custom dirpath to download the pack into.",
     )
     parser.add_argument(
