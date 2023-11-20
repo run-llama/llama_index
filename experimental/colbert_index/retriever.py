@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core import BaseRetriever
 from llama_index.schema import NodeWithScore, QueryBundle
@@ -28,19 +29,19 @@ class ColbertRetriever(BaseRetriever):
         filters: Optional[MetadataFilters] = None,
         node_ids: Optional[List[str]] = None,
         doc_ids: Optional[List[str]] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._index = index
         self._service_context = self._index.service_context
         self._docstore = self._index.docstore
-
         self._similarity_top_k = similarity_top_k
         self._node_ids = node_ids
         self._doc_ids = doc_ids
         self._filters = filters
-
         self._kwargs: Dict[str, Any] = kwargs.get("colbert_kwargs", {})
+        super().__init__(callback_manager)
 
     def _retrieve(
         self,

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- Added callback manager to each retriever (#8871)
+
 ### Bug Fixes / Nits
 
 - Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)

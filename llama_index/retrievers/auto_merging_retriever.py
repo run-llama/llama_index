@@ -2,9 +2,11 @@
 
 import logging
 from collections import defaultdict
-from typing import Dict, List, Tuple, cast
+from typing import Dict, List, Optional, Tuple, cast
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.core import BaseRetriever
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import truncate_text
 from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
 from llama_index.schema import BaseNode, NodeWithScore, QueryBundle
@@ -27,12 +29,14 @@ class AutoMergingRetriever(BaseRetriever):
         storage_context: StorageContext,
         simple_ratio_thresh: float = 0.5,
         verbose: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Init params."""
         self._vector_retriever = vector_retriever
         self._storage_context = storage_context
         self._simple_ratio_thresh = simple_ratio_thresh
         self._verbose = verbose
+        super().__init__(callback_manager)
 
     def _get_parents_and_merge(
         self, nodes: List[NodeWithScore]
