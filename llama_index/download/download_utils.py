@@ -111,7 +111,7 @@ def get_module_info(
     if isinstance(local_dir_path, str):
         local_dir_path = Path(local_dir_path)
 
-    local_library_path = f"{local_dir_path}/{library_path}]"
+    local_library_path = f"{local_dir_path}/{library_path}"
     module_id = None  # e.g. `web/simple_web`
     extra_files = []  # e.g. `web/simple_web/utils.py`
 
@@ -134,6 +134,12 @@ def get_module_info(
 
         module_id = library[module_class]["id"]
         extra_files = library[module_class].get("extra_files", [])
+
+        # create cache dir if needed
+        local_library_dir = os.path.dirname(local_library_path)
+        if not os.path.exists(local_library_dir):
+            os.makedirs(local_library_dir)
+
         # Update cache
         with open(local_library_path, "w") as f:
             f.write(library_raw_content)
