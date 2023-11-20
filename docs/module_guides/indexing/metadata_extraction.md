@@ -37,9 +37,9 @@ transformations = [
 Then, we can run our transformations on input documents or nodes:
 
 ```python
-from llama_index.ingestion import IngestionPipline
+from llama_index.ingestion import IngestionPipeline
 
-pipeline = IngestionPipline(transformations=transformations)
+pipeline = IngestionPipeline(transformations=transformations)
 
 nodes = pipeline.run(documents=documents)
 ```

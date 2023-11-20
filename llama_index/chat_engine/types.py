@@ -255,6 +255,14 @@ class ChatMode(str, Enum):
     in the system prompt to generate a response.
     """
 
+    CONDENSE_PLUS_CONTEXT = "condense_plus_context"
+    """Corresponds to `CondensePlusContextChatEngine`.
+
+    First condense a conversation and latest user message to a standalone question.
+    Then build a context for the standalone question from a retriever,
+    Then pass the context along with prompt and user message to LLM to generate a response.
+    """
+
     REACT = "react"
     """Corresponds to `ReActAgent`.
 
