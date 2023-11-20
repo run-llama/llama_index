@@ -42,8 +42,10 @@ def main():
         ),
     )
     llamapack_parser.add_argument(
-        "download_dir",
+        "-d",
+        "--download-dir",
         type=str,
+        default="./llama_packs",
         help="Custom dirpath to download the pack into.",
     )
     llamapack_parser.add_argument(
