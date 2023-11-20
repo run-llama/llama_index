@@ -308,6 +308,14 @@ class ServiceContext:
             raise ValueError("llm_predictor must be an instance of LLMPredictor")
         return self.llm_predictor.llm
 
+    @property
+    def node_parser(self) -> NodeParser:
+        """Get the node parser."""
+        for transform in self.transformations:
+            if isinstance(transform, NodeParser):
+                return transform
+        raise ValueError("No node parser found.")
+
     def to_dict(self) -> dict:
         """Convert service context to dict."""
         llm_dict = self.llm_predictor.llm.to_dict()
