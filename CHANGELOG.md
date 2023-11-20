@@ -4,6 +4,7 @@
 
 ### New Features
 
+- More precise testing of `OpenAILike` (#9026)
 - Added callback manager to each retriever (#8871)
 
 ### Bug Fixes / Nits
