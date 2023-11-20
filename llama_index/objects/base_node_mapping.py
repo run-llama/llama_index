@@ -1,9 +1,15 @@
 """Base object types."""
 
+import os
+import pickle
 from abc import abstractmethod
-from typing import Any, Generic, Optional, Sequence, TypeVar
+from typing import Any, Dict, Generic, Optional, Sequence, TypeVar
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.storage.storage_context import DEFAULT_PERSIST_DIR
+from llama_index.utils import concat_dirs
+
+DEFAULT_PERSIST_FNAME = "object_node_mapping.pickle"
 
 OT = TypeVar("OT")
 
@@ -62,6 +68,23 @@ class BaseObjectNodeMapping(Generic[OT]):
     def _from_node(self, node: BaseNode) -> OT:
         """From node."""
 
+    @abstractmethod
+    def persist(
+        self,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
+    ) -> None:
+        """Persist objs."""
+
+    @classmethod
+    @abstractmethod
+    def from_persist_dir(
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
+    ) -> "BaseObjectNodeMapping":
+        """Load from serialization."""
+
 
 class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
     """General node mapping that works for any obj.
@@ -82,6 +105,14 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
     ) -> "BaseObjectNodeMapping":
         return cls(objs)
 
+    @property
+    def obj_node_mapping(self):
+        return self._objs
+
+    @obj_node_mapping.setter
+    def obj_node_mapping(self, mapping: Dict[int:Any]):
+        self._objs = mapping
+
     def _add_object(self, obj: Any) -> None:
         self._objs[hash(str(obj))] = obj
 
@@ -90,3 +121,34 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
 
     def _from_node(self, node: BaseNode) -> Any:
         return self._objs[hash(node.get_content(metadata_mode=MetadataMode.NONE))]
+
+    def persist(
+        self,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
+    ) -> None:
+        if not os.path.exists(persist_dir):
+            os.makedirs(persist_dir)
+        obj_node_mapping_path = concat_dirs(persist_dir, obj_node_mapping_fname)
+        try:
+            with open(obj_node_mapping_path, "wb") as f:
+                pickle.dump(self._objs)
+        except pickle.PickleError as err:
+            raise ValueError("Objs is not pickleable") from err
+
+    @classmethod
+    def from_persist_dir(
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
+    ) -> "SimpleObjectNodeMapping":
+        obj_node_mapping_path = concat_dirs(persist_dir, obj_node_mapping_fname)
+        try:
+            with open(obj_node_mapping_path, "rb") as f:
+                objs = pickle.load(f)
+        except pickle.PickleError as err:
+            raise ValueError("Objs cannot be loaded.") from err
+
+        simple_object_node_mapping = cls(None)
+        simple_object_node_mapping.obj_node_mapping = objs
+        return simple_object_node_mapping
