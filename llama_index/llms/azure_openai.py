@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Tuple
 
+import httpx
 from openai import AsyncAzureOpenAI
 from openai import AzureOpenAI as SyncAzureOpenAI
 
@@ -51,6 +52,7 @@ class AzureOpenAI(OpenAI):
     _azure_ad_token: Any = PrivateAttr()
     _client: SyncAzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -72,6 +74,8 @@ class AzureOpenAI(OpenAI):
         deployment_name: Optional[str] = None,
         deployment_id: Optional[str] = None,
         deployment: Optional[str] = None,
+        # custom httpx client
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
         engine = resolve_from_aliases(
@@ -87,6 +91,10 @@ class AzureOpenAI(OpenAI):
         azure_endpoint = get_from_param_or_env(
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
         )
+
+        # Use the custom httpx client if provided.
+        # Otherwise the value will be None.
+        self._http_client = http_client
 
         super().__init__(
             engine=engine,
@@ -140,6 +148,7 @@ class AzureOpenAI(OpenAI):
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,
+            "http_client": self._http_client,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:

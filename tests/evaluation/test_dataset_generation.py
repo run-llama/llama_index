@@ -1,10 +1,10 @@
 """Test dataset generation."""
 
 from llama_index.evaluation.dataset_generation import DatasetGenerator
-from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.schema import TextNode
+from llama_index.service_context import ServiceContext
 
 
 def test_dataset_generation(

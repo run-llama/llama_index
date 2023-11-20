@@ -3,6 +3,11 @@ import pytest
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.tools.function_tool import FunctionTool
 
+try:
+    import langchain
+except ImportError:
+    langchain = None  # type: ignore
+
 
 def tmp_function(x: int) -> str:
     return str(x)
@@ -35,6 +40,13 @@ def test_function_tool() -> None:
     assert function_tool.metadata.fn_schema is not None
     actual_schema = function_tool.metadata.fn_schema.schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
+
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+def test_function_tool_to_langchain() -> None:
+    function_tool = FunctionTool.from_defaults(
+        tmp_function, name="foo", description="bar"
+    )
 
     # test to langchain
     # NOTE: can't take in a function with int args
@@ -71,6 +83,14 @@ async def test_function_tool_async() -> None:
 
     assert str(function_tool(2)) == "2"
     assert str(await function_tool.acall(2)) == "async_2"
+
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+@pytest.mark.asyncio()
+async def test_function_tool_async_langchain() -> None:
+    function_tool = FunctionTool.from_defaults(
+        fn=tmp_function, async_fn=async_tmp_function, name="foo", description="bar"
+    )
 
     # test to langchain
     # NOTE: can't take in a function with int args
@@ -111,6 +131,14 @@ async def test_function_tool_async_defaults() -> None:
     assert function_tool.metadata.fn_schema is not None
     actual_schema = function_tool.metadata.fn_schema.schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
+
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+@pytest.mark.asyncio()
+async def test_function_tool_async_defaults_langchain() -> None:
+    function_tool = FunctionTool.from_defaults(
+        fn=tmp_function, name="foo", description="bar"
+    )
 
     # test to langchain
     # NOTE: can't take in a function with int args

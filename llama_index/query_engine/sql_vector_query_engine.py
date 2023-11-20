@@ -4,7 +4,6 @@ import logging
 from typing import Any, Optional, Union
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.sql_query import (
     BaseSQLTableQueryEngine,
     NLSQLTableQueryEngine,
@@ -21,6 +20,7 @@ from llama_index.query_engine.sql_join_query_engine import (
 )
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
+from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 
 logger = logging.getLogger(__name__)

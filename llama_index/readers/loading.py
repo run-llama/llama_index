@@ -37,6 +37,8 @@ ALL_READERS: Dict[str, Type[BasePydanticReader]] = {
 
 
 def load_reader(data: Dict[str, Any]) -> BasePydanticReader:
+    if isinstance(data, BasePydanticReader):
+        return data
     class_name = data.get("class_name", None)
     if class_name is None:
         raise ValueError("Must specify `class_name` in reader data.")
