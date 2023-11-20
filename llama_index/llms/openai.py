@@ -317,7 +317,7 @@ class OpenAI(LLM):
                     delta = ChoiceDelta()
 
                 # check if this chunk is the start of a function call
-                if (delta.role == MessageRole.ASSISTANT) and (delta.content is None):
+                if delta.tool_calls:
                     is_function = True
 
                 # update using deltas
@@ -501,7 +501,7 @@ class OpenAI(LLM):
                     delta = {}
 
                 # check if this chunk is the start of a function call
-                if (delta.role == MessageRole.ASSISTANT) and (delta.content is None):
+                if delta.tool_calls:
                     is_function = True
 
                 # update using deltas
