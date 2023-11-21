@@ -2,12 +2,12 @@
 
 A transformation is something that takes a list of nodes as an input, and returns a list of nodes. Each component that implements the `Transformation` base class has both a synchronous `__call__()` definition and an async `acall()` definition.
 
-Current;y, the following components are `Transformation` objects:
+Currently, the following components are `Transformation` objects:
 
 - `TextSplitter`
 - `NodeParser`
 - `MetadataExtractor`
-- `Embeddings`model
+- `Embeddings`model (check our [list of supported embeddings](list_of_embeddings))
 
 ## Usage Pattern
 
