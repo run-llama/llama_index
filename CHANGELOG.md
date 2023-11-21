@@ -11,6 +11,7 @@
 - `FastEmbed` embeddings provider (#9043)
 - More precise testing of `OpenAILike` (#9026)
 - Added callback manager to each retriever (#8871)
+- Ability to bypass `max_tokens` inference with `OpenAILike` (#9032)
 
 ### Bug Fixes / Nits
 
