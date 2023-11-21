@@ -9,7 +9,8 @@ from typing import Any, cast
 from sqlalchemy import create_engine, text
 from tqdm import tqdm
 
-from llama_index import LLMPredictor, SQLDatabase, SQLStructStoreIndex
+from llama_index import LLMPredictor, SQLDatabase
+from llama_index.indices import SQLStructStoreIndex
 from llama_index.llms.openai import OpenAI
 
 logging.getLogger("root").setLevel(logging.WARNING)

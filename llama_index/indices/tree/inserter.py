@@ -3,7 +3,6 @@
 from typing import Optional, Sequence
 
 from llama_index.data_structs.data_structs import IndexGraph
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.indices.utils import (
     extract_numbers_given_response,
@@ -15,6 +14,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 

@@ -10,10 +10,9 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union, cast
 
+from llama_index.core import BaseRetriever
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.indices.base import BaseIndex
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import embed_nodes
 from llama_index.response.schema import Response
 from llama_index.response_synthesizers import (
@@ -28,6 +27,7 @@ from llama_index.schema import (
     RelatedNodeInfo,
     TextNode,
 )
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import get_tqdm_iterable

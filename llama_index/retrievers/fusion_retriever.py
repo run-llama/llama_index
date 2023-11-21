@@ -3,11 +3,11 @@ from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
 from llama_index.async_utils import run_async_tasks
+from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.retrievers import BaseRetriever
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, QueryBundle
 
 QUERY_GEN_PROMPT = (
     "You are a helpful assistant that generates multiple search queries based on a "
@@ -36,6 +36,7 @@ class QueryFusionRetriever(BaseRetriever):
         num_queries: int = 4,
         use_async: bool = True,
         verbose: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self.num_queries = num_queries
         self.query_gen_prompt = query_gen_prompt or QUERY_GEN_PROMPT
@@ -46,6 +47,7 @@ class QueryFusionRetriever(BaseRetriever):
 
         self._retrievers = retrievers
         self._llm = resolve_llm(llm)
+        super().__init__(callback_manager)
 
     def _get_queries(self, original_query: str) -> List[str]:
         prompt_str = self.query_gen_prompt.format(

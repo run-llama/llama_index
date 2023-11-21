@@ -2,10 +2,8 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.schema import BaseNode, IndexNode, NodeWithScore, TextNode
+from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle, TextNode
 from llama_index.utils import print_text
 
 DEFAULT_QUERY_RESPONSE_TMPL = "Query: {query_str}\nResponse: {response}"
@@ -51,7 +49,7 @@ class RecursiveRetriever(BaseRetriever):
         self._retriever_dict = retriever_dict
         self._query_engine_dict = query_engine_dict or {}
         self._node_dict = node_dict or {}
-        self.callback_manager = callback_manager or CallbackManager([])
+        super().__init__(callback_manager)
 
         # make sure keys don't overlap
         if set(self._retriever_dict.keys()) & set(self._query_engine_dict.keys()):
@@ -59,7 +57,7 @@ class RecursiveRetriever(BaseRetriever):
 
         self._query_response_tmpl = query_response_tmpl or DEFAULT_QUERY_RESPONSE_TMPL
         self._verbose = verbose
-        super().__init__()
+        super().__init__(callback_manager)
 
     def _query_retrieved_nodes(
         self, query_bundle: QueryBundle, nodes_with_score: List[NodeWithScore]

@@ -92,14 +92,21 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         """Initialize params."""
         try:
             import weaviate  # noqa
-            from weaviate import Client
+            from weaviate import AuthApiKey, Client
         except ImportError:
             raise ImportError(import_err_msg)
 
         if weaviate_client is None:
-            raise ValueError("Missing Weaviate client!")
+            if isinstance(auth_config, dict):
+                auth_config = AuthApiKey(**auth_config)
 
-        self._client = cast(Client, weaviate_client)
+            client_kwargs = client_kwargs or {}
+            self._client = Client(
+                url=url, auth_client_secret=auth_config, **client_kwargs
+            )
+        else:
+            self._client = cast(Client, weaviate_client)
+
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
             logger.warning("class_prefix is deprecated, please use index_name")
@@ -120,7 +127,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             url=url,
             index_name=index_name,
             text_key=text_key,
-            auth_config=auth_config or {},
+            auth_config=auth_config.__dict__ if auth_config else {},
             client_kwargs=client_kwargs or {},
         )
 
@@ -242,9 +249,12 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             }
             query_builder = query_builder.with_where(filter_with_node_ids)
 
-        query_builder = query_builder.with_additional(["id", "vector", "distance"])
+        query_builder = query_builder.with_additional(
+            ["id", "vector", "distance", "score"]
+        )
 
         vector = query.query_embedding
+        similarity_key = "distance"
         if query.mode == VectorStoreQueryMode.DEFAULT:
             logger.debug("Using vector search")
             if vector is not None:
@@ -255,6 +265,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             logger.debug(f"Using hybrid search with alpha {query.alpha}")
+            similarity_key = "score"
             query_builder = query_builder.with_hybrid(
                 query=query.query_str,
                 alpha=query.alpha,
@@ -277,7 +288,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         parsed_result = parse_get_response(query_result)
         entries = parsed_result[self.index_name]
 
-        similarities = [get_node_similarity(entry) for entry in entries]
+        similarities = [get_node_similarity(entry, similarity_key) for entry in entries]
         nodes = [to_node(entry, text_key=self.text_key) for entry in entries]
 
         nodes = nodes[: query.similarity_top_k]

@@ -6,7 +6,11 @@ from tqdm import tqdm
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+    DEFAULT_TEMPERATURE,
+)
 from llama_index.llms.base import (
     ChatMessage,
     ChatResponse,
@@ -45,11 +49,21 @@ class LlamaCPP(CustomLLM):
     model_path: Optional[str] = Field(
         description="The path to the llama-cpp model to use."
     )
-    temperature: float = Field(description="The temperature to use for sampling.")
-    max_new_tokens: int = Field(description="The maximum number of tokens to generate.")
+    temperature: float = Field(
+        default=DEFAULT_TEMPERATURE,
+        description="The temperature to use for sampling.",
+        gte=0.0,
+        lte=1.0,
+    )
+    max_new_tokens: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description="The maximum number of tokens to generate.",
+        gt=0,
+    )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",
+        gt=0,
     )
     messages_to_prompt: Callable = Field(
         description="The function to convert messages to a prompt.", exclude=True
@@ -74,7 +88,7 @@ class LlamaCPP(CustomLLM):
         self,
         model_url: Optional[str] = None,
         model_path: Optional[str] = None,
-        temperature: float = 0.1,
+        temperature: float = DEFAULT_TEMPERATURE,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         messages_to_prompt: Optional[Callable] = None,
