@@ -199,6 +199,7 @@ maxdepth: 1
 /examples/embeddings/OpenAI.ipynb
 /examples/embeddings/Langchain.ipynb
 /examples/embeddings/cohereai.ipynb
+/examples/embeddings/fastembed.ipynb
 /examples/embeddings/gradient.ipynb
 /examples/customization/llms/AzureOpenAI.ipynb
 /examples/embeddings/custom_embeddings.ipynb

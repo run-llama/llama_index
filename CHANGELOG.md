@@ -8,6 +8,7 @@
 
 ### New Features
 
+- `FastEmbed` embeddings provider (#9043)
 - More precise testing of `OpenAILike` (#9026)
 - Added callback manager to each retriever (#8871)
 
