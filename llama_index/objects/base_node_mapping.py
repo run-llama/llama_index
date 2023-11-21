@@ -133,6 +133,11 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         persist_dir: str = DEFAULT_PERSIST_DIR,
         obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
     ) -> None:
+        """Persist object node mapping.
+
+        NOTE: This may fail depending on whether the object types are
+        pickle-able.
+        """
         if not os.path.exists(persist_dir):
             os.makedirs(persist_dir)
         obj_node_mapping_path = concat_dirs(persist_dir, obj_node_mapping_fname)

@@ -43,6 +43,16 @@ def test_simple_object_node_mapping() -> None:
     assert node_mapping.from_node(node_mapping.to_node(objects[0])) == objects[0]
 
 
+def test_simple_object_node_mapping_persist() -> None:
+    """Test persist/load."""
+    strs = ["a", "b", "c"]
+    node_mapping = SimpleObjectNodeMapping.from_objects(strs)
+    node_mapping.persist()
+
+    loaded_node_mapping = SimpleObjectNodeMapping.from_persist_dir()
+    assert node_mapping.obj_node_mapping == loaded_node_mapping.obj_node_mapping
+
+
 def test_tool_object_node_mapping() -> None:
     """Test tool object node mapping."""
     tool1 = FunctionTool.from_defaults(
