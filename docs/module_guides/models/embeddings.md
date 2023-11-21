@@ -188,7 +188,9 @@ embeddings = embed_model.get_text_embedding(
 )
 ```
 
-## Modules
+(list_of_embeddings)=
+
+## List of supported embeddings
 
 We support integrations with OpenAI, Azure, and anything LangChain offers.
 
