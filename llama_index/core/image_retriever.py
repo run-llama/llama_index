@@ -15,7 +15,7 @@ class BaseImageRetriever(PromptMixin):
         """Retrieve image nodes given query or single image input.
 
         Args:
-            str_or_query_bundle (QueryType): Either a query text
+            str_or_query_bundle (QueryType): a query text
             string or a QueryBundle object.
         """
         if isinstance(str_or_query_bundle, str):
@@ -39,7 +39,7 @@ class BaseImageRetriever(PromptMixin):
         """Retrieve image nodes given query or single image input.
 
         Args:
-            str_or_query_bundle (QueryType): Either a image path
+            str_or_query_bundle (QueryType): a image path
             string or a QueryBundle object.
         """
         if isinstance(str_or_query_bundle, str):
