@@ -42,6 +42,11 @@ class BaseObjectNodeMapping(Generic[OT]):
         self.validate_object(obj)
         self._add_object(obj)
 
+    @property
+    @abstractmethod
+    def obj_node_mapping(self) -> Dict[int, Any]:
+        """The mapping data structure between node and object."""
+
     @abstractmethod
     def _add_object(self, obj: OT) -> None:
         """Add object.
@@ -107,15 +112,15 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
     @classmethod
     def from_objects(
         cls, objs: Sequence[Any], *args: Any, **kwargs: Any
-    ) -> "BaseObjectNodeMapping":
+    ) -> "SimpleObjectNodeMapping":
         return cls(objs)
 
     @property
-    def obj_node_mapping(self):
+    def obj_node_mapping(self) -> Dict[int, Any]:
         return self._objs
 
     @obj_node_mapping.setter
-    def obj_node_mapping(self, mapping: Dict[int, Any]):
+    def obj_node_mapping(self, mapping: Dict[int, Any]) -> None:
         self._objs = mapping
 
     def _add_object(self, obj: Any) -> None:
