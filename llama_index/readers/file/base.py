@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, Generator, List, Optional, Type
+
 from tqdm import tqdm
 
 from llama_index.readers.base import BaseReader
@@ -222,9 +223,9 @@ class SimpleDirectoryReader(BaseReader):
             List[Document]: A list of documents.
         """
         documents = []
-        
+
         files_to_process = self.input_files
-        
+
         if show_progress:
             files_to_process = tqdm(self.input_files, desc="Loading files", unit="file")
 
