@@ -1,6 +1,7 @@
 """Test pandas index."""
 
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, cast
 
@@ -83,6 +84,7 @@ def test_default_output_processor_rce(tmp_path: Path) -> None:
     assert not tmp_file.is_file(), "file has been created via RCE!"
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Requires Python 3.9 or higher")
 def test_default_output_processor_e2e(tmp_path: Path) -> None:
     """
     RCE Attack from https://github.com/run-llama/llama_index/issues/7054 .

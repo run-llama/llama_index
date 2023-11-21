@@ -16,6 +16,8 @@
 - Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)
 - Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
 - Restored `mypy` for Python 3.8 (#9031)
+- Loosened `dataclasses-json` version range,
+  and removes unnecessary `jinja2` extra from `pandas` (#9042)
 
 ## [0.9.4] - 2023-11-19
 
