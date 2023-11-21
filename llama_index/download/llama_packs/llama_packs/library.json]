@@ -1,0 +1,12 @@
+{
+  "GmailOpenAIAgentPack": {
+    "id": "llama_packs/gmail_openai_agent",
+    "author": "logan-markewich",
+    "keywords": ["math", "science", "research"]
+  },
+  "ChromaAutoretrievalPack": {
+    "id": "llama_packs/chroma_autoretrieval",
+    "author": "logan-markewich",
+    "keywords": ["chroma", "retrieval", "vector"]
+  }
+}

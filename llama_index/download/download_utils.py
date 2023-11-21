@@ -106,6 +106,7 @@ def get_module_info(
     module_class: str,
     refresh_cache: bool = False,
     library_path: str = "library.json",
+    disable_library_cache: bool = False,
 ) -> Dict:
     """Get module info."""
     if isinstance(local_dir_path, str):
@@ -137,12 +138,13 @@ def get_module_info(
 
         # create cache dir if needed
         local_library_dir = os.path.dirname(local_library_path)
-        if not os.path.exists(local_library_dir):
-            os.makedirs(local_library_dir)
+        if not disable_library_cache:
+            if not os.path.exists(local_library_dir):
+                os.makedirs(local_library_dir)
 
-        # Update cache
-        with open(local_library_path, "w") as f:
-            f.write(library_raw_content)
+            # Update cache
+            with open(local_library_path, "w") as f:
+                f.write(library_raw_content)
 
     if module_id is None:
         raise ValueError("Loader class name not found in library")
@@ -241,6 +243,7 @@ def download_llama_module(
     library_path: str = "library.json",
     base_file_name: str = "base.py",
     use_gpt_index_import: bool = False,
+    disable_library_cache: bool = False,
 ) -> Type:
     """Download a module from LlamaHub.
 
@@ -273,6 +276,7 @@ def download_llama_module(
         module_class=module_class,
         refresh_cache=refresh_cache,
         library_path=library_path,
+        disable_library_cache=disable_library_cache,
     )
     module_id = module_info["module_id"]
     extra_files = module_info["extra_files"]
