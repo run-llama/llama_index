@@ -8,7 +8,6 @@ def handle_download_llama_pack(
     llama_pack_class: Optional[str] = None,
     download_dir: Optional[str] = None,
     llama_hub_url: str = LLAMA_HUB_URL,
-    refresh_cache: bool = False,
     **kwargs: Any,
 ) -> None:
     assert llama_pack_class is not None
@@ -18,7 +17,6 @@ def handle_download_llama_pack(
         llama_pack_class=llama_pack_class,
         download_dir=download_dir,
         llama_hub_url=llama_hub_url,
-        refresh_cache=refresh_cache,
     )
     print(f"Successfully downloaded {llama_pack_class} to {download_dir}")
 
@@ -53,14 +51,6 @@ def main() -> None:
         type=str,
         default=LLAMA_HUB_URL,
         help="URL to llama hub.",
-    )
-    llamapack_parser.add_argument(
-        "--refresh-cache",
-        action="store_true",
-        help=(
-            "If true, the local cache will be skipped and the pack "
-            "will be fetched directly from the remote repo."
-        ),
     )
     llamapack_parser.set_defaults(
         func=lambda args: handle_download_llama_pack(**vars(args))
