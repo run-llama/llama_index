@@ -57,7 +57,9 @@ parser = MarkdownNodeParser()
 nodes = parser.get_nodes_from_documents(markdown_docs)
 ```
 
-## Text-Based Node Parsers
+(text_splitters)=
+
+## Text-Splitters
 
 ### CodeSplitter
 
@@ -66,7 +68,7 @@ Splits raw code-text based on the language it is written in.
 Check the full list of [supported languages here](https://github.com/grantjenks/py-tree-sitter-languages#license).
 
 ```python
-from llama_index.node_parser import CodeSplitter
+from llama_index.text_splitter import CodeSplitter
 
 splitter = CodeSplitter(
     language="python",
@@ -94,7 +96,7 @@ nodes = parser.get_nodes_from_documents(documents)
 The `SentenceSplitter` attempts to split text while respecting the boundaries of sentences.
 
 ```python
-from llama_index.node_parser import SentenceSplitter
+from llama_index.text_splitter import SentenceSplitter
 
 splitter = SentenceSplitter(
     chunk_size=1024,
@@ -132,7 +134,7 @@ A full example can be found [here in combination with the `MetadataReplacementNo
 The `TokenTextSplitter` attempts to split text while respecting the boundaries of sentences.
 
 ```python
-from llama_index.node_parser import TokenTextSplitter
+from llama_index.text_splitter import TokenTextSplitter
 
 splitter = TokenTextSplitter(
     chunk_size=1024,
