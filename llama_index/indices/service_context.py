@@ -141,6 +141,7 @@ class ServiceContext:
             return cls.from_service_context(
                 llama_index.global_service_context,
                 llm_predictor=llm_predictor,
+                llm=llm,
                 prompt_helper=prompt_helper,
                 embed_model=embed_model,
                 node_parser=node_parser,
