@@ -161,12 +161,17 @@ def download_module_and_reqs(
     refresh_cache: bool = False,
     use_gpt_index_import: bool = False,
     base_file_name: str = "base.py",
+    override_path: bool = False,
 ) -> None:
     """Load module."""
     if isinstance(local_dir_path, str):
         local_dir_path = Path(local_dir_path)
 
-    module_path = f"{local_dir_path}/{module_id}"
+    if override_path:
+        module_path = local_dir_path
+    else:
+        module_path = f"{local_dir_path}/{module_id}"
+
     if refresh_cache or not os.path.exists(module_path):
         os.makedirs(module_path, exist_ok=True)
 
@@ -281,16 +286,16 @@ def download_llama_module(
         refresh_cache=refresh_cache,
         use_gpt_index_import=use_gpt_index_import,
         base_file_name=base_file_name,
+        override_path=True,
     )
 
     # loads the module into memory
     spec = util.spec_from_file_location(
-        "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
+        "custom_module", location=f"{dirpath}/{base_file_name}"
     )
     if spec is None:
-        raise ValueError(
-            f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
-        )
+        raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
+
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore
 
