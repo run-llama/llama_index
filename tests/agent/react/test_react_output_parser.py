@@ -21,7 +21,7 @@ def test_extract_tool_use_multiline_action_input() -> None:
 Thought: I need to use a tool to help me answer the question.
 Action: add
 Action Input: {
-    "a": 1, 
+    "a": 1,
     "b": 1
 }
 """
@@ -32,7 +32,7 @@ Action Input: {
         action_input
         == """\
 {
-    "a": 1, 
+    "a": 1,
     "b": 1
 }"""
     )
