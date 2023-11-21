@@ -498,7 +498,7 @@ class OpenAI(LLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    delta = {}
+                    continue
 
                 # check if this chunk is the start of a function call
                 if delta.tool_calls:
