@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.core import BaseRetriever
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.prompts.mixin import PromptMixinType
@@ -19,10 +20,12 @@ class TransformRetriever(BaseRetriever):
         retriever: BaseRetriever,
         query_transform: BaseQueryTransform,
         transform_metadata: Optional[dict] = None,
+        callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._retriever = retriever
         self._query_transform = query_transform
         self._transform_metadata = transform_metadata
+        super().__init__(callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""

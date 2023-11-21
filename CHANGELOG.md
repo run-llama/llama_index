@@ -1,5 +1,24 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fixed bug with AzureOpenAI logic for inferring if stream chunk is a tool call (#9018)
+
+### New Features
+
+- More precise testing of `OpenAILike` (#9026)
+- Added callback manager to each retriever (#8871)
+
+### Bug Fixes / Nits
+
+- Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)
+- Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
+- Restored `mypy` for Python 3.8 (#9031)
+- Loosened `dataclasses-json` version range,
+  and removes unnecessary `jinja2` extra from `pandas` (#9042)
+
 ## [0.9.4] - 2023-11-19
 
 ### New Features

@@ -83,6 +83,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         return VectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
+            callback_manager=self._service_context.callback_manager,
             **kwargs,
         )
 
