@@ -75,6 +75,9 @@ class BaseObjectNodeMapping(Generic[OT]):
         obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
     ) -> None:
         """Persist objs."""
+        raise NotImplementedError(
+            "This object node mapping does not support persist method."
+        )
 
     @classmethod
     @abstractmethod
@@ -84,6 +87,9 @@ class BaseObjectNodeMapping(Generic[OT]):
         obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
     ) -> "BaseObjectNodeMapping":
         """Load from serialization."""
+        raise NotImplementedError(
+            "This object node mapping does not support from_persist_dir method."
+        )
 
 
 class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
@@ -110,7 +116,7 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         return self._objs
 
     @obj_node_mapping.setter
-    def obj_node_mapping(self, mapping: Dict[int:Any]):
+    def obj_node_mapping(self, mapping: Dict[int, Any]):
         self._objs = mapping
 
     def _add_object(self, obj: Any) -> None:
@@ -132,7 +138,7 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         obj_node_mapping_path = concat_dirs(persist_dir, obj_node_mapping_fname)
         try:
             with open(obj_node_mapping_path, "wb") as f:
-                pickle.dump(self._objs)
+                pickle.dump(self._objs, f)
         except pickle.PickleError as err:
             raise ValueError("Objs is not pickleable") from err
 
