@@ -170,7 +170,7 @@ def download_module_and_reqs(
         local_dir_path = Path(local_dir_path)
 
     if override_path:
-        module_path = local_dir_path
+        module_path = str(local_dir_path)
     else:
         module_path = f"{local_dir_path}/{module_id}"
 
