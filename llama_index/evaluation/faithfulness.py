@@ -1,6 +1,7 @@
 """Faithfulness evaluation."""
 from __future__ import annotations
 
+import re
 from typing import Any, Sequence
 
 from llama_index import ServiceContext
@@ -11,11 +12,11 @@ from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import Document
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
-    "Please tell if a given piece of information "
-    "is supported by the context.\n"
-    "You need to answer with either YES or NO.\n"
-    "Answer YES if any of the context supports the information, even "
-    "if most of the context is unrelated. "
+    "Please determine if a given piece of information "
+    "is supported by the context and provide a brief reasoning for your answer.\n"
+    "You need to provide your answer in a structured format with two sections: 'Answer' and 'Reasoning'.\n"
+    "In the 'Answer' section, write either 'YES' or 'NO'.\n"
+    "In the 'Reasoning' section, provide a brief explanation for your answer.\n"
     "Some examples are provided below. \n\n"
     "Information: Apple pie is generally double-crusted.\n"
     "Context: An apple pie is a fruit pie in which the principal filling "
@@ -26,7 +27,8 @@ DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "and below the filling; the upper crust may be solid or "
     "latticed (woven of crosswise strips).\n"
     "Answer: YES\n"
-    "Information: Apple pies tastes bad.\n"
+    "Reasoning: The context specifically states that apple pie is generally double-crusted.\n"
+    "Information: Apple pies taste bad.\n"
     "Context: An apple pie is a fruit pie in which the principal filling "
     "ingredient is apples. \n"
     "Apple pie is often served with whipped cream, ice cream "
@@ -35,15 +37,16 @@ DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "and below the filling; the upper crust may be solid or "
     "latticed (woven of crosswise strips).\n"
     "Answer: NO\n"
+    "Reasoning: The context does not provide any information about the taste of apple pies.\n"
     "Information: {query_str}\n"
     "Context: {context_str}\n"
-    "Answer: "
 )
+
 
 DEFAULT_REFINE_TEMPLATE = PromptTemplate(
     "We want to understand if the following information is present "
     "in the context information: {query_str}\n"
-    "We have provided an existing YES/NO answer: {existing_answer}\n"
+    "We have provided an existing YES/NO answer with reasoning: {existing_answer}\n"
     "We have the opportunity to refine the existing answer "
     "(only if needed) with some more context below.\n"
     "------------\n"
@@ -52,6 +55,7 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
     "If the existing answer was already YES, still answer YES. "
     "If the information is present in the new context, answer YES. "
     "Otherwise answer NO.\n"
+    "Make sure to update the reasoning if needed.\n"
 )
 
 
@@ -142,12 +146,16 @@ class FaithfulnessEvaluator(BaseEvaluator):
             if self._raise_error:
                 raise ValueError("The response is invalid")
 
+        reasoning_pattern = re.compile(r"^Reasoning: (.+)$", re.MULTILINE)
+        reasoning_match = reasoning_pattern.search(raw_response_txt)
+        reasoning = reasoning_match.group(1) if reasoning_match else None
+
         return EvaluationResult(
             response=response,
             contexts=contexts,
             passing=passing,
             score=1.0 if passing else 0.0,
-            feedback=raw_response_txt,
+            feedback=reasoning,
         )
 
 

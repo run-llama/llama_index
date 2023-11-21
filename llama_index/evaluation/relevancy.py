@@ -1,6 +1,7 @@
 """Relevancy evaluation."""
 from __future__ import annotations
 
+import re
 from typing import Any, Sequence
 
 from llama_index import ServiceContext
@@ -11,20 +12,35 @@ from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import Document
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
-    "Your task is to evaluate if the response for the query \
-    is in line with the context information provided.\n"
-    "You have two options to answer. Either YES/ NO.\n"
-    "Answer - YES, if the response for the query \
-    is in line with context information otherwise NO.\n"
-    "Query and Response: \n {query_str}\n"
-    "Context: \n {context_str}\n"
-    "Answer: "
+    "Your task is to evaluate if the response for the query "
+    "is in line with the context information provided.\n"
+    "You have two options to answer: Either 'YES' or 'NO'.\n"
+    "Additionally, provide a brief reasoning for your answer.\n"
+    "Answer 'YES' if the response for the query "
+    "is in line with context information, and explain why. "
+    "Answer 'NO' if it is not, and explain why not.\n"
+    "Some examples are provided below.\n\n"
+    "Example 1:\n"
+    "Question: What is the capital of France?\n"
+    "Response: Paris.\n"
+    "Context: France is a country in Europe. Its capital city is Paris.\n"
+    "Answer: YES\n"
+    "Reasoning: The context confirms that Paris is the capital of France.\n\n"
+    "Example 2:\n"
+    "Question: What is the boiling point of water?\n"
+    "Response: 100 degrees Celsius.\n"
+    "Context: Water is essential for life, and about 71% of the Earth's surface is water-covered.\n"
+    "Answer: NO\n"
+    "Reasoning: The context does not provide information related to the boiling point of water, hence it cannot be used to verify the response.\n\n"
+    "{query_str}\n"
+    "Context: {context_str}\n"
 )
+
 
 DEFAULT_REFINE_TEMPLATE = PromptTemplate(
     "We want to understand if the following query and response is"
     "in line with the context information: \n {query_str}\n"
-    "We have provided an existing YES/NO answer: \n {existing_answer}\n"
+    "We have provided an existing YES/NO answer with reasoning: \n {existing_answer}\n"
     "We have the opportunity to refine the existing answer "
     "(only if needed) with some more context below.\n"
     "------------\n"
@@ -33,6 +49,7 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
     "If the existing answer was already YES, still answer YES. "
     "If the information is present in the new context, answer YES. "
     "Otherwise answer NO.\n"
+    "Make sure to update the reasoning if needed.\n"
 )
 
 
@@ -124,12 +141,16 @@ class RelevancyEvaluator(BaseEvaluator):
                 raise ValueError("The response is invalid")
             passing = False
 
+        reasoning_pattern = re.compile(r"^Reasoning: (.+)$", re.MULTILINE)
+        reasoning_match = reasoning_pattern.search(raw_response_txt)
+        reasoning = reasoning_match.group(1) if reasoning_match else None
+
         return EvaluationResult(
             query=query,
             response=response,
             passing=passing,
             score=1.0 if passing else 0.0,
-            feedback=raw_response_txt,
+            feedback=reasoning,
         )
 
 
