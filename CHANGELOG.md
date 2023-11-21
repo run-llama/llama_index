@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.5] - 2023-11-21
 
 ### Bug Fixes / Nits
 
