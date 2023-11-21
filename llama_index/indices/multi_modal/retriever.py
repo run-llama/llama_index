@@ -173,7 +173,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
             # change the embedding for query bundle to Multi Modal Image encoder for image input
             assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
             query_bundle.embedding = self._image_embed_model.get_image_embedding(
-                query_bundle.embedding_image
+                query_bundle.embedding_image[0]
             )
         return self._get_nodes_with_embeddings(
             query_bundle, self._image_similarity_top_k, self._image_vector_store
@@ -251,7 +251,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         results: List[NodeWithScore] = []
         tasks = [
             self._atext_retrieve(query_bundle),
-            self._atext_image_retrieve(query_bundle),
+            self._atext_to_image_retrieve(query_bundle),
         ]
 
         task_results = await asyncio.gather(*tasks)
@@ -323,10 +323,11 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         if self._image_vector_store.is_embedding_query:
             # change the embedding for query bundle to Multi Modal Image encoder for image input
             assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
+            # Using the first imaage in the list for image retrieval
             query_bundle.embedding = await self._image_embed_model.get_image_embedding(
-                query_bundle.embedding_image
+                query_bundle.embedding_image[0]
             )
-        return await self._get_nodes_with_embeddings(
+        return await self._aget_nodes_with_embeddings(
             query_bundle, self._image_similarity_top_k, self._image_vector_store
         )
 

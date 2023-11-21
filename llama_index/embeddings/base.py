@@ -10,7 +10,7 @@ import numpy as np
 from llama_index.bridge.pydantic import Field, validator
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.schema import BaseNode, ImageType, MetadataMode, TransformComponent
+from llama_index.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.utils import get_tqdm_iterable
 
 # TODO: change to numpy array
@@ -132,44 +132,44 @@ class BaseEmbedding(TransformComponent):
             )
         return query_embedding
 
-    def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:
-        """
-        Embed the input image synchronously.
+    # def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:
+    #     """
+    #     Embed the input image synchronously.
 
-        Subclasses should implement this method. Reference get_image_embedding's
-        docstring for more information.
-        """
+    #     Subclasses should implement this method. Reference get_image_embedding's
+    #     docstring for more information.
+    #     """
 
-    async def _aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
-        """
-        Embed the input image asynchronously.
+    # async def _aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
+    #     """
+    #     Embed the input image asynchronously.
 
-        Subclasses should implement this method. Reference get_query_embedding's
-        docstring for more information.
-        """
+    #     Subclasses should implement this method. Reference get_query_embedding's
+    #     docstring for more information.
+    #     """
 
-    def get_image_embedding(self, img_file_path: ImageType) -> Embedding:
-        """
-        Embed the input image.
+    # def get_image_embedding(self, img_file_path: ImageType) -> Embedding:
+    #     """
+    #     Embed the input image.
 
-        When embedding a query, depending on the model, a special instruction
-        can be prepended to the raw query string. For example, "Represent the
-        question for retrieving supporting documents: ". If you're curious,
-        other examples of predefined instructions can be found in
-        embeddings/huggingface_utils.py.
-        """
-        with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
-        ) as event:
-            image_embedding = self._get_image_embedding(img_file_path)
+    #     When embedding a query, depending on the model, a special instruction
+    #     can be prepended to the raw query string. For example, "Represent the
+    #     question for retrieving supporting documents: ". If you're curious,
+    #     other examples of predefined instructions can be found in
+    #     embeddings/huggingface_utils.py.
+    #     """
+    #     with self.callback_manager.event(
+    #         CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+    #     ) as event:
+    #         image_embedding = self._get_image_embedding(img_file_path)
 
-            event.on_end(
-                payload={
-                    EventPayload.CHUNKS: [img_file_path],
-                    EventPayload.EMBEDDINGS: [image_embedding],
-                },
-            )
-        return image_embedding
+    #         event.on_end(
+    #             payload={
+    #                 EventPayload.CHUNKS: [img_file_path],
+    #                 EventPayload.EMBEDDINGS: [image_embedding],
+    #             },
+    #         )
+    #     return image_embedding
 
     async def aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
