@@ -132,21 +132,6 @@ class BaseEmbedding(TransformComponent):
             )
         return query_embedding
 
-    async def aget_query_embedding(self, query: str) -> Embedding:
-        """Get query embedding."""
-        with self.callback_manager.event(
-            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
-        ) as event:
-            query_embedding = await self._aget_query_embedding(query)
-
-            event.on_end(
-                payload={
-                    EventPayload.CHUNKS: [query],
-                    EventPayload.EMBEDDINGS: [query_embedding],
-                },
-            )
-        return query_embedding
-
     def get_agg_embedding_from_queries(
         self,
         queries: List[str],

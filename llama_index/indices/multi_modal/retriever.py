@@ -324,7 +324,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
             # change the embedding for query bundle to Multi Modal Image encoder for image input
             assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
             # Using the first imaage in the list for image retrieval
-            query_bundle.embedding = await self._image_embed_model.get_image_embedding(
+            query_bundle.embedding = await self._image_embed_model.aget_image_embedding(
                 query_bundle.embedding_image[0]
             )
         return await self._aget_nodes_with_embeddings(
