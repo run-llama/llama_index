@@ -15,7 +15,8 @@ build:
     - python -m pip install --upgrade --no-cache-dir sphinx readthedocs-sphinx-ext
     - python -m pip install --exists-action=w --no-cache-dir -r docs/requirements.txt
     - cat docs/conf.py
-    - cd docs
+    - pwd
+    - ls -la
     - python -m sphinx -T -E -b html -d _build/doctrees -D language=en . $READTHEDOCS_OUTPUT/html -j 4
 
 # Build documentation in the "docs/" directory with Sphinx
