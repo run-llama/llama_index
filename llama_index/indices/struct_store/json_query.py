@@ -36,6 +36,14 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
     prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS,
 )
 
+def default_output_response_parser(llm_output: str) -> str:
+    '''Attempts to parse the JSON path prompt output. Only applicable if the default prompt is used.'''
+    try:
+        llm_output_parsed = re.search(pattern="JSONPath:\s+(.*)",string=llm_output).groups()[0]
+    except Exception as exc:
+        raise ValueError(f"JSON Path could not be parsed in the LLM response after the 'JSONPath' identifier. Try passing a custom JSON path prompt and processor.") from ecc    
+    return llm_output_parsed
+
 
 def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
     """Default output processor that extracts values based on JSON Path expressions."""
@@ -142,6 +150,10 @@ class JSONQueryEngine(BaseQueryEngine):
             query_str=query_bundle.query_str,
         )
 
+        #removes JSONPath: prefix from returned JSON path prompt call
+        if self._json_path_prompt == DEFAULT_JSON_PATH_PROMPT:
+            json_path_response_str = default_output_response_parser(json_path_response_str)            
+
         if self._verbose:
             print_text(
                 f"> JSONPath Instructions:\n" f"```\n{json_path_response_str}\n```\n"
@@ -181,6 +193,10 @@ class JSONQueryEngine(BaseQueryEngine):
             schema=schema,
             query_str=query_bundle.query_str,
         )
+        
+        #removes JSONPath: prefix from returned JSON path prompt call
+        if self._json_path_prompt == DEFAULT_JSON_PATH_PROMPT:
+            json_path_response_str = default_output_response_parser(json_path_response_str)        
 
         if self._verbose:
             print_text(
