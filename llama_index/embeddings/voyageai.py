@@ -36,7 +36,8 @@ class VoyageEmbedding(BaseEmbedding):
             raise ImportError(
                 "voyageai package not found, install with" "'pip install voyageai'"
             )
-        voyageai.api_key = voyage_api_key
+        if voyage_api_key:
+            voyageai.api_key = voyage_api_key
         self._model = voyageai
 
         super().__init__(
