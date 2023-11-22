@@ -12,7 +12,7 @@ Just run the following command in your terminal (this terminal command is instal
 llamaindex-cli download-llamapack ZephyrQueryEnginePack --download-dir ./zephyr_pack
 ```
 
-The full set of LlamaPacks is available on [LlamaHub](https://llamahub.ai/)
+The full set of LlamaPacks is available on [LlamaHub](https://llamahub.ai/). Here's a [sample notebook on how to use a LlamaPack](/examples/llama_hub/llama_packs_example.ipynb).
 
 ## Data Loaders
 
