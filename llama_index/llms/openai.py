@@ -317,7 +317,6 @@ class OpenAI(LLM):
         message_dicts = to_openai_message_dicts(messages)
 
         def gen() -> ChatResponseGen:
-            tool_index = 0
             content = ""
             tool_calls: List[ChoiceDeltaToolCall] = []
 
@@ -347,23 +346,12 @@ class OpenAI(LLM):
                     tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
-                if response_ix == 0:
-                    message = ChatMessage(
-                        role=role,
-                        content=content,
-                        additional_kwargs={"tool_calls": []},
-                    )
-                else:
-                    message = ChatMessage(
+                yield ChatResponse(
+                    message=ChatMessage(
                         role=role,
                         content=content,
                         additional_kwargs=additional_kwargs,
-                    )
-
-                response_ix += 1
-
-                yield ChatResponse(
-                    message=message,
+                    ),
                     delta=content_delta,
                     raw=response,
                     additional_kwargs=self._get_response_token_counts(response),
@@ -514,7 +502,6 @@ class OpenAI(LLM):
         message_dicts = to_openai_message_dicts(messages)
 
         async def gen() -> ChatResponseAsyncGen:
-            tool_index = 0
             content = ""
             tool_calls: List[ChoiceDeltaToolCall] = []
 
@@ -544,23 +531,12 @@ class OpenAI(LLM):
                     tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
-                if response_ix == 0:
-                    message = ChatMessage(
-                        role=role,
-                        content=content,
-                        additional_kwargs={"tool_calls": []},
-                    )
-                else:
-                    message = ChatMessage(
+                yield ChatResponse(
+                    message=ChatMessage(
                         role=role,
                         content=content,
                         additional_kwargs=additional_kwargs,
-                    )
-
-                response_ix += 1
-
-                yield ChatResponse(
-                    message=message,
+                    ),
                     delta=content_delta,
                     raw=response,
                     additional_kwargs=self._get_response_token_counts(response),

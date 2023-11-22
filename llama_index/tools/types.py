@@ -67,11 +67,6 @@ class ToolMetadata:
             },
         }
 
-    def to_openai_tool(self) -> Dict[str, Any]:
-        """To OpenAI tool."""
-        function = self.to_openai_function()
-        return {"type": "function", "function": function}
-
 
 class ToolOutput(BaseModel):
     """Tool output."""
