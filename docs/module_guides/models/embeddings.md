@@ -212,4 +212,5 @@ maxdepth: 1
 /examples/embeddings/text_embedding_inference.ipynb
 /examples/embeddings/google_palm.ipynb
 /examples/embeddings/jinaai_embeddings.ipynb
+/examples/embeddings/voyageai.ipynb
 ```
