@@ -118,7 +118,7 @@ def test_default_output_processor_e2e(tmp_path: Path) -> None:
     response = query_engine.query(prompt)
 
     assert isinstance(response, Response)
-    assert response.response == "3645000"
+    assert int(response.response) == int("3645000")
 
     # attack 1: fail!
     print("[+] Attack 1 starts, it should fail!")
