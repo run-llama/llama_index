@@ -144,6 +144,7 @@ class PromptTemplate(BasePromptTemplate):
 
         # NOTE: put the output parser back
         prompt.output_parser = output_parser
+        self.output_parser = output_parser
         return prompt
 
     def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:

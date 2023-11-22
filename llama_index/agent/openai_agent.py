@@ -40,8 +40,35 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
     return name_to_tool[name]
 
 
+def call_tool_with_error_handling(
+    tool: BaseTool,
+    input_dict: Dict,
+    error_message: Optional[str] = None,
+    raise_error: bool = False,
+) -> ToolOutput:
+    """Call tool with error handling.
+
+    Input is a dictionary with args and kwargs
+
+    """
+    try:
+        return tool(**input_dict)
+    except Exception as e:
+        if raise_error:
+            raise
+        error_message = error_message or f"Error: {e!s}"
+        return ToolOutput(
+            content=error_message,
+            tool_name=tool.metadata.name,
+            raw_input={"kwargs": input_dict},
+            raw_output=e,
+        )
+
+
 def call_function(
-    tools: List[BaseTool], tool_call: OpenAIToolCall, verbose: bool = False
+    tools: List[BaseTool],
+    tool_call: OpenAIToolCall,
+    verbose: bool = False,
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     # validations to get passed mypy
@@ -59,7 +86,10 @@ def call_function(
         print(f"Calling function: {name} with args: {arguments_str}")
     tool = get_function_by_name(tools, name)
     argument_dict = json.loads(arguments_str)
-    output = tool(**argument_dict)
+
+    # Call tool
+    # Use default error message
+    output = call_tool_with_error_handling(tool, argument_dict, error_message=None)
     if verbose:
         print(f"Got output: {output!s}")
         print("========================\n")

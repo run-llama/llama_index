@@ -384,6 +384,14 @@ class BaseIndex(Generic[IS], ABC):
                 **kwargs,
             )
 
+        elif chat_mode == ChatMode.CONDENSE_PLUS_CONTEXT:
+            from llama_index.chat_engine import CondensePlusContextChatEngine
+
+            return CondensePlusContextChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                **kwargs,
+            )
+
         elif chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
             # NOTE: lazy import
             from llama_index.agent import OpenAIAgent, ReActAgent

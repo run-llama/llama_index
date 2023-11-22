@@ -1,5 +1,53 @@
 # ChangeLog
 
+## [0.9.5] - 2023-11-21
+
+### Bug Fixes / Nits
+
+- Fixed bug with AzureOpenAI logic for inferring if stream chunk is a tool call (#9018)
+
+### New Features
+
+- `FastEmbed` embeddings provider (#9043)
+- More precise testing of `OpenAILike` (#9026)
+- Added callback manager to each retriever (#8871)
+- Ability to bypass `max_tokens` inference with `OpenAILike` (#9032)
+
+### Bug Fixes / Nits
+
+- Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)
+- Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
+- Restored `mypy` for Python 3.8 (#9031)
+- Loosened `dataclasses-json` version range,
+  and removes unnecessary `jinja2` extra from `pandas` (#9042)
+
+## [0.9.4] - 2023-11-19
+
+### New Features
+
+- Added `CondensePlusContextChatEngine` (#8949)
+
+### Smaller Features / Bug Fixes / Nits
+
+- Fixed bug with `OpenAIAgent` inserting errors into chat history (#9000)
+- Fixed various bugs with LiteLLM and the new OpenAI client (#9003)
+- Added context window attribute to perplexity llm (#9012)
+- Add `node_parser` attribute back to service context (#9013)
+- Refactor MM retriever classes (#8998)
+- Fix TextNode instantiation on SupabaseVectorIndexDemo (#8994)
+
+## [0.9.3] - 2023-11-17
+
+### New Features
+
+- Add perplexity LLM integration (#8734)
+
+### Bug Fixes / Nits
+
+- Fix token counting for new openai client (#8981)
+- Fix small pydantic bug in postgres vector db (#8962)
+- Fixed `chunk_overlap` and `doc_id` bugs in `HierarchicalNodeParser` (#8983)
+
 ## [0.9.2] - 2023-11-16
 
 ### New Features
@@ -19,13 +67,14 @@
 - Fixed issue with `set_global_service_context` not propagating settings (#8940)
 - Fixed issue with building index with Google Palm embeddings (#8936)
 - Fixed small issue with parsing ImageDocuments/Nodes that have no text (#8938)
+- Fixed issue with large data inserts in Astra DB (#8937)
 - Optimize `QueryEngineTool` for agents (#8933)
 
 ## [0.9.0] - 2023-11-15
 
 ### New Features / Breaking Changes / Deprecations
 
-- New `IngestionPipline` concept for ingesting and transforming data
+- New `IngestionPipeline` concept for ingesting and transforming data
 - Data ingestion and transforms are now automatically cached
 - Updated interface for node parsing/text splitting/metadata extraction modules
 - Changes to the default tokenizer, as well as customizing the tokenizer

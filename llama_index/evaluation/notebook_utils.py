@@ -4,7 +4,6 @@ from collections import defaultdict
 from typing import List, Optional, Tuple
 
 import pandas as pd
-from pandas.io.formats.style import Styler
 
 from llama_index.evaluation import EvaluationResult
 from llama_index.evaluation.retrieval.base import RetrievalEvalResult
@@ -63,13 +62,3 @@ def get_eval_results_df(
         mean_df.index = [f"mean_{metric}_score"]
 
     return deep_df, mean_df
-
-
-def df_make_pretty(df: pd.DataFrame) -> Styler:
-    """Wraps overflow text and returns a Style object."""
-    return df.style.set_properties(
-        **{
-            "inline-size": "300px",
-            "overflow-wrap": "break-word",
-        },
-    )

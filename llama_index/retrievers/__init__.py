@@ -1,4 +1,4 @@
-from llama_index.core import BaseRetriever
+from llama_index.core import BaseImageRetriever, BaseRetriever
 from llama_index.indices.empty.retrievers import EmptyIndexRetriever
 from llama_index.indices.keyword_table.retrievers import KeywordTableSimpleRetriever
 from llama_index.indices.knowledge_graph.retrievers import (
@@ -13,7 +13,6 @@ from llama_index.indices.list.retrievers import (
     SummaryIndexRetriever,
 )
 from llama_index.indices.managed.vectara.retriever import VectaraRetriever
-from llama_index.indices.multi_modal.retriever import MultiModalVectorIndexRetriever
 from llama_index.indices.struct_store.sql_retriever import (
     NLSQLRetriever,
     SQLParserMode,
@@ -38,7 +37,6 @@ from llama_index.retrievers.transform_retriever import TransformRetriever
 from llama_index.retrievers.you_retriever import YouRetriever
 
 __all__ = [
-    "MultiModalVectorIndexRetriever",
     "VectorIndexRetriever",
     "VectorIndexAutoRetriever",
     "SummaryIndexRetriever",
@@ -68,4 +66,6 @@ __all__ = [
     # legacy
     "ListIndexEmbeddingRetriever",
     "ListIndexRetriever",
+    # image
+    "BaseImageRetriever",
 ]

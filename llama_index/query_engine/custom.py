@@ -10,7 +10,7 @@ from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import QueryBundle, QueryType
 
-STR_OR_RESPONSE_TYPE = Union[Response, str]
+STR_OR_RESPONSE_TYPE = Union[RESPONSE_TYPE, str]
 
 
 class CustomQueryEngine(BaseModel, BaseQueryEngine):

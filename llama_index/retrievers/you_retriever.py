@@ -6,7 +6,9 @@ from typing import List, Optional
 
 import requests
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.core import BaseRetriever
+from llama_index.indices.query.schema import QueryBundle
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 
 logger = logging.getLogger(__name__)
@@ -15,9 +17,14 @@ logger = logging.getLogger(__name__)
 class YouRetriever(BaseRetriever):
     """You retriever."""
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> None:
         """Init params."""
         self._api_key = api_key or os.environ["YOU_API_KEY"]
+        super().__init__(callback_manager)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve."""
