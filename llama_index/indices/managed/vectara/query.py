@@ -29,9 +29,9 @@ class VectaraQueryEngine(BaseQueryEngine):
         if summary_enabled:
             self._summary_kwargs = {
                 "summary_response_lang": summary_kwargs.get(
-                    "summary_response_lang", "en"
+                    "summary_response_lang", "eng"
                 ),
-                "summary_num_results": summary_kwargs.get("summary_num_results", 7),
+                "summary_num_results": summary_kwargs.get("summary_num_results", 5),
                 "summary_prompt_name": summary_kwargs.get(
                     "summary_prompt_name", "vectara-summary-ext-v1.2.0"
                 ),

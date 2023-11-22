@@ -182,7 +182,11 @@ class VectaraRetriever(BaseRetriever):
 
         responses = result["responseSet"][0]["response"]
         documents = result["responseSet"][0]["document"]
-        summary = result["responseSet"][0]["summary"] if self._summary_enabled else None
+        summary = (
+            result["responseSet"][0]["summary"][0]["text"]
+            if self._summary_enabled
+            else None
+        )
 
         metadatas = []
         for x in responses:

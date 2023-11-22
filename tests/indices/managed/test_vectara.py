@@ -7,7 +7,7 @@ from llama_index.schema import Document
 #
 # For this test to run properly, please setup as follows:
 # 1. Create a Vectara account: sign up at https://console.vectara.com/signup
-# 2. Create a corpus in your Vectara account, with a filter attribute called "test_num".
+# 2. Create a corpus in your Vectara account, with a "filter attribute" called "test_num".
 # 3. Create an API_KEY for this corpus with permissions for query and indexing
 # 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
@@ -34,24 +34,22 @@ def get_docs() -> Tuple[List[Document], List[str]]:
         },
     ]
     docs: List[Document] = []
-    ids = []
     for inp in inputs:
         doc = Document(
             text=inp["text"],
             metadata=inp["metadata"],
         )
         docs.append(doc)
-        ids.append(doc.id_)
-    return docs, ids
+    return docs
 
 
 def remove_docs(index: VectaraIndex, ids: List) -> None:
     for id in ids:
-        index.delete_ref_doc(id)
+        index._delete_doc(id)
 
 
-def test_simple_query() -> None:
-    docs, ids = get_docs()
+def test_simple_retrieval() -> None:
+    docs = get_docs()
     try:
         index = VectaraIndex.from_documents(docs)
     except ValueError:
@@ -63,11 +61,11 @@ def test_simple_query() -> None:
     assert len(res) == 1
     assert res[0].node.text == docs[2].text
 
-    remove_docs(index, ids)
+    remove_docs(index, index.doc_ids)
 
 
-def test_mmr_query() -> None:
-    docs, ids = get_docs()
+def test_mmr_retrieval() -> None:
+    docs = get_docs()
     try:
         index = VectaraIndex.from_documents(docs)
     except ValueError:
@@ -85,7 +83,6 @@ def test_mmr_query() -> None:
         mmr_diversity_bias=0.0,
     )
     res = qe.retrieve("how will I look?")
-    print(res)
     assert len(res) == 2
     assert res[0].node.text == docs[2].text
     assert res[1].node.text == docs[3].text
@@ -101,15 +98,14 @@ def test_mmr_query() -> None:
     )
     res = qe.retrieve("how will I look?")
     assert len(res) == 2
-    print(res)
     assert res[0].node.text == docs[2].text
     assert res[1].node.text == docs[0].text
 
-    remove_docs(index, ids)
+    remove_docs(index, index.doc_ids)
 
 
-def test_with_filter_query() -> None:
-    docs, ids = get_docs()
+def test_retrieval_with_filter() -> None:
+    docs = get_docs()
     try:
         index = VectaraIndex.from_documents(docs)
     except ValueError:
@@ -121,7 +117,7 @@ def test_with_filter_query() -> None:
     assert len(res) == 1
     assert res[0].node.text == docs[0].text
 
-    remove_docs(index, ids)
+    remove_docs(index, index.doc_ids)
 
 
 def test_file_upload() -> None:
@@ -134,8 +130,15 @@ def test_file_upload() -> None:
     id = index.insert_file(file_path)
 
     assert isinstance(index, VectaraIndex)
+
+    # test query with Vectara summarization (default)
     query_engine = index.as_query_engine(similarity_top_k=3)
-    res = query_engine.query("What is a Manager Schedule?")
-    assert "a manager schedule" in str(res).lower()
+    res = query_engine.query("What software did Paul Graham write?")
+    assert "paul graham" in str(res).lower() and "software" in str(res).lower()
+
+    # test query with VectorStoreQuery (using OpenAI for summarization)
+    query_engine = index.as_query_engine(similarity_top_k=3, summary_enabled=False)
+    res = query_engine.query("What software did Paul Graham write?")
+    assert "paul graham" in str(res).lower() and "software" in str(res).lower()
 
     remove_docs(index, [id])

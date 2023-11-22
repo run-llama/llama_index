@@ -17,8 +17,6 @@ from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
-from llama_index.service_context import ServiceContext
-from llama_index.storage.storage_context import StorageContext
 
 _logger = logging.getLogger(__name__)
 
@@ -93,6 +91,7 @@ class VectaraIndex(BaseManagedIndex):
         self._session.mount("https://", adapter)
         self.vectara_api_timeout = 90
         self.use_core_api = use_core_api
+        self.doc_ids: List[str] = []
 
         # if nodes is specified, consider each node as a single document
         # and use _build_index_from_nodes() to add them to the index
@@ -191,9 +190,8 @@ class VectaraIndex(BaseManagedIndex):
         nodes: Sequence[BaseNode],
         use_core_api: bool = False,
         **insert_kwargs: Any,
-    ) -> List[str]:
+    ) -> None:
         """Insert a set of documents (each a node)."""
-        doc_ids = []
 
         def gen_hash(s: str) -> str:
             hash_object = blake2b()
@@ -212,19 +210,16 @@ class VectaraIndex(BaseManagedIndex):
                 section_key: [{"text": text}],
             }
             self._index_doc(doc)
-            doc_ids.append(doc_id)
-        return doc_ids
+            self.doc_ids.append(doc_id)
 
     def add_documents(
         self,
         docs: Sequence[Document],
         use_core_api: bool = False,
         allow_update: bool = True,
-    ) -> List[str]:
-        nodes = [
-            TextNode(text=doc.text, metadata=doc.metadata, id_=doc.id_) for doc in docs
-        ]
-        return self._insert(nodes, use_core_api)
+    ) -> None:
+        nodes = [TextNode(text=doc.text, metadata=doc.metadata) for doc in docs]
+        self._insert(nodes, use_core_api)
 
     def insert_file(
         self,
@@ -285,13 +280,14 @@ class VectaraIndex(BaseManagedIndex):
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
-        """Delete a document and it's nodes by using ref_doc_id."""
-        self._delete_doc(ref_doc_id)
+        raise NotImplementedError(
+            "Vectara does not support deleting a reference document"
+        )
 
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
-        """Update a document and it's corresponding nodes."""
-        self._delete_doc(document.doc_id)
-        self.insert(document)
+        raise NotImplementedError(
+            "Vectara does not support updating a reference document"
+        )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
@@ -300,24 +296,30 @@ class VectaraIndex(BaseManagedIndex):
         return VectaraRetriever(self, **kwargs)
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
-        # NOTE: lazy import
-        from llama_index.indices.managed.vectara.query import VectaraQueryEngine
+        if kwargs.get("summary_enabled", True):
+            from llama_index.indices.managed.vectara.query import VectaraQueryEngine
 
-        retriever = self.as_retriever(**kwargs)
-        return VectaraQueryEngine.from_args(retriever, **kwargs)
+            kwargs["summary_enabled"] = True
+            retriever = self.as_retriever(**kwargs)
+            return VectaraQueryEngine.from_args(retriever, **kwargs)
+        else:
+            from llama_index.query_engine.retriever_query_engine import (
+                RetrieverQueryEngine,
+            )
+
+            kwargs["retriever"] = self.as_retriever(**kwargs)
+            return RetrieverQueryEngine.from_args(**kwargs)
 
     @classmethod
     def from_documents(
         cls: Type[IndexType],
         documents: Sequence[Document],
-        storage_context: Optional[StorageContext] = None,
-        service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> IndexType:
         """Build a Vectara index from a sequence of documents."""
         nodes = [
-            TextNode(text=document.text, metadata=document.metadata, id_=document.id_)
+            TextNode(text=document.text, metadata=document.metadata)
             for document in documents
         ]
         return cls(
