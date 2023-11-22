@@ -6,6 +6,8 @@ LlamaIndex has a number of community integrations, from vector stores, to prompt
 
 LlamaHub hosts a full suite of LlamaPacks -- templates for features that you can download, edit, and try out! This offers a quick way to learn about new features and try new techniques.
 
+Just run the following command in your terminal (this terminal command is installed with the `llama-index` python package!):
+
 ```bash
 llamaindex-cli download-llamapack ZephyrQueryEnginePack --download-dir ./zephyr_pack
 ```
