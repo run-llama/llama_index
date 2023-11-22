@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- Added `default_headers` argument to openai LLMs (#9090)
+
 ### Bug Fixed / Nits
 
 - store normalize as bool for huggingface embedding (#9089)
