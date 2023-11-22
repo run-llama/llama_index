@@ -50,8 +50,8 @@ def get_llm_token_counts(
 
             messages_tokens = 0
             response_tokens = 0
-            
-            if usage is not None:            
+
+            if usage is not None:
                 messages_tokens = usage.prompt_tokens
                 response_tokens = usage.completion_tokens
 
