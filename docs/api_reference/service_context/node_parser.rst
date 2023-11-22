@@ -1,9 +1,8 @@
 Node Parser
 ===========
 
-.. automodule:: llama_index.node_parser
-   :members:
-   :inherited-members:
+.. automodapi:: llama_index.node_parser
+   :no-inheritance-diagram:
 
 ..  autopydantic_model:: llama_index.node_parser.extractors.metadata_extractors.SummaryExtractor
 
