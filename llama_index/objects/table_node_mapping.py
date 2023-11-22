@@ -45,14 +45,14 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
             f"Schema of table {obj.table_name}:\n"
             f"{self._sql_database.get_single_table_info(obj.table_name)}\n"
         )
-        
-        metadata={"name": obj.table_name}
-        
+
+        metadata = {"name": obj.table_name}
+
         if obj.context_str is not None:
             table_text += f"Context of table {obj.table_name}:\n"
             table_text += obj.context_str
             metadata["context"] = obj.context_str
-        
+
         return TextNode(
             text=table_text,
             metadata=metadata,
