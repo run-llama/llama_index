@@ -1,10 +1,12 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.6] - 2023-11-22
 
 ### New Features
 
 - Added `default_headers` argument to openai LLMs (#9090)
+- Added support for `download_llama_pack()` and LlamaPack integrations
+- Added support for `llamaindex-cli` command line tool
 
 ### Bug Fixed / Nits
 
