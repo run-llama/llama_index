@@ -48,6 +48,9 @@ def get_llm_token_counts(
         try:
             usage = response.raw["usage"]  # type: ignore
 
+            if usage is None:
+                raise ValueError("Invalid usage!")
+            
             messages_tokens = usage.prompt_tokens
             response_tokens = usage.completion_tokens
 
