@@ -7,12 +7,11 @@ import re
 import uuid
 from typing import Dict, List, Tuple
 
-from pydantic import BaseModel, Field
-
 from llama_index import Document, ServiceContext, SummaryIndex
-from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.ingestion import run_transformations
 from llama_index.llms.openai import OpenAI
+from llama_index.postprocessor.node import KeywordNodePostprocessor
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType

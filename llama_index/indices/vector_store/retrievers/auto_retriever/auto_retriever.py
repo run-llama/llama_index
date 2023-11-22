@@ -1,10 +1,9 @@
 import logging
 from typing import Any, List, Optional, cast
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
+from llama_index.core import BaseRetriever
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser import (
@@ -15,7 +14,8 @@ from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
     VectorStoreQueryPrompt,
 )
 from llama_index.output_parsers.base import OutputParserException, StructuredOutput
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreInfo,
@@ -59,6 +59,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         max_top_k: int = 10,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
@@ -80,6 +81,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         self._similarity_top_k = similarity_top_k
         self._vector_store_query_mode = vector_store_query_mode
         self._kwargs = kwargs
+        super().__init__(callback_manager)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input

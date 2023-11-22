@@ -4,20 +4,20 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.callbacks.base import CallbackManager
+from llama_index.core import BaseRetriever
 from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import (
     extract_keywords_given_response,
     rake_extract_keywords,
     simple_extract_keywords,
 )
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -53,6 +53,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
         query_keyword_extract_template: Optional[BasePromptTemplate] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -67,6 +68,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
             keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
         )
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
+        super().__init__(callback_manager)
 
     @abstractmethod
     def _get_keywords(self, query_str: str) -> List[str]:

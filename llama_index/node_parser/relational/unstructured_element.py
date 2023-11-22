@@ -3,10 +3,9 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 
 import pandas as pd
-from pydantic import BaseModel, ValidationError
 from tqdm import tqdm
 
-from llama_index.bridge.pydantic import Field
+from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.callbacks.base import CallbackManager
 from llama_index.llms.openai import LLM, OpenAI
 from llama_index.node_parser.interface import NodeParser
@@ -103,7 +102,7 @@ def extract_table_summaries(
 ) -> None:
     """Go through elements, extract out summaries that are tables."""
     from llama_index.indices.list.base import SummaryIndex
-    from llama_index.indices.service_context import ServiceContext
+    from llama_index.service_context import ServiceContext
 
     llm = llm or OpenAI()
     llm = cast(LLM, llm)

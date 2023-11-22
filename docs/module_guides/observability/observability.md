@@ -235,7 +235,7 @@ set_global_handler(
 # NOTE: No need to do the following
 # from llama_index import ServiceContext
 # from llama_index.callbacks import CallbackManager
-# from honeyhive.sdk.llamaindex_tracer import HoneyHiveLlamaIndexTracer
+# from honeyhive.utils.llamaindex_tracer import HoneyHiveLlamaIndexTracer
 # hh_tracer = HoneyHiveLlamaIndexTracer(
 #     project="My HoneyHive Project",
 #     name="My LLM Pipeline Name",

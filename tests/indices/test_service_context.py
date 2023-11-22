@@ -6,10 +6,10 @@ from llama_index.extractors import (
     TitleExtractor,
 )
 from llama_index.indices.prompt_helper import PromptHelper
-from llama_index.indices.service_context import ServiceContext
 from llama_index.llms import MockLLM
 from llama_index.node_parser import SentenceSplitter
 from llama_index.schema import TransformComponent
+from llama_index.service_context import ServiceContext
 from llama_index.token_counter.mock_embed_model import MockEmbedding
 
 

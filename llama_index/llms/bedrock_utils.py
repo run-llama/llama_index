@@ -44,6 +44,7 @@ CHAT_ONLY_MODELS = {
     "anthropic.claude-instant-v1": 100000,
     "anthropic.claude-v1": 100000,
     "anthropic.claude-v2": 100000,
+    "meta.llama2-13b-chat-v1": 2048,
 }
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
@@ -56,6 +57,7 @@ STREAMING_MODELS = {
     "anthropic.claude-instant-v1",
     "anthropic.claude-v1",
     "anthropic.claude-v2",
+    "meta.llama2-13b-chat-v1",
 }
 
 # Each bedrock model specifies parameters with a slightly different name
@@ -66,6 +68,7 @@ PROVIDER_SPECIFIC_PARAM_NAME = {
     "ai21": {"max_tokens": "maxTokens"},
     "anthropic": {"max_tokens": "max_tokens_to_sample"},
     "cohere": {"max_tokens": "max_tokens"},
+    "meta": {"max_tokens": "max_gen_len"},
 }
 
 # The response format for each provider is different
@@ -74,11 +77,13 @@ PROVIDER_RESPONSE_LOADER = {
     "ai21": lambda x: x["completions"][0]["data"]["text"],
     "anthropic": lambda x: x["completion"],
     "cohere": lambda x: x["generations"][0]["text"],
+    "meta": lambda x: x["generation"],
 }
 
 PROVIDER_STREAM_RESPONSE_LOADER = {
     "amazon": lambda x: x["outputText"],
     "anthropic": lambda x: x["completion"],
+    "meta": lambda x: x["generation"],
 }
 logger = logging.getLogger(__name__)
 

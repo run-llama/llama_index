@@ -17,8 +17,7 @@ __all__ = [
     "TitleExtractor",
     "KeywordExtractor",
     "EntityExtractor",
-    "MetadataFeatureExtractor",
     "MarvinMetadataExtractor",
-    "PydanticProgramExtractor",
     "BaseExtractor",
+    "PydanticProgramExtractor",
 ]

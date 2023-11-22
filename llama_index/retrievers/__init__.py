@@ -1,4 +1,4 @@
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.core import BaseImageRetriever, BaseRetriever
 from llama_index.indices.empty.retrievers import EmptyIndexRetriever
 from llama_index.indices.keyword_table.retrievers import KeywordTableSimpleRetriever
 from llama_index.indices.knowledge_graph.retrievers import (
@@ -66,4 +66,6 @@ __all__ = [
     # legacy
     "ListIndexEmbeddingRetriever",
     "ListIndexRetriever",
+    # image
+    "BaseImageRetriever",
 ]

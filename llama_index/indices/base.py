@@ -7,6 +7,7 @@ from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, 
 import unique_names_generator as ung
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
+from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.base_retriever import BaseRetriever
@@ -20,6 +21,7 @@ from llama_index.ingestion.pipeline import (
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.schema import BaseNode, Document
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 
@@ -433,6 +435,14 @@ class BaseIndex(Generic[IS], ABC):
             from llama_index.chat_engine import ContextChatEngine
 
             return ContextChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                **kwargs,
+            )
+
+        elif chat_mode == ChatMode.CONDENSE_PLUS_CONTEXT:
+            from llama_index.chat_engine import CondensePlusContextChatEngine
+
+            return CondensePlusContextChatEngine.from_defaults(
                 retriever=self.as_retriever(**kwargs),
                 **kwargs,
             )

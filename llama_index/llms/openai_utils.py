@@ -1,10 +1,12 @@
 import logging
+import os
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import openai
 from deprecated import deprecated
-from openai.types.chat import ChatCompletionMessageParam
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from tenacity import (
     before_sleep_log,
@@ -116,6 +118,8 @@ https://platform.openai.com/account/api-keys
 """
 
 logger = logging.getLogger(__name__)
+
+OpenAIToolCall = Union[ChatCompletionMessageToolCall, ChoiceDeltaToolCall]
 
 
 def create_retry_decorator(
@@ -242,8 +246,7 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
 
     additional_kwargs: Dict[str, Any] = {}
     if openai_message.tool_calls is not None:
-        # TODO change this to retain tool_calls as List[typed Objects] insteaad of dicts
-        tool_calls = [tool_call.dict() for tool_call in openai_message.tool_calls]
+        tool_calls: List[ChatCompletionMessageToolCall] = openai_message.tool_calls
         additional_kwargs.update(tool_calls=tool_calls)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
@@ -280,12 +283,7 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
 
     Convert pydantic class to OpenAI function.
     """
-    schema = pydantic_class.schema()
-    return {
-        "name": schema["title"],
-        "description": schema["description"],
-        "parameters": pydantic_class.schema(),
-    }
+    return to_openai_tool(pydantic_class)
 
 
 def to_openai_tool(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
@@ -364,3 +362,10 @@ def resolve_from_aliases(*args: Optional[str]) -> Optional[str]:
         if arg is not None:
             return arg
     return None
+
+
+def validate_openai_api_key(api_key: Optional[str] = None) -> None:
+    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+
+    if not openai_api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)

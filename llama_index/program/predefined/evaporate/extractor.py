@@ -5,8 +5,6 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
 from llama_index.program.predefined.evaporate.prompts import (
     DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
     DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
@@ -15,7 +13,8 @@ from llama_index.program.predefined.evaporate.prompts import (
     FnGeneratePrompt,
     SchemaIDPrompt,
 )
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 
 
 class TimeoutException(Exception):

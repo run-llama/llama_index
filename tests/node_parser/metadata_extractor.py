@@ -6,10 +6,10 @@ from llama_index.extractors import (
     SummaryExtractor,
     TitleExtractor,
 )
-from llama_index.indices.service_context import ServiceContext
 from llama_index.ingestion import run_transformations
 from llama_index.node_parser import SentenceSplitter
 from llama_index.schema import Document, TransformComponent
+from llama_index.service_context import ServiceContext
 
 
 def test_metadata_extractor(mock_service_context: ServiceContext) -> None:

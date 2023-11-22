@@ -7,12 +7,12 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
+from llama_index.core import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.base import BaseIndex
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import async_embed_nodes, embed_nodes
 from llama_index.schema import BaseNode, ImageNode, IndexNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.types import VectorStore
@@ -83,6 +83,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         return VectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
+            callback_manager=self._service_context.callback_manager,
             **kwargs,
         )
 
