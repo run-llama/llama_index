@@ -122,11 +122,11 @@ def test_from_documents(
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.query_corpus")
-@patch("google.ai.generativelanguage.TextServiceClient.generate_text_answer")
+@patch("google.ai.generativelanguage.GenerativeServiceClient.generate_answer")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
 def test_as_query_engine(
     mock_get_corpus: MagicMock,
-    mock_generate_text_answer: MagicMock,
+    mock_generate_answer: MagicMock,
     mock_query_corpus: MagicMock,
 ) -> None:
     # Arrange
@@ -142,26 +142,40 @@ def test_as_query_engine(
             )
         ]
     )
-    mock_generate_text_answer.return_value = genai.GenerateTextAnswerResponse(
-        answer=genai.TextCompletion(
-            output="42",
+    mock_generate_answer.return_value = genai.GenerateAnswerResponse(
+        answer=genai.Candidate(
+            content=genai.Content(parts=[genai.Part(text="42")]),
+            grounding_attributions=[
+                genai.GroundingAttribution(
+                    content=genai.Content(
+                        parts=[genai.Part(text="Meaning of life is 42")]
+                    ),
+                    source_id=genai.AttributionSourceId(
+                        grounding_passage=genai.AttributionSourceId.GroundingPassageId(
+                            passage_id="corpora/123/documents/456/chunks/777",
+                            part_index=0,
+                        )
+                    ),
+                ),
+                genai.GroundingAttribution(
+                    content=genai.Content(parts=[genai.Part(text="Or maybe not")]),
+                    source_id=genai.AttributionSourceId(
+                        grounding_passage=genai.AttributionSourceId.GroundingPassageId(
+                            passage_id="corpora/123/documents/456/chunks/888",
+                            part_index=0,
+                        )
+                    ),
+                ),
+            ],
         ),
-        attributed_passages=[
-            genai.AttributedPassage(
-                text="Meaning of life is 42.",
-                passage_ids=["corpora/123/documents/456/chunks/777"],
-            ),
-            genai.AttributedPassage(
-                text="Or maybe not",
-                passage_ids=["corpora/123/documents/456/chunks/888"],
-            ),
-        ],
-        answerable_probability=0.8,
+        answerable_probability=0.9,
     )
 
     # Act
     index = GoogleIndex.from_corpus(corpus_id="123")
-    query_engine = index.as_query_engine(answer_style=genai.AnswerStyle.EXTRACTIVE)
+    query_engine = index.as_query_engine(
+        answer_style=genai.GenerateAnswerRequest.AnswerStyle.EXTRACTIVE
+    )
     response = query_engine.query("What is the meaning of life?")
 
     # Assert
@@ -174,12 +188,18 @@ def test_as_query_engine(
 
     assert response.response == "42"
 
-    assert mock_generate_text_answer.call_count == 1
-    generate_text_answer_request = mock_generate_text_answer.call_args.args[0]
-    assert generate_text_answer_request.question.text == "What is the meaning of life?"
-    assert generate_text_answer_request.answer_style == genai.AnswerStyle.EXTRACTIVE
+    assert mock_generate_answer.call_count == 1
+    generate_answer_request = mock_generate_answer.call_args.args[0]
+    assert (
+        generate_answer_request.contents[0].parts[0].text
+        == "What is the meaning of life?"
+    )
+    assert (
+        generate_answer_request.answer_style
+        == genai.GenerateAnswerRequest.AnswerStyle.EXTRACTIVE
+    )
 
-    passages = generate_text_answer_request.grounding_source.passages.passages
+    passages = generate_answer_request.inline_passages.passages
     assert len(passages) == 1
     passage = passages[0]
-    assert passage.text == "It's 42"
+    assert passage.content.parts[0].text == "It's 42"

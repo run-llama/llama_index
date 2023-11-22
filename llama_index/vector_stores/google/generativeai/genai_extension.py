@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_API_ENDPOINT = "autopush-generativelanguage.sandbox.googleapis.com"
 _USER_AGENT = f"llama_index/{llama_index.__version__}"
 _DEFAULT_PAGE_SIZE = 20
-_DEFAULT_TEXT_SERVICE_MODEL = "models/text-bison-001"
+_DEFAULT_GENERATE_SERVICE_MODEL = "models/aqa"
 _MAX_REQUEST_PER_CHUNK = 100
 _NAME_REGEX = re.compile(r"^corpora/([^/]+?)(/documents/([^/]+?)(/chunks/([^/]+?))?)?$")
 
@@ -148,12 +148,13 @@ def set_defaults(config: Config) -> None:
     global _config
     _config = config
     _set_default_retriever(build_semantic_retriever())
-    _set_default_text_service(build_text_service())
+    _set_default_generative_service(build_generative_service())
 
 
 _config = Config()
 
 
+# Retriever client.
 def build_semantic_retriever() -> genai.RetrieverServiceClient:
     return genai.RetrieverServiceClient(
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
@@ -171,8 +172,9 @@ def _set_default_retriever(retriever: genai.RetrieverServiceClient) -> None:
     _default_retriever = retriever
 
 
-def build_text_service() -> genai.TextServiceClient:
-    return genai.TextServiceClient(
+# GenerativeService client.
+def build_generative_service() -> genai.GenerativeServiceClient:
+    return genai.GenerativeServiceClient(
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
         client_options=client_options_lib.ClientOptions(
             api_endpoint=_config.api_endpoint
@@ -180,12 +182,17 @@ def build_text_service() -> genai.TextServiceClient:
     )
 
 
-_default_text_service: genai.TextServiceClient = build_text_service()
+_default_generative_service: genai.GenerativeServiceClient = build_generative_service()
 
 
-def _set_default_text_service(text_service: genai.TextServiceClient) -> None:
-    global _default_text_service
-    _default_text_service = text_service
+def _set_default_generative_service(
+    generative_service: genai.GenerativeServiceClient,
+) -> None:
+    global _default_generative_service
+    _default_generative_service = generative_service
+
+
+# Public functions.
 
 
 def list_corpora(
@@ -461,50 +468,59 @@ def query_document(
 @dataclass
 class Passage:
     text: str
-    ids: List[str]
+    id: str
 
 
 @dataclass
-class TextAnswer:
+class GroundedAnswer:
     answer: str
     attributed_passages: List[Passage]
     answerable_probability: Optional[float]
 
 
-def generate_text_answer(
+def generate_answer(
     *,
     prompt: str,
     passages: List[str],
-    answer_style: genai.AnswerStyle,
-    client: Optional[genai.TextServiceClient] = None,
-) -> TextAnswer:
+    answer_style: genai.GenerateAnswerRequest.AnswerStyle = genai.GenerateAnswerRequest.AnswerStyle.ABSTRACTIVE,
+    safety_settings: List[genai.SafetySetting] = [],
+    temperature: Optional[float] = None,
+    client: Optional[genai.GenerativeServiceClient] = None,
+) -> GroundedAnswer:
     if client is None:
-        client = _default_text_service
+        client = _default_generative_service
     # TODO: Consider passing in the corpus ID instead of the actual
     # passages.
-    response = client.generate_text_answer(
-        genai.GenerateTextAnswerRequest(
-            question=genai.TextPrompt(text=prompt),
-            model=_DEFAULT_TEXT_SERVICE_MODEL,
+    response = client.generate_answer(
+        genai.GenerateAnswerRequest(
+            contents=[
+                genai.Content(parts=[genai.Part(text=prompt)]),
+            ],
+            model=_DEFAULT_GENERATE_SERVICE_MODEL,
             answer_style=answer_style,
-            grounding_source=genai.GroundingSource(
-                passages=genai.InlinePassages(
-                    passages=[
-                        genai.InlinePassage(
-                            text=chunk,
-                            id=str(uuid.uuid4()),
-                        )
-                        for chunk in passages
-                    ]
-                )
+            safety_settings=safety_settings,
+            temperature=temperature,
+            inline_passages=genai.GroundingPassages(
+                passages=[
+                    genai.GroundingPassage(
+                        id=str(uuid.uuid4()),
+                        content=genai.Content(parts=[genai.Part(text=chunk)]),
+                    )
+                    for chunk in passages
+                ]
             ),
         )
     )
-    return TextAnswer(
-        answer=response.answer.output,
+    assert len(response.answer.content.parts) == 1
+    return GroundedAnswer(
+        answer=response.answer.content.parts[0].text,
         attributed_passages=[
-            Passage(text=passage.text, ids=list(passage.passage_ids))
-            for passage in response.attributed_passages
+            Passage(
+                text=passage.content.parts[0].text,
+                id=passage.source_id.grounding_passage.passage_id,
+            )
+            for passage in response.answer.grounding_attributions
+            if len(passage.content.parts) > 0
         ],
         answerable_probability=response.answerable_probability,
     )

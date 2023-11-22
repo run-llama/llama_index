@@ -14,7 +14,7 @@ https://developers.generativeai.google/guide
 
 import datetime
 import logging
-from typing import Any, Optional, Sequence, Type, cast
+from typing import Any, List, Optional, Sequence, Type, cast
 
 from llama_index import VectorStoreIndex
 from llama_index.data_structs.data_structs import IndexDict
@@ -163,12 +163,31 @@ class GoogleIndex(BaseManagedIndex):
         return self._index.as_retriever(**kwargs)
 
     def as_query_engine(
-        self, *, answer_style: int = 1, **kwargs: Any
+        self,
+        *,
+        temperature: float = 0.7,
+        answer_style: Any = 1,
+        safety_setting: List[Any] = [],
+        **kwargs: Any,
     ) -> BaseQueryEngine:
         """Returns the AQA engine for this index.
 
+        Example:
+          query_engine = index.as_query_engine(
+              temperature=0.7,
+              answer_style=AnswerStyle.ABSTRACTIVE,
+              safety_setting=[
+                  SafetySetting(
+                      category=HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                      threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+                  ),
+              ]
+          )
+
         Args:
-            answer_style: See `google.ai.generativelanguage.AnswerStyle`
+            temperature: 0.0 to 1.0.
+            answer_style: See `google.ai.generativelanguage.GenerateAnswerRequest.AnswerStyle`
+            safety_setting: See `google.ai.generativelanguage.SafetySetting`.
 
         Returns:
             A query engine that uses Google's AQA model. The query engine will
@@ -187,7 +206,11 @@ class GoogleIndex(BaseManagedIndex):
         """
         return super().as_query_engine(
             retriever=self.as_retriever(**kwargs),
-            response_synthesizer=GoogleTextSynthesizer(answer_style=answer_style),
+            response_synthesizer=GoogleTextSynthesizer.create(
+                temperature=temperature,
+                answer_style=answer_style,
+                safety_setting=safety_setting,
+            ),
             **kwargs,
         )
 
