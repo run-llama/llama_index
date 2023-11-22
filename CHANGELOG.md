@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixed / Nits
+
+- store normalize as bool for huggingface embedding (#9089)
+
 ## [0.9.5] - 2023-11-21
 
 ### Bug Fixes / Nits
