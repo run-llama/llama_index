@@ -8,11 +8,12 @@ interfaces a managed service.
 import json
 import logging
 import os
-from typing import Any, Dict, Optional, Sequence, Type
+from hashlib import blake2b
+from typing import Any, Dict, List, Optional, Sequence, Type
 
 import requests
 
-from llama_index.core import BaseRetriever
+from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
@@ -94,7 +95,7 @@ class VectaraIndex(BaseManagedIndex):
         self.use_core_api = use_core_api
 
         # if nodes is specified, consider each node as a single document
-        # and use _add_documents() to add them to the index
+        # and use _build_index_from_nodes() to add them to the index
         if nodes is not None:
             self._build_index_from_nodes(nodes, use_core_api)
 
@@ -190,31 +191,40 @@ class VectaraIndex(BaseManagedIndex):
         nodes: Sequence[BaseNode],
         use_core_api: bool = False,
         **insert_kwargs: Any,
-    ) -> None:
+    ) -> List[str]:
         """Insert a set of documents (each a node)."""
+        doc_ids = []
+
+        def gen_hash(s: str) -> str:
+            hash_object = blake2b()
+            hash_object.update(s.encode("utf-8"))
+            return hash_object.hexdigest()
+
         for node in nodes:
             metadata = node.metadata.copy()
             metadata["framework"] = "llama_index"
             section_key = "parts" if use_core_api else "section"
+            text = node.get_content(metadata_mode=MetadataMode.NONE)
+            doc_id = gen_hash(text)
             doc = {
-                "documentId": node.id_,
+                "documentId": doc_id,
                 "metadataJson": json.dumps(node.metadata),
-                section_key: [
-                    {"text": node.get_content(metadata_mode=MetadataMode.NONE)}
-                ],
+                section_key: [{"text": text}],
             }
             self._index_doc(doc)
+            doc_ids.append(doc_id)
+        return doc_ids
 
     def add_documents(
         self,
         docs: Sequence[Document],
         use_core_api: bool = False,
         allow_update: bool = True,
-    ) -> None:
+    ) -> List[str]:
         nodes = [
             TextNode(text=doc.text, metadata=doc.metadata, id_=doc.id_) for doc in docs
         ]
-        self._insert(nodes, use_core_api)
+        return self._insert(nodes, use_core_api)
 
     def insert_file(
         self,
@@ -288,6 +298,13 @@ class VectaraIndex(BaseManagedIndex):
         from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 
         return VectaraRetriever(self, **kwargs)
+
+    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        # NOTE: lazy import
+        from llama_index.indices.managed.vectara.query import VectaraQueryEngine
+
+        retriever = self.as_retriever(**kwargs)
+        return VectaraQueryEngine.from_args(retriever, **kwargs)
 
     @classmethod
     def from_documents(
