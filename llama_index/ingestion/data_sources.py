@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Any, Generic, Iterable, List, Optional, Type, TypeVar
+from typing import Any, Generic, Iterable, List, Optional, Type, TypeVar, cast
 
 from unique_names_generator import get_random_name
 from unique_names_generator.data import (
@@ -182,6 +182,12 @@ class ConfigurableDataSources(Enum):
             return ConfiguredDataSource[ReaderConfig](
                 component=reader_config
             )  # type: ignore
+
+        if isinstance(component, DocumentGroup) and name is None:
+            # if the component is a DocumentGroup, we want to use the
+            # full file path as the name of the data source
+            component = cast(DocumentGroup, component)
+            name = component.file_path
 
         if name is None:
             suffix = get_random_name(combo=name_combo, separator="-", style="lowercase")
