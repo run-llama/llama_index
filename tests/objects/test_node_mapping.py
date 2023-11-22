@@ -3,7 +3,9 @@
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.objects.base_node_mapping import SimpleObjectNodeMapping
 from llama_index.objects.tool_node_mapping import SimpleToolNodeMapping
+from llama_index.objects.table_node_mapping import SQLTableSchema, SQLTableNodeMapping
 from llama_index.tools.function_tool import FunctionTool
+from llama_index import SQLDatabase
 
 
 class TestObject(BaseModel):
@@ -18,6 +20,13 @@ class TestObject(BaseModel):
 
     def __str__(self) -> str:
         return f"TestObject(name='{self.name}')"
+
+
+class TestSQLDatabase(SQLDatabase):
+    """Test object for SQL Table Schema Node Mapping"""
+
+    def __init__(self):
+        pass
 
 
 def test_simple_object_node_mapping() -> None:
@@ -64,3 +73,29 @@ def test_tool_object_node_mapping() -> None:
         "Tool name: test_tool3\n" "Tool description: test3\n"
     ) in node_mapping.to_node(tool3).get_text()
     assert node_mapping.from_node(node_mapping.to_node(tool3)) == tool3
+
+
+def test_sql_table_node_mapping_to_node(mocker):
+    mocker.patch(
+        "llama_index.utilities.sql_wrapper.SQLDatabase.get_single_table_info",
+        return_value="",
+    )
+
+    # Define two table schemas with one that does not have context str defined
+    table1 = SQLTableSchema(table_name="table1")
+    table2 = SQLTableSchema(table_name="table2", context_str="stuff here")
+    tables = [table1, table2]
+
+    # Create the mapping
+    sql_database = TestSQLDatabase()
+    mapping = SQLTableNodeMapping(sql_database)
+
+    # Create the nodes
+    nodes = []
+    for table in tables:
+        node = mapping.to_node(table)
+        nodes.append(node)
+
+    # Make sure no None values are passed in otherwise PineconeVectorStore will fail the upsert
+    for node in nodes:
+        assert None not in node.metadata.values()
