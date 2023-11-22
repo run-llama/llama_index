@@ -3,6 +3,5 @@
 Vector Store
 =====================
 
-.. automodule:: llama_index.vector_stores
-   :members:
-   :inherited-members:
+.. automodapi:: llama_index.vector_stores
+   :no-inheritance-diagram:
