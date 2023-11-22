@@ -15,8 +15,8 @@ from llama_index_client import ProjectCreate
 from llama_index_client.client import PlatformApi
 from llama_index_client.types.eval_question_create import EvalQuestionCreate
 
+from llama_index.core import BaseQueryEngine
 from llama_index.evaluation.base import EvaluationResult
-from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.ingestion.pipeline import DEFAULT_BASE_URL, DEFAULT_PROJECT_NAME
 
 

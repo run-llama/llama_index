@@ -19,7 +19,6 @@ from llama_index_client.client import PlatformApi
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.indices.service_context import ServiceContext
 from llama_index.ingestion.cache import IngestionCache
 from llama_index.ingestion.data_sinks import ConfigurableDataSinks, ConfiguredDataSink
 from llama_index.ingestion.data_sources import (
@@ -39,6 +38,7 @@ from llama_index.schema import (
     MetadataMode,
     TransformComponent,
 )
+from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
 DEFAULT_PIPELINE_NAME = "default"
@@ -517,6 +517,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
         cache_collection: Optional[str] = None,
+        in_place: bool = True,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
         input_nodes: List[BaseNode] = []
@@ -538,6 +539,7 @@ class IngestionPipeline(BaseModel):
             show_progress=show_progress,
             cache=self.cache if not self.disable_cache else None,
             cache_collection=cache_collection,
+            in_place=in_place,
             **kwargs,
         )
 
@@ -552,6 +554,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
         cache_collection: Optional[str] = None,
+        in_place: bool = True,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
         input_nodes: List[BaseNode] = []
@@ -573,6 +576,7 @@ class IngestionPipeline(BaseModel):
             show_progress=show_progress,
             cache=self.cache if not self.disable_cache else None,
             cache_collection=cache_collection,
+            in_place=in_place,
             **kwargs,
         )
 

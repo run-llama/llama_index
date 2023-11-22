@@ -37,7 +37,11 @@ transformations = [
 Then, we can run our transformations on input documents or nodes:
 
 ```python
-from llama_index.ingestion import run_transformations
+from llama_index.ingestion import IngestionPipeline
+
+pipeline = IngestionPipeline(transformations=transformations)
+
+nodes = pipeline.run(documents=documents)
 ```
 
 Here is an sample of extracted metadata:
@@ -74,3 +78,18 @@ class CustomExtractor(BaseExtractor):
 ```
 
 In a more advanced example, it can also make use of an `llm` to extract features from the node content and the existing metadata. Refer to the [source code of the provided metadata extractors](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/extractors/metadata_extractors.py) for more details.
+
+## Modules
+
+Below you will find guides and tutorials for various metadata extractors.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/metadata_extraction/MetadataExtractionSEC.ipynb
+/examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb
+/examples/metadata_extraction/EntityExtractionClimate.ipynb
+/examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb
+/examples/metadata_extraction/PydanticExtractor.ipynb
+```

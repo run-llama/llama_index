@@ -49,8 +49,9 @@ chat_engine = index.as_chat_engine(chat_mode="condense_question", verbose=True)
 #### Available Chat Modes
 
 - `best` - Turn the query engine into a tool, for use with a `ReAct` data agent or an `OpenAI` data agent, depending on what your LLM supports. `OpenAI` data agents require `gpt-3.5-turbo` or `gpt-4` as they use the function calling API from OpenAI.
-- `context` - Retrieve nodes from the index using every user message. The retrieved text is inserted into the system prompt, so that the chat engine can either respond naturally or use the context from the query engine.
 - `condense_question` - Look at the chat history and re-write the user message to be a query for the index. Return the response after reading the response from the query engine.
+- `context` - Retrieve nodes from the index using every user message. The retrieved text is inserted into the system prompt, so that the chat engine can either respond naturally or use the context from the query engine.
+- `condense_plus_context` - A combination of `condense_question` and `context`. Look at the chat history and re-write the user message to be a retrieval query for the index. The retrieved text is inserted into the system prompt, so that the chat engine can either respond naturally or use the context from the query engine.
 - `simple` - A simple chat with the LLM directly, no query engine involved.
 - `react` - Same as `best`, but forces a `ReAct` data agent.
 - `openai` - Same as `best`, but forces an `OpenAI` data agent.

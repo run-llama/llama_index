@@ -1,8 +1,9 @@
 """Base reader class."""
 from abc import ABC
-from typing import Any, Dict, Iterable, List
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List
 
-from llama_index.bridge.langchain import Document as LCDocument
+if TYPE_CHECKING:
+    from llama_index.bridge.langchain import Document as LCDocument
 from llama_index.bridge.pydantic import Field
 from llama_index.schema import BaseComponent, Document
 
@@ -20,7 +21,7 @@ class BaseReader(ABC):
         """Load data from the input directory."""
         return list(self.lazy_load_data(*args, **load_kwargs))
 
-    def load_langchain_documents(self, **load_kwargs: Any) -> List[LCDocument]:
+    def load_langchain_documents(self, **load_kwargs: Any) -> List["LCDocument"]:
         """Load data in LangChain document format."""
         docs = self.load_data(**load_kwargs)
         return [d.to_langchain_format() for d in docs]

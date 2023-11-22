@@ -4,7 +4,6 @@ from typing import Any, Dict, Generic, List, Optional, Type
 
 import pandas as pd
 
-from llama_index.indices.service_context import ServiceContext
 from llama_index.program.predefined.df import (
     DataFrameRow,
     DataFrameRowsOnly,
@@ -18,6 +17,7 @@ from llama_index.program.predefined.evaporate.prompts import (
     SchemaIDPrompt,
 )
 from llama_index.schema import BaseNode, TextNode
+from llama_index.service_context import ServiceContext
 from llama_index.types import BasePydanticProgram, Model
 from llama_index.utils import print_text
 

@@ -5,11 +5,11 @@ from unittest.mock import patch
 
 from llama_index.indices.keyword_table.base import KeywordTableIndex
 from llama_index.indices.list.base import SummaryIndex
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.llm_predictor.mock import MockLLMPredictor
 from llama_index.node_parser import TokenTextSplitter
 from llama_index.schema import Document
+from llama_index.service_context import ServiceContext
 
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 

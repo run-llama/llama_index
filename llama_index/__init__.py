@@ -14,68 +14,43 @@ from llama_index.callbacks.global_handlers import set_global_handler
 from llama_index.data_structs.struct_type import IndexStructType
 
 # embeddings
-from llama_index.embeddings.langchain import LangchainEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
-
-# structured
-from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
-
-# for composability
-from llama_index.indices.composability.graph import ComposableGraph
-from llama_index.indices.document_summary import (
-    DocumentSummaryIndex,
-    GPTDocumentSummaryIndex,
-)
-from llama_index.indices.empty import EmptyIndex, GPTEmptyIndex
+from llama_index.embeddings import OpenAIEmbedding
 
 # indices
-from llama_index.indices.keyword_table import (
+# loading
+from llama_index.indices import (
+    ComposableGraph,
+    DocumentSummaryIndex,
+    GPTDocumentSummaryIndex,
     GPTKeywordTableIndex,
+    GPTKnowledgeGraphIndex,
+    GPTListIndex,
     GPTRAKEKeywordTableIndex,
     GPTSimpleKeywordTableIndex,
+    GPTTreeIndex,
+    GPTVectorStoreIndex,
     KeywordTableIndex,
+    KnowledgeGraphIndex,
+    ListIndex,
     RAKEKeywordTableIndex,
     SimpleKeywordTableIndex,
-)
-from llama_index.indices.knowledge_graph import (
-    GPTKnowledgeGraphIndex,
-    KnowledgeGraphIndex,
-)
-from llama_index.indices.list import GPTListIndex, ListIndex, SummaryIndex
-
-# loading
-from llama_index.indices.loading import (
+    SummaryIndex,
+    TreeIndex,
+    VectorStoreIndex,
     load_graph_from_storage,
     load_index_from_storage,
     load_indices_from_storage,
 )
 
+# structured
+from llama_index.indices.common.struct_store.base import SQLDocumentContextBuilder
+
 # prompt helper
 from llama_index.indices.prompt_helper import PromptHelper
-
-# QueryBundle
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import (
-    ServiceContext,
-    set_global_service_context,
-)
-from llama_index.indices.struct_store.pandas import GPTPandasIndex, PandasIndex
-from llama_index.indices.struct_store.sql import (
-    GPTSQLStructStoreIndex,
-    SQLStructStoreIndex,
-)
-from llama_index.indices.tree import GPTTreeIndex, TreeIndex
-from llama_index.indices.vector_store import GPTVectorStoreIndex, VectorStoreIndex
-from llama_index.langchain_helpers.memory_wrapper import GPTIndexMemory
-
-# langchain helper
 from llama_index.llm_predictor import LLMPredictor
 
 # token predictor
 from llama_index.llm_predictor.mock import MockLLMPredictor
-
-# vellum
-from llama_index.llm_predictor.vellum import VellumPredictor, VellumPromptRegistry
 
 # prompts
 from llama_index.prompts import (
@@ -86,53 +61,18 @@ from llama_index.prompts import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.prompts.prompts import (
-    KeywordExtractPrompt,
-    QueryKeywordExtractPrompt,
-    QuestionAnswerPrompt,
-    RefinePrompt,
-    SummaryPrompt,
-    TreeInsertPrompt,
-    TreeSelectMultiplePrompt,
-    TreeSelectPrompt,
-)
-from llama_index.readers import (
-    BeautifulSoupWebReader,
-    ChromaReader,
-    DeepLakeReader,
-    DiscordReader,
-    FaissReader,
-    GithubRepositoryReader,
-    GoogleDocsReader,
-    JSONReader,
-    MboxReader,
-    MilvusReader,
-    NotionPageReader,
-    ObsidianReader,
-    PineconeReader,
-    PsychicReader,
-    QdrantReader,
-    RssReader,
-    SimpleDirectoryReader,
-    SimpleMongoReader,
-    SimpleWebPageReader,
-    SlackReader,
-    StringIterableReader,
-    TrafilaturaWebReader,
-    TwitterTweetReader,
-    WeaviateReader,
-    WikipediaReader,
-)
-from llama_index.readers.download import download_loader
+from llama_index.readers import SimpleDirectoryReader, download_loader
 
 # response
 from llama_index.response.schema import Response
 
 # Response Synthesizer
 from llama_index.response_synthesizers.factory import get_response_synthesizer
-
-# readers
-from llama_index.schema import Document
+from llama_index.schema import Document, QueryBundle
+from llama_index.service_context import (
+    ServiceContext,
+    set_global_service_context,
+)
 
 # storage
 from llama_index.storage.storage_context import StorageContext
@@ -159,9 +99,6 @@ __all__ = [
     "KeywordTableIndex",
     "RAKEKeywordTableIndex",
     "TreeIndex",
-    "SQLStructStoreIndex",
-    "PandasIndex",
-    "EmptyIndex",
     "DocumentSummaryIndex",
     "KnowledgeGraphIndex",
     # indices - legacy names
@@ -171,18 +108,14 @@ __all__ = [
     "GPTRAKEKeywordTableIndex",
     "GPTListIndex",
     "ListIndex",
-    "GPTEmptyIndex",
     "GPTTreeIndex",
     "GPTVectorStoreIndex",
-    "GPTPandasIndex",
-    "GPTSQLStructStoreIndex",
     "GPTDocumentSummaryIndex",
     "Prompt",
     "PromptTemplate",
     "BasePromptTemplate",
     "ChatPromptTemplate",
     "SelectorPromptTemplate",
-    "LangchainEmbedding",
     "OpenAIEmbedding",
     "SummaryPrompt",
     "TreeInsertPrompt",
@@ -223,7 +156,6 @@ __all__ = [
     "VellumPromptRegistry",
     "MockEmbedding",
     "SQLDatabase",
-    "GPTIndexMemory",
     "SQLDocumentContextBuilder",
     "SQLContextBuilder",
     "PromptHelper",

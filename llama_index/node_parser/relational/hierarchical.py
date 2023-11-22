@@ -78,6 +78,7 @@ class HierarchicalNodeParser(NodeParser):
     def from_defaults(
         cls,
         chunk_sizes: Optional[List[int]] = None,
+        chunk_overlap: int = 20,
         node_parser_ids: Optional[List[str]] = None,
         node_parser_map: Optional[Dict[str, NodeParser]] = None,
         include_metadata: bool = True,
@@ -96,6 +97,7 @@ class HierarchicalNodeParser(NodeParser):
                 node_parser_map[node_parser_id] = SentenceSplitter(
                     chunk_size=chunk_size,
                     callback_manager=callback_manager,
+                    chunk_overlap=chunk_overlap,
                 )
         else:
             if chunk_sizes is not None:

@@ -46,10 +46,10 @@ def get_llm_token_counts(
 
         # try getting attached token counts first
         try:
-            usage_dict = response.additional_kwargs  # type: ignore
+            usage = response.raw["usage"]  # type: ignore
 
-            messages_tokens = usage_dict["prompt_tokens"]
-            response_tokens = usage_dict["completion_tokens"]
+            messages_tokens = usage.prompt_tokens
+            response_tokens = usage.completion_tokens
 
             if messages_tokens == 0 or response_tokens == 0:
                 raise ValueError("Invalid token counts!")

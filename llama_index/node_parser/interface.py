@@ -53,7 +53,7 @@ class NodeParser(TransformComponent, ABC):
             show_progress (bool): whether to show progress bar
 
         """
-        doc_id_to_document = {doc.doc_id: doc for doc in documents}
+        doc_id_to_document = {doc.id_: doc for doc in documents}
 
         with self.callback_manager.event(
             CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}

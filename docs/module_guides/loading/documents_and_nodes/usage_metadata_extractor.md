@@ -18,18 +18,23 @@ from llama_index.extractors import (
 )
 from llama_index.node_parser import TokenTextSplitter
 
-node_parser = TokenTextSplitter(
+text_splitter = TokenTextSplitter(
     separator=" ", chunk_size=512, chunk_overlap=128
 )
 title_extractor = TitleExtractor(nodes=5)
 qa_extractor = QuestionsAnsweredExtractor(questions=3)
 
 # assume documents are defined -> extract nodes
-from llama_index.ingestion import run_transformations
+from llama_index.ingestion import IngestionPipeline
 
-nodes = run_transformations(
-    documents,
-    [node_parser, title_extractor, qa_extractor],
+pipeline = IngestionPipeline(
+    transformations=[text_splitter, title_extractor, qa_extractor]
+)
+title_extractor = TitleExtractor(nodes=5)
+qa_extractor = QuestionsAnsweredExtractor(questions=3)
+
+nodes = pipeline.run(
+    documents=documents,
     in_place=True,
     show_progress=True,
 )
@@ -41,7 +46,7 @@ or insert into the service context:
 from llama_index import ServiceContext
 
 service_context = ServiceContext.from_defaults(
-    transformations=[node_parser, title_extractor, qa_extractor]
+    transformations=[text_splitter, title_extractor, qa_extractor]
 )
 ```
 

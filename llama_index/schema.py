@@ -3,11 +3,13 @@ import json
 import textwrap
 import uuid
 from abc import abstractmethod
+from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
+from dataclasses_json import DataClassJsonMixin
 from typing_extensions import Self
 
 from llama_index.bridge.pydantic import BaseModel, Field, root_validator
@@ -59,6 +61,35 @@ class BaseComponent(BaseModel):
         data = super().dict(**kwargs)
         data["class_name"] = self.class_name()
         return data
+
+    def __getstate__(self) -> Dict[str, Any]:
+        state = super().__getstate__()
+
+        # tiktoken is not pickleable
+        # state["__dict__"] = self.dict()
+        state["__dict__"].pop("tokenizer", None)
+
+        # remove local functions
+        keys_to_remove = []
+        for key in state["__dict__"]:
+            if key.endswith("_fn"):
+                keys_to_remove.append(key)
+        for key in keys_to_remove:
+            state["__dict__"].pop(key, None)
+
+        # remove private attributes -- kind of dangerous
+        state["__private_attribute_values__"] = {}
+
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        # Use the __dict__ and __init__ method to set state
+        # so that all variable initialize
+        try:
+            self.__init__(**state["__dict__"])  # type: ignore
+        except Exception:
+            # Fall back to the default __setstate__ method
+            super().__setstate__(state)
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = self.dict(**kwargs)
@@ -425,6 +456,10 @@ class ImageNode(TextNode):
     image: Optional[str] = None
     image_path: Optional[str] = None
     image_url: Optional[str] = None
+    text_embedding: Optional[List[float]] = Field(
+        default=None,
+        description="Text embedding of image node, if text field is filled out",
+    )
 
     @classmethod
     def get_type(cls) -> str:
@@ -654,6 +689,16 @@ class Document(TextNode):
             id_=doc._id,
         )
 
+    def to_vectorflow(self, client: Any) -> None:
+        """Send a document to vectorflow, since they don't have a document object."""
+        # write document to temp file
+        import tempfile
+
+        with tempfile.NamedTemporaryFile() as f:
+            f.write(self.text.encode("utf-8"))
+            f.flush()
+            client.embed(f.name)
+
     @classmethod
     def example(cls) -> "Document":
         return Document(
@@ -672,3 +717,45 @@ class ImageDocument(Document, ImageNode):
     @classmethod
     def class_name(cls) -> str:
         return "ImageDocument"
+
+
+@dataclass
+class QueryBundle(DataClassJsonMixin):
+    """
+    Query bundle.
+
+    This dataclass contains the original query string and associated transformations.
+
+    Args:
+        query_str (str): the original user-specified query string.
+            This is currently used by all non embedding-based queries.
+        custom_embedding_strs (list[str]): list of strings used for embedding the query.
+            This is currently used by all embedding-based queries.
+        embedding (list[float]): the stored embedding for the query.
+    """
+
+    query_str: str
+    # using single image path as query input
+    image_path: Optional[str] = None
+    custom_embedding_strs: Optional[List[str]] = None
+    embedding: Optional[List[float]] = None
+
+    @property
+    def embedding_strs(self) -> List[str]:
+        """Use custom embedding strs if specified, otherwise use query str."""
+        if self.custom_embedding_strs is None:
+            if len(self.query_str) == 0:
+                return []
+            return [self.query_str]
+        else:
+            return self.custom_embedding_strs
+
+    @property
+    def embedding_image(self) -> List[Any]:
+        """Use image path for image retrieval."""
+        if self.image_path is None:
+            return []
+        return [self.image_path]
+
+
+QueryType = Union[str, QueryBundle]

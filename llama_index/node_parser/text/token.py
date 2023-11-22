@@ -128,7 +128,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
     def _split_text(self, text: str, chunk_size: int) -> List[str]:
         """Split text into chunks up to chunk_size."""
         if text == "":
-            return []
+            return [text]
 
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
