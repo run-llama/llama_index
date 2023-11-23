@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List
+from typing import TYPE_CHECKING, Any, List
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode
@@ -15,18 +15,21 @@ import_err_msg = (
     '`pgvecto_rs.sdk` package not found, please run `pip install "pgvecto_rs[sdk]"`'
 )
 
+if TYPE_CHECKING:
+    from pgvecto_rs.sdk import PGVectoRs
+
 
 class PGVectoRsStore(BasePydanticVectorStore):
     stores_text = True
 
-    _client = PrivateAttr()
+    _client: "PGVectoRs" = PrivateAttr()
 
-    def __init__(self, pgvecto_rs: Any) -> None:
+    def __init__(self, client: "PGVectoRs") -> None:
         try:
             from pgvecto_rs.sdk import PGVectoRs
         except ImportError:
             raise ImportError(import_err_msg)
-        self._client: PGVectoRs = pgvecto_rs
+        self._client: PGVectoRs = client
         super().__init__()
 
     @classmethod
@@ -57,7 +60,9 @@ class PGVectoRsStore(BasePydanticVectorStore):
         return [node.id_ for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        self._client.delete_by_ids((ref_doc_id,))
+        from pgvecto_rs.sdk.filters import meta_contains
+
+        self._client.delete(meta_contains({"ref_doc_id": ref_doc_id}))
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         from pgvecto_rs.sdk.filters import meta_contains
