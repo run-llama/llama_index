@@ -76,7 +76,7 @@ class VectaraRetriever(BaseRetriever):
 
         if kwargs.get("summary_enabled", False):
             self._summary_enabled = True
-            self._summary_response_lang = kwargs.get("summary_response_lang", "en")
+            self._summary_response_lang = kwargs.get("summary_response_lang", "eng")
             self._summary_num_results = kwargs.get("summary_num_results", 7)
             self._summary_prompt_name = kwargs.get(
                 "summary_prompt_name", "vectara-summary-ext-v1.2.0"
@@ -176,7 +176,7 @@ class VectaraRetriever(BaseRetriever):
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
             )
-            return []
+            return [], ""
 
         result = response.json()
 

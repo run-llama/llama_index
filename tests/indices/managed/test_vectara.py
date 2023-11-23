@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 
 import pytest
 from llama_index.indices.managed.vectara.base import VectaraIndex
@@ -14,7 +14,7 @@ from llama_index.schema import Document
 #
 
 
-def get_docs() -> Tuple[List[Document], List[str]]:
+def get_docs() -> List[Document]:
     inputs = [
         {
             "text": "This is test text for Vectara integration with LlamaIndex",

@@ -17,6 +17,8 @@ from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
+from llama_index.service_context import ServiceContext
+from llama_index.storage.storage_context import StorageContext
 
 _logger = logging.getLogger(__name__)
 
@@ -301,7 +303,7 @@ class VectaraIndex(BaseManagedIndex):
 
             kwargs["summary_enabled"] = True
             retriever = self.as_retriever(**kwargs)
-            return VectaraQueryEngine.from_args(retriever, **kwargs)
+            return VectaraQueryEngine.from_args(retriever, **kwargs)  # type: ignore
         else:
             from llama_index.query_engine.retriever_query_engine import (
                 RetrieverQueryEngine,
@@ -314,6 +316,8 @@ class VectaraIndex(BaseManagedIndex):
     def from_documents(
         cls: Type[IndexType],
         documents: Sequence[Document],
+        storage_context: Optional[StorageContext] = None,
+        service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> IndexType:
