@@ -188,13 +188,18 @@ class PromptHelper(BaseComponent):
                 ]
 
                 # figure out which variables are partially formatted
-                used_vars = {}
+                # if a variable is not formatted, it will be replaced with
+                # the template variable itself
+                used_vars = {
+                    template_var: f"{{{template_var}}}"
+                    for template_var in template_vars
+                }
                 for var_name, val in prompt.kwargs.items():
                     if var_name in template_vars:
                         used_vars[var_name] = val
 
                 # format partial message
-                if len(used_vars) > 0 and partial_message.content is not None:
+                if partial_message.content is not None:
                     partial_message.content = partial_message.content.format(
                         **used_vars
                     )

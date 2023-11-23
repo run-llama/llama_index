@@ -2,6 +2,7 @@
 import logging
 from typing import Any, Callable, List, Optional, Tuple
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.core import BaseRetriever
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
@@ -27,8 +28,14 @@ class SummaryIndexRetriever(BaseRetriever):
 
     """
 
-    def __init__(self, index: SummaryIndex, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        index: SummaryIndex,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
+    ) -> None:
         self._index = index
+        super().__init__(callback_manager)
 
     def _retrieve(
         self,
@@ -58,10 +65,12 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
         self,
         index: SummaryIndex,
         similarity_top_k: Optional[int] = 1,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
         self._similarity_top_k = similarity_top_k
+        super().__init__(callback_manager)
 
     def _retrieve(
         self,
@@ -141,6 +150,7 @@ class SummaryIndexLLMRetriever(BaseRetriever):
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
         service_context: Optional[ServiceContext] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
@@ -155,6 +165,7 @@ class SummaryIndexLLMRetriever(BaseRetriever):
             parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
         )
         self._service_context = service_context or index.service_context
+        super().__init__(callback_manager)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve nodes."""

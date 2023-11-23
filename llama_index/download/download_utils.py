@@ -106,12 +106,13 @@ def get_module_info(
     module_class: str,
     refresh_cache: bool = False,
     library_path: str = "library.json",
+    disable_library_cache: bool = False,
 ) -> Dict:
     """Get module info."""
     if isinstance(local_dir_path, str):
         local_dir_path = Path(local_dir_path)
 
-    local_library_path = f"{local_dir_path}/{library_path}]"
+    local_library_path = f"{local_dir_path}/{library_path}"
     module_id = None  # e.g. `web/simple_web`
     extra_files = []  # e.g. `web/simple_web/utils.py`
 
@@ -134,9 +135,16 @@ def get_module_info(
 
         module_id = library[module_class]["id"]
         extra_files = library[module_class].get("extra_files", [])
-        # Update cache
-        with open(local_library_path, "w") as f:
-            f.write(library_raw_content)
+
+        # create cache dir if needed
+        local_library_dir = os.path.dirname(local_library_path)
+        if not disable_library_cache:
+            if not os.path.exists(local_library_dir):
+                os.makedirs(local_library_dir)
+
+            # Update cache
+            with open(local_library_path, "w") as f:
+                f.write(library_raw_content)
 
     if module_id is None:
         raise ValueError("Loader class name not found in library")
@@ -155,12 +163,17 @@ def download_module_and_reqs(
     refresh_cache: bool = False,
     use_gpt_index_import: bool = False,
     base_file_name: str = "base.py",
+    override_path: bool = False,
 ) -> None:
     """Load module."""
     if isinstance(local_dir_path, str):
         local_dir_path = Path(local_dir_path)
 
-    module_path = f"{local_dir_path}/{module_id}"
+    if override_path:
+        module_path = str(local_dir_path)
+    else:
+        module_path = f"{local_dir_path}/{module_id}"
+
     if refresh_cache or not os.path.exists(module_path):
         os.makedirs(module_path, exist_ok=True)
 
@@ -230,6 +243,8 @@ def download_llama_module(
     library_path: str = "library.json",
     base_file_name: str = "base.py",
     use_gpt_index_import: bool = False,
+    disable_library_cache: bool = False,
+    override_path: bool = False,
 ) -> Type:
     """Download a module from LlamaHub.
 
@@ -262,6 +277,7 @@ def download_llama_module(
         module_class=module_class,
         refresh_cache=refresh_cache,
         library_path=library_path,
+        disable_library_cache=disable_library_cache,
     )
     module_id = module_info["module_id"]
     extra_files = module_info["extra_files"]
@@ -275,16 +291,25 @@ def download_llama_module(
         refresh_cache=refresh_cache,
         use_gpt_index_import=use_gpt_index_import,
         base_file_name=base_file_name,
+        override_path=override_path,
     )
 
     # loads the module into memory
-    spec = util.spec_from_file_location(
-        "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
-    )
-    if spec is None:
-        raise ValueError(
-            f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
+    if override_path:
+        spec = util.spec_from_file_location(
+            "custom_module", location=f"{dirpath}/{base_file_name}"
         )
+        if spec is None:
+            raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
+    else:
+        spec = util.spec_from_file_location(
+            "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
+        )
+        if spec is None:
+            raise ValueError(
+                f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
+            )
+
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore
 

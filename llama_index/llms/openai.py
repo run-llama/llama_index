@@ -12,6 +12,7 @@ from typing import (
     runtime_checkable,
 )
 
+import httpx
 import tiktoken
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -97,6 +98,9 @@ class OpenAI(LLM):
         description="The timeout, in seconds, for API requests.",
         gte=0,
     )
+    default_headers: Dict[str, str] = Field(
+        default=None, description="The default headers for API requests."
+    )
 
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
     api_base: str = Field(description="The base URL for OpenAI API.")
@@ -104,6 +108,7 @@ class OpenAI(LLM):
 
     _client: SyncOpenAI = PrivateAttr()
     _aclient: AsyncOpenAI = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -117,6 +122,8 @@ class OpenAI(LLM):
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        default_headers: Optional[Dict[str, str]] = None,
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -138,12 +145,14 @@ class OpenAI(LLM):
             api_version=api_version,
             api_base=api_base,
             timeout=timeout,
+            default_headers=default_headers,
             **kwargs,
         )
 
-        self._client, self._aclient = self._get_clients(**kwargs)
+        self._http_client = http_client
+        self._client, self._aclient = self._get_clients()
 
-    def _get_clients(self, **kwargs: Any) -> Tuple[SyncOpenAI, AsyncOpenAI]:
+    def _get_clients(self) -> Tuple[SyncOpenAI, AsyncOpenAI]:
         client = SyncOpenAI(**self._get_credential_kwargs())
         aclient = AsyncOpenAI(**self._get_credential_kwargs())
         return client, aclient
@@ -161,7 +170,13 @@ class OpenAI(LLM):
         return "openai_llm"
 
     @property
-    def _tokenizer(self) -> Tokenizer:
+    def _tokenizer(self) -> Optional[Tokenizer]:
+        """
+        Get a tokenizer for this model, or None if a tokenizing method is unknown.
+
+        OpenAI can do this using the tiktoken package, subclasses may not have
+        this convenience.
+        """
         return tiktoken.encoding_for_model(self._get_model_name())
 
     @property
@@ -215,13 +230,14 @@ class OpenAI(LLM):
             return kwargs["use_chat_completions"]
         return self.metadata.is_chat_model
 
-    def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+    def _get_credential_kwargs(self) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
-            **kwargs,
+            "default_headers": self.default_headers,
+            "http_client": self._http_client,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
@@ -317,7 +333,7 @@ class OpenAI(LLM):
                     delta = ChoiceDelta()
 
                 # check if this chunk is the start of a function call
-                if (delta.role == MessageRole.ASSISTANT) and (delta.content is None):
+                if delta.tool_calls:
                     is_function = True
 
                 # update using deltas
@@ -385,16 +401,17 @@ class OpenAI(LLM):
         return gen()
 
     def _update_max_tokens(self, all_kwargs: Dict[str, Any], prompt: str) -> None:
-        if self.max_tokens is not None:
+        """Infer max_tokens for the payload, if possible."""
+        if self.max_tokens is not None or self._tokenizer is None:
             return
         # NOTE: non-chat completion endpoint requires max_tokens to be set
-        context_window = self.metadata.context_window
-        tokens = self._tokenizer.encode(prompt)
-        max_tokens = context_window - len(tokens)
+        num_tokens = len(self._tokenizer.encode(prompt))
+        max_tokens = self.metadata.context_window - num_tokens
         if max_tokens <= 0:
             raise ValueError(
-                f"The prompt is too long for the model. "
-                f"Please use a prompt that is less than {context_window} tokens."
+                f"The prompt has {num_tokens} tokens, which is too long for"
+                " the model. Please use a prompt that fits within"
+                f" {self.metadata.context_window} tokens."
             )
         all_kwargs["max_tokens"] = max_tokens
 
@@ -498,10 +515,10 @@ class OpenAI(LLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    delta = {}
+                    delta = ChoiceDelta()
 
                 # check if this chunk is the start of a function call
-                if (delta.role == MessageRole.ASSISTANT) and (delta.content is None):
+                if delta.tool_calls:
                     is_function = True
 
                 # update using deltas

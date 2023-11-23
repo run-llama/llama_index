@@ -48,6 +48,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.zep import ZepVectorStore
 
 __all__ = [
     "ElasticsearchStore",

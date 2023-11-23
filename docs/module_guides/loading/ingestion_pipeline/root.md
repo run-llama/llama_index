@@ -4,7 +4,7 @@ An `IngestionPipeline` uses a concept of `Transformations` that are applied to i
 
 ## Usage Pattern
 
-At it's most basic level, you can quickly instantiate an `IngestionPipeline` like so:
+The simplest usage is to instantiate an `IngestionPipeline` like so:
 
 ```python
 from llama_index import Document
@@ -25,6 +25,8 @@ pipeline = IngestionPipeline(
 # run the pipeline
 nodes = pipeline.run(documents=[Document.example()])
 ```
+
+Note that in a real-world scenario, you would get your documents from `SimpleDirectoryReader` or another reader from Llama Hub.
 
 ## Connecting to Vector Databases
 
@@ -62,6 +64,12 @@ from llama_index import VectorStoreIndex
 
 index = VectorStoreIndex.from_vector_store(vector_store)
 ```
+
+## Calculating embeddings in a pipeline
+
+Note that in the above example, embeddings are calculated as part of the pipeline. If you are connecting your pipeline to a vector store, embeddings must be a stage of your pipeline or your later instantiation of the index will fail.
+
+You can omit embeddings from your pipeline if you are not connecting to a vector store, i.e. just producing a list of nodes.
 
 ## Caching
 

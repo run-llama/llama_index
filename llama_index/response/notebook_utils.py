@@ -1,7 +1,7 @@
 """Utils for jupyter notebook."""
 import os
 from io import BytesIO
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import requests
@@ -26,7 +26,7 @@ def display_image(img_str: str, size: Tuple[int, int] = DEFAULT_THUMBNAIL_SIZE) 
 
 
 def display_image_uris(
-    image_paths: list[str],
+    image_paths: List[str],
     image_matrix: Tuple[int, int] = DEFAULT_IMAGE_MATRIX,
     top_k: int = DEFAULT_SHOW_TOP_K,
 ) -> None:

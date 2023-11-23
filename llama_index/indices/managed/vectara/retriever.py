@@ -4,8 +4,9 @@ An index that that is built on top of Vectara.
 
 import json
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core import BaseRetriever
 from llama_index.indices.managed.types import ManagedIndexQueryMode
@@ -50,6 +51,7 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
         filter: str = "",
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -67,6 +69,7 @@ class VectaraRetriever(BaseRetriever):
             self._mmr_diversity_bias = kwargs.get("mmr_diversity_bias", 0.3)
         else:
             self._mmr = False
+        super().__init__(callback_manager)
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""

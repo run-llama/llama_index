@@ -77,7 +77,7 @@ class QueryEngineTool(AsyncBaseTool):
         return ToolOutput(
             content=str(response),
             tool_name=self.metadata.name,
-            raw_input={"input": input},
+            raw_input={"input": query_str},
             raw_output=response,
         )
 
@@ -96,7 +96,7 @@ class QueryEngineTool(AsyncBaseTool):
         return ToolOutput(
             content=str(response),
             tool_name=self.metadata.name,
-            raw_input={"input": input},
+            raw_input={"input": query_str},
             raw_output=response,
         )
 

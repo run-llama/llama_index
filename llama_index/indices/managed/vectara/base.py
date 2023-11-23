@@ -8,7 +8,7 @@ interfaces a managed service.
 import json
 import logging
 import os
-from typing import Any, Optional, Sequence, Type
+from typing import Any, Dict, Optional, Sequence, Type
 
 import requests
 
@@ -155,7 +155,7 @@ class VectaraIndex(BaseManagedIndex):
         return True
 
     def _index_doc(self, doc: dict) -> str:
-        request: dict[str, Any] = {}
+        request: Dict[str, Any] = {}
         request["customerId"] = self._vectara_customer_id
         request["corpusId"] = self._vectara_corpus_id
         request["document"] = doc

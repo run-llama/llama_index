@@ -25,7 +25,12 @@ class Perplexity(LLM):
     model: str = Field(description="The Perplexity model to use.")
     temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
-        default=None, description="The maximum number of tokens to generate."
+        default=None,
+        description="The maximum number of tokens to generate.",
+    )
+    context_window: Optional[int] = Field(
+        default=None,
+        description="The context window to use during generation.",
     )
     api_key: str = Field(
         default=None, description="The Perplexity API key.", exclude=True
