@@ -61,4 +61,5 @@ Some example module guides are given below. Remember, go on [LlamaHub](https://l
 maxdepth: 1
 ---
 /examples/llama_hub/llama_packs_example.ipynb
+/examples/llama_hub/llama_pack_resume.ipynb
 ```
