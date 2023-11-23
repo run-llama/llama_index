@@ -160,7 +160,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
             # data already logged to trace?
             if not hasattr(e, "event_added"):
                 payload = {EventPayload.EXCEPTION: e}
-                e.event_added = True
+                e.event_added = True  # type: ignore
                 if not event.finished:
                     event.on_end(payload=payload)
             raise
@@ -182,7 +182,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
                 self.on_event_start(
                     CBEventType.EXCEPTION, payload={EventPayload.EXCEPTION: e}
                 )
-                e.event_added = True
+                e.event_added = True  # type: ignore
 
             raise
         finally:
