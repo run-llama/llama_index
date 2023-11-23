@@ -88,7 +88,7 @@ def call_function(
     )
 
 
-def _process_files(client: Any, files: List[str]) -> Dict[str, Any]:
+def _process_files(client: Any, files: List[str]) -> Dict[str, str]:
     """Process files."""
     from openai import OpenAI
 
@@ -117,6 +117,7 @@ class OpenAIAssistantAgent(BaseAgent):
         thread_id: Optional[str] = None,
         instructions_prefix: Optional[str] = None,
         run_retrieve_sleep_time: float = 0.1,
+        file_dict: Dict[str, str] = {},
         verbose: bool = False,
     ) -> None:
         """Init params."""
@@ -133,6 +134,7 @@ class OpenAIAssistantAgent(BaseAgent):
         self._instructions_prefix = instructions_prefix
         self._run_retrieve_sleep_time = run_retrieve_sleep_time
         self._verbose = verbose
+        self.file_dict = file_dict
 
         self.callback_manager = callback_manager or CallbackManager([])
 
@@ -150,6 +152,7 @@ class OpenAIAssistantAgent(BaseAgent):
         files: Optional[List[str]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        files_ids: Optional[List[str]] = None
     ) -> "OpenAIAssistantAgent":
         """From new assistant.
 
@@ -181,6 +184,8 @@ class OpenAIAssistantAgent(BaseAgent):
         # process files
         files = files or []
         file_dict = _process_files(client, files)
+        all_file_ids = list(file_dict.keys())
+        files_ids.extend(files_ids or [])
 
         # TODO: openai's typing is a bit sus
         all_openai_tools = cast(List[Any], all_openai_tools)
@@ -189,7 +194,7 @@ class OpenAIAssistantAgent(BaseAgent):
             instructions=instructions,
             tools=cast(List[Any], all_openai_tools),
             model=model,
-            file_ids=list(file_dict.keys()),
+            file_ids=all_file_ids,
         )
         return cls(
             client,
@@ -198,6 +203,7 @@ class OpenAIAssistantAgent(BaseAgent):
             callback_manager=callback_manager,
             thread_id=thread_id,
             instructions_prefix=instructions_prefix,
+            file_dict=file_dict,
             verbose=verbose,
         )
 
@@ -215,6 +221,11 @@ class OpenAIAssistantAgent(BaseAgent):
     def thread_id(self) -> str:
         """Get thread id."""
         return self._thread_id
+    
+    @property
+    def files_dict(self) -> Dict[str, str]:
+        """Get files dict"""
+        return self.file_dict
 
     @property
     def chat_history(self) -> List[ChatMessage]:
