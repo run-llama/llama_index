@@ -244,6 +244,7 @@ def download_llama_module(
     base_file_name: str = "base.py",
     use_gpt_index_import: bool = False,
     disable_library_cache: bool = False,
+    override_path: bool = False,
 ) -> Type:
     """Download a module from LlamaHub.
 
@@ -290,7 +291,7 @@ def download_llama_module(
         refresh_cache=refresh_cache,
         use_gpt_index_import=use_gpt_index_import,
         base_file_name=base_file_name,
-        override_path=True,
+        override_path=override_path,
     )
 
     # loads the module into memory
