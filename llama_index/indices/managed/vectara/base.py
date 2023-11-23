@@ -106,8 +106,8 @@ class VectaraIndex(BaseManagedIndex):
         docs = [
             Document(
                 text=node.get_content(metadata_mode=MetadataMode.NONE),
-                metadata=node.metadata,
-                id_=node.id_,
+                metadata=node.metadata,  # type: ignore
+                id_=node.id_,  # type: ignore
             )
             for node in nodes
         ]
@@ -220,7 +220,9 @@ class VectaraIndex(BaseManagedIndex):
         use_core_api: bool = False,
         allow_update: bool = True,
     ) -> None:
-        nodes = [TextNode(text=doc.text, metadata=doc.metadata) for doc in docs]
+        nodes = [
+            TextNode(text=doc.get_content(), metadata=doc.metadata) for doc in docs  # type: ignore
+        ]
         self._insert(nodes, use_core_api)
 
     def insert_file(
@@ -323,7 +325,7 @@ class VectaraIndex(BaseManagedIndex):
     ) -> IndexType:
         """Build a Vectara index from a sequence of documents."""
         nodes = [
-            TextNode(text=document.text, metadata=document.metadata)
+            TextNode(text=document.get_content(), metadata=document.metadata)  # type: ignore
             for document in documents
         ]
         return cls(

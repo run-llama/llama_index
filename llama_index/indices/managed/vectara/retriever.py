@@ -201,7 +201,7 @@ class VectaraRetriever(BaseRetriever):
             doc_inx = x["documentIndex"]
             doc_id = documents[doc_inx]["id"]
             node = NodeWithScore(
-                node=TextNode(text=x["text"], id_=doc_id, metadata=md), score=x["score"]
+                node=TextNode(text=x["text"], id_=doc_id, metadata=md), score=x["score"]  # type: ignore
             )
             top_nodes.append(node)
 

@@ -36,8 +36,8 @@ def get_docs() -> List[Document]:
     docs: List[Document] = []
     for inp in inputs:
         doc = Document(
-            text=inp["text"],
-            metadata=inp["metadata"],
+            text=str(inp["text"]),
+            metadata=inp["metadata"],  # type: ignore
         )
         docs.append(doc)
     return docs
@@ -59,7 +59,7 @@ def test_simple_retrieval() -> None:
     qe = index.as_retriever(similarity_top_k=1)
     res = qe.retrieve("how will I look?")
     assert len(res) == 1
-    assert res[0].node.text == docs[2].text
+    assert res[0].node.get_content() == docs[2].text
 
     remove_docs(index, index.doc_ids)
 
@@ -84,8 +84,8 @@ def test_mmr_retrieval() -> None:
     )
     res = qe.retrieve("how will I look?")
     assert len(res) == 2
-    assert res[0].node.text == docs[2].text
-    assert res[1].node.text == docs[3].text
+    assert res[0].node.get_content() == docs[2].text
+    assert res[1].node.get_content() == docs[3].text
 
     # test with diversity bias = 1
     qe = index.as_retriever(
@@ -98,8 +98,8 @@ def test_mmr_retrieval() -> None:
     )
     res = qe.retrieve("how will I look?")
     assert len(res) == 2
-    assert res[0].node.text == docs[2].text
-    assert res[1].node.text == docs[0].text
+    assert res[0].node.get_content() == docs[2].text
+    assert res[1].node.get_content() == docs[0].text
 
     remove_docs(index, index.doc_ids)
 
@@ -115,7 +115,7 @@ def test_retrieval_with_filter() -> None:
     qe = index.as_retriever(similarity_top_k=1, filter="doc.test_num = '1'")
     res = qe.retrieve("how will I look?")
     assert len(res) == 1
-    assert res[0].node.text == docs[0].text
+    assert res[0].node.get_content() == docs[0].text
 
     remove_docs(index, index.doc_ids)
 
