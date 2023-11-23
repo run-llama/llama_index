@@ -32,6 +32,42 @@ response = openai_mm_llm.complete(
 )
 ```
 
+**Legend**
+
+- ✅ = should work fine
+- ⚠️ = sometimes unreliable, may need to improve
+- 🛑 = not available at the moment. Support on the way
+
+### End to End Multi-Modal Work Flow
+
+| Query Type | Data Sources<br>for MultiModal<br>Vector Store/Index | MultiModal<br>Embedding                | Retriever                                        | Query<br>Engine        | Output<br>Data<br>Type                   |
+| ---------- | ---------------------------------------------------- | -------------------------------------- | ------------------------------------------------ | ---------------------- | ---------------------------------------- |
+| Text ✅    | Text ✅                                              | Text ✅                                | Top-k retrieval ✅<br>Simple Fusion retrieval ✅ | Simple Query Engine ✅ | Retrieved Text ✅<br>Generated Text ✅   |
+| Image ✅   | Image ✅                                             | Image ✅<br>Image to Text Embedding ✅ | Top-k retrieval ✅<br>Simple Fusion retrieval ✅ | Simple Query Engine ✅ | Retrieved Image ✅<br>Generated Image 🛑 |
+| Audio 🛑   | Audio 🛑                                             | Audio 🛑                               | 🛑                                               | 🛑                     | Audio 🛑                                 |
+| Video 🛑   | Video 🛑                                             | Video 🛑                               | 🛑                                               | 🛑                     | Video 🛑                                 |
+
+### Multi-Modal LLM Models
+
+Outer pipes Cell padding
+No sorting
+| Multi-Modal<br>Vision Models | Single<br>Image<br>Reasoning | Multiple<br>Images<br>Reasoning | Image<br>Embeddings | Simple<br>Query<br>Engine |
+| ----------------------------------------------------------- | ---------------------------- | ------------------------------- | ------------------- | ------------------------- |
+| GPT4V<br>(OpenAI API) | ✅ | ✅ | 🛑 | ✅ |
+| CLIP<br>(Local host) | 🛑 | 🛑 | ✅ | 🛑 |
+| LLaVa<br>(replicate) | ✅ | 🛑 | 🛑 | ✅ |
+| Fuyu-8B<br>(replicate) | ✅ | 🛑 | 🛑 | ✅ |
+| ImageBind<br>[To integrate] | 🛑 | 🛑 | ✅ | 🛑 |
+| [MiniGPT-4<br>](https://minigpt-4.github.io/)[To integrate] | ✅ | 🛑 | 🛑 | ✅ |
+
+### Multi Modal Vector Stores
+
+| Multi-Modal<br>Vector Stores                                                                                              | Single<br>Vector<br>Store | Multiple<br>Vector<br>Store | Text<br>Embedding                                         | Image<br>Embedding                                      |
+| ------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --------------------------- | --------------------------------------------------------- | ------------------------------------------------------- |
+| LLamaIndex self-built<br>MultiModal Index                                                                                 | 🛑                        | ✅                          | Can be arbitrary<br>text embedding<br>(Default is GPT3.5) | Can be arbitrary<br>text embedding<br>(Default is CLIP) |
+| Chroma                                                                                                                    | ✅                        | 🛑                          | CLIP ✅                                                   | CLIP ✅                                                 |
+| [Weaviate](https://weaviate.io/developers/weaviate/modules/retriever-vectorizer-modules/multi2vec-bind)<br>[To integrate] | ✅                        | 🛑                          | CLIP ✅<br>ImageBind ✅                                   | CLIP ✅<br>ImageBind ✅                                 |
+
 ## Modules
 
 We support integrations with GPT-4V, LLaVA, and more.
