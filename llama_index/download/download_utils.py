@@ -295,11 +295,20 @@ def download_llama_module(
     )
 
     # loads the module into memory
-    spec = util.spec_from_file_location(
-        "custom_module", location=f"{dirpath}/{base_file_name}"
-    )
-    if spec is None:
-        raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
+    if override_path:
+        spec = util.spec_from_file_location(
+            "custom_module", location=f"{dirpath}/{base_file_name}"
+        )
+        if spec is None:
+            raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
+    else:
+        spec = util.spec_from_file_location(
+            "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
+        )
+        if spec is None:
+            raise ValueError(
+                f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
+            )
 
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore
