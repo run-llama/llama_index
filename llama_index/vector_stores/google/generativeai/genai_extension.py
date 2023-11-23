@@ -7,7 +7,6 @@ google.generativeai.
 import datetime
 import logging
 import re
-import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, MutableSequence, Optional
 
@@ -482,7 +481,7 @@ def generate_answer(
     *,
     prompt: str,
     passages: List[str],
-    answer_style: genai.GenerateAnswerRequest.AnswerStyle = genai.GenerateAnswerRequest.AnswerStyle.ABSTRACTIVE,
+    answer_style: int = genai.GenerateAnswerRequest.AnswerStyle.ABSTRACTIVE,
     safety_settings: List[genai.SafetySetting] = [],
     temperature: Optional[float] = None,
     client: Optional[genai.GenerativeServiceClient] = None,
@@ -503,10 +502,11 @@ def generate_answer(
             inline_passages=genai.GroundingPassages(
                 passages=[
                     genai.GroundingPassage(
-                        id=str(uuid.uuid4()),
+                        # IDs here takes alphanumeric only. No dashes allowed.
+                        id=str(index),
                         content=genai.Content(parts=[genai.Part(text=chunk)]),
                     )
-                    for chunk in passages
+                    for index, chunk in enumerate(passages)
                 ]
             ),
         )

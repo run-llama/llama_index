@@ -58,7 +58,7 @@ class GoogleTextSynthesizer(BaseSynthesizer):
         def create(
             cls,
             temperature: float = 0.7,
-            answer_style: genai.GenerateAnswerRequest.AnswerStyle = genai.GenerateAnswerRequest.AnswerStyle.ABSTRACTIVE,
+            answer_style: int = genai.GenerateAnswerRequest.AnswerStyle.ABSTRACTIVE,
             safety_setting: List[genai.SafetySetting] = [],
         ) -> "GoogleTextSynthesizer":
             """Create a new Google AQA.
