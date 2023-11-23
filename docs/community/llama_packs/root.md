@@ -7,6 +7,7 @@ Llama Packs are a community-driven hub of **prepackaged modules/templates** you 
 This directly tackles a big pain point in building LLM apps; every use case requires cobbling together custom components and a lot of tuning/dev time. Our goal is to accelerate that through a community led effort.
 
 They can be used in two ways:
+
 - On one hand, they are **prepackaged modules** that can be initialized with parameters and run out of the box to achieve a given use case (whether that’s a full RAG pipeline, application template, and more). You can also import submodules (e.g. LLMs, query engines) to use directly.
 - On another hand, LlamaPacks are **templates** that you can inspect, modify, and use.
 
@@ -21,19 +22,18 @@ See our [launch blog post](https://blog.llamaindex.ai/introducing-llama-packs-e1
 You can use Llama Packs through either the CLI or Python.
 
 CLI:
+
 ```bash
 llamaindex-cli download-llamapack <pack_name> --download-dir <pack_directory>
 ```
 
 Python:
+
 ```python
 from llama_index.llama_pack import download_llama_pack
 
 # download and install dependencies
-pack_cls = download_llama_pack(
-  "<pack_name>", "<pack_directory>"
-)
-
+pack_cls = download_llama_pack("<pack_name>", "<pack_directory>")
 ```
 
 You can use the pack in different ways, either to inspect modules, run it e2e, or customize the templates.
@@ -48,11 +48,9 @@ display(modules)
 
 # run (every pack will have different args)
 output = pack.run(*args, **kwargs)
-
 ```
 
-Importantly, you can/should also go into `pack_directory` to inspect the source files/customize it. That's part of the point! 
-
+Importantly, you can/should also go into `pack_directory` to inspect the source files/customize it. That's part of the point!
 
 ## Module Guides
 
