@@ -1,7 +1,13 @@
 from enum import Enum
-from typing import Generic, Optional, Type, TypeVar
+from pathlib import Path
+from typing import Any, Generic, Iterable, List, Optional, Type, TypeVar, cast
 
 from unique_names_generator import get_random_name
+from unique_names_generator.data import (
+    ADJECTIVES,
+    ANIMALS,
+    COLORS,
+)
 
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
 from llama_index.readers import (
@@ -22,6 +28,9 @@ from llama_index.readers.google_readers.gdocs import GoogleDocsReader
 from llama_index.readers.google_readers.gsheets import GoogleSheetsReader
 from llama_index.schema import BaseComponent, Document, TextNode
 
+# used for generating random names for data sources
+name_combo = [ADJECTIVES, COLORS, ANIMALS]
+
 
 class DataSource(BaseModel):
     """
@@ -34,6 +43,29 @@ class DataSource(BaseModel):
     component_type: Type[BaseComponent] = Field(
         description="Type of component that implements the data source"
     )
+
+
+class DocumentGroup(BasePydanticReader):
+    """
+    A group of documents, usually separate pages from a single file.
+    """
+
+    file_path: str = Field(description="Path to the file containing the documents")
+    documents: List[Document] = Field(
+        description="Sequential group of documents, usually separate pages from a single file."
+    )
+
+    @property
+    def file_name(self) -> str:
+        return Path(self.file_path).name
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "DocumentGroup"
+
+    def lazy_load_data(self, *args: Any, **load_kwargs: Any) -> Iterable[Document]:
+        """Load data from the input directory lazily."""
+        return self.documents
 
 
 class ConfigurableDataSources(Enum):
@@ -121,6 +153,11 @@ class ConfigurableDataSources(Enum):
         component_type=ReaderConfig,
     )
 
+    DOCUMENT_GROUP = DataSource(
+        name="Document Group",
+        component_type=DocumentGroup,
+    )
+
     @classmethod
     def from_component(cls, component: BaseComponent) -> "ConfigurableDataSources":
         component_class = type(component)
@@ -146,8 +183,14 @@ class ConfigurableDataSources(Enum):
                 component=reader_config
             )  # type: ignore
 
+        if isinstance(component, DocumentGroup) and name is None:
+            # if the component is a DocumentGroup, we want to use the
+            # full file path as the name of the data source
+            component = cast(DocumentGroup, component)
+            name = component.file_path
+
         if name is None:
-            suffix = get_random_name(separator="-", style="lowercase")
+            suffix = get_random_name(combo=name_combo, separator="-", style="lowercase")
             name = self.value.name + f" [{suffix}]]"
         return ConfiguredDataSource[component_type](  # type: ignore
             component=component, name=name
