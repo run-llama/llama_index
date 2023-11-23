@@ -12,6 +12,7 @@ from typing import (
     runtime_checkable,
 )
 
+import httpx
 import tiktoken
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -97,6 +98,9 @@ class OpenAI(LLM):
         description="The timeout, in seconds, for API requests.",
         gte=0,
     )
+    default_headers: Dict[str, str] = Field(
+        default=None, description="The default headers for API requests."
+    )
 
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
     api_base: str = Field(description="The base URL for OpenAI API.")
@@ -104,6 +108,7 @@ class OpenAI(LLM):
 
     _client: SyncOpenAI = PrivateAttr()
     _aclient: AsyncOpenAI = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -117,6 +122,8 @@ class OpenAI(LLM):
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        default_headers: Optional[Dict[str, str]] = None,
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -138,12 +145,14 @@ class OpenAI(LLM):
             api_version=api_version,
             api_base=api_base,
             timeout=timeout,
+            default_headers=default_headers,
             **kwargs,
         )
 
-        self._client, self._aclient = self._get_clients(**kwargs)
+        self._http_client = http_client
+        self._client, self._aclient = self._get_clients()
 
-    def _get_clients(self, **kwargs: Any) -> Tuple[SyncOpenAI, AsyncOpenAI]:
+    def _get_clients(self) -> Tuple[SyncOpenAI, AsyncOpenAI]:
         client = SyncOpenAI(**self._get_credential_kwargs())
         aclient = AsyncOpenAI(**self._get_credential_kwargs())
         return client, aclient
@@ -221,13 +230,14 @@ class OpenAI(LLM):
             return kwargs["use_chat_completions"]
         return self.metadata.is_chat_model
 
-    def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+    def _get_credential_kwargs(self) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
-            **kwargs,
+            "default_headers": self.default_headers,
+            "http_client": self._http_client,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:

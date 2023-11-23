@@ -41,7 +41,11 @@ extensions = [
     "myst_nb",
     "sphinxcontrib.autodoc_pydantic",
     "sphinx_reredirects",
+    "sphinx_automodapi.automodapi",
 ]
+
+# automodapi requires this to avoid duplicates apparently
+numpydoc_show_class_members = False
 
 myst_heading_anchors = 5
 # TODO: Fix the non-consecutive header level in our docs, until then

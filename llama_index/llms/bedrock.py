@@ -41,6 +41,9 @@ class Bedrock(LLM):
         description="AWS Secret Access Key to use"
     )
     aws_session_token: Optional[str] = Field(description="AWS Session Token to use")
+    aws_region_name: Optional[str] = Field(
+        description="AWS region name to use. Uses region configured in AWS CLI if not passed"
+    )
     max_retries: int = Field(
         default=10, description="The maximum number of API retries."
     )
@@ -62,6 +65,7 @@ class Bedrock(LLM):
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
+        aws_region_name: Optional[str] = None,
         timeout: Optional[float] = None,
         max_retries: Optional[int] = 10,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -75,12 +79,20 @@ class Bedrock(LLM):
             )
         try:
             import boto3
+            import botocore
 
+        except Exception as e:
+            raise ImportError(
+                "You must install the `boto3` package to use Bedrock."
+                "Please `pip install boto3`"
+            ) from e
+        try:
             if not profile_name and aws_access_key_id:
                 session = boto3.Session(
                     aws_access_key_id=aws_access_key_id,
                     aws_secret_access_key=aws_secret_access_key,
                     aws_session_token=aws_session_token,
+                    region_name=aws_region_name,
                 )
             else:
                 session = boto3.Session(profile_name=profile_name)
@@ -92,11 +104,12 @@ class Bedrock(LLM):
                 self._client = session.client("bedrock-runtime")
             else:
                 self._client = session.client("bedrock")
-        except ImportError as e:
-            raise ImportError(
-                "You must install the `boto3` package to use Bedrock."
-                "Please `pip install boto3`"
-            ) from e
+
+        except botocore.exceptions.NoRegionError as e:
+            raise ValueError(
+                "If default region is not set in AWS CLI, you must provide"
+                " the region_name argument to llama_index.llms.Bedrock"
+            )
 
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])

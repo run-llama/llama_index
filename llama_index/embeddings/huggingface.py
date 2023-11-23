@@ -29,7 +29,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         default=DEFAULT_HUGGINGFACE_LENGTH, description="Maximum length of input.", gt=0
     )
     pooling: Pooling = Field(default=Pooling.CLS, description="Pooling strategy.")
-    normalize: str = Field(default=True, description="Normalize embeddings or not.")
+    normalize: bool = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
     )
