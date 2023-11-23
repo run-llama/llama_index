@@ -30,6 +30,7 @@ from llama_index.vector_stores.opensearch import (
     OpensearchVectorClient,
     OpensearchVectorStore,
 )
+from llama_index.vector_stores.pgvecto_rs import PGVectoRsStore
 from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.vector_stores.postgres import PGVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
@@ -73,6 +74,7 @@ __all__ = [
     "DocArrayHnswVectorStore",
     "SupabaseVectorStore",
     "PGVectorStore",
+    "PGVectoRsStore",
     "TimescaleVectorStore",
     "ZepVectorStore",
     "AwaDBVectorStore",

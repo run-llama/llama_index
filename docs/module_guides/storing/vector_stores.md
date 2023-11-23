@@ -37,6 +37,7 @@ We are actively adding more integrations and improving feature coverage for each
 | OpenSearch               | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
+| pgvecto.rs               | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 | Qdrant                   | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓     |
 | Redis                    | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Simple                   | in-memory           | ✓                  |               | ✓      |                 |       |
@@ -77,6 +78,8 @@ maxdepth: 1
 /examples/vector_stores/OpensearchDemo.ipynb
 /examples/vector_stores/PineconeIndexDemo.ipynb
 /examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
+/examples/vector_stores/PGVectoRsDemo.ipynb
+/examples/vector_stores/postgres.ipynb
 /examples/vector_stores/RedisIndexDemo.ipynb
 /examples/vector_stores/QdrantIndexDemo.ipynb
 /examples/vector_stores/RocksetIndexDemo.ipynb

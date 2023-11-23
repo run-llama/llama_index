@@ -4,6 +4,7 @@
 
 ### New Features
 
+- Add support for `PGVectoRsStore` (#9087)
 - Enforcing `requests>=2.31` for security, while unpinning `urllib3` (#9108)
 
 ## [0.9.6] - 2023-11-22
