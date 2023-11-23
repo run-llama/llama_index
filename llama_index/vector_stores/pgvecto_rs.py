@@ -2,7 +2,7 @@ import logging
 from typing import Any, List
 
 from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -46,8 +46,8 @@ class PGVectoRsStore(BasePydanticVectorStore):
         records = [
             Record(
                 id=node.id_,
-                text="",
-                meta=node_to_metadata_dict(node),
+                text=node.get_content(metadata_mode=MetadataMode.NONE),
+                meta=node_to_metadata_dict(node, remove_text=True),
                 embedding=node.get_embedding(),
             )
             for node in nodes
@@ -71,8 +71,14 @@ class PGVectoRsStore(BasePydanticVectorStore):
             if query.filters is not None
             else None,
         )
+
+        nodes = [
+            metadata_dict_to_node(record.meta, text=record.text)
+            for record, _ in results
+        ]
+
         return VectorStoreQueryResult(
-            nodes=[metadata_dict_to_node(record.meta) for record, _score in results],
-            similarities=[score for _record, score in results],
-            ids=[str(record.id) for record, _score in results],
+            nodes=nodes,
+            similarities=[score for _, score in results],
+            ids=[str(record.id) for record, _ in results],
         )
