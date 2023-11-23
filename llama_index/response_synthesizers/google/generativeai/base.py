@@ -34,7 +34,7 @@ class SynthesizedResponse(BaseModel):
     """The list of passages the AQA model used for its response."""
 
     answerable_probability: float
-    """The probability of the question being answered from the provided passages."""
+    """The model's estimate of the probability that its answer is correct and grounded in the input passages."""
 
 
 class GoogleTextSynthesizer(BaseSynthesizer):
@@ -199,8 +199,9 @@ GoogleTextSynthesizer.get_response(
             a score from the retrieval.
 
             Response's `metadata` may also have have an entry with key
-            `answerable_probability`, which is the probability that the grounded
-            answer is likely correct.
+            `answerable_probability`, which is the model's estimate of the
+            probability that its answer is correct and grounded in the input
+            passages.
         """
         if len(nodes) == 0:
             return Response("Empty Response")
