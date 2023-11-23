@@ -123,7 +123,6 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             self.kg_triple_extract_template,
             text=text,
         )
-        print(response, flush=True)
         return self._parse_triplet_response(
             response, max_length=self._max_object_length
         )
