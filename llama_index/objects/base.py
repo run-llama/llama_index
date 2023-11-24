@@ -100,42 +100,12 @@ class ObjectIndex(Generic[OT]):
         else:
             # try to load object_node_mapping
             try:
-                object_node_mapping = cls._resolve_object_node_mapping()
-            except (NotImplementedError, pickle.PickleError) as err:
-                raise ValueError(
+                object_node_mapping = BaseObjectNodeMapping.from_persist_dir(
+                    persist_dir=persist_dir
+                )
+            except Exception as err:
+                raise Exception(
                     "Unable to load from persist dir. The object_node_mapping cannot be loaded."
                 ) from err
             else:
                 return cls(index=index, object_node_mapping=object_node_mapping)
-
-    @staticmethod
-    def _resolve_object_node_mapping(
-        persist_dir: str = DEFAULT_PERSIST_DIR,
-    ) -> Type[BaseObjectNodeMapping]:
-        from llama_index.objects import (
-            SimpleObjectNodeMapping,
-            SimpleQueryToolNodeMapping,
-            SimpleToolNodeMapping,
-            SQLTableNodeMapping,
-        )
-
-        object_node_mapping = None
-        error = None
-        for object_node_mapping_type in [
-            SimpleObjectNodeMapping,
-            SimpleToolNodeMapping,
-            SimpleQueryToolNodeMapping,
-            SQLTableNodeMapping,
-        ]:
-            try:
-                object_node_mapping = object_node_mapping_type.from_persist_dir(
-                    persist_dir=persist_dir
-                )
-                break
-            except (NotImplementedError, pickle.PickleError) as err:
-                error = err
-
-        if object_node_mapping:
-            return object_node_mapping
-        else:
-            raise ValueError("Unable to load object_node_mapping.") from error

@@ -29,7 +29,6 @@ def test_object_index_persist(mock_service_context: ServiceContext) -> None:
         ["a", "b", "c"], object_mapping, index_cls=SummaryIndex
     )
     obj_index.persist()
-    print(type(object_mapping), flush=True)
 
     reloaded_obj_index = ObjectIndex.from_persist_dir()
     assert obj_index._index.index_id == reloaded_obj_index._index.index_id

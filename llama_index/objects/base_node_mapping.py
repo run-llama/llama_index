@@ -3,7 +3,7 @@
 import os
 import pickle
 from abc import abstractmethod
-from typing import Any, Dict, Generic, Optional, Sequence, TypeVar
+from typing import Any, Dict, Generic, Optional, Sequence, Type, TypeVar
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.storage.storage_context import DEFAULT_PERSIST_DIR
@@ -89,11 +89,21 @@ class BaseObjectNodeMapping(Generic[OT]):
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
         obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
-    ) -> "BaseObjectNodeMapping":
+    ) -> Type["BaseObjectNodeMapping"]:
         """Load from serialization."""
-        raise NotImplementedError(
-            "This object node mapping does not support from_persist_dir method."
-        )
+        obj_node_mapping = None
+        errors = []
+        for cls in BaseObjectNodeMapping.__subclasses__():
+            try:
+                obj_node_mapping = cls.from_persist_dir(persist_dir=persist_dir)
+                break
+            except (NotImplementedError, pickle.PickleError) as err:
+                # raise unhandled exception otherwise
+                errors.append(err)
+        if obj_node_mapping:
+            return obj_node_mapping
+        else:
+            raise Exception(errors)
 
 
 class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
