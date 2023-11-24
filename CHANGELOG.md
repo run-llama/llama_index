@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.7] - 2023-11-24
 
 ### New Features
 
@@ -11,6 +11,7 @@
 
 - Increased default memory token limit for context chat engine (#9123)
 - Added system prompt to `CondensePlusContextChatEngine` that gets prepended to the `context_prompt` (#9123)
+- Fixed bug in `CondensePlusContextChatEngine` not using chat history properly (#9129)
 
 ## [0.9.6] - 2023-11-22
 
