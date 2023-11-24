@@ -141,6 +141,7 @@ class ServiceContext:
         if llama_index.global_service_context is not None:
             return cls.from_service_context(
                 llama_index.global_service_context,
+                llm=llm,
                 llm_predictor=llm_predictor,
                 prompt_helper=prompt_helper,
                 embed_model=embed_model,
