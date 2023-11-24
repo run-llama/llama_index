@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from threading import Thread
-from typing import Any, List, Optional, Tuple, Type
+from typing import Any, List, Optional, Tuple
 
 from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
@@ -20,6 +20,7 @@ from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.base import PromptTemplate
 from llama_index.schema import MetadataMode, NodeWithScore
+from llama_index.utilities.token_counting import TokenCounter
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +85,8 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         self.callback_manager = callback_manager or CallbackManager([])
         for node_postprocessor in self._node_postprocessors:
             node_postprocessor.callback_manager = self.callback_manager
+
+        self._token_counter = TokenCounter()
         self._verbose = verbose
 
     @classmethod
@@ -93,7 +96,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
-        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         system_prompt: Optional[str] = None,
         context_prompt: Optional[str] = None,
         condense_prompt: Optional[str] = None,
@@ -109,7 +111,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         llm_predictor = service_context.llm_predictor
         llm = llm_predictor.llm
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
+        memory = memory or ChatMemoryBuffer.from_defaults(
+            chat_history=chat_history, token_limit=llm.metadata.context_window - 256
+        )
 
         return cls(
             retriever=retriever,
@@ -181,10 +185,10 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     def _run_c3(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> Tuple[List[ChatMessage], ToolOutput, List[NodeWithScore]]:
-        chat_history = chat_history or self._memory.get()
+        if chat_history is not None:
+            self._memory.set(chat_history)
 
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
-        self._memory.put(user_message)
+        chat_history = self._memory.get()
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = self._condense_question(chat_history, message)
@@ -213,17 +217,25 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         system_message = ChatMessage(
             content=system_message_content, role=MessageRole.SYSTEM
         )
-        chat_messages = [system_message, user_message]
 
+        initial_token_count = self._token_counter.estimate_tokens_in_messages(
+            [system_message]
+        )
+
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        chat_messages = [
+            system_message,
+            *self._memory.get(initial_token_count=initial_token_count),
+        ]
         return chat_messages, context_source, context_nodes
 
     async def _arun_c3(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> Tuple[List[ChatMessage], ToolOutput, List[NodeWithScore]]:
-        chat_history = chat_history or self._memory.get()
+        if chat_history is not None:
+            self._memory.set(chat_history)
 
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
-        self._memory.put(user_message)
+        chat_history = self._memory.get()
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = await self._acondense_question(chat_history, message)
@@ -252,7 +264,16 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         system_message = ChatMessage(
             content=system_message_content, role=MessageRole.SYSTEM
         )
-        chat_messages = [system_message, user_message]
+
+        initial_token_count = self._token_counter.estimate_tokens_in_messages(
+            [system_message]
+        )
+
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        chat_messages = [
+            system_message,
+            *self._memory.get(initial_token_count=initial_token_count),
+        ]
 
         return chat_messages, context_source, context_nodes
 
