@@ -3,7 +3,7 @@
 import os
 import pickle
 from abc import abstractmethod
-from typing import Any, Dict, Generic, Optional, Sequence, Type, TypeVar
+from typing import Any, Dict, Generic, Optional, Sequence, TypeVar
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.storage.storage_context import DEFAULT_PERSIST_DIR
@@ -89,7 +89,7 @@ class BaseObjectNodeMapping(Generic[OT]):
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
         obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
-    ) -> Type["BaseObjectNodeMapping"]:
+    ) -> "BaseObjectNodeMapping":
         """Load from serialization."""
         obj_node_mapping = None
         errors = []
