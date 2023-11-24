@@ -24,6 +24,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.extractors.interface import BaseExtractor
+from llama_index.extractors.utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM
 from llama_index.prompts import PromptTemplate
@@ -79,6 +80,7 @@ class TitleExtractor(BaseExtractor):
         nodes: int = 5,
         node_template: str = DEFAULT_TITLE_NODE_TEMPLATE,
         combine_template: str = DEFAULT_TITLE_COMBINE_TEMPLATE,
+        num_workers: int = DEFAULT_NUM_WORKERS,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -95,6 +97,7 @@ class TitleExtractor(BaseExtractor):
             nodes=nodes,
             node_template=node_template,
             combine_template=combine_template,
+            num_workers=num_workers,
             **kwargs,
         )
 
@@ -102,7 +105,7 @@ class TitleExtractor(BaseExtractor):
     def class_name(cls) -> str:
         return "TitleExtractor"
 
-    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+    async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         nodes_to_extract_title: List[BaseNode] = []
 
         for node in nodes:
@@ -116,22 +119,23 @@ class TitleExtractor(BaseExtractor):
             # Could not extract title
             return []
 
-        nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
-            nodes_to_extract_title, self.show_progress, "Extracting titles"
-        )
-        title_candidates = [
-            self.llm_predictor.predict(
+        title_jobs = [
+            self.llm_predictor.apredict(
                 PromptTemplate(template=self.node_template),
                 context_str=cast(TextNode, node).text,
             )
-            for node in nodes_queue
+            for node in nodes
         ]
+        title_candidates = await run_jobs(
+            title_jobs, show_progress=self.show_progress, workers=self.num_workers
+        )
+
         if len(nodes_to_extract_title) > 1:
             titles = reduce(
                 lambda x, y: x + "," + y, title_candidates[1:], title_candidates[0]
             )
 
-            title = self.llm_predictor.predict(
+            title = await self.llm_predictor.apredict(
                 PromptTemplate(template=self.combine_template),
                 context_str=titles,
             )
@@ -165,6 +169,7 @@ class KeywordExtractor(BaseExtractor):
         # TODO: llm_predictor arg is deprecated
         llm_predictor: Optional[LLMPredictor] = None,
         keywords: int = 5,
+        num_workers: int = DEFAULT_NUM_WORKERS,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -176,34 +181,43 @@ class KeywordExtractor(BaseExtractor):
         elif llm_predictor is None and llm is None:
             llm_predictor = LLMPredictor()
 
-        super().__init__(llm_predictor=llm_predictor, keywords=keywords, **kwargs)
+        super().__init__(
+            llm_predictor=llm_predictor,
+            keywords=keywords,
+            num_workers=num_workers,
+            **kwargs,
+        )
 
     @classmethod
     def class_name(cls) -> str:
         return "KeywordExtractor"
 
-    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        metadata_list: List[Dict] = []
-        nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
-            nodes, self.show_progress, "Extracting keywords"
-        )
+    async def _aextract_keywords_from_node(self, node: BaseNode) -> Dict[str, str]:
+        """Extract keywords from a node and return it's metadata dict."""
+        if self.is_text_node_only and not isinstance(node, TextNode):
+            return {}
 
-        for node in nodes_queue:
-            if self.is_text_node_only and not isinstance(node, TextNode):
-                metadata_list.append({})
-                continue
-
-            # TODO: figure out a good way to allow users to customize keyword template
-            keywords = self.llm_predictor.predict(
-                PromptTemplate(
-                    template=f"""\
+        # TODO: figure out a good way to allow users to customize keyword template
+        keywords = await self.llm_predictor.apredict(
+            PromptTemplate(
+                template=f"""\
 {{context_str}}. Give {self.keywords} unique keywords for this \
 document. Format as comma separated. Keywords: """
-                ),
-                context_str=cast(TextNode, node).text,
-            )
-            # node.metadata["excerpt_keywords"] = keywords
-            metadata_list.append({"excerpt_keywords": keywords.strip()})
+            ),
+            context_str=cast(TextNode, node).text,
+        )
+
+        return {"excerpt_keywords": keywords.strip()}
+
+    async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        keyword_jobs = []
+        for node in nodes:
+            keyword_jobs.append(self._aextract_keywords_from_node(node))
+
+        metadata_list: List[Dict] = await run_jobs(
+            keyword_jobs, show_progress=self.show_progress, workers=self.num_workers
+        )
+
         return metadata_list
 
 
@@ -258,6 +272,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         questions: int = 5,
         prompt_template: str = DEFAULT_QUESTION_GEN_TMPL,
         embedding_only: bool = True,
+        num_workers: int = DEFAULT_NUM_WORKERS,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -274,6 +289,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
             questions=questions,
             prompt_template=prompt_template,
             embedding_only=embedding_only,
+            num_workers=num_workers,
             **kwargs,
         )
 
@@ -281,27 +297,28 @@ class QuestionsAnsweredExtractor(BaseExtractor):
     def class_name(cls) -> str:
         return "QuestionsAnsweredExtractor"
 
-    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        metadata_list: List[Dict] = []
-        nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
-            nodes, self.show_progress, "Extracting questions"
+    async def _aextract_questions_from_node(self, node: BaseNode) -> Dict[str, str]:
+        """Extract questions from a node and return it's metadata dict."""
+        if self.is_text_node_only and not isinstance(node, TextNode):
+            return {}
+
+        context_str = node.get_content(metadata_mode=self.metadata_mode)
+        prompt = PromptTemplate(template=self.prompt_template)
+        questions = await self.llm_predictor.apredict(
+            prompt, num_questions=self.questions, context_str=context_str
         )
-        for node in nodes_queue:
-            if self.is_text_node_only and not isinstance(node, TextNode):
-                metadata_list.append({})
-                continue
 
-            context_str = node.get_content(metadata_mode=self.metadata_mode)
-            prompt = PromptTemplate(template=self.prompt_template)
-            questions = self.llm_predictor.predict(
-                prompt, num_questions=self.questions, context_str=context_str
-            )
+        return {"questions_this_excerpt_can_answer": questions.strip()}
 
-            if self.embedding_only:
-                node.excluded_llm_metadata_keys = ["questions_this_excerpt_can_answer"]
-            metadata_list.append(
-                {"questions_this_excerpt_can_answer": questions.strip()}
-            )
+    async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        questions_jobs = []
+        for node in nodes:
+            questions_jobs.append(self._aextract_questions_from_node(node))
+
+        metadata_list: List[Dict] = await run_jobs(
+            questions_jobs, show_progress=self.show_progress, workers=self.num_workers
+        )
+
         return metadata_list
 
 
@@ -348,6 +365,7 @@ class SummaryExtractor(BaseExtractor):
         llm_predictor: Optional[LLMPredictor] = None,
         summaries: List[str] = ["self"],
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
+        num_workers: int = DEFAULT_NUM_WORKERS,
         **kwargs: Any,
     ):
         if llm is not None:
@@ -366,6 +384,7 @@ class SummaryExtractor(BaseExtractor):
             llm_predictor=llm_predictor,
             summaries=summaries,
             prompt_template=prompt_template,
+            num_workers=num_workers,
             **kwargs,
         )
 
@@ -373,31 +392,40 @@ class SummaryExtractor(BaseExtractor):
     def class_name(cls) -> str:
         return "SummaryExtractor"
 
-    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+    async def _agenerate_node_summary(self, node: BaseNode) -> str:
+        """Generate a summary for a node."""
+        if self.is_text_node_only and not isinstance(node, TextNode):
+            return ""
+
+        context_str = node.get_content(metadata_mode=self.metadata_mode)
+        summary = await self.llm_predictor.apredict(
+            PromptTemplate(template=self.prompt_template), context_str=context_str
+        )
+
+        return summary.strip()
+
+    async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         if not all(isinstance(node, TextNode) for node in nodes):
             raise ValueError("Only `TextNode` is allowed for `Summary` extractor")
-        nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
-            nodes, self.show_progress, "Extracting summaries"
+
+        node_summaries_jobs = []
+        for node in nodes:
+            node_summaries_jobs.append(self._agenerate_node_summary(node))
+
+        node_summaries = await run_jobs(
+            node_summaries_jobs,
+            show_progress=self.show_progress,
+            workers=self.num_workers,
         )
-        node_summaries = []
-        for node in nodes_queue:
-            node_context = cast(TextNode, node).get_content(
-                metadata_mode=self.metadata_mode
-            )
-            summary = self.llm_predictor.predict(
-                PromptTemplate(template=self.prompt_template),
-                context_str=node_context,
-            ).strip()
-            node_summaries.append(summary)
 
         # Extract node-level summary metadata
         metadata_list: List[Dict] = [{} for _ in nodes]
         for i, metadata in enumerate(metadata_list):
-            if i > 0 and self._prev_summary:
+            if i > 0 and self._prev_summary and node_summaries[i - 1]:
                 metadata["prev_section_summary"] = node_summaries[i - 1]
-            if i < len(nodes) - 1 and self._next_summary:
+            if i < len(nodes) - 1 and self._next_summary and node_summaries[i + 1]:
                 metadata["next_section_summary"] = node_summaries[i + 1]
-            if self._self_summary:
+            if self._self_summary and node_summaries[i]:
                 metadata["section_summary"] = node_summaries[i]
 
         return metadata_list
@@ -530,7 +558,7 @@ class EntityExtractor(BaseExtractor):
     def class_name(cls) -> str:
         return "EntityExtractor"
 
-    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+    async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         # Extract node-level entity metadata
         metadata_list: List[Dict] = [{} for _ in nodes]
         metadata_queue: Iterable[int] = get_tqdm_iterable(
@@ -596,23 +624,27 @@ class PydanticProgramExtractor(BaseExtractor):
     def class_name(cls) -> str:
         return "PydanticModelExtractor"
 
-    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        """Extract pydantic program."""
-        metadata_list: List[Dict] = []
-        nodes_queue = get_tqdm_iterable(
-            nodes, self.show_progress, "Extracting Pydantic object"
-        )
-        for node in nodes_queue:
-            if self.is_text_node_only and not isinstance(node, TextNode):
-                metadata_list.append({})
-                continue
-            extract_str = self.extract_template_str.format(
-                context_str=node.get_content(metadata_mode=self.metadata_mode),
-                class_name=self.program.output_cls.__name__,
-            )
+    async def _acall_program(self, node: BaseNode) -> Dict[str, Any]:
+        """Call the program on a node."""
+        if self.is_text_node_only and not isinstance(node, TextNode):
+            return {}
 
-            object = self.program(**{self.input_key: extract_str})
-            fields_and_values = object.dict()
-            metadata_list.append(fields_and_values)
+        extract_str = self.extract_template_str.format(
+            context_str=node.get_content(metadata_mode=self.metadata_mode),
+            class_name=self.program.output_cls.__name__,
+        )
+
+        ret_object = await self.program.acall(**{self.input_key: extract_str})
+        return ret_object.dict()
+
+    async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        """Extract pydantic program."""
+        program_jobs = []
+        for node in nodes:
+            program_jobs.append(self._acall_program(node))
+
+        metadata_list: List[Dict] = await run_jobs(
+            program_jobs, show_progress=self.show_progress, workers=self.num_workers
+        )
 
         return metadata_list
