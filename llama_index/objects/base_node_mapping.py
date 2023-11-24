@@ -89,9 +89,9 @@ class BaseObjectNodeMapping(Generic[OT]):
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
         obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
-    ) -> "BaseObjectNodeMapping":
+    ) -> "BaseObjectNodeMapping[OT]":
         """Load from serialization."""
-        obj_node_mapping = None
+        obj_node_mapping: BaseObjectNodeMapping[OT] = None
         errors = []
         for cls in BaseObjectNodeMapping.__subclasses__():
             try:
