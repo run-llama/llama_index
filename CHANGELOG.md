@@ -7,6 +7,11 @@
 - Add support for `PGVectoRsStore` (#9087)
 - Enforcing `requests>=2.31` for security, while unpinning `urllib3` (#9108)
 
+### Bug Fixes / Nits
+
+- Increased default memory token limit for context chat engine (#9123)
+- Added system prompt to `CondensePlusContextChatEngine` that gets prepended to the `context_prompt` (#9123)
+
 ## [0.9.6] - 2023-11-22
 
 ### New Features
