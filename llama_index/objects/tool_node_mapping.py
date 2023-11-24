@@ -35,6 +35,16 @@ class BaseToolNodeMapping(BaseObjectNodeMapping[BaseTool]):
         if not isinstance(obj, BaseTool):
             raise ValueError(f"Object must be of type {BaseTool}")
 
+    @classmethod
+    def from_persist_dir(
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
+    ) -> "BaseToolNodeMapping":
+        raise NotImplementedError(
+            "This object node mapping does not support persist method."
+        )
+
 
 class SimpleToolNodeMapping(BaseToolNodeMapping):
     """Simple Tool mapping.
@@ -71,6 +81,16 @@ class SimpleToolNodeMapping(BaseToolNodeMapping):
 class BaseQueryToolNodeMapping(BaseObjectNodeMapping[QueryEngineTool]):
     """Base query tool node mapping."""
 
+    @classmethod
+    def from_persist_dir(
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
+    ) -> "BaseQueryToolNodeMapping":
+        raise NotImplementedError(
+            "This object node mapping does not support persist method."
+        )
+
 
 class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):
     """Simple query tool mapping."""
@@ -103,13 +123,3 @@ class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):
         if node.metadata is None:
             raise ValueError("Metadata must be set")
         return self._tools[node.metadata["name"]]
-
-    @classmethod
-    def from_persist_dir(
-        cls,
-        persist_dir: str = DEFAULT_PERSIST_DIR,
-        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
-    ) -> "SimpleQueryToolNodeMapping":
-        raise NotImplementedError(
-            "This object node mapping does not support persist method."
-        )
