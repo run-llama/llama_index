@@ -8,7 +8,7 @@ We've included a base `MultiModalLLM` abstraction to allow for text+image models
 
 ## Usage Pattern
 
-The following code snippet shows how you can get started using LMMs e.g. with GPT-4V.
+1. The following code snippet shows how you can get started using LMMs e.g. with GPT-4V.
 
 ```python
 from llama_index.multi_modal_llms import OpenAIMultiModal
@@ -32,6 +32,71 @@ response = openai_mm_llm.complete(
 )
 ```
 
+2. The following code snippet shows how you can build MultiModal Vector Stores/Index.
+
+```python
+from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
+from llama_index.vector_stores import QdrantVectorStore
+from llama_index import SimpleDirectoryReader, StorageContext
+
+import qdrant_client
+from llama_index import (
+    SimpleDirectoryReader,
+)
+
+# Create a local Qdrant vector store
+client = qdrant_client.QdrantClient(path="qdrant_mm_db")
+
+text_store = QdrantVectorStore(
+    client=client, collection_name="text_collection"
+)
+image_store = QdrantVectorStore(
+    client=client, collection_name="image_collection"
+)
+storage_context = StorageContext.from_defaults(vector_store=text_store)
+
+# Create the MultiModal index
+documents = SimpleDirectoryReader("./mixed_wiki/").load_data()
+
+index = MultiModalVectorStoreIndex.from_documents(
+    documents, storage_context=storage_context, image_vector_store=image_store
+)
+```
+
+3. The following code snippet shows how you can use MultiModal Retriever and Query Engine.
+
+```python
+from llama_index.multi_modal_llms import OpenAIMultiModal
+from llama_index.prompts import PromptTemplate
+from llama_index.query_engine import SimpleMultiModalQueryEngine
+
+retriever_engine = index.as_retriever(
+    similarity_top_k=3, image_similarity_top_k=3
+)
+
+# retrieve more information from the GPT4V response
+retrieval_results = retriever_engine.retrieve(response)
+
+qa_tmpl_str = (
+    "Context information is below.\n"
+    "---------------------\n"
+    "{context_str}\n"
+    "---------------------\n"
+    "Given the context information and not prior knowledge, "
+    "answer the query.\n"
+    "Query: {query_str}\n"
+    "Answer: "
+)
+qa_tmpl = PromptTemplate(qa_tmpl_str)
+
+query_engine = index.as_query_engine(
+    multi_modal_llm=openai_mm_llm, text_qa_template=qa_tmpl
+)
+
+query_str = "Tell me more about the Porsche"
+response = query_engine.query(query_str)
+```
+
 **Legend**
 
 - ✅ = should work fine
@@ -52,22 +117,22 @@ The tables below attempt to show the **initial** steps with various LlamaIndex f
 
 These notebooks serve as examples how to leverage and integrate Multi-Modal LLM model, Multi-Modal embeddings, Multi-Modal vector stores, Retriever, Query engine for composing Multi-Modal RAG orchestration.
 
-| Multi-Modal<br>Vision Models                                                                                                            | Single<br>Image<br>Reasoning | Multiple<br>Images<br>Reasoning | Image<br>Embeddings | Simple<br>Query<br>Engine |
-| --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------- | ------------------- | ------------------------- |
-| [GPT4V](https://github.com/run-llama/llama_index/blob/main/docs/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb)<br>(OpenAI API) | ✅                           | ✅                              | 🛑                  | ✅                        |
-| [CLIP](https://github.com/run-llama/llama_index/blob/main/docs/examples/multi_modal/image_to_image_retrieval.ipynb)<br>(Local host)     | 🛑                           | 🛑                              | ✅                  | 🛑                        |
-| [LLaVa](https://github.com/run-llama/llama_index/blob/main/docs/examples/multi_modal/llava_multi_modal_tesla_10q.ipynb)<br>(replicate)  | ✅                           | 🛑                              | 🛑                  | ✅                        |
-| [Fuyu-8B](https://github.com/run-llama/llama_index/blob/main/docs/examples/multi_modal/replicate_multi_modal.ipynb)<br>(replicate)      | ✅                           | 🛑                              | 🛑                  | ✅                        |
-| [ImageBind<br>](https://imagebind.metademolab.com/)[To integrate]                                                                       | 🛑                           | 🛑                              | ✅                  | 🛑                        |
-| [MiniGPT-4<br>](https://minigpt-4.github.io/)[To integrate]                                                                             | ✅                           | 🛑                              | 🛑                  | ✅                        |
+| Multi-Modal<br>Vision Models                                                     | Single<br>Image<br>Reasoning | Multiple<br>Images<br>Reasoning | Image<br>Embeddings | Simple<br>Query<br>Engine |
+| -------------------------------------------------------------------------------- | ---------------------------- | ------------------------------- | ------------------- | ------------------------- |
+| [GPT4V](/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb)<br>(OpenAI API) | ✅                           | ✅                              | 🛑                  | ✅                        |
+| [CLIP](/examples/multi_modal/image_to_image_retrieval.ipynb)<br>(Local host)     | 🛑                           | 🛑                              | ✅                  | 🛑                        |
+| [LLaVa](/examples/multi_modal/llava_multi_modal_tesla_10q.ipynb)<br>(replicate)  | ✅                           | 🛑                              | 🛑                  | ✅                        |
+| [Fuyu-8B](/examples/multi_modal/replicate_multi_modal.ipynb)<br>(replicate)      | ✅                           | 🛑                              | 🛑                  | ✅                        |
+| [ImageBind<br>](https://imagebind.metademolab.com/)[To integrate]                | 🛑                           | 🛑                              | ✅                  | 🛑                        |
+| [MiniGPT-4<br>](/examples/multi_modal/replicate_multi_modal.ipynb)               | ✅                           | 🛑                              | 🛑                  | ✅                        |
 
 ### Multi Modal Vector Stores
 
 Below table lists some vector stores supporting Multi-Modal use cases. Our LlamaIndex built-in `MultiModalVectorStoreIndex` supports building separate vector stores for image and text embedding vector stores. `MultiModalRetriever`, and `SimpleMultiModalQueryEngine` support text to text/image and image to image retrieval and simple ranking fusion functions for combining text and image retrieval results.
 | Multi-Modal<br>Vector Stores | Single<br>Vector<br>Store | Multiple<br>Vector<br>Stores | Text<br>Embedding | Image<br>Embedding |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --------------------------- | --------------------------------------------------------- | ------------------------------------------------------- |
-| [LLamaIndex self-built<br>MultiModal Index](https://github.com/run-llama/llama_index/blob/main/docs/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb) | 🛑 | ✅ | Can be arbitrary<br>text embedding<br>(Default is GPT3.5) | Can be arbitrary<br>text embedding<br>(Default is CLIP) |
-| [Chroma](https://github.com/run-llama/llama_index/blob/main/docs/examples/multi_modal/ChromaMultiModalDemo.ipynb) | ✅ | 🛑 | CLIP ✅ | CLIP ✅ |
+| [LLamaIndex self-built<br>MultiModal Index](/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb) | 🛑 | ✅ | Can be arbitrary<br>text embedding<br>(Default is GPT3.5) | Can be arbitrary<br>Image embedding<br>(Default is CLIP) |
+| [Chroma](/examples/multi_modal/ChromaMultiModalDemo.ipynb) | ✅ | 🛑 | CLIP ✅ | CLIP ✅ |
 | [Weaviate](https://weaviate.io/developers/weaviate/modules/retriever-vectorizer-modules/multi2vec-bind)<br>[To integrate] | ✅ | 🛑 | CLIP ✅<br>ImageBind ✅ | CLIP ✅<br>ImageBind ✅ |
 
 ## Modules
