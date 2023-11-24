@@ -90,29 +90,52 @@ class ObjectIndex(Generic[OT]):
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
         object_node_mapping: Optional[BaseObjectNodeMapping] = None,
-        object_node_mapping_type: Optional[Type[BaseObjectNodeMapping]] = None,
     ) -> "ObjectIndex":
         from llama_index.indices import load_index_from_storage
 
+        storage_context = StorageContext.from_defaults(persist_dir=persist_dir)
+        index = load_index_from_storage(storage_context)
         if object_node_mapping:
-            storage_context = StorageContext.from_defaults(persist_dir=persist_dir)
-            index = load_index_from_storage(storage_context)
             return cls(index=index, object_node_mapping=object_node_mapping)
-        elif object_node_mapping_type:
+        else:
             # try to load object_node_mapping
             try:
-                object_node_mapping = object_node_mapping_type.from_persist_dir(
-                    persist_dir=persist_dir
-                )
+                object_node_mapping = cls._resolve_object_node_mapping()
             except (NotImplementedError, pickle.PickleError) as err:
                 raise ValueError(
                     "Unable to load from persist dir. The object_node_mapping cannot be loaded."
                 ) from err
             else:
-                storage_context = StorageContext.from_defaults(persist_dir=persist_dir)
-                index = load_index_from_storage(storage_context)
                 return cls(index=index, object_node_mapping=object_node_mapping)
+
+    @staticmethod
+    def _resolve_object_node_mapping(
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+    ) -> Type[BaseObjectNodeMapping]:
+        from llama_index.objects import (
+            SimpleObjectNodeMapping,
+            SimpleQueryToolNodeMapping,
+            SimpleToolNodeMapping,
+            SQLTableNodeMapping,
+        )
+
+        object_node_mapping = None
+        error = None
+        for object_node_mapping_type in [
+            SimpleObjectNodeMapping,
+            SimpleToolNodeMapping,
+            SimpleQueryToolNodeMapping,
+            SQLTableNodeMapping,
+        ]:
+            try:
+                object_node_mapping = object_node_mapping_type.from_persist_dir(
+                    persist_dir=persist_dir
+                )
+                break
+            except (NotImplementedError, pickle.PickleError) as err:
+                error = err
+
+        if object_node_mapping:
+            return object_node_mapping
         else:
-            raise ValueError(
-                "Either one of object_node_mapping or object_node_mapping_type must be specified."
-            )
+            raise ValueError("Unable to load object_node_mapping.") from error
