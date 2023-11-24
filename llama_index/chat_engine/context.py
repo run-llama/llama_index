@@ -1,6 +1,6 @@
 import asyncio
 from threading import Thread
-from typing import Any, List, Optional, Tuple, Type
+from typing import Any, List, Optional, Tuple
 
 from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
@@ -60,7 +60,6 @@ class ContextChatEngine(BaseChatEngine):
         service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
-        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
@@ -74,7 +73,9 @@ class ContextChatEngine(BaseChatEngine):
         llm = service_context.llm_predictor.llm
 
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
+        memory = memory or ChatMemoryBuffer.from_defaults(
+            chat_history=chat_history, token_limit=llm.metadata.context_window - 256
+        )
 
         if system_prompt is not None:
             if prefix_messages is not None:
