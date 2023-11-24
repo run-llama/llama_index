@@ -63,6 +63,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         memory: BaseMemory,
         context_prompt: Optional[str] = None,
         condense_prompt: Optional[str] = None,
+        system_prompt: Optional[str] = None,
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -77,6 +78,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         )
         condense_prompt_str = condense_prompt or DEFAULT_CONDENSE_PROMPT_TEMPLATE
         self._condense_prompt_template = PromptTemplate(condense_prompt_str)
+        self._system_prompt = system_prompt
         self._skip_condense = skip_condense
         self._node_postprocessors = node_postprocessors or []
         self.callback_manager = callback_manager or CallbackManager([])
@@ -92,6 +94,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
+        system_prompt: Optional[str] = None,
         context_prompt: Optional[str] = None,
         condense_prompt: Optional[str] = None,
         skip_condense: bool = False,
@@ -118,6 +121,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             skip_condense=skip_condense,
             callback_manager=service_context.callback_manager,
             node_postprocessors=node_postprocessors,
+            system_prompt=system_prompt,
             verbose=verbose,
         )
 
@@ -203,6 +207,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         system_message_content = self._context_prompt_template.format(
             context_str=context_str
         )
+        if self._system_prompt:
+            system_message_content = self._system_prompt + "\n" + system_message_content
+
         system_message = ChatMessage(
             content=system_message_content, role=MessageRole.SYSTEM
         )
@@ -239,6 +246,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         system_message_content = self._context_prompt_template.format(
             context_str=context_str
         )
+        if self._system_prompt:
+            system_message_content = self._system_prompt + "\n" + system_message_content
+
         system_message = ChatMessage(
             content=system_message_content, role=MessageRole.SYSTEM
         )
