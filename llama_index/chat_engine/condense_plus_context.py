@@ -188,8 +188,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
-
         chat_history = self._memory.get()
 
         # Condense conversation history and latest message to a standalone question
@@ -224,6 +222,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             [system_message]
         )
 
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
         chat_messages = [
             system_message,
             *self._memory.get(initial_token_count=initial_token_count),
@@ -235,8 +234,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     ) -> Tuple[List[ChatMessage], ToolOutput, List[NodeWithScore]]:
         if chat_history is not None:
             self._memory.set(chat_history)
-
-        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
 
         chat_history = self._memory.get()
 
@@ -272,6 +269,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             [system_message]
         )
 
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
         chat_messages = [
             system_message,
             *self._memory.get(initial_token_count=initial_token_count),
