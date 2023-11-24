@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Callable, Coroutine, List
+from typing import Any, Coroutine, List
 
 DEFAULT_NUM_WORKERS = 4
 
@@ -35,7 +35,7 @@ async def run_jobs(
     asyncio_mod = get_asyncio_module(show_progress=show_progress)
     semaphore = asyncio.Semaphore(workers)
 
-    async def worker(job: Callable) -> Any:
+    async def worker(job: Coroutine) -> Any:
         async with semaphore:
             return await job
 
