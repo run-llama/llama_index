@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Add `persist` and `persist_from_dir` methods to `ObjectIndex` that are able to support it (#9064)
+
 ## [0.9.7] - 2023-11-24
 
 ### New Features
