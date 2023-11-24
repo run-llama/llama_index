@@ -11,7 +11,7 @@ from llama_index.utils import concat_dirs
 
 DEFAULT_PERSIST_FNAME = "object_node_mapping.pickle"
 
-OT = TypeVar("OT")
+OT = TypeVar("OT", bound=object)
 
 
 class BaseObjectNodeMapping(Generic[OT]):
