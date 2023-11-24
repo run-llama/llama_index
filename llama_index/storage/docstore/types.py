@@ -38,7 +38,10 @@ class BaseDocumentStore(ABC):
 
     @abstractmethod
     def add_documents(
-        self, docs: Sequence[BaseNode], allow_update: bool = True
+        self,
+        docs: Sequence[BaseNode],
+        allow_update: bool = True,
+        ref_doc_key: str = None,
     ) -> None:
         ...
 
