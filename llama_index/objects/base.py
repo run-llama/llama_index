@@ -8,6 +8,7 @@ from llama_index.core import BaseRetriever
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.objects.base_node_mapping import (
+    DEFAULT_PERSIST_FNAME,
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
 )
@@ -71,17 +72,20 @@ class ObjectIndex(Generic[OT]):
     def persist(
         self,
         persist_dir: str = DEFAULT_PERSIST_DIR,
+        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
     ) -> None:
         # try to persist object node mapping
         try:
-            self._object_node_mapping.persist(persist_dir=persist_dir)
+            self._object_node_mapping.persist(
+                persist_dir=persist_dir, obj_node_mapping_fname=obj_node_mapping_fname
+            )
         except (NotImplementedError, pickle.PickleError) as err:
             warnings.warn(
                 (
                     "Unable to persist ObjectNodeMapping. You will need to "
                     "reconstruct the same object node mapping to build this ObjectIndex"
                 ),
-                DeprecationWarning,
+                stacklevel=2,
             )
         self._index._storage_context.persist(persist_dir=persist_dir)
 
