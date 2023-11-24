@@ -4,6 +4,7 @@ from llama_index.llms import ChatMessage, MessageRole
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 
 USER_CHAT_MESSAGE = ChatMessage(role=MessageRole.USER, content="test message")
+ASSISTANT_CHAT_MESSAGE = ChatMessage(role=MessageRole.ASSISTANT, content="test message")
 
 
 def test_put_get() -> None:
@@ -23,13 +24,15 @@ def test_get_with_initial_tokens_less_than_limit() -> None:
     assert len(memory.get()) == 1
     assert memory.get()[0].content == USER_CHAT_MESSAGE.content
 
+
 def test_get_with_initial_tokens_same_as_limit() -> None:
     limit = 5
     memory = ChatMemoryBuffer.from_defaults(token_limit=limit)
 
     memory.put(USER_CHAT_MESSAGE)
+    memory.put(ASSISTANT_CHAT_MESSAGE)
 
-    assert len(memory.get(limit)) == 0
+    assert len(memory.get(limit-1)) == 0
 
 
 def test_set() -> None:
