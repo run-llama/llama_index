@@ -103,8 +103,10 @@ class ObjectIndex(Generic[OT]):
             return cls(index=index, object_node_mapping=object_node_mapping)
         else:
             # try to load object_node_mapping
+            # assume SimpleObjectNodeMapping for simplicity as its only subclass
+            # that supports this method
             try:
-                object_node_mapping = BaseObjectNodeMapping.from_persist_dir(
+                object_node_mapping = SimpleObjectNodeMapping.from_persist_dir(
                     persist_dir=persist_dir
                 )
             except Exception as err:

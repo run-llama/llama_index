@@ -157,7 +157,7 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         obj_node_mapping_path = concat_dirs(persist_dir, obj_node_mapping_fname)
         try:
             with open(obj_node_mapping_path, "wb") as f:
-                pickle.dump(self.__dict__, f)
+                pickle.dump(self, f)
         except pickle.PickleError as err:
             raise ValueError("Objs is not pickleable") from err
 
@@ -170,11 +170,7 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         obj_node_mapping_path = concat_dirs(persist_dir, obj_node_mapping_fname)
         try:
             with open(obj_node_mapping_path, "rb") as f:
-                tmp_dict = pickle.load(f)
+                simple_object_node_mapping = pickle.load(f)
         except pickle.PickleError as err:
             raise ValueError("Objs cannot be loaded.") from err
-
-        simple_object_node_mapping = cls(None)
-        simple_object_node_mapping.__dict__.clear()
-        simple_object_node_mapping.__dict__.update(tmp_dict)
         return simple_object_node_mapping
