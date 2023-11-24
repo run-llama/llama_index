@@ -477,6 +477,20 @@ class GroundedAnswer:
     answerable_probability: Optional[float]
 
 
+@dataclass
+class GenerateAnswerError(Exception):
+    finish_reason: genai.Candidate.FinishReason
+    finish_message: str
+    safety_ratings: MutableSequence[genai.SafetyRating]
+
+    def __str__(self) -> str:
+        return (
+            f"finish_reason: {self.finish_reason.name} "
+            f"finish_message: {self.finish_message} "
+            f"safety ratings: {self.safety_ratings}"
+        )
+
+
 def generate_answer(
     *,
     prompt: str,
@@ -511,6 +525,14 @@ def generate_answer(
             ),
         )
     )
+
+    if response.answer.finish_reason != genai.Candidate.FinishReason.STOP:
+        raise GenerateAnswerError(
+            finish_reason=response.answer.finish_reason,
+            finish_message=response.answer.finish_message,
+            safety_ratings=response.answer.safety_ratings,
+        )
+
     assert len(response.answer.content.parts) == 1
     return GroundedAnswer(
         answer=response.answer.content.parts[0].text,
