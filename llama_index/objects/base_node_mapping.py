@@ -44,7 +44,7 @@ class BaseObjectNodeMapping(Generic[OT]):
 
     @property
     @abstractmethod
-    def obj_node_mapping(self) -> Dict[int, Any]:
+    def obj_node_mapping(self) -> Dict[Any, Any]:
         """The mapping data structure between node and object."""
 
     @abstractmethod
@@ -80,9 +80,6 @@ class BaseObjectNodeMapping(Generic[OT]):
         obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
     ) -> None:
         """Persist objs."""
-        raise NotImplementedError(
-            "This object node mapping does not support persist method."
-        )
 
     @classmethod
     def from_persist_dir(
@@ -95,7 +92,10 @@ class BaseObjectNodeMapping(Generic[OT]):
         errors = []
         for cls in BaseObjectNodeMapping.__subclasses__():  # type: ignore[misc]
             try:
-                obj_node_mapping = cls.from_persist_dir(persist_dir=persist_dir)
+                obj_node_mapping = cls.from_persist_dir(
+                    persist_dir=persist_dir,
+                    obj_node_mapping_fname=obj_node_mapping_fname,
+                )
                 break
             except (NotImplementedError, pickle.PickleError) as err:
                 # raise unhandled exception otherwise

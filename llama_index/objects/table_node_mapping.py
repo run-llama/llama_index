@@ -1,6 +1,6 @@
 """Table node mapping."""
 
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.objects.base_node_mapping import (
@@ -71,6 +71,17 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
         return SQLTableSchema(
             table_name=node.metadata["name"], context_str=node.metadata["context"]
         )
+
+    @property
+    def obj_node_mapping(self) -> Dict[int, Any]:
+        """The mapping data structure between node and object."""
+        raise NotImplementedError("Subclasses should implement this!")
+
+    def persist(
+        self, persist_dir: str = ..., obj_node_mapping_fname: str = ...
+    ) -> None:
+        """Persist objs."""
+        raise NotImplementedError("Subclasses should implement this!")
 
     @classmethod
     def from_persist_dir(
