@@ -11,7 +11,7 @@ from llama_index.utils import concat_dirs
 
 DEFAULT_PERSIST_FNAME = "object_node_mapping.pickle"
 
-OT = TypeVar("OT", bound=object)
+OT = TypeVar("OT")
 
 
 class BaseObjectNodeMapping(Generic[OT]):
@@ -93,7 +93,7 @@ class BaseObjectNodeMapping(Generic[OT]):
         """Load from serialization."""
         obj_node_mapping = None
         errors = []
-        for cls in BaseObjectNodeMapping.__subclasses__():
+        for cls in BaseObjectNodeMapping.__subclasses__():  # type: ignore[misc]
             try:
                 obj_node_mapping = cls.from_persist_dir(persist_dir=persist_dir)
                 break
