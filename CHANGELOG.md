@@ -6,6 +6,10 @@
 
 - Add `persist` and `persist_from_dir` methods to `ObjectIndex` that are able to support it (#9064)
 
+### Bug Fixes / Nits
+
+- Fix for some kwargs not being set properly in global service context (#9137)
+
 ## [0.9.7] - 2023-11-24
 
 ### New Features

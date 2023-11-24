@@ -148,8 +148,14 @@ class ServiceContext:
                 text_splitter=text_splitter,
                 llama_logger=llama_logger,
                 callback_manager=callback_manager,
+                context_window=context_window,
                 chunk_size=chunk_size,
                 chunk_size_limit=chunk_size_limit,
+                chunk_overlap=chunk_overlap,
+                num_output=num_output,
+                system_prompt=system_prompt,
+                query_wrapper_prompt=query_wrapper_prompt,
+                transformations=transformations,
             )
 
         callback_manager = callback_manager or CallbackManager([])
