@@ -2,7 +2,11 @@
 
 from typing import Any, Optional, Sequence
 
-from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
+from llama_index.objects.base_node_mapping import (
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
+    BaseObjectNodeMapping,
+)
 from llama_index.schema import BaseNode, TextNode
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.types import BaseTool
@@ -99,3 +103,13 @@ class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):
         if node.metadata is None:
             raise ValueError("Metadata must be set")
         return self._tools[node.metadata["name"]]
+
+    @classmethod
+    def from_persist_dir(
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
+    ) -> "SimpleQueryToolNodeMapping":
+        raise NotImplementedError(
+            "This object node mapping does not support persist method."
+        )
