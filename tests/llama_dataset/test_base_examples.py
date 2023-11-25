@@ -1,6 +1,6 @@
 """Test llama data examples."""
 
-from llama_index.llama_dataset.base import (
+from llama_index.llama_dataset import (
     LlamaRagDataExample,
     LlamaRagDataExampleKind,
 )
@@ -24,3 +24,4 @@ def test_repr_rag_example_class() -> None:
     )
     assert repr(rag_example) == expected_repr
     assert rag_example.class_name == "LlamaRagDataExample"
+    print(rag_example.to_json())
