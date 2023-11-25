@@ -22,9 +22,9 @@ disambiguate the document or subsection from other similar documents or subsecti
 from functools import reduce
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
 
+from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.extractors.interface import BaseExtractor
-from llama_index.extractors.utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM
 from llama_index.prompts import PromptTemplate
