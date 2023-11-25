@@ -31,4 +31,4 @@ class BaseLlamaDataset(BaseModel):
 
     @abstractmethod
     def to_pandas(self) -> PandasDataFrame:
-        """Get modules."""
+        """Create pandas dataframe."""
