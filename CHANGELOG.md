@@ -4,8 +4,24 @@
 
 ### New Features
 
+- Add `persist` and `persist_from_dir` methods to `ObjectIndex` that are able to support it (#9064)
+
+### Bug Fixes / Nits
+
+- Fix for some kwargs not being set properly in global service context (#9137)
+
+## [0.9.7] - 2023-11-24
+
+### New Features
+
 - Add support for `PGVectoRsStore` (#9087)
 - Enforcing `requests>=2.31` for security, while unpinning `urllib3` (#9108)
+
+### Bug Fixes / Nits
+
+- Increased default memory token limit for context chat engine (#9123)
+- Added system prompt to `CondensePlusContextChatEngine` that gets prepended to the `context_prompt` (#9123)
+- Fixed bug in `CondensePlusContextChatEngine` not using chat history properly (#9129)
 
 ## [0.9.6] - 2023-11-22
 

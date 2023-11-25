@@ -62,7 +62,10 @@ class NodeParser(TransformComponent, ABC):
 
             if self.include_metadata:
                 for node in nodes:
-                    if node.ref_doc_id is not None:
+                    if (
+                        node.ref_doc_id is not None
+                        and node.ref_doc_id in doc_id_to_document
+                    ):
                         node.metadata.update(
                             doc_id_to_document[node.ref_doc_id].metadata
                         )
