@@ -172,8 +172,13 @@ class ReplicateMultiModal(MultiModalLLM):
             # using the first image for single image completion
             prompt,
             image_documents[0],
-            **kwargs
+            **kwargs,
         )
+        if self.model not in REPLICATE_MULTI_MODAL_LLM_MODELS.values():
+            raise ValueError(
+                f"Unknown model {self.model!r}. Please provide a valid Replicate Multi-Modal model name in:"
+                f" {', '.join(REPLICATE_MULTI_MODAL_LLM_MODELS.values())}"
+            )
 
         response_iter = replicate.run(self.model, input=input_dict)
 
