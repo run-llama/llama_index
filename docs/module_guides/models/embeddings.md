@@ -188,7 +188,9 @@ embeddings = embed_model.get_text_embedding(
 )
 ```
 
-## Modules
+(list_of_embeddings)=
+
+## List of supported embeddings
 
 We support integrations with OpenAI, Azure, and anything LangChain offers.
 
@@ -210,4 +212,5 @@ maxdepth: 1
 /examples/embeddings/text_embedding_inference.ipynb
 /examples/embeddings/google_palm.ipynb
 /examples/embeddings/jinaai_embeddings.ipynb
+/examples/embeddings/voyageai.ipynb
 ```

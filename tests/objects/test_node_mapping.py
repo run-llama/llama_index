@@ -1,9 +1,12 @@
 """Test node mapping."""
 
+from llama_index import SQLDatabase
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.objects.base_node_mapping import SimpleObjectNodeMapping
+from llama_index.objects.table_node_mapping import SQLTableNodeMapping, SQLTableSchema
 from llama_index.objects.tool_node_mapping import SimpleToolNodeMapping
 from llama_index.tools.function_tool import FunctionTool
+from pytest_mock import MockerFixture
 
 
 class TestObject(BaseModel):
@@ -20,6 +23,13 @@ class TestObject(BaseModel):
         return f"TestObject(name='{self.name}')"
 
 
+class TestSQLDatabase(SQLDatabase):
+    """Test object for SQL Table Schema Node Mapping."""
+
+    def __init__(self) -> None:
+        pass
+
+
 def test_simple_object_node_mapping() -> None:
     """Test simple object node mapping."""
     strs = ["a", "b", "c"]
@@ -31,6 +41,16 @@ def test_simple_object_node_mapping() -> None:
     node_mapping = SimpleObjectNodeMapping.from_objects(objects)
     assert node_mapping.to_node(objects[0]).text == "TestObject(name='a')"
     assert node_mapping.from_node(node_mapping.to_node(objects[0])) == objects[0]
+
+
+def test_simple_object_node_mapping_persist() -> None:
+    """Test persist/load."""
+    strs = ["a", "b", "c"]
+    node_mapping = SimpleObjectNodeMapping.from_objects(strs)
+    node_mapping.persist()
+
+    loaded_node_mapping = SimpleObjectNodeMapping.from_persist_dir()
+    assert node_mapping.obj_node_mapping == loaded_node_mapping.obj_node_mapping
 
 
 def test_tool_object_node_mapping() -> None:
@@ -64,3 +84,30 @@ def test_tool_object_node_mapping() -> None:
         "Tool name: test_tool3\n" "Tool description: test3\n"
     ) in node_mapping.to_node(tool3).get_text()
     assert node_mapping.from_node(node_mapping.to_node(tool3)) == tool3
+
+
+def test_sql_table_node_mapping_to_node(mocker: MockerFixture) -> None:
+    """Test to add node for sql table node mapping object to ensure no 'None' values in metadata output to avoid issues with nulls when upserting to indexes."""
+    mocker.patch(
+        "llama_index.utilities.sql_wrapper.SQLDatabase.get_single_table_info",
+        return_value="",
+    )
+
+    # Define two table schemas with one that does not have context str defined
+    table1 = SQLTableSchema(table_name="table1")
+    table2 = SQLTableSchema(table_name="table2", context_str="stuff here")
+    tables = [table1, table2]
+
+    # Create the mapping
+    sql_database = TestSQLDatabase()
+    mapping = SQLTableNodeMapping(sql_database)
+
+    # Create the nodes
+    nodes = []
+    for table in tables:
+        node = mapping.to_node(table)
+        nodes.append(node)
+
+    # Make sure no None values are passed in otherwise PineconeVectorStore will fail the upsert
+    for node in nodes:
+        assert None not in node.metadata.values()

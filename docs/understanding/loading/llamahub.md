@@ -1,7 +1,7 @@
 # LlamaHub
 
 Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙.
-LlamaHub is a registry of open-source data connectors that you can easily plug into any LlamaIndex application.
+LlamaHub contains a registry of open-source data connectors that you can easily plug into any LlamaIndex application (+ Agent Tools, and Llama Packs).
 
 ![](/_static/data_connectors/llamahub.png)
 

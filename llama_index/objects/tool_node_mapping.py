@@ -1,8 +1,12 @@
 """Tool mapping."""
 
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
-from llama_index.objects.base_node_mapping import BaseObjectNodeMapping
+from llama_index.objects.base_node_mapping import (
+    DEFAULT_PERSIST_DIR,
+    DEFAULT_PERSIST_FNAME,
+    BaseObjectNodeMapping,
+)
 from llama_index.schema import BaseNode, TextNode
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.types import BaseTool
@@ -30,6 +34,27 @@ class BaseToolNodeMapping(BaseObjectNodeMapping[BaseTool]):
     def validate_object(self, obj: BaseTool) -> None:
         if not isinstance(obj, BaseTool):
             raise ValueError(f"Object must be of type {BaseTool}")
+
+    @property
+    def obj_node_mapping(self) -> Dict[int, Any]:
+        """The mapping data structure between node and object."""
+        raise NotImplementedError("Subclasses should implement this!")
+
+    def persist(
+        self, persist_dir: str = ..., obj_node_mapping_fname: str = ...
+    ) -> None:
+        """Persist objs."""
+        raise NotImplementedError("Subclasses should implement this!")
+
+    @classmethod
+    def from_persist_dir(
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
+    ) -> "BaseToolNodeMapping":
+        raise NotImplementedError(
+            "This object node mapping does not support persist method."
+        )
 
 
 class SimpleToolNodeMapping(BaseToolNodeMapping):
@@ -66,6 +91,27 @@ class SimpleToolNodeMapping(BaseToolNodeMapping):
 
 class BaseQueryToolNodeMapping(BaseObjectNodeMapping[QueryEngineTool]):
     """Base query tool node mapping."""
+
+    @classmethod
+    def from_persist_dir(
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
+    ) -> "BaseQueryToolNodeMapping":
+        raise NotImplementedError(
+            "This object node mapping does not support persist method."
+        )
+
+    @property
+    def obj_node_mapping(self) -> Dict[int, Any]:
+        """The mapping data structure between node and object."""
+        raise NotImplementedError("Subclasses should implement this!")
+
+    def persist(
+        self, persist_dir: str = ..., obj_node_mapping_fname: str = ...
+    ) -> None:
+        """Persist objs."""
+        raise NotImplementedError("Subclasses should implement this!")
 
 
 class SimpleQueryToolNodeMapping(BaseQueryToolNodeMapping):

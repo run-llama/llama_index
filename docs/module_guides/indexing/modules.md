@@ -17,4 +17,5 @@ REBEL + Wikipedia Filtering </examples/index_structs/knowledge_graph/knowledge_g
 SQL Index </examples/index_structs/struct_indices/SQLIndexDemo.ipynb>
 /examples/index_structs/struct_indices/duckdb_sql_query.ipynb
 /examples/index_structs/doc_summary/DocSummary.ipynb
+/examples/objects/object_index.ipynb
 ```
