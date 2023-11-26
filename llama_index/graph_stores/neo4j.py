@@ -50,6 +50,7 @@ class Neo4jGraphStore(GraphStore):
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
         self.schema = ""
+        self.structured_schema = {}
         # Verify connection
         try:
             self._driver.verify_connectivity()
@@ -202,6 +203,12 @@ class Neo4jGraphStore(GraphStore):
         node_properties = [el["output"] for el in self.query(node_properties_query)]
         rel_properties = [el["output"] for el in self.query(rel_properties_query)]
         relationships = [el["output"] for el in self.query(rel_query)]
+
+        self.structured_schema = {
+            "node_props": {el["labels"]: el["properties"] for el in node_properties},
+            "rel_props": {el["type"]: el["properties"] for el in rel_properties},
+            "relationships": relationships,
+        }
 
         # Format node properties
         formatted_node_props = []
