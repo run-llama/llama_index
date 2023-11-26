@@ -41,6 +41,8 @@ class LabelledRagDataExample(BaseLlamaDataExample):
 class LabelledRagDataset(BaseLlamaDataset):
     """RagDataset class."""
 
+    _examples_type = LabelledRagDataExample
+
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
         data = {
