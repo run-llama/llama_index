@@ -28,7 +28,7 @@ CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE type = "RELATIONSHIP" AND elementType = "node"
 UNWIND other AS other_node
-RETURN "(:" + label + ")-[:" + property + "]->(:" + toString(other_node) + ")" AS output
+RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 
@@ -199,18 +199,41 @@ class Neo4jGraphStore(GraphStore):
         """
         Refreshes the Neo4j graph schema information.
         """
-        node_properties = self.query(node_properties_query)
-        relationships_properties = self.query(rel_properties_query)
-        relationships = self.query(rel_query)
+        node_properties = [el["output"] for el in self.query(node_properties_query)]
+        rel_properties = [el["output"] for el in self.query(rel_properties_query)]
+        relationships = [el["output"] for el in self.query(rel_query)]
 
-        self.schema = f"""
-        Node properties are the following:
-        {[el['output'] for el in node_properties]}
-        Relationship properties are the following:
-        {[el['output'] for el in relationships_properties]}
-        The relationships are the following:
-        {[el['output'] for el in relationships]}
-        """
+        # Format node properties
+        formatted_node_props = []
+        for el in node_properties:
+            props_str = ", ".join(
+                [f"{prop['property']}: {prop['type']}" for prop in el["properties"]]
+            )
+            formatted_node_props.append(f"{el['labels']} {{{props_str}}}")
+
+        # Format relationship properties
+        formatted_rel_props = []
+        for el in rel_properties:
+            props_str = ", ".join(
+                [f"{prop['property']}: {prop['type']}" for prop in el["properties"]]
+            )
+            formatted_rel_props.append(f"{el['type']} {{{props_str}}}")
+
+        # Format relationships
+        formatted_rels = [
+            f"(:{el['start']})-[:{el['type']}]->(:{el['end']})" for el in relationships
+        ]
+
+        self.schema = "\n".join(
+            [
+                "Node properties are the following:",
+                ",".join(formatted_node_props),
+                "Relationship properties are the following:",
+                ",".join(formatted_rel_props),
+                "The relationships are the following:",
+                ",".join(formatted_rels),
+            ]
+        )
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the Neo4jGraph store."""
