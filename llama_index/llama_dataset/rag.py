@@ -1,19 +1,15 @@
 """Llama Dataset Class."""
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import List
 
 from pandas import DataFrame as PandasDataFrame
 
-from llama_index.llama_dataset.base import BaseLlamaDataExample, BaseLlamaDataset
-
-
-class RagDataExampleKind(str, Enum):
-    """The kinds of rag data examples."""
-
-    HUMAN = "human"
-    AI = "ai"
+from llama_index.llama_dataset.base import (
+    BaseLlamaDataExample,
+    BaseLlamaDataset,
+    CreatedByType,
+)
 
 
 @dataclass(repr=True)
@@ -31,9 +27,10 @@ class LabelledRagDataExample(BaseLlamaDataExample):
     """
 
     query: str
-    kind: RagDataExampleKind
+    query_by: CreatedByType
     reference_contexts: List[str]
-    reference_answer: str = None
+    reference_answer: str
+    reference_answer_by: CreatedByType
 
     @property
     def class_name(self) -> str:
@@ -41,7 +38,7 @@ class LabelledRagDataExample(BaseLlamaDataExample):
         return "LlamaRagDataExample"
 
 
-class RagDataset(BaseLlamaDataset):
+class LabelledRagDataset(BaseLlamaDataset):
     """RagDataset class."""
 
     def to_pandas(self) -> PandasDataFrame:
@@ -53,8 +50,12 @@ class RagDataset(BaseLlamaDataset):
             + [t.reference_contexts for t in self.test_examples],
             "reference_answer": [t.reference_answer for t in self.train_examples]
             + [t.reference_answer for t in self.test_examples],
-            "kind": [t.kind for t in self.train_examples]
-            + [t.kind for t in self.test_examples],
+            "reference_answer_by": [
+                str(t.reference_answer_by) for t in self.train_examples
+            ]
+            + [str(t.reference_answer_by) for t in self.test_examples],
+            "query_by": [str(t.query_by) for t in self.train_examples]
+            + [str(t.query_by) for t in self.test_examples],
             "split": ["train"] * len(self.train_examples)
             + ["test"] * len(self.test_examples),
         }
