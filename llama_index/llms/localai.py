@@ -27,7 +27,7 @@ LOCALAI_DEFAULTS: Mapping[str, Any] = MappingProxyType(
 )
 
 
-def make_localai(**kwargs) -> OpenAILike:
+def make_localai(**kwargs: Any) -> OpenAILike:
     """Instantiate a LocalAI API wrapper using OpenAILike."""
     return OpenAILike(**({**LOCALAI_DEFAULTS, **kwargs}))
 
