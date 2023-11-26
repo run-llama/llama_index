@@ -50,7 +50,7 @@ class Neo4jGraphStore(GraphStore):
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
         self.schema = ""
-        self.structured_schema = {}
+        self.structured_schema: Dict[str, Any] = {}
         # Verify connection
         try:
             self._driver.verify_connectivity()
