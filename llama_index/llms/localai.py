@@ -1,25 +1,38 @@
-from typing import Any, Dict, Optional
+"""
+LocalAI is a free, open source, and self-hosted OpenAI alternative.
+
+Docs: https://localai.io/
+Source: https://github.com/go-skynet/LocalAI
+"""
+
+import warnings
+from types import MappingProxyType
+from typing import Any, Dict, Mapping, Optional
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.openai_utils import is_function_calling_model
 
-DEFAULT_API_KEY = "fake"
-DEFAULT_API_HOST = "localhost"
-DEFAULT_API_PORT = 8080
-DEFAULT_API_BASE = f"{DEFAULT_API_HOST}{DEFAULT_API_PORT}"
+# Use these as kwargs for OpenAILike to connect to LocalAIs
+DEFAULT_LOCALAI_PORT = 8080
+LOCALAI_DEFAULTS: Mapping[str, Any] = MappingProxyType(
+    {
+        "api_key": "localai_fake",
+        "api_type": "localai_fake",
+        "api_base": f"http://localhost:{DEFAULT_LOCALAI_PORT}/v1",
+    }
+)
+
+
+def make_localai(**kwargs) -> OpenAILike:
+    """Instantiate a LocalAI API wrapper using OpenAILike."""
+    return OpenAILike(**({**LOCALAI_DEFAULTS, **kwargs}))
 
 
 class LocalAI(OpenAI):
-    """
-    LocalAI is a free, open source, and self-hosted OpenAI alternative.
-
-    Docs: https://localai.io/
-    Source: https://github.com/go-skynet/LocalAI
-    """
-
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",
@@ -37,11 +50,20 @@ class LocalAI(OpenAI):
 
     def __init__(
         self,
-        api_key: Optional[str] = DEFAULT_API_KEY,
-        api_base: Optional[str] = DEFAULT_API_BASE,
+        api_key: Optional[str] = LOCALAI_DEFAULTS["api_key"],
+        api_base: Optional[str] = LOCALAI_DEFAULTS["api_base"],
         **kwargs: Any,
     ) -> None:
         super().__init__(api_key=api_key, api_base=api_base, **kwargs)
+        warnings.warn(
+            (
+                f"{type(self).__name__} subclass is deprecated in favor of"
+                " make_localai. Deprecation cycle will complete sometime in"
+                " late December 2023."
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     @classmethod
     def class_name(cls) -> str:

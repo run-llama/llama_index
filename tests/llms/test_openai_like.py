@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, call, patch
 
 from llama_index.llms import OpenAILike
 from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.localai import LOCALAI_DEFAULTS
 from llama_index.llms.openai import Tokenizer
 from openai.types import Completion, CompletionChoice
 from openai.types.chat.chat_completion import ChatCompletion, Choice
@@ -68,6 +69,7 @@ def test_completion(MockSyncOpenAI: MagicMock) -> None:
 
     llm = OpenAILike(
         model=STUB_MODEL_NAME,
+        **LOCALAI_DEFAULTS,
         context_window=1024,
         max_tokens=None,
     )
