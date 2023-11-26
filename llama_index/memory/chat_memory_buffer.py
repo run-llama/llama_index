@@ -84,6 +84,9 @@ class ChatMemoryBuffer(BaseMemory):
 
     def get(self, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
+        if initial_token_count > self.token_limit:
+            raise ValueError("Initial token count exceeds token limit")
+
         message_count = len(self.chat_history)
         token_count = self._token_count_for_message_count(message_count) + initial_token_count
 
