@@ -3,21 +3,25 @@
 from llama_index.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,
-    BaseLlamaPrediction,
+    BaseLlamaExamplePrediction,
+    BaseLlamaPredictionDataset,
     CreatedByType,
 )
 from llama_index.llama_dataset.rag import (
     LabelledRagDataExample,
     LabelledRagDataset,
     RagExamplePrediction,
+    RagPredictionDataset,
 )
 
 __all__ = [
     "BaseLlamaDataset",
     "BaseLlamaDataExample",
-    "BaseLlamaPrediction",
+    "BaseLlamaExamplePrediction",
+    "BaseLlamaPredictionDataset",
     "LabelledRagDataExample",
     "LabelledRagDataset",
     "RagExamplePrediction",
+    "RagPredictionDataset",
     "CreatedByType",
 ]

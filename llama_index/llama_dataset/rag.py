@@ -9,13 +9,14 @@ from llama_index.core import BaseQueryEngine
 from llama_index.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,
-    BaseLlamaPrediction,
+    BaseLlamaExamplePrediction,
+    BaseLlamaPredictionDataset,
     CreatedByType,
 )
 
 
 @dataclass(repr=True)
-class RagExamplePrediction(BaseLlamaPrediction):
+class RagExamplePrediction(BaseLlamaExamplePrediction):
     """RAG example prediction class.
 
     Args:
@@ -58,11 +59,27 @@ class LabelledRagDataExample(BaseLlamaDataExample):
         return "LlamaRagDataExample"
 
 
+class RagPredictionDataset(BaseLlamaPredictionDataset):
+    """RagDataset class."""
+
+    _prediction_type = RagExamplePrediction
+
+    def to_pandas(self) -> PandasDataFrame:
+        """Create pandas dataframe."""
+        data = {
+            "response": [t.response for t in self.train_predictions]
+            + [t.response for t in self.test_predictions],
+            "contexts": [t.contexts for t in self.train_predictions]
+            + [t.contexts for t in self.test_predictions],
+        }
+
+        return PandasDataFrame(data)
+
+
 class LabelledRagDataset(BaseLlamaDataset):
     """RagDataset class."""
 
-    _examples_type = LabelledRagDataExample
-    _predictions_type = RagExamplePrediction
+    _example_type = LabelledRagDataExample
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
@@ -83,20 +100,6 @@ class LabelledRagDataset(BaseLlamaDataset):
             + ["test"] * len(self.test_examples),
         }
 
-        # add predictions if they exist
-        predictions = []
-        if self.train_predictions:
-            predictions += self.train_predictions
-        if self.test_predictions:
-            predictions += self.test_predictions
-
-        if predictions:
-            data.update(
-                {
-                    "prediction": [p.response for p in predictions],
-                    "prediction_contexts": [p.contexts for p in predictions],
-                }
-            )
         return PandasDataFrame(data)
 
     def _predict_example(
@@ -108,4 +111,12 @@ class LabelledRagDataset(BaseLlamaDataset):
         response = query_engine.query(example.query)
         return RagExamplePrediction(
             response=response.response, contexts=[s.text for s in response.source_nodes]
+        )
+
+    def _construct_prediction_dataset(
+        self, train_predictions, test_predictions
+    ) -> RagPredictionDataset:
+        """Construct prediction dataset."""
+        return RagPredictionDataset(
+            train_predictions=train_predictions, test_predictions=test_predictions
         )

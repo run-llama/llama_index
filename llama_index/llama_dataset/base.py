@@ -24,7 +24,7 @@ class CreatedByType(str, Enum):
 
 
 @dataclass(repr=True)
-class BaseLlamaPrediction(DataClassJsonMixin):
+class BaseLlamaExamplePrediction(DataClassJsonMixin):
     """Base llama dataset example class."""
 
     @property
@@ -45,21 +45,72 @@ class BaseLlamaDataExample(DataClassJsonMixin):
         return "BaseLlamaDataExample"
 
 
+class BaseLlamaPredictionDataset(BaseModel):
+    _prediction_type: Type[BaseLlamaExamplePrediction] = BaseLlamaExamplePrediction
+    train_predictions: Optional[List[BaseLlamaExamplePrediction]] = Field(
+        default=None, description="Predictions on train_examples."
+    )
+    test_predictions: Optional[List[BaseLlamaExamplePrediction]] = Field(
+        default=None, description="Predictions on test_examples."
+    )
+
+    @property
+    def all_examples(self) -> List[BaseLlamaExamplePrediction]:
+        """Return train and test examples."""
+        return self.train_predictions + self.test_predictions
+
+    @abstractmethod
+    def to_pandas(self) -> PandasDataFrame:
+        """Create pandas dataframe."""
+
+    def save_json(self, path: str) -> None:
+        """Save json."""
+        with open(path, "w") as f:
+            train_predictions = [
+                self._prediction_type.to_dict(el) for el in self.train_predictions
+            ]
+            test_predictions = [
+                self._prediction_type.to_dict(el) for el in self.test_predictions
+            ]
+            data = {
+                "train_predictions": train_predictions,
+                "test_predictions": test_predictions,
+            }
+
+            json.dump(data, f, indent=4)
+
+    @classmethod
+    def from_json(cls, path: str) -> "BaseLlamaPredictionDataset":
+        """Load json."""
+        with open(path) as f:
+            data = json.load(f)
+
+        train_predictions = [
+            cls._prediction_type.from_dict(el) for el in data["train_predictions"]
+        ]
+        test_predictions = [
+            cls._prediction_type.from_dict(el) for el in data["test_predictions"]
+        ]
+
+        return cls(
+            train_predictions=train_predictions,
+            test_predictions=test_predictions,
+        )
+
+
 class BaseLlamaDataset(BaseModel):
-    _examples_type: Type[BaseLlamaDataExample]
-    _predictions_type: Type[BaseLlamaPrediction]
+    _example_type: Type[BaseLlamaDataExample] = BaseLlamaDataExample
     train_examples: List[BaseLlamaDataExample] = Field(
         default=[], description="Data examples of this dataset."
     )
     test_examples: List[BaseLlamaDataExample] = Field(
         default=[], description="Data examples of this dataset."
     )
-    train_predictions: Optional[List[BaseLlamaPrediction]] = Field(
-        default=None, description="Predictions on the train examples."
-    )
-    test_predictions: Optional[List[BaseLlamaPrediction]] = Field(
-        default=None, description="Predictions on the test examples."
-    )
+
+    @property
+    def all_examples(self) -> List[BaseLlamaDataExample]:
+        """Return train and test examples."""
+        return self.train_examples + self.test_examples
 
     @abstractmethod
     def to_pandas(self) -> PandasDataFrame:
@@ -69,79 +120,62 @@ class BaseLlamaDataset(BaseModel):
         """Save json."""
         with open(path, "w") as f:
             train_examples = [
-                self._examples_type.to_dict(el) for el in self.train_examples
+                self._example_type.to_dict(el) for el in self.train_examples
             ]
             test_examples = [
-                self._examples_type.to_dict(el) for el in self.test_examples
+                self._example_type.to_dict(el) for el in self.test_examples
             ]
             data = {
                 "train_examples": train_examples,
                 "test_examples": test_examples,
             }
 
-            if self.train_predictions:
-                train_predictions = [
-                    self._predictions_type.to_dict(el) for el in self.train_predictions
-                ]
-                data.update({"train_predictions": train_predictions})
-            if self.test_predictions:
-                test_predictions = [
-                    self._predictions_type.to_dict(el) for el in self.test_predictions
-                ]
-                data.update({"test_predictions": test_predictions})
-
             json.dump(data, f, indent=4)
 
     @classmethod
-    def from_json(cls, path: str) -> "BaseLlamaDataset":
+    def from_json(cls, path: str) -> "BaseLlamaDataset[BaseLlamaDataExample]":
         """Load json."""
         with open(path) as f:
             data = json.load(f)
 
         train_examples = [
-            cls._examples_type.from_dict(el) for el in data["train_examples"]
+            cls._example_type.from_dict(el) for el in data["train_examples"]
         ]
         test_examples = [
-            cls._examples_type.from_dict(el) for el in data["test_examples"]
+            cls._example_type.from_dict(el) for el in data["test_examples"]
         ]
-
-        train_predictions, test_predictions = None, None
-        if "train_predictions" in data:
-            train_predictions = [
-                cls._predictions_type.from_dict(el) for el in data["train_predictions"]
-            ]
-        if "test_predictions" in data:
-            test_predictions = [
-                cls._predictions_type.from_dict(el) for el in data["test_predictions"]
-            ]
 
         return cls(
             train_examples=train_examples,
             test_examples=test_examples,
-            train_predictions=train_predictions,
-            test_predictions=test_predictions,
         )
 
     @abstractmethod
     def _predict_example(
         self, query_engine: BaseQueryEngine, example: BaseLlamaDataExample
-    ) -> BaseLlamaPrediction:
+    ) -> BaseLlamaExamplePrediction:
         """Subclasses need to generated this."""
 
     def _predict_examples(
         self, query_engine, on: Literal["train", "test"]
-    ) -> List[BaseLlamaPrediction]:
+    ) -> List[BaseLlamaExamplePrediction]:
         """Predictions on train examples."""
         if on == "train":
             examples = self.train_examples
         else:
             examples = self.test_examples
 
-        predictions: List[BaseLlamaPrediction] = []
+        predictions: List[BaseLlamaExamplePrediction] = []
         for example in examples:
             prediction = self._predict_example(query_engine, example)
             predictions.append(prediction)
         return predictions
+
+    @abstractmethod
+    def _construct_prediction_dataset(
+        self, train_predictions, test_predictions
+    ) -> BaseLlamaPredictionDataset:
+        """Construct prediction dataset."""
 
     def predict(
         self,
@@ -149,7 +183,7 @@ class BaseLlamaDataset(BaseModel):
         on_train: bool = True,
         on_test: bool = True,
         on_both: bool = True,
-    ) -> None:
+    ) -> BaseLlamaPredictionDataset:
         """Predict with a given query engine."""
         train_predictions = None
         test_predictions = None
@@ -163,5 +197,6 @@ class BaseLlamaDataset(BaseModel):
             if on_test:
                 test_predictions = self._predict_examples(query_engine, on="test")
 
-        self.train_predictions = train_predictions
-        self.test_predictions = test_predictions
+        return self._construct_prediction_dataset(
+            train_predictions=train_predictions, test_predictions=test_predictions
+        )
