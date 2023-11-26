@@ -23,6 +23,7 @@ maxdepth: 1
 ---
 /examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
 Multi-modal retrieval with CLIP </examples/multi_modal/multi_modal_retrieval.ipynb>
+Image to Image Retrieval </examples/multi_modal/image_to_image_retrieval.ipynb>
 ```
 
 ### Retrieval-Augmented Image Captioning
