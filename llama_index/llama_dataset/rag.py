@@ -5,11 +5,31 @@ from typing import List
 
 from pandas import DataFrame as PandasDataFrame
 
+from llama_index.core import BaseQueryEngine
 from llama_index.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,
+    BaseLlamaPrediction,
     CreatedByType,
 )
+
+
+@dataclass(repr=True)
+class RagExamplePrediction(BaseLlamaPrediction):
+    """RAG example prediction class.
+
+    Args:
+        response: str
+        contexts: List[str]
+    """
+
+    response: str
+    contexts: List[str]
+
+    @property
+    def class_name(self) -> str:
+        """Data example class name."""
+        return "LlamaRagDataExample"
 
 
 @dataclass(repr=True)
@@ -42,6 +62,7 @@ class LabelledRagDataset(BaseLlamaDataset):
     """RagDataset class."""
 
     _examples_type = LabelledRagDataExample
+    _predictions_type = RagExamplePrediction
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
@@ -61,4 +82,30 @@ class LabelledRagDataset(BaseLlamaDataset):
             "split": ["train"] * len(self.train_examples)
             + ["test"] * len(self.test_examples),
         }
+
+        # add predictions if they exist
+        predictions = []
+        if self.train_predictions:
+            predictions += self.train_predictions
+        if self.test_predictions:
+            predictions += self.test_predictions
+
+        if predictions:
+            data.update(
+                {
+                    "prediction": [p.response for p in predictions],
+                    "prediction_contexts": [p.contexts for p in predictions],
+                }
+            )
         return PandasDataFrame(data)
+
+    def _predict_example(
+        self,
+        query_engine: BaseQueryEngine,
+        example: LabelledRagDataExample,
+    ) -> RagExamplePrediction:
+        """Predict RAG example with a query engine."""
+        response = query_engine.query(example.query)
+        return RagExamplePrediction(
+            response=response.response, contexts=[s.text for s in response.source_nodes]
+        )
