@@ -88,7 +88,9 @@ class ChatMemoryBuffer(BaseMemory):
             raise ValueError("Initial token count exceeds token limit")
 
         message_count = len(self.chat_history)
-        token_count = self._token_count_for_message_count(message_count) + initial_token_count
+        token_count = (
+            self._token_count_for_message_count(message_count) + initial_token_count
+        )
 
         while token_count > self.token_limit and message_count > 1:
             message_count -= 1
@@ -98,7 +100,9 @@ class ChatMemoryBuffer(BaseMemory):
                 # we need to remove the assistant message too
                 message_count -= 1
 
-            token_count = self._token_count_for_message_count(message_count) + initial_token_count
+            token_count = (
+                self._token_count_for_message_count(message_count) + initial_token_count
+            )
 
         # catch one message longer than token limit
         if token_count > self.token_limit or message_count <= 0:
