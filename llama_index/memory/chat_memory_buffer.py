@@ -126,7 +126,7 @@ class ChatMemoryBuffer(BaseMemory):
         """Reset chat history."""
         return self.chat_history.clear()
 
-    def _token_count_for_message_count(self, message_count):
+    def _token_count_for_message_count(self, message_count: int) -> int:
         if message_count <= 0:
             return 0
         msg_str = " ".join(str(m.content) for m in self.chat_history[-message_count:])
