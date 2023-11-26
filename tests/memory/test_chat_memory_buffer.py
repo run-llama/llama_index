@@ -8,16 +8,16 @@ from llama_index.utils import GlobalsHelper
 tokenizer = GlobalsHelper().tokenizer
 
 USER_CHAT_MESSAGE = ChatMessage(role=MessageRole.USER, content="first message")
-USER_CHAT_MESSAGE_TOKENS = len(tokenizer(USER_CHAT_MESSAGE.content))
+USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(USER_CHAT_MESSAGE.content)))
 SECOND_USER_CHAT_MESSAGE = ChatMessage(role=MessageRole.USER, content="second message")
-SECOND_USER_CHAT_MESSAGE_TOKENS = len(tokenizer(SECOND_USER_CHAT_MESSAGE.content))
+SECOND_USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(SECOND_USER_CHAT_MESSAGE.content)))
 ASSISTANT_CHAT_MESSAGE = ChatMessage(role=MessageRole.ASSISTANT, content="first answer")
-ASSISTANT_CHAT_MESSAGE_TOKENS = len(tokenizer(ASSISTANT_CHAT_MESSAGE.content))
+ASSISTANT_CHAT_MESSAGE_TOKENS = len(tokenizer(str(ASSISTANT_CHAT_MESSAGE.content)))
 SECOND_ASSISTANT_CHAT_MESSAGE = ChatMessage(
     role=MessageRole.USER, content="second answer"
 )
 SECOND_ASSISTANT_CHAT_MESSAGE_TOKENS = len(
-    tokenizer(SECOND_ASSISTANT_CHAT_MESSAGE.content)
+    tokenizer(str(SECOND_ASSISTANT_CHAT_MESSAGE.content))
 )
 
 
