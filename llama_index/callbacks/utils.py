@@ -3,7 +3,7 @@ import dataclasses
 import json
 import logging
 from datetime import date, datetime
-from typing import Any, Callable, cast
+from typing import Any, Callable, Generator, cast
 
 from pydantic import BaseModel
 
@@ -67,7 +67,7 @@ class SuperJSONEncoder(json.JSONEncoder):
         if dataclasses.is_dataclass(o):
             return self.default(dataclasses.asdict(o))
         if isinstance(o, BaseModel):
-            return o.dict()
+            return self.default(o.model_dump())
         if isinstance(o, (datetime, date)):
             return o.isoformat()
         if isinstance(o, Exception):
@@ -78,6 +78,8 @@ class SuperJSONEncoder(json.JSONEncoder):
             return [self.default(x) for x in o]
         if isinstance(o, dict):
             return {k: self.default(v) for k, v in o.items()}
+        if isinstance(o, Generator):
+            return None
         return super().default(o)
 
 

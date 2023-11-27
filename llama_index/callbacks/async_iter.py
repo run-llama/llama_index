@@ -39,12 +39,13 @@ class AsyncIteratorCallbackHandler(BaseCallbackHandler):
     ) -> str:
         """Run when an event starts and return id of event."""
         event = {
-            "event": event_type,
-            "data": payload,
+            "event": event_type + ".start",
             "event_id": event_id,
             "parent_id": parent_id,
         }
+        print(event)
         event = superjson_dumps(event)
+        print(event)
         if self.verbose:
             logger.debug(
                 event_type,
@@ -64,17 +65,20 @@ class AsyncIteratorCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when an event ends."""
         event = {
-            "event": event_type,
-            "data": payload,
+            "event": event_type + ".end",
             "event_id": event_id,
         }
+        if event_type not in [CBEventType.AGENT_STEP]:
+            event["data"] = payload
+        print(event)
         event = superjson_dumps(event)
+        print(event)
         if self.verbose:
             logger.debug(
                 event_type,
-                payload=payload,
-                event_id=event_id,
-                **kwargs,
+                # payload=payload,
+                # event_id=event_id,
+                # **kwargs,
             )
         self.queue.put_nowait(event)
 
@@ -98,7 +102,7 @@ class AsyncIteratorCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when an overall trace is exited."""
         event = {
-            "event": "trace.start",
+            "event": "trace.end",
             "trace_id": trace_id,
             "trace_map": trace_map,
         }
