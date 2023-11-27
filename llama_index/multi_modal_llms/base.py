@@ -20,9 +20,9 @@ class MessageRole(str, Enum):
     FUNCTION = "function"
 
 
-# ===== Generic Model Input - Chat =====
-class ChatMessage(BaseModel):
-    """Chat message."""
+# ===== Generic Multi-Modal Input - Chat =====
+class MultiModalChatMessage(BaseModel):
+    """Mult-Modal Chat message."""
 
     role: MessageRole = MessageRole.USER
     content: Optional[Any] = ""
@@ -32,7 +32,7 @@ class ChatMessage(BaseModel):
         return f"{self.role.value}: {self.content}"
 
 
-# ===== Generic Model Output - Completion =====
+# ===== Generic Multi-Modal Model Output - Completion =====
 class MultiModalCompletionResponse(BaseModel):
     """
     Completion response.
@@ -59,6 +59,23 @@ MultiModalCompletionResponseGen = Generator[MultiModalCompletionResponse, None, 
 MultiModalCompletionResponseAsyncGen = AsyncGenerator[
     MultiModalCompletionResponse, None
 ]
+
+
+# ===== Generic Model Output - Chat =====
+class MultiModalChatResponse(BaseModel):
+    """Chat response."""
+
+    message: MultiModalChatMessage
+    raw: Optional[dict] = None
+    delta: Optional[str] = None
+    additional_kwargs: dict = Field(default_factory=dict)
+
+    def __str__(self) -> str:
+        return str(self.message)
+
+
+MultiModalChatResponseGen = Generator[MultiModalChatResponse, None, None]
+MultiModalChatResponseAsyncGen = AsyncGenerator[MultiModalChatResponse, None]
 
 
 class MultiModalLLMMetadata(BaseModel):
@@ -123,6 +140,26 @@ class MultiModalLLM(BaseComponent):
         """Streaming completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
+    def chat(
+        self,
+        messages: Sequence[MultiModalChatMessage],
+        image_documents: Sequence[ImageDocument],
+        **kwargs: Any,
+    ) -> MultiModalChatResponse:
+        """Chat endpoint for Multi-Modal LLM."""
+
+    @abstractmethod
+    def stream_chat(
+        self,
+        messages: Sequence[MultiModalChatMessage],
+        image_documents: Sequence[ImageDocument],
+        **kwargs: Any,
+    ) -> MultiModalChatResponseGen:
+        """Stream chat endpoint for Multi-Modal LLM."""
+
+    # ===== Async Endpoints =====
+
+    @abstractmethod
     async def acomplete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponse:
@@ -133,3 +170,21 @@ class MultiModalLLM(BaseComponent):
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponseAsyncGen:
         """Async streaming completion endpoint for Multi-Modal LLM."""
+
+    @abstractmethod
+    async def achat(
+        self,
+        messages: Sequence[MultiModalChatMessage],
+        image_documents: Sequence[ImageDocument],
+        **kwargs: Any,
+    ) -> MultiModalChatResponse:
+        """Async chat endpoint for Multi-Modal LLM."""
+
+    @abstractmethod
+    async def astream_chat(
+        self,
+        messages: Sequence[MultiModalChatMessage],
+        image_documents: Sequence[ImageDocument],
+        **kwargs: Any,
+    ) -> MultiModalChatResponseAsyncGen:
+        """Async streaming chat endpoint for Multi-Modal LLM."""

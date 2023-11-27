@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Sequence
 from openai.types.chat import ChatCompletionMessageParam
 
 from llama_index.llms.openai_utils import to_openai_message_dicts
-from llama_index.multi_modal_llms.base import ChatMessage
+from llama_index.multi_modal_llms.base import MultiModalChatMessage
 from llama_index.multi_modal_llms.generic_utils import encode_image
 from llama_index.schema import ImageDocument
 
@@ -62,5 +62,5 @@ def to_openai_multi_modal_payload(
 
         completion_content.append(image_content)
     return to_openai_message_dicts(
-        [ChatMessage(role="user", content=completion_content)]
+        [MultiModalChatMessage(role="user", content=completion_content)]
     )

@@ -11,6 +11,10 @@ from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.multi_modal_llms import (
+    MultiModalChatMessage,
+    MultiModalChatResponse,
+    MultiModalChatResponseAsyncGen,
+    MultiModalChatResponseGen,
     MultiModalCompletionResponse,
     MultiModalCompletionResponseAsyncGen,
     MultiModalCompletionResponseGen,
@@ -174,6 +178,23 @@ class OpenAIMultiModal(MultiModalLLM):
     ) -> MultiModalCompletionResponseGen:
         raise NotImplementedError
 
+    def chat(
+        self,
+        messages: Sequence[MultiModalChatMessage],
+        image_documents: Sequence[ImageDocument],
+        **kwargs: Any,
+    ) -> MultiModalChatResponse:
+        raise NotImplementedError
+
+    def stream_chat(
+        self,
+        messages: Sequence[MultiModalChatMessage],
+        image_documents: Sequence[ImageDocument],
+        **kwargs: Any,
+    ) -> MultiModalChatResponseGen:
+        raise NotImplementedError
+
+    # ===== Async Endpoints =====
     async def acomplete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponse:
@@ -182,4 +203,20 @@ class OpenAIMultiModal(MultiModalLLM):
     async def astream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> MultiModalCompletionResponseAsyncGen:
+        raise NotImplementedError
+
+    async def achat(
+        self,
+        messages: Sequence[MultiModalChatMessage],
+        image_documents: Sequence[ImageDocument],
+        **kwargs: Any,
+    ) -> MultiModalChatResponse:
+        raise NotImplementedError
+
+    async def astream_chat(
+        self,
+        messages: Sequence[MultiModalChatMessage],
+        image_documents: Sequence[ImageDocument],
+        **kwargs: Any,
+    ) -> MultiModalChatResponseAsyncGen:
         raise NotImplementedError
