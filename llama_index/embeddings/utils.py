@@ -19,6 +19,19 @@ from llama_index.utils import get_cache_dir
 
 EmbedType = Union[BaseEmbedding, "LCEmbeddings", str]
 
+validation_error_msg = (
+    "\n******\n"
+    "Could not load OpenAI embedding model. "
+    "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
+    "Original error:\n"
+    "{e!s}"
+    "\nConsider using embed_model='local'.\n"
+    "Visit our documentation for more embedding options: "
+    "https://docs.llamaindex.ai/en/stable/module_guides/models/"
+    "embeddings.html#modules"
+    "\n******"
+)
+
 
 def save_embedding(embedding: List[float], file_path: str) -> None:
     """Save embedding to file."""
@@ -47,18 +60,13 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
             embed_model = OpenAIEmbedding()
             validate_openai_api_key(embed_model.api_key)
         except ValueError as e:
-            raise ValueError(
-                "\n******\n"
-                "Could not load OpenAI embedding model. "
-                "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
-                "Original error:\n"
-                f"{e!s}"
-                "\nConsider using embed_model='local'.\n"
-                "Visit our documentation for more embedding options: "
-                "https://docs.llamaindex.ai/en/stable/module_guides/models/"
-                "embeddings.html#modules"
-                "\n******"
-            )
+            raise ValueError(validation_error_msg.format(e=e))
+
+    if type(embed_model) == OpenAIEmbedding:
+        try:
+            validate_openai_api_key(embed_model.api_key)
+        except ValueError as e:
+            raise ValueError(validation_error_msg.format(e=e))
 
     # for image embeddings
     if embed_model == "clip":

@@ -28,6 +28,7 @@ def download_llama_pack(
         custom_path=download_dir,
         library_path="llama_packs/library.json",
         disable_library_cache=True,
+        override_path=True,
     )
     if not issubclass(pack_cls, BaseLlamaPack):
         raise ValueError(f"Tool class {pack_cls} must be a subclass of BaseToolSpec.")

@@ -72,6 +72,7 @@ def test_condense_plus_context_chat_engine(
     # Keep reference of the mock source URL constructed for this input
     source_url_1 = source_url(input_1)
     # No condensing should happen for the first chat
+
     expected_response_str_1 = (
         f"system: Context information: source: {source_url_1}\n\n{input_1}"
         f"\nuser: {input_1}"
@@ -94,6 +95,10 @@ def test_condense_plus_context_chat_engine(
         f"\nassistant: {expected_response_str_1}"
         f"\nFollow up question: {input_2}"
         f"\nStandalone question:"
+        f"\nuser: {input_1}"
+        f"\nassistant: system: Context information: source: {source_url_1}\n\n{input_1}"
+        f"\nuser: {input_1}"
+        f"\nassistant: "
         f"\nuser: {input_2}"
         f"\nassistant: "
     )

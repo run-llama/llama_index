@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from threading import Thread
-from typing import Any, List, Optional, Tuple, Type
+from typing import Any, List, Optional, Tuple
 
 from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
@@ -20,6 +20,7 @@ from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.base import PromptTemplate
 from llama_index.schema import MetadataMode, NodeWithScore
+from llama_index.utilities.token_counting import TokenCounter
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         memory: BaseMemory,
         context_prompt: Optional[str] = None,
         condense_prompt: Optional[str] = None,
+        system_prompt: Optional[str] = None,
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -77,11 +79,14 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         )
         condense_prompt_str = condense_prompt or DEFAULT_CONDENSE_PROMPT_TEMPLATE
         self._condense_prompt_template = PromptTemplate(condense_prompt_str)
+        self._system_prompt = system_prompt
         self._skip_condense = skip_condense
         self._node_postprocessors = node_postprocessors or []
         self.callback_manager = callback_manager or CallbackManager([])
         for node_postprocessor in self._node_postprocessors:
             node_postprocessor.callback_manager = self.callback_manager
+
+        self._token_counter = TokenCounter()
         self._verbose = verbose
 
     @classmethod
@@ -91,7 +96,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
-        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
+        system_prompt: Optional[str] = None,
         context_prompt: Optional[str] = None,
         condense_prompt: Optional[str] = None,
         skip_condense: bool = False,
@@ -106,7 +111,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         llm_predictor = service_context.llm_predictor
         llm = llm_predictor.llm
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
+        memory = memory or ChatMemoryBuffer.from_defaults(
+            chat_history=chat_history, token_limit=llm.metadata.context_window - 256
+        )
 
         return cls(
             retriever=retriever,
@@ -118,6 +125,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             skip_condense=skip_condense,
             callback_manager=service_context.callback_manager,
             node_postprocessors=node_postprocessors,
+            system_prompt=system_prompt,
             verbose=verbose,
         )
 
@@ -177,10 +185,10 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     def _run_c3(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> Tuple[List[ChatMessage], ToolOutput, List[NodeWithScore]]:
-        chat_history = chat_history or self._memory.get()
+        if chat_history is not None:
+            self._memory.set(chat_history)
 
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
-        self._memory.put(user_message)
+        chat_history = self._memory.get()
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = self._condense_question(chat_history, message)
@@ -203,20 +211,31 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         system_message_content = self._context_prompt_template.format(
             context_str=context_str
         )
+        if self._system_prompt:
+            system_message_content = self._system_prompt + "\n" + system_message_content
+
         system_message = ChatMessage(
             content=system_message_content, role=MessageRole.SYSTEM
         )
-        chat_messages = [system_message, user_message]
 
+        initial_token_count = self._token_counter.estimate_tokens_in_messages(
+            [system_message]
+        )
+
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        chat_messages = [
+            system_message,
+            *self._memory.get(initial_token_count=initial_token_count),
+        ]
         return chat_messages, context_source, context_nodes
 
     async def _arun_c3(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> Tuple[List[ChatMessage], ToolOutput, List[NodeWithScore]]:
-        chat_history = chat_history or self._memory.get()
+        if chat_history is not None:
+            self._memory.set(chat_history)
 
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
-        self._memory.put(user_message)
+        chat_history = self._memory.get()
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = await self._acondense_question(chat_history, message)
@@ -239,10 +258,22 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         system_message_content = self._context_prompt_template.format(
             context_str=context_str
         )
+        if self._system_prompt:
+            system_message_content = self._system_prompt + "\n" + system_message_content
+
         system_message = ChatMessage(
             content=system_message_content, role=MessageRole.SYSTEM
         )
-        chat_messages = [system_message, user_message]
+
+        initial_token_count = self._token_counter.estimate_tokens_in_messages(
+            [system_message]
+        )
+
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        chat_messages = [
+            system_message,
+            *self._memory.get(initial_token_count=initial_token_count),
+        ]
 
         return chat_messages, context_source, context_nodes
 
