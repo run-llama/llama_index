@@ -4,8 +4,8 @@ We've created both tooling and a variety of example projects (all open-source) t
 
 ## create-llama
 
- `create-llama` is a command-line tool that will generate a full-stack application template for you. It supports both FastAPI, Vercel, and Node backends. This is one of the easiest ways to get started!
- 
+`create-llama` is a command-line tool that will generate a full-stack application template for you. It supports both FastAPI, Vercel, and Node backends. This is one of the easiest ways to get started!
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -23,7 +23,6 @@ Check them out below.
 
 ### SEC Insights
 
-
 ```{toctree}
 ---
 maxdepth: 1
@@ -33,7 +32,6 @@ SEC Insights Repo <https://github.com/run-llama/sec-insights>
 ```
 
 ### Chat LlamaIndex
-
 
 ```{toctree}
 ---
