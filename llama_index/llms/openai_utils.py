@@ -372,10 +372,10 @@ def resolve_from_aliases(*args: Optional[str]) -> Optional[str]:
 def validate_openai_api_key(api_key: Optional[str] = None) -> None:
     openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
 
-    proper_format = len(openai_api_key) == 51 and openai_api_key.startswith("sk-")
-
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+
+    proper_format = len(openai_api_key) == 51 and openai_api_key.startswith("sk-")
 
     if not proper_format:
         raise ValueError(INCORRECT_API_KEY_ERROR_MESSAGE)
