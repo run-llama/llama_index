@@ -109,6 +109,7 @@ class AsyncIteratorCallbackHandler(BaseCallbackHandler):
                 trace_map=trace_map,
             )
         self.queue.put_nowait(superjson_dumps(event))
+        self.done.set()
 
     async def aiter(self) -> AsyncIterator[str]:
         while not self.queue.empty() or not self.done.is_set():
