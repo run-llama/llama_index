@@ -270,6 +270,3 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
         return None
-
-
-VECTOR_STORE_TYPE = Union[VectorStore, BasePydanticVectorStore]

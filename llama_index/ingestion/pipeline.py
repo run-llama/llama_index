@@ -36,7 +36,7 @@ from llama_index.schema import (
     TransformComponent,
 )
 from llama_index.service_context import ServiceContext
-from llama_index.vector_stores.types import VECTOR_STORE_TYPE
+from llama_index.vector_stores.types import BasePydanticVectorStore
 
 DEFAULT_PIPELINE_NAME = "default"
 DEFAULT_PROJECT_NAME = "default"
@@ -177,7 +177,7 @@ class IngestionPipeline(BaseModel):
     readers: List[ReaderConfig] = Field(
         description="Readers to use to read the data", default_factor=list
     )
-    vector_store: Optional[VECTOR_STORE_TYPE] = Field(
+    vector_store: Optional[BasePydanticVectorStore] = Field(
         description="Vector store to use to store the data"
     )
     cache: IngestionCache = Field(
@@ -203,7 +203,7 @@ class IngestionPipeline(BaseModel):
         transformations: Optional[List[TransformComponent]] = None,
         readers: Optional[List[ReaderConfig]] = None,
         documents: Optional[Sequence[Document]] = None,
-        vector_store: Optional[VECTOR_STORE_TYPE] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
         disable_cache: bool = False,
         platform_base_url: Optional[str] = None,
@@ -250,7 +250,7 @@ class IngestionPipeline(BaseModel):
         project_name: str = DEFAULT_PROJECT_NAME,
         readers: Optional[List[ReaderConfig]] = None,
         documents: Optional[Sequence[Document]] = None,
-        vector_store: Optional[VECTOR_STORE_TYPE] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
     ) -> "IngestionPipeline":
         transformations = [
@@ -277,7 +277,7 @@ class IngestionPipeline(BaseModel):
         cache: Optional[IngestionCache] = None,
         platform_api_key: Optional[str] = None,
         platform_app_url: Optional[str] = None,
-        vector_store: Optional[VECTOR_STORE_TYPE] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         disable_cache: bool = False,
     ) -> "IngestionPipeline":
         platform_base_url = platform_base_url or os.environ.get(
