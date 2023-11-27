@@ -67,10 +67,8 @@ class RagPredictionDataset(BaseLlamaPredictionDataset):
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
         data = {
-            "response": [t.response for t in self.train_predictions]
-            + [t.response for t in self.test_predictions],
-            "contexts": [t.contexts for t in self.train_predictions]
-            + [t.contexts for t in self.test_predictions],
+            "response": [t.response for t in self.predictions],
+            "contexts": [t.contexts for t in self.predictions],
         }
 
         return PandasDataFrame(data)
@@ -84,20 +82,11 @@ class LabelledRagDataset(BaseLlamaDataset):
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
         data = {
-            "query": [t.query for t in self.train_examples]
-            + [t.query for t in self.test_examples],
-            "reference_contexts": [t.reference_contexts for t in self.train_examples]
-            + [t.reference_contexts for t in self.test_examples],
-            "reference_answer": [t.reference_answer for t in self.train_examples]
-            + [t.reference_answer for t in self.test_examples],
-            "reference_answer_by": [
-                str(t.reference_answer_by) for t in self.train_examples
-            ]
-            + [str(t.reference_answer_by) for t in self.test_examples],
-            "query_by": [str(t.query_by) for t in self.train_examples]
-            + [str(t.query_by) for t in self.test_examples],
-            "split": ["train"] * len(self.train_examples)
-            + ["test"] * len(self.test_examples),
+            "query": [t.query for t in self.examples],
+            "reference_contexts": [t.reference_contexts for t in self.examples],
+            "reference_answer": [t.reference_answer for t in self.examples],
+            "reference_answer_by": [str(t.reference_answer_by) for t in self.examples],
+            "query_by": [str(t.query_by) for t in self.examples],
         }
 
         return PandasDataFrame(data)
@@ -113,10 +102,6 @@ class LabelledRagDataset(BaseLlamaDataset):
             response=response.response, contexts=[s.text for s in response.source_nodes]
         )
 
-    def _construct_prediction_dataset(
-        self, train_predictions, test_predictions
-    ) -> RagPredictionDataset:
+    def _construct_prediction_dataset(self, predictions) -> RagPredictionDataset:
         """Construct prediction dataset."""
-        return RagPredictionDataset(
-            train_predictions=train_predictions, test_predictions=test_predictions
-        )
+        return RagPredictionDataset(predictions=predictions)

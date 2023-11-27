@@ -175,7 +175,6 @@ class RagDatasetGenerator(PromptMixin):
             cleaned_questions = [
                 question for question in cleaned_questions if len(question) > 0
             ]
-            print(f"generated {len(cleaned_questions)} questions", flush=True)
             index = summary_indices[idx]
             reference_context = nodes[idx].text
 
@@ -208,10 +207,7 @@ class RagDatasetGenerator(PromptMixin):
                 pass
 
         # split train/test
-        train_ix = int(len(examples) * 0.3)
-        return LabelledRagDataset(
-            train_examples=examples[:train_ix], test_examples=examples[train_ix:]
-        )
+        return LabelledRagDataset(examples=examples)
 
     async def agenerate_questions_from_nodes(self) -> List[str]:
         """Generates questions for each document."""

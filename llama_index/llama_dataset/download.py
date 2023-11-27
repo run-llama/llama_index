@@ -2,7 +2,8 @@ from typing import List, Tuple, Type
 
 import llama_index.download.download_utils as download_utils
 from llama_index import Document
-from llama_index.llama_dataset import BaseLlamaDataset, LabelledRagDataset
+from llama_index.llama_dataset.base import BaseLlamaDataset
+from llama_index.llama_dataset.rag import LabelledRagDataset
 from llama_index.readers import SimpleDirectoryReader
 
 

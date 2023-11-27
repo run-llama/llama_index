@@ -12,13 +12,13 @@ import pkg_resources
 import requests
 from pkg_resources import DistributionNotFound
 
-BRANCH = "datasets"
-LLAMA_HUB_CONTENTS_URL = f"https://raw.githubusercontent.com/nerdai/llama-hub/{BRANCH}"
+LLAMA_HUB_CONTENTS_URL = f"https://raw.githubusercontent.com/nerdai/llama-hub/datasets"
 LLAMA_HUB_PATH = "/llama_hub"
 LLAMA_HUB_URL = LLAMA_HUB_CONTENTS_URL + LLAMA_HUB_PATH
 
-REPO = "main"
-LLAMA_DATASETS_URL = f"https://media.githubusercontent.com/media/nerdai/{BRANCH}/{REPO}"
+REPO = "datasets"
+BRANCH = "main"
+LLAMA_DATASETS_URL = f"https://media.githubusercontent.com/media/nerdai/{REPO}/{BRANCH}"
 LLAMA_RAG_DATASET_FILENAME = "rag_dataset.json"
 
 
