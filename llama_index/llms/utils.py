@@ -12,6 +12,16 @@ from llama_index.llms.openai_utils import validate_openai_api_key
 
 LLMType = Union[str, LLM, "BaseLanguageModel"]
 
+validation_error_msg = (
+    "\n******\n"
+    "Could not load OpenAI model. "
+    "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
+    "Original error:\n"
+    "{e!s}"
+    "\nTo disable the LLM entirely, set llm=None."
+    "\n******"
+)
+
 
 def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
     """Resolve LLM from string or LLM instance."""
@@ -28,15 +38,13 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
             llm = OpenAI()
             validate_openai_api_key(llm.api_key)
         except ValueError as e:
-            raise ValueError(
-                "\n******\n"
-                "Could not load OpenAI model. "
-                "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
-                "Original error:\n"
-                f"{e!s}"
-                "\nTo disable the LLM entirely, set llm=None."
-                "\n******"
-            )
+            raise ValueError(validation_error_msg.format(e=e))
+
+    if type(llm) == OpenAI:
+        try:
+            validate_openai_api_key(llm.api_key)
+        except ValueError as e:
+            raise ValueError(validation_error_msg.format(e=e))
 
     if isinstance(llm, str):
         splits = llm.split(":", 1)

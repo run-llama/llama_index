@@ -110,12 +110,17 @@ DISCONTINUED_MODELS = {
     "code-cushman-001": 2048,
 }
 
-MISSING_API_KEY_ERROR_MESSAGE = """No API key found for OpenAI.
-Please set either the OPENAI_API_KEY environment variable or \
+API_KEY_ERROR = """Please set either the OPENAI_API_KEY environment variable or \
 openai.api_key prior to initialization.
 API keys can be found or created at \
 https://platform.openai.com/account/api-keys
 """
+
+MISSING_API_KEY_ERROR_MESSAGE = "No API key found for OpenAI.\n" + API_KEY_ERROR
+
+INCORRECT_API_KEY_ERROR_MESSAGE = (
+    "Incorrect API key found for OpenAI.\n" + API_KEY_ERROR
+)
 
 logger = logging.getLogger(__name__)
 
@@ -367,5 +372,10 @@ def resolve_from_aliases(*args: Optional[str]) -> Optional[str]:
 def validate_openai_api_key(api_key: Optional[str] = None) -> None:
     openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
 
+    proper_format = len(openai_api_key) == 51 and openai_api_key.startswith("sk-")
+
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+
+    if not proper_format:
+        raise ValueError(INCORRECT_API_KEY_ERROR_MESSAGE)
