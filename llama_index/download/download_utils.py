@@ -12,9 +12,15 @@ import pkg_resources
 import requests
 from pkg_resources import DistributionNotFound
 
-LLAMA_HUB_CONTENTS_URL = "https://raw.githubusercontent.com/run-llama/llama-hub/main"
+BRANCH = "datasets"
+LLAMA_HUB_CONTENTS_URL = f"https://raw.githubusercontent.com/nerdai/llama-hub/{BRANCH}"
 LLAMA_HUB_PATH = "/llama_hub"
 LLAMA_HUB_URL = LLAMA_HUB_CONTENTS_URL + LLAMA_HUB_PATH
+
+REPO = "main"
+LLAMA_DATASETS_URL = f"https://media.githubusercontent.com/media/nerdai/{BRANCH}/{REPO}"
+LLAMA_RAG_DATASET_FILENAME = "rag_dataset.json"
+
 
 PATH_TYPE = Union[str, Path]
 
@@ -164,6 +170,7 @@ def download_module_and_reqs(
     use_gpt_index_import: bool = False,
     base_file_name: str = "base.py",
     override_path: bool = False,
+    dataset: bool = False,
 ) -> None:
     """Load module."""
     if isinstance(local_dir_path, str):
@@ -209,29 +216,30 @@ def download_module_and_reqs(
             with open(f"{module_path}/{extra_file}", "w") as f:
                 f.write(extra_file_raw_content)
 
-    # install requirements
-    requirements_path = f"{local_dir_path}/requirements.txt"
+    if not dataset:
+        # install requirements
+        requirements_path = f"{local_dir_path}/requirements.txt"
 
-    if not os.path.exists(requirements_path):
-        # NOTE: need to check the status code
-        response_txt, status_code = _get_file_content(
-            str(remote_dir_path), f"/{module_id}/requirements.txt"
-        )
-        if status_code == 200:
-            with open(requirements_path, "w") as f:
-                f.write(response_txt)
+        if not os.path.exists(requirements_path):
+            # NOTE: need to check the status code
+            response_txt, status_code = _get_file_content(
+                str(remote_dir_path), f"/{module_id}/requirements.txt"
+            )
+            if status_code == 200:
+                with open(requirements_path, "w") as f:
+                    f.write(response_txt)
 
-    # Install dependencies if there are any and not already installed
-    if os.path.exists(requirements_path):
-        try:
-            requirements = pkg_resources.parse_requirements(
-                Path(requirements_path).open()
-            )
-            pkg_resources.require([str(r) for r in requirements])
-        except DistributionNotFound:
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", "-r", requirements_path]
-            )
+        # Install dependencies if there are any and not already installed
+        if os.path.exists(requirements_path):
+            try:
+                requirements = pkg_resources.parse_requirements(
+                    Path(requirements_path).open()
+                )
+                pkg_resources.require([str(r) for r in requirements])
+            except DistributionNotFound:
+                subprocess.check_call(
+                    [sys.executable, "-m", "pip", "install", "-r", requirements_path]
+                )
 
 
 def download_llama_module(
@@ -314,3 +322,51 @@ def download_llama_module(
     spec.loader.exec_module(module)  # type: ignore
 
     return getattr(module, module_class)
+
+
+def download_llama_dataset(
+    dataset_name: str,
+    llama_hub_url: str = LLAMA_HUB_URL,
+    llama_datasets_url: str = LLAMA_DATASETS_URL,
+    refresh_cache: bool = False,
+    custom_dir: Optional[str] = None,
+    custom_path: Optional[str] = None,
+    library_path: str = "library.json",
+    disable_library_cache: bool = False,
+    override_path: bool = False,
+) -> Tuple[str, List[str]]:
+    # create directory / get path
+    dirpath = initialize_directory(custom_path=custom_path, custom_dir=custom_dir)
+
+    # fetch info from library.json file
+    module_info = get_module_info(
+        local_dir_path=dirpath,
+        remote_dir_path=llama_hub_url,
+        module_class=dataset_name,
+        refresh_cache=refresh_cache,
+        library_path=library_path,
+        disable_library_cache=disable_library_cache,
+    )
+    module_id = module_info["module_id"]
+    extra_files = module_info["extra_files"]  # re-purposed for source files
+
+    # download the rag_dataset.json and source files
+    download_module_and_reqs(
+        local_dir_path=dirpath,
+        remote_dir_path=llama_datasets_url,  # datasets not stored in llama-hub repo
+        module_id=module_id,
+        extra_files=extra_files,
+        refresh_cache=refresh_cache,
+        base_file_name=LLAMA_RAG_DATASET_FILENAME,
+        override_path=override_path,
+        dataset=True,
+    )
+
+    if override_path:
+        module_path = str(dirpath)
+    else:
+        module_path = f"{dirpath}/{module_id}"
+
+    return f"{module_path}/{LLAMA_RAG_DATASET_FILENAME}", [
+        f"{module_path}/{el}" for el in extra_files
+    ]
