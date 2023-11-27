@@ -41,7 +41,7 @@ maxdepth: 1
 
 ### LLaVa-13, Fuyu-8B and MiniGPT-4 Multi-Modal LLM Models Comparison for Image Reasoning
 
-This notebooks shows how to use different Multi-Modal LLM models for image understanding/reasoning. The various model inferences are supported by Replicate. We compared several popular Multi-Modal LLMs:
+These notebooks show how to use different Multi-Modal LLM models for image understanding/reasoning. The various model inferences are supported by Replicate or OpenAI GPT4-V API. We compared several popular Multi-Modal LLMs:
 
 - GPT4-V (OpenAI API)
 - LLava-13B (Replicate)
@@ -60,9 +60,9 @@ GPT4-V: </examples/multi_modal/openai_multi_modal.ipynb>
 
 ### Pydantic Program for Generating Structured Output for Multi-Modal LLMs
 
-This notebooks shows how to generate `structured` output with new OpenAI GPT4V via LlamaIndex. The user just needs to specify a Pydantic object.
+You can generate `structured` output with new OpenAI GPT4V via LlamaIndex. The user just needs to specify a Pydantic object to define the structure of output.
 
-Check out our guides below:
+Check out the guide below:
 
 ```{toctree}
 ---
