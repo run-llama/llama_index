@@ -60,15 +60,30 @@ class NodeParser(TransformComponent, ABC):
         ) as event:
             nodes = self._parse_nodes(documents, show_progress=show_progress, **kwargs)
 
-            if self.include_metadata:
-                for node in nodes:
-                    if node.ref_doc_id is not None:
+            for i, node in enumerate(nodes):
+                if (
+                    node.ref_doc_id is not None
+                    and node.ref_doc_id in doc_id_to_document
+                ):
+                    ref_doc = doc_id_to_document[node.ref_doc_id]
+                    start_char_idx = ref_doc.text.find(
+                        node.get_content(metadata_mode=MetadataMode.NONE)
+                    )
+
+                    # update start/end char idx
+                    if start_char_idx >= 0:
+                        node.start_char_idx = start_char_idx
+                        node.end_char_idx = start_char_idx + len(
+                            node.get_content(metadata_mode=MetadataMode.NONE)
+                        )
+
+                    # update metadata
+                    if self.include_metadata:
                         node.metadata.update(
                             doc_id_to_document[node.ref_doc_id].metadata
                         )
 
-            if self.include_prev_next_rel:
-                for i, node in enumerate(nodes):
+                if self.include_prev_next_rel:
                     if i > 0:
                         node.relationships[NodeRelationship.PREVIOUS] = nodes[
                             i - 1

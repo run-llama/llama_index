@@ -157,17 +157,21 @@ class CallbackManager(BaseCallbackHandler, ABC):
         event = EventContext(self, event_type, event_id=event_id)
         event.on_start(payload=payload)
 
+        payload = None
         try:
             yield event
         except Exception as e:
-            self.on_event_start(
-                CBEventType.EXCEPTION, payload={EventPayload.EXCEPTION: e}
-            )
+            # data already logged to trace?
+            if not hasattr(e, "event_added"):
+                payload = {EventPayload.EXCEPTION: e}
+                e.event_added = True  # type: ignore
+                if not event.finished:
+                    event.on_end(payload=payload)
             raise
         finally:
             # ensure event is ended
             if not event.finished:
-                event.on_end()
+                event.on_end(payload=payload)
 
     @contextmanager
     def as_trace(self, trace_id: str) -> Generator[None, None, None]:
@@ -177,9 +181,13 @@ class CallbackManager(BaseCallbackHandler, ABC):
         try:
             yield
         except Exception as e:
-            self.on_event_start(
-                CBEventType.EXCEPTION, payload={EventPayload.EXCEPTION: e}
-            )
+            # event already added to trace?
+            if not hasattr(e, "event_added"):
+                self.on_event_start(
+                    CBEventType.EXCEPTION, payload={EventPayload.EXCEPTION: e}
+                )
+                e.event_added = True  # type: ignore
+
             raise
         finally:
             # ensure trace is ended
