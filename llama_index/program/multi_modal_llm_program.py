@@ -56,7 +56,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
             output_parser,
             prompt=cast(PromptTemplate, prompt),
             multi_modal_llm=multi_modal_llm,
-            image_documents=image_documents,
+            image_documents=image_documents or [],
             verbose=verbose,
         )
 
