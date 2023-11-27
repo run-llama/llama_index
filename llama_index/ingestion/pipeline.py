@@ -4,11 +4,9 @@ from hashlib import sha256
 from typing import Any, List, Optional, Sequence, cast
 
 from llama_index_client import (
-    ConfigurableDataSinkNames,
     ConfigurableDataSourceNames,
     ConfigurableTransformationNames,
     ConfiguredTransformationItem,
-    DataSinkCreate,
     DataSourceCreate,
     Pipeline,
     PipelineCreate,
@@ -20,7 +18,6 @@ from llama_index_client.client import PlatformApi
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.ingestion.cache import IngestionCache
-from llama_index.ingestion.data_sinks import ConfigurableDataSinks, ConfiguredDataSink
 from llama_index.ingestion.data_sources import (
     ConfigurableDataSources,
     ConfiguredDataSource,
@@ -39,7 +36,7 @@ from llama_index.schema import (
     TransformComponent,
 )
 from llama_index.service_context import ServiceContext
-from llama_index.vector_stores.types import BasePydanticVectorStore
+from llama_index.vector_stores.types import VECTOR_STORE_TYPE
 
 DEFAULT_PIPELINE_NAME = "default"
 DEFAULT_PROJECT_NAME = "default"
@@ -58,13 +55,6 @@ def deserialize_source_component(
     component_dict: dict, component_type: ConfigurableDataSourceNames
 ) -> BaseComponent:
     component_cls = ConfigurableDataSources[component_type].value.component_type
-    return component_cls.from_dict(component_dict)
-
-
-def deserialize_sink_component(
-    component_dict: dict, component_type: ConfigurableDataSinkNames
-) -> BaseComponent:
-    component_cls = ConfigurableDataSinks[component_type].value.component_type
     return component_cls.from_dict(component_dict)
 
 
@@ -184,8 +174,10 @@ class IngestionPipeline(BaseModel):
     )
 
     documents: Optional[Sequence[Document]] = Field(description="Documents to ingest")
-    reader: Optional[ReaderConfig] = Field(description="Reader to use to read the data")
-    vector_store: Optional[BasePydanticVectorStore] = Field(
+    readers: List[ReaderConfig] = Field(
+        description="Readers to use to read the data", default_factor=list
+    )
+    vector_store: Optional[VECTOR_STORE_TYPE] = Field(
         description="Vector store to use to store the data"
     )
     cache: IngestionCache = Field(
@@ -209,9 +201,9 @@ class IngestionPipeline(BaseModel):
         name: str = DEFAULT_PIPELINE_NAME,
         project_name: str = DEFAULT_PROJECT_NAME,
         transformations: Optional[List[TransformComponent]] = None,
-        reader: Optional[ReaderConfig] = None,
+        readers: Optional[List[ReaderConfig]] = None,
         documents: Optional[Sequence[Document]] = None,
-        vector_store: Optional[BasePydanticVectorStore] = None,
+        vector_store: Optional[VECTOR_STORE_TYPE] = None,
         cache: Optional[IngestionCache] = None,
         disable_cache: bool = False,
         platform_base_url: Optional[str] = None,
@@ -240,7 +232,7 @@ class IngestionPipeline(BaseModel):
             project_name=project_name,
             configured_transformations=configured_transformations,
             transformations=transformations,
-            reader=reader,
+            readers=readers or [],
             documents=documents,
             vector_store=vector_store,
             cache=cache or IngestionCache(),
@@ -256,9 +248,9 @@ class IngestionPipeline(BaseModel):
         service_context: ServiceContext,
         name: str = DEFAULT_PIPELINE_NAME,
         project_name: str = DEFAULT_PROJECT_NAME,
-        reader: Optional[ReaderConfig] = None,
+        readers: Optional[List[ReaderConfig]] = None,
         documents: Optional[Sequence[Document]] = None,
-        vector_store: Optional[BasePydanticVectorStore] = None,
+        vector_store: Optional[VECTOR_STORE_TYPE] = None,
         cache: Optional[IngestionCache] = None,
     ) -> "IngestionPipeline":
         transformations = [
@@ -270,7 +262,7 @@ class IngestionPipeline(BaseModel):
             name=name,
             project_name=project_name,
             transformations=transformations,
-            reader=reader,
+            readers=readers or [],
             documents=documents,
             vector_store=vector_store,
             cache=cache,
@@ -285,6 +277,7 @@ class IngestionPipeline(BaseModel):
         cache: Optional[IngestionCache] = None,
         platform_api_key: Optional[str] = None,
         platform_app_url: Optional[str] = None,
+        vector_store: Optional[VECTOR_STORE_TYPE] = None,
         disable_cache: bool = False,
     ) -> "IngestionPipeline":
         platform_base_url = platform_base_url or os.environ.get(
@@ -339,23 +332,13 @@ class IngestionPipeline(BaseModel):
             else:
                 documents.append(source_component)
 
-        vector_stores = []
-        for data_sink in pipeline.data_sinks:
-            if data_sink.sink_type in ConfigurableDataSinkNames:
-                component_dict = cast(dict, data_sink.component)
-                sink_component_type = data_sink.sink_type
-                sink_component = deserialize_sink_component(
-                    component_dict, sink_component_type
-                )
-                vector_stores.append(sink_component)
-
         return cls(
             name=name,
             project_name=project_name,
             transformations=transformations,
-            reader=readers[0] if len(readers) > 0 else None,
+            readers=readers,
             documents=documents,
-            vector_store=vector_stores[0] if len(vector_stores) > 0 else None,
+            vector_store=vector_store,
             platform_base_url=platform_base_url,
             cache=cache,
             disable_cache=disable_cache,
@@ -401,25 +384,11 @@ class IngestionPipeline(BaseModel):
             # remove callback manager
             configured_transformations[-1].component.pop("callback_manager", None)  # type: ignore
 
-        data_sinks = []
-        if self.vector_store is not None:
-            configured_data_sink = ConfiguredDataSink.from_component(self.vector_store)
-            sink_type = ConfigurableDataSinkNames[
-                configured_data_sink.configurable_data_sink_type.name
-            ]
-            data_sinks.append(
-                DataSinkCreate(
-                    name=configured_data_sink.name,
-                    sink_type=sink_type,
-                    component=configured_data_sink.component,
-                )
-            )
-
         data_sources = []
-        if self.reader is not None:
-            if self.reader.reader.is_remote:
+        for reader in self.readers:
+            if reader.reader.is_remote:
                 configured_data_source = ConfiguredDataSource.from_component(
-                    self.reader,
+                    reader,
                 )
                 source_type = ConfigurableDataSourceNames[
                     configured_data_source.configurable_data_source_type.name
@@ -432,7 +401,7 @@ class IngestionPipeline(BaseModel):
                     )
                 )
             else:
-                documents = self.reader.read()
+                documents = reader.read()
                 input_nodes += documents
 
         for node in input_nodes:
@@ -459,7 +428,6 @@ class IngestionPipeline(BaseModel):
             request=PipelineCreate(
                 name=self.name,
                 configured_transformations=configured_transformations,
-                data_sinks=data_sinks,
                 data_sources=data_sources,
             ),
         )
@@ -530,8 +498,8 @@ class IngestionPipeline(BaseModel):
         if self.documents is not None:
             input_nodes += self.documents
 
-        if self.reader is not None:
-            input_nodes += self.reader.read()
+        for reader in self.readers:
+            input_nodes += reader.read()
 
         nodes = run_transformations(
             input_nodes,
@@ -567,8 +535,8 @@ class IngestionPipeline(BaseModel):
         if self.documents is not None:
             input_nodes += self.documents
 
-        if self.reader is not None:
-            input_nodes += self.reader.read()
+        for reader in self.readers:
+            input_nodes += reader.read()
 
         nodes = await arun_transformations(
             input_nodes,
