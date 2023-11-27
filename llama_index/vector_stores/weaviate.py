@@ -294,9 +294,9 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
         for i, entry in enumerate(entries):
             if i < query.similarity_top_k:
+                similarities.append(get_node_similarity(entry, similarity_key))
                 nodes.append(to_node(entry, text_key=self.text_key))
                 node_idxs.append(str(i))
-                similarities.append(get_node_similarity(entry, similarity_key))
             else:
                 break
 
