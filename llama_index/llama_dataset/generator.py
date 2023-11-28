@@ -195,12 +195,13 @@ class RagDatasetGenerator(PromptMixin):
                 for question, answer_response in zip(
                     cleaned_questions, answer_responses
                 ):
+                    model_name = self.service_context.llm.metadata.model_name
                     example = LabelledRagDataExample(
                         query=question,
                         reference_answer=answer_response.response,
                         reference_contexts=[reference_context],
-                        reference_answer_by=CreatedByType.AI,
-                        query_by=CreatedByType.AI,
+                        reference_answer_by=CreatedByType.from_model_name(model_name),
+                        query_by=CreatedByType.from_model_name(model_name),
                     )
                     examples.append(example)
             else:

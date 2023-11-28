@@ -21,8 +21,36 @@ class CreatedByType(str, Enum):
     HUMAN = "human"
     AI = "ai"
 
+    def __init__(self, _: str, model_name: str = None):
+        self._model_name = model_name
+
+    @classmethod
+    def from_model_name(cls, model_name: str) -> "CreatedByType":
+        """Constructs CreatedByType.AI with _model_name set to model_name.
+
+        Args:
+            model_name (str): The name of the model used.
+
+        Returns:
+            CreatedByType: An CreateByType.AI
+        """
+        obj = cls.AI
+        obj._model_name = model_name
+        return obj
+
+    @property
+    def model_name(self):
+        return self._model_name
+
+    @model_name.setter
+    def model_name(self, value: str):
+        self._model_name = value.lower()
+
     def __str__(self) -> str:
-        return self.value
+        if self._model_name:
+            return f"{self.value} ({self._model_name})"
+        else:
+            return self.value
 
 
 @dataclass(repr=True)
@@ -113,8 +141,17 @@ class BaseLlamaDataset(BaseModel):
         )
 
     @abstractmethod
-    def _construct_prediction_dataset(self, predictions) -> BaseLlamaPredictionDataset:
-        """Construct prediction dataset."""
+    def _construct_prediction_dataset(
+        self, predictions: List[BaseLlamaExamplePrediction]
+    ) -> BaseLlamaPredictionDataset:
+        """Construct the specific prediction dataset.
+
+        Args:
+            predictions (List[BaseLlamaExamplePrediction]): the list of predictions.
+
+        Returns:
+            BaseLlamaPredictionDataset: A dataset of predictions.
+        """
 
     def make_predictions_with(
         self, query_engine: BaseQueryEngine, show_progress: bool = False
