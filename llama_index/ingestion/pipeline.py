@@ -198,9 +198,9 @@ class IngestionPipeline(BaseModel):
             cache_path = concat_dirs(persist_dir, cache_name)
 
         else:
-            persist_dir = Path(persist_dir)
-            docstore_path = str(persist_dir / docstore_name)
-            cache_path = str(persist_dir / cache_name)
+            persist_path = Path(persist_dir)
+            docstore_path = str(persist_path / docstore_name)
+            cache_path = str(persist_path / cache_name)
 
         self.cache.persist(cache_path, fs=fs)
         if self.docstore is not None:

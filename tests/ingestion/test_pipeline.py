@@ -51,13 +51,13 @@ def test_run_pipeline() -> None:
 
 def test_save_load_pipeline() -> None:
     document1 = Document.example()
-    document1.doc_id = "1"
+    document1.id_ = "1"
 
     document2 = Document.example()
-    document2.doc_id = "2"
+    document2.id_ = "2"
 
     document3 = Document.example()
-    document3.doc_id = "1"
+    document3.id_ = "1"
 
     pipeline = IngestionPipeline(
         transformations=[
@@ -102,7 +102,7 @@ def test_save_load_pipeline() -> None:
 
 def test_pipeline_update() -> None:
     document1 = Document.example()
-    document1.doc_id = "1"
+    document1.id_ = "1"
 
     pipeline = IngestionPipeline(
         transformations=[
