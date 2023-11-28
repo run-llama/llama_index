@@ -3,11 +3,9 @@
 import asyncio
 import json
 from abc import abstractmethod
-from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional, Type
 
-from dataclasses_json import DataClassJsonMixin
 from pandas import DataFrame as PandasDataFrame
 
 from llama_index.async_utils import asyncio_module
@@ -53,8 +51,7 @@ class CreatedByType(str, Enum):
             return self.value
 
 
-@dataclass(repr=True)
-class BaseLlamaExamplePrediction(DataClassJsonMixin):
+class BaseLlamaExamplePrediction(BaseModel):
     """Base llama dataset example class."""
 
     @property
@@ -64,8 +61,7 @@ class BaseLlamaExamplePrediction(DataClassJsonMixin):
         return "BaseLlamaPrediction"
 
 
-@dataclass(repr=True)
-class BaseLlamaDataExample(DataClassJsonMixin):
+class BaseLlamaDataExample(BaseModel):
     """Base llama dataset example class."""
 
     @property
@@ -88,7 +84,7 @@ class BaseLlamaPredictionDataset(BaseModel):
     def save_json(self, path: str) -> None:
         """Save json."""
         with open(path, "w") as f:
-            predictions = [self._prediction_type.to_dict(el) for el in self.predictions]
+            predictions = [self._prediction_type.dict(el) for el in self.predictions]
             data = {
                 "predictions": predictions,
             }
@@ -101,7 +97,7 @@ class BaseLlamaPredictionDataset(BaseModel):
         with open(path) as f:
             data = json.load(f)
 
-        predictions = [cls._prediction_type.from_dict(el) for el in data["predictions"]]
+        predictions = [cls._prediction_type.parse_obj(el) for el in data["predictions"]]
 
         return cls(
             predictions=predictions,
@@ -121,7 +117,7 @@ class BaseLlamaDataset(BaseModel):
     def save_json(self, path: str) -> None:
         """Save json."""
         with open(path, "w") as f:
-            examples = [self._example_type.to_dict(el) for el in self.examples]
+            examples = [self._example_type.dict(el) for el in self.examples]
             data = {
                 "examples": examples,
             }
@@ -134,7 +130,7 @@ class BaseLlamaDataset(BaseModel):
         with open(path) as f:
             data = json.load(f)
 
-        examples = [cls._example_type.from_dict(el) for el in data["examples"]]
+        examples = [cls._example_type.parse_obj(el) for el in data["examples"]]
 
         return cls(
             examples=examples,

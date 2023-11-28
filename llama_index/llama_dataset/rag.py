@@ -1,10 +1,10 @@
 """Llama Dataset Class."""
 
-from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from pandas import DataFrame as PandasDataFrame
 
+from llama_index.bridge.pydantic import Field
 from llama_index.core import BaseQueryEngine
 from llama_index.llama_dataset.base import (
     BaseLlamaDataExample,
@@ -15,7 +15,6 @@ from llama_index.llama_dataset.base import (
 )
 
 
-@dataclass(repr=True)
 class RagExamplePrediction(BaseLlamaExamplePrediction):
     """RAG example prediction class.
 
@@ -24,8 +23,14 @@ class RagExamplePrediction(BaseLlamaExamplePrediction):
         contexts: List[str]
     """
 
-    response: str
-    contexts: List[str]
+    response: str = Field(
+        default_factory=str,
+        description="The generated (predicted) response that can be compared to a reference (ground-truth) answer.",
+    )
+    contexts: List[str] = Field(
+        default_factory=List,
+        description="The contexts in raw text form used to generate the response.",
+    )
 
     @property
     def class_name(self) -> str:
@@ -33,7 +38,6 @@ class RagExamplePrediction(BaseLlamaExamplePrediction):
         return "LlamaRagDataExample"
 
 
-@dataclass(repr=True)
 class LabelledRagDataExample(BaseLlamaDataExample):
     """RAG example class. Analogous to traditional ML datasets, this dataset contains
     the "features" (i.e., query + context) to make a prediction and the "label" (i.e., response)
@@ -47,11 +51,23 @@ class LabelledRagDataExample(BaseLlamaDataExample):
                                     that would receive full marks upon evaluation.
     """
 
-    query: str
-    query_by: CreatedByType
-    reference_contexts: List[str]
-    reference_answer: str
-    reference_answer_by: CreatedByType
+    query: str = Field(
+        default_factory=str, description="The user query for the example."
+    )
+    query_by: Optional[CreatedByType] = Field(
+        default=None, description="What generated the query."
+    )
+    reference_contexts: List[str] = Field(
+        default_factory=List,
+        description="The contexts used to generate the reference answer.",
+    )
+    reference_answer: str = Field(
+        default_factory=str,
+        description="The reference (ground-truth) answer to the example.",
+    )
+    reference_answer_by: Optional[CreatedByType] = Field(
+        default=None, description="What generated the reference answer."
+    )
 
     @property
     def class_name(self) -> str:
