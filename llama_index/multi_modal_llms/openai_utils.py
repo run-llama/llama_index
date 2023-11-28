@@ -66,4 +66,4 @@ def generate_openai_multi_modal_chat_message(
             }
 
         completion_content.append(image_content)
-    return ChatMessage(role=role, content=str(completion_content))
+    return ChatMessage(role=role, content=completion_content)

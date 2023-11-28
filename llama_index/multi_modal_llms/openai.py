@@ -31,7 +31,6 @@ from llama_index.multi_modal_llms import (
     MultiModalLLMMetadata,
 )
 from llama_index.multi_modal_llms.openai_utils import (
-    # to_openai_multi_modal_payload,
     generate_openai_multi_modal_chat_message,
 )
 from llama_index.schema import ImageDocument
