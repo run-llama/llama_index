@@ -79,11 +79,7 @@ class AzureOpenAI(OpenAI):
         **kwargs: Any,
     ) -> None:
         engine = resolve_from_aliases(
-            engine,
-            deployment_name,
-            deployment_id,
-            deployment,
-            azure_deployment
+            engine, deployment_name, deployment_id, deployment, azure_deployment
         )
 
         if engine is None:
