@@ -348,7 +348,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
     async def _astream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> CompletionResponseGen:
+    ) -> CompletionResponseAsyncGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
@@ -402,7 +402,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
+    ) -> ChatResponseAsyncGen:
         message_dicts = to_openai_message_dicts(messages)
 
         async def gen() -> ChatResponseAsyncGen:
