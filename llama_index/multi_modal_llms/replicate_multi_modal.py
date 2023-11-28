@@ -9,6 +9,7 @@ from llama_index.llms.base import (
     ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
 )
 from llama_index.llms.generic_utils import (
@@ -225,7 +226,7 @@ class ReplicateMultiModal(MultiModalLLM):
 
     async def astream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> CompletionResponseGen:
+    ) -> CompletionResponseAsyncGen:
         try:
             import replicate
         except ImportError:
@@ -255,7 +256,7 @@ class ReplicateMultiModal(MultiModalLLM):
 
         response_iter = replicate.run(self.model, input=input_dict)
 
-        async def gen() -> CompletionResponseGen:
+        async def gen() -> CompletionResponseAsyncGen:
             text = ""
             for delta in response_iter:
                 text += delta

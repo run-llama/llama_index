@@ -354,7 +354,7 @@ class OpenAIMultiModal(MultiModalLLM):
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
 
-        async def gen() -> CompletionResponseGen:
+        async def gen() -> CompletionResponseAsyncGen:
             text = ""
 
             for response in self._client.chat.completions.create(
@@ -405,7 +405,7 @@ class OpenAIMultiModal(MultiModalLLM):
     ) -> ChatResponseGen:
         message_dicts = to_openai_message_dicts(messages)
 
-        async def gen() -> ChatResponseGen:
+        async def gen() -> ChatResponseAsyncGen:
             content = ""
             tool_calls: List[ChoiceDeltaToolCall] = []
 
