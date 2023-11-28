@@ -10,9 +10,9 @@ from typing import List, Optional, Type
 from dataclasses_json import DataClassJsonMixin
 from pandas import DataFrame as PandasDataFrame
 
+from llama_index.async_utils import asyncio_module
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.core import BaseQueryEngine
-from llama_index.evaluation.eval_utils import asyncio_module
 
 
 class CreatedByType(str, Enum):
@@ -112,40 +112,6 @@ class BaseLlamaDataset(BaseModel):
             examples=examples,
         )
 
-    def _predict_example(
-        self, query_engine: BaseQueryEngine, example: BaseLlamaDataExample
-    ) -> BaseLlamaExamplePrediction:
-        """Sync version of _apredict_example."""
-        return asyncio.run(
-            self._apredict_example(query_engine=query_engine, example=example)
-        )
-
-    @abstractmethod
-    async def _apredict_example(
-        self, query_engine: BaseQueryEngine, example: BaseLlamaDataExample
-    ) -> BaseLlamaExamplePrediction:
-        """Subclasses need to generated this."""
-
-    def _predict_examples(
-        self, query_engine, show_progress: bool = False
-    ) -> List[BaseLlamaExamplePrediction]:
-        """Predictions on examples."""
-        return asyncio.run(
-            self._apredict_examples(
-                query_engine=query_engine, show_progress=show_progress
-            )
-        )
-
-    async def _apredict_examples(
-        self, query_engine, show_progress: bool = False
-    ) -> List[BaseLlamaExamplePrediction]:
-        """Async predict on examples."""
-        tasks = []
-        for example in self.examples:
-            tasks.append(self._apredict_example(query_engine, example))
-        asyncio_mod = asyncio_module(show_progress=show_progress)
-        return await asyncio_mod.gather(*tasks)
-
     @abstractmethod
     def _construct_prediction_dataset(self, predictions) -> BaseLlamaPredictionDataset:
         """Construct prediction dataset."""
@@ -153,13 +119,53 @@ class BaseLlamaDataset(BaseModel):
     def make_predictions_with(
         self, query_engine: BaseQueryEngine, show_progress: bool = False
     ) -> BaseLlamaPredictionDataset:
-        """Predict with a given query engine."""
-        predictions = self._predict_examples(query_engine)
-        return self._construct_prediction_dataset(predictions=predictions)
+        """Predict with a given query engine.
+
+        Args:
+            query_engine (BaseQueryEngine): The query engine to make predictions with.
+            show_progress (bool, optional): Show progress of making predictions.
+
+        Returns:
+            BaseLlamaPredictionDataset: A dataset of predictions.
+        """
+        return asyncio.run(
+            self.amake_predictions_with(
+                query_engine=query_engine, show_progress=show_progress
+            )
+        )
+
+    # async methods
+    @abstractmethod
+    async def _apredict_example(
+        self, query_engine: BaseQueryEngine, example: BaseLlamaDataExample
+    ) -> BaseLlamaExamplePrediction:
+        """Async predict on a single example.
+
+        NOTE: Subclasses need to implement this.
+
+        Args:
+            query_engine (BaseQueryEngine): Query engine to make the prediciton with.
+            example (BaseLlamaDataExample): The example to predict on.
+
+        Returns:
+            BaseLlamaExamplePrediction: The prediction.
+        """
 
     async def amake_predictions_with(
         self, query_engine: BaseQueryEngine, show_progress: bool = False
     ) -> BaseLlamaPredictionDataset:
-        """Predict with a given query engine."""
-        predictions = await self._apredict_examples(query_engine)
+        """Async predict with a given query engine.
+
+        Args:
+            query_engine (BaseQueryEngine): The query engine to make predictions with.
+            show_progress (bool, optional): Show progress of making predictions.
+
+        Returns:
+            BaseLlamaPredictionDataset: A dataset of predictions.
+        """
+        tasks = []
+        for example in self.examples:
+            tasks.append(self._apredict_example(query_engine, example))
+        asyncio_mod = asyncio_module(show_progress=show_progress)
+        predictions = await asyncio_mod.gather(*tasks)
         return self._construct_prediction_dataset(predictions=predictions)
