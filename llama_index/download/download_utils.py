@@ -12,7 +12,9 @@ import pkg_resources
 import requests
 from pkg_resources import DistributionNotFound
 
-LLAMA_HUB_CONTENTS_URL = f"https://raw.githubusercontent.com/nerdai/llama-hub/datasets"
+LLAMA_HUB_CONTENTS_URL = (
+    f"https://raw.githubusercontent.com/run-llama/llama-hub/datasets"
+)
 LLAMA_HUB_PATH = "/llama_hub"
 LLAMA_HUB_URL = LLAMA_HUB_CONTENTS_URL + LLAMA_HUB_PATH
 
