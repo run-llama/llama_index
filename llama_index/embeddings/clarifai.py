@@ -25,6 +25,9 @@ class ClarifaiEmbedding(BaseEmbedding):
     model_version_id: Optional[str] = Field(description="Model Version ID.")
     app_id: Optional[str] = Field(description="Clarifai application ID of the model.")
     user_id: Optional[str] = Field(description="Clarifai user ID of the model.")
+    pat: Optional[str] = Field(
+        description="Personal Access Tokens(PAT) to validate requests."
+    )
 
     _model: Any = PrivateAttr()
 
@@ -35,14 +38,19 @@ class ClarifaiEmbedding(BaseEmbedding):
         model_version_id: Optional[str] = "",
         app_id: Optional[str] = None,
         user_id: Optional[str] = None,
+        pat: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
     ):
         try:
+            import os
             from clarifai.client.model import Model
         except ImportError:
             raise ImportError("ClarifaiEmbedding requires `pip install clarifai`.")
-
+        
+        if pat is not None:
+            os.environ["CLARIFAI_PAT"] = pat
+            
         if model_url is not None and model_name is not None:
             raise ValueError("You can only specify one of model_url or model_name.")
         if model_url is None and model_name is None:
@@ -78,40 +86,29 @@ class ClarifaiEmbedding(BaseEmbedding):
     def _embed(self, sentences: List[str]) -> List[List[float]]:
         """Embed sentences."""
         try:
-            from clarifai_grpc.grpc.api import resources_pb2
-            from clarifai_grpc.grpc.api.status import status_code_pb2
+            from clarifai.client.input import Inputs
         except ImportError:
             raise ImportError("ClarifaiEmbedding requires `pip install clarifai`.")
 
         embeddings = []
-        for i in range(0, len(sentences), self.embed_batch_size):
-            batch = sentences[i : i + self.embed_batch_size]
-            inputs = [
-                resources_pb2.Input(
-                    data=resources_pb2.Data(text=resources_pb2.Text(raw=t))
-                )
-                for t in batch
-            ]
-            post_model_outputs_response = self._model.predict(inputs)
+        input_obj = Inputs()
+        try:
+            for i in range(0, len(sentences), self.embed_batch_size):
+                batch = sentences[i : i + self.embed_batch_size]
+                input_batch = [
+                        input_obj.get_text_input(input_id=str(id), raw_text=inp)
+                        for id, inp in enumerate(batch)
+                    ]
+                predict_response = self._model.predict(input_batch)
+                embeddings.extend(
+                        [
+                            list(output.data.embeddings[0].vector)
+                            for output in predict_response.outputs
+                        ]
+                    )
+        except Exception as e:
+            logger.error(f"Predict failed, exception: {e}")
 
-            if post_model_outputs_response.status.code != status_code_pb2.SUCCESS:
-                logger.error(post_model_outputs_response.status)
-                first_output_failure = (
-                    post_model_outputs_response.outputs[0].status
-                    if len(post_model_outputs_response.outputs)
-                    else None
-                )
-                raise Exception(
-                    f"Model prediction failed. Status: "
-                    f"{post_model_outputs_response.status}. First output failure: "
-                    f"{first_output_failure}"
-                )
-            embeddings.extend(
-                [
-                    list(o.data.embeddings[0].vector)
-                    for o in post_model_outputs_response.outputs
-                ]
-            )
         return embeddings
 
     def _get_query_embedding(self, query: str) -> List[float]:

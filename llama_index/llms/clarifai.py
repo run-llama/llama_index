@@ -26,6 +26,9 @@ class Clarifai(LLM):
     model_version_id: Optional[str] = Field(description="Model Version ID.")
     app_id: Optional[str] = Field(description="Clarifai application ID of the model.")
     user_id: Optional[str] = Field(description="Clarifai user ID of the model.")
+    pat: Optional[str] = Field(
+        description="Personal Access Tokens(PAT) to validate requests."
+    )
 
     _model: Any = PrivateAttr()
     _is_chat_model: bool = PrivateAttr()
@@ -37,15 +40,20 @@ class Clarifai(LLM):
         model_version_id: Optional[str] = "",
         app_id: Optional[str] = None,
         user_id: Optional[str] = None,
+        pat: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: int = 512,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ):
         try:
+            import os
             from clarifai.client.model import Model
         except ImportError:
             raise ImportError("ClarifaiLLM requires `pip install clarifai`.")
+        
+        if pat is not None:
+            os.environ["CLARIFAI_PAT"] = pat
 
         if model_url is not None and model_name is not None:
             raise ValueError("You can only specify one of model_url or model_name.")
