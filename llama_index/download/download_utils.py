@@ -253,6 +253,8 @@ def download_llama_module(
     use_gpt_index_import: bool = False,
     disable_library_cache: bool = False,
     override_path: bool = False,
+    llama_datasets_url: str = LLAMA_DATASETS_URL,
+    is_dataset: bool = False,
 ) -> Type:
     """Download a module from LlamaHub.
 
@@ -271,9 +273,10 @@ def download_llama_module(
             the loader files use llama_index as the base dependency.
             NOTE: this is a temporary workaround while we fully migrate all usages
             to llama_index.
+        is_dataset: whether or not downloading a LlamaDataset
 
     Returns:
-        A Loader.
+        A Loader, A Pack, An Agent, or A Dataset
     """
     # create directory / get path
     dirpath = initialize_directory(custom_path=custom_path, custom_dir=custom_dir)
@@ -291,9 +294,14 @@ def download_llama_module(
     extra_files = module_info["extra_files"]
 
     # download the module, install requirements
+    if is_dataset:
+        download_remote_dir_path = llama_datasets_url
+    else:
+        download_remote_dir_path = llama_hub_url
+
     download_module_and_reqs(
         local_dir_path=dirpath,
-        remote_dir_path=llama_hub_url,
+        remote_dir_path=download_remote_dir_path,
         module_id=module_id,
         extra_files=extra_files,
         refresh_cache=refresh_cache,
@@ -302,71 +310,34 @@ def download_llama_module(
         override_path=override_path,
     )
 
-    # loads the module into memory
-    if override_path:
-        spec = util.spec_from_file_location(
-            "custom_module", location=f"{dirpath}/{base_file_name}"
-        )
-        if spec is None:
-            raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
+    if is_dataset:
+        # no module to install, instead just store data files in specified path
+        if override_path:
+            module_path = str(dirpath)
+        else:
+            module_path = f"{dirpath}/{module_id}"
+
+        return f"{module_path}/{LLAMA_RAG_DATASET_FILENAME}", [
+            f"{module_path}/{el}" for el in extra_files
+        ]
     else:
-        spec = util.spec_from_file_location(
-            "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
-        )
-        if spec is None:
-            raise ValueError(
-                f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
+        # loads the module into memory
+        if override_path:
+            spec = util.spec_from_file_location(
+                "custom_module", location=f"{dirpath}/{base_file_name}"
             )
+            if spec is None:
+                raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
+        else:
+            spec = util.spec_from_file_location(
+                "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
+            )
+            if spec is None:
+                raise ValueError(
+                    f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
+                )
 
-    module = util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore
+        module = util.module_from_spec(spec)
+        spec.loader.exec_module(module)  # type: ignore
 
-    return getattr(module, module_class)
-
-
-def download_llama_dataset(
-    dataset_name: str,
-    llama_hub_url: str = LLAMA_HUB_URL,
-    llama_datasets_url: str = LLAMA_DATASETS_URL,
-    refresh_cache: bool = False,
-    custom_dir: Optional[str] = None,
-    custom_path: Optional[str] = None,
-    library_path: str = "library.json",
-    disable_library_cache: bool = False,
-    override_path: bool = False,
-) -> Tuple[str, List[str]]:
-    # create directory / get path
-    dirpath = initialize_directory(custom_path=custom_path, custom_dir=custom_dir)
-
-    # fetch info from library.json file
-    module_info = get_module_info(
-        local_dir_path=dirpath,
-        remote_dir_path=llama_hub_url,
-        module_class=dataset_name,
-        refresh_cache=refresh_cache,
-        library_path=library_path,
-        disable_library_cache=disable_library_cache,
-    )
-    module_id = module_info["module_id"]
-    extra_files = module_info["extra_files"]  # re-purposed for source files
-
-    # download the rag_dataset.json and source files
-    download_module_and_reqs(
-        local_dir_path=dirpath,
-        remote_dir_path=llama_datasets_url,  # datasets not stored in llama-hub repo
-        module_id=module_id,
-        extra_files=extra_files,
-        refresh_cache=refresh_cache,
-        base_file_name=LLAMA_RAG_DATASET_FILENAME,
-        override_path=override_path,
-        dataset=True,
-    )
-
-    if override_path:
-        module_path = str(dirpath)
-    else:
-        module_path = f"{dirpath}/{module_id}"
-
-    return f"{module_path}/{LLAMA_RAG_DATASET_FILENAME}", [
-        f"{module_path}/{el}" for el in extra_files
-    ]
+        return getattr(module, module_class)

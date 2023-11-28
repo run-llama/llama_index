@@ -1,7 +1,11 @@
 from typing import List, Tuple, Type
 
-import llama_index.download.download_utils as download_utils
 from llama_index import Document
+from llama_index.download.download_utils import (
+    LLAMA_DATASETS_URL,
+    LLAMA_HUB_URL,
+    download_llama_module,
+)
 from llama_index.llama_dataset.base import BaseLlamaDataset
 from llama_index.llama_dataset.rag import LabelledRagDataset
 from llama_index.readers import SimpleDirectoryReader
@@ -10,8 +14,8 @@ from llama_index.readers import SimpleDirectoryReader
 def download_llama_dataset(
     llama_dataset_class: str,
     download_dir: str,
-    llama_hub_url: str = download_utils.LLAMA_HUB_URL,
-    llama_datasets_url: str = download_utils.LLAMA_DATASETS_URL,
+    llama_hub_url: str = LLAMA_HUB_URL,
+    llama_datasets_url: str = LLAMA_DATASETS_URL,
 ) -> Tuple[Type[BaseLlamaDataset], List[Document]]:
     """Download a single LlamaDataset from Llama Hub.
 
@@ -25,8 +29,9 @@ def download_llama_dataset(
     Returns:
         A Loader.
     """
-    rag_dataset_filename, source_filenames = download_utils.download_llama_dataset(
+    rag_dataset_filename, source_filenames = download_llama_module(
         llama_dataset_class,
+        is_dataset=True,
         llama_hub_url=llama_hub_url,
         llama_datasets_url=llama_datasets_url,
         refresh_cache=True,
