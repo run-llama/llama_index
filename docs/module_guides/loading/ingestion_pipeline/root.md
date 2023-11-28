@@ -158,4 +158,6 @@ nodes = await pipeline.arun(documents=documents)
 maxdepth: 2
 ---
 transformations.md
+/examples/ingestion/advanced_ingestion_pipeline.ipynb
+/examples/ingestion/async_ingestion_pipeline.ipynb
 ```
