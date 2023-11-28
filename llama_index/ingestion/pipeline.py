@@ -429,6 +429,7 @@ class IngestionPipeline(BaseModel):
                 name=self.name,
                 configured_transformations=configured_transformations,
                 data_sources=data_sources,
+                data_sinks=[],
             ),
         )
         assert pipeline.id is not None, "Pipeline ID should not be None"
