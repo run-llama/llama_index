@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from llama_index_client import ProjectCreate
 from llama_index_client.client import PlatformApi
+from llama_index_client.types.eval_dataset_create import EvalDatasetCreate
 from llama_index_client.types.eval_question_create import EvalQuestionCreate
 
 from llama_index.core import BaseQueryEngine
@@ -121,7 +122,7 @@ def upload_eval_dataset(
     # either create new dataset or use existing one
     if cur_dataset is None:
         eval_dataset = client.project.create_eval_dataset_for_project(
-            project_id=project.id, name=dataset_name
+            project_id=project.id, request=EvalDatasetCreate(name=dataset_name)
         )
     else:
         eval_dataset = cur_dataset
