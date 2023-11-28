@@ -16,9 +16,11 @@ LLAMA_HUB_CONTENTS_URL = f"https://raw.githubusercontent.com/nerdai/llama-hub/da
 LLAMA_HUB_PATH = "/llama_hub"
 LLAMA_HUB_URL = LLAMA_HUB_CONTENTS_URL + LLAMA_HUB_PATH
 
-REPO = "datasets"
+REPO = "llama_datasets"
 BRANCH = "main"
-LLAMA_DATASETS_URL = f"https://media.githubusercontent.com/media/nerdai/{REPO}/{BRANCH}"
+LLAMA_DATASETS_URL = (
+    f"https://media.githubusercontent.com/media/run-llama/{REPO}/{BRANCH}"
+)
 LLAMA_RAG_DATASET_FILENAME = "rag_dataset.json"
 
 
