@@ -17,18 +17,27 @@ Confused about where node postprocessor fits in the pipeline? Read about [high-l
 An example of using a node postprocessors is below:
 
 ```python
-from llama_index.indices.postprocessor import SimilarityPostprocessor
+from llama_index.postprocessor import (
+    SimilarityPostprocessor,
+    CohereRerank,
+)
 from llama_index.schema import Node, NodeWithScore
 
 nodes = [
-    NodeWithScore(node=Node(text="text"), score=0.7),
-    NodeWithScore(node=Node(text="text"), score=0.8),
+    NodeWithScore(node=Node(text="text1"), score=0.7),
+    NodeWithScore(node=Node(text="text2"), score=0.8),
 ]
 
-# filter nodes below 0.75 similarity score
+# similarity postprocessor: filter nodes below 0.75 similarity score
 processor = SimilarityPostprocessor(similarity_cutoff=0.75)
 filtered_nodes = processor.postprocess_nodes(nodes)
+
+# cohere rerank: rerank nodes given query using trained model
+reranker = CohereRerank(api_key="<COHERE_API_KEY>", top_n=2)
+reranker.postprocess_nodes(nodes, query_str="<user_query>")
 ```
+
+Note that `postprocess_nodes` can take in either a `query_str` or `query_bundle` (`QueryBundle`), though not both.
 
 ## Usage Pattern
 
@@ -38,7 +47,7 @@ Most commonly, node-postprocessors will be used in a query engine, where they ar
 
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.indices.postprocessor import TimeWeightedPostprocessor
+from llama_index.postprocessor import TimeWeightedPostprocessor
 
 documents = SimpleDirectoryReader("./data").load_data()
 
@@ -61,7 +70,7 @@ response = query_engine.query("query string")
 Or used as a standalone object for filtering retrieved nodes:
 
 ```python
-from llama_index.indices.postprocessor import SimilarityPostprocessor
+from llama_index.postprocessor import SimilarityPostprocessor
 
 nodes = index.as_retriever().retrieve("test query str")
 
@@ -75,7 +84,7 @@ filtered_nodes = processor.postprocess_nodes(nodes)
 As you may have noticed, the postprocessors take `NodeWithScore` objects as inputs, which is just a wrapper class with a `Node` and a `score` value.
 
 ```python
-from llama_index.indices.postprocessor import SimilarityPostprocessor
+from llama_index.postprocessor import SimilarityPostprocessor
 from llama_index.schema import Node, NodeWithScore
 
 nodes = [
@@ -97,7 +106,7 @@ class BaseNodePostprocessor:
     """Node postprocessor."""
 
     @abstractmethod
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
@@ -107,12 +116,12 @@ A dummy node-postprocessor can be implemented in just a few lines of code:
 
 ```python
 from llama_index import QueryBundle
-from llama_index.indices.postprocessor.base import BaseNodePostprocessor
+from llama_index.postprocessor.base import BaseNodePostprocessor
 from llama_index.schema import NodeWithScore
 
 
 class DummyNodePostprocessor:
-    def postprocess_nodes(
+    def _postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
     ) -> List[NodeWithScore]:
         # subtracts 1 from the score

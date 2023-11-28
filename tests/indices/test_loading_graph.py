@@ -4,9 +4,9 @@ from typing import List
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.loading import load_graph_from_storage
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.schema import Document
+from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 
 

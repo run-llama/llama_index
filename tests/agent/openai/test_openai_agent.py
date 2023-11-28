@@ -1,35 +1,39 @@
 from typing import Any, List, Sequence
+from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.agent.openai_agent import OpenAIAgent
+from llama_index.agent.openai_agent import OpenAIAgent, call_tool_with_error_handling
 from llama_index.chat_engine.types import AgentChatResponse
 from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.tools.function_tool import FunctionTool
-from pytest import MonkeyPatch
+from openai.types.chat.chat_completion import ChatCompletion, Choice
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
 
-def mock_chat_completion(*args: Any, **kwargs: Any) -> dict:
+def mock_chat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
     if "functions" in kwargs:
         if not kwargs["functions"]:
             raise ValueError("functions must not be empty")
 
     # Example taken from https://platform.openai.com/docs/api-reference/chat/create
-    return {
-        "id": "chatcmpl-abc123",
-        "object": "chat.completion",
-        "created": 1677858242,
-        "model": "gpt-3.5-turbo-0301",
-        "usage": {"prompt_tokens": 13, "completion_tokens": 7, "total_tokens": 20},
-        "choices": [
-            {
-                "message": {"role": "assistant", "content": "\n\nThis is a test!"},
-                "finish_reason": "stop",
-                "index": 0,
-            }
+    return ChatCompletion(
+        id="chatcmpl-abc123",
+        object="chat.completion",
+        created=1677858242,
+        model="gpt-3.5-turbo-0301",
+        usage={"prompt_tokens": 13, "completion_tokens": 7, "total_tokens": 20},
+        choices=[
+            Choice(
+                message=ChatCompletionMessage(
+                    role="assistant", content="\n\nThis is a test!"
+                ),
+                finish_reason="stop",
+                index=0,
+            )
         ],
-    }
+    )
 
 
 @pytest.fixture()
@@ -67,13 +71,10 @@ Answer: 2
 """
 
 
-def test_chat_basic(
-    add_tool: FunctionTool,
-    monkeypatch: MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        "llama_index.llms.openai.completion_with_retry", mock_chat_completion
-    )
+@patch("llama_index.llms.openai.SyncOpenAI")
+def test_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_chat_completion()
 
     llm = OpenAI(model="gpt-3.5-turbo")
 
@@ -86,12 +87,10 @@ def test_chat_basic(
     assert response.response == "\n\nThis is a test!"
 
 
-def test_chat_no_functions(
-    monkeypatch: MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(
-        "llama_index.llms.openai.completion_with_retry", mock_chat_completion
-    )
+@patch("llama_index.llms.openai.SyncOpenAI")
+def test_chat_no_functions(MockSyncOpenAI: MagicMock) -> None:
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_chat_completion()
 
     llm = OpenAI(model="gpt-3.5-turbo")
 
@@ -101,3 +100,23 @@ def test_chat_no_functions(
     response = agent.chat("What is 1 + 1?")
     assert isinstance(response, AgentChatResponse)
     assert response.response == "\n\nThis is a test!"
+
+
+def test_call_tool_with_error_handling() -> None:
+    """Test call tool with error handling."""
+
+    def _add(a: int, b: int) -> int:
+        return a + b
+
+    tool = FunctionTool.from_defaults(fn=_add)
+
+    output = call_tool_with_error_handling(
+        tool, {"a": 1, "b": 1}, error_message="Error!"
+    )
+    assert output.content == "2"
+
+    # try error
+    output = call_tool_with_error_handling(
+        tool, {"a": "1", "b": 1}, error_message="Error!"
+    )
+    assert output.content == "Error!"

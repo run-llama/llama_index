@@ -91,6 +91,21 @@ maxdepth: 1
 /examples/callbacks/WandbCallbackHandler.ipynb
 ```
 
+### OpenLLMetry
+
+[OpenLLMetry](https://github.com/traceloop/openllmetry) is an open-source project based on OpenTelemetry for tracing and monitoring
+LLM applications. It connects to [all major observability platforms](https://www.traceloop.com/docs/openllmetry/integrations/introduction) and installs in minutes.
+
+#### Usage Pattern
+
+```python
+from traceloop.sdk import Traceloop
+
+Traceloop.init()
+```
+
+![](/_static/integrations/openllmetry.png)
+
 ### Arize Phoenix
 
 Arize [Phoenix](https://github.com/Arize-ai/phoenix): LLMOps insights at lightning speed with zero-config observability. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
@@ -220,7 +235,7 @@ set_global_handler(
 # NOTE: No need to do the following
 # from llama_index import ServiceContext
 # from llama_index.callbacks import CallbackManager
-# from honeyhive.sdk.llamaindex_tracer import HoneyHiveLlamaIndexTracer
+# from honeyhive.utils.llamaindex_tracer import HoneyHiveLlamaIndexTracer
 # hh_tracer = HoneyHiveLlamaIndexTracer(
 #     project="My HoneyHive Project",
 #     name="My LLM Pipeline Name",

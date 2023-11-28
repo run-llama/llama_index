@@ -5,9 +5,9 @@ from typing import Dict, List
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.keyword_table.simple_base import SimpleKeywordTableIndex
 from llama_index.indices.list.base import SummaryIndex
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.schema import Document
+from llama_index.service_context import ServiceContext
 
 
 def test_recursive_query_list_tree(

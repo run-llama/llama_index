@@ -6,9 +6,7 @@ from abc import abstractmethod
 from copy import deepcopy
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
-from pydantic import BaseModel, Field
-
-from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.utils import get_tqdm_iterable
 
 
@@ -262,13 +260,16 @@ class RayTuneParamTuner(BaseParamTuner):
 
         results = tuner.fit()
         all_run_results = []
-        for result in results:
+        for idx in range(len(results)):
+            result = results[idx]
             # convert dict back to RunResult (reconstruct it with metadata)
             # get the keys in RunResult, assign corresponding values in
             # result.metrics to those keys
             run_result = RunResult.parse_obj(result.metrics)
             # add some more metadata to run_result (e.g. timestamp)
-            run_result.metadata["timestamp"] = result.metrics["timestamp"]
+            run_result.metadata["timestamp"] = (
+                result.metrics["timestamp"] if result.metrics else None
+            )
 
             all_run_results.append(run_result)
 

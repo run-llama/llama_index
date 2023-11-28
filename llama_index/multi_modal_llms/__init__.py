@@ -1,10 +1,13 @@
 from llama_index.multi_modal_llms.base import (
+    ChatMessage,
+    MessageRole,
     MultiModalCompletionResponse,
     MultiModalCompletionResponseAsyncGen,
     MultiModalCompletionResponseGen,
     MultiModalLLM,
     MultiModalLLMMetadata,
 )
+from llama_index.multi_modal_llms.openai import OpenAIMultiModal
 from llama_index.multi_modal_llms.replicate_multi_modal import ReplicateMultiModal
 
 __all__ = [
@@ -14,4 +17,7 @@ __all__ = [
     "MultiModalCompletionResponseAsyncGen",
     "MultiModalLLMMetadata",
     "MultiModalLLM",
+    "ChatMessage",
+    "MessageRole",
+    "OpenAIMultiModal",
 ]

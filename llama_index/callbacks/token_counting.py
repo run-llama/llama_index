@@ -3,7 +3,8 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.utils import globals_helper
+from llama_index.utilities.token_counting import TokenCounter
+from llama_index.utils import get_tokenizer
 
 
 @dataclass
@@ -20,7 +21,7 @@ class TokenCountingEvent:
 
 
 def get_llm_token_counts(
-    tokenizer: Callable[[str], List], payload: Dict[str, Any], event_id: str = ""
+    token_counter: TokenCounter, payload: Dict[str, Any], event_id: str = ""
 ) -> TokenCountingEvent:
     from llama_index.llms import ChatMessage
 
@@ -31,22 +32,54 @@ def get_llm_token_counts(
         return TokenCountingEvent(
             event_id=event_id,
             prompt=prompt,
-            prompt_token_count=len(tokenizer(prompt)),
+            prompt_token_count=token_counter.get_string_tokens(prompt),
             completion=completion,
-            completion_token_count=len(tokenizer(completion)),
+            completion_token_count=token_counter.get_string_tokens(completion),
         )
 
     elif EventPayload.MESSAGES in payload:
         messages = cast(List[ChatMessage], payload.get(EventPayload.MESSAGES, []))
         messages_str = "\n".join([str(x) for x in messages])
-        response = str(payload.get(EventPayload.RESPONSE))
+
+        response = payload.get(EventPayload.RESPONSE)
+        response_str = str(response)
+
+        # try getting attached token counts first
+        try:
+            usage = response.raw["usage"]  # type: ignore
+
+            messages_tokens = 0
+            response_tokens = 0
+
+            if usage is not None:
+                messages_tokens = usage.prompt_tokens
+                response_tokens = usage.completion_tokens
+
+            if messages_tokens == 0 or response_tokens == 0:
+                raise ValueError("Invalid token counts!")
+
+            return TokenCountingEvent(
+                event_id=event_id,
+                prompt=messages_str,
+                prompt_token_count=messages_tokens,
+                completion=response_str,
+                completion_token_count=response_tokens,
+            )
+
+        except (ValueError, KeyError):
+            # Invalid token counts, or no token counts attached
+            pass
+
+        # Should count tokens ourselves
+        messages_tokens = token_counter.estimate_tokens_in_messages(messages)
+        response_tokens = token_counter.get_string_tokens(response_str)
 
         return TokenCountingEvent(
             event_id=event_id,
             prompt=messages_str,
-            prompt_token_count=len(tokenizer(messages_str)),
-            completion=response,
-            completion_token_count=len(tokenizer(response)),
+            prompt_token_count=messages_tokens,
+            completion=response_str,
+            completion_token_count=response_tokens,
         )
     else:
         raise ValueError(
@@ -74,7 +107,9 @@ class TokenCountingHandler(BaseCallbackHandler):
     ) -> None:
         self.llm_token_counts: List[TokenCountingEvent] = []
         self.embedding_token_counts: List[TokenCountingEvent] = []
-        self.tokenizer = tokenizer or globals_helper.tokenizer
+        self.tokenizer = tokenizer or get_tokenizer()
+
+        self._token_counter = TokenCounter(tokenizer=self.tokenizer)
         self._verbose = verbose
 
         super().__init__(
@@ -117,7 +152,7 @@ class TokenCountingHandler(BaseCallbackHandler):
         ):
             self.llm_token_counts.append(
                 get_llm_token_counts(
-                    tokenizer=self.tokenizer,
+                    token_counter=self._token_counter,
                     payload=payload,
                     event_id=event_id,
                 )
@@ -142,7 +177,7 @@ class TokenCountingHandler(BaseCallbackHandler):
                     TokenCountingEvent(
                         event_id=event_id,
                         prompt=chunk,
-                        prompt_token_count=len(self.tokenizer(chunk)),
+                        prompt_token_count=self._token_counter.get_string_tokens(chunk),
                         completion="",
                         completion_token_count=0,
                     )

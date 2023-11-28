@@ -27,6 +27,7 @@ LLM Implementations
    llms/predibase.rst
    llms/replicate.rst
    llms/xinference.rst
+   llms/openllm.rst
 
 LLM Interface
 ^^^^^^^^^^^^^^^^^^^^^^^

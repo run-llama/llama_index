@@ -1,5 +1,8 @@
+from typing import List
+
 import tiktoken
-from llama_index.text_splitter import SentenceSplitter
+from llama_index.node_parser.text import SentenceSplitter
+from llama_index.schema import Document, MetadataMode, TextNode
 
 
 def test_paragraphs() -> None:
@@ -10,6 +13,18 @@ def test_paragraphs() -> None:
     sentence_split = sentence_text_splitter.split_text(text)
     assert sentence_split[0] == " ".join(["foo"] * 15)
     assert sentence_split[1] == " ".join(["bar"] * 15)
+
+
+def test_start_end_char_idx() -> None:
+    document = Document(text=" ".join(["foo"] * 15) + "\n\n\n" + " ".join(["bar"] * 15))
+    text_splitter = SentenceSplitter(chunk_size=2, chunk_overlap=1)
+    nodes: List[TextNode] = text_splitter.get_nodes_from_documents([document])
+    for node in nodes:
+        assert node.start_char_idx is not None
+        assert node.end_char_idx is not None
+        assert node.end_char_idx - node.start_char_idx == len(
+            node.get_content(metadata_mode=MetadataMode.NONE)
+        )
 
 
 def test_sentences() -> None:
@@ -26,7 +41,7 @@ def test_sentences() -> None:
 def test_chinese_text(chinese_text: str) -> None:
     splitter = SentenceSplitter(chunk_size=512, chunk_overlap=0)
     chunks = splitter.split_text(chinese_text)
-    assert len(chunks) == 3
+    assert len(chunks) == 2
 
 
 def test_contiguous_text(contiguous_text: str) -> None:

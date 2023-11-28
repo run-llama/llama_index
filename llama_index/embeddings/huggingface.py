@@ -20,12 +20,16 @@ from llama_index.utils import get_cache_dir, infer_torch_device
 if TYPE_CHECKING:
     import torch
 
+DEFAULT_HUGGINGFACE_LENGTH = 512
+
 
 class HuggingFaceEmbedding(BaseEmbedding):
     tokenizer_name: str = Field(description="Tokenizer name from HuggingFace.")
-    max_length: int = Field(description="Maximum length of input.")
+    max_length: int = Field(
+        default=DEFAULT_HUGGINGFACE_LENGTH, description="Maximum length of input.", gt=0
+    )
     pooling: Pooling = Field(default=Pooling.CLS, description="Pooling strategy.")
-    normalize: str = Field(default=True, description="Normalize embeddings or not.")
+    normalize: bool = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
     )

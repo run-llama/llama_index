@@ -8,15 +8,16 @@ interfaces a managed service.
 import json
 import logging
 import os
-from typing import Any, Optional, Sequence, Type
+from hashlib import blake2b
+from typing import Any, Dict, List, Optional, Sequence, Type
 
 import requests
 
+from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
-from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
-from llama_index.indices.service_context import ServiceContext
 from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 
 _logger = logging.getLogger(__name__)
@@ -92,9 +93,10 @@ class VectaraIndex(BaseManagedIndex):
         self._session.mount("https://", adapter)
         self.vectara_api_timeout = 90
         self.use_core_api = use_core_api
+        self.doc_ids: List[str] = []
 
         # if nodes is specified, consider each node as a single document
-        # and use _add_documents() to add them to the index
+        # and use _build_index_from_nodes() to add them to the index
         if nodes is not None:
             self._build_index_from_nodes(nodes, use_core_api)
 
@@ -104,8 +106,8 @@ class VectaraIndex(BaseManagedIndex):
         docs = [
             Document(
                 text=node.get_content(metadata_mode=MetadataMode.NONE),
-                metadata=node.metadata,
-                id_=node.id_,
+                metadata=node.metadata,  # type: ignore
+                id_=node.id_,  # type: ignore
             )
             for node in nodes
         ]
@@ -155,7 +157,7 @@ class VectaraIndex(BaseManagedIndex):
         return True
 
     def _index_doc(self, doc: dict) -> str:
-        request: dict[str, Any] = {}
+        request: Dict[str, Any] = {}
         request["customerId"] = self._vectara_customer_id
         request["corpusId"] = self._vectara_corpus_id
         request["document"] = doc
@@ -192,18 +194,25 @@ class VectaraIndex(BaseManagedIndex):
         **insert_kwargs: Any,
     ) -> None:
         """Insert a set of documents (each a node)."""
+
+        def gen_hash(s: str) -> str:
+            hash_object = blake2b()
+            hash_object.update(s.encode("utf-8"))
+            return hash_object.hexdigest()
+
         for node in nodes:
             metadata = node.metadata.copy()
             metadata["framework"] = "llama_index"
             section_key = "parts" if use_core_api else "section"
+            text = node.get_content(metadata_mode=MetadataMode.NONE)
+            doc_id = gen_hash(text)
             doc = {
-                "documentId": node.id_,
+                "documentId": doc_id,
                 "metadataJson": json.dumps(node.metadata),
-                section_key: [
-                    {"text": node.get_content(metadata_mode=MetadataMode.NONE)}
-                ],
+                section_key: [{"text": text}],
             }
             self._index_doc(doc)
+            self.doc_ids.append(doc_id)
 
     def add_documents(
         self,
@@ -212,7 +221,7 @@ class VectaraIndex(BaseManagedIndex):
         allow_update: bool = True,
     ) -> None:
         nodes = [
-            TextNode(text=doc.text, metadata=doc.metadata, id_=doc.id_) for doc in docs
+            TextNode(text=doc.get_content(), metadata=doc.metadata) for doc in docs  # type: ignore
         ]
         self._insert(nodes, use_core_api)
 
@@ -275,19 +284,35 @@ class VectaraIndex(BaseManagedIndex):
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
-        """Delete a document and it's nodes by using ref_doc_id."""
-        self._delete_doc(ref_doc_id)
+        raise NotImplementedError(
+            "Vectara does not support deleting a reference document"
+        )
 
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
-        """Update a document and it's corresponding nodes."""
-        self._delete_doc(document.doc_id)
-        self.insert(document)
+        raise NotImplementedError(
+            "Vectara does not support updating a reference document"
+        )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
         from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 
         return VectaraRetriever(self, **kwargs)
+
+    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        if kwargs.get("summary_enabled", True):
+            from llama_index.indices.managed.vectara.query import VectaraQueryEngine
+
+            kwargs["summary_enabled"] = True
+            retriever = self.as_retriever(**kwargs)
+            return VectaraQueryEngine.from_args(retriever, **kwargs)  # type: ignore
+        else:
+            from llama_index.query_engine.retriever_query_engine import (
+                RetrieverQueryEngine,
+            )
+
+            kwargs["retriever"] = self.as_retriever(**kwargs)
+            return RetrieverQueryEngine.from_args(**kwargs)
 
     @classmethod
     def from_documents(
@@ -300,7 +325,7 @@ class VectaraIndex(BaseManagedIndex):
     ) -> IndexType:
         """Build a Vectara index from a sequence of documents."""
         nodes = [
-            TextNode(text=document.text, metadata=document.metadata, id_=document.id_)
+            TextNode(text=document.get_content(), metadata=document.metadata)  # type: ignore
             for document in documents
         ]
         return cls(

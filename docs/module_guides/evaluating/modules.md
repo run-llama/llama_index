@@ -17,6 +17,7 @@ maxdepth: 1
 /examples/evaluation/Deepeval.ipynb
 /examples/evaluation/QuestionGeneration.ipynb
 /examples/evaluation/batch_eval.ipynb
+/examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb
 ```
 
 ## Retrieval Evaluation

@@ -21,6 +21,7 @@ from llama_index.vector_stores.elasticsearch import (
 from llama_index.vector_stores.epsilla import EpsillaVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
+from llama_index.vector_stores.lantern import LanternVectorStore
 from llama_index.vector_stores.metal import MetalVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.myscale import MyScaleVectorStore
@@ -29,6 +30,7 @@ from llama_index.vector_stores.opensearch import (
     OpensearchVectorClient,
     OpensearchVectorStore,
 )
+from llama_index.vector_stores.pgvecto_rs import PGVectoRsStore
 from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.vector_stores.postgres import PGVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
@@ -46,6 +48,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.zep import ZepVectorStore
 
 __all__ = [
     "ElasticsearchStore",
@@ -71,6 +74,7 @@ __all__ = [
     "DocArrayHnswVectorStore",
     "SupabaseVectorStore",
     "PGVectorStore",
+    "PGVectoRsStore",
     "TimescaleVectorStore",
     "ZepVectorStore",
     "AwaDBVectorStore",
@@ -86,4 +90,5 @@ __all__ = [
     "TencentVectorDB",
     "AstraDBVectorStore",
     "AzureCosmosDBMongoDBVectorSearch",
+    "LanternVectorStore",
 ]

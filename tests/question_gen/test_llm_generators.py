@@ -1,7 +1,7 @@
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.types import SubQuestion
+from llama_index.schema import QueryBundle
+from llama_index.service_context import ServiceContext
 from llama_index.tools.types import ToolMetadata
 
 

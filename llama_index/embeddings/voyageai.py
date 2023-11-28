@@ -36,7 +36,8 @@ class VoyageEmbedding(BaseEmbedding):
             raise ImportError(
                 "voyageai package not found, install with" "'pip install voyageai'"
             )
-        voyageai.api_key = voyage_api_key
+        if voyage_api_key:
+            voyageai.api_key = voyage_api_key
         self._model = voyageai
 
         super().__init__(
@@ -52,24 +53,44 @@ class VoyageEmbedding(BaseEmbedding):
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        return self._model.get_embedding(query, model=self.model_name)
+        return self._model.get_embedding(
+            query, model=self.model_name, input_type="query"
+        )
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
-        return await self._model.aget_embedding(query, model=self.model_name)
+        return await self._model.aget_embedding(
+            query, model=self.model_name, input_type="query"
+        )
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        return self._model.get_embedding(text, model=self.model_name)
+        return self._model.get_embedding(
+            text, model=self.model_name, input_type="document"
+        )
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        return await self._model.aget_embedding(text, model=self.model_name)
+        return await self._model.aget_embedding(
+            text, model=self.model_name, input_type="document"
+        )
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        return self._model.get_embeddings(texts, model=self.model_name)
+        return self._model.get_embeddings(
+            texts, model=self.model_name, input_type="document"
+        )
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        return await self._model.aget_embeddings(texts, model=self.model_name)
+        return await self._model.aget_embeddings(
+            texts, model=self.model_name, input_type="document"
+        )
+
+    def get_general_text_embedding(
+        self, text: str, input_type: Optional[str] = None
+    ) -> List[float]:
+        """Get general text embedding with input_type."""
+        return self._model.get_embedding(
+            text, model=self.model_name, input_type=input_type
+        )

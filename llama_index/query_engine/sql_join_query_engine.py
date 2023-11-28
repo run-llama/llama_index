@@ -4,10 +4,8 @@ import logging
 from typing import Callable, Dict, Optional, Union
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.sql_query import (
     BaseSQLTableQueryEngine,
     NLSQLTableQueryEngine,
@@ -17,9 +15,11 @@ from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.schema import QueryBundle
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
 from llama_index.selectors.utils import get_selector_from_context
+from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.utils import print_text
 

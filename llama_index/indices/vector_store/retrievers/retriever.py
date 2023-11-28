@@ -3,13 +3,13 @@
 
 from typing import Any, Dict, List, Optional
 
+from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.core import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import NodeWithScore, ObjectType
+from llama_index.schema import NodeWithScore, ObjectType, QueryBundle
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
@@ -45,6 +45,7 @@ class VectorIndexRetriever(BaseRetriever):
         node_ids: Optional[List[str]] = None,
         doc_ids: Optional[List[str]] = None,
         sparse_top_k: Optional[int] = None,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -60,8 +61,8 @@ class VectorIndexRetriever(BaseRetriever):
         self._doc_ids = doc_ids
         self._filters = filters
         self._sparse_top_k = sparse_top_k
-
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
+        super().__init__(callback_manager)
 
     @property
     def similarity_top_k(self) -> int:
@@ -95,7 +96,6 @@ class VectorIndexRetriever(BaseRetriever):
                         query_bundle.embedding_strs
                     )
                 )
-
         return await self._aget_nodes_with_embeddings(query_bundle)
 
     def _build_vector_store_query(

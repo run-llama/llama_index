@@ -20,6 +20,8 @@ from llama_index.vector_stores.utils import (
 
 _logger = logging.getLogger(__name__)
 
+MAX_INSERT_BATCH_SIZE = 20
+
 
 class AstraDBVectorStore(VectorStore):
     """Astra DB Vector Store.
@@ -60,7 +62,7 @@ class AstraDBVectorStore(VectorStore):
 
         # Try to import astrapy for use
         try:
-            from astrapy.db import AstraDB, AstraDBCollection
+            from astrapy.db import AstraDB
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -75,14 +77,9 @@ class AstraDBVectorStore(VectorStore):
             api_endpoint=api_endpoint, token=token, namespace=namespace
         )
 
-        # Create the new collection
-        self._astra_db.create_collection(
+        # Create and connect to the newly created collection
+        self._astra_db_collection = self._astra_db.create_collection(
             collection_name=collection_name, dimension=embedding_dimension
-        )
-
-        # Connect to the newly created collection
-        self._astra_db_collection = AstraDBCollection(
-            collection_name=collection_name, astra_db=self._astra_db
         )
 
     def add(
@@ -121,8 +118,20 @@ class AstraDBVectorStore(VectorStore):
         # Log the number of rows being added
         _logger.debug(f"Adding {len(nodes_list)} rows to table")
 
+        # Initialize an empty list to hold the batches
+        batched_list = []
+
+        # Iterate over the node_list in steps of MAX_INSERT_BATCH_SIZE
+        for i in range(0, len(nodes_list), MAX_INSERT_BATCH_SIZE):
+            # Append a slice of node_list to the batched_list
+            batched_list.append(nodes_list[i : i + MAX_INSERT_BATCH_SIZE])
+
         # Perform the bulk insert
-        self._astra_db_collection.insert_many(nodes_list)
+        for i, batch in enumerate(batched_list):
+            _logger.debug(f"Processing batch #{i + 1} of size {len(batch)}")
+
+            # Go to astrapy to perform the bulk insert
+            self._astra_db_collection.insert_many(batch)
 
         # Return the list of ids
         return [str(n["_id"]) for n in nodes_list]
