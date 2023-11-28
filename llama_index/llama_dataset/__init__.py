@@ -5,6 +5,7 @@ from llama_index.llama_dataset.base import (
     BaseLlamaDataset,
     BaseLlamaExamplePrediction,
     BaseLlamaPredictionDataset,
+    CreatedBy,
     CreatedByType,
 )
 from llama_index.llama_dataset.download import download_llama_dataset
@@ -25,5 +26,6 @@ __all__ = [
     "RagExamplePrediction",
     "RagPredictionDataset",
     "CreatedByType",
+    "CreatedBy",
     "download_llama_dataset",
 ]

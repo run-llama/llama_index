@@ -19,36 +19,21 @@ class CreatedByType(str, Enum):
     HUMAN = "human"
     AI = "ai"
 
-    def __init__(self, _: str, model_name: str = None):
-        self._model_name = model_name
+    def __str__(self) -> str:
+        return self.value
 
-    @classmethod
-    def from_model_name(cls, model_name: str) -> "CreatedByType":
-        """Constructs CreatedByType.AI with _model_name set to model_name.
 
-        Args:
-            model_name (str): The name of the model used.
-
-        Returns:
-            CreatedByType: An CreateByType.AI
-        """
-        obj = cls.AI
-        obj._model_name = model_name
-        return obj
-
-    @property
-    def model_name(self):
-        return self._model_name
-
-    @model_name.setter
-    def model_name(self, value: str):
-        self._model_name = value.lower()
+class CreatedBy(BaseModel):
+    model_name: Optional[str] = Field(
+        default_factory=str, description="When CreatedByType.AI, specify model name."
+    )
+    type: CreatedByType
 
     def __str__(self) -> str:
-        if self._model_name:
-            return f"{self.value} ({self._model_name})"
+        if self.type == "ai":
+            return f"{self.type!s} ({self.model_name})"
         else:
-            return self.value
+            return str(self.type)
 
 
 class BaseLlamaExamplePrediction(BaseModel):

@@ -11,7 +11,7 @@ from llama_index.llama_dataset.base import (
     BaseLlamaDataset,
     BaseLlamaExamplePrediction,
     BaseLlamaPredictionDataset,
-    CreatedByType,
+    CreatedBy,
 )
 
 
@@ -54,7 +54,7 @@ class LabelledRagDataExample(BaseLlamaDataExample):
     query: str = Field(
         default_factory=str, description="The user query for the example."
     )
-    query_by: Optional[CreatedByType] = Field(
+    query_by: Optional[CreatedBy] = Field(
         default=None, description="What generated the query."
     )
     reference_contexts: List[str] = Field(
@@ -65,7 +65,7 @@ class LabelledRagDataExample(BaseLlamaDataExample):
         default_factory=str,
         description="The reference (ground-truth) answer to the example.",
     )
-    reference_answer_by: Optional[CreatedByType] = Field(
+    reference_answer_by: Optional[CreatedBy] = Field(
         default=None, description="What generated the reference answer."
     )
 

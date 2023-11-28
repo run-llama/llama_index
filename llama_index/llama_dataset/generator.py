@@ -8,6 +8,7 @@ from typing import List
 from llama_index import Document, ServiceContext, SummaryIndex
 from llama_index.ingestion import run_transformations
 from llama_index.llama_dataset import (
+    CreatedBy,
     CreatedByType,
     LabelledRagDataExample,
     LabelledRagDataset,
@@ -196,12 +197,13 @@ class RagDatasetGenerator(PromptMixin):
                     cleaned_questions, answer_responses
                 ):
                     model_name = self.service_context.llm.metadata.model_name
+                    created_by = CreatedBy(type=CreatedByType.AI, model_name=model_name)
                     example = LabelledRagDataExample(
                         query=question,
                         reference_answer=answer_response.response,
                         reference_contexts=[reference_context],
-                        reference_answer_by=CreatedByType.from_model_name(model_name),
-                        query_by=CreatedByType.from_model_name(model_name),
+                        reference_answer_by=created_by,
+                        query_by=created_by,
                     )
                     examples.append(example)
             else:

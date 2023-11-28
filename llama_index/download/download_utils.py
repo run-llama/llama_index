@@ -170,7 +170,7 @@ def download_module_and_reqs(
     use_gpt_index_import: bool = False,
     base_file_name: str = "base.py",
     override_path: bool = False,
-    dataset: bool = False,
+    is_dataset: bool = False,
 ) -> None:
     """Load module."""
     if isinstance(local_dir_path, str):
@@ -216,7 +216,7 @@ def download_module_and_reqs(
             with open(f"{module_path}/{extra_file}", "w") as f:
                 f.write(extra_file_raw_content)
 
-    if not dataset:
+    if not is_dataset:
         # install requirements
         requirements_path = f"{local_dir_path}/requirements.txt"
 
@@ -296,6 +296,7 @@ def download_llama_module(
     # download the module, install requirements
     if is_dataset:
         download_remote_dir_path = llama_datasets_url
+        base_file_name = "rag_dataset.json"
     else:
         download_remote_dir_path = llama_hub_url
 
@@ -308,6 +309,7 @@ def download_llama_module(
         use_gpt_index_import=use_gpt_index_import,
         base_file_name=base_file_name,
         override_path=override_path,
+        is_dataset=is_dataset,
     )
 
     if is_dataset:
