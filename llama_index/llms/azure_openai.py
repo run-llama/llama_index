@@ -83,6 +83,7 @@ class AzureOpenAI(OpenAI):
             deployment_name,
             deployment_id,
             deployment,
+            azure_deployment
         )
 
         if engine is None:
