@@ -126,3 +126,23 @@ def test_pipeline_update() -> None:
     assert pipeline.docstore is not None
     assert len(pipeline.docstore.docs) == 1
     assert next(iter(pipeline.docstore.docs.values())).text == "test"  # type: ignore
+
+
+def test_pipeline_dedupe_input() -> None:
+    documents = [
+        Document(text="one", doc_id="1"),
+        Document(text="two", doc_id="2"),
+        Document(text="three", doc_id="1"),
+    ]
+
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        ],
+        docstore=SimpleDocumentStore(),
+    )
+
+    nodes = pipeline.run(documents=documents)
+    assert len(nodes) == 2
+    assert pipeline.docstore is not None
+    assert len(pipeline.docstore.docs) == 2

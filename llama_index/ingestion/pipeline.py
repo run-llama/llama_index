@@ -134,10 +134,6 @@ class IngestionPipeline(BaseModel):
         default=None,
         description="Document store to use to store the data for de-duping",
     )
-    dedup_key: Optional[str] = Field(
-        default=None,
-        description="Metadata key to use for de-duping documents. If not specified, will use the ref_doc_id.",
-    )
     disable_cache: bool = Field(default=False, description="Disable the cache")
 
     class Config:
@@ -151,7 +147,6 @@ class IngestionPipeline(BaseModel):
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
         docstore: Optional[BaseDocumentStore] = None,
-        dedup_key: Optional[str] = None,
     ) -> None:
         if transformations is None:
             transformations = self._get_default_transformations()
@@ -163,7 +158,6 @@ class IngestionPipeline(BaseModel):
             vector_store=vector_store,
             cache=cache or IngestionCache(),
             docstore=docstore,
-            dedup_key=dedup_key,
         )
 
     @classmethod
@@ -175,7 +169,6 @@ class IngestionPipeline(BaseModel):
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
         docstore: Optional[BaseDocumentStore] = None,
-        dedup_key: Optional[str] = None,
     ) -> "IngestionPipeline":
         transformations = [
             *service_context.transformations,
@@ -189,7 +182,6 @@ class IngestionPipeline(BaseModel):
             vector_store=vector_store,
             cache=cache,
             docstore=docstore,
-            dedup_key=dedup_key,
         )
 
     def persist(
@@ -272,36 +264,33 @@ class IngestionPipeline(BaseModel):
     ) -> Sequence[BaseNode]:
         input_nodes = self._prepare_inputs(documents, nodes)
 
-        # check if we need to de-
+        # check if we need to de-dupe
         nodes_to_run = []
+        deduped_nodes_to_run = {}
         if self.docstore is not None:
             for node in input_nodes:
-                if self.dedup_key is not None:
-                    doc_key = str(node.metadata.get(self.dedup_key, None))
-                else:
-                    doc_key = node.ref_doc_id or node.id_
+                ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
 
-                if doc_key and not self.docstore.document_exists(doc_key):
+                existing_hash = self.docstore.get_document_hash(ref_doc_id)
+                if not existing_hash:
                     # document doesn't exist, so add it
-                    self.docstore.add_documents(
-                        [node], allow_update=False, ref_doc_key=doc_key
-                    )
-                    self.docstore.set_document_hash(doc_key, node.hash)
-                    nodes_to_run.append(node)
-                elif doc_key and self.docstore.document_exists(doc_key):
-                    existing_hash = self.docstore.get_document_hash(doc_key)
+                    self.docstore.add_documents([node])
+                    self.docstore.set_document_hash(ref_doc_id, node.hash)
+                    deduped_nodes_to_run[ref_doc_id] = node
+                elif existing_hash and existing_hash != node.hash:
+                    self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
 
-                    # update
-                    if existing_hash != node.hash:
-                        self.docstore.delete_ref_doc(doc_key, raise_error=False)
+                    if self.vector_store is not None:
+                        self.vector_store.delete(ref_doc_id)
 
-                        if self.vector_store is not None:
-                            self.vector_store.delete(doc_key)
+                    self.docstore.add_documents([node])
+                    self.docstore.set_document_hash(ref_doc_id, node.hash)
 
-                        self.docstore.add_documents([node], ref_doc_key=doc_key)
-                        self.docstore.set_document_hash(doc_key, node.hash)
+                    deduped_nodes_to_run[ref_doc_id] = node
+                else:
+                    continue  # document exists and is unchanged, so skip it
 
-                        nodes_to_run.append(node)
+            nodes_to_run = list(deduped_nodes_to_run.values())
         else:
             nodes_to_run = input_nodes
 
