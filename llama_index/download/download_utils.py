@@ -244,6 +244,7 @@ def download_llama_module(
     base_file_name: str = "base.py",
     use_gpt_index_import: bool = False,
     disable_library_cache: bool = False,
+    override_path: bool = False,
 ) -> Type:
     """Download a module from LlamaHub.
 
@@ -290,15 +291,24 @@ def download_llama_module(
         refresh_cache=refresh_cache,
         use_gpt_index_import=use_gpt_index_import,
         base_file_name=base_file_name,
-        override_path=True,
+        override_path=override_path,
     )
 
     # loads the module into memory
-    spec = util.spec_from_file_location(
-        "custom_module", location=f"{dirpath}/{base_file_name}"
-    )
-    if spec is None:
-        raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
+    if override_path:
+        spec = util.spec_from_file_location(
+            "custom_module", location=f"{dirpath}/{base_file_name}"
+        )
+        if spec is None:
+            raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
+    else:
+        spec = util.spec_from_file_location(
+            "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
+        )
+        if spec is None:
+            raise ValueError(
+                f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
+            )
 
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore

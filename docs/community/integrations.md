@@ -2,6 +2,19 @@
 
 LlamaIndex has a number of community integrations, from vector stores, to prompt trackers, tracers, and more!
 
+## LlamaPacks -- Code Templates
+
+LlamaHub hosts a full suite of LlamaPacks -- templates for features that you can download, edit, and try out! This offers a quick way to learn about new features and try new techniques.
+
+The full set of LlamaPacks is available on [LlamaHub](https://llamahub.ai/). Check out our dedicated page below.
+
+```{toctree}
+---
+maxdepth: 1
+---
+llama_packs/root.md
+```
+
 ## Data Loaders
 
 The full set of data loaders are found on [LlamaHub](https://llamahub.ai/)

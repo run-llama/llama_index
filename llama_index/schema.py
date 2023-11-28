@@ -751,7 +751,7 @@ class QueryBundle(DataClassJsonMixin):
             return self.custom_embedding_strs
 
     @property
-    def embedding_image(self) -> List[Any]:
+    def embedding_image(self) -> List[ImageType]:
         """Use image path for image retrieval."""
         if self.image_path is None:
             return []

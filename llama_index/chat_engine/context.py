@@ -1,6 +1,6 @@
 import asyncio
 from threading import Thread
-from typing import Any, List, Optional, Tuple, Type
+from typing import Any, List, Optional, Tuple
 
 from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import (
@@ -60,7 +60,6 @@ class ContextChatEngine(BaseChatEngine):
         service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
-        memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
@@ -74,7 +73,9 @@ class ContextChatEngine(BaseChatEngine):
         llm = service_context.llm_predictor.llm
 
         chat_history = chat_history or []
-        memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
+        memory = memory or ChatMemoryBuffer.from_defaults(
+            chat_history=chat_history, token_limit=llm.metadata.context_window - 256
+        )
 
         if system_prompt is not None:
             if prefix_messages is not None:
@@ -153,13 +154,13 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_template, nodes = self._generate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
+        prefix_messages_token_count = len(
             self._memory.tokenizer_fn(
                 " ".join([(m.content or "") for m in prefix_messages])
             )
         )
         all_messages = prefix_messages + self._memory.get(
-            initial_token_count=initial_token_count
+            initial_token_count=prefix_messages_token_count
         )
         chat_response = self._llm.chat(all_messages)
         ai_message = chat_response.message
