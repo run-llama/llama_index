@@ -168,7 +168,7 @@ class LanceDBVectorStore(VectorStore):
         nodes = []
         for _, item in results.iterrows():
             node = TextNode(
-                text=item.text,
+                text=item.text or "",  # ensure text is a string
                 id_=item.id,
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),
