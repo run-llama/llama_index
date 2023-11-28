@@ -2,7 +2,7 @@
 
 from typing import Dict, Optional, Sequence
 
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, TextNode
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.storage.kvstore.types import BaseKVStore
@@ -62,10 +62,7 @@ class KVDocumentStore(BaseDocumentStore):
         return {key: json_to_doc(json) for key, json in json_dict.items()}
 
     def add_documents(
-        self,
-        nodes: Sequence[BaseNode],
-        allow_update: bool = True,
-        ref_doc_key: Optional[str] = None,
+        self, nodes: Sequence[BaseNode], allow_update: bool = True
     ) -> None:
         """Add a document to the store.
 
@@ -87,26 +84,20 @@ class KVDocumentStore(BaseDocumentStore):
 
             # update doc_collection if needed
             metadata = {"doc_hash": node.hash}
-            ref_doc_id = (
-                metadata.get(ref_doc_key, None)
-                if ref_doc_key is not None
-                else node.ref_doc_id
-            )
-
-            if ref_doc_id is not None:
-                ref_doc_info = self.get_ref_doc_info(ref_doc_id) or RefDocInfo()
+            if isinstance(node, TextNode) and node.ref_doc_id is not None:
+                ref_doc_info = self.get_ref_doc_info(node.ref_doc_id) or RefDocInfo()
                 if node.node_id not in ref_doc_info.node_ids:
                     ref_doc_info.node_ids.append(node.node_id)
                 if not ref_doc_info.metadata:
                     ref_doc_info.metadata = node.metadata or {}
                 self._kvstore.put(
-                    ref_doc_id,
+                    node.ref_doc_id,
                     ref_doc_info.to_dict(),
                     collection=self._ref_doc_collection,
                 )
 
                 # update metadata with map
-                metadata["ref_doc_id"] = ref_doc_id
+                metadata["ref_doc_id"] = node.ref_doc_id
                 self._kvstore.put(
                     node_key, metadata, collection=self._metadata_collection
                 )
@@ -207,10 +198,7 @@ class KVDocumentStore(BaseDocumentStore):
             self._kvstore.delete(ref_doc_id, collection=self._metadata_collection)
 
     def delete_document(
-        self,
-        doc_id: str,
-        raise_error: bool = True,
-        remove_ref_doc_node: bool = True,
+        self, doc_id: str, raise_error: bool = True, remove_ref_doc_node: bool = True
     ) -> None:
         """Delete a document from the store."""
         if remove_ref_doc_node:
