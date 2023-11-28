@@ -112,8 +112,19 @@ class LabelledRagDataset(BaseLlamaDataset):
         query_engine: BaseQueryEngine,
         example: LabelledRagDataExample,
     ) -> RagExamplePrediction:
-        """Predict RAG example with a query engine."""
+        """Async predict RAG example with a query engine."""
         response = await query_engine.aquery(example.query)
+        return RagExamplePrediction(
+            response=response.response, contexts=[s.text for s in response.source_nodes]
+        )
+
+    def _predict_example(
+        self,
+        query_engine: BaseQueryEngine,
+        example: LabelledRagDataExample,
+    ) -> RagExamplePrediction:
+        """Predict RAG example with a query engine."""
+        response = query_engine.query(example.query)
         return RagExamplePrediction(
             response=response.response, contexts=[s.text for s in response.source_nodes]
         )

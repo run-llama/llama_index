@@ -1,11 +1,11 @@
 """Llama Dataset Class."""
 
-import asyncio
 import json
 from abc import abstractmethod
 from enum import Enum
 from typing import List, Optional, Type
 
+import tqdm
 from pandas import DataFrame as PandasDataFrame
 
 from llama_index.async_utils import asyncio_module
@@ -134,6 +134,22 @@ class BaseLlamaDataset(BaseModel):
             BaseLlamaPredictionDataset: A dataset of predictions.
         """
 
+    @abstractmethod
+    def _predict_example(
+        self, query_engine: BaseQueryEngine, example: BaseLlamaDataExample
+    ) -> BaseLlamaExamplePrediction:
+        """Predict on a single example.
+
+        NOTE: Subclasses need to implement this.
+
+        Args:
+            query_engine (BaseQueryEngine): Query engine to make the prediciton with.
+            example (BaseLlamaDataExample): The example to predict on.
+
+        Returns:
+            BaseLlamaExamplePrediction: The prediction.
+        """
+
     def make_predictions_with(
         self, query_engine: BaseQueryEngine, show_progress: bool = False
     ) -> BaseLlamaPredictionDataset:
@@ -146,11 +162,14 @@ class BaseLlamaDataset(BaseModel):
         Returns:
             BaseLlamaPredictionDataset: A dataset of predictions.
         """
-        return asyncio.run(
-            self.amake_predictions_with(
-                query_engine=query_engine, show_progress=show_progress
-            )
-        )
+        predictions = []
+        if show_progress:
+            example_iterator = tqdm.tqdm(self.examples)
+        else:
+            example_iterator = self.examples
+        for example in example_iterator:
+            predictions.append(self._predict_example(query_engine, example))
+        return self._construct_prediction_dataset(predictions=predictions)
 
     # async methods
     @abstractmethod
