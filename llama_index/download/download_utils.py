@@ -257,7 +257,7 @@ def download_llama_module(
     override_path: bool = False,
     llama_datasets_url: str = LLAMA_DATASETS_URL,
     is_dataset: bool = False,
-) -> Type:
+) -> Union[Type, Tuple[str, List[str]]]:
     """Download a module from LlamaHub.
 
     Can be a loader, tool, pack, or more.

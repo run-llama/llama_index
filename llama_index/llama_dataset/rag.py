@@ -82,10 +82,12 @@ class RagPredictionDataset(BaseLlamaPredictionDataset):
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
-        data = {
-            "response": [t.response for t in self.predictions],
-            "contexts": [t.contexts for t in self.predictions],
-        }
+        data = {}
+        if self.predictions:
+            data = {
+                "response": [t.response for t in self.predictions],
+                "contexts": [t.contexts for t in self.predictions],
+            }
 
         return PandasDataFrame(data)
 
@@ -115,7 +117,7 @@ class LabelledRagDataset(BaseLlamaDataset):
         """Async predict RAG example with a query engine."""
         response = await query_engine.aquery(example.query)
         return RagExamplePrediction(
-            response=response.response, contexts=[s.text for s in response.source_nodes]
+            response=str(response), contexts=[s.text for s in response.source_nodes]
         )
 
     def _predict_example(
@@ -126,9 +128,11 @@ class LabelledRagDataset(BaseLlamaDataset):
         """Predict RAG example with a query engine."""
         response = query_engine.query(example.query)
         return RagExamplePrediction(
-            response=response.response, contexts=[s.text for s in response.source_nodes]
+            response=str(response), contexts=[s.text for s in response.source_nodes]
         )
 
-    def _construct_prediction_dataset(self, predictions) -> RagPredictionDataset:
+    def _construct_prediction_dataset(
+        self, predictions: List[RagExamplePrediction]
+    ) -> RagPredictionDataset:
         """Construct prediction dataset."""
         return RagPredictionDataset(predictions=predictions)

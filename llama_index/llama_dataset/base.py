@@ -69,7 +69,11 @@ class BaseLlamaPredictionDataset(BaseModel):
     def save_json(self, path: str) -> None:
         """Save json."""
         with open(path, "w") as f:
-            predictions = [self._prediction_type.dict(el) for el in self.predictions]
+            predictions = None
+            if self.predictions:
+                predictions = [
+                    self._prediction_type.dict(el) for el in self.predictions
+                ]
             data = {
                 "predictions": predictions,
             }
@@ -110,7 +114,7 @@ class BaseLlamaDataset(BaseModel):
             json.dump(data, f, indent=4)
 
     @classmethod
-    def from_json(cls, path: str) -> "BaseLlamaDataset[BaseLlamaDataExample]":
+    def from_json(cls, path: str) -> "BaseLlamaDataset":
         """Load json."""
         with open(path) as f:
             data = json.load(f)

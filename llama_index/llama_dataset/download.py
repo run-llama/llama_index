@@ -29,7 +29,7 @@ def download_llama_dataset(
     Returns:
         A Loader.
     """
-    rag_dataset_filename, source_filenames = download_llama_module(
+    filenames: Tuple[str, str] = download_llama_module(
         llama_dataset_class,
         is_dataset=True,
         llama_hub_url=llama_hub_url,
@@ -40,6 +40,7 @@ def download_llama_dataset(
         disable_library_cache=True,
         override_path=True,
     )
+    rag_dataset_filename, source_filenames = filenames
 
     return (
         LabelledRagDataset.from_json(rag_dataset_filename),

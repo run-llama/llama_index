@@ -200,7 +200,7 @@ class RagDatasetGenerator(PromptMixin):
                     created_by = CreatedBy(type=CreatedByType.AI, model_name=model_name)
                     example = LabelledRagDataExample(
                         query=question,
-                        reference_answer=answer_response.response,
+                        reference_answer=str(answer_response),
                         reference_contexts=[reference_context],
                         reference_answer_by=created_by,
                         query_by=created_by,
