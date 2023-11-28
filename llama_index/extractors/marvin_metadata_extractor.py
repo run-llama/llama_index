@@ -76,7 +76,7 @@ class MarvinMetadataExtractor(BaseExtractor):
     def class_name(cls) -> str:
         return "MarvinEntityExtractor"
 
-    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+    async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         from marvin import AIModel
 
         ai_model = cast(AIModel, self.marvin_model)
@@ -90,6 +90,7 @@ class MarvinMetadataExtractor(BaseExtractor):
                 metadata_list.append({})
                 continue
 
+            # TODO: Does marvin support async?
             metadata = ai_model(node.get_content())
 
             metadata_list.append({"marvin_metadata": metadata.dict()})

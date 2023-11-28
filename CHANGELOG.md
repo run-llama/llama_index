@@ -1,5 +1,25 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Use `azure_deployment` kwarg in `AzureOpenAILLM` (#9174)
+
+## [0.9.8] - 2023-11-26
+
+### New Features
+
+- Add `persist` and `persist_from_dir` methods to `ObjectIndex` that are able to support it (#9064)
+- Added async metadata extraction + pipeline support (#9121)
+- Added back support for start/end char idx in nodes (#9143)
+
+### Bug Fixes / Nits
+
+- Fix for some kwargs not being set properly in global service context (#9137)
+- Small fix for `memory.get()` when system/prefix messages are large (#9149)
+- Minor fixes for global service context (#9137)
+
 ## [0.9.7] - 2023-11-24
 
 ### New Features

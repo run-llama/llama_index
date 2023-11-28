@@ -152,6 +152,7 @@ Associated projects
 
    community/integrations.md
    community/frequently_asked_questions.md
+   community/full_stack_projects.md
 
 .. toctree::
    :maxdepth: 2

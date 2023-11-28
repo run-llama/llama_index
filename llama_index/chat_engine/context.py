@@ -154,13 +154,13 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_template, nodes = self._generate_context(message)
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
+        prefix_messages_token_count = len(
             self._memory.tokenizer_fn(
                 " ".join([(m.content or "") for m in prefix_messages])
             )
         )
         all_messages = prefix_messages + self._memory.get(
-            initial_token_count=initial_token_count
+            initial_token_count=prefix_messages_token_count
         )
         chat_response = self._llm.chat(all_messages)
         ai_message = chat_response.message
