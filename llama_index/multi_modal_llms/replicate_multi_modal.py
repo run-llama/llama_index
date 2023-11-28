@@ -3,13 +3,18 @@ from typing import Any, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.llms.base import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseGen,
+)
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.multi_modal_llms import (
-    MultiModalCompletionResponse,
-    MultiModalCompletionResponseAsyncGen,
-    MultiModalCompletionResponseGen,
     MultiModalLLM,
     MultiModalLLMMetadata,
 )
@@ -112,7 +117,7 @@ class ReplicateMultiModal(MultiModalLLM):
             **self.additional_kwargs,
         }
 
-    def _get_multi_modal_input_dict(
+    def _get_multi_modal_chat_messages(
         self, prompt: str, image_document: ImageDocument, **kwargs: Any
     ) -> Dict[str, Any]:
         if image_document.image_path:
@@ -143,7 +148,7 @@ class ReplicateMultiModal(MultiModalLLM):
 
     def complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> MultiModalCompletionResponse:
+    ) -> CompletionResponse:
         response_gen = self.stream_complete(prompt, image_documents, **kwargs)
         response_list = list(response_gen)
         final_response = response_list[-1]
@@ -152,7 +157,7 @@ class ReplicateMultiModal(MultiModalLLM):
 
     def stream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> MultiModalCompletionResponseGen:
+    ) -> CompletionResponseGen:
         try:
             import replicate
         except ImportError:
@@ -168,7 +173,7 @@ class ReplicateMultiModal(MultiModalLLM):
             )
 
         prompt = self._completion_to_prompt(prompt)
-        input_dict = self._get_multi_modal_input_dict(
+        input_dict = self._get_multi_modal_chat_messages(
             # using the first image for single image completion
             prompt,
             image_documents[0],
@@ -182,23 +187,95 @@ class ReplicateMultiModal(MultiModalLLM):
 
         response_iter = replicate.run(self.model, input=input_dict)
 
-        def gen() -> MultiModalCompletionResponseGen:
+        def gen() -> CompletionResponseGen:
             text = ""
             for delta in response_iter:
                 text += delta
-                yield MultiModalCompletionResponse(
+                yield CompletionResponse(
                     delta=delta,
                     text=text,
                 )
 
         return gen()
 
+    def chat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponse:
+        raise NotImplementedError
+
+    def stream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponseGen:
+        raise NotImplementedError
+
+    # ===== Async Endpoints =====
+
     async def acomplete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> MultiModalCompletionResponse:
-        raise NotImplementedError
+    ) -> CompletionResponse:
+        response_gen = self.stream_complete(prompt, image_documents, **kwargs)
+        response_list = list(response_gen)
+        final_response = response_list[-1]
+        final_response.delta = None
+        return final_response
 
     async def astream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> MultiModalCompletionResponseAsyncGen:
+    ) -> CompletionResponseGen:
+        try:
+            import replicate
+        except ImportError:
+            raise ImportError(
+                "Could not import replicate library."
+                "Please install replicate with `pip install replicate`"
+            )
+
+        # TODO: at the current moment, only support uploading one image document
+        if len(image_documents) > 1:
+            raise NotImplementedError(
+                "ReplicateMultiModal currently only supports uploading one image document"
+            )
+
+        prompt = self._completion_to_prompt(prompt)
+        input_dict = self._get_multi_modal_chat_messages(
+            # using the first image for single image completion
+            prompt,
+            image_documents[0],
+            **kwargs,
+        )
+        if self.model not in REPLICATE_MULTI_MODAL_LLM_MODELS.values():
+            raise ValueError(
+                f"Unknown model {self.model!r}. Please provide a valid Replicate Multi-Modal model name in:"
+                f" {', '.join(REPLICATE_MULTI_MODAL_LLM_MODELS.values())}"
+            )
+
+        response_iter = replicate.run(self.model, input=input_dict)
+
+        async def gen() -> CompletionResponseGen:
+            text = ""
+            for delta in response_iter:
+                text += delta
+                yield CompletionResponse(
+                    delta=delta,
+                    text=text,
+                )
+
+        return gen()
+
+    async def achat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponse:
+        raise NotImplementedError
+
+    async def astream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponseAsyncGen:
         raise NotImplementedError
