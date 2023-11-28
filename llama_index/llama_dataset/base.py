@@ -57,7 +57,7 @@ class BaseLlamaDataExample(BaseModel):
 
 
 class BaseLlamaPredictionDataset(BaseModel):
-    _prediction_type: Type[BaseLlamaExamplePrediction] = BaseLlamaExamplePrediction
+    _prediction_type: Type[BaseLlamaExamplePrediction] = BaseLlamaExamplePrediction  # type: ignore[misc]
     predictions: Optional[List[BaseLlamaExamplePrediction]] = Field(
         default=None, description="Predictions on train_examples."
     )
@@ -94,7 +94,7 @@ class BaseLlamaPredictionDataset(BaseModel):
 
 
 class BaseLlamaDataset(BaseModel):
-    _example_type: Type[BaseLlamaDataExample] = BaseLlamaDataExample
+    _example_type: Type[BaseLlamaDataExample] = BaseLlamaDataExample  # type: ignore[misc]
     examples: List[BaseLlamaDataExample] = Field(
         default=[], description="Data examples of this dataset."
     )

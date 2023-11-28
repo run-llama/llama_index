@@ -6,7 +6,7 @@ import subprocess
 import sys
 from importlib import util
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pkg_resources
 import requests
@@ -257,7 +257,7 @@ def download_llama_module(
     override_path: bool = False,
     llama_datasets_url: str = LLAMA_DATASETS_URL,
     is_dataset: bool = False,
-) -> Union[Type, Tuple[str, List[str]]]:
+) -> Any:
     """Download a module from LlamaHub.
 
     Can be a loader, tool, pack, or more.
