@@ -87,9 +87,9 @@ class MetadataFilters(BaseModel):
     """
 
     # Exact match filters
-    filters: List(ExactMatchFilter)
+    filters: Optional[List[ExactMatchFilter]] = None
     # Advanced filters with operators like >, <, >=, <=, !=, etc.
-    advanced_filters: Optional[List(AdvancedFilter)] = None
+    advanced_filters: Optional[List[AdvancedFilter]] = None
 
     @classmethod
     def from_dict(
