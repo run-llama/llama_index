@@ -108,7 +108,10 @@ class MetadataFilters(BaseModel):
 
     @classmethod
     def from_dict(
-        cls, filter_dict: Dict, advanced_filter_tuples: Optional[List] = None
+        cls,
+        filter_dict: Dict,
+        advanced_filter_tuples: Optional[List] = None,
+        condition: Optional[str] = None,
     ) -> "MetadataFilters":
         """Create MetadataFilters from json."""
         filters, advanced_filters = [], []
@@ -120,7 +123,9 @@ class MetadataFilters(BaseModel):
             for k, op, v in advanced_filter_tuples:
                 advanced_filter = AdvancedFilter(key=k, operator=op, value=v)
                 advanced_filters.append(advanced_filter)
-        return cls(filters=filters, advanced_filters=advanced_filters)
+        return cls(
+            filters=filters, advanced_filters=advanced_filters, condition=condition
+        )
 
 
 class VectorStoreQuerySpec(BaseModel):
