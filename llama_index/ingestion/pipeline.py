@@ -165,10 +165,6 @@ class IngestionPipeline(BaseModel):
         default=DEFAULT_PROJECT_NAME, description="Unique name of the project"
     )
 
-    configured_transformations: List[ConfiguredTransformation] = Field(
-        description="Serialized schemas of transformations to apply to the data"
-    )
-
     transformations: List[TransformComponent] = Field(
         description="Transformations to apply to the data"
     )
@@ -213,12 +209,6 @@ class IngestionPipeline(BaseModel):
         if transformations is None:
             transformations = self._get_default_transformations()
 
-        configured_transformations: List[ConfiguredTransformation] = []
-        for transformation in transformations:
-            configured_transformations.append(
-                ConfiguredTransformation.from_component(transformation)
-            )
-
         platform_base_url = platform_base_url or os.environ.get(
             "PLATFORM_BASE_URL", DEFAULT_BASE_URL
         )
@@ -230,7 +220,6 @@ class IngestionPipeline(BaseModel):
         super().__init__(
             name=name,
             project_name=project_name,
-            configured_transformations=configured_transformations,
             transformations=transformations,
             readers=readers or [],
             documents=documents,
@@ -368,12 +357,21 @@ class IngestionPipeline(BaseModel):
         if nodes is not None:
             input_nodes += nodes
 
-        configured_transformations: List[ConfiguredTransformationItem] = []
-        for item in self.configured_transformations:
+        configured_transformations: List[ConfiguredTransformation] = []
+        for transformation in self.transformations:
+            try:
+                configured_transformations.append(
+                    ConfiguredTransformation.from_component(transformation)
+                )
+            except ValueError:
+                raise ValueError(f"Unsupported transformation: {type(transformation)}")
+
+        configured_transformation_items: List[ConfiguredTransformationItem] = []
+        for item in configured_transformations:
             name = ConfigurableTransformationNames[
                 item.configurable_transformation_type.name
             ]
-            configured_transformations.append(
+            configured_transformation_items.append(
                 ConfiguredTransformationItem(
                     transformation_name=name,
                     component=item.component,
@@ -382,7 +380,7 @@ class IngestionPipeline(BaseModel):
             )
 
             # remove callback manager
-            configured_transformations[-1].component.pop("callback_manager", None)  # type: ignore
+            configured_transformation_items[-1].component.pop("callback_manager", None)  # type: ignore
 
         data_sources = []
         for reader in self.readers:
@@ -427,7 +425,7 @@ class IngestionPipeline(BaseModel):
             project.id,
             request=PipelineCreate(
                 name=self.name,
-                configured_transformations=configured_transformations,
+                configured_transformations=configured_transformation_items,
                 data_sources=data_sources,
                 data_sinks=[],
             ),

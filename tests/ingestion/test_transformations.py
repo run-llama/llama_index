@@ -54,7 +54,7 @@ def test_build_configured_transformation() -> None:
     )
 
     with pytest.raises(ValueError):
-        ConfigurableTransformations.SENTENCE_WINDOW_NODE_PARSER.build_configured_transformation(
+        ConfigurableTransformations.TOKEN_AWARE_NODE_PARSER.build_configured_transformation(
             parser
         )
 
