@@ -3,7 +3,7 @@ from llama_index.ingestion.transformations import (
     ConfigurableTransformations,
     ConfiguredTransformation,
 )
-from llama_index.node_parser import SentenceSplitter, SentenceWindowNodeParser
+from llama_index.node_parser.text import SentenceSplitter, TokenTextSplitter
 
 
 @pytest.mark.parametrize(
@@ -35,7 +35,7 @@ def test_can_build_configured_transform_from_component() -> None:
     )
     assert not isinstance(
         configured_transformation,
-        ConfiguredTransformation[SentenceWindowNodeParser],  # type: ignore
+        ConfiguredTransformation[TokenTextSplitter],  # type: ignore
     )
     assert (
         configured_transformation.configurable_transformation_type.value.component_type
