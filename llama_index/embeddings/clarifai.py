@@ -48,6 +48,7 @@ class ClarifaiEmbedding(BaseEmbedding):
         except ImportError:
             raise ImportError("ClarifaiEmbedding requires `pip install clarifai`.")
         
+        embed_batch_size = min(128, embed_batch_size)
         if pat is not None:
             os.environ["CLARIFAI_PAT"] = pat
 
