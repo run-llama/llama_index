@@ -14,6 +14,7 @@
 
 ### Bug Fixes / Nits
 
+- Fix bug in `download_utils.py` with pointing to wrong repo (#9215)
 - Use `azure_deployment` kwarg in `AzureOpenAILLM` (#9174)
 - Fix similarity score return for `AstraDBVectorStore` Integration (#9193)
 
