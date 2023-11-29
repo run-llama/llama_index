@@ -6,23 +6,19 @@ from enum import Enum
 from typing import Generic, Sequence, Type, TypeVar
 
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.embeddings import HuggingFaceEmbedding, OpenAIEmbedding
+from llama_index.embeddings import OpenAIEmbedding
 from llama_index.extractors import (
-    EntityExtractor,
     KeywordExtractor,
-    MarvinMetadataExtractor,
     QuestionsAnsweredExtractor,
     SummaryExtractor,
     TitleExtractor,
 )
 from llama_index.node_parser import (
     CodeSplitter,
-    HierarchicalNodeParser,
     HTMLNodeParser,
     JSONNodeParser,
     MarkdownNodeParser,
     SentenceSplitter,
-    SentenceWindowNodeParser,
     SimpleFileNodeParser,
     TokenTextSplitter,
 )
@@ -117,16 +113,6 @@ class ConfigurableTransformations(Enum):
         transformation_category=TransformationCategories.METADATA_EXTRACTOR,
         component_type=TitleExtractor,
     )
-    ENTITY_EXTRACTOR = ConfigurableTransformation(
-        name="Entity Extractor",
-        transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-        component_type=EntityExtractor,
-    )
-    MARVIN_METADATA_EXTRACTOR = ConfigurableTransformation(
-        name="Marvin Metadata Extractor",
-        transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-        component_type=MarvinMetadataExtractor,
-    )
     SUMMARY_EXTRACTOR = ConfigurableTransformation(
         name="Summary Extractor",
         transformation_category=TransformationCategories.METADATA_EXTRACTOR,
@@ -139,16 +125,6 @@ class ConfigurableTransformations(Enum):
     )
 
     ## Node Parsers
-    SENTENCE_WINDOW_NODE_PARSER = ConfigurableTransformation(
-        name="Sentence Window Node Parser",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=SentenceWindowNodeParser,
-    )
-    HIERARCHICAL_NODE_PARSER = ConfigurableTransformation(
-        name="Hierarchical Node Parser",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=HierarchicalNodeParser,
-    )
     CODE_NODE_PARSER = ConfigurableTransformation(
         name="Code Splitter",
         transformation_category=TransformationCategories.NODE_PARSER,
@@ -190,11 +166,6 @@ class ConfigurableTransformations(Enum):
         name="OpenAI Embedding",
         transformation_category=TransformationCategories.EMBEDDING,
         component_type=OpenAIEmbedding,
-    )
-    HUGGINGFACE_EMBEDDING = ConfigurableTransformation(
-        name="HuggingFace Embedding",
-        transformation_category=TransformationCategories.EMBEDDING,
-        component_type=HuggingFaceEmbedding,
     )
 
     @classmethod
