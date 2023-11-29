@@ -63,7 +63,9 @@ class AstraDBVectorStore(VectorStore):
         namespace: Optional[str] = None,
         ttl_seconds: Optional[int] = None,
     ) -> None:
-        import_err_msg = "`astrapy` package not found, please run `pip install astrapy`"
+        import_err_msg = (
+            "`astrapy` package not found, please run `pip install --upgrade astrapy`"
+        )
 
         # Try to import astrapy for use
         try:
