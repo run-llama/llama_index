@@ -517,9 +517,9 @@ class OpenAI(LLM):
                     # check if the first chunk has neither content nor tool_calls
                     # this happens when 1106 models end up calling multiple tools
                     if (
-                        response.choices[0].delta.content is None
+                        first_chat_chunk
+                        and response.choices[0].delta.content is None
                         and response.choices[0].delta.tool_calls is None
-                        and first_chat_chunk
                     ):
                         first_chat_chunk = False
                         continue
