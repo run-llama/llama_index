@@ -8,8 +8,6 @@ from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
-    ExactMatchFilter,
-    MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -57,10 +55,11 @@ def _to_chroma_filter(
     """Translate standard metadata filters to Chroma specific spec."""
     filters = {}
     filters_list = []
-    condition = _transform_chroma_filter_condition(standard_filters.condition) or "$and"
+    condition = standard_filters.condition or "and"
+    condition = _transform_chroma_filter_condition(condition)
     if standard_filters.filters:
         for filter in standard_filters.filters:
-            if isinstance(filter, MetadataFilter):
+            if filter.operator:
                 filters_list.append(
                     {
                         filter.key: {
@@ -70,7 +69,7 @@ def _to_chroma_filter(
                         }
                     }
                 )
-            elif isinstance(filter, ExactMatchFilter):
+            else:
                 filters_list.append({filter.key: filter.value})
 
     if len(filters_list) == 1:

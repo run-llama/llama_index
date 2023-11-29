@@ -83,6 +83,7 @@ class ExactMatchFilter(BaseModel):
 
     key: str
     value: Union[StrictInt, StrictFloat, StrictStr]
+    operator: Optional[FilterOperator] = None
 
 
 class MetadataFilter(BaseModel):
@@ -107,7 +108,7 @@ class MetadataFilters(BaseModel):
     """
 
     # Exact match filters and Advanced filters with operators like >, <, >=, <=, !=, etc.
-    filters: List[Union[ExactMatchFilter, MetadataFilter]]
+    filters: List[Union[MetadataFilter, ExactMatchFilter]]
     # and/or such conditions for combining different filters
     condition: Optional[FilterCondition] = FilterCondition.AND
 
