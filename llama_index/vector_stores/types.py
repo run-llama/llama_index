@@ -76,7 +76,7 @@ class AdvancedFilter(BaseModel):
 
     key: str
     value: Union[StrictInt, StrictFloat, StrictStr]
-    operator: Optional[str] = None
+    operator: str
 
 
 class MetadataFilters(BaseModel):
@@ -90,6 +90,8 @@ class MetadataFilters(BaseModel):
     filters: Optional[List[ExactMatchFilter]] = None
     # Advanced filters with operators like >, <, >=, <=, !=, etc.
     advanced_filters: Optional[List[AdvancedFilter]] = None
+    # and/or such conditions for combining different filters
+    condition: Optional[str] = None
 
     @classmethod
     def from_dict(

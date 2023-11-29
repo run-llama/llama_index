@@ -22,11 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 def _to_chroma_filter(
-    standard_filters: MetadataFilters, condition: Optional[str] = None
+    standard_filters: MetadataFilters,
 ) -> dict:
     """Translate standard metadata filters to Chroma specific spec."""
     filters = {}
     filters_list = []
+    condition = standard_filters.condition or "$and"
     if standard_filters.filters:
         filters_list = [
             {filter.key: filter.value} for filter in standard_filters.filters
@@ -44,7 +45,6 @@ def _to_chroma_filter(
         # If there is only one filter, return it directly
         return filters_list[0]
     elif len(filters_list) > 1:
-        condition = condition or "$and"
         filters[condition] = filters_list
 
     return filters
