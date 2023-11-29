@@ -21,6 +21,24 @@ from llama_index.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
+def _transform_chroma_filter(operator: str) -> str:
+    """Translate standard metadata filter operator to Chroma specific spec."""
+    if operator == "!=":
+        return "$ne"
+    elif operator == "=":
+        return "$eq"
+    elif operator == ">":
+        return "$gt"
+    elif operator == "<":
+        return "$lt"
+    elif operator == ">=":
+        return "$gte"
+    elif operator == "<=":
+        return "$lte"
+    else:
+        raise ValueError(f"Operator {operator} not supported")
+
+
 def _to_chroma_filter(
     standard_filters: MetadataFilters,
 ) -> dict:
@@ -37,7 +55,7 @@ def _to_chroma_filter(
     if standard_filters.advanced_filters:
         filters_list.extend(
             [
-                {filter.key: {filter.operator: filter.value}}
+                {filter.key: {_transform_chroma_filter(filter.operator): filter.value}}
                 for filter in standard_filters.advanced_filters
             ]
         )
@@ -46,7 +64,7 @@ def _to_chroma_filter(
         return filters_list[0]
     elif len(filters_list) > 1:
         filters[condition] = filters_list
-
+    print(filters)
     return filters
 
 

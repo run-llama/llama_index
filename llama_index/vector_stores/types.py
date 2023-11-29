@@ -52,6 +52,19 @@ class VectorStoreQueryMode(str, Enum):
     MMR = "mmr"
 
 
+class FilterOperator(str, Enum):
+    """Vector store filter operator."""
+
+    # TODO add more operators
+
+    DEFAULT = "="  # default operator (string, int, float)
+    GT = ">"  # greater than (int, float)
+    LT = "<"  # less than (int, float)
+    NE = "!="  # not equal to (string, int, float)
+    GTE = ">="  # greater than or equal to (int, float)
+    LTE = "<="  # less than or equal to (int, float)
+
+
 class ExactMatchFilter(BaseModel):
     """Exact match metadata filter for vector stores.
 
@@ -76,7 +89,7 @@ class AdvancedFilter(BaseModel):
 
     key: str
     value: Union[StrictInt, StrictFloat, StrictStr]
-    operator: str
+    operator: FilterOperator = FilterOperator.DEFAULT
 
 
 class MetadataFilters(BaseModel):
