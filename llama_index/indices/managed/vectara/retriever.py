@@ -4,7 +4,7 @@ An index that that is built on top of Vectara.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
@@ -40,6 +40,10 @@ class VectaraRetriever(BaseRetriever):
                 of diversity among the results with 0 corresponding
                 to minimum diversity and 1 to maximum diversity.
                 Defaults to 0.3.
+            * summary_enabled: whether to generate summaries or not. Defaults to False.
+            * summary_response_lang: language to use for summary generation.
+            * summary_num_results: number of results to use for summary generation.
+            * summary_prompt_name: name of the prompt to use for summary generation.
     """
 
     def __init__(
@@ -69,6 +73,16 @@ class VectaraRetriever(BaseRetriever):
             self._mmr_diversity_bias = kwargs.get("mmr_diversity_bias", 0.3)
         else:
             self._mmr = False
+
+        if kwargs.get("summary_enabled", False):
+            self._summary_enabled = True
+            self._summary_response_lang = kwargs.get("summary_response_lang", "eng")
+            self._summary_num_results = kwargs.get("summary_num_results", 7)
+            self._summary_prompt_name = kwargs.get(
+                "summary_prompt_name", "vectara-summary-ext-v1.2.0"
+            )
+        else:
+            self._summary_enabled = False
         super().__init__(callback_manager)
 
     def _get_post_headers(self) -> dict:
@@ -95,6 +109,18 @@ class VectaraRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         **kwargs: Any,
     ) -> List[NodeWithScore]:
+        """Retrieve top k most similar nodes.
+
+        Args:
+            query: Query Bundle
+        """
+        return self._vectara_query(query_bundle, **kwargs)[0]  # return top_nodes only
+
+    def _vectara_query(
+        self,
+        query_bundle: QueryBundle,
+        **kwargs: Any,
+    ) -> Tuple[List[NodeWithScore], str]:
         """Query Vectara index to get for top k most similar nodes.
 
         Args:
@@ -128,6 +154,15 @@ class VectaraRetriever(BaseRetriever):
                 "mmrConfig": {"diversityBias": self._mmr_diversity_bias},
             }
 
+        if self._summary_enabled:
+            data["query"][0]["summary"] = [
+                {
+                    "responseLang": self._summary_response_lang,
+                    "maxSummarizedResults": self._summary_num_results,
+                    "summarizerPromptName": self._summary_prompt_name,
+                }
+            ]
+
         response = self._index._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
@@ -141,11 +176,17 @@ class VectaraRetriever(BaseRetriever):
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
             )
-            return []
+            return [], ""
 
         result = response.json()
+
         responses = result["responseSet"][0]["response"]
         documents = result["responseSet"][0]["document"]
+        summary = (
+            result["responseSet"][0]["summary"][0]["text"]
+            if self._summary_enabled
+            else None
+        )
 
         metadatas = []
         for x in responses:
@@ -160,8 +201,18 @@ class VectaraRetriever(BaseRetriever):
             doc_inx = x["documentIndex"]
             doc_id = documents[doc_inx]["id"]
             node = NodeWithScore(
-                node=TextNode(text=x["text"], id_=doc_id, metadata=md), score=x["score"]
+                node=TextNode(text=x["text"], id_=doc_id, metadata=md), score=x["score"]  # type: ignore
             )
             top_nodes.append(node)
 
-        return top_nodes[: self._similarity_top_k]
+        return top_nodes[: self._similarity_top_k], summary
+
+    async def _avectara_query(
+        self, query_bundle: QueryBundle
+    ) -> Tuple[List[NodeWithScore], str]:
+        """Asynchronously retrieve nodes given query.
+
+        Implemented by the user.
+
+        """
+        return self._vectara_query(query_bundle)

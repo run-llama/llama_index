@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from llama_index.schema import (
     BaseNode,
@@ -62,19 +62,25 @@ def node_to_metadata_dict(
     return metadata
 
 
-def metadata_dict_to_node(metadata: dict) -> BaseNode:
+def metadata_dict_to_node(metadata: dict, text: Optional[str] = None) -> BaseNode:
     """Common logic for loading Node data from metadata dict."""
     node_json = metadata.get("_node_content", None)
     node_type = metadata.get("_node_type", None)
     if node_json is None:
         raise ValueError("Node content not found in metadata dict.")
 
+    node: BaseNode
     if node_type == IndexNode.class_name():
-        return IndexNode.parse_raw(node_json)
+        node = IndexNode.parse_raw(node_json)
     elif node_type == ImageNode.class_name():
-        return ImageNode.parse_raw(node_json)
+        node = ImageNode.parse_raw(node_json)
     else:
-        return TextNode.parse_raw(node_json)
+        node = TextNode.parse_raw(node_json)
+
+    if text is not None:
+        node.set_content(text)
+
+    return node
 
 
 # TODO: Deprecated conversion functions

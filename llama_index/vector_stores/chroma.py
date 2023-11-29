@@ -21,11 +21,18 @@ from llama_index.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
-def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
+def _to_chroma_filter(
+    standard_filters: MetadataFilters, condition: Optional[str] = None
+) -> dict:
     """Translate standard metadata filters to Chroma specific spec."""
     filters = {}
-    for filter in standard_filters.filters:
-        filters[filter.key] = filter.value
+    if len(standard_filters.filters) == 1:
+        filters[standard_filters.filters[0].key] = standard_filters.filters[0].value
+    else:
+        condition = condition or "$and"
+        filters[condition] = [
+            {filter.key: filter.value} for filter in standard_filters.filters
+        ]
     return filters
 
 
