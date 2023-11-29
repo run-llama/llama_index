@@ -8,6 +8,8 @@ from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
+    ExactMatchFilter,
+    MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -21,7 +23,17 @@ from llama_index.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
-def _transform_chroma_filter(operator: str) -> str:
+def _transform_chroma_filter_condition(condition: str) -> str:
+    """Translate standard metadata filter op to Chroma specific spec."""
+    if condition == "and":
+        return "$and"
+    elif condition == "or":
+        return "$or"
+    else:
+        raise ValueError(f"Filter condition {condition} not supported")
+
+
+def _transform_chroma_filter_operator(operator: str) -> str:
     """Translate standard metadata filter operator to Chroma specific spec."""
     if operator == "!=":
         return "$ne"
@@ -36,7 +48,7 @@ def _transform_chroma_filter(operator: str) -> str:
     elif operator == "<=":
         return "$lte"
     else:
-        raise ValueError(f"Operator {operator} not supported")
+        raise ValueError(f"Filter operator {operator} not supported")
 
 
 def _to_chroma_filter(
@@ -45,26 +57,27 @@ def _to_chroma_filter(
     """Translate standard metadata filters to Chroma specific spec."""
     filters = {}
     filters_list = []
-    condition = standard_filters.condition or "$and"
+    condition = _transform_chroma_filter_condition(standard_filters.condition) or "$and"
     if standard_filters.filters:
-        filters_list = [
-            {filter.key: filter.value} for filter in standard_filters.filters
-        ]
+        for filter in standard_filters.filters:
+            if isinstance(filter, MetadataFilter):
+                filters_list.append(
+                    {
+                        filter.key: {
+                            _transform_chroma_filter_operator(
+                                filter.operator
+                            ): filter.value
+                        }
+                    }
+                )
+            elif isinstance(filter, ExactMatchFilter):
+                filters_list.append({filter.key: filter.value})
 
-    # advanced filters with operators like >, <, >=, <=, !=, etc.
-    if standard_filters.advanced_filters:
-        filters_list.extend(
-            [
-                {filter.key: {_transform_chroma_filter(filter.operator): filter.value}}
-                for filter in standard_filters.advanced_filters
-            ]
-        )
     if len(filters_list) == 1:
         # If there is only one filter, return it directly
         return filters_list[0]
     elif len(filters_list) > 1:
         filters[condition] = filters_list
-    print(filters)
     return filters
 
 

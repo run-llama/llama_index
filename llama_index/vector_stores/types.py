@@ -56,13 +56,20 @@ class FilterOperator(str, Enum):
     """Vector store filter operator."""
 
     # TODO add more operators
-
     DEFAULT = "="  # default operator (string, int, float)
     GT = ">"  # greater than (int, float)
     LT = "<"  # less than (int, float)
     NE = "!="  # not equal to (string, int, float)
     GTE = ">="  # greater than or equal to (int, float)
     LTE = "<="  # less than or equal to (int, float)
+
+
+class FilterCondition(str, Enum):
+    """Vector store filter conditions to combine different filters."""
+
+    # TODO add more conditions
+    AND = "and"
+    OR = "or"
 
 
 class ExactMatchFilter(BaseModel):
@@ -78,8 +85,8 @@ class ExactMatchFilter(BaseModel):
     value: Union[StrictInt, StrictFloat, StrictStr]
 
 
-class AdvancedFilter(BaseModel):
-    """Advanced metadata filter for vector stores to support more operators.
+class MetadataFilter(BaseModel):
+    """Comprehensive metadata filter for vector stores to support more operators.
 
     Value uses Strict* types, as int, float and str are compatible types and were all
     converted to string before.
@@ -99,33 +106,27 @@ class MetadataFilters(BaseModel):
     TODO: support more advanced expressions.
     """
 
-    # Exact match filters
-    filters: List[ExactMatchFilter]
-    # Advanced filters with operators like >, <, >=, <=, !=, etc.
-    advanced_filters: Optional[List[AdvancedFilter]] = None
+    # Exact match filters and Advanced filters with operators like >, <, >=, <=, !=, etc.
+    filters: List[Union[ExactMatchFilter, MetadataFilter]]
     # and/or such conditions for combining different filters
-    condition: Optional[str] = None
+    condition: Optional[FilterCondition] = FilterCondition.AND
 
     @classmethod
     def from_dict(
         cls,
         filter_dict: Dict,
-        advanced_filter_tuples: Optional[List] = None,
-        condition: Optional[str] = None,
+        filter_tuples_with_operators: Optional[List] = None,
+        condition: Optional[FilterCondition] = FilterCondition.AND,
     ) -> "MetadataFilters":
         """Create MetadataFilters from json."""
-        filters, advanced_filters = [], []
+        filters = []
         for k, v in filter_dict.items():
-            filter = ExactMatchFilter(key=k, value=v)
-            filters.append(filter)
+            filters.append(ExactMatchFilter(key=k, value=v))
         # Define advanced filters as three element tuples (key, operator, value)
-        if advanced_filter_tuples:
-            for k, op, v in advanced_filter_tuples:
-                advanced_filter = AdvancedFilter(key=k, operator=op, value=v)
-                advanced_filters.append(advanced_filter)
-        return cls(
-            filters=filters, advanced_filters=advanced_filters, condition=condition
-        )
+        if filter_tuples_with_operators:
+            for k, op, v in filter_tuples_with_operators:
+                filters.append(MetadataFilter(key=k, operator=op, value=v))
+        return cls(filters=filters, condition=condition)
 
 
 class VectorStoreQuerySpec(BaseModel):
