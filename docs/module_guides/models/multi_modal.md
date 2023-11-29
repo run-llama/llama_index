@@ -125,6 +125,8 @@ These notebooks serve as examples how to leverage and integrate Multi-Modal LLM 
 | [Fuyu-8B](/examples/multi_modal/replicate_multi_modal.ipynb)<br>(replicate)      | ✅                           | 🛑                              | 🛑                  | ✅                        |
 | [ImageBind<br>](https://imagebind.metademolab.com/)[To integrate]                | 🛑                           | 🛑                              | ✅                  | 🛑                        |
 | [MiniGPT-4<br>](/examples/multi_modal/replicate_multi_modal.ipynb)               | ✅                           | 🛑                              | 🛑                  | ✅                        |
+| [CogVLM<br>](https://github.com/THUDM/CogVLM)[To integrate]                      | ✅                           | 🛑                              | 🛑                  | ✅                        |
+| [Qwen-VL<br>](https://arxiv.org/abs/2308.12966)[To integrate]                    | ✅                           | 🛑                              | 🛑                  | ✅                        |
 
 ### Multi Modal Vector Stores
 
