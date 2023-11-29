@@ -164,7 +164,7 @@ class AstraDBVectorStore(VectorStore):
     def _query_filters_to_dict(query_filters: MetadataFilters) -> Dict[str, Any]:
         if any(not isinstance(f, ExactMatchFilter) for f in query_filters.filters):
             raise NotImplementedError("Only `ExactMatchFilter` filters are supported")
-        return {f.key: f.value for f in query_filters.filters}
+        return {f"metadata.{f.key}": f.value for f in query_filters.filters}
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
