@@ -6,6 +6,7 @@
 
 - Add new abstractions for `LlamaDataset`'s (#9165)
 - Add metadata filtering and MMR mode support for `AstraDBVectorStore` (#9193)
+- Allowing newest `scikit-learn` versions (#9213)
 
 ### Breaking Changes / Deprecations
 
