@@ -15,6 +15,7 @@ from typing import List, Optional, Tuple, Type
 
 import pkg_resources
 import requests
+from packaging.requirements import InvalidRequirement
 from pkg_resources import DistributionNotFound
 
 from llama_index.readers.base import BaseReader
@@ -203,7 +204,7 @@ def download_loader(
                 Path(requirements_path).open()
             )
             pkg_resources.require([str(r) for r in requirements])
-        except DistributionNotFound:
+        except (DistributionNotFound, InvalidRequirement):
             subprocess.check_call(
                 [sys.executable, "-m", "pip", "install", "-r", requirements_path]
             )
