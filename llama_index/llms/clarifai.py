@@ -54,6 +54,9 @@ class Clarifai(LLM):
         
         if pat is not None:
             os.environ["CLARIFAI_PAT"] = pat
+        
+        if not pat and os.environ.get("CLARIFAI_PAT") is None:
+           raise ValueError("Set `CLARIFAI_PAT` as env variable or pass `pat` as constructor argument")
 
         if model_url is not None and model_name is not None:
             raise ValueError("You can only specify one of model_url or model_name.")
@@ -106,13 +109,15 @@ class Clarifai(LLM):
         )
 
     # TODO: When the Clarifai python SDK supports inference params, add here.
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    def chat(self, messages: Sequence[ChatMessage], inference_params: Dict, **kwargs: Any) -> ChatResponse:
         """Chat endpoint for LLM."""
         prompt = "".join([str(m) for m in messages])
         try:
+            (inference_params := {}) if inference_params is None else inference_params
             response = (
                 self._model.predict_by_bytes(
-                    input_bytes=prompt.encode(encoding="UTF-8"), input_type="text"
+                    input_bytes=prompt.encode(encoding="UTF-8"), input_type="text",
+                    inference_params=inference_params
                 )
                 .outputs[0]
                 .data.text.raw
@@ -121,12 +126,14 @@ class Clarifai(LLM):
             raise Exception(f"Prediction failed: {e}")
         return ChatResponse(message=ChatMessage(content=response))
 
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, inference_params: Dict, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint for LLM."""
         try:
+            (inference_params := {}) if inference_params is None else inference_params
             response = (
                 self._model.predict_by_bytes(
-                    input_bytes=prompt.encode(encoding="utf-8"), input_type="text"
+                    input_bytes=prompt.encode(encoding="utf-8"), input_type="text",
+                    inference_params=inference_params
                 )
                 .outputs[0]
                 .data.text.raw

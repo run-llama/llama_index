@@ -50,6 +50,9 @@ class ClarifaiEmbedding(BaseEmbedding):
         
         if pat is not None:
             os.environ["CLARIFAI_PAT"] = pat
+
+        if not pat and os.environ.get("CLARIFAI_PAT") is None:
+           raise ValueError("Set `CLARIFAI_PAT` as env variable or pass `pat` as constructor argument")
             
         if model_url is not None and model_name is not None:
             raise ValueError("You can only specify one of model_url or model_name.")
@@ -91,12 +94,11 @@ class ClarifaiEmbedding(BaseEmbedding):
             raise ImportError("ClarifaiEmbedding requires `pip install clarifai`.")
 
         embeddings = []
-        input_obj = Inputs()
         try:
             for i in range(0, len(sentences), self.embed_batch_size):
                 batch = sentences[i : i + self.embed_batch_size]
                 input_batch = [
-                        input_obj.get_text_input(input_id=str(id), raw_text=inp)
+                        Inputs.get_text_input(input_id=str(id), raw_text=inp)
                         for id, inp in enumerate(batch)
                     ]
                 predict_response = self._model.predict(input_batch)
