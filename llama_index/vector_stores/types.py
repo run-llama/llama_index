@@ -87,7 +87,7 @@ class MetadataFilters(BaseModel):
     """
 
     # Exact match filters
-    filters: Optional[List[ExactMatchFilter]] = None
+    filters: List[ExactMatchFilter]
     # Advanced filters with operators like >, <, >=, <=, !=, etc.
     advanced_filters: Optional[List[AdvancedFilter]] = None
     # and/or such conditions for combining different filters
