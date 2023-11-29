@@ -26,6 +26,7 @@ def _to_chroma_filter(
 ) -> dict:
     """Translate standard metadata filters to Chroma specific spec."""
     filters = {}
+    # basic exact match filters
     if len(standard_filters.filters) == 1:
         filters[standard_filters.filters[0].key] = standard_filters.filters[0].value
     else:
@@ -33,6 +34,21 @@ def _to_chroma_filter(
         filters[condition] = [
             {filter.key: filter.value} for filter in standard_filters.filters
         ]
+
+    # advanced filters with operators like >, <, >=, <=, !=, etc.
+    if len(standard_filters.advanced_filters) == 1:
+        filters[standard_filters.advanced_filters[0].key] = {
+            standard_filters.advanced_filters[0]
+            .operator: standard_filters.advanced_filters[0]
+            .value
+        }
+    else:
+        condition = condition or "$and"
+        filters[condition] = [
+            {filter.key: {filter.operator: filter.value}}
+            for filter in standard_filters.advanced_filters
+        ]
+
     return filters
 
 

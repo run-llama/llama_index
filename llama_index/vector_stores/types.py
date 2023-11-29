@@ -65,6 +65,20 @@ class ExactMatchFilter(BaseModel):
     value: Union[StrictInt, StrictFloat, StrictStr]
 
 
+class AdvancedFilter(BaseModel):
+    """Advanced metadata filter for vector stores to support more operators.
+
+    Value uses Strict* types, as int, float and str are compatible types and were all
+    converted to string before.
+
+    See: https://docs.pydantic.dev/latest/usage/types/#strict-types
+    """
+
+    key: str
+    value: Union[StrictInt, StrictFloat, StrictStr]
+    operator: Optional[str] = None
+
+
 class MetadataFilters(BaseModel):
     """Metadata filters for vector stores.
 
@@ -72,16 +86,26 @@ class MetadataFilters(BaseModel):
     TODO: support more advanced expressions.
     """
 
-    filters: List[ExactMatchFilter]
+    # Exact match filters
+    filters: List(ExactMatchFilter)
+    # Advanced filters with operators like >, <, >=, <=, !=, etc.
+    advanced_filters: Optional[List(AdvancedFilter)] = None
 
     @classmethod
-    def from_dict(cls, filter_dict: Dict) -> "MetadataFilters":
+    def from_dict(
+        cls, filter_dict: Dict, advanced_filter_tuples: Optional[List] = None
+    ) -> "MetadataFilters":
         """Create MetadataFilters from json."""
-        filters = []
+        filters, advanced_filters = [], []
         for k, v in filter_dict.items():
             filter = ExactMatchFilter(key=k, value=v)
             filters.append(filter)
-        return cls(filters=filters)
+        # Define advanced filters as three element tuples (key, operator, value)
+        if advanced_filter_tuples:
+            for k, op, v in advanced_filter_tuples:
+                advanced_filter = AdvancedFilter(key=k, operator=op, value=v)
+                advanced_filters.append(advanced_filter)
+        return cls(filters=filters, advanced_filters=advanced_filters)
 
 
 class VectorStoreQuerySpec(BaseModel):
