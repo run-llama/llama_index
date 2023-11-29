@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### New Features
+
+- Add new abstractions for `LlamaDataset`'s (#9165)
+
+### Breaking Changes / Deprecations
+
+- Deprecate `QueryResponseDataset` and `DatasetGenerator` of `evaluaton` module (#9165)
+
 ### Bug Fixes / Nits
 
 - Use `azure_deployment` kwarg in `AzureOpenAILLM` (#9174)
