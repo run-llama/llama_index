@@ -5,6 +5,7 @@
 ### New Features
 
 - Add new abstractions for `LlamaDataset`'s (#9165)
+- Add metadata filtering and MMR mode support for `AstraDBVectorStore` (#9193)
 
 ### Breaking Changes / Deprecations
 
@@ -13,6 +14,7 @@
 ### Bug Fixes / Nits
 
 - Use `azure_deployment` kwarg in `AzureOpenAILLM` (#9174)
+- Fix similarity score return for `AstraDBVectorStore` Integration (#9193)
 
 ## [0.9.8] - 2023-11-26
 
