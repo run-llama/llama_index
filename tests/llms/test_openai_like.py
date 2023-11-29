@@ -1,7 +1,7 @@
 from typing import List
 from unittest.mock import MagicMock, call, patch
 
-from llama_index.llms import OpenAILike, make_localai
+from llama_index.llms import LOCALAI_DEFAULTS, OpenAILike
 from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.openai import Tokenizer
 from openai.types import Completion, CompletionChoice
@@ -66,7 +66,9 @@ def test_completion(MockSyncOpenAI: MagicMock) -> None:
         mock_completion("2"),
     ]
 
-    llm = make_localai(model=STUB_MODEL_NAME, context_window=1024, max_tokens=None)
+    llm = OpenAILike(
+        **LOCALAI_DEFAULTS, model=STUB_MODEL_NAME, context_window=1024, max_tokens=None
+    )
     response = llm.complete("A long time ago in a galaxy far, far away")
     expected_calls = [
         # NOTE: has no max_tokens or tokenizer, so won't infer max_tokens

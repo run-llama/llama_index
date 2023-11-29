@@ -25,7 +25,7 @@ from llama_index.llms.konko import Konko
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.litellm import LiteLLM
 from llama_index.llms.llama_cpp import LlamaCPP
-from llama_index.llms.localai import LocalAI, make_localai
+from llama_index.llms.localai import LOCALAI_DEFAULTS, LocalAI
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.monsterapi import MonsterLLM
 from llama_index.llms.ollama import Ollama
@@ -69,7 +69,7 @@ __all__ = [
     "LiteLLM",
     "LlamaCPP",
     "LocalAI",
-    "make_localai",
+    "LOCALAI_DEFAULTS",
     "MessageRole",
     "MockLLM",
     "MonsterLLM",

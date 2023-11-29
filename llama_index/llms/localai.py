@@ -27,11 +27,6 @@ LOCALAI_DEFAULTS: Mapping[str, Any] = MappingProxyType(
 )
 
 
-def make_localai(**kwargs: Any) -> OpenAILike:
-    """Instantiate a LocalAI API wrapper using OpenAILike."""
-    return OpenAILike(**({**LOCALAI_DEFAULTS, **kwargs}))
-
-
 class LocalAI(OpenAI):
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
@@ -58,8 +53,8 @@ class LocalAI(OpenAI):
         warnings.warn(
             (
                 f"{type(self).__name__} subclass is deprecated in favor of"
-                " make_localai. Deprecation cycle will complete sometime in"
-                " late December 2023."
+                f" {OpenAILike.__name__} composition. The deprecation cycle"
+                " will complete sometime in late December 2023."
             ),
             DeprecationWarning,
             stacklevel=2,
