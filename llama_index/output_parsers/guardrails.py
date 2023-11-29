@@ -3,7 +3,6 @@
 See https://github.com/ShreyaR/guardrails.
 
 """
-from deprecated import deprecated
 
 try:
     from guardrails import Guard
@@ -40,32 +39,6 @@ class GuardrailsOutputParser(BaseOutputParser):
         self.guard: Guard = guard
         self.llm = llm
         self.format_key = format_key
-
-    @classmethod
-    @deprecated(version="0.8.46")
-    def from_rail(
-        cls, rail: str, llm: Optional["BaseLLM"] = None
-    ) -> "GuardrailsOutputParser":
-        """From rail."""
-        if Guard is None:
-            raise ImportError(
-                "Guardrails is not installed. Run `pip install guardrails-ai`. "
-            )
-
-        return cls(Guard.from_rail(rail), llm=llm)
-
-    @classmethod
-    @deprecated(version="0.8.46")
-    def from_rail_string(
-        cls, rail_string: str, llm: Optional["BaseLLM"] = None
-    ) -> "GuardrailsOutputParser":
-        """From rail string."""
-        if Guard is None:
-            raise ImportError(
-                "Guardrails is not installed. Run `pip install guardrails-ai`. "
-            )
-
-        return cls(Guard.from_rail_string(rail_string), llm=llm)
 
     def parse(
         self,
