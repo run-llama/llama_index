@@ -1,0 +1,72 @@
+{
+  "docstore/data": {
+    "89aa51d8-4b69-4681-9fb5-b2873585d596": {
+      "__data__": {
+        "id_": "89aa51d8-4b69-4681-9fb5-b2873585d596",
+        "embedding": null,
+        "metadata": {},
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
+        "relationships": {},
+        "hash": "5f546eb4606b5c2b7d2a449a5cc2bbb477ed5a246c7051ce871b12f2dbfc8419",
+        "text": "a",
+        "start_char_idx": null,
+        "end_char_idx": null,
+        "text_template": "{metadata_str}\n\n{content}",
+        "metadata_template": "{key}: {value}",
+        "metadata_seperator": "\n",
+        "class_name": "TextNode"
+      },
+      "__type__": "1"
+    },
+    "ec970ebf-fb1e-43f7-a6c5-cbc02b0c1a08": {
+      "__data__": {
+        "id_": "ec970ebf-fb1e-43f7-a6c5-cbc02b0c1a08",
+        "embedding": null,
+        "metadata": {},
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
+        "relationships": {},
+        "hash": "ef2a875407aca2dd75a7a1dccc3b202918a9bc8e543e0b3def3f34ccd5e56a7b",
+        "text": "b",
+        "start_char_idx": null,
+        "end_char_idx": null,
+        "text_template": "{metadata_str}\n\n{content}",
+        "metadata_template": "{key}: {value}",
+        "metadata_seperator": "\n",
+        "class_name": "TextNode"
+      },
+      "__type__": "1"
+    },
+    "bd1a056b-2a44-407b-8237-a5b724ee56ac": {
+      "__data__": {
+        "id_": "bd1a056b-2a44-407b-8237-a5b724ee56ac",
+        "embedding": null,
+        "metadata": {},
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
+        "relationships": {},
+        "hash": "7ed0bc022e61394074858c49e5e2f8844146ae76fd02cc3b74ed8fb450e33b42",
+        "text": "c",
+        "start_char_idx": null,
+        "end_char_idx": null,
+        "text_template": "{metadata_str}\n\n{content}",
+        "metadata_template": "{key}: {value}",
+        "metadata_seperator": "\n",
+        "class_name": "TextNode"
+      },
+      "__type__": "1"
+    }
+  },
+  "docstore/metadata": {
+    "89aa51d8-4b69-4681-9fb5-b2873585d596": {
+      "doc_hash": "5f546eb4606b5c2b7d2a449a5cc2bbb477ed5a246c7051ce871b12f2dbfc8419"
+    },
+    "ec970ebf-fb1e-43f7-a6c5-cbc02b0c1a08": {
+      "doc_hash": "ef2a875407aca2dd75a7a1dccc3b202918a9bc8e543e0b3def3f34ccd5e56a7b"
+    },
+    "bd1a056b-2a44-407b-8237-a5b724ee56ac": {
+      "doc_hash": "7ed0bc022e61394074858c49e5e2f8844146ae76fd02cc3b74ed8fb450e33b42"
+    }
+  }
+}
