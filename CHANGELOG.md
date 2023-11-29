@@ -11,6 +11,8 @@
 ### Breaking Changes / Deprecations
 
 - Deprecate `QueryResponseDataset` and `DatasetGenerator` of `evaluaton` module (#9165)
+- Completed deprecation cycle of
+  `GuardrailsOutputParser.from_rail`/`from_rail_string` (#9217)
 
 ### Bug Fixes / Nits
 
