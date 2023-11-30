@@ -32,15 +32,15 @@ logger = logging.getLogger(__name__)
 
 
 def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
-    if len(standard_filters.filters) == 1:
+    if len(standard_filters.legacy_filters()) == 1:
         return {
-            "path": standard_filters.filters[0].key,
+            "path": standard_filters.legacy_filters()[0].key,
             "operator": "Equal",
-            "valueText": standard_filters.filters[0].value,
+            "valueText": standard_filters.legacy_filters()[0].value,
         }
     else:
         operands = []
-        for filter in standard_filters.filters:
+        for filter in standard_filters.legacy_filters():
             operands.append(
                 {"path": filter.key, "operator": "Equal", "valueText": filter.value}
             )
@@ -272,7 +272,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 vector=vector,
             )
 
-        if query.filters is not None and len(query.filters.filters) > 0:
+        if query.filters is not None and len(query.filters.legacy_filters()) > 0:
             filter = _to_weaviate_filter(query.filters)
             query_builder = query_builder.with_where(filter)
         elif "filter" in kwargs and kwargs["filter"] is not None:
@@ -288,11 +288,17 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         parsed_result = parse_get_response(query_result)
         entries = parsed_result[self.index_name]
 
-        similarities = [get_node_similarity(entry, similarity_key) for entry in entries]
-        nodes = [to_node(entry, text_key=self.text_key) for entry in entries]
+        similarities = []
+        nodes = []
+        node_idxs = []
 
-        nodes = nodes[: query.similarity_top_k]
-        node_idxs = [str(i) for i in range(len(nodes))]
+        for i, entry in enumerate(entries):
+            if i < query.similarity_top_k:
+                similarities.append(get_node_similarity(entry, similarity_key))
+                nodes.append(to_node(entry, text_key=self.text_key))
+                node_idxs.append(str(i))
+            else:
+                break
 
         return VectorStoreQueryResult(
             nodes=nodes, ids=node_idxs, similarities=similarities

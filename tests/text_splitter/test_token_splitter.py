@@ -1,7 +1,10 @@
 """Test text splitter."""
+from typing import List
+
 import tiktoken
 from llama_index.node_parser.text import TokenTextSplitter
 from llama_index.node_parser.text.utils import truncate_text
+from llama_index.schema import Document, MetadataMode, TextNode
 
 
 def test_split_token() -> None:
@@ -15,6 +18,18 @@ def test_split_token() -> None:
     text_splitter = TokenTextSplitter(chunk_size=2, chunk_overlap=1)
     chunks = text_splitter.split_text(token)
     assert chunks == ["foo bar", "bar hello", "hello world"]
+
+
+def test_start_end_char_idx() -> None:
+    document = Document(text="foo bar hello world baz bbq")
+    text_splitter = TokenTextSplitter(chunk_size=3, chunk_overlap=1)
+    nodes: List[TextNode] = text_splitter.get_nodes_from_documents([document])
+    for node in nodes:
+        assert node.start_char_idx is not None
+        assert node.end_char_idx is not None
+        assert node.end_char_idx - node.start_char_idx == len(
+            node.get_content(metadata_mode=MetadataMode.NONE)
+        )
 
 
 def test_truncate_token() -> None:

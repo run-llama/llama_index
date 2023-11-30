@@ -85,7 +85,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         return self._image_vector_store
 
     @property
-    def image_embed_model(self) -> EmbedType:
+    def image_embed_model(self) -> MultiModalEmbedding:
         return self._image_embed_model
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:

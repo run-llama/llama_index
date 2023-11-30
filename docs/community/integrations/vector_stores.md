@@ -661,6 +661,8 @@ maxdepth: 1
 ../../examples/vector_stores/OpensearchDemo.ipynb
 ../../examples/vector_stores/PineconeIndexDemo.ipynb
 ../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
+../../examples/vector_stores/PGVectoRsDemo.ipynb
+../../examples/vector_stores/postgres.ipynb
 ../../examples/vector_stores/RedisIndexDemo.ipynb
 ../../examples/vector_stores/QdrantIndexDemo.ipynb
 ../../examples/vector_stores/RocksetIndexDemo.ipynb

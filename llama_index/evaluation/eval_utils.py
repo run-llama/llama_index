@@ -11,19 +11,9 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 
+from llama_index.async_utils import asyncio_module
 from llama_index.core import BaseQueryEngine
 from llama_index.evaluation.base import EvaluationResult
-
-
-def asyncio_module(show_progress: bool = False) -> Any:
-    if show_progress:
-        from tqdm.asyncio import tqdm_asyncio
-
-        module = tqdm_asyncio
-    else:
-        module = asyncio
-
-    return module
 
 
 async def aget_responses(

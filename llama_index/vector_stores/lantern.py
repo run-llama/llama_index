@@ -356,7 +356,7 @@ class LanternVectorStore(BasePydanticVectorStore):
         import sqlalchemy
 
         if metadata_filters:
-            for filter_ in metadata_filters.filters:
+            for filter_ in metadata_filters.legacy_filters():
                 bind_parameter = f"value_{filter_.key}"
                 stmt = stmt.where(  # type: ignore
                     sqlalchemy.text(f"metadata_->>'{filter_.key}' = :{bind_parameter}")
