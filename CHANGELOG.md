@@ -1,5 +1,18 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Advanced Metadata filter for vector stores (#9216)
+- Amazon Bedrock Embeddings New models (#9222)
+
+### Breaking Changes / Deprecations
+
+- Deprecate ExactMatchFilter (#9216)
+
+### Bug Fixes / Nits
+
 ## [0.9.9] - 2023-11-20
 
 ### New Features
