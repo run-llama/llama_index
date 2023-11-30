@@ -39,13 +39,16 @@ class MODULE_TYPE(str, Enum):
     DATASETS = "datasets"
 
 
-def _get_file_content(loader_hub_url: str, path: str) -> Tuple[Union[str, bytes], int]:
+def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
     """Get the content of a file from the GitHub REST API."""
     resp = requests.get(loader_hub_url + path)
-    if ".pdf" in path:
-        return resp.content, resp.status_code
-    else:
-        return resp.text, resp.status_code
+    return resp.text, resp.status_code
+
+
+def _get_file_content_bytes(loader_hub_url: str, path: str) -> Tuple[bytes, int]:
+    """Get the content of a file from the GitHub REST API."""
+    resp = requests.get(loader_hub_url + path)
+    return resp.content, resp.status_code
 
 
 def get_exports(raw_content: str) -> List:
@@ -223,9 +226,14 @@ def download_module_and_reqs(
         else:
             extra_files_iterator = extra_files
         for extra_file in extra_files_iterator:
-            extra_file_raw_content, _ = _get_file_content(
-                str(remote_dir_path), f"/{module_id}/{extra_file}"
-            )
+            if ".pdf" in extra_file:
+                extra_file_raw_content, _ = _get_file_content_bytes(
+                    str(remote_dir_path), f"/{module_id}/{extra_file}"
+                )
+            else:
+                extra_file_raw_content, _ = _get_file_content(
+                    str(remote_dir_path), f"/{module_id}/{extra_file}"
+                )
             # If the extra file is an __init__.py file, we need to
             # add the exports to the __init__.py file in the modules directory
             if extra_file == "__init__.py":
@@ -241,6 +249,7 @@ def download_module_and_reqs(
                 with open(f"{module_path}/{extra_file}", "wb") as f:
                     f.write(extra_file_raw_content)
             else:
+                extra_file_raw_content = cast(str, extra_file_raw_content)
                 with open(f"{module_path}/{extra_file}", "w") as f:
                     f.write(extra_file_raw_content)
 
