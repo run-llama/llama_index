@@ -6,7 +6,7 @@ import subprocess
 import sys
 from importlib import util
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import pkg_resources
 import requests
@@ -28,7 +28,7 @@ LLAMA_RAG_DATASET_FILENAME = "rag_dataset.json"
 PATH_TYPE = Union[str, Path]
 
 
-def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
+def _get_file_content(loader_hub_url: str, path: str) -> Tuple[Union[str, bytes], int]:
     """Get the content of a file from the GitHub REST API."""
     resp = requests.get(loader_hub_url + path)
     if ".pdf" in path:
@@ -226,6 +226,7 @@ def download_module_and_reqs(
                 rewrite_exports(existing_exports + loader_exports, str(local_dir_path))
 
             if ".pdf" in extra_file:
+                extra_file_raw_content = cast(bytes, extra_file_raw_content)
                 with open(f"{module_path}/{extra_file}", "wb") as f:
                     f.write(extra_file_raw_content)
             else:
