@@ -152,7 +152,7 @@ class OpenAIAssistantAgent(BaseAgent):
         files: Optional[List[str]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
-        files_ids: Optional[List[str]] = None
+        files_ids: Optional[List[str]] = None,
     ) -> "OpenAIAssistantAgent":
         """From new assistant.
 
@@ -185,7 +185,9 @@ class OpenAIAssistantAgent(BaseAgent):
         files = files or []
         file_dict = _process_files(client, files)
         all_file_ids = list(file_dict.keys())
-        files_ids.extend(files_ids or [])
+
+        file_ids = file_ids or []
+        files_ids.extend(all_file_ids)
 
         # TODO: openai's typing is a bit sus
         all_openai_tools = cast(List[Any], all_openai_tools)
@@ -204,6 +206,7 @@ class OpenAIAssistantAgent(BaseAgent):
             thread_id=thread_id,
             instructions_prefix=instructions_prefix,
             file_dict=file_dict,
+            run_retrieve_sleep_time=run_retrieve_sleep_time,
             verbose=verbose,
         )
 
@@ -221,10 +224,10 @@ class OpenAIAssistantAgent(BaseAgent):
     def thread_id(self) -> str:
         """Get thread id."""
         return self._thread_id
-    
+
     @property
     def files_dict(self) -> Dict[str, str]:
-        """Get files dict"""
+        """Get files dict."""
         return self.file_dict
 
     @property
