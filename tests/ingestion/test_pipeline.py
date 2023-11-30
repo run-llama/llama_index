@@ -50,14 +50,11 @@ def test_run_pipeline() -> None:
 
 
 def test_save_load_pipeline() -> None:
-    document1 = Document.example()
-    document1.id_ = "1"
-
-    document2 = Document.example()
-    document2.id_ = "2"
-
-    document3 = Document.example()
-    document3.id_ = "1"
+    documents = [
+        Document(text="one", doc_id="1"),
+        Document(text="two", doc_id="2"),
+        Document(text="one", doc_id="1"),
+    ]
 
     pipeline = IngestionPipeline(
         transformations=[
@@ -66,18 +63,13 @@ def test_save_load_pipeline() -> None:
         docstore=SimpleDocumentStore(),
     )
 
-    nodes = pipeline.run(documents=[document1])
-    assert len(nodes) == 19
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 1
-
-    nodes = pipeline.run(documents=[document2])
-    assert len(nodes) == 19
+    nodes = pipeline.run(documents=documents)
+    assert len(nodes) == 2
     assert pipeline.docstore is not None
     assert len(pipeline.docstore.docs) == 2
 
-    # dedup will catch the last set of nodes
-    nodes = pipeline.run(documents=[document3])
+    # dedup will catch the last node
+    nodes = pipeline.run(documents=[documents[-1]])
     assert len(nodes) == 0
     assert pipeline.docstore is not None
     assert len(pipeline.docstore.docs) == 2
@@ -93,8 +85,8 @@ def test_save_load_pipeline() -> None:
 
     pipeline2.load("./test_pipeline")
 
-    # dedup will catch the last set of nodes
-    nodes = pipeline.run(documents=[document3])
+    # dedup will catch the last node
+    nodes = pipeline.run(documents=[documents[-1]])
     assert len(nodes) == 0
     assert pipeline.docstore is not None
     assert len(pipeline.docstore.docs) == 2
@@ -128,11 +120,11 @@ def test_pipeline_update() -> None:
     assert next(iter(pipeline.docstore.docs.values())).text == "test"  # type: ignore
 
 
-def test_pipeline_dedupe_input() -> None:
+def test_pipeline_dedup_duplicates_only() -> None:
     documents = [
         Document(text="one", doc_id="1"),
         Document(text="two", doc_id="2"),
-        Document(text="three", doc_id="1"),
+        Document(text="three", doc_id="3"),
     ]
 
     pipeline = IngestionPipeline(
@@ -143,6 +135,7 @@ def test_pipeline_dedupe_input() -> None:
     )
 
     nodes = pipeline.run(documents=documents)
-    assert len(nodes) == 2
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 2
+    assert len(nodes) == 3
+
+    nodes = pipeline.run(documents=documents)
+    assert len(nodes) == 0
