@@ -4,6 +4,7 @@ from llama_index import Document
 from llama_index.download.download_utils import (
     LLAMA_DATASETS_URL,
     LLAMA_HUB_URL,
+    LLAMA_RAG_DATASET_FILENAME,
     download_llama_module,
 )
 from llama_index.llama_dataset.base import BaseLlamaDataset
@@ -16,6 +17,7 @@ def download_llama_dataset(
     download_dir: str,
     llama_hub_url: str = LLAMA_HUB_URL,
     llama_datasets_url: str = LLAMA_DATASETS_URL,
+    show_progress: bool = False,
 ) -> Tuple[Type[BaseLlamaDataset], List[Document]]:
     """Download a single LlamaDataset from Llama Hub.
 
@@ -39,10 +41,13 @@ def download_llama_dataset(
         library_path="llama_datasets/library.json",
         disable_library_cache=True,
         override_path=True,
+        show_progress=show_progress,
     )
     rag_dataset_filename, source_filenames = filenames
 
     return (
         LabelledRagDataset.from_json(rag_dataset_filename),
-        SimpleDirectoryReader(input_files=source_filenames).load_data(),
+        SimpleDirectoryReader(
+            input_dir=download_dir, exclude=[LLAMA_RAG_DATASET_FILENAME, "__init__.py"]
+        ).load_data(show_progress=show_progress),
     )

@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pkg_resources
 import requests
+import tqdm
 from pkg_resources import DistributionNotFound
 
 LLAMA_HUB_CONTENTS_URL = f"https://raw.githubusercontent.com/run-llama/llama-hub/main"
@@ -30,7 +31,10 @@ PATH_TYPE = Union[str, Path]
 def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
     """Get the content of a file from the GitHub REST API."""
     resp = requests.get(loader_hub_url + path)
-    return resp.text, resp.status_code
+    if ".pdf" in path:
+        return resp.content, resp.status_code
+    else:
+        return resp.text, resp.status_code
 
 
 def get_exports(raw_content: str) -> List:
@@ -173,6 +177,7 @@ def download_module_and_reqs(
     base_file_name: str = "base.py",
     override_path: bool = False,
     is_dataset: bool = False,
+    show_progress: bool = False,
 ) -> None:
     """Load module."""
     if isinstance(local_dir_path, str):
@@ -202,7 +207,11 @@ def download_module_and_reqs(
 
         # Get content of extra files if there are any
         # and write them under the loader directory
-        for extra_file in extra_files:
+        if show_progress:
+            extra_files_iterator = tqdm.tqdm(extra_files)
+        else:
+            extra_files_iterator = extra_files
+        for extra_file in extra_files_iterator:
             extra_file_raw_content, _ = _get_file_content(
                 str(remote_dir_path), f"/{module_id}/{extra_file}"
             )
@@ -215,8 +224,13 @@ def download_module_and_reqs(
                     f.write(f"from .{module_id} import {', '.join(loader_exports)}")
                     existing_exports = get_exports(f.read())
                 rewrite_exports(existing_exports + loader_exports, str(local_dir_path))
-            with open(f"{module_path}/{extra_file}", "w") as f:
-                f.write(extra_file_raw_content)
+
+            if ".pdf" in extra_file:
+                with open(f"{module_path}/{extra_file}", "wb") as f:
+                    f.write(extra_file_raw_content)
+            else:
+                with open(f"{module_path}/{extra_file}", "w") as f:
+                    f.write(extra_file_raw_content)
 
     if not is_dataset:
         # install requirements
@@ -257,6 +271,7 @@ def download_llama_module(
     override_path: bool = False,
     llama_datasets_url: str = LLAMA_DATASETS_URL,
     is_dataset: bool = False,
+    show_progress: bool = False,
 ) -> Any:
     """Download a module from LlamaHub.
 
@@ -312,6 +327,7 @@ def download_llama_module(
         base_file_name=base_file_name,
         override_path=override_path,
         is_dataset=is_dataset,
+        show_progress=show_progress,
     )
 
     if is_dataset:
