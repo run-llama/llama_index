@@ -92,7 +92,7 @@ def get_default_tokenizer() -> Callable:
 def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     """Convert from standard dataclass to pinecone filter dict."""
     filters = {}
-    for filter in standard_filters.filters:
+    for filter in standard_filters.legacy_filters():
         filters[filter.key] = filter.value
     return filters
 

@@ -32,15 +32,15 @@ logger = logging.getLogger(__name__)
 
 
 def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
-    if len(standard_filters.filters) == 1:
+    if len(standard_filters.legacy_filters()) == 1:
         return {
-            "path": standard_filters.filters[0].key,
+            "path": standard_filters.legacy_filters()[0].key,
             "operator": "Equal",
-            "valueText": standard_filters.filters[0].value,
+            "valueText": standard_filters.legacy_filters()[0].value,
         }
     else:
         operands = []
-        for filter in standard_filters.filters:
+        for filter in standard_filters.legacy_filters():
             operands.append(
                 {"path": filter.key, "operator": "Equal", "valueText": filter.value}
             )
@@ -272,7 +272,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 vector=vector,
             )
 
-        if query.filters is not None and len(query.filters.filters) > 0:
+        if query.filters is not None and len(query.filters.legacy_filters()) > 0:
             filter = _to_weaviate_filter(query.filters)
             query_builder = query_builder.with_where(filter)
         elif "filter" in kwargs and kwargs["filter"] is not None:

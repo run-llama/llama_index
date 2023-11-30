@@ -29,7 +29,7 @@ def _to_dashvector_filter(
         return None
 
     filters = []
-    for filter in standard_filters.filters:
+    for filter in standard_filters.legacy_filters():
         if isinstance(filter.value, str):
             value = f"'{filter.value}'"
         else:

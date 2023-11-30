@@ -7,6 +7,8 @@ import re
 import uuid
 from typing import Dict, List, Tuple
 
+from deprecated import deprecated
+
 from llama_index import Document, ServiceContext, SummaryIndex
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.ingestion import run_transformations
@@ -34,6 +36,10 @@ def _get_default_service_context() -> ServiceContext:
     return ServiceContext.from_defaults(llm=llm, chunk_size_limit=3000)
 
 
+@deprecated(
+    "Deprecated in favor of `LabelledRagDataset` which should be used instead.",
+    action="always",
+)
 class QueryResponseDataset(BaseModel):
     """Query Response Dataset.
 
@@ -94,6 +100,10 @@ class QueryResponseDataset(BaseModel):
         return cls(**data)
 
 
+@deprecated(
+    "Deprecated in favor of `RagDatasetGenerator` which should be used instead.",
+    action="always",
+)
 class DatasetGenerator(PromptMixin):
     """Generate dataset (question/ question-answer pairs) \
     based on the given documents.
