@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Add docs for `LabelledRagDataset` (#9228)
+
 ## [0.9.10] - 2023-11-30
 
 ### New Features
