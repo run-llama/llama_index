@@ -99,11 +99,6 @@ class ExactMatchFilter(BaseModel):
     value: Union[StrictInt, StrictFloat, StrictStr]
 
 
-class ExactMatchFilter(BaseModel):
-    key: str
-    value: Union[StrictInt, StrictFloat, StrictStr]
-
-
 class MetadataFilters(BaseModel):
     """Metadata filters for vector stores.
 

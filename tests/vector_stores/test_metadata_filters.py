@@ -7,7 +7,7 @@ from llama_index.vector_stores.types import (
 )
 
 
-def test_legacy_filters_value_error():
+def test_legacy_filters_value_error() -> None:
     """Test legacy filters."""
     filters = [
         MetadataFilter(key="key1", value="value1", operator=FilterOperator.GTE),
@@ -20,7 +20,7 @@ def test_legacy_filters_value_error():
         metadata_filters.legacy_filters()
 
 
-def test_legacy_filters():
+def test_legacy_filters() -> None:
     filters = [
         ExactMatchFilter(key="key1", value="value1"),
         ExactMatchFilter(key="key2", value="value2"),
