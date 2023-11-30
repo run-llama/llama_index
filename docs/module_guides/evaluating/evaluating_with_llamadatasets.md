@@ -1,4 +1,4 @@
-# Evaluating With `LlamaDatasets`
+# Evaluating With `LlamaDataset`'s
 
 We have already gone through the core abstractions within the Evaluation module that
 enable various kinds of evaluation methodologies of LLM-based applications or systems, including RAG systems. Of course, to evaluate the system one needs an
