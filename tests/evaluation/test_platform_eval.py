@@ -19,7 +19,7 @@ def test_upload_eval_dataste() -> None:
         overwrite=True,
     )
 
-    client = PlatformApi(base_url=base_url, api_key=api_key)
+    client = PlatformApi(base_url=base_url, token=api_key)
     eval_dataset = client.eval.get_dataset(dataset_id=eval_dataset_id)
     assert eval_dataset.name == "test_dataset"
 
