@@ -122,6 +122,15 @@ maxdepth: 1
 /examples/llm/llama_2_llama_cpp.ipynb
 ```
 
+## LocalAI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/localai.ipynb
+```
+
 ## MonsterAPI
 
 ```{toctree}
