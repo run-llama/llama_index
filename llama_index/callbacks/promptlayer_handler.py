@@ -88,6 +88,7 @@ class PromptLayerHandler(BaseCallbackHandler):
         if response:
             messages = cast(List[ChatMessage], payload.get(EventPayload.MESSAGES, []))
             resp = response.message.dict()
+            assert isinstance(resp, dict)
 
             usage_dict: Dict[str, int] = {}
             try:
