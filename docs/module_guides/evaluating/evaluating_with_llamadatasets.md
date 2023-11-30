@@ -85,9 +85,55 @@ response by comparing it to the reference answer. In step (2) we also evaluate t
 RAG system's retrieved contexts and compare it to the reference contexts, to gain
 an assessment on the retrieval component of the RAG system.
 
-## Where To Find `LlamaDatasets`
+For convenience, we have a `LlamaPack` called the `RagEvaluatorPack` that
+streamlines this evaluation process!
 
-## Notebooks
+```python
+from llama_index.llama_pack import download_llama_pack
+
+RagEvaluatorPack = download_llama_pack("RagEvaluatorPack", "./pack")
+
+rag_evaluator = RagEvaluatorPack(
+    query_engine=query_engine,  # built with the same source Documents as the rag_dataset
+    rag_dataset=rag_dataset,
+)
+benchmark_df = await rag_evaluator.run()
+```
+
+The above `benchmark_df` contains the mean scores for evaluation measures introduced
+previously: `Correctness`, `Relevancy`, `Faithfulness` as well as `Context Similarity`
+that measures the semantic similarity between the reference contexts as well as the
+contexts retrieved by the RAG system to generated the predicted response.
+
+## Where To Find `LlamaDataset`'s
+
+You can find all of the `LabelledRagDataset`'s and other `LlamaDataset`'s
+in [llamahub](https://llambahub.ai). You can browse each one of these and decide
+if you do decide that you'd like to use it to benchmark your RAG pipeline, then
+you can download the dataset as well as the source `Document`'s conveniently thru
+one of two ways: the `llamaindex-cli` or through Python code using the
+`download_llama_dataset` utility function.
+
+```bash
+# using cli
+llamaindex-cli download-llamadataset PaulGrahamEssayDataset --download-dir ./data
+```
+
+```python
+# using python
+from llama_index.llama_datasets import download_llama_datasets
+
+# a LabelledRagDataset and a list of source Document's
+rag_dataset, documents = download_llama_datasets(
+    "PaulGrahamEssayDataset", "./data"
+)
+```
+
+## Now, Go And Build Robust LLM Applications
+
+This page hopefully has served as a good starting point for you to create, download
+and use `LlamaDataset`'s for building robust and performant LLM Applications. To
+learn more, we recommend reading the notebook guides provided below.
 
 ```{toctree}
 ---
