@@ -157,11 +157,18 @@ Attaching a `docstore` to the ingestion pipeline will enable document management
 
 Using the `document.doc_id` or `node.ref_doc_id` as a grounding point, the ingestion pipeline will actively look for duplicate documents.
 
-It works by
+It works by:
 
 - Storing a map of `doc_id` -> `document_hash`
-- If a duplicate `doc_id` is detected, and the hash has changed, the document will be re-processed
-- If the hash has not changed, the document will skipped in the pipeline
+- If a vector store is attached:
+  - If a duplicate `doc_id` is detected, and the hash has changed, the document will be re-processed and upserted
+  - If a duplicate `doc_id` is detected and the hash is unchanged, the node is skipped
+- If only a vector store is not attached:
+  - Checks all existing hashes for each node
+  - If a duplicate is found, the node is skipped
+  - Otherwise, the node is processed
+
+**NOTE:** If we do not attach a vector store, we can only check for and remove duplicate inputs.
 
 ```python
 from llama_index.ingestion import IngestionPipeline
@@ -174,6 +181,8 @@ pipeline = IngestionPipeline(
 
 A full walkthrough is found in our [demo notebook](/examples/ingestion/document_management_pipeline.ipynb).
 
+Also check out another guide using [Redis as our entire ingestion stack](/examples/ingestion/redis_ingestion_pipeline.ipynb).
+
 ## Modules
 
 ```{toctree}
@@ -184,4 +193,5 @@ transformations.md
 /examples/ingestion/advanced_ingestion_pipeline.ipynb
 /examples/ingestion/async_ingestion_pipeline.ipynb
 /examples/ingestion/document_management_pipeline.ipynb
+/examples/ingestion/redis_ingestion_pipeline.ipynb
 ```

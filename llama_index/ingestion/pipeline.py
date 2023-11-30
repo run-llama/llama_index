@@ -1,4 +1,5 @@
 import re
+from enum import Enum
 from hashlib import sha256
 from pathlib import Path
 from typing import Any, List, Optional, Sequence
@@ -114,6 +115,13 @@ async def arun_transformations(
     return nodes
 
 
+class DocstoreStrategy(str, Enum):
+    """Document de-duplication strategy."""
+
+    UPSERTS = "upserts"
+    DUPLICATES_ONLY = "duplicates_only"
+
+
 class IngestionPipeline(BaseModel):
     """An ingestion pipeline that can be applied to data."""
 
@@ -132,7 +140,10 @@ class IngestionPipeline(BaseModel):
     )
     docstore: Optional[BaseDocumentStore] = Field(
         default=None,
-        description="Document store to use to store the data for de-duping",
+        description="Document store to use for de-duping with a vector store.",
+    )
+    docstore_strategy: DocstoreStrategy = Field(
+        default=DocstoreStrategy.UPSERTS, description="Document de-dup strategy."
     )
     disable_cache: bool = Field(default=False, description="Disable the cache")
 
@@ -147,6 +158,7 @@ class IngestionPipeline(BaseModel):
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
         docstore: Optional[BaseDocumentStore] = None,
+        docstore_strategy: DocstoreStrategy = DocstoreStrategy.UPSERTS,
     ) -> None:
         if transformations is None:
             transformations = self._get_default_transformations()
@@ -158,6 +170,7 @@ class IngestionPipeline(BaseModel):
             vector_store=vector_store,
             cache=cache or IngestionCache(),
             docstore=docstore,
+            docstore_strategy=docstore_strategy,
         )
 
     @classmethod
@@ -253,6 +266,46 @@ class IngestionPipeline(BaseModel):
 
         return input_nodes
 
+    def _handle_duplicates(self, nodes: List[BaseNode]) -> List[BaseNode]:
+        """Handle docstore duplicates by checking all hashes."""
+        existing_hashes = self.docstore.get_all_document_hashes()
+        current_hashes = []
+        nodes_to_run = []
+        for node in nodes:
+            if node.hash not in existing_hashes and node.hash not in current_hashes:
+                self.docstore.add_documents([node])
+                self.docstore.set_document_hash(node.id_, node.hash)
+                nodes_to_run.append(node)
+                current_hashes.append(node.hash)
+        return nodes_to_run
+
+    def _handle_upserts(self, nodes: List[BaseNode]) -> List[BaseNode]:
+        """Handle docstore upserts by checking hashes and ids."""
+        deduped_nodes_to_run = {}
+        for node in nodes:
+            ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
+
+            existing_hash = self.docstore.get_document_hash(ref_doc_id)
+            if not existing_hash:
+                # document doesn't exist, so add it
+                self.docstore.add_documents([node])
+                self.docstore.set_document_hash(ref_doc_id, node.hash)
+                deduped_nodes_to_run[ref_doc_id] = node
+            elif existing_hash and existing_hash != node.hash:
+                self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+
+                if self.vector_store is not None:
+                    self.vector_store.delete(ref_doc_id)
+
+                self.docstore.add_documents([node])
+                self.docstore.set_document_hash(ref_doc_id, node.hash)
+
+                deduped_nodes_to_run[ref_doc_id] = node
+            else:
+                continue  # document exists and is unchanged, so skip it
+
+        return list(deduped_nodes_to_run.values())
+
     def run(
         self,
         show_progress: bool = False,
@@ -264,33 +317,22 @@ class IngestionPipeline(BaseModel):
     ) -> Sequence[BaseNode]:
         input_nodes = self._prepare_inputs(documents, nodes)
 
-        # check if we need to de-dupe
-        nodes_to_run = []
-        deduped_nodes_to_run = {}
-        if self.docstore is not None:
-            for node in input_nodes:
-                ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
-
-                existing_hash = self.docstore.get_document_hash(ref_doc_id)
-                if not existing_hash:
-                    # document doesn't exist, so add it
-                    self.docstore.add_documents([node])
-                    self.docstore.set_document_hash(ref_doc_id, node.hash)
-                    deduped_nodes_to_run[ref_doc_id] = node
-                elif existing_hash and existing_hash != node.hash:
-                    self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
-
-                    if self.vector_store is not None:
-                        self.vector_store.delete(ref_doc_id)
-
-                    self.docstore.add_documents([node])
-                    self.docstore.set_document_hash(ref_doc_id, node.hash)
-
-                    deduped_nodes_to_run[ref_doc_id] = node
-                else:
-                    continue  # document exists and is unchanged, so skip it
-
-            nodes_to_run = list(deduped_nodes_to_run.values())
+        # check if we need to dedup
+        if self.docstore is not None and self.vector_store is not None:
+            if self.docstore_strategy == DocstoreStrategy.UPSERTS:
+                nodes_to_run = self._handle_upserts(input_nodes)
+            elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+                nodes_to_run = self._handle_duplicates(input_nodes)
+            else:
+                raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
+        elif self.docstore is not None and self.vector_store is None:
+            if self.docstore_strategy == DocstoreStrategy.UPSERTS:
+                print(
+                    "Docstore strategy set to upserts, but no vector store. "
+                    "Switching to duplicates_only strategy."
+                )
+                self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
+            nodes_to_run = self._handle_duplicates(input_nodes)
         else:
             nodes_to_run = input_nodes
 
