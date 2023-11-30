@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Added document management to ingestion pipeline (#9135)
+
 ## [0.9.10] - 2023-11-30
 
 ### New Features
