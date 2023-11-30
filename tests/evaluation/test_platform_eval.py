@@ -1,15 +1,15 @@
 import os
-import pytest
-from llama_index_client.client import PlatformApi
 
+import pytest
 from llama_index.evaluation.eval_utils import upload_eval_dataset
+from llama_index_client.client import PlatformApi
 
 base_url = os.environ.get("PLATFORM_BASE_URL", None)
 api_key = os.environ.get("PLATFORM_API_KEY", None)
 
+
 @pytest.mark.skipif(
-        not base_url or not api_key, 
-        reason="No platform base url or api keyset"
+    not base_url or not api_key, reason="No platform base url or api keyset"
 )
 @pytest.mark.integration()
 def test_upload_eval_dataste() -> None:
