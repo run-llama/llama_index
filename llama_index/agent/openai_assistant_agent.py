@@ -152,7 +152,7 @@ class OpenAIAssistantAgent(BaseAgent):
         files: Optional[List[str]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
-        files_ids: Optional[List[str]] = None,
+        file_ids: Optional[List[str]] = None,
     ) -> "OpenAIAssistantAgent":
         """From new assistant.
 
@@ -183,11 +183,10 @@ class OpenAIAssistantAgent(BaseAgent):
 
         # process files
         files = files or []
-        file_dict = _process_files(client, files)
-        all_file_ids = list(file_dict.keys())
-
         file_ids = file_ids or []
-        files_ids.extend(all_file_ids)
+
+        file_dict = _process_files(client, files)
+        all_file_ids = list(file_dict.keys()) + file_ids
 
         # TODO: openai's typing is a bit sus
         all_openai_tools = cast(List[Any], all_openai_tools)
@@ -196,7 +195,7 @@ class OpenAIAssistantAgent(BaseAgent):
             instructions=instructions,
             tools=cast(List[Any], all_openai_tools),
             model=model,
-            file_ids=all_file_ids,
+            file_ids=all_file_ids + file_ids,
         )
         return cls(
             client,
