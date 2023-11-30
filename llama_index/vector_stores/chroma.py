@@ -35,7 +35,7 @@ def _transform_chroma_filter_operator(operator: str) -> str:
     """Translate standard metadata filter operator to Chroma specific spec."""
     if operator == "!=":
         return "$ne"
-    elif operator == "=":
+    elif operator == "==":
         return "$eq"
     elif operator == ">":
         return "$gt"
