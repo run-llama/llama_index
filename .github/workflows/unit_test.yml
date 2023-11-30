@@ -36,4 +36,4 @@ jobs:
         env:
           CI: true
         shell: bash
-        run: poetry run make test --integration
+        run: poetry run make test-plus-integration
