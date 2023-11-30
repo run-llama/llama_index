@@ -76,7 +76,7 @@ def upload_eval_dataset(
     platform_api_key: Optional[str] = None,
     overwrite: bool = False,
     append: bool = False,
-) -> None:
+) -> str:
     """Upload questions to platform dataset."""
     platform_base_url = platform_base_url or os.environ.get(
         "PLATFORM_BASE_URL", DEFAULT_BASE_URL
@@ -126,3 +126,4 @@ def upload_eval_dataset(
 
     assert len(eval_questions) == len(questions)
     print(f"Uploaded {len(questions)} questions to dataset {dataset_name}")
+    return eval_dataset.id
