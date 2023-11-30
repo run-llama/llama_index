@@ -86,8 +86,8 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
-        remote_pipeline_name: Optional[str] = None,
         from_pipeline_name: Optional[str] = None,
+        remote_pipeline_name: Optional[str] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
         **kwargs: Any,
     ) -> IndexType:
