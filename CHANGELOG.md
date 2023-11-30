@@ -7,6 +7,7 @@
 - Advanced Metadata filter for vector stores (#9216)
 - Amazon Bedrock Embeddings New models (#9222)
 - Added PromptLayer callback integration (#9190)
+- Reuse file ids for `OpenAIAssistant` (#9125)
 
 ### Breaking Changes / Deprecations
 
