@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.10] - 2023-11-30
 
 ### New Features
 
@@ -13,9 +13,7 @@
 
 - Deprecate ExactMatchFilter (#9216)
 
-### Bug Fixes / Nits
-
-## [0.9.9] - 2023-11-20
+## [0.9.9] - 2023-11-29
 
 ### New Features
 
