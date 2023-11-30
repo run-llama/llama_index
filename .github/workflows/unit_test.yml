@@ -8,6 +8,8 @@ on:
 
 env:
   POETRY_VERSION: "1.6.1"
+  PLATFORM_BASE_URL: ${{ secrets.PLATFORM_BASE_URL }}
+  PLATFORM_API_KEY: ${{ secrets.PLATFORM_API_KEY }}
 
 jobs:
   test:
@@ -34,4 +36,4 @@ jobs:
         env:
           CI: true
         shell: bash
-        run: poetry run make test
+        run: poetry run make test --integration
