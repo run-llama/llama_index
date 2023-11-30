@@ -129,6 +129,18 @@ rag_dataset, documents = download_llama_datasets(
 )
 ```
 
+### Contributing A `LlamaDataset`
+
+You can also contribute a `LabelledRagDataset` to [llamahub](https://llamahub.ai).
+Contributing a `LabelledRagDataset` involves two high level steps. Generally speaking,
+you must create the `LabelledRagDataset`, save it as a json and submit both this
+json file and the source text files to our [llama_datasets](https://github.com/run-llama/llama_datasets) Github repository. Additionally, you'll have to make
+a pull request, following the steps listed in the `README.md` in our [llama_hub](https://github.com/run-llama/llama-hub)
+Github repository.
+
+Please refer to the "Contributing a LlamaDataset To LlamaHub" jupyter notebook
+linked below.
+
 ## Now, Go And Build Robust LLM Applications
 
 This page hopefully has served as a good starting point for you to create, download
