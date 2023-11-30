@@ -2,9 +2,35 @@
 
 ## Unreleased
 
+### New Features
+
+- Advanced Metadata filter for vector stores (#9216)
+- Amazon Bedrock Embeddings New models (#9222)
+
+### Breaking Changes / Deprecations
+
+- Deprecate ExactMatchFilter (#9216)
+
 ### Bug Fixes / Nits
 
+## [0.9.9] - 2023-11-20
+
+### New Features
+
+- Add new abstractions for `LlamaDataset`'s (#9165)
+- Add metadata filtering and MMR mode support for `AstraDBVectorStore` (#9193)
+- Allowing newest `scikit-learn` versions (#9213)
+
+### Breaking Changes / Deprecations
+
+- Added `LocalAI` demo and began deprecation cycle (#9151)
+- Deprecate `QueryResponseDataset` and `DatasetGenerator` of `evaluaton` module (#9165)
+
+### Bug Fixes / Nits
+
+- Fix bug in `download_utils.py` with pointing to wrong repo (#9215)
 - Use `azure_deployment` kwarg in `AzureOpenAILLM` (#9174)
+- Fix similarity score return for `AstraDBVectorStore` Integration (#9193)
 
 ## [0.9.8] - 2023-11-26
 

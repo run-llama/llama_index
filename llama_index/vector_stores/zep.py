@@ -248,7 +248,7 @@ class ZepVectorStore(VectorStore):
         """Convert filters to Zep filters. Filters are ANDed together."""
         filter_conditions: List[Dict[str, Any]] = []
 
-        for f in filters.filters:
+        for f in filters.legacy_filters():
             filter_conditions.append({"jsonpath": f'$[*] ? (@.{f.key} == "{f.value}")'})
 
         return {"where": {"and": filter_conditions}}

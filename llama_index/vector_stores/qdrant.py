@@ -469,7 +469,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         if query.filters is None:
             return Filter(must=must_conditions)
 
-        for subfilter in query.filters.filters:
+        for subfilter in query.filters.legacy_filters():
             if isinstance(subfilter.value, float):
                 must_conditions.append(
                     FieldCondition(
