@@ -1,4 +1,4 @@
-# Evaluating With `LlamaDataset`'s
+# Evaluating With `LabelledRagDataset`'s
 
 We have already gone through the core abstractions within the Evaluation module that
 enable various kinds of evaluation methodologies of LLM-based applications or systems, including RAG systems. Of course, to evaluate the system one needs an
@@ -8,13 +8,11 @@ emanating from different sources and domains. Doing so, helps to ensure the over
 robustness (that is, the level in which the system will work in unseen, new cases) of
 the system.
 
-To this end, we've included the `BaseLlamaDataset` (referred to as `LlamaDataset`
-for short) abstraction in our library. Their core purpose is to facilitate the
+To this end, we've included the `LabelledRagDataset` abstraction in our library. Their core purpose is to facilitate the
 evaluations of systems on various datasets, by making these easy to create, easy
 to use, and widely available.
 
-The rest of this page focuses on a particular kind of `BaseLlamaDataset`, namely
-the `LabelledRagDataset`. This dataset consists of examples, where an example
+This dataset consists of examples, where an example
 carries a `query`, a `reference_answer`, as well as `reference_contexts`. The main
 reason for using a `LabelledRagDataset` is then to test a RAG system's performance
 by first predicting a response to the given `query` and comparing that predicted
@@ -105,10 +103,9 @@ previously: `Correctness`, `Relevancy`, `Faithfulness` as well as `Context Simil
 that measures the semantic similarity between the reference contexts as well as the
 contexts retrieved by the RAG system to generated the predicted response.
 
-## Where To Find `LlamaDataset`'s
+## Where To Find `LabelledRagDataset`'s
 
-You can find all of the `LabelledRagDataset`'s and other `LlamaDataset`'s
-in [llamahub](https://llambahub.ai). You can browse each one of these and decide
+You can find all of the `LabelledRagDataset`'s in [llamahub](https://llambahub.ai). You can browse each one of these and decide
 if you do decide that you'd like to use it to benchmark your RAG pipeline, then
 you can download the dataset as well as the source `Document`'s conveniently thru
 one of two ways: the `llamaindex-cli` or through Python code using the
@@ -129,7 +126,7 @@ rag_dataset, documents = download_llama_datasets(
 )
 ```
 
-### Contributing A `LlamaDataset`
+### Contributing A `LabelledRagDataset`
 
 You can also contribute a `LabelledRagDataset` to [llamahub](https://llamahub.ai).
 Contributing a `LabelledRagDataset` involves two high level steps. Generally speaking,
