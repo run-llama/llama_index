@@ -69,7 +69,7 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
         if node.metadata is None:
             raise ValueError("Metadata must be set")
         return SQLTableSchema(
-            table_name=node.metadata["name"], context_str=node.metadata["context"]
+            table_name=node.metadata["name"], context_str=node.metadata.get("context")
         )
 
     @property

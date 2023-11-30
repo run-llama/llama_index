@@ -2,21 +2,23 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import re
-import uuid
-from typing import Dict, List, Tuple
-
-from deprecated import deprecated
+from typing import List
 
 from llama_index import Document, ServiceContext, SummaryIndex
-from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.ingestion import run_transformations
+from llama_index.llama_dataset import (
+    CreatedBy,
+    CreatedByType,
+    LabelledRagDataExample,
+    LabelledRagDataset,
+)
 from llama_index.llms.openai import OpenAI
 from llama_index.postprocessor.node import KeywordNodePostprocessor
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
@@ -36,75 +38,7 @@ def _get_default_service_context() -> ServiceContext:
     return ServiceContext.from_defaults(llm=llm, chunk_size_limit=3000)
 
 
-@deprecated(
-    "Deprecated in favor of `LabelledRagDataset` which should be used instead.",
-    action="always",
-)
-class QueryResponseDataset(BaseModel):
-    """Query Response Dataset.
-
-    The response can be empty if the dataset is generated from documents.
-
-    Args:
-        queries (Dict[str, str]): Query id -> query.
-        responses (Dict[str, str]): Query id -> response.
-
-    """
-
-    queries: Dict[str, str] = Field(
-        default_factory=dict, description="Query id -> query"
-    )
-    responses: Dict[str, str] = Field(
-        default_factory=dict, description="Query id -> response"
-    )
-
-    @classmethod
-    def from_qr_pairs(
-        cls,
-        qr_pairs: List[Tuple[str, str]],
-    ) -> QueryResponseDataset:
-        """Create from qr pairs."""
-        # define ids as simple integers
-        queries = {str(idx): query for idx, (query, _) in enumerate(qr_pairs)}
-        responses = {str(idx): response for idx, (_, response) in enumerate(qr_pairs)}
-        return cls(queries=queries, responses=responses)
-
-    @property
-    def qr_pairs(self) -> List[Tuple[str, str]]:
-        """Get pairs."""
-        # if query_id not in response, throw error
-        for query_id in self.queries:
-            if query_id not in self.responses:
-                raise ValueError(f"Query id {query_id} not in responses")
-
-        return [
-            (self.queries[query_id], self.responses[query_id])
-            for query_id in self.queries
-        ]
-
-    @property
-    def questions(self) -> List[str]:
-        """Get questions."""
-        return list(self.queries.values())
-
-    def save_json(self, path: str) -> None:
-        """Save json."""
-        with open(path, "w") as f:
-            json.dump(self.dict(), f, indent=4)
-
-    @classmethod
-    def from_json(cls, path: str) -> QueryResponseDataset:
-        """Load json."""
-        with open(path) as f:
-            data = json.load(f)
-        return cls(**data)
-
-
-@deprecated(
-    "Deprecated in favor of `RagDatasetGenerator` which should be used instead.",
-    action="always",
-)
-class DatasetGenerator(PromptMixin):
+class RagDatasetGenerator(PromptMixin):
     """Generate dataset (question/ question-answer pairs) \
     based on the given documents.
 
@@ -124,7 +58,7 @@ class DatasetGenerator(PromptMixin):
         self,
         nodes: List[BaseNode],
         service_context: ServiceContext | None = None,
-        num_questions_per_chunk: int = 10,
+        num_questions_per_chunk: int = 3,
         text_question_template: BasePromptTemplate | None = None,
         text_qa_template: BasePromptTemplate | None = None,
         question_gen_query: str | None = None,
@@ -156,14 +90,14 @@ class DatasetGenerator(PromptMixin):
         cls,
         documents: List[Document],
         service_context: ServiceContext | None = None,
-        num_questions_per_chunk: int = 10,
+        num_questions_per_chunk: int = 3,
         text_question_template: BasePromptTemplate | None = None,
         text_qa_template: BasePromptTemplate | None = None,
         question_gen_query: str | None = None,
         required_keywords: List[str] | None = None,
         exclude_keywords: List[str] | None = None,
         show_progress: bool = False,
-    ) -> DatasetGenerator:
+    ) -> RagDatasetGenerator:
         """Generate dataset from documents."""
         if service_context is None:
             service_context = _get_default_service_context()
@@ -197,13 +131,11 @@ class DatasetGenerator(PromptMixin):
     async def _agenerate_dataset(
         self,
         nodes: List[BaseNode],
-        num: int | None = None,
-        generate_response: bool = False,
-    ) -> QueryResponseDataset:
+        labelled: bool = False,
+    ) -> LabelledRagDataset:
         """Node question generator."""
         query_tasks = []
-        queries: Dict[str, str] = {}
-        responses_dict: Dict[str, str] = {}
+        examples: List[LabelledRagDataExample] = []
 
         if self._show_progress:
             from tqdm.asyncio import tqdm_asyncio
@@ -214,8 +146,6 @@ class DatasetGenerator(PromptMixin):
 
         summary_indices: List[SummaryIndex] = []
         for node in nodes:
-            if num is not None and len(queries) >= num:
-                break
             index = SummaryIndex.from_documents(
                 [
                     Document(
@@ -237,7 +167,7 @@ class DatasetGenerator(PromptMixin):
             query_tasks.append(task)
             summary_indices.append(index)
 
-        responses = await async_module.gather(*query_tasks)
+        responses = await async_module.gather(*query_tasks)  # result order is preserved
         for idx, response in enumerate(responses):
             result = str(response).strip().split("\n")
             cleaned_questions = [
@@ -246,65 +176,58 @@ class DatasetGenerator(PromptMixin):
             cleaned_questions = [
                 question for question in cleaned_questions if len(question) > 0
             ]
-            cur_queries = {
-                str(uuid.uuid4()): question for question in cleaned_questions
-            }
-            queries.update(cur_queries)
+            index = summary_indices[idx]
+            reference_context = nodes[idx].text
 
-            if generate_response:
+            if labelled:
                 index = summary_indices[idx]
                 qr_tasks = []
-                cur_query_items = list(cur_queries.items())
-                cur_query_keys = [query_id for query_id, _ in cur_query_items]
-                for query_id, query in cur_query_items:
+                for query in cleaned_questions:
+                    # build summary index off of node (i.e. context)
                     qa_query_engine = index.as_query_engine(
                         service_context=self.service_context,
                         text_qa_template=self.text_qa_template,
                     )
                     qr_task = qa_query_engine.aquery(query)
                     qr_tasks.append(qr_task)
-                qr_responses = await async_module.gather(*qr_tasks)
-                for query_id, qa_response in zip(cur_query_keys, qr_responses):
-                    responses_dict[query_id] = str(qa_response)
+                answer_responses: List[RESPONSE_TYPE] = await async_module.gather(
+                    *qr_tasks
+                )  # execution order is not guaranteed but result values order is preserved
+                for question, answer_response in zip(
+                    cleaned_questions, answer_responses
+                ):
+                    model_name = self.service_context.llm.metadata.model_name
+                    created_by = CreatedBy(type=CreatedByType.AI, model_name=model_name)
+                    example = LabelledRagDataExample(
+                        query=question,
+                        reference_answer=str(answer_response),
+                        reference_contexts=[reference_context],
+                        reference_answer_by=created_by,
+                        query_by=created_by,
+                    )
+                    examples.append(example)
             else:
                 pass
 
-        query_ids = list(queries.keys())
-        if num is not None:
-            query_ids = query_ids[:num]
-            # truncate queries, responses to the subset of query ids
-            queries = {query_id: queries[query_id] for query_id in query_ids}
-            if generate_response:
-                responses_dict = {
-                    query_id: responses_dict[query_id] for query_id in query_ids
-                }
+        # split train/test
+        return LabelledRagDataset(examples=examples)
 
-        return QueryResponseDataset(queries=queries, responses=responses_dict)
-
-    async def agenerate_questions_from_nodes(self, num: int | None = None) -> List[str]:
+    async def agenerate_questions_from_nodes(self) -> List[str]:
         """Generates questions for each document."""
-        dataset = await self._agenerate_dataset(
-            self.nodes, num=num, generate_response=False
-        )
+        dataset = await self._agenerate_dataset(self.nodes, labelled=False)
         return dataset.questions
 
-    async def agenerate_dataset_from_nodes(
-        self, num: int | None = None
-    ) -> QueryResponseDataset:
+    async def agenerate_dataset_from_nodes(self) -> LabelledRagDataset:
         """Generates questions for each document."""
-        return await self._agenerate_dataset(
-            self.nodes, num=num, generate_response=True
-        )
+        return await self._agenerate_dataset(self.nodes, labelled=True)
 
-    def generate_questions_from_nodes(self, num: int | None = None) -> List[str]:
+    def generate_questions_from_nodes(self) -> List[str]:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_questions_from_nodes(num=num))
+        return asyncio.run(self.agenerate_questions_from_nodes())
 
-    def generate_dataset_from_nodes(
-        self, num: int | None = None
-    ) -> QueryResponseDataset:
+    def generate_dataset_from_nodes(self) -> LabelledRagDataset:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_dataset_from_nodes(num=num))
+        return asyncio.run(self.agenerate_dataset_from_nodes())
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
