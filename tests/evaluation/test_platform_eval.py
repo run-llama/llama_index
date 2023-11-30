@@ -12,7 +12,7 @@ api_key = os.environ.get("PLATFORM_API_KEY", None)
     not base_url or not api_key, reason="No platform base url or api keyset"
 )
 @pytest.mark.integration()
-def test_upload_eval_dataste() -> None:
+def test_upload_eval_dataset() -> None:
     eval_dataset_id = upload_eval_dataset(
         "test_dataset",
         questions=["foo", "bar"],
