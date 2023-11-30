@@ -124,7 +124,7 @@ class TitleExtractor(BaseExtractor):
                 PromptTemplate(template=self.node_template),
                 context_str=cast(TextNode, node).text,
             )
-            for node in nodes
+            for node in nodes_to_extract_title
         ]
         title_candidates = await run_jobs(
             title_jobs, show_progress=self.show_progress, workers=self.num_workers
