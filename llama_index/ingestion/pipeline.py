@@ -268,6 +268,8 @@ class IngestionPipeline(BaseModel):
 
     def _handle_duplicates(self, nodes: List[BaseNode]) -> List[BaseNode]:
         """Handle docstore duplicates by checking all hashes."""
+        assert self.docstore is not None
+
         existing_hashes = self.docstore.get_all_document_hashes()
         current_hashes = []
         nodes_to_run = []
@@ -281,6 +283,8 @@ class IngestionPipeline(BaseModel):
 
     def _handle_upserts(self, nodes: List[BaseNode]) -> List[BaseNode]:
         """Handle docstore upserts by checking hashes and ids."""
+        assert self.docstore is not None
+
         deduped_nodes_to_run = {}
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
