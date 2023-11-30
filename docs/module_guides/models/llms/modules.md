@@ -2,17 +2,6 @@
 
 We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 
-## OpenAI
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/llm/openai.ipynb
-/examples/llm/azure_openai.ipynb
-
-```
-
 ## AI21
 
 ```{toctree}
@@ -29,30 +18,33 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/anthropic.ipynb
-
 ```
 
-## Gradient
+## AnyScale
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/gradient_base_model.ipynb
-/examples/llm/gradient_model_adapter.ipynb
-
+/examples/llm/anyscale.ipynb
 ```
 
-## Hugging Face
+## Bedrock
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
-/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
-/examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb
+/examples/llm/bedrock.ipynb
+```
 
+## Clarifai
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/clarifai.ipynb
 ```
 
 ## EverlyAI
@@ -64,44 +56,34 @@ maxdepth: 1
 /examples/llm/everlyai.ipynb
 ```
 
-## LiteLLM
+## Gradient
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/litellm.ipynb
+/examples/llm/gradient_base_model.ipynb
+/examples/llm/gradient_model_adapter.ipynb
 ```
 
-## PaLM
+## Hugging Face
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/palm.ipynb
-
+/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
+/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
+/examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb
 ```
 
-## Predibase
+## Konko
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/predibase.ipynb
-
-```
-
-## Replicate
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/llm/llama_2.ipynb
-/examples/llm/vicuna.ipynb
-/examples/vector_stores/SimpleIndexDemoLlama2.ipynb
+/examples/llm/konko.ipynb
 ```
 
 ## LangChain
@@ -111,6 +93,15 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/langchain.ipynb
+```
+
+## LiteLLM
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/litellm.ipynb
 ```
 
 ## Llama API
@@ -131,13 +122,13 @@ maxdepth: 1
 /examples/llm/llama_2_llama_cpp.ipynb
 ```
 
-## Xorbits Inference
+## LocalAI
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/xinference_local_deployment.ipynb
+/examples/llm/localai.ipynb
 ```
 
 ## MonsterAPI
@@ -149,33 +140,6 @@ maxdepth: 1
 /examples/llm/monsterapi.ipynb
 ```
 
-## RunGPT
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/llm/rungpt.ipynb
-```
-
-## Portkey
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/llm/portkey.ipynb
-```
-
-## AnyScale
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/llm/anyscale.ipynb
-```
-
 ## Ollama
 
 ```{toctree}
@@ -185,40 +149,32 @@ maxdepth: 1
 /examples/llm/ollama.ipynb
 ```
 
-## Konko
+## OpenAI
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/konko.ipynb
+/examples/llm/openai.ipynb
+/examples/llm/azure_openai.ipynb
 ```
 
-## Clarifai
+## OpenLLM
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/clarifai.ipynb
+/examples/llm/openllm.ipynb
 ```
 
-## Bedrock
+## PaLM
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/bedrock.ipynb
-```
-
-## Vertex
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/llm/vertex.ipynb
+/examples/llm/palm.ipynb
 ```
 
 ## Perplexity
@@ -230,11 +186,58 @@ maxdepth: 1
 /examples/llm/perplexity.ipynb
 ```
 
-## OpenLLM
+## Portkey
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/openllm.ipynb
+/examples/llm/portkey.ipynb
+```
+
+## Predibase
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/predibase.ipynb
+```
+
+## Replicate
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/llama_2.ipynb
+/examples/llm/vicuna.ipynb
+/examples/vector_stores/SimpleIndexDemoLlama2.ipynb
+```
+
+## RunGPT
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/rungpt.ipynb
+```
+
+## Vertex
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/vertex.ipynb
+```
+
+## Xorbits Inference
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/xinference_local_deployment.ipynb
 ```
