@@ -101,7 +101,7 @@ class ExactMatchFilter(BaseModel):
 
 class ExactMatchFilter(BaseModel):
     key: str
-    value: str
+    value: Union[StrictInt, StrictFloat, StrictStr]
 
 
 class MetadataFilters(BaseModel):
