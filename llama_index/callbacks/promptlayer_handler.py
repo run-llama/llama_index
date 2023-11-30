@@ -1,6 +1,7 @@
 import datetime
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
+from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llms import ChatMessage
@@ -82,13 +83,30 @@ class PromptLayerHandler(BaseCallbackHandler):
         response = payload.get(EventPayload.RESPONSE)
         function_name = PROMPT_LAYER_CHAT_FUNCTION_NAME
         event_data = self.get_event(event_id=event_id)
-        resp: str | Dict
+        resp: Union[str, Dict]
         extra_args = {}
         if response:
             messages = cast(List[ChatMessage], payload.get(EventPayload.MESSAGES, []))
             resp = response.message.dict()
+
+            usage_dict: Dict[str, int] = {}
+            try:
+                usage = response.raw.get("usage", None)  # type: ignore
+
+                if isinstance(usage, dict):
+                    usage_dict = {
+                        "prompt_tokens": usage.get("prompt_tokens", 0),
+                        "completion_tokens": usage.get("completion_tokens", 0),
+                        "total_tokens": usage.get("total_tokens", 0),
+                    }
+                elif isinstance(usage, BaseModel):
+                    usage_dict = usage.dict()
+            except Exception:
+                pass
+
             extra_args = {
                 "messages": [message.dict() for message in messages],
+                "usage": usage_dict,
             }
             ## promptlayer needs tool_calls toplevel.
             if "tool_calls" in response.message.additional_kwargs:
