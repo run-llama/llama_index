@@ -3,6 +3,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
+import httpx
 from openai import AsyncOpenAI, OpenAI
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -234,11 +235,15 @@ class OpenAIEmbedding(BaseEmbedding):
         default=10, description="Maximum number of retries.", gte=0
     )
     timeout: float = Field(default=60.0, description="Timeout for each request.", gte=0)
+    default_headers: Dict[str, str] = Field(
+        default=None, description="The default headers for API requests."
+    )
 
     _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
     _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
     _client: OpenAI = PrivateAttr()
     _aclient: AsyncOpenAI = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -252,6 +257,8 @@ class OpenAIEmbedding(BaseEmbedding):
         max_retries: int = 10,
         timeout: float = 60.0,
         callback_manager: Optional[CallbackManager] = None,
+        default_headers: Optional[Dict[str, str]] = None,
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -280,9 +287,11 @@ class OpenAIEmbedding(BaseEmbedding):
             api_version=api_version,
             max_retries=max_retries,
             timeout=timeout,
+            default_headers=default_headers,
             **kwargs,
         )
 
+        self._http_client = http_client
         # NOTE: init after super to use class attributes + helper function
         self._client, self._aclient = self._get_clients()
 
@@ -301,6 +310,8 @@ class OpenAIEmbedding(BaseEmbedding):
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
+            "default_headers": self.default_headers,
+            "http_client": self._http_client,
         }
 
     def _get_query_embedding(self, query: str) -> List[float]:
