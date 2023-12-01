@@ -7,6 +7,10 @@
 - Added document management to ingestion pipeline (#9135)
 - Add docs for `LabelledRagDataset` (#9228)
 
+### Bug Fixes / Nits
+
+- Convert numpy to list for `InstructorEmbedding` (#9255)
+
 ## [0.9.10] - 2023-11-30
 
 ### New Features
