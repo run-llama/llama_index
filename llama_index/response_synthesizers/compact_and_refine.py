@@ -24,7 +24,10 @@ class CompactAndRefine(Refine):
         )
 
         if self._output_parser is not None:
-            response = str(self._output_parser.parse(response))
+            if isinstance(response, str):
+                response = self._output_parser.parse(output=response)
+            # TODO: support generators, we probably need parse to accept str generators
+
         return response
 
     def get_response(
@@ -47,7 +50,11 @@ class CompactAndRefine(Refine):
         )
 
         if self._output_parser is not None:
-            response = str(self._output_parser.parse(response))
+            # check if response type is string
+            if isinstance(response, str):
+                response = self._output_parser.parse(output=response)
+            # TODO: support generators, we probably need parse to accept str generators
+
         return response
 
     def _make_compact_text_chunks(
