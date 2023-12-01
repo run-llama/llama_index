@@ -244,8 +244,8 @@ class OpenAIEmbedding(BaseEmbedding):
 
     _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
     _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
-    _client: OpenAI = PrivateAttr()
-    _aclient: AsyncOpenAI = PrivateAttr()
+    _client: Optional[OpenAI] = PrivateAttr()
+    _aclient: Optional[AsyncOpenAI] = PrivateAttr()
 
     def __init__(
         self,

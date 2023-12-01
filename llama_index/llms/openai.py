@@ -112,8 +112,8 @@ class OpenAI(LLM):
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
 
-    _client: SyncOpenAI = PrivateAttr()
-    _aclient: AsyncOpenAI = PrivateAttr()
+    _client: Optional[SyncOpenAI] = PrivateAttr()
+    _aclient: Optional[AsyncOpenAI] = PrivateAttr()
     _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
