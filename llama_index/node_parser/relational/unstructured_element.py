@@ -62,8 +62,12 @@ def html_to_df(html_str: str) -> pd.DataFrame:
         cols = [c.text.strip() if c.text is not None else "" for c in cols]
         data.append(cols)
 
-    """ Check if the  first row is as long as the data rows, if not likely not a table """
-    if len(data) > 0 and len(data[0]) != len(data[1]):
+    """ Check if the table is empty"""
+    if len(data) == 0:
+        return None
+
+    """ Check if the all rows have the same number of columns """
+    if not all(len(row) == len(data[0]) for row in data):
         return None
 
     return pd.DataFrame(data[1:], columns=data[0])
