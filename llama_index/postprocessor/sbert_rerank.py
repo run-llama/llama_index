@@ -18,7 +18,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         self,
         top_n: int = 2,
         model: str = "cross-encoder/stsb-distilroberta-base",
-        device: str = "cuda",
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
         try:
             from sentence_transformers import CrossEncoder
