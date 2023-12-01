@@ -18,6 +18,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         self,
         top_n: int = 2,
         model: str = "cross-encoder/stsb-distilroberta-base",
+        device: str = "cuda",
     ):
         try:
             from sentence_transformers import CrossEncoder
@@ -30,7 +31,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         self._model = CrossEncoder(
             model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH
         )
-        super().__init__(top_n=top_n, model=model)
+        super().__init__(top_n=top_n, model=model,device=device)
 
     @classmethod
     def class_name(cls) -> str:
