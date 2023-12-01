@@ -33,7 +33,7 @@ def download_llama_dataset(
     Returns:
         A Loader.
     """
-    filenames: Tuple[str, List[str]] = download(
+    filenames: Tuple[str, str] = download(
         llama_dataset_class,
         llama_datasets_url=llama_datasets_url,
         llama_datasets_lfs_url=llama_datasets_lfs_url,
