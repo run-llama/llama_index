@@ -4,7 +4,7 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CBEventType, EventPayload
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
-import torch
+from llama_index.utils import infer_torch_device
 
 DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH = 512
 
@@ -19,7 +19,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         self,
         top_n: int = 2,
         model: str = "cross-encoder/stsb-distilroberta-base",
-        device: str = "cuda" if torch.cuda.is_available() else "cpu",
+        device: str = infer_torch_device(),
     ):
         try:
             from sentence_transformers import CrossEncoder
