@@ -13,6 +13,12 @@ import pkg_resources
 import requests
 from pkg_resources import DistributionNotFound
 
+from llama_index.download.utils import (
+    get_exports,
+    initialize_directory,
+    rewrite_exports,
+)
+
 LLAMA_HUB_CONTENTS_URL = f"https://raw.githubusercontent.com/run-llama/llama-hub/main"
 LLAMA_HUB_PATH = "/llama_hub"
 LLAMA_HUB_URL = LLAMA_HUB_CONTENTS_URL + LLAMA_HUB_PATH
@@ -34,81 +40,6 @@ def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
     """Get the content of a file from the GitHub REST API."""
     resp = requests.get(loader_hub_url + path)
     return resp.text, resp.status_code
-
-
-def get_exports(raw_content: str) -> List:
-    """Read content of a Python file and returns a list of exported class names.
-
-    For example:
-    ```python
-    from .a import A
-    from .b import B
-
-    __all__ = ["A", "B"]
-    ```
-    will return `["A", "B"]`.
-
-    Args:
-        - raw_content: The content of a Python file as a string.
-
-    Returns:
-        A list of exported class names.
-
-    """
-    exports = []
-    for line in raw_content.splitlines():
-        line = line.strip()
-        if line.startswith("__all__"):
-            exports = line.split("=")[1].strip().strip("[").strip("]").split(",")
-            exports = [export.strip().strip("'").strip('"') for export in exports]
-    return exports
-
-
-def rewrite_exports(exports: List[str], dirpath: str) -> None:
-    """Write the `__all__` variable to the `__init__.py` file in the modules dir.
-
-    Removes the line that contains `__all__` and appends a new line with the updated
-    `__all__` variable.
-
-    Args:
-        - exports: A list of exported class names.
-
-    """
-    init_path = f"{dirpath}/__init__.py"
-    with open(init_path) as f:
-        lines = f.readlines()
-    with open(init_path, "w") as f:
-        for line in lines:
-            line = line.strip()
-            if line.startswith("__all__"):
-                continue
-            f.write(line + os.linesep)
-        f.write(f"__all__ = {list(set(exports))}" + os.linesep)
-
-
-def initialize_directory(
-    custom_path: Optional[str] = None, custom_dir: Optional[str] = None
-) -> Path:
-    """Initialize directory."""
-    if custom_path is not None and custom_dir is not None:
-        raise ValueError(
-            "You cannot specify both `custom_path` and `custom_dir` at the same time."
-        )
-
-    custom_dir = custom_dir or "llamahub_modules"
-    if custom_path is not None:
-        dirpath = Path(custom_path)
-    else:
-        dirpath = Path(__file__).parent / custom_dir
-    if not os.path.exists(dirpath):
-        # Create a new directory because it does not exist
-        os.makedirs(dirpath)
-    if not os.path.exists(f"{dirpath}/__init__.py"):
-        # Create an empty __init__.py file if it does not exist yet
-        with open(f"{dirpath}/__init__.py", "w") as f:
-            pass
-
-    return dirpath
 
 
 def get_module_info(
