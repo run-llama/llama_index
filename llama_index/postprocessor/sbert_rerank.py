@@ -29,7 +29,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             )
 
         self._model = CrossEncoder(
-            model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH
+            model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH,device=device
         )
         super().__init__(top_n=top_n, model=model,device=device)
 
