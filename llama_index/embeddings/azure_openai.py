@@ -38,7 +38,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         azure_deployment: Optional[str] = None,
         deployment_name: Optional[str] = None,
         max_retries: int = 10,
-        reuse_client: bool = False,
+        reuse_client: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
