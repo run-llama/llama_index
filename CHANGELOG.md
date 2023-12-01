@@ -5,6 +5,7 @@
 ### New Features
 
 - Added document management to ingestion pipeline (#9135)
+- Add docs for `LabelledRagDataset` (#9228)
 
 ## [0.9.10] - 2023-11-30
 
