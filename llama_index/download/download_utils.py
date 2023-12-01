@@ -26,6 +26,12 @@ LLAMA_RAG_DATASET_FILENAME = "rag_dataset.json"
 
 PATH_TYPE = Union[str, Path]
 
+LLAMAHUB_ANALYTICS_PROXY_SERVER = "https://llamahub.ai/api/analytics/download"
+class MODULE_TYPE(Enum):
+    LOADER = "loader"
+    TOOL = "tool"
+    LLAMAHUB = "llamahub"
+    DATASETS = "datasets"
 
 def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
     """Get the content of a file from the GitHub REST API."""
@@ -345,3 +351,17 @@ def download_llama_module(
         spec.loader.exec_module(module)  # type: ignore
 
         return getattr(module, module_class)
+    
+def track_download(
+    module_class: str,
+    module_type: str
+) -> None:
+    """Tracks number of downloads via Llamahub proxy
+    Args:
+        module_class: The name of the llama module being downloaded, e.g.,`GmailOpenAIAgentPack`.
+        module_type: Can be "loader", "tool", "llamapack", or "datasets"
+    """
+    try: 
+        requests.post(LLAMAHUB_ANALYTICS_PROXY_SERVER, {"type": module_type, "plugin": module_class})
+    except: 
+        print(f"Error tracking downloads for {{module_class}}")
