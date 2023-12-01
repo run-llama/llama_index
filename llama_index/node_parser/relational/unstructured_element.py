@@ -62,13 +62,18 @@ def html_to_df(html_str: str) -> pd.DataFrame:
         cols = [c.text.strip() if c.text is not None else "" for c in cols]
         data.append(cols)
 
+    """ Check if the  first row is as long as the data rows, if not likely not a table """
+    if len(data) > 0 and len(data[0]) != len(data[1]):
+        return None
+
     return pd.DataFrame(data[1:], columns=data[0])
 
 
 def filter_table(table_element: Any) -> bool:
     """Filter table."""
     table_df = html_to_df(table_element.metadata.text_as_html)
-    return len(table_df) > 1 and len(table_df.columns) > 1
+    """ check if table_df is not None, has more than one row, and more than one column """
+    return table_df and len(table_df) > 1 and len(table_df.columns) > 1
 
 
 def extract_elements(
