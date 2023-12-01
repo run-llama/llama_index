@@ -17,6 +17,7 @@ python_version = sys.version
 def test_upload_eval_dataset() -> None:
     eval_dataset_id = upload_eval_dataset(
         "test_dataset" + python_version,  # avoid CI test clashes
+        project_name="test_project" + python_version,
         questions=["foo", "bar"],
         overwrite=True,
     )
