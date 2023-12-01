@@ -11,20 +11,11 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pkg_resources
 import requests
-import tqdm
 from pkg_resources import DistributionNotFound
 
 LLAMA_HUB_CONTENTS_URL = f"https://raw.githubusercontent.com/run-llama/llama-hub/main"
 LLAMA_HUB_PATH = "/llama_hub"
 LLAMA_HUB_URL = LLAMA_HUB_CONTENTS_URL + LLAMA_HUB_PATH
-
-REPO = "llama_datasets"
-BRANCH = "main"
-LLAMA_DATASETS_URL = (
-    f"https://media.githubusercontent.com/media/run-llama/{REPO}/{BRANCH}"
-)
-LLAMA_RAG_DATASET_FILENAME = "rag_dataset.json"
-
 
 PATH_TYPE = Union[str, Path]
 
@@ -43,12 +34,6 @@ def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
     """Get the content of a file from the GitHub REST API."""
     resp = requests.get(loader_hub_url + path)
     return resp.text, resp.status_code
-
-
-def _get_file_content_bytes(loader_hub_url: str, path: str) -> Tuple[bytes, int]:
-    """Get the content of a file from the GitHub REST API."""
-    resp = requests.get(loader_hub_url + path)
-    return resp.content, resp.status_code
 
 
 def get_exports(raw_content: str) -> List:
@@ -190,8 +175,6 @@ def download_module_and_reqs(
     use_gpt_index_import: bool = False,
     base_file_name: str = "base.py",
     override_path: bool = False,
-    is_dataset: bool = False,
-    show_progress: bool = False,
 ) -> None:
     """Load module."""
     if isinstance(local_dir_path, str):
@@ -219,62 +202,48 @@ def download_module_and_reqs(
         with open(f"{module_path}/{base_file_name}", "w") as f:
             f.write(basepy_raw_content)
 
-        # Get content of extra files if there are any
-        # and write them under the loader directory
-        if show_progress:
-            extra_files_iterator = tqdm.tqdm(extra_files)
-        else:
-            extra_files_iterator = extra_files
-        for extra_file in extra_files_iterator:
-            if ".pdf" in extra_file:
-                extra_file_raw_content_bytes, _ = _get_file_content_bytes(
-                    str(remote_dir_path), f"/{module_id}/{extra_file}"
-                )
-            else:
-                extra_file_raw_content, _ = _get_file_content(
-                    str(remote_dir_path), f"/{module_id}/{extra_file}"
-                )
-            # If the extra file is an __init__.py file, we need to
-            # add the exports to the __init__.py file in the modules directory
-            if extra_file == "__init__.py":
-                loader_exports = get_exports(extra_file_raw_content)
-                existing_exports = []
-                with open(local_dir_path / "__init__.py", "r+") as f:
-                    f.write(f"from .{module_id} import {', '.join(loader_exports)}")
-                    existing_exports = get_exports(f.read())
-                rewrite_exports(existing_exports + loader_exports, str(local_dir_path))
+    # Get content of extra files if there are any
+    # and write them under the loader directory
+    for extra_file in extra_files:
+        extra_file_raw_content, _ = _get_file_content(
+            str(remote_dir_path), f"/{module_id}/{extra_file}"
+        )
+        # If the extra file is an __init__.py file, we need to
+        # add the exports to the __init__.py file in the modules directory
+        if extra_file == "__init__.py":
+            loader_exports = get_exports(extra_file_raw_content)
+            existing_exports = []
+            with open(local_dir_path / "__init__.py", "r+") as f:
+                f.write(f"from .{module_id} import {', '.join(loader_exports)}")
+                existing_exports = get_exports(f.read())
+            rewrite_exports(existing_exports + loader_exports, str(local_dir_path))
 
-            if ".pdf" in extra_file:
-                with open(f"{module_path}/{extra_file}", "wb") as f:
-                    f.write(extra_file_raw_content_bytes)
-            else:
-                with open(f"{module_path}/{extra_file}", "w") as f:
-                    f.write(extra_file_raw_content)
+        with open(f"{module_path}/{extra_file}", "w") as f:
+            f.write(extra_file_raw_content)
 
-    if not is_dataset:
-        # install requirements
-        requirements_path = f"{local_dir_path}/requirements.txt"
+    # install requirements
+    requirements_path = f"{local_dir_path}/requirements.txt"
 
-        if not os.path.exists(requirements_path):
-            # NOTE: need to check the status code
-            response_txt, status_code = _get_file_content(
-                str(remote_dir_path), f"/{module_id}/requirements.txt"
+    if not os.path.exists(requirements_path):
+        # NOTE: need to check the status code
+        response_txt, status_code = _get_file_content(
+            str(remote_dir_path), f"/{module_id}/requirements.txt"
+        )
+        if status_code == 200:
+            with open(requirements_path, "w") as f:
+                f.write(response_txt)
+
+    # Install dependencies if there are any and not already installed
+    if os.path.exists(requirements_path):
+        try:
+            requirements = pkg_resources.parse_requirements(
+                Path(requirements_path).open()
             )
-            if status_code == 200:
-                with open(requirements_path, "w") as f:
-                    f.write(response_txt)
-
-        # Install dependencies if there are any and not already installed
-        if os.path.exists(requirements_path):
-            try:
-                requirements = pkg_resources.parse_requirements(
-                    Path(requirements_path).open()
-                )
-                pkg_resources.require([str(r) for r in requirements])
-            except DistributionNotFound:
-                subprocess.check_call(
-                    [sys.executable, "-m", "pip", "install", "-r", requirements_path]
-                )
+            pkg_resources.require([str(r) for r in requirements])
+        except DistributionNotFound:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "-r", requirements_path]
+            )
 
 
 def download_llama_module(
@@ -288,9 +257,6 @@ def download_llama_module(
     use_gpt_index_import: bool = False,
     disable_library_cache: bool = False,
     override_path: bool = False,
-    llama_datasets_url: str = LLAMA_DATASETS_URL,
-    is_dataset: bool = False,
-    show_progress: bool = False,
 ) -> Any:
     """Download a module from LlamaHub.
 
@@ -330,56 +296,37 @@ def download_llama_module(
     extra_files = module_info["extra_files"]
 
     # download the module, install requirements
-    if is_dataset:
-        download_remote_dir_path = llama_datasets_url
-        base_file_name = "rag_dataset.json"
-    else:
-        download_remote_dir_path = llama_hub_url
-
     download_module_and_reqs(
         local_dir_path=dirpath,
-        remote_dir_path=download_remote_dir_path,
+        remote_dir_path=llama_hub_url,
         module_id=module_id,
         extra_files=extra_files,
         refresh_cache=refresh_cache,
         use_gpt_index_import=use_gpt_index_import,
         base_file_name=base_file_name,
         override_path=override_path,
-        is_dataset=is_dataset,
-        show_progress=show_progress,
     )
 
-    if is_dataset:
-        # no module to install, instead just store data files in specified path
-        if override_path:
-            module_path = str(dirpath)
-        else:
-            module_path = f"{dirpath}/{module_id}"
-
-        return f"{module_path}/{LLAMA_RAG_DATASET_FILENAME}", [
-            f"{module_path}/{el}" for el in extra_files
-        ]
+    # loads the module into memory
+    if override_path:
+        spec = util.spec_from_file_location(
+            "custom_module", location=f"{dirpath}/{base_file_name}"
+        )
+        if spec is None:
+            raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
     else:
-        # loads the module into memory
-        if override_path:
-            spec = util.spec_from_file_location(
-                "custom_module", location=f"{dirpath}/{base_file_name}"
+        spec = util.spec_from_file_location(
+            "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
+        )
+        if spec is None:
+            raise ValueError(
+                f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
             )
-            if spec is None:
-                raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
-        else:
-            spec = util.spec_from_file_location(
-                "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
-            )
-            if spec is None:
-                raise ValueError(
-                    f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
-                )
 
-        module = util.module_from_spec(spec)
-        spec.loader.exec_module(module)  # type: ignore
+    module = util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # type: ignore
 
-        return getattr(module, module_class)
+    return getattr(module, module_class)
 
 
 def track_download(module_class: str, module_type: str) -> None:
