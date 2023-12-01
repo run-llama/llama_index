@@ -4,6 +4,7 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CBEventType, EventPayload
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
+import torch
 
 DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH = 512
 
