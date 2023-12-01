@@ -2,7 +2,7 @@
 
 from typing import Optional, Type
 
-from llama_index.download.download_utils import (
+from llama_index.download.module import (
     LLAMA_HUB_URL,
     MODULE_TYPE,
     download_llama_module,
