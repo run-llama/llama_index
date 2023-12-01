@@ -90,6 +90,7 @@ class BaseIndex(Generic[IS], ABC):
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
+        from_pipeline_name: Optional[str] = None,
         remote_pipeline_name: Optional[str] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
         **kwargs: Any,
@@ -109,12 +110,13 @@ class BaseIndex(Generic[IS], ABC):
             for doc in documents:
                 docstore.set_document_hash(doc.get_doc_id(), doc.hash)
 
-            if remote_pipeline_name is not None:
+            if from_pipeline_name is not None:
                 pipeline = IngestionPipeline.from_pipeline_name(
-                    remote_pipeline_name,
+                    from_pipeline_name,
                     project_name=project_name,
                     disable_cache=True,
                 )
+                service_context.transformations = pipeline.transformations
             else:
                 pipeline = IngestionPipeline(
                     name=remote_pipeline_name
