@@ -127,7 +127,7 @@ class AzureOpenAI(OpenAI):
         return values
 
     def _get_client(self) -> SyncAzureOpenAI:
-        if not self.resuse_client:
+        if not self.reuse_client:
             return SyncAzureOpenAI(**self._get_credential_kwargs())
 
         if self._client is None:
@@ -137,7 +137,7 @@ class AzureOpenAI(OpenAI):
         return self._client
 
     def _get_aclient(self) -> AsyncAzureOpenAI:
-        if not self.resuse_client:
+        if not self.reuse_client:
             return AsyncAzureOpenAI(**self._get_credential_kwargs())
 
         if self._aclient is None:

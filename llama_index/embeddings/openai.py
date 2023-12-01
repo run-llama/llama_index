@@ -234,7 +234,7 @@ class OpenAIEmbedding(BaseEmbedding):
         default=10, description="Maximum number of retries.", gte=0
     )
     timeout: float = Field(default=60.0, description="Timeout for each request.", gte=0)
-    resuse_client: bool = Field(
+    reuse_client: bool = Field(
         default=True,
         description=(
             "Reuse the OpenAI client between requests. When doing anything with large "
@@ -296,7 +296,7 @@ class OpenAIEmbedding(BaseEmbedding):
         self._aclient = None
 
     def _get_client(self) -> OpenAI:
-        if not self.resuse_client:
+        if not self.reuse_client:
             return OpenAI(**self._get_credential_kwargs())
 
         if self._client is None:
@@ -304,7 +304,7 @@ class OpenAIEmbedding(BaseEmbedding):
         return self._client
 
     def _get_aclient(self) -> AsyncOpenAI:
-        if not self.resuse_client:
+        if not self.reuse_client:
             return AsyncOpenAI(**self._get_credential_kwargs())
 
         if self._aclient is None:

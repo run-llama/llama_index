@@ -83,7 +83,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         return values
 
     def _get_client(self) -> AzureOpenAI:
-        if not self.resuse_client:
+        if not self.reuse_client:
             return AzureOpenAI(**self._get_credential_kwargs())
 
         if self._client is None:
@@ -91,7 +91,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         return self._client
 
     def _get_aclient(self) -> AsyncAzureOpenAI:
-        if not self.resuse_client:
+        if not self.reuse_client:
             return AsyncAzureOpenAI(**self._get_credential_kwargs())
 
         if self._aclient is None:

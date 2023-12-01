@@ -100,7 +100,7 @@ class OpenAI(LLM):
     default_headers: Dict[str, str] = Field(
         default=None, description="The default headers for API requests."
     )
-    resuse_client: bool = Field(
+    reuse_client: bool = Field(
         default=True,
         description=(
             "Reuse the OpenAI client between requests. When doing anything with large "
@@ -162,7 +162,7 @@ class OpenAI(LLM):
         self._http_client = http_client
 
     def _get_client(self) -> SyncOpenAI:
-        if not self.resuse_client:
+        if not self.reuse_client:
             return SyncOpenAI(**self._get_credential_kwargs())
 
         if self._client is None:
@@ -170,7 +170,7 @@ class OpenAI(LLM):
         return self._client
 
     def _get_aclient(self) -> AsyncOpenAI:
-        if not self.resuse_client:
+        if not self.reuse_client:
             return AsyncOpenAI(**self._get_credential_kwargs())
 
         if self._aclient is None:
