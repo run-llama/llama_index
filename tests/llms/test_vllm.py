@@ -7,13 +7,13 @@ except ImportError:
     vllm_init = False
 
 
-@pytest.mark.skipif(vllm_init is False, reason="vertex not installed")
+@pytest.mark.skipif(vllm_init is True, reason="vertex not installed")
 def test_vllm_initialization() -> None:
     llm = Vllm()
     assert llm.class_name() == "Vllm"
 
 
-@pytest.mark.skipif(vllm_init is False, reason="vertex not installed")
+@pytest.mark.skipif(vllm_init is True, reason="vertex not installed")
 def test_vllm_call() -> None:
     llm = Vllm(temperature=0)
     output = llm.complete("Say foo:")
