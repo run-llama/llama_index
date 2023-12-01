@@ -16,12 +16,16 @@ class CompactAndRefine(Refine):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         compact_texts = self._make_compact_text_chunks(query_str, text_chunks)
-        return await super().aget_response(
+        response = await super().aget_response(
             query_str=query_str,
             text_chunks=compact_texts,
             prev_response=prev_response,
             **response_kwargs,
         )
+
+        if self._output_parser is not None:
+            response = str(self._output_parser.parse(response))
+        return response
 
     def get_response(
         self,
@@ -35,12 +39,16 @@ class CompactAndRefine(Refine):
         # TODO: This is a temporary fix - reason it's temporary is that
         # the refine template does not account for size of previous answer.
         new_texts = self._make_compact_text_chunks(query_str, text_chunks)
-        return super().get_response(
+        response = super().get_response(
             query_str=query_str,
             text_chunks=new_texts,
             prev_response=prev_response,
             **response_kwargs,
         )
+
+        if self._output_parser is not None:
+            response = str(self._output_parser.parse(response))
+        return response
 
     def _make_compact_text_chunks(
         self, query_str: str, text_chunks: Sequence[str]

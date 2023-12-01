@@ -13,7 +13,7 @@ from llama_index.prompts.mixin import PromptDictType
 from llama_index.response.utils import get_response_text
 from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.service_context import ServiceContext
-from llama_index.types import RESPONSE_TEXT_TYPE, BasePydanticProgram
+from llama_index.types import RESPONSE_TEXT_TYPE, BaseOutputParser, BasePydanticProgram
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +79,7 @@ class Refine(BaseSynthesizer):
         program_factory: Optional[
             Callable[[BasePromptTemplate], BasePydanticProgram]
         ] = None,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         super().__init__(service_context=service_context, streaming=streaming)
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
@@ -86,7 +87,7 @@ class Refine(BaseSynthesizer):
         self._verbose = verbose
         self._structured_answer_filtering = structured_answer_filtering
         self._output_cls = output_cls
-
+        self._output_parser = output_parser
         if self._streaming and self._structured_answer_filtering:
             raise ValueError(
                 "Streaming not supported with structured answer filtering."

@@ -23,7 +23,7 @@ from llama_index.response_synthesizers.simple_summarize import SimpleSummarize
 from llama_index.response_synthesizers.tree_summarize import TreeSummarize
 from llama_index.response_synthesizers.type import ResponseMode
 from llama_index.service_context import ServiceContext
-from llama_index.types import BasePydanticProgram
+from llama_index.types import BaseOutputParser, BasePydanticProgram
 
 
 def get_response_synthesizer(
@@ -40,6 +40,7 @@ def get_response_synthesizer(
     output_cls: Optional[BaseModel] = None,
     program_factory: Optional[Callable[[PromptTemplate], BasePydanticProgram]] = None,
     verbose: bool = False,
+    output_parser: Optional[BaseOutputParser] = None,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""
     text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
@@ -72,6 +73,7 @@ def get_response_synthesizer(
             structured_answer_filtering=structured_answer_filtering,
             program_factory=program_factory,
             verbose=verbose,
+            output_parser=output_parser,
         )
     elif response_mode == ResponseMode.TREE_SUMMARIZE:
         return TreeSummarize(

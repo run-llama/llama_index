@@ -15,6 +15,7 @@ from llama_index.response_synthesizers import (
 )
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
+from llama_index.types import BaseOutputParser
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
@@ -67,6 +68,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         output_cls: Optional[BaseModel] = None,
         use_async: bool = False,
         streaming: bool = False,
+        output_parser: Optional[BaseOutputParser] = None,
         # class-specific args
         **kwargs: Any,
     ) -> "RetrieverQueryEngine":
@@ -86,6 +88,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.
+            output_parser (Optional[BaseOutputParser]): A BaseOutputParser object.
             optimizer (Optional[BaseTokenUsageOptimizer]): A BaseTokenUsageOptimizer
                 object.
 
@@ -100,6 +103,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             output_cls=output_cls,
             use_async=use_async,
             streaming=streaming,
+            output_parser=output_parser,
         )
 
         callback_manager = (
@@ -174,7 +178,6 @@ class RetrieverQueryEngine(BaseQueryEngine):
             )
 
             query_event.on_end(payload={EventPayload.RESPONSE: response})
-
         return response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
