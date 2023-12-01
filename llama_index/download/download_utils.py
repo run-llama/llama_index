@@ -7,7 +7,7 @@ import sys
 from enum import Enum
 from importlib import util
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pkg_resources
 import requests
@@ -227,7 +227,7 @@ def download_module_and_reqs(
             extra_files_iterator = extra_files
         for extra_file in extra_files_iterator:
             if ".pdf" in extra_file:
-                extra_file_raw_content, _ = _get_file_content_bytes(
+                extra_file_raw_content_bytes, _ = _get_file_content_bytes(
                     str(remote_dir_path), f"/{module_id}/{extra_file}"
                 )
             else:
@@ -245,11 +245,9 @@ def download_module_and_reqs(
                 rewrite_exports(existing_exports + loader_exports, str(local_dir_path))
 
             if ".pdf" in extra_file:
-                extra_file_raw_content = cast(bytes, extra_file_raw_content)
                 with open(f"{module_path}/{extra_file}", "wb") as f:
-                    f.write(extra_file_raw_content)
+                    f.write(extra_file_raw_content_bytes)
             else:
-                extra_file_raw_content = cast(str, extra_file_raw_content)
                 with open(f"{module_path}/{extra_file}", "w") as f:
                     f.write(extra_file_raw_content)
 
