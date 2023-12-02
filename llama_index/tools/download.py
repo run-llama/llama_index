@@ -2,7 +2,12 @@
 
 from typing import Optional, Type
 
-from llama_index.download.download_utils import LLAMA_HUB_URL, download_llama_module, track_download, MODULE_TYPE
+from llama_index.download.download_utils import (
+    LLAMA_HUB_URL,
+    MODULE_TYPE,
+    download_llama_module,
+    track_download,
+)
 from llama_index.tools.tool_spec.base import BaseToolSpec
 
 

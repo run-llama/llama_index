@@ -1,10 +1,10 @@
 """Download."""
-from enum import Enum
-import logging
 import json
+import logging
 import os
 import subprocess
 import sys
+from enum import Enum
 from importlib import util
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -29,11 +29,14 @@ PATH_TYPE = Union[str, Path]
 
 logger = logging.getLogger(__name__)
 LLAMAHUB_ANALYTICS_PROXY_SERVER = "https://llamahub.ai/api/analytics/downloads"
+
+
 class MODULE_TYPE(str, Enum):
     LOADER = "loader"
     TOOL = "tool"
     LLAMAPACK = "llamapack"
     DATASETS = "datasets"
+
 
 def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
     """Get the content of a file from the GitHub REST API."""
@@ -353,17 +356,19 @@ def download_llama_module(
         spec.loader.exec_module(module)  # type: ignore
 
         return getattr(module, module_class)
-    
-def track_download(
-    module_class: str,
-    module_type: str
-) -> None:
+
+
+def track_download(module_class: str, module_type: str) -> None:
     """Tracks number of downloads via Llamahub proxy.
+
     Args:
         module_class: The name of the llama module being downloaded, e.g.,`GmailOpenAIAgentPack`.
         module_type: Can be "loader", "tool", "llamapack", or "datasets"
     """
-    try: 
-        requests.post(LLAMAHUB_ANALYTICS_PROXY_SERVER, json={"type": module_type, "plugin": module_class})
-    except Exception as e: 
+    try:
+        requests.post(
+            LLAMAHUB_ANALYTICS_PROXY_SERVER,
+            json={"type": module_type, "plugin": module_class},
+        )
+    except Exception as e:
         logger.info(f"Error tracking downloads for {module_class} : {e}")
