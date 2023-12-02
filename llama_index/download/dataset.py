@@ -8,17 +8,12 @@ from typing import Any, Dict, List, Optional, Union
 import requests
 import tqdm
 
+from llama_index.download.module import LLAMA_HUB_URL
 from llama_index.download.utils import (
     get_file_content,
     get_file_content_bytes,
     initialize_directory,
 )
-
-LLAMA_DATASETS_CONTENTS_URL = (
-    f"https://raw.githubusercontent.com/run-llama/llama_datasets/main"
-)
-LLAMA_DATASETS_PATH = "/llama_datasets"
-LLAMA_DATASETS_URL = LLAMA_DATASETS_CONTENTS_URL + LLAMA_DATASETS_PATH
 
 LLAMA_DATASETS_LFS_URL = (
     f"https://media.githubusercontent.com/media/run-llama/llama_datasets/main"
@@ -159,7 +154,7 @@ def download_dataset_and_source_files(
 
 def download_llama_dataset(
     dataset_class: str,
-    llama_datasets_url: str = LLAMA_DATASETS_URL,
+    llama_hub_url: str = LLAMA_HUB_URL,
     llama_datasets_lfs_url: str = LLAMA_DATASETS_LFS_URL,
     llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     refresh_cache: bool = False,
@@ -200,7 +195,7 @@ def download_llama_dataset(
     # fetch info from library.json file
     dataset_info = get_dataset_info(
         local_dir_path=dirpath,
-        remote_dir_path=llama_datasets_url,
+        remote_dir_path=llama_hub_url,
         remote_source_dir_path=llama_datasets_source_files_tree_url,
         dataset_class=dataset_class,
         refresh_cache=refresh_cache,
