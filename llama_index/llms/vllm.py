@@ -194,7 +194,7 @@ class Vllm(LLM):
             "top_p": self.top_p,
             "stop": self.stop,
         }
-        return {**base_kwargs, **self.vllm_kwargs}
+        return {**base_kwargs}
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
