@@ -68,6 +68,8 @@ class FilterOperator(str, Enum):
     NE = "!="  # not equal to (string, int, float)
     GTE = ">="  # greater than or equal to (int, float)
     LTE = "<="  # less than or equal to (int, float)
+    IN = "in"  # In array (string or number)
+    NIN = "nin"  # Not in array (string or number)
 
 
 class FilterCondition(str, Enum):
