@@ -130,7 +130,7 @@ class GoogleIndex(BaseManagedIndex):
         )
 
         index = cast(GoogleIndex, c)
-        index.insert_documents(documents=documents)
+        index.insert_documents(documents=documents, service_context=service_context)
 
         return c
 
@@ -141,7 +141,7 @@ class GoogleIndex(BaseManagedIndex):
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Inserts a set of nodes."""
-        self._index.insert_nodes(nodes=nodes)
+        self._index.insert_nodes(nodes=nodes, **insert_kwargs)
 
     def insert_documents(self, documents: Sequence[Document], **kwargs: Any) -> None:
         """Inserts a set of documents."""
@@ -152,11 +152,11 @@ class GoogleIndex(BaseManagedIndex):
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
         """Deletes a document and its nodes by using ref_doc_id."""
-        self._index.delete_ref_doc(ref_doc_id=ref_doc_id)
+        self._index.delete_ref_doc(ref_doc_id=ref_doc_id, **delete_kwargs)
 
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
         """Updates a document and its corresponding nodes."""
-        self._index.update(document=document)
+        self._index.update(document=document, **update_kwargs)
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Returns a Retriever for this managed index."""

@@ -45,6 +45,7 @@ def test_get_response(mock_generate_answer: MagicMock) -> None:
                     ),
                 ),
             ],
+            finish_reason=genai.Candidate.FinishReason.STOP,
         ),
         answerable_probability=0.7,
     )
@@ -125,6 +126,7 @@ def test_synthesize(mock_generate_answer: MagicMock) -> None:
                     ),
                 ),
             ],
+            finish_reason=genai.Candidate.FinishReason.STOP,
         ),
         answerable_probability=0.9,
     )

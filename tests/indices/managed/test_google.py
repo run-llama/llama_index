@@ -167,6 +167,7 @@ def test_as_query_engine(
                     ),
                 ),
             ],
+            finish_reason=genai.Candidate.FinishReason.STOP,
         ),
         answerable_probability=0.9,
     )
