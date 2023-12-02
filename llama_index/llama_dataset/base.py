@@ -3,7 +3,7 @@
 import json
 from abc import abstractmethod
 from enum import Enum
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union
 
 import tqdm
 from pandas import DataFrame as PandasDataFrame
@@ -58,11 +58,11 @@ class BaseLlamaDataExample(BaseModel):
 
 class BaseLlamaPredictionDataset(BaseModel):
     _prediction_type: Type[BaseLlamaExamplePrediction] = BaseLlamaExamplePrediction  # type: ignore[misc]
-    predictions: Optional[List[BaseLlamaExamplePrediction]] = Field(
-        default=None, description="Predictions on train_examples."
+    predictions: List[BaseLlamaExamplePrediction] = Field(
+        default=list, description="Predictions on train_examples."
     )
 
-    def __getitem__(self, val) -> List[BaseLlamaExamplePrediction]:
+    def __getitem__(self, val: Union[slice, int]) -> List[BaseLlamaExamplePrediction]:
         """Enable slicing and indexing.
 
         Returns the desired slice on `predictions`.
@@ -106,7 +106,7 @@ class BaseLlamaDataset(BaseModel):
         default=[], description="Data examples of this dataset."
     )
 
-    def __getitem__(self, val) -> List[BaseLlamaDataExample]:
+    def __getitem__(self, val: Union[slice, int]) -> List[BaseLlamaDataExample]:
         """Enable slicing and indexing.
 
         Returns the desired slice on `examples`.
