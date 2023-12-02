@@ -7,23 +7,22 @@ import sys
 from enum import Enum
 from importlib import util
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pkg_resources
 import requests
 from pkg_resources import DistributionNotFound
 
+from llama_index.download.utils import (
+    get_exports,
+    get_file_content,
+    initialize_directory,
+    rewrite_exports,
+)
+
 LLAMA_HUB_CONTENTS_URL = f"https://raw.githubusercontent.com/run-llama/llama-hub/main"
 LLAMA_HUB_PATH = "/llama_hub"
 LLAMA_HUB_URL = LLAMA_HUB_CONTENTS_URL + LLAMA_HUB_PATH
-
-REPO = "llama_datasets"
-BRANCH = "main"
-LLAMA_DATASETS_URL = (
-    f"https://media.githubusercontent.com/media/run-llama/{REPO}/{BRANCH}"
-)
-LLAMA_RAG_DATASET_FILENAME = "rag_dataset.json"
-
 
 PATH_TYPE = Union[str, Path]
 
@@ -36,87 +35,6 @@ class MODULE_TYPE(str, Enum):
     TOOL = "tool"
     LLAMAPACK = "llamapack"
     DATASETS = "datasets"
-
-
-def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
-    """Get the content of a file from the GitHub REST API."""
-    resp = requests.get(loader_hub_url + path)
-    return resp.text, resp.status_code
-
-
-def get_exports(raw_content: str) -> List:
-    """Read content of a Python file and returns a list of exported class names.
-
-    For example:
-    ```python
-    from .a import A
-    from .b import B
-
-    __all__ = ["A", "B"]
-    ```
-    will return `["A", "B"]`.
-
-    Args:
-        - raw_content: The content of a Python file as a string.
-
-    Returns:
-        A list of exported class names.
-
-    """
-    exports = []
-    for line in raw_content.splitlines():
-        line = line.strip()
-        if line.startswith("__all__"):
-            exports = line.split("=")[1].strip().strip("[").strip("]").split(",")
-            exports = [export.strip().strip("'").strip('"') for export in exports]
-    return exports
-
-
-def rewrite_exports(exports: List[str], dirpath: str) -> None:
-    """Write the `__all__` variable to the `__init__.py` file in the modules dir.
-
-    Removes the line that contains `__all__` and appends a new line with the updated
-    `__all__` variable.
-
-    Args:
-        - exports: A list of exported class names.
-
-    """
-    init_path = f"{dirpath}/__init__.py"
-    with open(init_path) as f:
-        lines = f.readlines()
-    with open(init_path, "w") as f:
-        for line in lines:
-            line = line.strip()
-            if line.startswith("__all__"):
-                continue
-            f.write(line + os.linesep)
-        f.write(f"__all__ = {list(set(exports))}" + os.linesep)
-
-
-def initialize_directory(
-    custom_path: Optional[str] = None, custom_dir: Optional[str] = None
-) -> Path:
-    """Initialize directory."""
-    if custom_path is not None and custom_dir is not None:
-        raise ValueError(
-            "You cannot specify both `custom_path` and `custom_dir` at the same time."
-        )
-
-    custom_dir = custom_dir or "llamahub_modules"
-    if custom_path is not None:
-        dirpath = Path(custom_path)
-    else:
-        dirpath = Path(__file__).parent / custom_dir
-    if not os.path.exists(dirpath):
-        # Create a new directory because it does not exist
-        os.makedirs(dirpath)
-    if not os.path.exists(f"{dirpath}/__init__.py"):
-        # Create an empty __init__.py file if it does not exist yet
-        with open(f"{dirpath}/__init__.py", "w") as f:
-            pass
-
-    return dirpath
 
 
 def get_module_info(
@@ -145,7 +63,7 @@ def get_module_info(
 
     # Fetch up-to-date library from remote repo if module_id not found
     if module_id is None:
-        library_raw_content, _ = _get_file_content(
+        library_raw_content, _ = get_file_content(
             str(remote_dir_path), f"/{library_path}"
         )
         library = json.loads(library_raw_content)
@@ -183,7 +101,6 @@ def download_module_and_reqs(
     use_gpt_index_import: bool = False,
     base_file_name: str = "base.py",
     override_path: bool = False,
-    is_dataset: bool = False,
 ) -> None:
     """Load module."""
     if isinstance(local_dir_path, str):
@@ -197,7 +114,7 @@ def download_module_and_reqs(
     if refresh_cache or not os.path.exists(module_path):
         os.makedirs(module_path, exist_ok=True)
 
-        basepy_raw_content, _ = _get_file_content(
+        basepy_raw_content, _ = get_file_content(
             str(remote_dir_path), f"/{module_id}/{base_file_name}"
         )
         if use_gpt_index_import:
@@ -211,48 +128,48 @@ def download_module_and_reqs(
         with open(f"{module_path}/{base_file_name}", "w") as f:
             f.write(basepy_raw_content)
 
-        # Get content of extra files if there are any
-        # and write them under the loader directory
-        for extra_file in extra_files:
-            extra_file_raw_content, _ = _get_file_content(
-                str(remote_dir_path), f"/{module_id}/{extra_file}"
+    # Get content of extra files if there are any
+    # and write them under the loader directory
+    for extra_file in extra_files:
+        extra_file_raw_content, _ = get_file_content(
+            str(remote_dir_path), f"/{module_id}/{extra_file}"
+        )
+        # If the extra file is an __init__.py file, we need to
+        # add the exports to the __init__.py file in the modules directory
+        if extra_file == "__init__.py":
+            loader_exports = get_exports(extra_file_raw_content)
+            existing_exports = []
+            with open(local_dir_path / "__init__.py", "r+") as f:
+                f.write(f"from .{module_id} import {', '.join(loader_exports)}")
+                existing_exports = get_exports(f.read())
+            rewrite_exports(existing_exports + loader_exports, str(local_dir_path))
+
+        with open(f"{module_path}/{extra_file}", "w") as f:
+            f.write(extra_file_raw_content)
+
+    # install requirements
+    requirements_path = f"{local_dir_path}/requirements.txt"
+
+    if not os.path.exists(requirements_path):
+        # NOTE: need to check the status code
+        response_txt, status_code = get_file_content(
+            str(remote_dir_path), f"/{module_id}/requirements.txt"
+        )
+        if status_code == 200:
+            with open(requirements_path, "w") as f:
+                f.write(response_txt)
+
+    # Install dependencies if there are any and not already installed
+    if os.path.exists(requirements_path):
+        try:
+            requirements = pkg_resources.parse_requirements(
+                Path(requirements_path).open()
             )
-            # If the extra file is an __init__.py file, we need to
-            # add the exports to the __init__.py file in the modules directory
-            if extra_file == "__init__.py":
-                loader_exports = get_exports(extra_file_raw_content)
-                existing_exports = []
-                with open(local_dir_path / "__init__.py", "r+") as f:
-                    f.write(f"from .{module_id} import {', '.join(loader_exports)}")
-                    existing_exports = get_exports(f.read())
-                rewrite_exports(existing_exports + loader_exports, str(local_dir_path))
-            with open(f"{module_path}/{extra_file}", "w") as f:
-                f.write(extra_file_raw_content)
-
-    if not is_dataset:
-        # install requirements
-        requirements_path = f"{local_dir_path}/requirements.txt"
-
-        if not os.path.exists(requirements_path):
-            # NOTE: need to check the status code
-            response_txt, status_code = _get_file_content(
-                str(remote_dir_path), f"/{module_id}/requirements.txt"
+            pkg_resources.require([str(r) for r in requirements])
+        except DistributionNotFound:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "-r", requirements_path]
             )
-            if status_code == 200:
-                with open(requirements_path, "w") as f:
-                    f.write(response_txt)
-
-        # Install dependencies if there are any and not already installed
-        if os.path.exists(requirements_path):
-            try:
-                requirements = pkg_resources.parse_requirements(
-                    Path(requirements_path).open()
-                )
-                pkg_resources.require([str(r) for r in requirements])
-            except DistributionNotFound:
-                subprocess.check_call(
-                    [sys.executable, "-m", "pip", "install", "-r", requirements_path]
-                )
 
 
 def download_llama_module(
@@ -266,8 +183,6 @@ def download_llama_module(
     use_gpt_index_import: bool = False,
     disable_library_cache: bool = False,
     override_path: bool = False,
-    llama_datasets_url: str = LLAMA_DATASETS_URL,
-    is_dataset: bool = False,
 ) -> Any:
     """Download a module from LlamaHub.
 
@@ -307,55 +222,37 @@ def download_llama_module(
     extra_files = module_info["extra_files"]
 
     # download the module, install requirements
-    if is_dataset:
-        download_remote_dir_path = llama_datasets_url
-        base_file_name = "rag_dataset.json"
-    else:
-        download_remote_dir_path = llama_hub_url
-
     download_module_and_reqs(
         local_dir_path=dirpath,
-        remote_dir_path=download_remote_dir_path,
+        remote_dir_path=llama_hub_url,
         module_id=module_id,
         extra_files=extra_files,
         refresh_cache=refresh_cache,
         use_gpt_index_import=use_gpt_index_import,
         base_file_name=base_file_name,
         override_path=override_path,
-        is_dataset=is_dataset,
     )
 
-    if is_dataset:
-        # no module to install, instead just store data files in specified path
-        if override_path:
-            module_path = str(dirpath)
-        else:
-            module_path = f"{dirpath}/{module_id}"
-
-        return f"{module_path}/{LLAMA_RAG_DATASET_FILENAME}", [
-            f"{module_path}/{el}" for el in extra_files
-        ]
+    # loads the module into memory
+    if override_path:
+        spec = util.spec_from_file_location(
+            "custom_module", location=f"{dirpath}/{base_file_name}"
+        )
+        if spec is None:
+            raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
     else:
-        # loads the module into memory
-        if override_path:
-            spec = util.spec_from_file_location(
-                "custom_module", location=f"{dirpath}/{base_file_name}"
+        spec = util.spec_from_file_location(
+            "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
+        )
+        if spec is None:
+            raise ValueError(
+                f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
             )
-            if spec is None:
-                raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
-        else:
-            spec = util.spec_from_file_location(
-                "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
-            )
-            if spec is None:
-                raise ValueError(
-                    f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
-                )
 
-        module = util.module_from_spec(spec)
-        spec.loader.exec_module(module)  # type: ignore
+    module = util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # type: ignore
 
-        return getattr(module, module_class)
+    return getattr(module, module_class)
 
 
 def track_download(module_class: str, module_type: str) -> None:

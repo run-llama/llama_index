@@ -2,7 +2,8 @@ import argparse
 from typing import Any, Optional
 
 from llama_index.llama_dataset.download import (
-    LLAMA_DATASETS_URL,
+    LLAMA_DATASETS_LFS_URL,
+    LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     download_llama_dataset,
 )
 from llama_index.llama_pack.download import LLAMA_HUB_URL, download_llama_pack
@@ -29,7 +30,8 @@ def handle_download_llama_dataset(
     llama_dataset_class: Optional[str] = None,
     download_dir: Optional[str] = None,
     llama_hub_url: str = LLAMA_HUB_URL,
-    llama_datasets_url: str = LLAMA_DATASETS_URL,
+    llama_datasets_lfs_url: str = LLAMA_DATASETS_LFS_URL,
+    llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     **kwargs: Any,
 ) -> None:
     assert llama_dataset_class is not None
@@ -39,10 +41,11 @@ def handle_download_llama_dataset(
         llama_dataset_class=llama_dataset_class,
         download_dir=download_dir,
         llama_hub_url=llama_hub_url,
-        llama_datasets_url=llama_datasets_url,
+        llama_datasets_lfs_url=llama_datasets_lfs_url,
+        llama_datasets_source_files_tree_url=llama_datasets_source_files_tree_url,
     )
 
-    print(f"Successfully downloaded {llama_datasets_url} to {download_dir}")
+    print(f"Successfully downloaded {llama_dataset_class} to {download_dir}")
 
 
 def main() -> None:
@@ -106,9 +109,15 @@ def main() -> None:
         help="URL to llama hub.",
     )
     llamadataset_parser.add_argument(
-        "--llama-dataset-url",
+        "--llama-datasets-lfs-url",
         type=str,
-        default=LLAMA_DATASETS_URL,
+        default=LLAMA_DATASETS_LFS_URL,
+        help="URL to llama datasets.",
+    )
+    llamadataset_parser.add_argument(
+        "--llama-datasets-lfs-url",
+        type=str,
+        default=LLAMA_DATASETS_LFS_URL,
         help="URL to llama datasets.",
     )
     llamadataset_parser.set_defaults(
