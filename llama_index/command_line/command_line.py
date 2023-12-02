@@ -109,9 +109,15 @@ def main() -> None:
         help="URL to llama hub.",
     )
     llamadataset_parser.add_argument(
-        "--llama-dataset-url",
+        "--llama-datasets-lfs-url",
         type=str,
-        default=LLAMA_DATASETS_URL,
+        default=LLAMA_DATASETS_LFS_URL,
+        help="URL to llama datasets.",
+    )
+    llamadataset_parser.add_argument(
+        "--llama-datasets-lfs-url",
+        type=str,
+        default=LLAMA_DATASETS_LFS_URL,
         help="URL to llama datasets.",
     )
     llamadataset_parser.set_defaults(
