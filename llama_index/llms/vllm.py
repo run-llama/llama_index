@@ -266,7 +266,6 @@ class VllmServer(Vllm):
         temperature: float = 1.0,
         tensor_parallel_size: Optional[int] = 1,
         trust_remote_code: Optional[bool] = True,
-        max_retries: int = 10,
         n: int = 1,
         best_of: Optional[int] = None,
         presence_penalty: float = 0.0,
@@ -291,7 +290,6 @@ class VllmServer(Vllm):
         super().__init__(
             model=model,
             temperature=temperature,
-            max_retries=max_retries,
             n=n,
             best_of=best_of,
             presence_penalty=presence_penalty,
