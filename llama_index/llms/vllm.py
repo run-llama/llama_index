@@ -137,7 +137,7 @@ class Vllm(LLM):
                 "Could not import vllm python package. "
                 "Please install it with `pip install vllm`."
             )
-        if model == "":
+        if model != "":
             self._client = VLLModel(
                 model=model,
                 tensor_parallel_size=tensor_parallel_size,
