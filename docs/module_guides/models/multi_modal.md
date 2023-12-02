@@ -105,7 +105,7 @@ response = query_engine.query(query_str)
 
 ### End to End Multi-Modal Work Flow
 
-The tables below attempt to show the **initial** steps with various LlamaIndex features for building your own Multi-Modal RAGs. You can combine different modules/steps together for composing your own Multi-Modal RAG orchestration.
+The tables below attempt to show the **initial** steps with various LlamaIndex features for building your own Multi-Modal RAGs (Retrieval Augmented Generation). You can combine different modules/steps together for composing your own Multi-Modal RAG orchestration.
 
 | Query Type | Data Sources<br>for MultiModal<br>Vector Store/Index | MultiModal<br>Embedding                | Retriever                                        | Query<br>Engine        | Output<br>Data<br>Type                   |
 | ---------- | ---------------------------------------------------- | -------------------------------------- | ------------------------------------------------ | ---------------------- | ---------------------------------------- |
@@ -116,7 +116,7 @@ The tables below attempt to show the **initial** steps with various LlamaIndex f
 
 ### Multi-Modal LLM Models
 
-These notebooks serve as examples how to leverage and integrate Multi-Modal LLM model, Multi-Modal embeddings, Multi-Modal vector stores, Retriever, Query engine for composing Multi-Modal RAG orchestration.
+These notebooks serve as examples how to leverage and integrate Multi-Modal LLM model, Multi-Modal embeddings, Multi-Modal vector stores, Retriever, Query engine for composing Multi-Modal Retrieval Augmented Generation (RAG) orchestration.
 
 | Multi-Modal<br>Vision Models                                                     | Single<br>Image<br>Reasoning | Multiple<br>Images<br>Reasoning | Image<br>Embeddings | Simple<br>Query<br>Engine | Pydantic<br>Structured<br>Output |
 | -------------------------------------------------------------------------------- | ---------------------------- | ------------------------------- | ------------------- | ------------------------- | -------------------------------- |
@@ -153,9 +153,9 @@ maxdepth: 1
 /examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
 ```
 
-## Multi-Modal RAG
+## Multi-Modal Retrieval Augmented Generation
 
-We support Multi-Modal RAG with different Multi-Modal LLMs with Multi-Modal vector stores.
+We support Multi-Modal Retrieval Augmented Generation with different Multi-Modal LLMs with Multi-Modal vector stores.
 
 ```{toctree}
 ---
@@ -170,7 +170,7 @@ maxdepth: 1
 
 ## Evaluation
 
-We support basic evaluation for Multi-Modal LLM and RAG.
+We support basic evaluation for Multi-Modal LLM and Retrieval Augmented Generation.
 
 ```{toctree}
 ---
