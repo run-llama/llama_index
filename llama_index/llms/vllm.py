@@ -34,8 +34,6 @@ class Vllm(LLM):
         description="Trust remote code (e.g., from HuggingFace) when downloading the model and tokenizer.",
     )
 
-    max_retries: int = Field(default=10, description="The maximum number of retries.")
-
     n: int = Field(
         default=1,
         description="Number of output sequences to return for the given prompt.",
@@ -115,7 +113,6 @@ class Vllm(LLM):
         temperature: float = 1.0,
         tensor_parallel_size: Optional[int] = 1,
         trust_remote_code: Optional[bool] = True,
-        max_retries: int = 10,
         n: int = 1,
         best_of: Optional[int] = None,
         presence_penalty: float = 0.0,
@@ -156,7 +153,6 @@ class Vllm(LLM):
         super().__init__(
             model=model,
             temperature=temperature,
-            max_retries=max_retries,
             n=n,
             best_of=best_of,
             presence_penalty=presence_penalty,
