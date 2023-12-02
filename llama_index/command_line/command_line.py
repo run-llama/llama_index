@@ -39,8 +39,8 @@ def handle_download_llama_dataset(
     assert download_dir is not None
 
     download_llama_dataset(
-        llama_dataset_class=llama_dataset_class,
-        download_dir=download_dir,
+        dataset_class=llama_dataset_class,
+        custom_path=download_dir,
         llama_datasets_url=llama_datasets_url,
         llama_datasets_lfs_url=llama_datasets_lfs_url,
         llama_datasets_source_files_tree_url=llama_datasets_source_files_tree_url,
