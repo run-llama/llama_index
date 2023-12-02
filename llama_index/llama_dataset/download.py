@@ -1,10 +1,12 @@
-from typing import List, Optional, Tuple, Type
+from typing import List, Tuple, Type
 
 from llama_index import Document
 from llama_index.download.dataset import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     LLAMA_DATASETS_URL,
+)
+from llama_index.download.dataset import (
     download_llama_dataset as download,
 )
 from llama_index.download.module import MODULE_TYPE, track_download
