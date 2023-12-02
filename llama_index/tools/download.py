@@ -34,5 +34,5 @@ def download_tool(
     )
     if not issubclass(tool_cls, BaseToolSpec):
         raise ValueError(f"Tool class {tool_class} must be a subclass of BaseToolSpec.")
-    track_download(tool_class, MODULE_TYPE.AGENT)
+    track_download(tool_class, MODULE_TYPE.TOOL)
     return tool_cls

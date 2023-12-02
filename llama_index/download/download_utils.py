@@ -1,5 +1,6 @@
 """Download."""
-
+from enum import Enum
+import logging
 import json
 import os
 import subprocess
@@ -7,7 +8,6 @@ import sys
 from importlib import util
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
-from enum import Enum
 
 import pkg_resources
 import requests
@@ -27,10 +27,11 @@ LLAMA_RAG_DATASET_FILENAME = "rag_dataset.json"
 
 PATH_TYPE = Union[str, Path]
 
-LLAMAHUB_ANALYTICS_PROXY_SERVER = "https://llamahub.ai/api/analytics/download"
+logger = logging.getLogger(__name__)
+LLAMAHUB_ANALYTICS_PROXY_SERVER = "https://llamahub.ai/api/analytics/downloads"
 class MODULE_TYPE(str, Enum):
     LOADER = "loader"
-    AGENT = "agent"
+    TOOL = "tool"
     LLAMAPACK = "llamapack"
     DATASETS = "datasets"
 
@@ -365,4 +366,4 @@ def track_download(
     try: 
         requests.post(LLAMAHUB_ANALYTICS_PROXY_SERVER, json={"type": module_type, "plugin": module_class})
     except: 
-        print(f"Error tracking downloads for {module_class}")
+        logger.info(f"Error tracking downloads for {module_class}")
