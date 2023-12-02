@@ -1,5 +1,5 @@
 import json
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 import requests
 
@@ -13,7 +13,7 @@ def get_response(response: requests.Response) -> List[str]:
 
 
 def post_http_request(
-    api_url: str, sampling_params: dict = {}, stream: bool = False
+    api_url: Optional[str], sampling_params: dict = {}, stream: bool = False
 ) -> requests.Response:
     headers = {"User-Agent": "Test Client"}
     sampling_params["stream"] = stream

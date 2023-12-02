@@ -140,7 +140,7 @@ class Vllm(LLM):
                 "Could not import vllm python package. "
                 "Please install it with `pip install vllm`."
             )
-        if model:
+        if model == "":
             self._client = VLLModel(
                 model=model,
                 tensor_parallel_size=tensor_parallel_size,
@@ -291,7 +291,7 @@ class VllmServer(Vllm):
 
         callback_manager = callback_manager or CallbackManager([])
 
-        model = None
+        model = ""
         super().__init__(
             model=model,
             temperature=temperature,
@@ -345,7 +345,6 @@ class VllmServer(Vllm):
 
         from vllm import SamplingParams
 
-        responses = []
         # build sampling parameters
         sampling_params = SamplingParams(**params).__dict__
         sampling_params["prompt"] = prompt
