@@ -223,7 +223,9 @@ class BedrockEmbedding(BaseEmbedding):
     def _get_text_embedding(self, text: str) -> Embedding:
         return self._get_embedding(text, "text")
 
-    def _get_request_body(self, provider: str, payload: str, type: Literal["text", "query"]) -> Any:
+    def _get_request_body(
+        self, provider: str, payload: str, type: Literal["text", "query"]
+    ) -> Any:
         """Build the request body as per the provider.
         Currently supported providers are amazon, cohere.
 
@@ -248,7 +250,13 @@ class BedrockEmbedding(BaseEmbedding):
                 "text": "search_document",
                 "query": "search_query",
             }
-            request_body = json.dumps({"texts": [payload], "input_type": input_types[type], "truncate": "NONE"})
+            request_body = json.dumps(
+                {
+                    "texts": [payload],
+                    "input_type": input_types[type],
+                    "truncate": "NONE",
+                }
+            )
         else:
             raise ValueError("Provider not supported")
         return request_body
