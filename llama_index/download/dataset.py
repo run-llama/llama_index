@@ -3,13 +3,14 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Union
 
 import requests
 import tqdm
 
 from llama_index.download.utils import (
-    initialize_directory,
+    get_file_content,
+    get_file_content_bytes,
 )
 
 LLAMA_DATASETS_CONTENTS_URL = (
@@ -30,18 +31,6 @@ LLAMA_SOURCE_FILES_PATH = "source_files"
 
 
 PATH_TYPE = Union[str, Path]
-
-
-def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
-    """Get the content of a file from the GitHub REST API."""
-    resp = requests.get(loader_hub_url + path)
-    return resp.text, resp.status_code
-
-
-def _get_file_content_bytes(loader_hub_url: str, path: str) -> Tuple[bytes, int]:
-    """Get the content of a file from the GitHub REST API."""
-    resp = requests.get(loader_hub_url + path)
-    return resp.content, resp.status_code
 
 
 def _get_source_files_list(source_tree_url: str, path: str) -> List[str]:
@@ -79,7 +68,7 @@ def get_dataset_info(
 
     # Fetch up-to-date library from remote repo if dataset_id not found
     if dataset_id is None:
-        library_raw_content, _ = _get_file_content(
+        library_raw_content, _ = get_file_content(
             str(remote_dir_path), f"/{library_path}"
         )
         library = json.loads(library_raw_content)
@@ -134,7 +123,7 @@ def download_dataset_and_source_files(
         os.makedirs(module_path, exist_ok=True)
         os.makedirs(f"{module_path}/{source_files_dir_path}", exist_ok=True)
 
-        rag_dataset_raw_content, _ = _get_file_content(
+        rag_dataset_raw_content, _ = get_file_content(
             str(remote_lfs_dir_path), f"/{dataset_id}/{base_file_name}"
         )
 
@@ -148,7 +137,7 @@ def download_dataset_and_source_files(
             source_files_iterator = source_files
         for source_file in source_files_iterator:
             if ".pdf" in source_file:
-                source_file_raw_content_bytes, _ = _get_file_content_bytes(
+                source_file_raw_content_bytes, _ = get_file_content_bytes(
                     str(remote_lfs_dir_path),
                     f"/{dataset_id}/{source_files_dir_path}/{source_file}",
                 )
@@ -157,7 +146,7 @@ def download_dataset_and_source_files(
                 ) as f:
                     f.write(source_file_raw_content_bytes)
             else:
-                source_file_raw_content, _ = _get_file_content(
+                source_file_raw_content, _ = get_file_content(
                     str(remote_lfs_dir_path),
                     f"/{dataset_id}/{source_files_dir_path}/{source_file}",
                 )
@@ -165,79 +154,3 @@ def download_dataset_and_source_files(
                     f"{module_path}/{source_files_dir_path}/{source_file}", "w"
                 ) as f:
                     f.write(source_file_raw_content)
-
-
-def download_llama_dataset(
-    dataset_class: str,
-    llama_datasets_url: str = LLAMA_DATASETS_URL,
-    llama_datasets_lfs_url: str = LLAMA_DATASETS_LFS_URL,
-    llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
-    refresh_cache: bool = False,
-    custom_dir: Optional[str] = None,
-    custom_path: Optional[str] = None,
-    source_files_dirpath: str = LLAMA_SOURCE_FILES_PATH,
-    library_path: str = "library.json",
-    base_file_name: str = "rag_dataset.json",
-    disable_library_cache: bool = False,
-    override_path: bool = False,
-    show_progress: bool = False,
-) -> Any:
-    """Download a module from LlamaHub.
-
-    Can be a loader, tool, pack, or more.
-
-    Args:
-        loader_class: The name of the llama module class you want to download,
-            such as `GmailOpenAIAgentPack`.
-        refresh_cache: If true, the local cache will be skipped and the
-            loader will be fetched directly from the remote repo.
-        custom_dir: Custom dir name to download loader into (under parent folder).
-        custom_path: Custom dirpath to download loader into.
-        library_path: File name of the library file.
-        use_gpt_index_import: If true, the loader files will use
-            llama_index as the base dependency. By default (False),
-            the loader files use llama_index as the base dependency.
-            NOTE: this is a temporary workaround while we fully migrate all usages
-            to llama_index.
-        is_dataset: whether or not downloading a LlamaDataset
-
-    Returns:
-        A Loader, A Pack, An Agent, or A Dataset
-    """
-    # create directory / get path
-    dirpath = initialize_directory(custom_path=custom_path, custom_dir=custom_dir)
-
-    # fetch info from library.json file
-    dataset_info = get_dataset_info(
-        local_dir_path=dirpath,
-        remote_dir_path=llama_datasets_url,
-        remote_source_dir_path=llama_datasets_source_files_tree_url,
-        dataset_class=dataset_class,
-        refresh_cache=refresh_cache,
-        library_path=library_path,
-        disable_library_cache=disable_library_cache,
-    )
-    dataset_id = dataset_info["dataset_id"]
-    source_files = dataset_info["source_files"]
-
-    download_dataset_and_source_files(
-        local_dir_path=dirpath,
-        remote_lfs_dir_path=llama_datasets_lfs_url,
-        source_files_dir_path=source_files_dirpath,
-        dataset_id=dataset_id,
-        source_files=source_files,
-        refresh_cache=refresh_cache,
-        base_file_name=base_file_name,
-        override_path=override_path,
-        show_progress=show_progress,
-    )
-
-    if override_path:
-        module_path = str(dirpath)
-    else:
-        module_path = f"{dirpath}/{dataset_id}"
-
-    return (
-        f"{module_path}/{LLAMA_RAG_DATASET_FILENAME}",
-        f"{module_path}/{LLAMA_SOURCE_FILES_PATH}",
-    )

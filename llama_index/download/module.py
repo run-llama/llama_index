@@ -7,14 +7,14 @@ import sys
 from enum import Enum
 from importlib import util
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pkg_resources
-import requests
 from pkg_resources import DistributionNotFound
 
 from llama_index.download.utils import (
     get_exports,
+    get_file_content,
     initialize_directory,
     rewrite_exports,
 )
@@ -34,12 +34,6 @@ class MODULE_TYPE(str, Enum):
     TOOL = "tool"
     LLAMAPACK = "llamapack"
     DATASETS = "datasets"
-
-
-def _get_file_content(loader_hub_url: str, path: str) -> Tuple[str, int]:
-    """Get the content of a file from the GitHub REST API."""
-    resp = requests.get(loader_hub_url + path)
-    return resp.text, resp.status_code
 
 
 def get_module_info(
@@ -68,7 +62,7 @@ def get_module_info(
 
     # Fetch up-to-date library from remote repo if module_id not found
     if module_id is None:
-        library_raw_content, _ = _get_file_content(
+        library_raw_content, _ = get_file_content(
             str(remote_dir_path), f"/{library_path}"
         )
         library = json.loads(library_raw_content)
@@ -119,7 +113,7 @@ def download_module_and_reqs(
     if refresh_cache or not os.path.exists(module_path):
         os.makedirs(module_path, exist_ok=True)
 
-        basepy_raw_content, _ = _get_file_content(
+        basepy_raw_content, _ = get_file_content(
             str(remote_dir_path), f"/{module_id}/{base_file_name}"
         )
         if use_gpt_index_import:
@@ -136,7 +130,7 @@ def download_module_and_reqs(
     # Get content of extra files if there are any
     # and write them under the loader directory
     for extra_file in extra_files:
-        extra_file_raw_content, _ = _get_file_content(
+        extra_file_raw_content, _ = get_file_content(
             str(remote_dir_path), f"/{module_id}/{extra_file}"
         )
         # If the extra file is an __init__.py file, we need to
@@ -157,7 +151,7 @@ def download_module_and_reqs(
 
     if not os.path.exists(requirements_path):
         # NOTE: need to check the status code
-        response_txt, status_code = _get_file_content(
+        response_txt, status_code = get_file_content(
             str(remote_dir_path), f"/{module_id}/requirements.txt"
         )
         if status_code == 200:
