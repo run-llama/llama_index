@@ -6,7 +6,7 @@ LlamaIndex offers capabilities to not only build language-based applications, bu
 
 This space is actively being explored right now, but there are some fascinating use cases popping up.
 
-### Multi-Modal RAG
+### Multi-Modal RAG (Retrieval Augmented Generation)
 
 All the core RAG concepts: indexing, retrieval, and synthesis, can be extended into the image setting.
 
@@ -47,6 +47,7 @@ These notebooks show how to use different Multi-Modal LLM models for image under
 - LLava-13B (Replicate)
 - Fuyu-8B (Replicate)
 - MiniGPT-4 (Replicate)
+- CogVLM (Replicate)
 
 Check out our guides below:
 
