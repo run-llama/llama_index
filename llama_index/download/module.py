@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import pkg_resources
+import requests
 from pkg_resources import DistributionNotFound
 
 from llama_index.download.utils import (
