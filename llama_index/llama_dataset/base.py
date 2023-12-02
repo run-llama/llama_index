@@ -62,6 +62,13 @@ class BaseLlamaPredictionDataset(BaseModel):
         default=None, description="Predictions on train_examples."
     )
 
+    def __getitem__(self, val) -> List[BaseLlamaExamplePrediction]:
+        """Enable slicing and indexing.
+
+        Returns the desired slice on `predictions`.
+        """
+        return self.predictions[val]
+
     @abstractmethod
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
@@ -98,6 +105,13 @@ class BaseLlamaDataset(BaseModel):
     examples: List[BaseLlamaDataExample] = Field(
         default=[], description="Data examples of this dataset."
     )
+
+    def __getitem__(self, val) -> List[BaseLlamaDataExample]:
+        """Enable slicing and indexing.
+
+        Returns the desired slice on `examples`.
+        """
+        return self.examples[val]
 
     @abstractmethod
     def to_pandas(self) -> PandasDataFrame:
