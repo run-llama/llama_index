@@ -4,6 +4,8 @@
 
 ### New Features
 
+- Make `reference_contexts` optional in `LabelledRagDataset` (#9266)
+- Re-organize `download` module (#9253)
 - Added document management to ingestion pipeline (#9135)
 - Add docs for `LabelledRagDataset` (#9228)
 
