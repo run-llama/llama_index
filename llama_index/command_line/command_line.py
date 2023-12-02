@@ -4,7 +4,6 @@ from typing import Any, Optional
 from llama_index.llama_dataset.download import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
-    LLAMA_DATASETS_URL,
     download_llama_dataset,
 )
 from llama_index.llama_pack.download import LLAMA_HUB_URL, download_llama_pack
@@ -30,7 +29,7 @@ def handle_download_llama_pack(
 def handle_download_llama_dataset(
     llama_dataset_class: Optional[str] = None,
     download_dir: Optional[str] = None,
-    llama_datasets_url: str = LLAMA_DATASETS_URL,
+    llama_hub_url: str = LLAMA_HUB_URL,
     llama_datasets_lfs_url: str = LLAMA_DATASETS_LFS_URL,
     llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     **kwargs: Any,
@@ -41,7 +40,7 @@ def handle_download_llama_dataset(
     download_llama_dataset(
         llama_dataset_class=llama_dataset_class,
         download_dir=download_dir,
-        llama_datasets_url=llama_datasets_url,
+        llama_hub_url=llama_hub_url,
         llama_datasets_lfs_url=llama_datasets_lfs_url,
         llama_datasets_source_files_tree_url=llama_datasets_source_files_tree_url,
     )
