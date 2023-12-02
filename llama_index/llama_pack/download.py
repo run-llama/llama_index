@@ -37,5 +37,5 @@ def download_llama_pack(
     )
     if not issubclass(pack_cls, BaseLlamaPack):
         raise ValueError(f"Tool class {pack_cls} must be a subclass of BaseToolSpec.")
-    track_download(llama_pack_class, MODULE_TYPE.LLAMAHUB)
+    track_download(llama_pack_class, MODULE_TYPE.LLAMAPACK)
     return pack_cls
