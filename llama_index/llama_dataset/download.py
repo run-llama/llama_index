@@ -4,7 +4,9 @@ from llama_index import Document
 from llama_index.download.download_utils import (
     LLAMA_DATASETS_URL,
     LLAMA_HUB_URL,
+    MODULE_TYPE,
     download_llama_module,
+    track_download,
 )
 from llama_index.llama_dataset.base import BaseLlamaDataset
 from llama_index.llama_dataset.rag import LabelledRagDataset
@@ -41,7 +43,7 @@ def download_llama_dataset(
         override_path=True,
     )
     rag_dataset_filename, source_filenames = filenames
-
+    track_download(llama_dataset_class, MODULE_TYPE.DATASETS)
     return (
         LabelledRagDataset.from_json(rag_dataset_filename),
         SimpleDirectoryReader(input_files=source_filenames).load_data(),

@@ -7,7 +7,12 @@ Please do `pip install llama-hub` instead.
 
 from typing import Optional, Type
 
-from llama_index.download.download_utils import LLAMA_HUB_URL, download_llama_module
+from llama_index.download.download_utils import (
+    LLAMA_HUB_URL,
+    MODULE_TYPE,
+    download_llama_module,
+    track_download,
+)
 from llama_index.readers.base import BaseReader
 
 
@@ -53,4 +58,5 @@ def download_loader(
         raise ValueError(
             f"Loader class {loader_class} must be a subclass of BaseReader."
         )
+    track_download(loader_class, MODULE_TYPE.LOADER)
     return reader_cls

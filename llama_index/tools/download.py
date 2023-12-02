@@ -2,7 +2,12 @@
 
 from typing import Optional, Type
 
-from llama_index.download.download_utils import LLAMA_HUB_URL, download_llama_module
+from llama_index.download.download_utils import (
+    LLAMA_HUB_URL,
+    MODULE_TYPE,
+    download_llama_module,
+    track_download,
+)
 from llama_index.tools.tool_spec.base import BaseToolSpec
 
 
@@ -34,5 +39,5 @@ def download_tool(
     )
     if not issubclass(tool_cls, BaseToolSpec):
         raise ValueError(f"Tool class {tool_class} must be a subclass of BaseToolSpec.")
-
+    track_download(tool_class, MODULE_TYPE.TOOL)
     return tool_cls
