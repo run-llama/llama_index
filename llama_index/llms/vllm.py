@@ -105,7 +105,7 @@ class Vllm(LLM):
         description="Holds any model parameters valid for `vllm.LLM` call not explicitly specified.",
     )
 
-    api_url: Optional[str] = Field(description="The api url for vllm server")
+    api_url: str = Field(description="The api url for vllm server")
 
     _client: Any = PrivateAttr()
 
@@ -130,7 +130,7 @@ class Vllm(LLM):
         dtype: str = "auto",
         download_dir: Optional[str] = None,
         vllm_kwargs: Dict[str, Any] = {},
-        api_url: Optional[str] = None,
+        api_url: Optional[str] = "",
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         try:
