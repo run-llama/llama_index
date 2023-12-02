@@ -12,7 +12,7 @@ class TestBedrockEmbedding(TestCase):
     bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
     bedrock_stubber = Stubber(bedrock_client)
 
-    def test_get_text_embedding_titan(self):
+    def test_get_text_embedding_titan(self) -> None:
         mock_response = {
             "embedding": [
                 0.017410278,
@@ -45,7 +45,7 @@ class TestBedrockEmbedding(TestCase):
         self.bedrock_stubber.assert_no_pending_responses()
         self.assertEqual(embedding, mock_response["embedding"])
 
-    def test_get_text_embedding_cohere(self):
+    def test_get_text_embedding_cohere(self) -> None:
         mock_response = {
             "embeddings": [
                 [0.017410278, 0.040924072, -0.007507324, 0.09429932, 0.015304565]
