@@ -4,7 +4,7 @@ We have already gone through the core abstractions within the Evaluation module 
 enable various kinds of evaluation methodologies of LLM-based applications or systems, including RAG systems. Of course, to evaluate the system one needs an
 evaluation method, the system itself, as well as evaluation datasets. It is
 considered best practice to test the LLM application on several distinct datasets
-emanating from different sources and domains. Doing so, helps to ensure the overall
+emanating from different sources and domains. Doing so helps to ensure the overall
 robustness (that is, the level in which the system will work in unseen, new cases) of
 the system.
 
@@ -14,8 +14,8 @@ to use, and widely available.
 
 This dataset consists of examples, where an example
 carries a `query`, a `reference_answer`, as well as `reference_contexts`. The main
-reason for using a `LabelledRagDataset` is then to test a RAG system's performance
-by first predicting a response to the given `query` and comparing that predicted
+reason for using a `LabelledRagDataset` is to test a RAG system's performance
+by first predicting a response to the given `query` and then comparing that predicted
 (or generated) response to the `reference_answer`.
 
 ```python
@@ -132,11 +132,9 @@ You can also contribute a `LabelledRagDataset` to [llamahub](https://llamahub.ai
 Contributing a `LabelledRagDataset` involves two high level steps. Generally speaking,
 you must create the `LabelledRagDataset`, save it as a json and submit both this
 json file and the source text files to our [llama_datasets](https://github.com/run-llama/llama_datasets) Github repository. Additionally, you'll have to make
-a pull request, following the steps listed in the `README.md` in our [llama_hub](https://github.com/run-llama/llama-hub)
-Github repository.
+a pull request, to upload required metadata of the dataset to our [llama_hub](https://github.com/run-llama/llama-hub) Github repository.
 
-Please refer to the "Contributing a LlamaDataset To LlamaHub" jupyter notebook
-linked below.
+Please refer to the "LlamaDataset Submission Template Notebook" linked below.
 
 ## Now, Go And Build Robust LLM Applications
 
@@ -151,5 +149,4 @@ maxdepth: 1
 
 /examples/llama_dataset/labelled-rag-datasets.ipynb
 /examples/llama_dataset/downloading_llama_datasets.ipynb
-/examples/llama_dataset/uploading_llama_dataset.ipynb
 ```
