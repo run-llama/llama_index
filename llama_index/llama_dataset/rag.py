@@ -138,3 +138,8 @@ class LabelledRagDataset(BaseLlamaDataset):
     ) -> RagPredictionDataset:
         """Construct prediction dataset."""
         return RagPredictionDataset(predictions=predictions)
+
+
+# British English + American English
+LabeledRagDatasetExample = LabelledRagDataExample
+LabeledRagDataset = LabelledRagDataset
