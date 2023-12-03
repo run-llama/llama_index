@@ -107,7 +107,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         )
         from llama_index.query_engine.multi_modal import SimpleMultiModalQueryEngine
 
-        retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever())
+        retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 
         return SimpleMultiModalQueryEngine(
             retriever,
