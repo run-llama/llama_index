@@ -12,6 +12,8 @@ from llama_index.llama_dataset.download import download_llama_dataset
 from llama_index.llama_dataset.rag import (
     LabelledRagDataExample,
     LabelledRagDataset,
+    LabeledRagDatasetExample,
+    LabeledRagDataset,
     RagExamplePrediction,
     RagPredictionDataset,
 )
@@ -23,6 +25,8 @@ __all__ = [
     "BaseLlamaPredictionDataset",
     "LabelledRagDataExample",
     "LabelledRagDataset",
+    "LabeledRagDatasetExample",
+    "LabeledRagDataset",
     "RagExamplePrediction",
     "RagPredictionDataset",
     "CreatedByType",
