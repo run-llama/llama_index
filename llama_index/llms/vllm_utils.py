@@ -5,10 +5,7 @@ import requests
 
 
 def get_response(response: requests.Response) -> List[str]:
-    # print(response.content)
     data = json.loads(response.content)
-    # print(data)
-
     return data["text"]
 
 
@@ -27,5 +24,4 @@ def get_streaming_response(response: requests.Response) -> Iterable[List[str]]:
     ):
         if chunk:
             data = json.loads(chunk.decode("utf-8"))
-
             yield data["text"]

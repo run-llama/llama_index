@@ -208,8 +208,6 @@ class Vllm(LLM):
 
     @llm_completion_callback()
     def complete(self, prompts: List[str], **kwargs: Any) -> List[CompletionResponse]:
-        # return CompletionResponse(text="hello")
-        # print("here")
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
@@ -220,7 +218,6 @@ class Vllm(LLM):
         sampling_params = SamplingParams(**params)
         outputs = self._client.generate(prompts, sampling_params)
         for output in outputs:
-            # prompt = output.prompt
             responses.append(CompletionResponse(text=output.outputs[0].text))
 
         return responses
@@ -313,8 +310,6 @@ class VllmServer(Vllm):
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> List[CompletionResponse]:
-        # return CompletionResponse(text="hello")
-        # print("here")
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
@@ -327,7 +322,6 @@ class VllmServer(Vllm):
         response = post_http_request(self.api_url, sampling_params, stream=False)
         outputs = get_response(response)
         for output in outputs:
-            # prompt = output.prompt
             responses.append(CompletionResponse(text=output))
 
         return responses
