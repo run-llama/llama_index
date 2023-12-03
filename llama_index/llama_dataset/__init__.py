@@ -10,10 +10,10 @@ from llama_index.llama_dataset.base import (
 )
 from llama_index.llama_dataset.download import download_llama_dataset
 from llama_index.llama_dataset.rag import (
+    LabeledRagDataset,
+    LabeledRagDatasetExample,
     LabelledRagDataExample,
     LabelledRagDataset,
-    LabeledRagDatasetExample,
-    LabeledRagDataset,
     RagExamplePrediction,
     RagPredictionDataset,
 )
