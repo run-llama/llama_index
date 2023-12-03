@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.9.11] - 2023-12-03
+
 ### New Features
 
 - Make `reference_contexts` optional in `LabelledRagDataset` (#9266)
