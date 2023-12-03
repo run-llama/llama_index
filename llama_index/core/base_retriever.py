@@ -13,8 +13,13 @@ from llama_index.schema import NodeWithScore
 class BaseRetriever(PromptMixin):
     """Base retriever."""
 
-    def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
-        self.callback_manager = callback_manager or CallbackManager([])
+    def __init__(self, callback_manager: Optional[CallbackManager] = None) -> None:
+        self.callback_manager = callback_manager or CallbackManager()
+
+    def _check_callback_manager(self) -> None:
+        """Check callback manager."""
+        if not hasattr(self, "callback_manager"):
+            self.callback_manager = CallbackManager()
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -35,6 +40,8 @@ class BaseRetriever(PromptMixin):
                 a QueryBundle object.
 
         """
+        self._check_callback_manager()
+
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -51,6 +58,8 @@ class BaseRetriever(PromptMixin):
         return nodes
 
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
+        self._check_callback_manager()
+
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:

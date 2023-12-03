@@ -41,7 +41,12 @@ extensions = [
     "myst_nb",
     "sphinxcontrib.autodoc_pydantic",
     "sphinx_reredirects",
+    "sphinx_automodapi.automodapi",
+    "sphinxcontrib.gtagjs",
 ]
+
+# automodapi requires this to avoid duplicates apparently
+numpydoc_show_class_members = False
 
 myst_heading_anchors = 5
 # TODO: Fix the non-consecutive header level in our docs, until then
@@ -110,3 +115,7 @@ redirects = {
     "core_modules/supporting_modules/evaluation/root": "/en/stable/module_guides/evaluating/root.html",
     "core_modules/supporting_modules/cost_analysis/root": "/en/stable/understanding/evaluating/cost_analysis/root.html",
 }
+
+gtagjs_ids = [
+    "G-BYVB1ZVE6J",
+]

@@ -1,5 +1,91 @@
 # ChangeLog
 
+## Unreleased
+
+## [0.9.11] - 2023-12-03
+
+### New Features
+
+- Make `reference_contexts` optional in `LabelledRagDataset` (#9266)
+- Re-organize `download` module (#9253)
+- Added document management to ingestion pipeline (#9135)
+- Add docs for `LabelledRagDataset` (#9228)
+
+### Bug Fixes / Nits
+
+- Convert numpy to list for `InstructorEmbedding` (#9255)
+
+## [0.9.10] - 2023-11-30
+
+### New Features
+
+- Advanced Metadata filter for vector stores (#9216)
+- Amazon Bedrock Embeddings New models (#9222)
+- Added PromptLayer callback integration (#9190)
+- Reuse file ids for `OpenAIAssistant` (#9125)
+
+### Breaking Changes / Deprecations
+
+- Deprecate ExactMatchFilter (#9216)
+
+## [0.9.9] - 2023-11-29
+
+### New Features
+
+- Add new abstractions for `LlamaDataset`'s (#9165)
+- Add metadata filtering and MMR mode support for `AstraDBVectorStore` (#9193)
+- Allowing newest `scikit-learn` versions (#9213)
+
+### Breaking Changes / Deprecations
+
+- Added `LocalAI` demo and began deprecation cycle (#9151)
+- Deprecate `QueryResponseDataset` and `DatasetGenerator` of `evaluaton` module (#9165)
+
+### Bug Fixes / Nits
+
+- Fix bug in `download_utils.py` with pointing to wrong repo (#9215)
+- Use `azure_deployment` kwarg in `AzureOpenAILLM` (#9174)
+- Fix similarity score return for `AstraDBVectorStore` Integration (#9193)
+
+## [0.9.8] - 2023-11-26
+
+### New Features
+
+- Add `persist` and `persist_from_dir` methods to `ObjectIndex` that are able to support it (#9064)
+- Added async metadata extraction + pipeline support (#9121)
+- Added back support for start/end char idx in nodes (#9143)
+
+### Bug Fixes / Nits
+
+- Fix for some kwargs not being set properly in global service context (#9137)
+- Small fix for `memory.get()` when system/prefix messages are large (#9149)
+- Minor fixes for global service context (#9137)
+
+## [0.9.7] - 2023-11-24
+
+### New Features
+
+- Add support for `PGVectoRsStore` (#9087)
+- Enforcing `requests>=2.31` for security, while unpinning `urllib3` (#9108)
+
+### Bug Fixes / Nits
+
+- Increased default memory token limit for context chat engine (#9123)
+- Added system prompt to `CondensePlusContextChatEngine` that gets prepended to the `context_prompt` (#9123)
+- Fixed bug in `CondensePlusContextChatEngine` not using chat history properly (#9129)
+
+## [0.9.6] - 2023-11-22
+
+### New Features
+
+- Added `default_headers` argument to openai LLMs (#9090)
+- Added support for `download_llama_pack()` and LlamaPack integrations
+- Added support for `llamaindex-cli` command line tool
+
+### Bug Fixed / Nits
+
+- store normalize as bool for huggingface embedding (#9089)
+
 ## [0.9.5] - 2023-11-21
 
 ### Bug Fixes / Nits

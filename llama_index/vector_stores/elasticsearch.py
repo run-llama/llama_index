@@ -103,8 +103,8 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
     Returns:
         Elasticsearch filter.
     """
-    if len(standard_filters.filters) == 1:
-        filter = standard_filters.filters[0]
+    if len(standard_filters.legacy_filters()) == 1:
+        filter = standard_filters.legacy_filters()[0]
         return {
             "term": {
                 f"metadata.{filter.key}.keyword": {
@@ -114,7 +114,7 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
         }
     else:
         operands = []
-        for filter in standard_filters.filters:
+        for filter in standard_filters.legacy_filters():
             operands.append(
                 {
                     "term": {
@@ -485,7 +485,7 @@ class ElasticsearchStore(VectorStore):
 
         es_query = {}
 
-        if query.filters is not None and len(query.filters.filters) > 0:
+        if query.filters is not None and len(query.filters.legacy_filters()) > 0:
             filter = [_to_elasticsearch_filter(query.filters)]
         else:
             filter = es_filter or []

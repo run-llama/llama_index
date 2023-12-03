@@ -75,12 +75,15 @@ class IngestionCache(BaseModel):
 
     @classmethod
     def from_persist_path(
-        cls, persist_path: str, collection: str = DEFAULT_CACHE_NAME
+        cls,
+        persist_path: str,
+        collection: str = DEFAULT_CACHE_NAME,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "IngestionCache":
         """Create a IngestionCache from a persist directory."""
         return cls(
             collection=collection,
-            cache=SimpleCache.from_persist_path(persist_path),
+            cache=SimpleCache.from_persist_path(persist_path, fs=fs),
         )
 
 

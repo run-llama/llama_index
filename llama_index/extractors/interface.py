@@ -1,4 +1,5 @@
 """Node parser interface."""
+import asyncio
 from abc import abstractmethod
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, cast
@@ -36,6 +37,11 @@ class BaseExtractor(TransformComponent):
         default=True, description="Whether to process nodes in place."
     )
 
+    num_workers: int = Field(
+        default=4,
+        description="Number of workers to use for concurrent async processing.",
+    )
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
         if isinstance(kwargs, dict):
@@ -58,7 +64,7 @@ class BaseExtractor(TransformComponent):
         return "MetadataExtractor"
 
     @abstractmethod
-    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+    async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extracts metadata for a sequence of nodes, returning a list of
         metadata dictionaries corresponding to each node.
 
@@ -67,7 +73,17 @@ class BaseExtractor(TransformComponent):
 
         """
 
-    def process_nodes(
+    def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
+        """Extracts metadata for a sequence of nodes, returning a list of
+        metadata dictionaries corresponding to each node.
+
+        Args:
+            nodes (Sequence[Document]): nodes to extract metadata from
+
+        """
+        return asyncio.run(self.aextract(nodes))
+
+    async def aprocess_nodes(
         self,
         nodes: List[BaseNode],
         excluded_embed_metadata_keys: Optional[List[str]] = None,
@@ -90,7 +106,7 @@ class BaseExtractor(TransformComponent):
         else:
             new_nodes = [deepcopy(node) for node in nodes]
 
-        cur_metadata_list = self.extract(new_nodes)
+        cur_metadata_list = await self.aextract(new_nodes)
         for idx, node in enumerate(new_nodes):
             node.metadata.update(cur_metadata_list[idx])
 
@@ -105,6 +121,22 @@ class BaseExtractor(TransformComponent):
 
         return new_nodes
 
+    def process_nodes(
+        self,
+        nodes: List[BaseNode],
+        excluded_embed_metadata_keys: Optional[List[str]] = None,
+        excluded_llm_metadata_keys: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[BaseNode]:
+        return asyncio.run(
+            self.aprocess_nodes(
+                nodes,
+                excluded_embed_metadata_keys=excluded_embed_metadata_keys,
+                excluded_llm_metadata_keys=excluded_llm_metadata_keys,
+                **kwargs,
+            )
+        )
+
     def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
         """Post process nodes parsed from documents.
 
@@ -113,4 +145,14 @@ class BaseExtractor(TransformComponent):
         Args:
             nodes (List[BaseNode]): nodes to post-process
         """
-        return self.process_nodes(nodes, **kwargs)  # type: ignore
+        return self.process_nodes(nodes, **kwargs)
+
+    async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        """Post process nodes parsed from documents.
+
+        Allows extractors to be chained.
+
+        Args:
+            nodes (List[BaseNode]): nodes to post-process
+        """
+        return await self.aprocess_nodes(nodes, **kwargs)

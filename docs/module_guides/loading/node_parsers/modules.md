@@ -11,8 +11,9 @@ The simplest flow is to combine the `FlatFileReader` with the `SimpleFileNodePar
 ```python
 from llama_index.node_parser.file import SimpleFileNodeParser
 from llama_index.readers.file.flat_reader import FlatReader
+from pathlib import Path
 
-md_docs = FlatReader().load_data("./test.md")
+md_docs = FlatReader().load_data(Path("./test.md"))
 
 parser = SimpleFileNodeParser()
 md_nodes = parser.get_nodes_from_documents(md_docs)
