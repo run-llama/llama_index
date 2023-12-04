@@ -63,7 +63,7 @@ class AzureOpenAI(OpenAI):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 3,
         timeout: float = 60.0,
-        reuse_client: bool = False,
+        reuse_client: bool = True,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
         # azure specific
