@@ -348,3 +348,28 @@ class VllmServer(Vllm):
                     yield CompletionResponse(text=data["text"][0])
 
         return gen()
+
+    @llm_completion_callback()
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        kwargs = kwargs if kwargs else {}
+        return self.complete(prompt, **kwargs)
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        kwargs = kwargs if kwargs else {}
+        params = {**self._model_kwargs, **kwargs}
+
+        from vllm import SamplingParams
+
+        responses = []
+        # build sampling parameters
+        sampling_params = SamplingParams(**params).__dict__
+        sampling_params["prompt"] = prompt
+
+        async def gen() -> CompletionResponseAsyncGen:
+            for message in self.stream_complete(prompt, **kwargs):
+                yield message
+
+        return gen()
