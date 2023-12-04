@@ -85,6 +85,7 @@ def test_model_basic() -> None:
         model="amazon.titan-text-express-v1",
         profile_name=None,
         aws_region_name="us-east-1",
+        aws_access_key_id="test",
     )
 
     bedrock_stubber = Stubber(llm._client)
@@ -119,7 +120,12 @@ def test_model_streaming(monkeypatch: MonkeyPatch) -> None:
         "llama_index.llms.bedrock.completion_with_retry",
         mock_stream_completion_with_retry,
     )
-    llm = Bedrock(model="amazon.titan-text-express-v1", profile_name=None)
+    llm = Bedrock(
+        model="amazon.titan-text-express-v1",
+        profile_name=None,
+        aws_region_name="us-east-1",
+        aws_access_key_id="test",
+    )
     test_prompt = "test prompt"
     response_gen = llm.stream_complete(test_prompt)
     response = list(response_gen)
