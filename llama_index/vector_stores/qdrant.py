@@ -72,8 +72,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         if client is None:
             client_kwargs = client_kwargs or {}
-            self._client = (
-                qdrant_client.QdrantClient(url=url, api_key=api_key, **client_kwargs),
+            self._client = qdrant_client.QdrantClient(
+                url=url, api_key=api_key, **client_kwargs
             )
         else:
             self._client = cast(qdrant_client.QdrantClient, client)
@@ -469,7 +469,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         if query.filters is None:
             return Filter(must=must_conditions)
 
-        for subfilter in query.filters.filters:
+        for subfilter in query.filters.legacy_filters():
             if isinstance(subfilter.value, float):
                 must_conditions.append(
                     FieldCondition(

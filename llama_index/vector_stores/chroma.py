@@ -21,18 +21,62 @@ from llama_index.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
+def _transform_chroma_filter_condition(condition: str) -> str:
+    """Translate standard metadata filter op to Chroma specific spec."""
+    if condition == "and":
+        return "$and"
+    elif condition == "or":
+        return "$or"
+    else:
+        raise ValueError(f"Filter condition {condition} not supported")
+
+
+def _transform_chroma_filter_operator(operator: str) -> str:
+    """Translate standard metadata filter operator to Chroma specific spec."""
+    if operator == "!=":
+        return "$ne"
+    elif operator == "==":
+        return "$eq"
+    elif operator == ">":
+        return "$gt"
+    elif operator == "<":
+        return "$lt"
+    elif operator == ">=":
+        return "$gte"
+    elif operator == "<=":
+        return "$lte"
+    else:
+        raise ValueError(f"Filter operator {operator} not supported")
+
+
 def _to_chroma_filter(
-    standard_filters: MetadataFilters, condition: Optional[str] = None
+    standard_filters: MetadataFilters,
 ) -> dict:
     """Translate standard metadata filters to Chroma specific spec."""
     filters = {}
-    if len(standard_filters.filters) == 1:
-        filters[standard_filters.filters[0].key] = standard_filters.filters[0].value
-    else:
-        condition = condition or "$and"
-        filters[condition] = [
-            {filter.key: filter.value} for filter in standard_filters.filters
-        ]
+    filters_list = []
+    condition = standard_filters.condition or "and"
+    condition = _transform_chroma_filter_condition(condition)
+    if standard_filters.filters:
+        for filter in standard_filters.filters:
+            if filter.operator:
+                filters_list.append(
+                    {
+                        filter.key: {
+                            _transform_chroma_filter_operator(
+                                filter.operator
+                            ): filter.value
+                        }
+                    }
+                )
+            else:
+                filters_list.append({filter.key: filter.value})
+
+    if len(filters_list) == 1:
+        # If there is only one filter, return it directly
+        return filters_list[0]
+    elif len(filters_list) > 1:
+        filters[condition] = filters_list
     return filters
 
 

@@ -1,18 +1,50 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.11] - 2023-12-03
+
+### New Features
+
+- Make `reference_contexts` optional in `LabelledRagDataset` (#9266)
+- Re-organize `download` module (#9253)
+- Added document management to ingestion pipeline (#9135)
+- Add docs for `LabelledRagDataset` (#9228)
+- Add submission template notebook and other doc updates for `LabelledRagDataset` (#9273)
+
+### Bug Fixes / Nits
+
+- Convert numpy to list for `InstructorEmbedding` (#9255)
+
+## [0.9.10] - 2023-11-30
+
+### New Features
+
+- Advanced Metadata filter for vector stores (#9216)
+- Amazon Bedrock Embeddings New models (#9222)
+- Added PromptLayer callback integration (#9190)
+- Reuse file ids for `OpenAIAssistant` (#9125)
+
+### Breaking Changes / Deprecations
+
+- Deprecate ExactMatchFilter (#9216)
+
+## [0.9.9] - 2023-11-29
 
 ### New Features
 
 - Add new abstractions for `LlamaDataset`'s (#9165)
+- Add metadata filtering and MMR mode support for `AstraDBVectorStore` (#9193)
+- Allowing newest `scikit-learn` versions (#9213)
 
 ### Breaking Changes / Deprecations
 
+- Added `LocalAI` demo and began deprecation cycle (#9151)
 - Deprecate `QueryResponseDataset` and `DatasetGenerator` of `evaluaton` module (#9165)
 
 ### Bug Fixes / Nits
 
+- Fix bug in `download_utils.py` with pointing to wrong repo (#9215)
 - Use `azure_deployment` kwarg in `AzureOpenAILLM` (#9174)
+- Fix similarity score return for `AstraDBVectorStore` Integration (#9193)
 
 ## [0.9.8] - 2023-11-26
 
