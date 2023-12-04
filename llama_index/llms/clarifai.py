@@ -52,8 +52,8 @@ class Clarifai(LLM):
         except ImportError:
             raise ImportError("ClarifaiLLM requires `pip install clarifai`.")
         
-        if pat is not None:
-            os.environ["CLARIFAI_PAT"] = pat
+        if pat is None and os.environ.get("CLARIFAI_PAT") is not None:
+            pat = os.environ.get("CLARIFAI_PAT")
         
         if not pat and os.environ.get("CLARIFAI_PAT") is None:
            raise ValueError("Set `CLARIFAI_PAT` as env variable or pass `pat` as constructor argument")
@@ -74,10 +74,11 @@ class Clarifai(LLM):
                     app_id=app_id,
                     model_id=model_name,
                     model_version={"id": model_version_id},
+                    pat=pat
                 )
 
         if model_url is not None:
-            self._model = Model(model_url)
+            self._model = Model(model_url, pat=pat)
             model_name = self._model.id
 
         self._is_chat_model = False
@@ -109,7 +110,7 @@ class Clarifai(LLM):
         )
 
     # TODO: When the Clarifai python SDK supports inference params, add here.
-    def chat(self, messages: Sequence[ChatMessage], inference_params: Dict, **kwargs: Any) -> ChatResponse:
+    def chat(self, messages: Sequence[ChatMessage], inference_params: Dict= None, **kwargs: Any) -> ChatResponse:
         """Chat endpoint for LLM."""
         prompt = "".join([str(m) for m in messages])
         try:
@@ -126,7 +127,7 @@ class Clarifai(LLM):
             raise Exception(f"Prediction failed: {e}")
         return ChatResponse(message=ChatMessage(content=response))
 
-    def complete(self, prompt: str, inference_params: Dict, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, inference_params: Dict= None, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint for LLM."""
         try:
             (inference_params := {}) if inference_params is None else inference_params

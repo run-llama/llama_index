@@ -49,8 +49,9 @@ class ClarifaiEmbedding(BaseEmbedding):
             raise ImportError("ClarifaiEmbedding requires `pip install clarifai`.")
         
         embed_batch_size = min(128, embed_batch_size)
-        if pat is not None:
-            os.environ["CLARIFAI_PAT"] = pat
+
+        if pat is None and os.environ.get("CLARIFAI_PAT") is not None:
+            pat = os.environ.get("CLARIFAI_PAT")
 
         if not pat and os.environ.get("CLARIFAI_PAT") is None:
            raise ValueError("Set `CLARIFAI_PAT` as env variable or pass `pat` as constructor argument")
@@ -71,10 +72,11 @@ class ClarifaiEmbedding(BaseEmbedding):
                     app_id=app_id,
                     model_id=model_name,
                     model_version={"id": model_version_id},
+                    pat=pat
                 )
 
         if model_url is not None:
-            self._model = Model(model_url)
+            self._model = Model(model_url, pat=pat)
             model_name = self._model.id
 
         super().__init__(
