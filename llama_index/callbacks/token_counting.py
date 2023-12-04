@@ -71,7 +71,6 @@ def get_llm_token_counts(
             # Invalid token counts, or no token counts attached
             pass
 
-
         # Should count tokens ourselves
         messages_tokens = token_counter.estimate_tokens_in_messages(messages)
         response_tokens = token_counter.get_string_tokens(response_str)
