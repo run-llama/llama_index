@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Added an option `reuse_client` to openai/azure to help with async timeouts. Set to `False` to see improvements (#9301)
+
 ## [0.9.11] - 2023-12-03
 
 ### New Features
