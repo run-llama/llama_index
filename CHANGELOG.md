@@ -1,11 +1,5 @@
 # ChangeLog
 
-## Unreleased
-
-### New Features
-
-- Add submission template notebook and other doc updates for `LabelledRagDataset` (#9273)
-
 ## [0.9.11] - 2023-12-03
 
 ### New Features
@@ -14,6 +8,7 @@
 - Re-organize `download` module (#9253)
 - Added document management to ingestion pipeline (#9135)
 - Add docs for `LabelledRagDataset` (#9228)
+- Add submission template notebook and other doc updates for `LabelledRagDataset` (#9273)
 
 ### Bug Fixes / Nits
 
