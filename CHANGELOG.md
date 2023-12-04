@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- Add submission template notebook and other doc updates for `LabelledRagDataset` (#9273)
+
 ## [0.9.11] - 2023-12-03
 
 ### New Features
