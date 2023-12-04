@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -15,6 +15,13 @@ from llama_index.llms.base import (
     LLMMetadata,
     llm_chat_callback,
     llm_completion_callback,
+)
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.llms.vllm_utils import get_response, post_http_request
 
@@ -93,6 +100,14 @@ class Vllm(LLM):
         description="The data type for the model weights and activations.",
     )
 
+    messages_to_prompt: Callable = Field(
+        description="The function to convert messages to a prompt.", exclude=True
+    )
+
+    completion_to_prompt: Callable = Field(
+        description="The function to convert a completion to a prompt.", exclude=True
+    )
+
     download_dir: Optional[str] = Field(
         default=None,
         description="Directory to download and load the weights. (Default to the default cache dir of huggingface)",
@@ -128,6 +143,8 @@ class Vllm(LLM):
         download_dir: Optional[str] = None,
         vllm_kwargs: Dict[str, Any] = {},
         api_url: Optional[str] = "",
+        messages_to_prompt: Optional[Callable] = None,
+        completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         try:
@@ -149,7 +166,8 @@ class Vllm(LLM):
         else:
             self._client = None
         callback_manager = callback_manager or CallbackManager([])
-
+        messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
+        completion_to_prompt = completion_to_prompt or (lambda x: x)
         super().__init__(
             model=model,
             temperature=temperature,
@@ -166,6 +184,8 @@ class Vllm(LLM):
             logprobs=logprobs,
             dtype=dtype,
             download_dir=download_dir,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
             vllm_kwargs=vllm_kwargs,
             api_url=api_url,
         )
@@ -204,7 +224,10 @@ class Vllm(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        raise (ValueError("Not Implemented"))
+        kwargs = kwargs if kwargs else {}
+        prompt = self.messages_to_prompt(messages)
+        completion_response = self.complete(prompt, **kwargs)
+        return completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
     def complete(self, prompts: List[str], **kwargs: Any) -> List[CompletionResponse]:
@@ -236,7 +259,8 @@ class Vllm(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        raise (ValueError("Not Implemented"))
+        kwargs = kwargs if kwargs else {}
+        return self.chat(messages, **kwargs)
 
     @llm_completion_callback()
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
@@ -276,11 +300,14 @@ class VllmServer(Vllm):
         logprobs: Optional[int] = None,
         dtype: str = "auto",
         download_dir: Optional[str] = None,
+        messages_to_prompt: Optional[Callable] = None,
+        completion_to_prompt: Optional[Callable] = None,
         vllm_kwargs: Dict[str, Any] = {},
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._client = None
-
+        messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
+        completion_to_prompt = completion_to_prompt or (lambda x: x)
         callback_manager = callback_manager or CallbackManager([])
 
         model = ""
@@ -300,6 +327,8 @@ class VllmServer(Vllm):
             logprobs=logprobs,
             dtype=dtype,
             download_dir=download_dir,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
             vllm_kwargs=vllm_kwargs,
             api_url=api_url,
         )
@@ -315,16 +344,13 @@ class VllmServer(Vllm):
 
         from vllm import SamplingParams
 
-        responses = []
         # build sampling parameters
         sampling_params = SamplingParams(**params).__dict__
         sampling_params["prompt"] = prompt
         response = post_http_request(self.api_url, sampling_params, stream=False)
-        outputs = get_response(response)
-        for output in outputs:
-            responses.append(CompletionResponse(text=output))
+        output = get_response(response)
 
-        return responses
+        return CompletionResponse(text=output[0])
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
@@ -372,3 +398,17 @@ class VllmServer(Vllm):
                 yield message
 
         return gen()
+
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        prompt = self.messages_to_prompt(messages)
+        completion_response = self.stream_complete(prompt, **kwargs)
+        return stream_completion_response_to_chat_response(completion_response)
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        return self.stream_chat(messages, **kwargs)
