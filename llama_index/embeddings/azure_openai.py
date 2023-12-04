@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import httpx
 from openai import AsyncAzureOpenAI, AzureOpenAI
@@ -40,6 +40,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         azure_deployment: Optional[str] = None,
         deployment_name: Optional[str] = None,
         max_retries: int = 10,
+        reuse_client: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         # custom httpx client
         http_client: Optional[httpx.Client] = None,
@@ -68,6 +69,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
             max_retries=max_retries,
+            reuse_client=reuse_client,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -88,10 +90,21 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
 
         return values
 
-    def _get_clients(self) -> Tuple[AzureOpenAI, AsyncAzureOpenAI]:
-        client = AzureOpenAI(**self._get_credential_kwargs())
-        aclient = AsyncAzureOpenAI(**self._get_credential_kwargs())
-        return client, aclient
+    def _get_client(self) -> AzureOpenAI:
+        if not self.reuse_client:
+            return AzureOpenAI(**self._get_credential_kwargs())
+
+        if self._client is None:
+            self._client = AzureOpenAI(**self._get_credential_kwargs())
+        return self._client
+
+    def _get_aclient(self) -> AsyncAzureOpenAI:
+        if not self.reuse_client:
+            return AsyncAzureOpenAI(**self._get_credential_kwargs())
+
+        if self._aclient is None:
+            self._aclient = AsyncAzureOpenAI(**self._get_credential_kwargs())
+        return self._aclient
 
     def _get_credential_kwargs(self) -> Dict[str, Any]:
         return {
