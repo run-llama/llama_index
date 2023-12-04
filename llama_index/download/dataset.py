@@ -16,11 +16,11 @@ from llama_index.download.utils import (
 )
 
 LLAMA_DATASETS_LFS_URL = (
-    f"https://media.githubusercontent.com/media/run-llama/llama_datasets/main"
+    f"https://media.githubusercontent.com/media/run-llama/llama-datasets/main"
 )
 
 LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL = (
-    "https://github.com/run-llama/llama_datasets/tree/main"
+    "https://github.com/run-llama/llama-datasets/tree/main"
 )
 LLAMA_RAG_DATASET_FILENAME = "rag_dataset.json"
 LLAMA_SOURCE_FILES_PATH = "source_files"
@@ -167,7 +167,8 @@ def download_llama_dataset(
     override_path: bool = False,
     show_progress: bool = False,
 ) -> Any:
-    """Download a module from LlamaHub.
+    """
+    Download a module from LlamaHub.
 
     Can be a loader, tool, pack, or more.
 
