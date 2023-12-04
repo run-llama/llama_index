@@ -46,25 +46,26 @@ def get_llm_token_counts(
 
         # try getting attached token counts first
         try:
-            usage = response.raw["usage"]  # type: ignore
-
             messages_tokens = 0
             response_tokens = 0
 
-            if usage is not None:
-                messages_tokens = usage.prompt_tokens
-                response_tokens = usage.completion_tokens
+            if response is not None and response.raw is not None:
+                usage = response.raw.get("usage")  # type: ignore
 
-            if messages_tokens == 0 or response_tokens == 0:
-                raise ValueError("Invalid token counts!")
+                if usage is not None:
+                    messages_tokens = usage.prompt_tokens
+                    response_tokens = usage.completion_tokens
 
-            return TokenCountingEvent(
-                event_id=event_id,
-                prompt=messages_str,
-                prompt_token_count=messages_tokens,
-                completion=response_str,
-                completion_token_count=response_tokens,
-            )
+                if messages_tokens == 0 or response_tokens == 0:
+                    raise ValueError("Invalid token counts!")
+
+                return TokenCountingEvent(
+                    event_id=event_id,
+                    prompt=messages_str,
+                    prompt_token_count=messages_tokens,
+                    completion=response_str,
+                    completion_token_count=response_tokens,
+                )
 
         except (ValueError, KeyError):
             # Invalid token counts, or no token counts attached
