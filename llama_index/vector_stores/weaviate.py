@@ -208,6 +208,12 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             "operator": "Equal",
             "valueText": ref_doc_id,
         }
+        if "filter" in delete_kwargs and delete_kwargs["filter"] is not None:
+            where_filter = {
+                "operator": "And",
+                "operands": [where_filter, delete_kwargs["filter"]],  # type: ignore
+            }
+
         query = (
             self._client.query.get(self.index_name)
             .with_additional(["id"])
