@@ -4,7 +4,10 @@ import asyncio
 from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.constants import (
+    DEFAULT_IMAGE_SIMILARITY_TOP_K,
+    DEFAULT_SIMILARITY_TOP_K,
+)
 from llama_index.core import (
     MultiModalRetriever,
 )
@@ -44,8 +47,10 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         index: MultiModalVectorStoreIndex,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
-        image_similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        image_similarity_top_k: int = DEFAULT_IMAGE_SIMILARITY_TOP_K,
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
+        text_similarity_score_threshold: Optional[float] = None,
+        image_similarity_score_threshold: Optional[float] = None,
         filters: Optional[MetadataFilters] = None,
         alpha: Optional[float] = None,
         node_ids: Optional[List[str]] = None,
@@ -68,6 +73,8 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
 
         self._similarity_top_k = similarity_top_k
         self._image_similarity_top_k = image_similarity_top_k
+        self._text_similarity_score_threshold = text_similarity_score_threshold
+        self._image_similarity_score_threshold = image_similarity_score_threshold
         self._vector_store_query_mode = VectorStoreQueryMode(vector_store_query_mode)
         self._alpha = alpha
         self._node_ids = node_ids
@@ -97,6 +104,26 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
     def image_similarity_top_k(self, image_similarity_top_k: int) -> None:
         """Set image similarity top k."""
         self._image_similarity_top_k = image_similarity_top_k
+
+    # @property
+    # def text_similarity_score_threshold(self) -> float:
+    #     """Return text similarity score."""
+    #     return self._text_similarity_score_threshold
+
+    # @text_similarity_score_threshold.setter
+    # def text_similarity_score_threshold(self, text_similarity_score_threshold: int) -> None:
+    #     """Set score threshold for query to text similarity."""
+    #     self._text_similarity_score_threshold = text_similarity_score_threshold
+
+    # @property
+    # def image_similarity_score_threshold(self) -> float:
+    #     """Return similarity top k."""
+    #     return self._image_similarity_score_threshold
+
+    # @image_similarity_score_threshold.setter
+    # def image_similarity_score_threshold(self, image_similarity_score_threshold: int) -> None:
+    #     """Set score threshold for query to image similarity."""
+    #     self._image_similarity_score_threshold = image_similarity_score_threshold
 
     def _build_vector_store_query(
         self, query_bundle_with_embeddings: QueryBundle, similarity_top_k: int
@@ -193,11 +220,19 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         query_bundle_with_embeddings: QueryBundle,
         similarity_top_k: int,
         vector_store: VectorStore,
+        similarity_score_threshold: Optional[float],
     ) -> List[NodeWithScore]:
         query = self._build_vector_store_query(
             query_bundle_with_embeddings, similarity_top_k
         )
         query_result = vector_store.query(query, **self._kwargs)
+        for node in query_result.nodes:
+            if node.score is not None:
+                if (
+                    similarity_score_threshold is not None
+                    and node.score < similarity_score_threshold
+                ):
+                    res.score = None
         return self._build_node_list_from_query_result(query_result)
 
     def _build_node_list_from_query_result(

@@ -68,6 +68,10 @@ class JSONReader(BaseReader):
         is_jsonl (Optional[bool]): If True, indicates that the file is in JSONL format.
         Defaults to False.
 
+        text_fields (Optional[List[str]]): The text fields to use. Defaults to ["text"].
+
+        metadata_fields (Optional[List[str]]): The metadata fields to include.
+
     """
 
     def __init__(
@@ -76,6 +80,8 @@ class JSONReader(BaseReader):
         collapse_length: Optional[int] = None,
         ensure_ascii: bool = False,
         is_jsonl: Optional[bool] = False,
+        text_fields: Optional[List[str]] = ["text"],
+        metadata_fields: Optional[List[str]] = None,
     ) -> None:
         """Initialize with arguments."""
         super().__init__()
@@ -83,6 +89,8 @@ class JSONReader(BaseReader):
         self.collapse_length = collapse_length
         self.ensure_ascii = ensure_ascii
         self.is_jsonl = is_jsonl
+        self.text_fields = text_fields
+        self.metadata_fields = metadata_fields
 
     def load_data(self, input_file: str) -> List[Document]:
         """Load data from the input file."""
@@ -96,29 +104,48 @@ class JSONReader(BaseReader):
 
             documents = []
             for data in load_data:
-                # print(data)
+                metadata = {}
+                if self.text_fields is not None:
+                    filtered_data = "\n".join(
+                        [
+                            data.get(field)
+                            for field in self.text_fields
+                            if data.get(field) is not None
+                        ]
+                    )
+                else:
+                    filtered_data = data
+
+                # Filter the data based on metadata_fieldss
+                if self.metadata_fields is not None:
+                    metadata = {
+                        field: data.get(field) for field in self.metadata_fields
+                    }
+
                 if self.levels_back is None:
                     # If levels_back isn't set, we just format and make each
                     # line an embedding
                     json_output = json.dumps(
-                        data, indent=0, ensure_ascii=self.ensure_ascii
+                        filtered_data, indent=0, ensure_ascii=self.ensure_ascii
                     )
                     lines = json_output.split("\n")
                     useful_lines = [
                         line for line in lines if not re.match(r"^[{}\[\],]*$", line)
                     ]
-                    documents.append(Document(text="\n".join(useful_lines)))
+                    documents.append(
+                        Document(text="\n".join(useful_lines), metadata=metadata)
+                    )
                 elif self.levels_back is not None:
                     # If levels_back is set, we make the embeddings contain the labels
                     # from further up the JSON tree
                     lines = [
                         *_depth_first_yield(
-                            data,
+                            filtered_data,
                             self.levels_back,
                             self.collapse_length,
                             [],
                             self.ensure_ascii,
                         )
                     ]
-                    documents.append(Document(text="\n".join(lines)))
+                    documents.append(Document(text="\n".join(lines), metadata=metadata))
             return documents
