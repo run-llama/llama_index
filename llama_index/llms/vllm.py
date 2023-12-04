@@ -363,7 +363,6 @@ class VllmServer(Vllm):
 
         from vllm import SamplingParams
 
-        responses = []
         # build sampling parameters
         sampling_params = SamplingParams(**params).__dict__
         sampling_params["prompt"] = prompt
