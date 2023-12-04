@@ -49,7 +49,7 @@ def get_llm_token_counts(
             messages_tokens = 0
             response_tokens = 0
 
-            if response.raw is not None:
+            if response is not None and response.raw is not None:
                 usage = response.raw.get("usage")  # type: ignore
 
                 if usage is not None:
