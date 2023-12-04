@@ -97,7 +97,7 @@ async def acompletion_with_retry(
 def init_vertexai(
     project: Optional[str] = None,
     location: Optional[str] = None,
-    credentials: Optional[str] = None,
+    credentials: Optional[Any] = None,
 ) -> None:
     """Init vertexai.
 
