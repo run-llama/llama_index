@@ -114,12 +114,6 @@ def main() -> None:
         default=LLAMA_DATASETS_LFS_URL,
         help="URL to llama datasets.",
     )
-    llamadataset_parser.add_argument(
-        "--llama-datasets-lfs-url",
-        type=str,
-        default=LLAMA_DATASETS_LFS_URL,
-        help="URL to llama datasets.",
-    )
     llamadataset_parser.set_defaults(
         func=lambda args: handle_download_llama_dataset(**vars(args))
     )
