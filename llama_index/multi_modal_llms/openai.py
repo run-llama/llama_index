@@ -31,13 +31,14 @@ from llama_index.multi_modal_llms import (
     MultiModalLLMMetadata,
 )
 from llama_index.multi_modal_llms.openai_utils import (
+    GPT4V_MODELS,
     generate_openai_multi_modal_chat_message,
 )
 from llama_index.schema import ImageDocument
 
 
 class OpenAIMultiModal(MultiModalLLM):
-    model: str = Field(description="The Multi-Modal model to use from OpenAI GPT4V.")
+    model: str = Field(description="The Multi-Modal model to use from OpenAI.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_new_tokens: int = Field(
         description=" The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt"
@@ -152,6 +153,11 @@ class OpenAIMultiModal(MultiModalLLM):
 
     # Model Params for OpenAI GPT4V model.
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        if self.model not in GPT4V_MODELS:
+            raise ValueError(
+                f"Invalid model {self.model}. "
+                f"Available models are: {list(GPT4V_MODELS.keys())}"
+            )
         base_kwargs = {"model": self.model, **kwargs}
         if self.max_new_tokens is not None:
             # If max_tokens is None, don't include in the payload:
