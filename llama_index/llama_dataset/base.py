@@ -236,7 +236,7 @@ class BaseLlamaDataset(BaseModel):
         self,
         batch_size: int = 20,
         start_position: int = 0,
-    ) -> Generator[BaseLlamaDataExample]:
+    ) -> Generator[BaseLlamaDataExample, None, None]:
         """Batches examples and predictions with a given batch_size."""
         num_examples = len(self.examples)
         for ndx in range(start_position, num_examples, batch_size):
