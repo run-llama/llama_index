@@ -1,15 +1,17 @@
 """Llama Dataset Class."""
 
 import json
+import time
 from abc import abstractmethod
 from enum import Enum
 from typing import List, Optional, Type, Union
 
 import tqdm
+from openai import RateLimitError
 from pandas import DataFrame as PandasDataFrame
 
 from llama_index.async_utils import asyncio_module
-from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core import BaseQueryEngine
 
 
@@ -105,6 +107,9 @@ class BaseLlamaDataset(BaseModel):
     examples: List[BaseLlamaDataExample] = Field(
         default=[], description="Data examples of this dataset."
     )
+    _predictions_cache: List[BaseLlamaExamplePrediction] = PrivateAttr(
+        default_factory=list
+    )
 
     def __getitem__(self, val: Union[slice, int]) -> List[BaseLlamaDataExample]:
         """Enable slicing and indexing.
@@ -169,25 +174,46 @@ class BaseLlamaDataset(BaseModel):
         """
 
     def make_predictions_with(
-        self, query_engine: BaseQueryEngine, show_progress: bool = False
+        self,
+        query_engine: BaseQueryEngine,
+        show_progress: bool = False,
+        batch_size: int = 20,
+        sleep_time_in_seconds: int = 10,
     ) -> BaseLlamaPredictionDataset:
         """Predict with a given query engine.
 
         Args:
             query_engine (BaseQueryEngine): The query engine to make predictions with.
             show_progress (bool, optional): Show progress of making predictions.
+            batch_size (int): Used to batch async calls, especially to reduce chances
+                            of hitting RateLimitError from openai.
+            sleep_time_in_seconds (int): Amount of time to sleep between batch call
+                            to reduce chance of hitting RateLimitError from openai.
 
         Returns:
             BaseLlamaPredictionDataset: A dataset of predictions.
         """
-        predictions = []
-        if show_progress:
-            example_iterator = tqdm.tqdm(self.examples)
+        if self._predictions_cache:
+            start_example_position = len(self._predictions_cache)
         else:
-            example_iterator = self.examples
-        for example in example_iterator:
-            predictions.append(self._predict_example(query_engine, example))
-        return self._construct_prediction_dataset(predictions=predictions)
+            start_example_position = 0
+
+        for batch in self._batch_examples(
+            batch_size=batch_size, start_position=start_example_position
+        ):
+            if show_progress:
+                example_iterator = tqdm.tqdm(batch)
+            else:
+                example_iterator = batch
+            for example in example_iterator:
+                self._predictions_cache.append(
+                    self._predict_example(query_engine, example)
+                )
+
+            # sleep after current batch execution
+            time.sleep(sleep_time_in_seconds)
+
+        return self._construct_prediction_dataset(predictions=self._predictions_cache)
 
     # async methods
     @abstractmethod
@@ -206,21 +232,65 @@ class BaseLlamaDataset(BaseModel):
             BaseLlamaExamplePrediction: The prediction.
         """
 
+    def _batch_examples(
+        self,
+        batch_size: int = 20,
+        start_position: int = 0,
+    ):
+        """Batches examples and predictions with a given batch_size."""
+        num_examples = len(self.examples)
+        for ndx in range(start_position, num_examples, batch_size):
+            yield self.examples[ndx : min(ndx + batch_size, num_examples)]
+
     async def amake_predictions_with(
-        self, query_engine: BaseQueryEngine, show_progress: bool = False
+        self,
+        query_engine: BaseQueryEngine,
+        show_progress: bool = False,
+        batch_size: int = 20,
+        sleep_time_in_seconds: int = 10,
     ) -> BaseLlamaPredictionDataset:
         """Async predict with a given query engine.
 
         Args:
             query_engine (BaseQueryEngine): The query engine to make predictions with.
             show_progress (bool, optional): Show progress of making predictions.
+            batch_size (int): Used to batch async calls, especially to reduce chances
+                            of hitting RateLimitError from openai.
+            sleep_time_in_seconds (int): Amount of time to sleep between batch call
+                            to reduce chance of hitting RateLimitError from openai.
 
         Returns:
             BaseLlamaPredictionDataset: A dataset of predictions.
         """
-        tasks = []
-        for example in self.examples:
-            tasks.append(self._apredict_example(query_engine, example))
-        asyncio_mod = asyncio_module(show_progress=show_progress)
-        predictions = await asyncio_mod.gather(*tasks)
-        return self._construct_prediction_dataset(predictions=predictions)
+        if self._predictions_cache:
+            start_example_position = len(self._predictions_cache)
+        else:
+            start_example_position = 0
+        print(f"start_example_position: {start_example_position}", flush=True)
+        for batch in self._batch_examples(
+            batch_size=batch_size, start_position=start_example_position
+        ):
+            tasks = []
+            for example in batch:
+                tasks.append(self._apredict_example(query_engine, example))
+            asyncio_mod = asyncio_module(show_progress=show_progress)
+
+            try:
+                batch_predictions = await asyncio_mod.gather(*tasks)
+            except RateLimitError as err:
+                print(f"num predictions cached: {len(self._predictions_cache)}")
+                raise ValueError(
+                    "You've hit rate limits on your OpenAI subscription. This"
+                    " class caches previous predictions after each successful"
+                    " batch execution. Based off this cache, when executing this"
+                    " command again it will attempt to predict on only the examples "
+                    "that have not yet been predicted. Try reducing your batch_size."
+                ) from err
+            self._predictions_cache += batch_predictions
+            time.sleep(sleep_time_in_seconds)
+
+        prediction_dataset = self._construct_prediction_dataset(
+            predictions=self._predictions_cache
+        )
+        self._predictions_cache = []  # clear cache
+        return prediction_dataset
