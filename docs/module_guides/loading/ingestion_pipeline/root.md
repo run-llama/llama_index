@@ -194,4 +194,5 @@ transformations.md
 /examples/ingestion/async_ingestion_pipeline.ipynb
 /examples/ingestion/document_management_pipeline.ipynb
 /examples/ingestion/redis_ingestion_pipeline.ipynb
+/examples/ingestion/ingestion_gdrive.ipynb
 ```
