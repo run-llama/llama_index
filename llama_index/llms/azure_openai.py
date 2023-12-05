@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import httpx
 from openai import AsyncAzureOpenAI
@@ -63,6 +63,7 @@ class AzureOpenAI(OpenAI):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 3,
         timeout: float = 60.0,
+        reuse_client: bool = True,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
         # azure specific
@@ -101,6 +102,7 @@ class AzureOpenAI(OpenAI):
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             timeout=timeout,
+            reuse_client=reuse_client,
             api_key=api_key,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
@@ -126,14 +128,25 @@ class AzureOpenAI(OpenAI):
 
         return values
 
-    def _get_clients(self, **kwargs: Any) -> Tuple[SyncAzureOpenAI, AsyncAzureOpenAI]:
-        client = SyncAzureOpenAI(
-            **self._get_credential_kwargs(),
-        )
-        aclient = AsyncAzureOpenAI(
-            **self._get_credential_kwargs(),
-        )
-        return client, aclient
+    def _get_client(self) -> SyncAzureOpenAI:
+        if not self.reuse_client:
+            return SyncAzureOpenAI(**self._get_credential_kwargs())
+
+        if self._client is None:
+            self._client = SyncAzureOpenAI(
+                **self._get_credential_kwargs(),
+            )
+        return self._client
+
+    def _get_aclient(self) -> AsyncAzureOpenAI:
+        if not self.reuse_client:
+            return AsyncAzureOpenAI(**self._get_credential_kwargs())
+
+        if self._aclient is None:
+            self._aclient = AsyncAzureOpenAI(
+                **self._get_credential_kwargs(),
+            )
+        return self._aclient
 
     def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         if self.use_azure_ad:

@@ -6,7 +6,7 @@ LlamaIndex offers capabilities to not only build language-based applications, bu
 
 This space is actively being explored right now, but there are some fascinating use cases popping up.
 
-### Multi-Modal RAG
+### Multi-Modal RAG (Retrieval Augmented Generation)
 
 All the core RAG concepts: indexing, retrieval, and synthesis, can be extended into the image setting.
 
@@ -47,6 +47,7 @@ These notebooks show how to use different Multi-Modal LLM models for image under
 - LLava-13B (Replicate)
 - Fuyu-8B (Replicate)
 - MiniGPT-4 (Replicate)
+- CogVLM (Replicate)
 
 Check out our guides below:
 
@@ -104,4 +105,26 @@ Check out out Chroma + LlamaIndex integration with single Multi-Modal Vector Sto
 maxdepth: 1
 ---
 /examples/multi_modal/ChromaMultiModalDemo.ipynb
+```
+
+### Multi-Modal RAG on PDF's with Tables using Microsoft `Table Transformer`
+
+One common challenge with RAG (Retrieval-Augmented Generation) involves handling PDFs that contain tables. Parsing tables in various formats can be quite complex.
+
+However, Microsoft's newly released model, Table Transformer, offers a promising solution for detecting tables within images.
+
+In this notebook, we will demonstrate how to leverage the Table Transformer model in conjunction with GPT4-V to yield better results for images containing tables.
+
+The experiment is divided into the following parts and we compared those 4 options for extracting table information from PDFs:
+
+1. Retrieving relevant images (PDF pages) and sending them to GPT4-V to respond to queries.
+2. Regarding every PDF page as an image, let GPT4-V do the image reasoning for each page. Build Text Vector Store index for the image reasonings. Query the answer against the `Image Reasoning Vector Store`.
+3. Using Table Transformer to crop the table information from the retrieved images and then sending these cropped images to GPT4-V for query responses.
+4. Applying OCR on cropped table images and send the data to GPT4/ GPT-3.5 to answer the query.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/multi_modal/multi_modal_pdf_tables.ipynb
 ```

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import fsspec
 
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.readers.redis.utils import (
     TokenEscaper,
     array_to_buffer,
@@ -22,8 +23,8 @@ from llama_index.schema import (
     TextNode,
 )
 from llama_index.vector_stores.types import (
+    BasePydanticVectorStore,
     MetadataFilters,
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -37,12 +38,20 @@ if TYPE_CHECKING:
     from redis.commands.search.field import VectorField
 
 
-class RedisVectorStore(VectorStore):
+class RedisVectorStore(BasePydanticVectorStore):
     stores_text = True
     stores_node = True
     flat_metadata = False
 
-    tokenizer = TokenEscaper()
+    _tokenizer: Any = PrivateAttr()
+    _redis_client: Any = PrivateAttr()
+    _prefix: str = PrivateAttr()
+    _index_name: str = PrivateAttr()
+    _index_args: Dict[str, Any] = PrivateAttr()
+    _metadata_fields: List[str] = PrivateAttr()
+    _overwrite: bool = PrivateAttr()
+    _vector_field: str = PrivateAttr()
+    _vector_key: str = PrivateAttr()
 
     def __init__(
         self,
@@ -120,6 +129,8 @@ class RedisVectorStore(VectorStore):
         self._overwrite = overwrite
         self._vector_field = str(self._index_args.get("vector_field", "vector"))
         self._vector_key = str(self._index_args.get("vector_key", "vector"))
+        self._tokenizer = TokenEscaper()
+        super().__init__()
 
     @property
     def client(self) -> "RedisType":
@@ -183,7 +194,7 @@ class RedisVectorStore(VectorStore):
 
         """
         # use tokenizer to escape dashes in query
-        query_str = "@doc_id:{%s}" % self.tokenizer.escape(ref_doc_id)
+        query_str = "@doc_id:{%s}" % self._tokenizer.escape(ref_doc_id)
         # find all documents that match a doc_id
         results = self._redis_client.ft(self._index_name).search(query_str)
         if len(results.docs) == 0:
@@ -445,7 +456,7 @@ def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
     tokenizer = TokenEscaper()
 
     filter_strings = []
-    for filter in metadata_filters.filters:
+    for filter in metadata_filters.legacy_filters():
         # adds quotes around the value to ensure that the filter is treated as an
         #   exact match
         filter_string = f"@{filter.key}:{{{tokenizer.escape(str(filter.value))}}}"

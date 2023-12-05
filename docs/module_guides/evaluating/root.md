@@ -73,3 +73,17 @@ maxdepth: 1
 ---
 modules.md
 ```
+
+## Evaluating with `LabelledRagDataset`'s
+
+For details on how to perform evaluation of a RAG system with various evaluation
+datasets, called `LabelledRagDataset`'s see below:
+
+```{toctree}
+---
+maxdepth: 1
+---
+
+evaluating_with_llamadatasets.md
+contributing_llamadatasets.md
+```

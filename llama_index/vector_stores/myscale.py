@@ -266,9 +266,9 @@ class MyScaleVectorStore(VectorStore):
             if query.doc_ids
             else None
         )
-        if query.filters is not None:
+        if query.filters is not None and len(query.filters.legacy_filters()) > 0:
             where_str = self._append_meta_filter_condition(
-                where_str, query.filters.filters
+                where_str, query.filters.legacy_filters()
             )
 
         # build query sql

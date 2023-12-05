@@ -47,17 +47,23 @@ from llama_index import (
 # Create a local Qdrant vector store
 client = qdrant_client.QdrantClient(path="qdrant_mm_db")
 
+# if you only need image_store for image retrieval,
+# you can remove text_sotre
 text_store = QdrantVectorStore(
     client=client, collection_name="text_collection"
 )
 image_store = QdrantVectorStore(
     client=client, collection_name="image_collection"
 )
+
+# if you only need image_store for image retrieval,
+# don't need to pass text_store for StorageContext
 storage_context = StorageContext.from_defaults(vector_store=text_store)
+# storage_context = StorageContext.from_defaults()
 
+# Load text and image documents from local folder
+documents = SimpleDirectoryReader("./data_folder/").load_data()
 # Create the MultiModal index
-documents = SimpleDirectoryReader("./mixed_wiki/").load_data()
-
 index = MultiModalVectorStoreIndex.from_documents(
     documents, storage_context=storage_context, image_vector_store=image_store
 )
@@ -100,11 +106,12 @@ response = query_engine.query(query_str)
 **Legend**
 
 - ✅ = should work fine
-- 🛑 = not available at the moment. Support on the way
+- ⚠️ = sometimes unreliable, may need more tuning to improve
+- 🛑 = not available at the moment.
 
 ### End to End Multi-Modal Work Flow
 
-The tables below attempt to show the **initial** steps with various LlamaIndex features for building your own Multi-Modal RAGs. You can combine different modules/steps together for composing your own Multi-Modal RAG orchestration.
+The tables below attempt to show the **initial** steps with various LlamaIndex features for building your own Multi-Modal RAGs (Retrieval Augmented Generation). You can combine different modules/steps together for composing your own Multi-Modal RAG orchestration.
 
 | Query Type | Data Sources<br>for MultiModal<br>Vector Store/Index | MultiModal<br>Embedding                | Retriever                                        | Query<br>Engine        | Output<br>Data<br>Type                   |
 | ---------- | ---------------------------------------------------- | -------------------------------------- | ------------------------------------------------ | ---------------------- | ---------------------------------------- |
@@ -115,18 +122,18 @@ The tables below attempt to show the **initial** steps with various LlamaIndex f
 
 ### Multi-Modal LLM Models
 
-These notebooks serve as examples how to leverage and integrate Multi-Modal LLM model, Multi-Modal embeddings, Multi-Modal vector stores, Retriever, Query engine for composing Multi-Modal RAG orchestration.
+These notebooks serve as examples how to leverage and integrate Multi-Modal LLM model, Multi-Modal embeddings, Multi-Modal vector stores, Retriever, Query engine for composing Multi-Modal Retrieval Augmented Generation (RAG) orchestration.
 
-| Multi-Modal<br>Vision Models                                                     | Single<br>Image<br>Reasoning | Multiple<br>Images<br>Reasoning | Image<br>Embeddings | Simple<br>Query<br>Engine |
-| -------------------------------------------------------------------------------- | ---------------------------- | ------------------------------- | ------------------- | ------------------------- |
-| [GPT4V](/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb)<br>(OpenAI API) | ✅                           | ✅                              | 🛑                  | ✅                        |
-| [CLIP](/examples/multi_modal/image_to_image_retrieval.ipynb)<br>(Local host)     | 🛑                           | 🛑                              | ✅                  | 🛑                        |
-| [LLaVa](/examples/multi_modal/llava_multi_modal_tesla_10q.ipynb)<br>(replicate)  | ✅                           | 🛑                              | 🛑                  | ✅                        |
-| [Fuyu-8B](/examples/multi_modal/replicate_multi_modal.ipynb)<br>(replicate)      | ✅                           | 🛑                              | 🛑                  | ✅                        |
-| [ImageBind<br>](https://imagebind.metademolab.com/)[To integrate]                | 🛑                           | 🛑                              | ✅                  | 🛑                        |
-| [MiniGPT-4<br>](/examples/multi_modal/replicate_multi_modal.ipynb)               | ✅                           | 🛑                              | 🛑                  | ✅                        |
-| [CogVLM<br>](https://github.com/THUDM/CogVLM)[To integrate]                      | ✅                           | 🛑                              | 🛑                  | ✅                        |
-| [Qwen-VL<br>](https://arxiv.org/abs/2308.12966)[To integrate]                    | ✅                           | 🛑                              | 🛑                  | ✅                        |
+| Multi-Modal<br>Vision Models                                                     | Single<br>Image<br>Reasoning | Multiple<br>Images<br>Reasoning | Image<br>Embeddings | Simple<br>Query<br>Engine | Pydantic<br>Structured<br>Output |
+| -------------------------------------------------------------------------------- | ---------------------------- | ------------------------------- | ------------------- | ------------------------- | -------------------------------- |
+| [GPT4V](/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb)<br>(OpenAI API) | ✅                           | ✅                              | 🛑                  | ✅                        | ✅                               |
+| [CLIP](/examples/multi_modal/image_to_image_retrieval.ipynb)<br>(Local host)     | 🛑                           | 🛑                              | ✅                  | 🛑                        | 🛑                               |
+| [LLaVa](/examples/multi_modal/llava_multi_modal_tesla_10q.ipynb)<br>(replicate)  | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
+| [Fuyu-8B](/examples/multi_modal/replicate_multi_modal.ipynb)<br>(replicate)      | ✅                           | 🛑                              | 🛑                  | ✅                        | ✅                               |
+| [ImageBind<br>](https://imagebind.metademolab.com/)[To integrate]                | 🛑                           | 🛑                              | ✅                  | 🛑                        | 🛑                               |
+| [MiniGPT-4<br>](/examples/multi_modal/replicate_multi_modal.ipynb)               | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
+| [CogVLM<br>](https://github.com/THUDM/CogVLM)                                    | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
+| [Qwen-VL<br>](https://arxiv.org/abs/2308.12966)[To integrate]                    | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
 
 ### Multi Modal Vector Stores
 
@@ -137,9 +144,9 @@ Below table lists some vector stores supporting Multi-Modal use cases. Our Llama
 | [Chroma](/examples/multi_modal/ChromaMultiModalDemo.ipynb) | ✅ | 🛑 | CLIP ✅ | CLIP ✅ |
 | [Weaviate](https://weaviate.io/developers/weaviate/modules/retriever-vectorizer-modules/multi2vec-bind)<br>[To integrate] | ✅ | 🛑 | CLIP ✅<br>ImageBind ✅ | CLIP ✅<br>ImageBind ✅ |
 
-## Modules
+## Multi-Modal LLM Modules
 
-We support integrations with GPT-4V, LLaVA, Fuyu-8B, CLIP, and more.
+We support integrations with GPT4-V, CLIP (OpenAI), BLIP (Salesforce), and Replicate (LLaVA, Fuyu-8B, MiniGPT-4, CogVLM), and more.
 
 ```{toctree}
 ---
@@ -147,17 +154,29 @@ maxdepth: 1
 ---
 /examples/multi_modal/openai_multi_modal.ipynb
 /examples/multi_modal/replicate_multi_modal.ipynb
-/examples/multi_modal/multi_modal_retrieval.ipynb
-/examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
-/examples/multi_modal/image_to_image_retrieval.ipynb
-/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
+/examples/multi_modal/multi_modal_pydantic.ipynb
 /examples/multi_modal/gpt4v_experiments_cot.ipynb
+/examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
+```
+
+## Multi-Modal Retrieval Augmented Generation
+
+We support Multi-Modal Retrieval Augmented Generation with different Multi-Modal LLMs with Multi-Modal vector stores.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
+/examples/multi_modal/multi_modal_pdf_tables.ipynb
+/examples/multi_modal/multi_modal_retrieval.ipynb
+/examples/multi_modal/image_to_image_retrieval.ipynb
 /examples/multi_modal/ChromaMultiModalDemo.ipynb
 ```
 
 ## Evaluation
 
-We support basic evaluation for Multi-Modal LLM and RAG.
+We support basic evaluation for Multi-Modal LLM and Retrieval Augmented Generation.
 
 ```{toctree}
 ---
