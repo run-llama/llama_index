@@ -65,11 +65,11 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         if image_vector_store is not None:
             if self.image_namespace not in storage_context.vector_stores:
-                # use existing image_store from storage_context if it exists
                 storage_context.add_vector_store(
                     image_vector_store, self.image_namespace
                 )
             else:
+                # overwrite image_store from storage_context
                 storage_context.vector_stores[self.image_namespace] = image_vector_store
 
         if self.image_namespace not in storage_context.vector_stores:
