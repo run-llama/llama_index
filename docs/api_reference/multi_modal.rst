@@ -25,7 +25,7 @@ Multi-Modal LLM Interface
 
 Multi-Modal Embedding
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: llama_index.embedding.multi_modal_base.MultiModalEmbedding
+.. autoclass:: llama_index.embeddings.multi_modal_base.MultiModalEmbedding
    :members:
    :inherited-members:
 
