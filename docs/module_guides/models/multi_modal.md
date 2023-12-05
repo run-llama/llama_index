@@ -56,16 +56,16 @@ image_store = QdrantVectorStore(
     client=client, collection_name="image_collection"
 )
 
-# if you only need image_store for image retrieval,
-# don't need to pass text_store for StorageContext
-storage_context = StorageContext.from_defaults(vector_store=text_store)
-# storage_context = StorageContext.from_defaults()
+storage_context = StorageContext.from_defaults(
+    vector_store=text_store, image_store=image_store
+)
 
 # Load text and image documents from local folder
 documents = SimpleDirectoryReader("./data_folder/").load_data()
 # Create the MultiModal index
 index = MultiModalVectorStoreIndex.from_documents(
-    documents, storage_context=storage_context, image_vector_store=image_store
+    documents,
+    storage_context=storage_context,
 )
 ```
 
@@ -82,6 +82,10 @@ retriever_engine = index.as_retriever(
 
 # retrieve more information from the GPT4V response
 retrieval_results = retriever_engine.retrieve(response)
+
+# if you only need image retrieval without text retrieval
+# you can use `text_to_image_retrieve`
+# retrieval_results = retriever_engine.text_to_image_retrieve(response)
 
 qa_tmpl_str = (
     "Context information is below.\n"
