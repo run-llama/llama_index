@@ -1,5 +1,5 @@
 """SQL wrapper around SQLDatabase in langchain."""
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Callable
 
 from sqlalchemy import MetaData, create_engine, insert, inspect, text
 from sqlalchemy.engine import Engine
@@ -49,6 +49,7 @@ class SQLDatabase:
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
         max_string_length: int = 300,
+        preprocess_query_function: Callable[..., Any] = None,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -113,6 +114,7 @@ class SQLDatabase:
             only=list(self._usable_tables),
             schema=self._schema,
         )
+        self.preprocess_query_function = preprocess_query_function
 
     @property
     def engine(self) -> Engine:
@@ -183,12 +185,19 @@ class SQLDatabase:
         with self._engine.begin() as connection:
             connection.execute(stmt)
 
+    def _preprocess_query(self, query: str) -> str:
+        """Preprocess the SQL query."""
+        if self.preprocess_query_function:
+            return self.preprocess_query_function(query)
+        return query  # Return the query unchanged if no preprocessing function is provided
+    
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """Execute a SQL statement and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
         """
+        command = self._preprocess_query(command)
         with self._engine.begin() as connection:
             try:
                 cursor = connection.execute(text(command))
