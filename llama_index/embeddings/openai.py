@@ -302,6 +302,7 @@ class OpenAIEmbedding(BaseEmbedding):
 
         self._client = None
         self._aclient = None
+        self._http_client = http_client
 
     def _get_client(self) -> OpenAI:
         if not self.reuse_client:
