@@ -233,6 +233,15 @@ maxdepth: 1
 /examples/llm/vertex.ipynb
 ```
 
+## vLLM
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/vllm.ipynb
+```
+
 ## Xorbits Inference
 
 ```{toctree}

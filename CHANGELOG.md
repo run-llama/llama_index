@@ -5,6 +5,7 @@
 ### New Features
 
 - Added an option `reuse_client` to openai/azure to help with async timeouts. Set to `False` to see improvements (#9301)
+- Added support for `vLLM` llm (#9257)
 
 ## [0.9.11] - 2023-12-03
 
