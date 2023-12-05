@@ -14,8 +14,8 @@ Multi-Modal LLM Implementations
    :maxdepth: 1
    :caption: Multi-Modal LLM Implementations
 
-   multi_modal_llms/openai.rst
-   multi_modal_llms/replicate_multi_modal.rst
+   multi_modal/openai.rst
+   multi_modal/replicate.rst
 
 Multi-Modal LLM Interface
 ^^^^^^^^^^^^^^^^^^^^^^^

@@ -17,6 +17,7 @@ API Reference for the ``llama-index`` package.
    llm_predictor.rst
    llms.rst
    memory.rst
+   multi_modal.rst
    node_postprocessor.rst
    node.rst
    playground.rst
