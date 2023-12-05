@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fixed save and load for faiss vector store (#9330)
+
 ## [0.9.12] - 2023-12-05
 
 ### New Features
