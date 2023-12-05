@@ -4,8 +4,21 @@
 
 ### New Features
 
+- Added an option `reuse_client` to openai/azure to help with async timeouts. Set to `False` to see improvements (#9301)
+
+## [0.9.11] - 2023-12-03
+
+### New Features
+
+- Make `reference_contexts` optional in `LabelledRagDataset` (#9266)
+- Re-organize `download` module (#9253)
 - Added document management to ingestion pipeline (#9135)
 - Add docs for `LabelledRagDataset` (#9228)
+- Add submission template notebook and other doc updates for `LabelledRagDataset` (#9273)
+
+### Bug Fixes / Nits
+
+- Convert numpy to list for `InstructorEmbedding` (#9255)
 
 ## [0.9.10] - 2023-11-30
 
