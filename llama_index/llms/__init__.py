@@ -25,7 +25,7 @@ from llama_index.llms.konko import Konko
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.litellm import LiteLLM
 from llama_index.llms.llama_cpp import LlamaCPP
-from llama_index.llms.localai import LocalAI
+from llama_index.llms.localai import LOCALAI_DEFAULTS, LocalAI
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.monsterapi import MonsterLLM
 from llama_index.llms.ollama import Ollama
@@ -38,6 +38,7 @@ from llama_index.llms.portkey import Portkey
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
 from llama_index.llms.vertex import Vertex
+from llama_index.llms.vllm import Vllm
 from llama_index.llms.watsonx import WatsonX
 from llama_index.llms.xinference import Xinference
 
@@ -69,6 +70,7 @@ __all__ = [
     "LiteLLM",
     "LlamaCPP",
     "LocalAI",
+    "LOCALAI_DEFAULTS",
     "MessageRole",
     "MockLLM",
     "MonsterLLM",
@@ -84,5 +86,7 @@ __all__ = [
     "Replicate",
     "WatsonX",
     "Xinference",
+    "Vllm",
+    "VllmServer",
     "Vertex",
 ]

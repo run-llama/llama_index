@@ -4,7 +4,7 @@ An index that that is built on top of Vectara.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
@@ -33,17 +33,15 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_after (int):
              number of sentences after the matched sentence to return in the node
         filter: metadata filter (if specified)
-        vectara_kwargs (dict): Additional vectara specific kwargs to pass
-            through to Vectara at query time.
-            * mmr_k: number of results to fetch for MMR, defaults to 50
-            * mmr_diversity_bias: number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding
-                to minimum diversity and 1 to maximum diversity.
-                Defaults to 0.3.
-            * summary_enabled: whether to generate summaries or not. Defaults to False.
-            * summary_response_lang: language to use for summary generation.
-            * summary_num_results: number of results to use for summary generation.
-            * summary_prompt_name: name of the prompt to use for summary generation.
+        mmr_k: number of results to fetch for MMR, defaults to 50
+        mmr_diversity_bias: number between 0 and 1 that determines the degree
+            of diversity among the results with 0 corresponding
+            to minimum diversity and 1 to maximum diversity.
+            Defaults to 0.3.
+        summary_enabled: whether to generate summaries or not. Defaults to False.
+        summary_response_lang: language to use for summary generation.
+        summary_num_results: number of results to use for summary generation.
+        summary_prompt_name: name of the prompt to use for summary generation.
     """
 
     def __init__(
@@ -65,7 +63,6 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_before = n_sentences_before
         self._n_sentences_after = n_sentences_after
         self._filter = filter
-        self._kwargs: Dict[str, Any] = kwargs.get("vectara_kwargs", {})
 
         if vectara_query_mode == ManagedIndexQueryMode.MMR:
             self._mmr = True

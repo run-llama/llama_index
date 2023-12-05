@@ -1,14 +1,21 @@
 import re
+from enum import Enum
 from hashlib import sha256
+from pathlib import Path
 from typing import Any, List, Optional, Sequence
+
+from fsspec import AbstractFileSystem
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.ingestion.cache import IngestionCache
+from llama_index.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
 from llama_index.node_parser import SentenceSplitter
 from llama_index.readers.base import ReaderConfig
 from llama_index.schema import BaseNode, Document, MetadataMode, TransformComponent
 from llama_index.service_context import ServiceContext
+from llama_index.storage.docstore import BaseDocumentStore, SimpleDocumentStore
+from llama_index.storage.storage_context import DOCSTORE_FNAME
+from llama_index.utils import concat_dirs
 from llama_index.vector_stores.types import BasePydanticVectorStore
 
 
@@ -108,6 +115,13 @@ async def arun_transformations(
     return nodes
 
 
+class DocstoreStrategy(str, Enum):
+    """Document de-duplication strategy."""
+
+    UPSERTS = "upserts"
+    DUPLICATES_ONLY = "duplicates_only"
+
+
 class IngestionPipeline(BaseModel):
     """An ingestion pipeline that can be applied to data."""
 
@@ -124,7 +138,17 @@ class IngestionPipeline(BaseModel):
         default_factory=IngestionCache,
         description="Cache to use to store the data",
     )
+    docstore: Optional[BaseDocumentStore] = Field(
+        default=None,
+        description="Document store to use for de-duping with a vector store.",
+    )
+    docstore_strategy: DocstoreStrategy = Field(
+        default=DocstoreStrategy.UPSERTS, description="Document de-dup strategy."
+    )
     disable_cache: bool = Field(default=False, description="Disable the cache")
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def __init__(
         self,
@@ -133,6 +157,8 @@ class IngestionPipeline(BaseModel):
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
+        docstore: Optional[BaseDocumentStore] = None,
+        docstore_strategy: DocstoreStrategy = DocstoreStrategy.UPSERTS,
     ) -> None:
         if transformations is None:
             transformations = self._get_default_transformations()
@@ -143,6 +169,8 @@ class IngestionPipeline(BaseModel):
             documents=documents,
             vector_store=vector_store,
             cache=cache or IngestionCache(),
+            docstore=docstore,
+            docstore_strategy=docstore_strategy,
         )
 
     @classmethod
@@ -153,6 +181,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
+        docstore: Optional[BaseDocumentStore] = None,
     ) -> "IngestionPipeline":
         transformations = [
             *service_context.transformations,
@@ -165,7 +194,53 @@ class IngestionPipeline(BaseModel):
             documents=documents,
             vector_store=vector_store,
             cache=cache,
+            docstore=docstore,
         )
+
+    def persist(
+        self,
+        persist_dir: str = "./pipeline_storage",
+        fs: Optional[AbstractFileSystem] = None,
+        cache_name: str = DEFAULT_CACHE_NAME,
+        docstore_name: str = DOCSTORE_FNAME,
+    ) -> None:
+        """Persist the pipeline to disk."""
+        if fs is not None:
+            persist_dir = str(persist_dir)  # NOTE: doesn't support Windows here
+            docstore_path = concat_dirs(persist_dir, docstore_name)
+            cache_path = concat_dirs(persist_dir, cache_name)
+
+        else:
+            persist_path = Path(persist_dir)
+            docstore_path = str(persist_path / docstore_name)
+            cache_path = str(persist_path / cache_name)
+
+        self.cache.persist(cache_path, fs=fs)
+        if self.docstore is not None:
+            self.docstore.persist(docstore_path, fs=fs)
+
+    def load(
+        self,
+        persist_dir: str = "./pipeline_storage",
+        fs: Optional[AbstractFileSystem] = None,
+        cache_name: str = DEFAULT_CACHE_NAME,
+        docstore_name: str = DOCSTORE_FNAME,
+    ) -> None:
+        """Load the pipeline from disk."""
+        if fs is not None:
+            self.cache = IngestionCache.from_persist_path(
+                concat_dirs(persist_dir, cache_name), fs=fs
+            )
+            self.docstore = SimpleDocumentStore.from_persist_path(
+                concat_dirs(persist_dir, docstore_name), fs=fs
+            )
+        else:
+            self.cache = IngestionCache.from_persist_path(
+                str(Path(persist_dir) / cache_name)
+            )
+            self.docstore = SimpleDocumentStore.from_persist_path(
+                str(Path(persist_dir) / docstore_name)
+            )
 
     def _get_default_transformations(self) -> List[TransformComponent]:
         return [
@@ -173,15 +248,9 @@ class IngestionPipeline(BaseModel):
             resolve_embed_model("default"),
         ]
 
-    def run(
-        self,
-        show_progress: bool = False,
-        documents: Optional[List[Document]] = None,
-        nodes: Optional[List[BaseNode]] = None,
-        cache_collection: Optional[str] = None,
-        in_place: bool = True,
-        **kwargs: Any,
-    ) -> Sequence[BaseNode]:
+    def _prepare_inputs(
+        self, documents: Optional[List[Document]], nodes: Optional[List[BaseNode]]
+    ) -> List[Document]:
         input_nodes: List[BaseNode] = []
         if documents is not None:
             input_nodes += documents
@@ -195,8 +264,84 @@ class IngestionPipeline(BaseModel):
         if self.reader is not None:
             input_nodes += self.reader.read()
 
+        return input_nodes
+
+    def _handle_duplicates(self, nodes: List[BaseNode]) -> List[BaseNode]:
+        """Handle docstore duplicates by checking all hashes."""
+        assert self.docstore is not None
+
+        existing_hashes = self.docstore.get_all_document_hashes()
+        current_hashes = []
+        nodes_to_run = []
+        for node in nodes:
+            if node.hash not in existing_hashes and node.hash not in current_hashes:
+                self.docstore.add_documents([node])
+                self.docstore.set_document_hash(node.id_, node.hash)
+                nodes_to_run.append(node)
+                current_hashes.append(node.hash)
+        return nodes_to_run
+
+    def _handle_upserts(self, nodes: List[BaseNode]) -> List[BaseNode]:
+        """Handle docstore upserts by checking hashes and ids."""
+        assert self.docstore is not None
+
+        deduped_nodes_to_run = {}
+        for node in nodes:
+            ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
+
+            existing_hash = self.docstore.get_document_hash(ref_doc_id)
+            if not existing_hash:
+                # document doesn't exist, so add it
+                self.docstore.add_documents([node])
+                self.docstore.set_document_hash(ref_doc_id, node.hash)
+                deduped_nodes_to_run[ref_doc_id] = node
+            elif existing_hash and existing_hash != node.hash:
+                self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+
+                if self.vector_store is not None:
+                    self.vector_store.delete(ref_doc_id)
+
+                self.docstore.add_documents([node])
+                self.docstore.set_document_hash(ref_doc_id, node.hash)
+
+                deduped_nodes_to_run[ref_doc_id] = node
+            else:
+                continue  # document exists and is unchanged, so skip it
+
+        return list(deduped_nodes_to_run.values())
+
+    def run(
+        self,
+        show_progress: bool = False,
+        documents: Optional[List[Document]] = None,
+        nodes: Optional[List[BaseNode]] = None,
+        cache_collection: Optional[str] = None,
+        in_place: bool = True,
+        **kwargs: Any,
+    ) -> Sequence[BaseNode]:
+        input_nodes = self._prepare_inputs(documents, nodes)
+
+        # check if we need to dedup
+        if self.docstore is not None and self.vector_store is not None:
+            if self.docstore_strategy == DocstoreStrategy.UPSERTS:
+                nodes_to_run = self._handle_upserts(input_nodes)
+            elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+                nodes_to_run = self._handle_duplicates(input_nodes)
+            else:
+                raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
+        elif self.docstore is not None and self.vector_store is None:
+            if self.docstore_strategy == DocstoreStrategy.UPSERTS:
+                print(
+                    "Docstore strategy set to upserts, but no vector store. "
+                    "Switching to duplicates_only strategy."
+                )
+                self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
+            nodes_to_run = self._handle_duplicates(input_nodes)
+        else:
+            nodes_to_run = input_nodes
+
         nodes = run_transformations(
-            input_nodes,
+            nodes_to_run,
             self.transformations,
             show_progress=show_progress,
             cache=self.cache if not self.disable_cache else None,
@@ -219,18 +364,7 @@ class IngestionPipeline(BaseModel):
         in_place: bool = True,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
-        input_nodes: List[BaseNode] = []
-        if documents is not None:
-            input_nodes += documents
-
-        if nodes is not None:
-            input_nodes += nodes
-
-        if self.documents is not None:
-            input_nodes += self.documents
-
-        if self.reader is not None:
-            input_nodes += self.reader.read()
+        input_nodes = self._prepare_inputs(documents, nodes)
 
         nodes = await arun_transformations(
             input_nodes,

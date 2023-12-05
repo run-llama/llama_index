@@ -44,6 +44,7 @@ CHAT_ONLY_MODELS = {
     "anthropic.claude-instant-v1": 100000,
     "anthropic.claude-v1": 100000,
     "anthropic.claude-v2": 100000,
+    "anthropic.claude-v2:1": 200000,
     "meta.llama2-13b-chat-v1": 2048,
 }
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}

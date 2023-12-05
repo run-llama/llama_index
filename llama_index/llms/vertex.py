@@ -45,14 +45,14 @@ class Vertex(LLM):
         default=False, description="Flag to determine if current model is a Code Model"
     )
     _client: Any = PrivateAttr()
-    _chatclient: Any = PrivateAttr()
+    _chat_client: Any = PrivateAttr()
 
     def __init__(
         self,
         model: str = "text-bison",
         project: Optional[str] = None,
         location: Optional[str] = None,
-        credential: Optional[str] = None,
+        credentials: Optional[Any] = None,
         examples: Optional[Sequence[ChatMessage]] = None,
         temperature: float = 0.1,
         max_tokens: int = 512,
@@ -61,7 +61,7 @@ class Vertex(LLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        init_vertexai(project=project, location=location, credentials=credential)
+        init_vertexai(project=project, location=location, credentials=credentials)
 
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -69,11 +69,11 @@ class Vertex(LLM):
         if model in CHAT_MODELS:
             from vertexai.language_models import ChatModel
 
-            self._chatclient = ChatModel.from_pretrained(model)
+            self._chat_client = ChatModel.from_pretrained(model)
         elif model in CODE_CHAT_MODELS:
             from vertexai.language_models import CodeChatModel
 
-            self._chatclient = CodeChatModel.from_pretrained(model)
+            self._chat_client = CodeChatModel.from_pretrained(model)
             iscode = True
         elif model in CODE_MODELS:
             from vertexai.language_models import CodeGenerationModel
@@ -148,7 +148,7 @@ class Vertex(LLM):
             )
 
         generation = completion_with_retry(
-            client=self._chatclient,
+            client=self._chat_client,
             prompt=question,
             chat=True,
             stream=False,
@@ -195,7 +195,7 @@ class Vertex(LLM):
             )
 
         response = completion_with_retry(
-            client=self._chatclient,
+            client=self._chat_client,
             prompt=question,
             chat=True,
             stream=True,
@@ -267,7 +267,7 @@ class Vertex(LLM):
                 )
             )
         generation = await acompletion_with_retry(
-            client=self._chatclient,
+            client=self._chat_client,
             prompt=question,
             chat=True,
             params=chat_params,
