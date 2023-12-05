@@ -46,6 +46,7 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         text_qa_template: Optional[BasePromptTemplate] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
         self._retriever = retriever
         self._multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
