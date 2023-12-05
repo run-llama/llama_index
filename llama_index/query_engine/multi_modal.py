@@ -113,15 +113,13 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
             metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
         )
 
-    def image_synthesize(
+    def _get_response_with_images(
         self,
-        query_str: str,
-        nodes: List[NodeWithScore],
-        additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
+        prompt_str: str,
+        image_nodes: List[ImageNode],
     ) -> RESPONSE_TYPE:
-        image_nodes, _ = _get_image_and_text_nodes(nodes)
         fmt_prompt = self._image_qa_template.format(
-            query_str=query_str,
+            prompt_str=prompt_str,
         )
 
         llm_response = self._multi_modal_llm.complete(
@@ -130,7 +128,7 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         )
         return Response(
             response=str(llm_response),
-            source_nodes=nodes,
+            source_nodes=image_nodes,
             metadata={"image_nodes": image_nodes},
         )
 
@@ -179,24 +177,25 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
 
         return response
 
-    def image_query(self, image_query_str: QueryType, query_str: str) -> RESPONSE_TYPE:
+    def image_query(self, image_path: QueryType, prompt_str: str) -> RESPONSE_TYPE:
         """Answer a image query."""
         with self.callback_manager.event(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: str(image_query_str)}
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: str(image_path)}
         ) as query_event:
             with self.callback_manager.event(
                 CBEventType.RETRIEVE,
-                payload={EventPayload.QUERY_STR: str(image_query_str)},
+                payload={EventPayload.QUERY_STR: str(image_path)},
             ) as retrieve_event:
-                nodes = self._retriever.image_to_image_retrieve(image_query_str)
+                nodes = self._retriever.image_to_image_retrieve(image_path)
 
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
 
-            response = self.image_synthesize(
-                query_str=query_str,
-                nodes=nodes,
+            image_nodes, _ = _get_image_and_text_nodes(nodes)
+            response = self._get_response_with_images(
+                prompt_str=prompt_str,
+                image_nodes=image_nodes,
             )
 
             query_event.on_end(payload={EventPayload.RESPONSE: response})
