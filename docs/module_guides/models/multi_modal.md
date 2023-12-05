@@ -47,17 +47,23 @@ from llama_index import (
 # Create a local Qdrant vector store
 client = qdrant_client.QdrantClient(path="qdrant_mm_db")
 
+# if you only need image_store for image retrieval,
+# you can remove text_sotre
 text_store = QdrantVectorStore(
     client=client, collection_name="text_collection"
 )
 image_store = QdrantVectorStore(
     client=client, collection_name="image_collection"
 )
+
+# if you only need image_store for image retrieval,
+# don't need to pass text_store for StorageContext
 storage_context = StorageContext.from_defaults(vector_store=text_store)
+# storage_context = StorageContext.from_defaults()
 
-# Create the MultiModal index
+# Load text and image documents from local folder
 documents = SimpleDirectoryReader("./data_folder/").load_data()
-
+# Create the MultiModal index
 index = MultiModalVectorStoreIndex.from_documents(
     documents, storage_context=storage_context, image_vector_store=image_store
 )
@@ -140,7 +146,7 @@ Below table lists some vector stores supporting Multi-Modal use cases. Our Llama
 
 ## Multi-Modal LLM Modules
 
-We support integrations with GPT-4V, LLaVA, Fuyu-8B, CLIP, and more.
+We support integrations with GPT4-V, CLIP (OpenAI), BLIP (Salesforce), and Replicate (LLaVA, Fuyu-8B, MiniGPT-4, CogVLM), and more.
 
 ```{toctree}
 ---

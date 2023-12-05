@@ -117,10 +117,16 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        res = self._text_retrieve(query_bundle)
-        # using text to image retrievel here for image retrieval
-        # users can also use image_to_image retrieval
-        res.extend(self._text_to_image_retrieve(query_bundle))
+        res = []
+        # If text vector store is not empty, retrieve text nodes
+        # If text vector store is empty, please create index without text vector store
+        if self._vector_store.stores_text:
+            res.extend(self._text_retrieve(query_bundle))
+
+        # If image vector store is not empty, retrieve text nodes
+        # If image vector store is empty, please create index without image vector store
+        if self._image_vector_store.stores_text:
+            res.extend(self._text_to_image_retrieve(query_bundle))
         return res
 
     def _text_retrieve(
