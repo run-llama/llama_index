@@ -49,6 +49,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         store_nodes_override: bool = False,
         show_progress: bool = False,
         # Image-related kwargs
+        # image_vector_store going to be deprecated. image_store can be passed from storage_context
+        # keep image_vector_store here for backward compatibility
         image_vector_store: Optional[VectorStore] = None,
         image_embed_model: EmbedType = "clip",
         is_image_to_text: bool = False,
@@ -62,7 +64,13 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         storage_context = storage_context or StorageContext.from_defaults()
 
         if image_vector_store is not None:
-            storage_context.add_vector_store(image_vector_store, self.image_namespace)
+            if self.image_namespace not in storage_context.vector_stores:
+                storage_context.add_vector_store(
+                    image_vector_store, self.image_namespace
+                )
+            else:
+                # overwrite image_store from storage_context
+                storage_context.vector_stores[self.image_namespace] = image_vector_store
 
         if self.image_namespace not in storage_context.vector_stores:
             storage_context.add_vector_store(SimpleVectorStore(), self.image_namespace)

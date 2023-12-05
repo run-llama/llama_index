@@ -120,12 +120,12 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         res = []
         # If text vector store is not empty, retrieve text nodes
         # If text vector store is empty, please create index without text vector store
-        if self._vector_store.stores_text:
+        if self._vector_store is not None:
             res.extend(self._text_retrieve(query_bundle))
 
         # If image vector store is not empty, retrieve text nodes
         # If image vector store is empty, please create index without image vector store
-        if self._image_vector_store.stores_text:
+        if self._image_vector_store is not None:
             res.extend(self._text_to_image_retrieve(query_bundle))
         return res
 
