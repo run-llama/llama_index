@@ -242,7 +242,7 @@ class OpenAIEmbedding(BaseEmbedding):
         default=True,
         description=(
             "Reuse the OpenAI client between requests. When doing anything with large "
-            "volumes of async API calls, setting this to false can improve stability.",
+            "volumes of async API calls, setting this to false can improve stability."
         ),
     )
 
