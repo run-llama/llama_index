@@ -4,7 +4,7 @@ import json
 import time
 from abc import abstractmethod
 from enum import Enum
-from typing import List, Optional, Type, Union
+from typing import Iterable, List, Optional, Type, Union
 
 import tqdm
 from openai import RateLimitError
@@ -236,7 +236,7 @@ class BaseLlamaDataset(BaseModel):
         self,
         batch_size: int = 20,
         start_position: int = 0,
-    ):
+    ) -> Iterable[BaseLlamaDataExample]:
         """Batches examples and predictions with a given batch_size."""
         num_examples = len(self.examples)
         for ndx in range(start_position, num_examples, batch_size):
