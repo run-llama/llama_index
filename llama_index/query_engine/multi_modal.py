@@ -119,7 +119,7 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         image_nodes: List[ImageNode],
     ) -> RESPONSE_TYPE:
         fmt_prompt = self._image_qa_template.format(
-            prompt_str=prompt_str,
+            query_str=prompt_str,
         )
 
         llm_response = self._multi_modal_llm.complete(
