@@ -44,18 +44,21 @@ class ClarifaiEmbedding(BaseEmbedding):
     ):
         try:
             import os
+
             from clarifai.client.model import Model
         except ImportError:
             raise ImportError("ClarifaiEmbedding requires `pip install clarifai`.")
-        
+
         embed_batch_size = min(128, embed_batch_size)
 
         if pat is None and os.environ.get("CLARIFAI_PAT") is not None:
             pat = os.environ.get("CLARIFAI_PAT")
 
         if not pat and os.environ.get("CLARIFAI_PAT") is None:
-           raise ValueError("Set `CLARIFAI_PAT` as env variable or pass `pat` as constructor argument")
-            
+            raise ValueError(
+                "Set `CLARIFAI_PAT` as env variable or pass `pat` as constructor argument"
+            )
+
         if model_url is not None and model_name is not None:
             raise ValueError("You can only specify one of model_url or model_name.")
         if model_url is None and model_name is None:
@@ -72,7 +75,7 @@ class ClarifaiEmbedding(BaseEmbedding):
                     app_id=app_id,
                     model_id=model_name,
                     model_version={"id": model_version_id},
-                    pat=pat
+                    pat=pat,
                 )
 
         if model_url is not None:
@@ -101,16 +104,16 @@ class ClarifaiEmbedding(BaseEmbedding):
             for i in range(0, len(sentences), self.embed_batch_size):
                 batch = sentences[i : i + self.embed_batch_size]
                 input_batch = [
-                        Inputs.get_text_input(input_id=str(id), raw_text=inp)
-                        for id, inp in enumerate(batch)
-                    ]
+                    Inputs.get_text_input(input_id=str(id), raw_text=inp)
+                    for id, inp in enumerate(batch)
+                ]
                 predict_response = self._model.predict(input_batch)
                 embeddings.extend(
-                        [
-                            list(output.data.embeddings[0].vector)
-                            for output in predict_response.outputs
-                        ]
-                    )
+                    [
+                        list(output.data.embeddings[0].vector)
+                        for output in predict_response.outputs
+                    ]
+                )
         except Exception as e:
             logger.error(f"Predict failed, exception: {e}")
 
