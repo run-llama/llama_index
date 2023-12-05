@@ -1,11 +1,10 @@
-from typing import Any, Callable, Dict, List, Optional, Type, Union
-
 import abc
 import json
 import queue
 import random
 import time
 from functools import partial
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import google.protobuf.json_format
 import numpy as np
@@ -90,8 +89,7 @@ if USE_LANGCHAIN:
 
         @property
         def _invocation_params(self, **kwargs: Any) -> Dict[str, Any]:
-            params = {**self._get_model_default_parameters, **kwargs}
-            return params
+            return {**self._get_model_default_parameters, **kwargs}
 
         @property
         def _identifying_params(self) -> Dict[str, Any]:
@@ -191,13 +189,13 @@ class StreamingResponseGenerator(queue.Queue[Optional[str]]):
     def __iter__(self) -> "StreamingResponseGenerator":
         """Return self as a generator."""
         return self
-    
+
     def __next__(self) -> str:
         """Return the next retrieved token."""
         val = self.get()
         if val is None or val in STOP_WORDS:
             self._stop_stream()
-            raise StopIteration()
+            raise StopIteration
         return val
 
     def _stop_stream(self) -> None:
@@ -222,7 +220,7 @@ class _BaseTritonClient(abc.ABC):
     ) -> Union[
         Type[grpcclient.InferenceServerClient], Type[httpclient.InferenceServerClient]
     ]:
-        """Return the prefered InferenceServerClient class."""
+        """Return the preferred InferenceServerClient class."""
 
     @property
     @abc.abstractmethod
@@ -260,7 +258,7 @@ class _BaseTritonClient(abc.ABC):
         return [model["name"] for model in res["models"]]
 
     def get_model_concurrency(self, model_name: str, timeout: int = 1000) -> int:
-        """Get the modle concurrency."""
+        """Get the model concurrency."""
         self.load_model(model_name, timeout)
         instances = self._client.get_model_config(model_name, as_json=True)["config"][
             "instance_group"
@@ -325,7 +323,7 @@ class _BaseTritonClient(abc.ABC):
         beam_width_array = np.array([beam_width]).astype(np.uint32).reshape((1, -1))
         streaming_data = np.array([[stream]], dtype=bool)
 
-        inputs = [
+        return [
             self._prepare_tensor("text_input", query),
             self._prepare_tensor("max_tokens", request_output_len),
             self._prepare_tensor("top_k", runtime_top_k),
@@ -337,7 +335,6 @@ class _BaseTritonClient(abc.ABC):
             self._prepare_tensor("beam_width", beam_width_array),
             self._prepare_tensor("stream", streaming_data),
         ]
-        return inputs
 
     def _trim_batch_response(self, result_str: str) -> str:
         """Trim the resulting response from a batch request by removing provided prompt and extra generated text."""
@@ -347,8 +344,7 @@ class _BaseTritonClient(abc.ABC):
         end_token = generated.find("</s>")
         if end_token == -1:
             return generated
-        generated = generated[:end_token].strip()
-        return generated
+        return generated[:end_token].strip()
 
 
 class GrpcTritonClient(_BaseTritonClient):
@@ -358,7 +354,7 @@ class GrpcTritonClient(_BaseTritonClient):
     def _inference_server_client(
         self,
     ) -> Type[grpcclient.InferenceServerClient]:
-        """Return the prefered InferenceServerClient class."""
+        """Return the preferred InferenceServerClient class."""
         return grpcclient.InferenceServerClient  # type: ignore
 
     @property
@@ -489,7 +485,7 @@ class HttpTritonClient(_BaseTritonClient):
     def _inference_server_client(
         self,
     ) -> Type[httpclient.InferenceServerClient]:
-        """Return the prefered InferenceServerClient class."""
+        """Return the preferred InferenceServerClient class."""
         return httpclient.InferenceServerClient  # type: ignore
 
     @property
