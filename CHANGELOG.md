@@ -1,11 +1,19 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.12] - 2023-12-05
 
 ### New Features
 
 - Added an option `reuse_client` to openai/azure to help with async timeouts. Set to `False` to see improvements (#9301)
 - Added support for `vLLM` llm (#9257)
+- Add support for python 3.12 (#9304)
+- Support for `claude-2.1` model name (#9275)
+
+### Bug Fixes / Nits
+
+- Fix embedding format for bedrock cohere embeddings (#9265)
+- Use `delete_kwargs` for filtering in weaviate vector store (#9300)
+- Fixed automatic qdrant client construction (#9267)
 
 ## [0.9.11] - 2023-12-03
 
