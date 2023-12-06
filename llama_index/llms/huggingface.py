@@ -116,6 +116,15 @@ class HuggingFaceLLM(CustomLLM):
         default_factory=dict,
         description="The kwargs to pass to the model during generation.",
     )
+    is_chat_model: bool = Field(
+        default=False,
+        description=(
+            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            + " Be sure to verify that you either pass an appropriate tokenizer "
+            "that can convert prompts to properly formatted chat messages or a "
+            "`messages_to_prompt` that does so."
+        ),
+    )
 
     _model: Any = PrivateAttr()
     _tokenizer: Any = PrivateAttr()
@@ -138,6 +147,7 @@ class HuggingFaceLLM(CustomLLM):
         tokenizer_outputs_to_remove: Optional[list] = None,
         model_kwargs: Optional[dict] = None,
         generate_kwargs: Optional[dict] = None,
+        is_chat_model: Optional[bool] = False,
         messages_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
@@ -225,6 +235,7 @@ class HuggingFaceLLM(CustomLLM):
             tokenizer_outputs_to_remove=tokenizer_outputs_to_remove or [],
             model_kwargs=model_kwargs or {},
             generate_kwargs=generate_kwargs or {},
+            is_chat_model=is_chat_model,
             callback_manager=callback_manager,
         )
 
@@ -239,12 +250,16 @@ class HuggingFaceLLM(CustomLLM):
             context_window=self.context_window,
             num_output=self.max_new_tokens,
             model_name=self.model_name,
+            is_chat_model=self.is_chat_model,
         )
 
     def _tokenizer_messages_to_prompt(self, messages: Sequence[ChatMessage]) -> str:
         """Use the tokenizer to convert messages to prompt. Fallback to generic."""
         if hasattr(self._tokenizer, "apply_chat_template"):
-            messages_dict = [message.dict() for message in messages]
+            messages_dict = [
+                {"role": message.role.value, "content": message.content}
+                for message in messages
+            ]
             tokens = self._tokenizer.apply_chat_template(messages_dict)
             return self._tokenizer.decode(tokens)
 
