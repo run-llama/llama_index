@@ -250,7 +250,7 @@ class BaseLlamaDataset(BaseModel):
         query_engine: BaseQueryEngine,
         show_progress: bool = False,
         batch_size: int = 20,
-        sleep_time_in_seconds: int = 10,
+        sleep_time_in_seconds: int = 1,
     ) -> BaseLlamaPredictionDataset:
         """Async predict with a given query engine.
 
