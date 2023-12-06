@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- Added batch prediction support for `LabelledRagDataset` (#9332)
+
 ### Bug Fixes / Nits
 
 - Fixed save and load for faiss vector store (#9330)
