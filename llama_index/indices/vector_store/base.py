@@ -186,6 +186,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not nodes:
             return
 
+        # remove nodes with no content
+        nodes = [node for node in nodes if node.get_content()]
+
         nodes = self._get_node_with_embedding(nodes, show_progress)
         new_ids = self._vector_store.add(nodes, **insert_kwargs)
 

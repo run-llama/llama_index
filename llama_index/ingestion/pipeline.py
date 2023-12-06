@@ -212,6 +212,9 @@ class IngestionPipeline(BaseModel):
         default=None, description="Platform API key"
     )
 
+    class Config:
+        arbitrary_types_allowed = True
+
     def __init__(
         self,
         name: str = DEFAULT_PIPELINE_NAME,
