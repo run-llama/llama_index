@@ -223,9 +223,9 @@ A node postprocessor refines a list of retrieve nodes given configuration and co
 
 **Examples**:
 
-- [Keyword Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L32): filters nodes based on keyword match
-- [Similarity Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L62): filers nodes based on similarity threshold
-- [Prev Next Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L135): fetches additional nodes to augment context based on node relationships.
+- [Keyword Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L32): filters nodes based on keyword match
+- [Similarity Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L74): filers nodes based on similarity threshold
+- [Prev Next Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L175): fetches additional nodes to augment context based on node relationships.
 
 ---
 

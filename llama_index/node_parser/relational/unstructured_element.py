@@ -62,13 +62,22 @@ def html_to_df(html_str: str) -> pd.DataFrame:
         cols = [c.text.strip() if c.text is not None else "" for c in cols]
         data.append(cols)
 
+    """ Check if the table is empty"""
+    if len(data) == 0:
+        return None
+
+    """ Check if the all rows have the same number of columns """
+    if not all(len(row) == len(data[0]) for row in data):
+        return None
+
     return pd.DataFrame(data[1:], columns=data[0])
 
 
 def filter_table(table_element: Any) -> bool:
     """Filter table."""
     table_df = html_to_df(table_element.metadata.text_as_html)
-    return len(table_df) > 1 and len(table_df.columns) > 1
+    """ check if table_df is not None, has more than one row, and more than one column """
+    return table_df is not None and not table_df.empty and len(table_df.columns) > 1
 
 
 def extract_elements(
@@ -91,7 +100,13 @@ def extract_elements(
                     )
                 )
             else:
-                pass
+                """if not a table, keep it as Text as we don't want to loose context"""
+                from unstructured.documents.html import HTMLText
+
+                newElement = HTMLText(str(element), tag=element.tag)
+                output_els.append(
+                    Element(id=f"id_{idx}", type="text", element=newElement)
+                )
         else:
             output_els.append(Element(id=f"id_{idx}", type="text", element=element))
     return output_els
@@ -261,7 +276,6 @@ class UnstructuredElementNodeParser(NodeParser):
         table_elements = get_table_elements(elements)
         # extract summaries over table elements
         extract_table_summaries(table_elements, self.llm, self.summary_query_str)
-
         # convert into nodes
         # will return a list of Nodes and Index Nodes
         return get_nodes_from_elements(elements)

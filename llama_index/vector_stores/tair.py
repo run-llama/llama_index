@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 def _to_filter_expr(filters: MetadataFilters) -> str:
     conditions = []
-    for f in filters.filters:
+    for f in filters.legacy_filters():
         value = str(f.value)
         if isinstance(f.value, str):
             value = '"' + value + '"'

@@ -3,6 +3,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
+import httpx
 from openai import AsyncOpenAI, OpenAI
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -234,11 +235,14 @@ class OpenAIEmbedding(BaseEmbedding):
         default=10, description="Maximum number of retries.", gte=0
     )
     timeout: float = Field(default=60.0, description="Timeout for each request.", gte=0)
+    default_headers: Optional[Dict[str, str]] = Field(
+        default=None, description="The default headers for API requests."
+    )
     reuse_client: bool = Field(
         default=True,
         description=(
             "Reuse the OpenAI client between requests. When doing anything with large "
-            "volumes of async API calls, setting this to false can improve stability.",
+            "volumes of async API calls, setting this to false can improve stability."
         ),
     )
 
@@ -246,6 +250,7 @@ class OpenAIEmbedding(BaseEmbedding):
     _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
     _client: Optional[OpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -260,6 +265,8 @@ class OpenAIEmbedding(BaseEmbedding):
         timeout: float = 60.0,
         reuse_client: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        default_headers: Optional[Dict[str, str]] = None,
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -289,11 +296,13 @@ class OpenAIEmbedding(BaseEmbedding):
             max_retries=max_retries,
             reuse_client=reuse_client,
             timeout=timeout,
+            default_headers=default_headers,
             **kwargs,
         )
 
         self._client = None
         self._aclient = None
+        self._http_client = http_client
 
     def _get_client(self) -> OpenAI:
         if not self.reuse_client:
@@ -321,6 +330,8 @@ class OpenAIEmbedding(BaseEmbedding):
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
+            "default_headers": self.default_headers,
+            "http_client": self._http_client,
         }
 
     def _get_query_embedding(self, query: str) -> List[float]:

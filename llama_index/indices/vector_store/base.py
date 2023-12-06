@@ -186,6 +186,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not nodes:
             return
 
+        # remove nodes with no content
+        nodes = [node for node in nodes if node.get_content()]
+
         nodes = self._get_node_with_embedding(nodes, show_progress)
         new_ids = self._vector_store.add(nodes, **insert_kwargs)
 
@@ -292,7 +295,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
         """Delete a document and it's nodes by using ref_doc_id."""
-        self._vector_store.delete(ref_doc_id)
+        self._vector_store.delete(ref_doc_id, **delete_kwargs)
 
         # delete from index_struct only if needed
         if not self._vector_store.stores_text or self._store_nodes_override:

@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from llama_index.embeddings import OpenAIEmbedding
 from llama_index.extractors import KeywordExtractor
@@ -6,6 +8,15 @@ from llama_index.llms import MockLLM
 from llama_index.node_parser import SentenceSplitter
 from llama_index.readers import ReaderConfig, StringIterableReader
 from llama_index.schema import Document
+
+python_version = sys.version
+
+
+# clean up folders after tests
+def teardown_function() -> None:
+    import shutil
+
+    shutil.rmtree("./test_pipeline", ignore_errors=True)
 
 
 def test_build_pipeline() -> None:
@@ -54,7 +65,8 @@ def test_run_local_pipeline() -> None:
 @pytest.mark.integration()
 def test_register() -> None:
     pipeline = IngestionPipeline(
-        name="Test",
+        name="Test" + python_version,
+        project_name="test_project" + python_version,
         readers=[
             ReaderConfig(
                 reader=StringIterableReader(),
@@ -72,7 +84,8 @@ def test_register() -> None:
 
     # update pipeline
     updated_pipeline = IngestionPipeline(
-        name="Test",
+        name="Test" + python_version,
+        project_name="test_project" + python_version,
         readers=[
             ReaderConfig(
                 reader=StringIterableReader(),
@@ -95,7 +108,8 @@ def test_register() -> None:
 @pytest.mark.integration()
 def test_from_pipeline_name() -> None:
     pipeline = IngestionPipeline(
-        name="Test",
+        name="Test" + python_version,
+        project_name="test_project" + python_version,
         readers=[
             ReaderConfig(
                 reader=StringIterableReader(),

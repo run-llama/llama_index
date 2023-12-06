@@ -43,6 +43,10 @@ from llama_index.vector_stores.tair import TairVectorStore
 from llama_index.vector_stores.tencentvectordb import TencentVectorDB
 from llama_index.vector_stores.timescalevector import TimescaleVectorStore
 from llama_index.vector_stores.types import (
+    ExactMatchFilter,
+    FilterCondition,
+    FilterOperator,
+    MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -86,6 +90,10 @@ __all__ = [
     "VectorStoreQuery",
     "VectorStoreQueryResult",
     "MetadataFilters",
+    "MetadataFilter",
+    "ExactMatchFilter",
+    "FilterCondition",
+    "FilterOperator",
     "DashVectorStore",
     "TencentVectorDB",
     "AstraDBVectorStore",

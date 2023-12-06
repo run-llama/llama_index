@@ -25,6 +25,7 @@ REPLICATE_MULTI_MODAL_LLM_MODELS = {
     "llava-13b": "yorickvp/llava-13b:2facb4a474a0462c15041b78b1ad70952ea46b5ec6ad29583c0b29dbd4249591",
     "fuyu-8b": "lucataco/fuyu-8b:42f23bc876570a46f5a90737086fbc4c3f79dd11753a28eaa39544dd391815e9",
     "minigpt-4": "daanelson/minigpt-4:b96a2f33cc8e4b0aa23eacfce731b9c41a7d9466d9ed4e167375587b54db9423",
+    "cogvlm": "naklecha/cogvlm:ec3886f9ea85dd0aee216585be5e6d07b04c9650f7b8b08363a14eb89e207eb2",
 }
 
 
@@ -57,7 +58,7 @@ class ReplicateMultiModal(MultiModalLLM):
 
     def __init__(
         self,
-        model: str = "lucataco/fuyu-8b:42f23bc876570a46f5a90737086fbc4c3f79dd11753a28eaa39544dd391815e9",
+        model: str = REPLICATE_MULTI_MODAL_LLM_MODELS["fuyu-8b"],
         temperature: float = 0.75,
         max_new_tokens: int = 512,
         num_input_files: int = 1,
