@@ -121,7 +121,7 @@ class HuggingFaceLLM(CustomLLM):
         description=(
             LLMMetadata.__fields__["is_chat_model"].field_info.description
             + " Be sure to verify that you either pass an appropriate tokenizer "
-            "that can convert prompts to properly formated chat messages or a "
+            "that can convert prompts to properly formatted chat messages or a "
             "`messages_to_prompt` that does so."
         ),
     )
