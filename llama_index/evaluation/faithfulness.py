@@ -1,6 +1,7 @@
 """Faithfulness evaluation."""
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Sequence
 
 from llama_index import ServiceContext
@@ -116,11 +117,15 @@ class FaithfulnessEvaluator(BaseEvaluator):
         query: str | None = None,
         response: str | None = None,
         contexts: Sequence[str] | None = None,
+        sleep_time_in_seconds: int = 0,
         **kwargs: Any,
     ) -> EvaluationResult:
         """Evaluate whether the response is faithful to the contexts."""
         del query  # Unused
         del kwargs  # Unused
+
+        await asyncio.sleep(sleep_time_in_seconds)
+
         if contexts is None or response is None:
             raise ValueError("contexts and response must be provided")
 

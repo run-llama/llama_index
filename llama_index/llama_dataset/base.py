@@ -218,7 +218,10 @@ class BaseLlamaDataset(BaseModel):
     # async methods
     @abstractmethod
     async def _apredict_example(
-        self, query_engine: BaseQueryEngine, example: BaseLlamaDataExample
+        self,
+        query_engine: BaseQueryEngine,
+        example: BaseLlamaDataExample,
+        sleep_time_in_seconds: int,
     ) -> BaseLlamaExamplePrediction:
         """Async predict on a single example.
 
@@ -266,19 +269,24 @@ class BaseLlamaDataset(BaseModel):
             start_example_position = len(self._predictions_cache)
         else:
             start_example_position = 0
-        print(f"start_example_position: {start_example_position}", flush=True)
+
         for batch in self._batch_examples(
             batch_size=batch_size, start_position=start_example_position
         ):
             tasks = []
             for example in batch:
-                tasks.append(self._apredict_example(query_engine, example))
+                tasks.append(
+                    self._apredict_example(query_engine, example, sleep_time_in_seconds)
+                )
             asyncio_mod = asyncio_module(show_progress=show_progress)
 
             try:
-                batch_predictions = await asyncio_mod.gather(*tasks)
+                batch_predictions = await asyncio_mod.gather(
+                    *tasks, desc="Batch processing of predictions"
+                )
             except RateLimitError as err:
-                print(f"num predictions cached: {len(self._predictions_cache)}")
+                if show_progress:
+                    asyncio_mod.close()
                 raise ValueError(
                     "You've hit rate limits on your OpenAI subscription. This"
                     " class caches previous predictions after each successful"
@@ -287,7 +295,7 @@ class BaseLlamaDataset(BaseModel):
                     "that have not yet been predicted. Try reducing your batch_size."
                 ) from err
             self._predictions_cache += batch_predictions
-            time.sleep(sleep_time_in_seconds)
+            # time.sleep(sleep_time_in_seconds)
 
         prediction_dataset = self._construct_prediction_dataset(
             predictions=self._predictions_cache

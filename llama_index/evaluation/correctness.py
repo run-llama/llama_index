@@ -1,4 +1,5 @@
 """Correctness evaluation."""
+import asyncio
 from typing import Any, Optional, Sequence, Union
 
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
@@ -113,10 +114,13 @@ class CorrectnessEvaluator(BaseEvaluator):
         response: Optional[str] = None,
         contexts: Optional[Sequence[str]] = None,
         reference: Optional[str] = None,
+        sleep_time_in_seconds: int = 0,
         **kwargs: Any,
     ) -> EvaluationResult:
         del kwargs  # Unused
         del contexts  # Unused
+
+        await asyncio.sleep(sleep_time_in_seconds)
 
         if query is None or response is None or reference is None:
             print(query, response, reference, flush=True)
