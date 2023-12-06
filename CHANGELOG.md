@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.9.13] - 2023-12-06
+
 ### New Features
 
 - Added batch prediction support for `LabelledRagDataset` (#9332)
