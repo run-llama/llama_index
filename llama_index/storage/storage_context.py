@@ -33,6 +33,7 @@ from llama_index.vector_stores.types import VectorStore
 
 DEFAULT_PERSIST_DIR = "./storage"
 IMAGE_STORE_FNAME = "image_store.json"
+IMAGE_VECTOR_STORE_NAMESPACE = "image"
 
 
 @dataclass
@@ -59,6 +60,7 @@ class StorageContext:
         docstore: Optional[BaseDocumentStore] = None,
         index_store: Optional[BaseIndexStore] = None,
         vector_store: Optional[VectorStore] = None,
+        image_store: Optional[VectorStore] = None,
         vector_stores: Optional[Dict[str, VectorStore]] = None,
         graph_store: Optional[GraphStore] = None,
         persist_dir: Optional[str] = None,
@@ -71,12 +73,14 @@ class StorageContext:
             index_store (Optional[BaseIndexStore]): index store
             vector_store (Optional[VectorStore]): vector store
             graph_store (Optional[GraphStore]): graph store
+            image_store (Optional[VectorStore]): image store
 
         """
         if persist_dir is None:
             docstore = docstore or SimpleDocumentStore()
             index_store = index_store or SimpleIndexStore()
             graph_store = graph_store or SimpleGraphStore()
+            image_store = image_store or SimpleVectorStore()
 
             if vector_store:
                 vector_stores = {DEFAULT_VECTOR_STORE: vector_store}
@@ -84,6 +88,9 @@ class StorageContext:
                 vector_stores = vector_stores or {
                     DEFAULT_VECTOR_STORE: SimpleVectorStore()
                 }
+            if image_store:
+                # append image store to vector stores
+                vector_stores[IMAGE_VECTOR_STORE_NAMESPACE] = image_store
         else:
             docstore = docstore or SimpleDocumentStore.from_persist_dir(
                 persist_dir, fs=fs
@@ -103,6 +110,9 @@ class StorageContext:
                 vector_stores = SimpleVectorStore.from_namespaced_persist_dir(
                     persist_dir, fs=fs
                 )
+            if image_store:
+                # append image store to vector stores
+                vector_stores[IMAGE_VECTOR_STORE_NAMESPACE] = image_store
 
         return cls(
             docstore=docstore,

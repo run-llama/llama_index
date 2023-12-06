@@ -8,6 +8,13 @@ from llama_index.readers import ReaderConfig, StringIterableReader
 from llama_index.schema import Document
 
 
+# clean up folders after tests
+def teardown_function() -> None:
+    import shutil
+
+    shutil.rmtree("./test_pipeline", ignore_errors=True)
+
+
 def test_build_pipeline() -> None:
     pipeline = IngestionPipeline(
         name="Test",

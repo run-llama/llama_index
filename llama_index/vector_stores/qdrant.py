@@ -72,8 +72,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         if client is None:
             client_kwargs = client_kwargs or {}
-            self._client = (
-                qdrant_client.QdrantClient(url=url, api_key=api_key, **client_kwargs),
+            self._client = qdrant_client.QdrantClient(
+                url=url, api_key=api_key, **client_kwargs
             )
         else:
             self._client = cast(qdrant_client.QdrantClient, client)
@@ -470,21 +470,51 @@ class QdrantVectorStore(BasePydanticVectorStore):
             return Filter(must=must_conditions)
 
         for subfilter in query.filters.filters:
-            if isinstance(subfilter.value, float):
+            # only for exact match
+            if not subfilter.operator or subfilter.operator == "==":
+                if isinstance(subfilter.value, float):
+                    must_conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            range=Range(
+                                gte=subfilter.value,
+                                lte=subfilter.value,
+                            ),
+                        )
+                    )
+                else:
+                    must_conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            match=MatchValue(value=subfilter.value),
+                        )
+                    )
+            elif subfilter.operator == "<":
                 must_conditions.append(
                     FieldCondition(
                         key=subfilter.key,
-                        range=Range(
-                            gte=subfilter.value,
-                            lte=subfilter.value,
-                        ),
+                        range=Range(lt=subfilter.value),
                     )
                 )
-            else:
+            elif subfilter.operator == ">":
                 must_conditions.append(
                     FieldCondition(
                         key=subfilter.key,
-                        match=MatchValue(value=subfilter.value),
+                        range=Range(gt=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == ">=":
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(gte=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == "<=":
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(lte=subfilter.value),
                     )
                 )
 

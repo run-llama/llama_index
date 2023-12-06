@@ -14,8 +14,14 @@ from typing import (
 )
 
 import fsspec
+from deprecated import deprecated
 
-from llama_index.bridge.pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
+from llama_index.bridge.pydantic import (
+    BaseModel,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
+)
 from llama_index.schema import BaseComponent, BaseNode, TextNode
 
 DEFAULT_PERSIST_DIR = "./storage"
@@ -52,8 +58,29 @@ class VectorStoreQueryMode(str, Enum):
     MMR = "mmr"
 
 
-class ExactMatchFilter(BaseModel):
-    """Exact match metadata filter for vector stores.
+class FilterOperator(str, Enum):
+    """Vector store filter operator."""
+
+    # TODO add more operators
+    EQ = "=="  # default operator (string, int, float)
+    GT = ">"  # greater than (int, float)
+    LT = "<"  # less than (int, float)
+    NE = "!="  # not equal to (string, int, float)
+    GTE = ">="  # greater than or equal to (int, float)
+    LTE = "<="  # less than or equal to (int, float)
+    IN = "in"  # In array (string or number)
+
+
+class FilterCondition(str, Enum):
+    """Vector store filter conditions to combine different filters."""
+
+    # TODO add more conditions
+    AND = "and"
+    OR = "or"
+
+
+class MetadataFilter(BaseModel):
+    """Comprehensive metadata filter for vector stores to support more operators.
 
     Value uses Strict* types, as int, float and str are compatible types and were all
     converted to string before.
@@ -61,6 +88,14 @@ class ExactMatchFilter(BaseModel):
     See: https://docs.pydantic.dev/latest/usage/types/#strict-types
     """
 
+    key: str
+    value: Union[StrictInt, StrictFloat, StrictStr]
+    operator: FilterOperator = FilterOperator.EQ
+
+
+# TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
+# Keep class for now so that AutoRetriever can still work with old vector stores
+class ExactMatchFilter(BaseModel):
     key: str
     value: Union[StrictInt, StrictFloat, StrictStr]
 
@@ -72,16 +107,35 @@ class MetadataFilters(BaseModel):
     TODO: support more advanced expressions.
     """
 
-    filters: List[ExactMatchFilter]
+    # Exact match filters and Advanced filters with operators like >, <, >=, <=, !=, etc.
+    filters: List[Union[MetadataFilter, ExactMatchFilter]]
+    # and/or such conditions for combining different filters
+    condition: Optional[FilterCondition] = FilterCondition.AND
 
     @classmethod
+    @deprecated(
+        "`from_dict()` is deprecated. "
+        "Please use `MetadataFilters(filters=.., condition='and')` directly instead."
+    )
     def from_dict(cls, filter_dict: Dict) -> "MetadataFilters":
         """Create MetadataFilters from json."""
         filters = []
         for k, v in filter_dict.items():
-            filter = ExactMatchFilter(key=k, value=v)
+            filter = MetadataFilter(key=k, value=v, operator=FilterOperator.EQ)
             filters.append(filter)
         return cls(filters=filters)
+
+    def legacy_filters(self) -> List[ExactMatchFilter]:
+        """Convert MetadataFilters to legacy ExactMatchFilters."""
+        filters = []
+        for filter in self.filters:
+            if filter.operator != FilterOperator.EQ:
+                raise ValueError(
+                    "Vector Store only supports exact match filters. "
+                    "Please use ExactMatchFilter or FilterOperator.EQ instead."
+                )
+            filters.append(ExactMatchFilter(key=filter.key, value=filter.value))
+        return filters
 
 
 class VectorStoreQuerySpec(BaseModel):

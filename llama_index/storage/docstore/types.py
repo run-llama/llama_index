@@ -64,6 +64,10 @@ class BaseDocumentStore(ABC):
     def get_document_hash(self, doc_id: str) -> Optional[str]:
         ...
 
+    @abstractmethod
+    def get_all_document_hashes(self) -> Dict[str, str]:
+        ...
+
     # ==== Ref Docs =====
     @abstractmethod
     def get_all_ref_doc_info(self) -> Optional[Dict[str, RefDocInfo]]:

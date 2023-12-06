@@ -260,6 +260,32 @@ maxdepth: 1
 /examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
 ```
 
+### PromptLayer
+
+PromptLayer allows you to track analytics across LLM calls, tagging, analyzing, and evaluating prompts for various use-cases. Use it with LlamaIndex to track the performance of your RAG prompts and more.
+
+#### Usage Pattern
+
+```python
+import os
+
+os.environ["PROMPTLAYER_API_KEY"] = "pl_7db888a22d8171fb58aab3738aa525a7"
+
+from llama_index import set_global_handler
+
+# pl_tags are optional, to help you organize your prompts and apps
+set_global_handler("promptlayer", pl_tags=["paul graham", "essay"])
+```
+
+#### Guides
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/callbacks/PromptLayerHandler.ipynb
+```
+
 ## More observability
 
 ```{toctree}

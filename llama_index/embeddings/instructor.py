@@ -75,7 +75,7 @@ class InstructorEmbedding(BaseEmbedding):
 
     def _embed(self, instruct_sentence_pairs: List[List[str]]) -> List[List[float]]:
         """Embed sentences."""
-        return self._model.encode(instruct_sentence_pairs)
+        return self._model.encode(instruct_sentence_pairs).tolist()
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""

@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional
 
+import httpx
 from openai import AsyncAzureOpenAI, AzureOpenAI
 
 from llama_index.bridge.pydantic import Field, PrivateAttr, root_validator
@@ -24,6 +25,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
 
     _client: AzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -40,6 +42,8 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         max_retries: int = 10,
         reuse_client: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        # custom httpx client
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ):
         azure_endpoint = get_from_param_or_env(
@@ -50,6 +54,10 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             azure_deployment,
             deployment_name,
         )
+
+        # Use the custom httpx client if provided.
+        # Otherwise the value will be None.
+        self._http_client = http_client
 
         super().__init__(
             mode=mode,
@@ -104,6 +112,8 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,
+            "default_headers": self.default_headers,
+            "http_client": self._http_client,
         }
 
     @classmethod
