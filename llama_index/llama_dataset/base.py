@@ -1,7 +1,6 @@
 """Llama Dataset Class."""
 
 import json
-import time
 from abc import abstractmethod
 from enum import Enum
 from typing import Generator, List, Optional, Type, Union
@@ -159,7 +158,10 @@ class BaseLlamaDataset(BaseModel):
 
     @abstractmethod
     def _predict_example(
-        self, query_engine: BaseQueryEngine, example: BaseLlamaDataExample
+        self,
+        query_engine: BaseQueryEngine,
+        example: BaseLlamaDataExample,
+        sleep_time_in_seconds: int = 0,
     ) -> BaseLlamaExamplePrediction:
         """Predict on a single example.
 
@@ -178,7 +180,7 @@ class BaseLlamaDataset(BaseModel):
         query_engine: BaseQueryEngine,
         show_progress: bool = False,
         batch_size: int = 20,
-        sleep_time_in_seconds: int = 10,
+        sleep_time_in_seconds: int = 0,
     ) -> BaseLlamaPredictionDataset:
         """Predict with a given query engine.
 
@@ -207,11 +209,8 @@ class BaseLlamaDataset(BaseModel):
                 example_iterator = batch
             for example in example_iterator:
                 self._predictions_cache.append(
-                    self._predict_example(query_engine, example)
+                    self._predict_example(query_engine, example, sleep_time_in_seconds)
                 )
-
-            # sleep after current batch execution
-            time.sleep(sleep_time_in_seconds)
 
         return self._construct_prediction_dataset(predictions=self._predictions_cache)
 

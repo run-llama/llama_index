@@ -1,6 +1,7 @@
 """Llama Dataset Class."""
 
 import asyncio
+import time
 from typing import List, Optional
 
 from pandas import DataFrame as PandasDataFrame
@@ -129,8 +130,10 @@ class LabelledRagDataset(BaseLlamaDataset):
         self,
         query_engine: BaseQueryEngine,
         example: LabelledRagDataExample,
+        sleep_time_in_seconds: int = 0,
     ) -> RagExamplePrediction:
         """Predict RAG example with a query engine."""
+        time.sleep(sleep_time_in_seconds)
         response = query_engine.query(example.query)
         return RagExamplePrediction(
             response=str(response), contexts=[s.text for s in response.source_nodes]
