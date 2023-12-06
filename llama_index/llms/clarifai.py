@@ -116,13 +116,12 @@ class Clarifai(LLM):
     def chat(
         self,
         messages: Sequence[ChatMessage],
-        inference_params: Dict = None,
+        inference_params: Optional[Dict] = {},
         **kwargs: Any,
     ) -> ChatResponse:
         """Chat endpoint for LLM."""
         prompt = "".join([str(m) for m in messages])
         try:
-            (inference_params := {}) if inference_params is None else inference_params
             response = (
                 self._model.predict_by_bytes(
                     input_bytes=prompt.encode(encoding="UTF-8"),
@@ -137,11 +136,10 @@ class Clarifai(LLM):
         return ChatResponse(message=ChatMessage(content=response))
 
     def complete(
-        self, prompt: str, inference_params: Dict = None, **kwargs: Any
+        self, prompt: str, inference_params: Optional[Dict] = {}, **kwargs: Any
     ) -> CompletionResponse:
         """Completion endpoint for LLM."""
         try:
-            (inference_params := {}) if inference_params is None else inference_params
             response = (
                 self._model.predict_by_bytes(
                     input_bytes=prompt.encode(encoding="utf-8"),
