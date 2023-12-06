@@ -138,7 +138,7 @@ class ContextChatEngine(BaseChatEngine):
             system_prompt = str(self._prefix_messages[0].content)
             prefix_messages = self._prefix_messages[1:]
 
-        context_str_w_sys_prompt = context_str + system_prompt.strip()
+        context_str_w_sys_prompt = system_prompt.strip() + "\n" + context_str
         return [
             ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM),
             *prefix_messages,
