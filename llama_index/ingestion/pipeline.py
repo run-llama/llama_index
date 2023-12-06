@@ -539,7 +539,10 @@ class IngestionPipeline(BaseModel):
         return pipeline_execution.id
 
     def _prepare_inputs(
-        self, documents: Optional[List[Document]], nodes: Optional[List[BaseNode]]
+        self,
+        documents: Optional[List[Document]],
+        nodes: Optional[List[BaseNode]],
+        read_local: bool = False,
     ) -> List[Document]:
         input_nodes: List[BaseNode] = []
         if documents is not None:
@@ -552,7 +555,8 @@ class IngestionPipeline(BaseModel):
             input_nodes += self.documents
 
         for reader in self.readers:
-            input_nodes += reader.read()
+            if read_local:
+                input_nodes += reader.read()
 
         return input_nodes
 
@@ -609,7 +613,7 @@ class IngestionPipeline(BaseModel):
         in_place: bool = True,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
-        input_nodes = self._prepare_inputs(documents, nodes)
+        input_nodes = self._prepare_inputs(documents, nodes, read_local=True)
 
         # check if we need to dedup
         if self.docstore is not None and self.vector_store is not None:
@@ -654,7 +658,7 @@ class IngestionPipeline(BaseModel):
         in_place: bool = True,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
-        input_nodes = self._prepare_inputs(documents, nodes)
+        input_nodes = self._prepare_inputs(documents, nodes, read_local=True)
 
         nodes = await arun_transformations(
             input_nodes,
