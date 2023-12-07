@@ -1,5 +1,40 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Add `Ollama` Embedding class (#9341)
+
+### Bug Fixes / Nits
+
+- Change more than one image input for Replicate Multi-modal models from error to warning (#9360)
+
+## [0.9.13] - 2023-12-06
+
+### New Features
+
+- Added batch prediction support for `LabelledRagDataset` (#9332)
+
+### Bug Fixes / Nits
+
+- Fixed save and load for faiss vector store (#9330)
+
+## [0.9.12] - 2023-12-05
+
+### New Features
+
+- Added an option `reuse_client` to openai/azure to help with async timeouts. Set to `False` to see improvements (#9301)
+- Added support for `vLLM` llm (#9257)
+- Add support for python 3.12 (#9304)
+- Support for `claude-2.1` model name (#9275)
+
+### Bug Fixes / Nits
+
+- Fix embedding format for bedrock cohere embeddings (#9265)
+- Use `delete_kwargs` for filtering in weaviate vector store (#9300)
+- Fixed automatic qdrant client construction (#9267)
+
 ## [0.9.11] - 2023-12-03
 
 ### New Features

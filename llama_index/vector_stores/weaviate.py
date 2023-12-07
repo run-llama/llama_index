@@ -30,26 +30,66 @@ from llama_index.vector_stores.weaviate_utils import (
 
 logger = logging.getLogger(__name__)
 
-
-def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
-    if len(standard_filters.legacy_filters()) == 1:
-        return {
-            "path": standard_filters.legacy_filters()[0].key,
-            "operator": "Equal",
-            "valueText": standard_filters.legacy_filters()[0].value,
-        }
-    else:
-        operands = []
-        for filter in standard_filters.legacy_filters():
-            operands.append(
-                {"path": filter.key, "operator": "Equal", "valueText": filter.value}
-            )
-        return {"operands": operands, "operator": "And"}
-
-
 import_err_msg = (
     "`weaviate` package not found, please run `pip install weaviate-client`"
 )
+
+
+def _transform_weaviate_filter_condition(condition: str) -> str:
+    """Translate standard metadata filter op to Chroma specific spec."""
+    if condition == "and":
+        return "And"
+    elif condition == "or":
+        return "Or"
+    else:
+        raise ValueError(f"Filter condition {condition} not supported")
+
+
+def _transform_weaviate_filter_operator(operator: str) -> str:
+    """Translate standard metadata filter operator to Chroma specific spec."""
+    if operator == "!=":
+        return "NotEqual"
+    elif operator == "==":
+        return "Equal"
+    elif operator == ">":
+        return "GreaterThan"
+    elif operator == "<":
+        return "LessThan"
+    elif operator == ">=":
+        return "GreaterThanEqual"
+    elif operator == "<=":
+        return "LessThanEqual"
+    else:
+        raise ValueError(f"Filter operator {operator} not supported")
+
+
+def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
+    filters_list = []
+    condition = standard_filters.condition or "and"
+    condition = _transform_weaviate_filter_condition(condition)
+
+    if standard_filters.filters:
+        for filter in standard_filters.filters:
+            value_type = "valueText"
+            if isinstance(filter.value, float):
+                value_type = "valueNumber"
+            elif isinstance(filter.value, int):
+                value_type = "valueNumber"
+            filters_list.append(
+                {
+                    "path": filter.key,
+                    "operator": _transform_weaviate_filter_operator(filter.operator),
+                    value_type: filter.value,
+                }
+            )
+    else:
+        return {}
+
+    if len(filters_list) == 1:
+        # If there is only one filter, return it directly
+        return filters_list[0]
+
+    return {"operands": filters_list, "operator": condition}
 
 
 class WeaviateVectorStore(BasePydanticVectorStore):
@@ -208,6 +248,12 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             "operator": "Equal",
             "valueText": ref_doc_id,
         }
+        if "filter" in delete_kwargs and delete_kwargs["filter"] is not None:
+            where_filter = {
+                "operator": "And",
+                "operands": [where_filter, delete_kwargs["filter"]],  # type: ignore
+            }
+
         query = (
             self._client.query.get(self.index_name)
             .with_additional(["id"])
@@ -272,7 +318,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 vector=vector,
             )
 
-        if query.filters is not None and len(query.filters.legacy_filters()) > 0:
+        if query.filters is not None:
             filter = _to_weaviate_filter(query.filters)
             query_builder = query_builder.with_where(filter)
         elif "filter" in kwargs and kwargs["filter"] is not None:

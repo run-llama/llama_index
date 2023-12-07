@@ -7,7 +7,6 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
-    Tuple,
     cast,
     runtime_checkable,
 )
@@ -101,13 +100,20 @@ class OpenAI(LLM):
     default_headers: Dict[str, str] = Field(
         default=None, description="The default headers for API requests."
     )
+    reuse_client: bool = Field(
+        default=True,
+        description=(
+            "Reuse the OpenAI client between requests. When doing anything with large "
+            "volumes of async API calls, setting this to false can improve stability."
+        ),
+    )
 
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
 
-    _client: SyncOpenAI = PrivateAttr()
-    _aclient: AsyncOpenAI = PrivateAttr()
+    _client: Optional[SyncOpenAI] = PrivateAttr()
+    _aclient: Optional[AsyncOpenAI] = PrivateAttr()
     _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
@@ -118,6 +124,7 @@ class OpenAI(LLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 3,
         timeout: float = 60.0,
+        reuse_client: bool = True,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
@@ -145,17 +152,30 @@ class OpenAI(LLM):
             api_version=api_version,
             api_base=api_base,
             timeout=timeout,
+            reuse_client=reuse_client,
             default_headers=default_headers,
             **kwargs,
         )
 
+        self._client = None
+        self._aclient = None
         self._http_client = http_client
-        self._client, self._aclient = self._get_clients()
 
-    def _get_clients(self) -> Tuple[SyncOpenAI, AsyncOpenAI]:
-        client = SyncOpenAI(**self._get_credential_kwargs())
-        aclient = AsyncOpenAI(**self._get_credential_kwargs())
-        return client, aclient
+    def _get_client(self) -> SyncOpenAI:
+        if not self.reuse_client:
+            return SyncOpenAI(**self._get_credential_kwargs())
+
+        if self._client is None:
+            self._client = SyncOpenAI(**self._get_credential_kwargs())
+        return self._client
+
+    def _get_aclient(self) -> AsyncOpenAI:
+        if not self.reuse_client:
+            return AsyncOpenAI(**self._get_credential_kwargs())
+
+        if self._aclient is None:
+            self._aclient = AsyncOpenAI(**self._get_credential_kwargs())
+        return self._aclient
 
     def _get_model_name(self) -> str:
         model_name = self.model
@@ -250,8 +270,9 @@ class OpenAI(LLM):
         return {**base_kwargs, **self.additional_kwargs}
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        client = self._get_client()
         message_dicts = to_openai_message_dicts(messages)
-        response = self._client.chat.completions.create(
+        response = client.chat.completions.create(
             messages=message_dicts,
             stream=False,
             **self._get_model_kwargs(**kwargs),
@@ -314,6 +335,7 @@ class OpenAI(LLM):
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        client = self._get_client()
         message_dicts = to_openai_message_dicts(messages)
 
         def gen() -> ChatResponseGen:
@@ -321,7 +343,7 @@ class OpenAI(LLM):
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
-            for response in self._client.chat.completions.create(
+            for response in client.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
@@ -360,10 +382,11 @@ class OpenAI(LLM):
         return gen()
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        client = self._get_client()
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
-        response = self._client.completions.create(
+        response = client.completions.create(
             prompt=prompt,
             stream=False,
             **all_kwargs,
@@ -376,12 +399,13 @@ class OpenAI(LLM):
         )
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        client = self._get_client()
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
         def gen() -> CompletionResponseGen:
             text = ""
-            for response in self._client.completions.create(
+            for response in client.completions.create(
                 prompt=prompt,
                 stream=True,
                 **all_kwargs,
@@ -483,8 +507,9 @@ class OpenAI(LLM):
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
+        aclient = self._get_aclient()
         message_dicts = to_openai_message_dicts(messages)
-        response = await self._aclient.chat.completions.create(
+        response = await aclient.chat.completions.create(
             messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
         )
         message_dict = response.choices[0].message
@@ -499,6 +524,7 @@ class OpenAI(LLM):
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
+        aclient = self._get_aclient()
         message_dicts = to_openai_message_dicts(messages)
 
         async def gen() -> ChatResponseAsyncGen:
@@ -507,7 +533,7 @@ class OpenAI(LLM):
 
             is_function = False
             first_chat_chunk = True
-            async for response in await self._aclient.chat.completions.create(
+            async for response in await aclient.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
@@ -556,10 +582,11 @@ class OpenAI(LLM):
         return gen()
 
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        aclient = self._get_aclient()
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
-        response = await self._aclient.completions.create(
+        response = await aclient.completions.create(
             prompt=prompt,
             stream=False,
             **all_kwargs,
@@ -574,12 +601,13 @@ class OpenAI(LLM):
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
+        aclient = self._get_aclient()
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
-            async for response in await self._aclient.completions.create(
+            async for response in await aclient.completions.create(
                 prompt=prompt,
                 stream=True,
                 **all_kwargs,

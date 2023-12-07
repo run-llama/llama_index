@@ -4,7 +4,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.indices.multi_modal import MultiModalVectorIndexRetriever
 from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.multi_modal_llms.base import MultiModalLLM
 from llama_index.multi_modal_llms.openai import OpenAIMultiModal
 from llama_index.postprocessor.types import BaseNodePostprocessor
@@ -35,7 +35,10 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
 
     Args:
         retriever (MultiModalVectorIndexRetriever): A retriever object.
-        llm (Optional[LLM])
+        multi_modal_llm (Optional[MultiModalLLM]): MultiModalLLM Models.
+        text_qa_template (Optional[BasePromptTemplate]): Text QA Prompt Template.
+        image_qa_template (Optional[BasePromptTemplate]): Image QA Prompt Template.
+        node_postprocessors (Optional[List[BaseNodePostprocessor]]): Node Postprocessors.
         callback_manager (Optional[CallbackManager]): A callback manager.
     """
 
@@ -44,14 +47,17 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         retriever: MultiModalVectorIndexRetriever,
         multi_modal_llm: Optional[MultiModalLLM] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
+        image_qa_template: Optional[BasePromptTemplate] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
         self._retriever = retriever
         self._multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
             model="gpt-4-vision-preview", max_new_tokens=1000
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
+        self._image_qa_template = image_qa_template or DEFAULT_TEXT_QA_PROMPT
 
         self._node_postprocessors = node_postprocessors or []
         callback_manager = callback_manager or CallbackManager([])
@@ -107,6 +113,25 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
             metadata={"text_nodes": text_nodes, "image_nodes": image_nodes},
         )
 
+    def _get_response_with_images(
+        self,
+        prompt_str: str,
+        image_nodes: List[ImageNode],
+    ) -> RESPONSE_TYPE:
+        fmt_prompt = self._image_qa_template.format(
+            query_str=prompt_str,
+        )
+
+        llm_response = self._multi_modal_llm.complete(
+            prompt=fmt_prompt,
+            image_documents=[image_node.node for image_node in image_nodes],
+        )
+        return Response(
+            response=str(llm_response),
+            source_nodes=image_nodes,
+            metadata={"image_nodes": image_nodes},
+        )
+
     async def asynthesize(
         self,
         query_bundle: QueryBundle,
@@ -146,6 +171,31 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
             response = self.synthesize(
                 query_bundle,
                 nodes=nodes,
+            )
+
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
+
+        return response
+
+    def image_query(self, image_path: QueryType, prompt_str: str) -> RESPONSE_TYPE:
+        """Answer a image query."""
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: str(image_path)}
+        ) as query_event:
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: str(image_path)},
+            ) as retrieve_event:
+                nodes = self._retriever.image_to_image_retrieve(image_path)
+
+                retrieve_event.on_end(
+                    payload={EventPayload.NODES: nodes},
+                )
+
+            image_nodes, _ = _get_image_and_text_nodes(nodes)
+            response = self._get_response_with_images(
+                prompt_str=prompt_str,
+                image_nodes=image_nodes,
             )
 
             query_event.on_end(payload={EventPayload.RESPONSE: response})

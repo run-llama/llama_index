@@ -38,6 +38,7 @@ from llama_index.llms.portkey import Portkey
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
 from llama_index.llms.vertex import Vertex
+from llama_index.llms.vllm import Vllm, VllmServer
 from llama_index.llms.watsonx import WatsonX
 from llama_index.llms.xinference import Xinference
 
@@ -85,5 +86,7 @@ __all__ = [
     "Replicate",
     "WatsonX",
     "Xinference",
+    "Vllm",
+    "VllmServer",
     "Vertex",
 ]
