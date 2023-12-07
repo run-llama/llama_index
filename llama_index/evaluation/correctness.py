@@ -38,7 +38,7 @@ you should give a score between 2 and 3.
 you should give a score between 4 and 5.
 
 Example Response:
-[SCORE:4.0]
+[SCORE:4.2]
 The generated answer has the exact same metrics as the reference answer, \
     but it is not as concise.
 
