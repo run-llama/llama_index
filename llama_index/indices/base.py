@@ -1,16 +1,27 @@
 """Base index classes."""
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, cast
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.ingestion import run_transformations
+from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
-from llama_index.schema import BaseNode, Document
+from llama_index.llms.utils import LLMType, resolve_llm
+from llama_index.postprocessor.types import BaseNodePostprocessor
+from llama_index.prompts import BasePromptTemplate
+from llama_index.response_synthesizers import (
+    BaseSynthesizer,
+    ResponseMode,
+)
+from llama_index.schema import BaseNode, Document, TransformComponent
 from llama_index.service_context import ServiceContext
+from llama_index.settings import Settings, callback_manager_from_settings_or_context
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 
@@ -38,8 +49,11 @@ class BaseIndex(Generic[IS], ABC):
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[IS] = None,
         storage_context: Optional[StorageContext] = None,
-        service_context: Optional[ServiceContext] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        transformations: Optional[List[TransformComponent]] = None,
         show_progress: bool = False,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
@@ -58,27 +72,37 @@ class BaseIndex(Generic[IS], ABC):
             else:
                 raise ValueError("nodes must be a list of Node objects.")
 
-        self._service_context = service_context or ServiceContext.from_defaults()
         self._storage_context = storage_context or StorageContext.from_defaults()
         self._docstore = self._storage_context.docstore
         self._show_progress = show_progress
         self._vector_store = self._storage_context.vector_store
         self._graph_store = self._storage_context.graph_store
+        self._callback_manager = (
+            callback_manager
+            or callback_manager_from_settings_or_context(Settings, service_context)
+        )
+        self._transformations = transformations
 
-        with self._service_context.callback_manager.as_trace("index_construction"):
+        with self._callback_manager.as_trace("index_construction"):
             if index_struct is None:
                 assert nodes is not None
                 index_struct = self.build_index_from_nodes(nodes)
             self._index_struct = index_struct
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
+        # deprecated
+        self._service_context = service_context or ServiceContext.from_defaults()
+
     @classmethod
     def from_documents(
         cls: Type[IndexType],
         documents: Sequence[Document],
         storage_context: Optional[StorageContext] = None,
-        service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
+        transformations: Optional[List[TransformComponent]] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> IndexType:
         """Create index from documents.
@@ -89,16 +113,22 @@ class BaseIndex(Generic[IS], ABC):
 
         """
         storage_context = storage_context or StorageContext.from_defaults()
-        service_context = service_context or ServiceContext.from_defaults()
         docstore = storage_context.docstore
+        callback_manager = (
+            callback_manager
+            or callback_manager_from_settings_or_context(Settings, service_context)
+        )
+        transformations = transformations
+        if service_context is not None:
+            transformations = service_context.transformations
 
-        with service_context.callback_manager.as_trace("index_construction"):
+        with callback_manager.as_trace("index_construction"):
             for doc in documents:
                 docstore.set_document_hash(doc.get_doc_id(), doc.hash)
 
             nodes = run_transformations(
                 documents,  # type: ignore
-                service_context.transformations,
+                transformations,
                 show_progress=show_progress,
                 **kwargs,
             )
@@ -106,8 +136,10 @@ class BaseIndex(Generic[IS], ABC):
             return cls(
                 nodes=nodes,
                 storage_context=storage_context,
-                service_context=service_context,
+                callback_manager=callback_manager,
                 show_progress=show_progress,
+                transformations=transformations,
+                service_context=service_context,
                 **kwargs,
             )
 
@@ -180,17 +212,17 @@ class BaseIndex(Generic[IS], ABC):
 
     def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert nodes."""
-        with self._service_context.callback_manager.as_trace("insert_nodes"):
+        with self._callback_manager.as_trace("insert_nodes"):
             self.docstore.add_documents(nodes, allow_update=True)
             self._insert(nodes, **insert_kwargs)
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
-        with self._service_context.callback_manager.as_trace("insert"):
+        with self._callback_manager.as_trace("insert"):
             nodes = run_transformations(
                 [document],
-                self._service_context.transformations,
+                self._transformations,
                 show_progress=self._show_progress,
             )
 
@@ -280,7 +312,7 @@ class BaseIndex(Generic[IS], ABC):
             delete_kwargs (Dict): kwargs to pass to delete
 
         """
-        with self._service_context.callback_manager.as_trace("update"):
+        with self._callback_manager.as_trace("update"):
             self.delete_ref_doc(
                 document.get_doc_id(),
                 delete_from_docstore=True,
@@ -312,7 +344,7 @@ class BaseIndex(Generic[IS], ABC):
         updating documents that have any changes in text or metadata. It
         will also insert any documents that previously were not stored.
         """
-        with self._service_context.callback_manager.as_trace("refresh"):
+        with self._callback_manager.as_trace("refresh"):
             refreshed_documents = [False] * len(documents)
             for i, document in enumerate(documents):
                 existing_doc_hash = self._docstore.get_document_hash(
@@ -339,30 +371,64 @@ class BaseIndex(Generic[IS], ABC):
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         ...
 
-    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+    def as_query_engine(
+        self,
+        llm: Optional[LLMType] = None,
+        llm_predictor: Optional[BaseLLMPredictor] = None,
+        response_synthesizer: Optional[BaseSynthesizer] = None,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        # response synthesizer args
+        response_mode: ResponseMode = ResponseMode.COMPACT,
+        text_qa_template: Optional[BasePromptTemplate] = None,
+        refine_template: Optional[BasePromptTemplate] = None,
+        summary_template: Optional[BasePromptTemplate] = None,
+        simple_template: Optional[BasePromptTemplate] = None,
+        output_cls: Optional[BaseModel] = None,
+        use_async: bool = False,
+        streaming: bool = False,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
+        **kwargs,
+    ) -> BaseQueryEngine:
         # NOTE: lazy import
         from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
 
-        kwargs["retriever"] = retriever
-        if "service_context" not in kwargs:
-            kwargs["service_context"] = self._service_context
-        return RetrieverQueryEngine.from_args(**kwargs)
+        return RetrieverQueryEngine.from_args(
+            retriever,
+            llm=llm,
+            llm_predictor=llm_predictor,
+            response_synthesizer=response_synthesizer,
+            node_postprocessors=node_postprocessors,
+            # response synthesizer args
+            response_mode=response_mode,
+            text_qa_template=text_qa_template,
+            refine_template=refine_template,
+            summary_template=summary_template,
+            simple_template=simple_template,
+            output_cls=output_cls,
+            use_async=use_async,
+            streaming=streaming,
+            # deprecated
+            service_context=service_context,
+        )
 
     def as_chat_engine(
-        self, chat_mode: ChatMode = ChatMode.BEST, **kwargs: Any
+        self,
+        chat_mode: ChatMode = ChatMode.BEST,
+        llm: Optional[LLMType] = None,
+        **kwargs: Any,
     ) -> BaseChatEngine:
-        query_engine = self.as_query_engine(**kwargs)
+        llm = resolve_llm(llm) if llm else Settings.llm
+
+        query_engine = self.as_query_engine(llm=llm, **kwargs)
+
         if "service_context" not in kwargs:
             kwargs["service_context"] = self._service_context
 
         # resolve chat mode
         if chat_mode == ChatMode.BEST:
-            # get LLM
-            service_context = cast(ServiceContext, kwargs["service_context"])
-            llm = service_context.llm
-
             if isinstance(llm, OpenAI) and is_function_calling_model(llm.model):
                 chat_mode = ChatMode.OPENAI
             else:
@@ -399,10 +465,6 @@ class BaseIndex(Generic[IS], ABC):
 
             # convert query engine to tool
             query_engine_tool = QueryEngineTool.from_defaults(query_engine=query_engine)
-
-            # get LLM
-            service_context = cast(ServiceContext, kwargs.pop("service_context"))
-            llm = service_context.llm
 
             if chat_mode == ChatMode.REACT:
                 return ReActAgent.from_tools(

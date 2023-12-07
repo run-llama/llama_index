@@ -10,12 +10,16 @@ from llama_index.chat_engine.types import (
     ToolOutput,
 )
 from llama_index.core import BaseRetriever
-from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 
 DEFAULT_CONTEXT_TEMPLATE = (
     "Context information is below."
@@ -67,10 +71,7 @@ class ContextChatEngine(BaseChatEngine):
         **kwargs: Any,
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
-        service_context = service_context or ServiceContext.from_defaults()
-        if not isinstance(service_context.llm_predictor, LLMPredictor):
-            raise ValueError("llm_predictor must be a LLMPredictor instance")
-        llm = service_context.llm_predictor.llm
+        llm = llm_from_settings_or_context(Settings, service_context)
 
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(
@@ -95,7 +96,9 @@ class ContextChatEngine(BaseChatEngine):
             memory=memory,
             prefix_messages=prefix_messages,
             node_postprocessors=node_postprocessors,
-            callback_manager=service_context.callback_manager,
+            callback_manager=callback_manager_from_settings_or_context(
+                Settings, service_context
+            ),
             context_template=context_template,
         )
 

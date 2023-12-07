@@ -82,9 +82,10 @@ class CorrectnessEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
         eval_template: Optional[Union[BasePromptTemplate, str]] = None,
         score_threshold: float = 4.0,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> None:
         self._service_context = service_context or ServiceContext.from_defaults()
 

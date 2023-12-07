@@ -19,10 +19,8 @@ class CompactAndAccumulate(Accumulate):
         # use prompt helper to fix compact text_chunks under the prompt limitation
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
 
-        with temp_set_attrs(self._service_context.prompt_helper):
-            new_texts = self._service_context.prompt_helper.repack(
-                text_qa_template, text_chunks
-            )
+        with temp_set_attrs(self._prompt_helper):
+            new_texts = self._prompt_helper.repack(text_qa_template, text_chunks)
 
             return await super().aget_response(
                 query_str=query_str,
@@ -42,10 +40,8 @@ class CompactAndAccumulate(Accumulate):
         # use prompt helper to fix compact text_chunks under the prompt limitation
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
 
-        with temp_set_attrs(self._service_context.prompt_helper):
-            new_texts = self._service_context.prompt_helper.repack(
-                text_qa_template, text_chunks
-            )
+        with temp_set_attrs(self._prompt_helper):
+            new_texts = self._prompt_helper.repack(text_qa_template, text_chunks)
 
             return super().get_response(
                 query_str=query_str,

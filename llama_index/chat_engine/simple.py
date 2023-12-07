@@ -8,10 +8,14 @@ from llama_index.chat_engine.types import (
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
-from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.base import LLM, ChatMessage
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 
 
 class SimpleChatEngine(BaseChatEngine):
@@ -45,10 +49,7 @@ class SimpleChatEngine(BaseChatEngine):
         **kwargs: Any,
     ) -> "SimpleChatEngine":
         """Initialize a SimpleChatEngine from default parameters."""
-        service_context = service_context or ServiceContext.from_defaults()
-        if not isinstance(service_context.llm_predictor, LLMPredictor):
-            raise ValueError("llm_predictor must be a LLMPredictor instance")
-        llm = service_context.llm_predictor.llm
+        llm = llm_from_settings_or_context(Settings, service_context)
 
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
@@ -66,7 +67,9 @@ class SimpleChatEngine(BaseChatEngine):
             llm=llm,
             memory=memory,
             prefix_messages=prefix_messages,
-            callback_manager=service_context.callback_manager,
+            callback_manager=callback_manager_from_settings_or_context(
+                Settings, service_context
+            ),
         )
 
     @trace_method("chat")

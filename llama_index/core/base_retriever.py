@@ -8,18 +8,19 @@ from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import NodeWithScore
+from llama_index.settings import Settings
 
 
 class BaseRetriever(PromptMixin):
     """Base retriever."""
 
     def __init__(self, callback_manager: Optional[CallbackManager] = None) -> None:
-        self.callback_manager = callback_manager or CallbackManager()
+        self.callback_manager = callback_manager or Settings.callback_manager
 
     def _check_callback_manager(self) -> None:
         """Check callback manager."""
         if not hasattr(self, "callback_manager"):
-            self.callback_manager = CallbackManager()
+            self.callback_manager = Settings.callback_manager
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""

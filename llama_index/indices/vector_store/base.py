@@ -7,15 +7,29 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
+from llama_index.callbacks.base import CallbackManager
+from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict
+from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.utils import async_embed_nodes, embed_nodes
-from llama_index.schema import BaseNode, ImageNode, IndexNode
+from llama_index.schema import (
+    BaseNode,
+    Document,
+    ImageNode,
+    IndexNode,
+    TransformComponent,
+)
 from llama_index.service_context import ServiceContext
+from llama_index.settings import Settings, embed_model_from_settings_or_context
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
-from llama_index.vector_stores.types import VectorStore
+from llama_index.vector_stores.types import (
+    MetadataFilters,
+    VectorStore,
+    VectorStoreQueryMode,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,24 +48,68 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
     def __init__(
         self,
-        nodes: Optional[Sequence[BaseNode]] = None,
-        index_struct: Optional[IndexDict] = None,
-        service_context: Optional[ServiceContext] = None,
-        storage_context: Optional[StorageContext] = None,
+        # vector store index params
         use_async: bool = False,
         store_nodes_override: bool = False,
+        embed_model: Optional[EmbedType] = None,
+        # parent class params
+        nodes: Optional[Sequence[BaseNode]] = None,
+        index_struct: Optional[IndexDict] = None,
+        storage_context: Optional[StorageContext] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        transformations: Optional[List[TransformComponent]] = None,
         show_progress: bool = False,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._use_async = use_async
         self._store_nodes_override = store_nodes_override
+        self._embed_model = (
+            resolve_embed_model(embed_model)
+            if embed_model
+            else embed_model_from_settings_or_context(Settings, service_context)
+        )
+
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
+            transformations=transformations,
+            callback_manager=callback_manager,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_documents(
+        cls: IndexDict,
+        documents: Sequence[Document],
+        # vector store index params
+        use_async: bool = False,
+        store_nodes_override: bool = False,
+        embed_model: Optional[EmbedType] = None,
+        # parent class params
+        storage_context: Optional[StorageContext] = None,
+        show_progress: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
+        transformations: Optional[List[TransformComponent]] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
+    ) -> "VectorStoreIndex":
+        super().from_documents(
+            documents,
+            storage_context=storage_context,
+            show_progress=show_progress,
+            callback_manager=callback_manager,
+            transformations=transformations,
+            service_context=service_context,
+            use_async=use_async,
+            store_nodes_override=store_nodes_override,
+            embed_model=embed_model,
             **kwargs,
         )
 
@@ -60,6 +118,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         cls,
         vector_store: VectorStore,
         service_context: Optional[ServiceContext] = None,
+        embed_model: Optional[EmbedType] = None,
         **kwargs: Any,
     ) -> "VectorStoreIndex":
         if not vector_store.stores_text:
@@ -69,21 +128,41 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         return cls(
-            nodes=[], service_context=service_context, storage_context=storage_context
+            nodes=[],
+            embed_model=embed_model,
+            service_context=service_context,
+            storage_context=storage_context,
+            **kwargs,
         )
 
     @property
     def vector_store(self) -> VectorStore:
         return self._vector_store
 
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+    def as_retriever(
+        self,
+        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
+        filters: Optional[MetadataFilters] = None,
+        alpha: Optional[float] = None,
+        node_ids: Optional[List[str]] = None,
+        doc_ids: Optional[List[str]] = None,
+        sparse_top_k: Optional[int] = None,
+        **kwargs: Any,
+    ) -> BaseRetriever:
         # NOTE: lazy import
         from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 
         return VectorIndexRetriever(
             self,
-            node_ids=list(self.index_struct.nodes_dict.values()),
-            callback_manager=self._service_context.callback_manager,
+            similarity_top_k=similarity_top_k,
+            vector_store_query_mode=vector_store_query_mode,
+            filters=filters,
+            alpha=alpha,
+            doc_ids=doc_ids,
+            sparse_top_k=sparse_top_k,
+            node_ids=node_ids or list(self.index_struct.nodes_dict.values()),
+            callback_manager=self._callback_manager,
             **kwargs,
         )
 
@@ -99,7 +178,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         """
         id_to_embed_map = embed_nodes(
-            nodes, self._service_context.embed_model, show_progress=show_progress
+            nodes, self._embed_model, show_progress=show_progress
         )
 
         results = []
@@ -123,7 +202,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """
         id_to_embed_map = await async_embed_nodes(
             nodes=nodes,
-            embed_model=self._service_context.embed_model,
+            embed_model=self._embed_model,
             show_progress=show_progress,
         )
 
