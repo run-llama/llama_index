@@ -62,4 +62,5 @@ maxdepth: 1
 ---
 /examples/llama_hub/llama_packs_example.ipynb
 /examples/llama_hub/llama_pack_resume.ipynb
+/examples/llama_hub/llama_pack_ollama.ipynb
 ```
