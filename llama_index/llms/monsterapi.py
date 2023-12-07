@@ -52,6 +52,7 @@ class MonsterLLM(CustomLLM):
     def __init__(
         self,
         model: str,
+        base_url: str = "https://api.monsterapi.ai/v1",
         monster_api_key: Optional[str] = None,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         temperature: float = DEFAULT_MONSTER_TEMP,
@@ -60,7 +61,7 @@ class MonsterLLM(CustomLLM):
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
     ) -> None:
-        self._client, available_llms = self.initialize_client(monster_api_key)
+        self._client, available_llms = self.initialize_client(monster_api_key, base_url)
 
         _messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         _completion_to_prompt = completion_to_prompt or (lambda x: x)
@@ -86,7 +87,7 @@ class MonsterLLM(CustomLLM):
             completion_to_prompt=_completion_to_prompt,
         )
 
-    def initialize_client(self, monster_api_key: Optional[str]) -> Any:
+    def initialize_client(self, monster_api_key: Optional[str], base_url: Optional[str]) -> Any:
         try:
             from monsterapi import client as MonsterClient
             from monsterapi.InputDataModels import MODEL_TYPES
@@ -98,7 +99,7 @@ class MonsterLLM(CustomLLM):
 
         llm_models_enabled = [i for i, j in MODEL_TYPES.items() if j == "LLM"]
 
-        return MonsterClient(monster_api_key), llm_models_enabled
+        return MonsterClient(monster_api_key, base_url), llm_models_enabled
 
     @classmethod
     def class_name(cls) -> str:
@@ -127,23 +128,55 @@ class MonsterLLM(CustomLLM):
         return self.complete(prompt, formatted=True, **kwargs)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, timeout: int = 100, **kwargs: Any) -> CompletionResponse:
         is_formatted = kwargs.pop("formatted", False)
         if not is_formatted:
             prompt = self.completion_to_prompt(prompt)
 
+        stream = kwargs.pop("stream", False)
+
+        if stream == True:
+            raise NotImplementedError("complete method cannot be used with stream=True, please use stream_complete method")
+
         # Validate input args against input Pydantic model
         input_dict = self._get_input_dict(prompt, **kwargs)
 
-        # Send request and receive process_id
-        response = self._client.get_response(model=self.model, data=input_dict)
-        process_id = response["process_id"]
+        result = self._client.generate(model=self.model, data=input_dict, timeout=timeout)
+        
+        if isinstance(result, Exception):
+            raise result
 
-        # Wait for response and return result
-        result = self._client.wait_and_get_result(process_id)
+        if isinstance(result, dict) and "error" in result:
+            raise RuntimeError(result["error"])
 
-        return CompletionResponse(text=result["text"])
+        if isinstance(result, dict) and "text" in result:
+            return CompletionResponse(text=result["text"][0])
+        
+        if isinstance(result, list):
+            return CompletionResponse(text=result[0]["text"])
+
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        raise NotImplementedError
+        if 'deploy' not in self.model:
+            raise NotImplementedError("stream_complete method can only be used with deploy models for now. Support for other models will be added soon.")
+
+        # Validate input args against input Pydantic model
+        input_dict = self._get_input_dict(prompt, **kwargs)
+        input_dict["stream"] = True
+        
+        # Starting the stream
+        result_stream = self._client.generate(model=self.model, data=input_dict)
+
+        if isinstance(result_stream, Exception):
+            raise result_stream
+
+        if isinstance(result_stream, dict) and "error" in result_stream:
+            raise RuntimeError(result_stream["error"])
+
+        # Iterating over the generator
+        try:
+            for result in result_stream:
+                yield CompletionResponse(text=result[0])
+        except StopIteration:
+            pass
