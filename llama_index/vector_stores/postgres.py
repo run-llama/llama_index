@@ -344,10 +344,14 @@ class PGVectorStore(BasePydanticVectorStore):
                 )
             stmt = stmt.where(
                 sqlalchemy_conditions[metadata_filters.condition](
-                    *(sqlalchemy.text(
-                        f"metadata_->>'{filter_.key}' = '{filter_.value}'"
+                    *(
+                        sqlalchemy.text(
+                            f"metadata_->>'{filter.key}' "
+                            f"{'=' if filter.operator.value == '==' else filter.operator.value} "
+                            f"'{filter.value}'"
+                        )
+                        for filter in metadata_filters.filters
                     )
-                    for filter_ in metadata_filters.legacy_filters())
                 )
             )
         return stmt.limit(limit)  # type: ignore
