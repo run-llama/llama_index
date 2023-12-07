@@ -23,7 +23,10 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
         try:
             from FlagEmbedding import FlagReranker
         except ImportError:
-            raise ImportError("Cannot import FlagReranker package, please install it.")
+            raise ImportError(
+                "Cannot import FlagReranker package, please install it: ",
+                "pip install git+https://github.com/FlagOpen/FlagEmbedding.git",
+            )
         self._model = FlagReranker(
             model,
             use_fp16=use_fp16,
