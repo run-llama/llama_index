@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### New Features
+
+- Add `Ollama` Embedding class (#9341)
+
+### Bug Fixes / Nits
+
+- Change more than one image input for Replicate Multi-modal models from error to warning (#9360)
+
 ## [0.9.13] - 2023-12-06
 
 ### New Features
