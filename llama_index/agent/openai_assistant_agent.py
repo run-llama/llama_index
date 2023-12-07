@@ -488,6 +488,7 @@ class OpenAIAssistantAgent(BaseAgent):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Asynchronous main chat interface."""
+        self.add_message(message)
         run, metadata = await self.arun_assistant(
             instructions_prefix=self._instructions_prefix,
         )
