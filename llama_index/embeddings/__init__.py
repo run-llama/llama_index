@@ -28,6 +28,7 @@ from llama_index.embeddings.huggingface_utils import DEFAULT_HUGGINGFACE_EMBEDDI
 from llama_index.embeddings.instructor import InstructorEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.llm_rails import LLMRailsEmbedding, LLMRailsEmbeddings
+from llama_index.embeddings.ollama_embedding import OllamaEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.pooling import Pooling
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
@@ -65,4 +66,5 @@ __all__ = [
     "ElasticsearchEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "VoyageEmbedding",
+    "OllamaEmbedding",
 ]
