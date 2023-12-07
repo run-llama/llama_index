@@ -7,7 +7,7 @@ https://developers.generativeai.google/guide
 """
 
 import logging
-from typing import Any, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import BaseModel  # type: ignore
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -18,6 +18,10 @@ from llama_index.response_synthesizers.base import BaseSynthesizer, QueryTextTyp
 from llama_index.schema import MetadataMode, NodeWithScore, TextNode
 from llama_index.types import RESPONSE_TEXT_TYPE
 from llama_index.vector_stores.google.generativeai import google_service_context
+
+if TYPE_CHECKING:
+    import google.ai.generativelanguage as genai
+
 
 _logger = logging.getLogger(__name__)
 _import_err_msg = "`google.generativeai` package not found, please run `pip install google-generativeai`"
@@ -50,48 +54,6 @@ class GoogleTextSynthesizer(BaseSynthesizer):
     _answer_style: Any
     _safety_setting: List[Any]
 
-    try:
-        import google.ai.generativelanguage as genai
-
-        # Type safe factory that is only available if Google is installed.
-        @classmethod
-        def from_defaults(
-            cls,
-            temperature: float = 0.7,
-            answer_style: int = genai.GenerateAnswerRequest.AnswerStyle.ABSTRACTIVE,
-            safety_setting: List[genai.SafetySetting] = [],
-        ) -> "GoogleTextSynthesizer":
-            """Create a new Google AQA.
-
-            Example:
-              responder = GoogleTextSynthesizer.create(
-                  temperature=0.7,
-                  answer_style=AnswerStyle.ABSTRACTIVE,
-                  safety_setting=[
-                      SafetySetting(
-                          category=HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                          threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
-                      ),
-                  ]
-              )
-
-            Args:
-              temperature: 0.0 to 1.0.
-              answer_style: See `google.ai.generativelanguage.GenerateAnswerRequest.AnswerStyle`
-              safety_setting: See `google.ai.generativelanguage.SafetySetting`.
-
-            Returns:
-              an instance of GoogleTextSynthesizer.
-            """
-            return cls(
-                temperature=temperature,
-                answer_style=answer_style,
-                safety_setting=safety_setting,
-            )
-
-    except ImportError:
-        pass
-
     def __init__(
         self,
         *,
@@ -102,8 +64,8 @@ class GoogleTextSynthesizer(BaseSynthesizer):
     ):
         """Create a new Google AQA.
 
-        Prefer to use the factory `create` instead for type safety.
-        See `create` for more documentation.
+        Prefer to use the factory `from_defaults` instead for type safety.
+        See `from_defaults` for more documentation.
         """
         try:
             import llama_index.vector_stores.google.generativeai.genai_extension as genaix
@@ -120,6 +82,43 @@ class GoogleTextSynthesizer(BaseSynthesizer):
         self._temperature = temperature
         self._answer_style = answer_style
         self._safety_setting = safety_setting
+
+    # Type safe factory that is only available if Google is installed.
+    @classmethod
+    def from_defaults(
+        cls,
+        temperature: float = 0.7,
+        answer_style: int = 1,
+        safety_setting: List["genai.SafetySetting"] = [],
+    ) -> "GoogleTextSynthesizer":
+        """Create a new Google AQA.
+
+        Example:
+          responder = GoogleTextSynthesizer.create(
+              temperature=0.7,
+              answer_style=AnswerStyle.ABSTRACTIVE,
+              safety_setting=[
+                  SafetySetting(
+                      category=HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                      threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+                  ),
+              ]
+          )
+
+        Args:
+          temperature: 0.0 to 1.0.
+          answer_style: See `google.ai.generativelanguage.GenerateAnswerRequest.AnswerStyle`
+            The default is ABSTRACTIVE (1).
+          safety_setting: See `google.ai.generativelanguage.SafetySetting`.
+
+        Returns:
+          an instance of GoogleTextSynthesizer.
+        """
+        return cls(
+            temperature=temperature,
+            answer_style=answer_style,
+            safety_setting=safety_setting,
+        )
 
     def get_response(
         self,
