@@ -150,7 +150,10 @@ class MonsterLLM(CustomLLM):
             raise RuntimeError(result["error"])
 
         if isinstance(result, dict) and "text" in result:
-            return CompletionResponse(text=result["text"][0])
+            if isinstance(result["text"], list):
+                return CompletionResponse(text=result["text"][0])
+            elif isinstance(result["text"], str):
+                return CompletionResponse(text=result["text"])
         
         if isinstance(result, list):
             return CompletionResponse(text=result[0]["text"])
