@@ -148,7 +148,7 @@ class CorrectnessEvaluator(BaseEvaluator):
 
         # a regexp to remove the score from the response
         reasoning_str = re.sub(r"\[SCORE:(.*?)\]", "", eval_response)
-        reasoning = reasoning_str.lstrip("\n")
+        reasoning = re.sub(r"\[SCORE:(.*?)\]", "", eval_response).lstrip()
 
         return EvaluationResult(
             query=query,
