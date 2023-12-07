@@ -1,5 +1,6 @@
 """Correctness evaluation."""
 import asyncio
+import re
 from typing import Any, Optional, Sequence, Union
 
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
@@ -23,7 +24,7 @@ You are given the following information:
 
 Your job is to judge the relevance and correctness of the generated answer.
 Output a single score that represents a holistic evaluation.
-You must return your response in a line with only the score.
+You must return your response in a line with only the score using the format [SCORE:2.0].
 Do not return answers in any other format.
 On a separate line provide your reasoning for the score as well.
 
@@ -37,7 +38,7 @@ you should give a score between 2 and 3.
 you should give a score between 4 and 5.
 
 Example Response:
-4.0
+[SCORE:4.0]
 The generated answer has the exact same metrics as the reference answer, \
     but it is not as concise.
 
@@ -134,8 +135,19 @@ class CorrectnessEvaluator(BaseEvaluator):
         )
 
         # Extract from response
-        score_str, reasoning_str = eval_response.split("\n", 1)
+        print(eval_response)
+        # use a regexp to match [SCORE:0.2] in the response
+        match = re.search(r"\[SCORE:(.*?)\]", eval_response)
+        if match:
+            score_str = match.group(1)
+        else:
+            # no score found, maybe retry?
+            pass
+
         score = float(score_str)
+
+        # a regexp to remove the score from the response
+        reasoning_str = re.sub(r"\[SCORE:(.*?)\]", "", eval_response)
         reasoning = reasoning_str.lstrip("\n")
 
         return EvaluationResult(
