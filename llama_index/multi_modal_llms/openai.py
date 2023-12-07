@@ -341,7 +341,7 @@ class OpenAIMultiModal(MultiModalLLM):
         message_dict = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
-        response = self._client.chat.completions.create(
+        response = await self._aclient.chat.completions.create(
             messages=message_dict,
             stream=False,
             **all_kwargs,
@@ -369,7 +369,7 @@ class OpenAIMultiModal(MultiModalLLM):
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
 
-            for response in self._client.chat.completions.create(
+            async for response in await self._aclient.chat.completions.create(
                 messages=message_dict,
                 stream=True,
                 **all_kwargs,
@@ -398,7 +398,7 @@ class OpenAIMultiModal(MultiModalLLM):
     ) -> ChatResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(messages)
-        response = self._client.chat.completions.create(
+        response = await self._aclient.chat.completions.create(
             messages=message_dicts,
             stream=False,
             **all_kwargs,
@@ -422,7 +422,7 @@ class OpenAIMultiModal(MultiModalLLM):
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
-            for response in self._client.chat.completions.create(
+            async for response in await self._aclient.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
                 **self._get_model_kwargs(**kwargs),
