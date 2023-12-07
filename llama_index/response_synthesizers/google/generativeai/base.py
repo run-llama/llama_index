@@ -55,7 +55,7 @@ class GoogleTextSynthesizer(BaseSynthesizer):
 
         # Type safe factory that is only available if Google is installed.
         @classmethod
-        def create(
+        def from_defaults(
             cls,
             temperature: float = 0.7,
             answer_style: int = genai.GenerateAnswerRequest.AnswerStyle.ABSTRACTIVE,

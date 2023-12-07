@@ -51,7 +51,7 @@ def test_get_response(mock_generate_answer: MagicMock) -> None:
     )
 
     # Act
-    synthesizer = GoogleTextSynthesizer.create(
+    synthesizer = GoogleTextSynthesizer.from_defaults(
         temperature=0.5,
         answer_style=genai.GenerateAnswerRequest.AnswerStyle.ABSTRACTIVE,
         safety_setting=[
@@ -132,7 +132,7 @@ def test_synthesize(mock_generate_answer: MagicMock) -> None:
     )
 
     # Act
-    synthesizer = GoogleTextSynthesizer.create()
+    synthesizer = GoogleTextSynthesizer.from_defaults()
     response = synthesizer.synthesize(
         query="What is the meaning of life?",
         nodes=[

@@ -204,15 +204,36 @@ class GoogleIndex(BaseManagedIndex):
             `answerable_probability`, which is the probability that the grounded
             answer is likely correct.
         """
-        return super().as_query_engine(
-            retriever=self.as_retriever(**kwargs),
-            response_synthesizer=GoogleTextSynthesizer.create(
-                temperature=temperature,
-                answer_style=answer_style,
-                safety_setting=safety_setting,
-            ),
-            **kwargs,
+        # NOTE: lazy import
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+
+        # Don't overwrite the caller's kwargs, which may surprise them.
+        local_kwargs = kwargs.copy()
+
+        if "retriever" in kwargs:
+            _logger.warning(
+                "Ignoring user's retriever to GoogleIndex.as_query_engine, "
+                "which uses its own retriever."
+            )
+            del local_kwargs["retriever"]
+
+        if "response_synthesizer" in kwargs:
+            _logger.warning(
+                "Ignoring user's response synthesizer to "
+                "GoogleIndex.as_query_engine, which uses its own retriever."
+            )
+            del local_kwargs["response_synthesizer"]
+
+        local_kwargs["retriever"] = self.as_retriever(**local_kwargs)
+        local_kwargs["response_synthesizer"] = GoogleTextSynthesizer.from_defaults(
+            temperature=temperature,
+            answer_style=answer_style,
+            safety_setting=safety_setting,
         )
+        if "service_context" not in local_kwargs:
+            local_kwargs["service_context"] = self._service_context
+
+        return RetrieverQueryEngine.from_args(**local_kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
         """Build the index from nodes."""
