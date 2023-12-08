@@ -3,6 +3,7 @@
 Before your chosen LLM can act on your data, you first need to build an ingestion pipeline over that data to process it and load it into a storage system. This has parallels to data cleaning/feature engineering pipelines in the ML world, or ETL pipelines in the traditional data setting.
 
 This ingestion pipeline consists of three main stages:
+
 1. Load the data
 2. Transform the data
 3. Index and store the data
@@ -55,7 +56,7 @@ After the data is loaded, you then need to process and transform your data befor
 
 Transformation input/outputs are `Node` objects (a `Document` is a subclass of a `Node`). Transformations can also be stacked and reordered.
 
-We have both a high-level and lower-level API for transforming documents. 
+We have both a high-level and lower-level API for transforming documents.
 
 ### High-Level Transformation API
 
@@ -76,7 +77,7 @@ You can also define these steps explicitly.
 
 You can do this by either using our transformation modules (text splitters, metadata extractors, etc.) as standalone components, or compose them in our declarative Transformation Pipeline interface.
 
-<TODO: FINISH THIS PART>
+<TODO: LEAVING THIS FOR NOW, FINISH THIS PART>
 
 The way in which your text is split up can have a large effect on the performance of your application in terms of accuracy and relevance of results returned. The defaults work well for simple text documents, so depending on what your data looks like you will sometimes want to modify the default ways in which your documents are split up.
 
