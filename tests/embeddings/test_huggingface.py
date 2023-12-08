@@ -42,7 +42,9 @@ class TestHuggingFaceInferenceAPIEmbeddings:
     def test_embed_query(
         self, hf_inference_api_embedding: HuggingFaceInferenceAPIEmbedding
     ) -> None:
-        raw_single_embedding = np.random.rand(1, 3, 1024)
+        raw_single_embedding = np.random.default_rng().random(
+            (1, 3, 1024), dtype=np.float32
+        )
 
         hf_inference_api_embedding.pooling = Pooling.CLS
         with patch.object(
@@ -53,6 +55,7 @@ class TestHuggingFaceInferenceAPIEmbeddings:
             embedding = hf_inference_api_embedding.get_query_embedding("test")
         assert isinstance(embedding, list)
         assert len(embedding) == 1024
+        assert isinstance(embedding[0], float)
         assert np.all(
             np.array(embedding, dtype=raw_single_embedding.dtype)
             == raw_single_embedding[0, 0]
@@ -68,6 +71,7 @@ class TestHuggingFaceInferenceAPIEmbeddings:
             embedding = hf_inference_api_embedding.get_query_embedding("test")
         assert isinstance(embedding, list)
         assert len(embedding) == 1024
+        assert isinstance(embedding[0], float)
         assert np.all(
             np.array(embedding, dtype=raw_single_embedding.dtype)
             == raw_single_embedding[0].mean(axis=0)
