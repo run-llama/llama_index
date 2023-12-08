@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from llama_index.core import BaseQueryEngine
