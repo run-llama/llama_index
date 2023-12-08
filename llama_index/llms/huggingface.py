@@ -592,7 +592,10 @@ class HuggingFaceInferenceAPI(CustomLLM):
         raise NotImplementedError
 
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        raise NotImplementedError
+        response = await self._async_client.text_generation(
+            prompt, **{**{"max_new_tokens": self.num_output}, **kwargs}
+        )
+        return CompletionResponse(text=response)
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
