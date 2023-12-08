@@ -5,13 +5,13 @@ from typing import Any, Optional
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import (
+from llama_index.llms.base import llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.types import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
-    llm_completion_callback,
 )
-from llama_index.llms.custom import CustomLLM
 
 DEFAULT_PALM_MODEL = "models/text-bison-001"
 

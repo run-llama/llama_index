@@ -13,8 +13,14 @@ if TYPE_CHECKING:
         ConditionalPromptSelector as LangchainSelector,
     )
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import LLM, ChatMessage
-from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
+from llama_index.llms.base import LLM
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as default_messages_to_prompt,
+)
+from llama_index.llms.generic_utils import (
+    prompt_to_messages,
+)
+from llama_index.llms.types import ChatMessage
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
 from llama_index.types import BaseOutputParser
@@ -147,7 +153,12 @@ class PromptTemplate(BasePromptTemplate):
         self.output_parser = output_parser
         return prompt
 
-    def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
+    def format(
+        self,
+        llm: Optional[LLM] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        **kwargs: Any,
+    ) -> str:
         """Format the prompt into a string."""
         del llm  # unused
         all_kwargs = {
@@ -157,8 +168,13 @@ class PromptTemplate(BasePromptTemplate):
 
         mapped_all_kwargs = self._map_all_vars(all_kwargs)
         prompt = self.template.format(**mapped_all_kwargs)
+
         if self.output_parser is not None:
             prompt = self.output_parser.format(prompt)
+
+        if completion_to_prompt is not None:
+            prompt = completion_to_prompt(prompt)
+
         return prompt
 
     def format_messages(
@@ -209,10 +225,19 @@ class ChatPromptTemplate(BasePromptTemplate):
         prompt.kwargs.update(kwargs)
         return prompt
 
-    def format(self, llm: Optional[LLM] = None, **kwargs: Any) -> str:
+    def format(
+        self,
+        llm: Optional[LLM] = None,
+        messages_to_prompt: Optional[Callable[[List[ChatMessage]], str]] = None,
+        **kwargs: Any,
+    ) -> str:
         del llm  # unused
         messages = self.format_messages(**kwargs)
-        return messages_to_prompt(messages)
+
+        if messages_to_prompt is not None:
+            return messages_to_prompt(messages)
+
+        return default_messages_to_prompt(messages)
 
     def format_messages(
         self, llm: Optional[LLM] = None, **kwargs: Any
@@ -246,7 +271,7 @@ class ChatPromptTemplate(BasePromptTemplate):
         return messages
 
     def get_template(self, llm: Optional[LLM] = None) -> str:
-        return messages_to_prompt(self.message_templates)
+        return default_messages_to_prompt(self.message_templates)
 
 
 class SelectorPromptTemplate(BasePromptTemplate):

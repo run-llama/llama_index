@@ -8,13 +8,13 @@ from llama_index.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.llms.base import (
+from llama_index.llms.base import llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.types import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
-    llm_completion_callback,
 )
-from llama_index.llms.custom import CustomLLM
 
 
 class PredibaseLLM(CustomLLM):

@@ -13,16 +13,7 @@ from typing import (
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms import ChatResponseAsyncGen
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -31,6 +22,17 @@ from llama_index.llms.generic_utils import (
 )
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,7 +45,7 @@ if TYPE_CHECKING:
     Metadata = Any
 
 
-class OpenLLM(LLM):
+class OpenLLM(LLMPromptMixin):
     """OpenLLM LLM."""
 
     model_id: str = Field(
@@ -274,7 +276,7 @@ class OpenLLM(LLM):
             )
 
 
-class OpenLLMAPI(LLM):
+class OpenLLMAPI(LLMPromptMixin):
     """OpenLLM Client interface. This is useful when interacting with a remote OpenLLM server."""
 
     address: Optional[str] = Field(

@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from llama_index.llms import LocalAI
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.types import ChatMessage
 from openai.types import Completion, CompletionChoice
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage

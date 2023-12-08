@@ -27,16 +27,6 @@ from llama_index.constants import (
     DEFAULT_TEMPERATURE,
 )
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -50,6 +40,7 @@ from llama_index.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
+from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
 from llama_index.llms.openai_utils import (
     from_openai_message,
     is_chat_model,
@@ -57,6 +48,17 @@ from llama_index.llms.openai_utils import (
     openai_modelname_to_contextsize,
     resolve_openai_credentials,
     to_openai_message_dicts,
+)
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
 )
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
@@ -70,7 +72,7 @@ class Tokenizer(Protocol):
         ...
 
 
-class OpenAI(LLM):
+class OpenAI(LLMPromptMixin):
     model: str = Field(
         default=DEFAULT_OPENAI_MODEL, description="The OpenAI model to use."
     )

@@ -8,16 +8,6 @@ from llama_index.llms.anthropic_utils import (
     messages_to_anthropic_prompt,
 )
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -27,12 +17,24 @@ from llama_index.llms.generic_utils import (
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
 )
+from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
 
 DEFAULT_ANTHROPIC_MODEL = "claude-2"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
 
 
-class Anthropic(LLM):
+class Anthropic(LLMPromptMixin):
     model: str = Field(
         default=DEFAULT_ANTHROPIC_MODEL, description="The anthropic model to use."
     )

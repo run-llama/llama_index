@@ -1,6 +1,6 @@
 from typing import List, Optional, Sequence
 
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.types import ChatMessage, MessageRole
 
 BOS, EOS = "<s>", "</s>"
 B_INST, E_INST = "[INST]", "[/INST]"

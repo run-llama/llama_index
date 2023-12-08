@@ -358,7 +358,7 @@ from llama_index.prompts import (
     ChatPromptTemplate,
 )
 from llama_index.prompts.utils import is_chat_model
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms import ChatMessage, MessageRole
 
 # Text QA templates
 DEFAULT_TEXT_QA_PROMPT_TMPL = (

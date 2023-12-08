@@ -1,12 +1,12 @@
 from typing import List
 
 import pytest
-from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.openai_utils import (
     from_openai_message_dicts,
     from_openai_messages,
     to_openai_message_dicts,
 )
+from llama_index.llms.types import ChatMessage, MessageRole
 from openai.types.chat.chat_completion_assistant_message_param import (
     FunctionCall as FunctionCallParam,
 )

@@ -11,10 +11,10 @@ from typing import Any, Dict, Mapping, Optional
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.openai_utils import is_function_calling_model
+from llama_index.llms.types import LLMMetadata
 
 # Use these as kwargs for OpenAILike to connect to LocalAIs
 DEFAULT_LOCALAI_PORT = 8080

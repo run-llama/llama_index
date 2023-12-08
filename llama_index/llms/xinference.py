@@ -4,6 +4,11 @@ from typing import Any, Dict, Optional, Sequence, Tuple
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
@@ -11,10 +16,7 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
-    llm_chat_callback,
-    llm_completion_callback,
 )
-from llama_index.llms.custom import CustomLLM
 from llama_index.llms.xinference_utils import (
     xinference_message_to_history,
     xinference_modelname_to_contextsize,

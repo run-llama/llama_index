@@ -3,18 +3,17 @@ from typing import Any, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import (
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
 )
 
 DEFAULT_MONSTER_TEMP = 0.75

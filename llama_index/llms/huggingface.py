@@ -8,16 +8,7 @@ from llama_index.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
 )
-from llama_index.llms import ChatResponseAsyncGen, CompletionResponseAsyncGen
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -28,6 +19,17 @@ from llama_index.llms.generic_utils import (
 )
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
 )
 from llama_index.prompts.base import PromptTemplate
 
@@ -386,7 +388,7 @@ def chat_messages_to_conversational_kwargs(
     return kwargs
 
 
-class HuggingFaceInferenceAPI(LLM):
+class HuggingFaceInferenceAPI(CustomLLM):
     """
     Wrapper on the Hugging Face's Inference API.
 

@@ -3,19 +3,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
-from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
-)
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
 from llama_index.llms.generic_utils import (
     achat_to_completion_decorator,
     acompletion_to_chat_decorator,
@@ -35,11 +23,22 @@ from llama_index.llms.konko_utils import (
     resolve_konko_credentials,
     to_openai_message_dicts,
 )
+from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 
 DEFAULT_KONKO_MODEL = "meta-llama/Llama-2-13b-chat-hf"
 
 
-class Konko(LLM):
+class Konko(LLMPromptMixin):
     model: str = Field(
         default=DEFAULT_KONKO_MODEL, description="The konko model to use."
     )

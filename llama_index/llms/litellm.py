@@ -3,19 +3,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_TEMPERATURE
-from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
-)
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
 from llama_index.llms.generic_utils import (
     achat_to_completion_decorator,
     acompletion_to_chat_decorator,
@@ -35,11 +23,22 @@ from llama_index.llms.litellm_utils import (
     to_openai_message_dicts,
     validate_litellm_api_key,
 )
+from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
 
-class LiteLLM(LLM):
+class LiteLLM(LLMPromptMixin):
     model: str = Field(
         default=DEFAULT_LITELLM_MODEL,
         description=(

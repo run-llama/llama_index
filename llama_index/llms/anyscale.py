@@ -5,11 +5,9 @@ from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.llms.anyscale_utils import (
     anyscale_modelname_to_contextsize,
 )
-from llama_index.llms.base import (
-    LLMMetadata,
-)
 from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.types import LLMMetadata
 
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "meta-llama/Llama-2-70b-chat-hf"

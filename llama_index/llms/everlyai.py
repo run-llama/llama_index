@@ -2,10 +2,10 @@ from typing import Any, Dict, Optional
 
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
-from llama_index.llms.base import LLMMetadata
 from llama_index.llms.everlyai_utils import everlyai_modelname_to_contextsize
 from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.types import LLMMetadata
 
 EVERLYAI_API_BASE = "https://everlyai.xyz/hosted"
 DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"

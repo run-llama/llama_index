@@ -3,7 +3,11 @@ from typing import Any, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
-    LLM,
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -13,8 +17,6 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
-    llm_chat_callback,
-    llm_completion_callback,
 )
 from llama_index.llms.vertex_utils import (
     CHAT_MODELS,
@@ -29,7 +31,7 @@ from llama_index.llms.vertex_utils import (
 )
 
 
-class Vertex(LLM):
+class Vertex(LLMPromptMixin):
     model: str = Field(description="The vertex model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")

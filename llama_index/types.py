@@ -14,7 +14,7 @@ from typing import (
 )
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.types import ChatMessage, MessageRole
 
 Model = TypeVar("Model", bound=BaseModel)
 

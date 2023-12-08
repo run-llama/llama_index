@@ -6,8 +6,9 @@ if TYPE_CHECKING:
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    LLM,
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -16,12 +17,10 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
 )
 
 
-class LangChainLLM(LLM):
+class LangChainLLM(LLMPromptMixin):
     """Adapter for a LangChain LLM."""
 
     _llm: Any = PrivateAttr()

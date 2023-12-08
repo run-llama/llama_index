@@ -3,8 +3,16 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    LLM,
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -13,20 +21,11 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
-)
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.llms.vllm_utils import get_response, post_http_request
 
 
-class Vllm(LLM):
+class Vllm(LLMPromptMixin):
     model: Optional[str] = Field(description="The HuggingFace Model to use.")
 
     temperature: float = Field(description="The temperature to use for sampling.")

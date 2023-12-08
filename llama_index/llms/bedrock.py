@@ -4,15 +4,6 @@ from typing import Any, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -26,9 +17,20 @@ from llama_index.llms.bedrock_utils import (
     get_text_from_response,
     stream_completion_to_chat_decorator,
 )
+from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 
 
-class Bedrock(LLM):
+class Bedrock(LLMPromptMixin):
     model: str = Field(description="The modelId of the Bedrock model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
@@ -136,7 +138,7 @@ class Bedrock(LLM):
         return LLMMetadata(
             context_window=self.context_size,
             num_output=self.max_tokens,
-            is_chat_model=True,
+            is_chat_model=False,
             model_name=self.model,
         )
 

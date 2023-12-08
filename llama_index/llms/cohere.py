@@ -4,16 +4,6 @@ from typing import Any, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -24,9 +14,21 @@ from llama_index.llms.cohere_utils import (
     completion_with_retry,
     messages_to_cohere_history,
 )
+from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
 
 
-class Cohere(LLM):
+class Cohere(LLMPromptMixin):
     model: str = Field(description="The cohere model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_retries: int = Field(
