@@ -10,6 +10,7 @@
 ### Bug Fixes / Nits
 
 - Change more than one image input for Replicate Multi-modal models from error to warning (#9360)
+- Removed GPT-Licensed `aiostream` dependency (#9403)
 
 ## [0.9.13] - 2023-12-06
 
