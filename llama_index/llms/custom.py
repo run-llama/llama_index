@@ -8,7 +8,7 @@ from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -19,11 +19,11 @@ from llama_index.llms.types import (
 )
 
 
-class CustomLLM(LLMPromptMixin):
+class CustomLLM(LLM):
     """Simple abstract base class for custom LLMs.
 
-    Subclasses must implement the `__init__`, `complete`,
-        `stream_complete`, and `metadata` methods.
+    Subclasses must implement the `__init__`, `_complete`,
+        `_stream_complete`, and `metadata` methods.
     """
 
     @llm_chat_callback()

@@ -6,7 +6,7 @@ from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -31,7 +31,7 @@ from llama_index.llms.vertex_utils import (
 )
 
 
-class Vertex(LLMPromptMixin):
+class Vertex(LLM):
     model: str = Field(description="The vertex model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")

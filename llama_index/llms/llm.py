@@ -8,7 +8,7 @@ from typing import (
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks import CBEventType, EventPayload
-from llama_index.llms.base import LLM
+from llama_index.llms.base import BaseLLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
@@ -69,7 +69,7 @@ async def astream_chat_response_to_tokens(
     return gen()
 
 
-class LLMPromptMixin(LLM):
+class LLM(BaseLLM):
     system_prompt: Optional[str] = Field(description="System prompt for LLM calls.")
     messages_to_prompt: Optional[Callable[[List[ChatMessage]], str]] = Field(
         description="Function to convert a list of messages to an LLM prompt.",

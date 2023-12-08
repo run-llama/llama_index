@@ -11,7 +11,7 @@ from llama_index.llms.generic_utils import (
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -25,7 +25,7 @@ from llama_index.llms.types import (
 from llama_index.llms.vllm_utils import get_response, post_http_request
 
 
-class Vllm(LLMPromptMixin):
+class Vllm(LLM):
     model: Optional[str] = Field(description="The HuggingFace Model to use.")
 
     temperature: float = Field(description="The temperature to use for sampling.")

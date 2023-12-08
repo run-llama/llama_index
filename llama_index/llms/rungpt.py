@@ -5,7 +5,7 @@ from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -22,7 +22,7 @@ DEFAULT_RUNGPT_MODEL = "rungpt"
 DEFAULT_RUNGPT_TEMP = 0.75
 
 
-class RunGptLLM(LLMPromptMixin):
+class RunGptLLM(LLM):
     """The opengpt of Jina AI models."""
 
     model: Optional[str] = Field(

@@ -7,7 +7,7 @@ import requests
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -20,7 +20,7 @@ from llama_index.llms.types import (
 )
 
 
-class Perplexity(LLMPromptMixin):
+class Perplexity(LLM):
     model: str = Field(description="The Perplexity model to use.")
     temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(

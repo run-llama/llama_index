@@ -7,7 +7,7 @@ from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -25,7 +25,7 @@ from llama_index.llms.watsonx_utils import (
 )
 
 
-class WatsonX(LLMPromptMixin):
+class WatsonX(LLM):
     """IBM WatsonX LLM."""
 
     model_id: str = Field(description="The Model to use.")

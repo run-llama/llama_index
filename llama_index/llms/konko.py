@@ -23,7 +23,7 @@ from llama_index.llms.konko_utils import (
     resolve_konko_credentials,
     to_openai_message_dicts,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -38,7 +38,7 @@ from llama_index.llms.types import (
 DEFAULT_KONKO_MODEL = "meta-llama/Llama-2-13b-chat-hf"
 
 
-class Konko(LLMPromptMixin):
+class Konko(LLM):
     model: str = Field(
         default=DEFAULT_KONKO_MODEL, description="The konko model to use."
     )

@@ -23,7 +23,7 @@ from llama_index.llms.generic_utils import (
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     Metadata = Any
 
 
-class OpenLLM(LLMPromptMixin):
+class OpenLLM(LLM):
     """OpenLLM LLM."""
 
     model_id: str = Field(
@@ -276,7 +276,7 @@ class OpenLLM(LLMPromptMixin):
             )
 
 
-class OpenLLMAPI(LLMPromptMixin):
+class OpenLLMAPI(LLM):
     """OpenLLM Client interface. This is useful when interacting with a remote OpenLLM server."""
 
     address: Optional[str] = Field(

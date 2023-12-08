@@ -10,7 +10,7 @@ from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser, TextSplitter

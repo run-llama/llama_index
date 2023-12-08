@@ -14,7 +14,7 @@ from llama_index.llms.cohere_utils import (
     completion_with_retry,
     messages_to_cohere_history,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -28,7 +28,7 @@ from llama_index.llms.types import (
 )
 
 
-class Cohere(LLMPromptMixin):
+class Cohere(LLM):
     model: str = Field(description="The cohere model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_retries: int = Field(

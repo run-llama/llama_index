@@ -17,7 +17,7 @@ from llama_index.llms.generic_utils import (
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -34,7 +34,7 @@ DEFAULT_ANTHROPIC_MODEL = "claude-2"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
 
 
-class Anthropic(LLMPromptMixin):
+class Anthropic(LLM):
     model: str = Field(
         default=DEFAULT_ANTHROPIC_MODEL, description="The anthropic model to use."
     )

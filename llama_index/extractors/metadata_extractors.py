@@ -26,7 +26,7 @@ from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.extractors.interface import BaseExtractor
 from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 from llama_index.prompts import PromptTemplate
 from llama_index.schema import BaseNode, TextNode
 from llama_index.types import BasePydanticProgram

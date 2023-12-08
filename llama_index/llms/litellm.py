@@ -23,7 +23,7 @@ from llama_index.llms.litellm_utils import (
     to_openai_message_dicts,
     validate_litellm_api_key,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -38,7 +38,7 @@ from llama_index.llms.types import (
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
 
-class LiteLLM(LLMPromptMixin):
+class LiteLLM(LLM):
     model: str = Field(
         default=DEFAULT_LITELLM_MODEL,
         description=(

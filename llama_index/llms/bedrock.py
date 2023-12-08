@@ -17,7 +17,7 @@ from llama_index.llms.bedrock_utils import (
     get_text_from_response,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -30,7 +30,7 @@ from llama_index.llms.types import (
 )
 
 
-class Bedrock(LLMPromptMixin):
+class Bedrock(LLM):
     model: str = Field(description="The modelId of the Bedrock model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")

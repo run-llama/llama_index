@@ -2,7 +2,6 @@ from llama_index.llms.ai21 import AI21
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anyscale import Anyscale
 from llama_index.llms.azure_openai import AzureOpenAI
-from llama_index.llms.base import LLM
 from llama_index.llms.bedrock import Bedrock
 from llama_index.llms.clarifai import Clarifai
 from llama_index.llms.cohere import Cohere
@@ -14,6 +13,7 @@ from llama_index.llms.konko import Konko
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.litellm import LiteLLM
 from llama_index.llms.llama_cpp import LlamaCPP
+from llama_index.llms.llm import LLM
 from llama_index.llms.localai import LOCALAI_DEFAULTS, LocalAI
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.monsterapi import MonsterLLM

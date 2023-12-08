@@ -10,8 +10,8 @@ from typing_extensions import Self
 from llama_index.bridge.pydantic import BaseModel, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llms.base import LLM
-from llama_index.llms.llm_prompt_mixin import (
+from llama_index.llms.llm import (
+    LLM,
     astream_chat_response_to_tokens,
     astream_completion_response_to_tokens,
     stream_chat_response_to_tokens,

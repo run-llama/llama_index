@@ -6,7 +6,7 @@ from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.llms.llm_prompt_mixin import LLMPromptMixin
+from llama_index.llms.llm import LLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -21,7 +21,7 @@ from llama_index.llms.types import (
 EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
 
 
-class Clarifai(LLMPromptMixin):
+class Clarifai(LLM):
     model_url: Optional[str] = Field(
         description=f"Full URL of the model. e.g. `{EXAMPLE_URL}`"
     )

@@ -131,7 +131,6 @@ class HuggingFaceLLM(CustomLLM):
     _model: Any = PrivateAttr()
     _tokenizer: Any = PrivateAttr()
     _stopping_criteria: Any = PrivateAttr()
-    _messages_to_prompt: Callable = PrivateAttr()
 
     def __init__(
         self,
