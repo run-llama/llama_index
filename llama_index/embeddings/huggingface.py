@@ -236,7 +236,10 @@ class HuggingFaceInferenceAPIEmbedding(HuggingFaceInferenceAPI, BaseEmbedding): 
         return "HuggingFaceInferenceAPIEmbedding"
 
     async def _async_embed_single(self, text: str) -> Embedding:
-        embedding = (await self._async_client.feature_extraction(text)).squeeze(axis=0)
+        embedding = await self._async_client.feature_extraction(text)
+        if len(embedding.shape) == 1:
+            return embedding.tolist()
+        embedding = embedding.squeeze(axis=0)
         if len(embedding.shape) == 1:  # Some models pool internally
             return embedding.tolist()
         try:

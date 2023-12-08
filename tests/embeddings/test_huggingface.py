@@ -78,6 +78,26 @@ class TestHuggingFaceInferenceAPIEmbeddings:
         )
         mock_feature_extraction.assert_awaited_once_with("test")
 
+    def test_embed_query_one_dimension(
+        self, hf_inference_api_embedding: HuggingFaceInferenceAPIEmbedding
+    ) -> None:
+        raw_single_embedding = np.random.default_rng().random(1024, dtype=np.float32)
+
+        with patch.object(
+            hf_inference_api_embedding._async_client,
+            "feature_extraction",
+            AsyncMock(return_value=raw_single_embedding),
+        ) as mock_feature_extraction:
+            embedding = hf_inference_api_embedding.get_query_embedding("test")
+        assert isinstance(embedding, list)
+        assert len(embedding) == 1024
+        assert isinstance(embedding[0], float)
+        assert np.all(
+            np.array(embedding, dtype=raw_single_embedding.dtype)
+            == raw_single_embedding
+        )
+        mock_feature_extraction.assert_awaited_once_with("test")
+
     def test_serialization(
         self, hf_inference_api_embedding: HuggingFaceInferenceAPIEmbedding
     ) -> None:
