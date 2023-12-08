@@ -29,7 +29,7 @@ from llama_index.vector_stores.simple import (
     NAMESPACE_SEP,
     SimpleVectorStore,
 )
-from llama_index.vector_stores.types import VectorStore
+from llama_index.vector_stores.types import BasePydanticVectorStore, VectorStore
 
 DEFAULT_PERSIST_DIR = "./storage"
 IMAGE_STORE_FNAME = "image_store.json"
@@ -59,9 +59,11 @@ class StorageContext:
         cls,
         docstore: Optional[BaseDocumentStore] = None,
         index_store: Optional[BaseIndexStore] = None,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: Optional[Union[VectorStore, BasePydanticVectorStore]] = None,
         image_store: Optional[VectorStore] = None,
-        vector_stores: Optional[Dict[str, VectorStore]] = None,
+        vector_stores: Optional[
+            Dict[str, Union[VectorStore, BasePydanticVectorStore]]
+        ] = None,
         graph_store: Optional[GraphStore] = None,
         persist_dir: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,

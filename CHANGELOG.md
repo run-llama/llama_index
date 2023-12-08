@@ -5,6 +5,7 @@
 ### New Features
 
 - Add `Ollama` Embedding class (#9341)
+- Add `FlagEmbeddingReranker` for reranking (#9285)
 
 ### Bug Fixes / Nits
 
