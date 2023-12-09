@@ -1,4 +1,4 @@
-# Ingestion
+# Loading Data (Ingestion)
 
 Before your chosen LLM can act on your data, you first need to process the data and load it. This has parallels to data cleaning/feature engineering pipelines in the ML world, or ETL pipelines in the traditional data setting.
 
@@ -49,14 +49,6 @@ documents = reader.load_data(query=query)
 ```
 
 There are hundreds of connectors to use on [LlamaHub](https://llamahub.ai)!
-
-```{toctree}
----
-maxdepth: 1
-hidden: true
----
-/understanding/loading/llamahub.md
-```
 
 ### Creating Documents directly
 
@@ -145,7 +137,6 @@ document = Document(
 
 To insert a node into a vector index, it should have an embedding. See our [ingestion pipeline](/module_guides/loading/ingestion_pipeline/root.md) or our [embeddings guide](/module_guides/models/embeddings.md) for more details.
 
-
 ### Creating and passing Nodes directly
 
 If you want to, you can create nodes directly and pass a list of Nodes directly to an indexer:
@@ -157,4 +148,16 @@ node1 = TextNode(text="<text_chunk>", id_="<node_id>")
 node2 = TextNode(text="<text_chunk>", id_="<node_id>")
 
 index = VectorStoreIndex([node1, node2])
+```
+
+```{toctree}
+---
+maxdepth: 1
+hidden: true
+---
+/module_guides/loading/loading.md
+/understanding/loading/llamahub.md
+/module_guides/loading/documents_and_nodes/root.md
+/module_guides/loading/node_parsers/root.md
+/module_guides/loading/ingestion_pipeline/root.md
 ```
