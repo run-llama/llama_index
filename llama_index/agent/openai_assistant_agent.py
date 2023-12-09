@@ -145,7 +145,7 @@ class OpenAIAssistantAgent(BaseAgent):
         self,
         client: Any,
         assistant: Any,
-        tools: List[BaseTool],
+        tools: Optional[List[BaseTool]],
         callback_manager: Optional[CallbackManager] = None,
         thread_id: Optional[str] = None,
         instructions_prefix: Optional[str] = None,
@@ -159,7 +159,7 @@ class OpenAIAssistantAgent(BaseAgent):
 
         self._client = cast(OpenAI, client)
         self._assistant = cast(Assistant, assistant)
-        self._tools = tools
+        self._tools = tools or []
         if thread_id is None:
             thread = self._client.beta.threads.create()
             thread_id = thread.id

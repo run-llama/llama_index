@@ -53,7 +53,7 @@ async def test_acall_function(
     add_tool: FunctionTool, add_function_call: Function
 ) -> None:
     tools = [add_tool]
-    chat_message, tool_output = await acall_function(tools, add_function_call)
+    chat_message, tool_output = await acall_function(tools, add_function_call)   # type: ignore
     assert isinstance(chat_message, ChatMessage)
     assert isinstance(tool_output, ToolOutput)
     assert tool_output.raw_output == 3
