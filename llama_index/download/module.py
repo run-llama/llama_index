@@ -139,7 +139,10 @@ def download_module_and_reqs(
         if extra_file == "__init__.py":
             loader_exports = get_exports(extra_file_raw_content)
             existing_exports = []
-            with open(local_dir_path / "__init__.py", "r+") as f:
+            init_file_path = local_dir_path / "__init__.py"
+            # if the __init__.py file do not exists, we need to create it
+            mode = "a+" if not os.path.exists(init_file_path) else "r+"
+            with open(init_file_path, mode) as f:
                 f.write(f"from .{module_id} import {', '.join(loader_exports)}")
                 existing_exports = get_exports(f.read())
             rewrite_exports(existing_exports + loader_exports, str(local_dir_path))
