@@ -1,13 +1,7 @@
 from collections import ChainMap
-from typing import (
-    Any,
-    List,
-    Optional,
-    Protocol,
-    Sequence,
-)
+from typing import Any, List, Optional, Protocol, Sequence, runtime_checkable
 
-from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.bridge.pydantic import BaseModel, Field, validator
 from llama_index.callbacks import CBEventType, EventPayload
 from llama_index.llms.base import BaseLLM
 from llama_index.llms.generic_utils import (
@@ -26,11 +20,13 @@ from llama_index.types import PydanticProgramMode, TokenAsyncGen, TokenGen
 
 
 # NOTE: These two protocols are needed to appease mypy
+@runtime_checkable
 class MessagesToPromptType(Protocol):
     def __call__(self, messages: Sequence[ChatMessage]) -> str:
         pass
 
 
+@runtime_checkable
 class CompletionToPromptType(Protocol):
     def __call__(self, prompt: str) -> str:
         pass
@@ -97,6 +93,18 @@ class LLM(BaseLLM):
         exclude=True,
     )
     pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT
+
+    @validator("messages_to_prompt", pre=True)
+    def set_messages_to_prompt(
+        cls, messages_to_prompt: Optional[MessagesToPromptType]
+    ) -> MessagesToPromptType:
+        return messages_to_prompt or genric_messages_to_prompt
+
+    @validator("completion_to_prompt", pre=True)
+    def set_completion_to_prompt(
+        cls, completion_to_prompt: Optional[CompletionToPromptType]
+    ) -> CompletionToPromptType:
+        return completion_to_prompt or (lambda x: x)
 
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any
