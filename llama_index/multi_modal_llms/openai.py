@@ -16,6 +16,10 @@ from llama_index.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.llms.openai_utils import from_openai_message, to_openai_message_dicts
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,

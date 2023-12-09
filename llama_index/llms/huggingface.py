@@ -32,6 +32,7 @@ from llama_index.llms.types import (
     MessageRole,
 )
 from llama_index.prompts.base import PromptTemplate
+from llama_index.types import PydanticProgramMode
 
 DEFAULT_HUGGINGFACE_MODEL = "StabilityAI/stablelm-tuned-alpha-3b"
 if TYPE_CHECKING:
@@ -136,7 +137,6 @@ class HuggingFaceLLM(CustomLLM):
         self,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
-        system_prompt: str = "",
         query_wrapper_prompt: Union[str, PromptTemplate] = "{query_str}",
         tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
         model_name: str = DEFAULT_HUGGINGFACE_MODEL,
@@ -149,8 +149,11 @@ class HuggingFaceLLM(CustomLLM):
         model_kwargs: Optional[dict] = None,
         generate_kwargs: Optional[dict] = None,
         is_chat_model: Optional[bool] = False,
-        messages_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         """Initialize params."""
         try:
@@ -226,7 +229,6 @@ class HuggingFaceLLM(CustomLLM):
         super().__init__(
             context_window=context_window,
             max_new_tokens=max_new_tokens,
-            system_prompt=system_prompt,
             query_wrapper_prompt=query_wrapper_prompt,
             tokenizer_name=tokenizer_name,
             model_name=model_name,
@@ -238,6 +240,10 @@ class HuggingFaceLLM(CustomLLM):
             generate_kwargs=generate_kwargs or {},
             is_chat_model=is_chat_model,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
         )
 
     @classmethod

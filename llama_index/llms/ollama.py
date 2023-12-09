@@ -25,6 +25,7 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.types import PydanticProgramMode
 
 
 class Ollama(CustomLLM):
@@ -59,9 +60,11 @@ class Ollama(CustomLLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         prompt_key: str = "prompt",
-        messages_to_prompt: Optional[Callable] = None,
-        completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)

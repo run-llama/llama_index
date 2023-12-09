@@ -3,7 +3,7 @@
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field
 
@@ -228,7 +228,7 @@ class ChatPromptTemplate(BasePromptTemplate):
     def format(
         self,
         llm: Optional[LLM] = None,
-        messages_to_prompt: Optional[Callable[[List[ChatMessage]], str]] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         **kwargs: Any,
     ) -> str:
         del llm  # unused

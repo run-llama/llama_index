@@ -60,6 +60,7 @@ from llama_index.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.types import PydanticProgramMode
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 
@@ -133,6 +134,11 @@ class OpenAI(LLM):
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
+        # base class
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -156,6 +162,10 @@ class OpenAI(LLM):
             timeout=timeout,
             reuse_client=reuse_client,
             default_headers=default_headers,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
             **kwargs,
         )
 

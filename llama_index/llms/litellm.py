@@ -34,6 +34,7 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.types import PydanticProgramMode
 
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
@@ -76,6 +77,10 @@ class LiteLLM(LLM):
         api_type: Optional[str] = None,
         api_base: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         **kwargs: Any,
     ) -> None:
         if "custom_llm_provider" in kwargs:
@@ -102,6 +107,10 @@ class LiteLLM(LLM):
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
             **kwargs,
         )
 

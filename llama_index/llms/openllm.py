@@ -34,6 +34,7 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.types import PydanticProgramMode
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +103,10 @@ class OpenLLM(LLM):
         serialization: Literal["safetensors", "legacy"] = "safetensors",
         trust_remote_code: bool = False,
         callback_manager: Optional[CallbackManager] = None,
-        messages_to_prompt: Optional[Callable[..., Any]] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         **attrs: Any,
     ):
         try:
@@ -141,6 +145,10 @@ class OpenLLM(LLM):
             serialization=self._llm._serialisation,
             trust_remote_code=self._llm.trust_remote_code,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
         )
 
     @classmethod

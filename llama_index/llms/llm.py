@@ -1,14 +1,18 @@
 from collections import ChainMap
 from typing import (
     Any,
-    Callable,
     List,
     Optional,
+    Protocol,
+    Sequence,
 )
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks import CBEventType, EventPayload
 from llama_index.llms.base import BaseLLM
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as genric_messages_to_prompt,
+)
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
@@ -19,6 +23,17 @@ from llama_index.llms.types import (
 )
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.types import PydanticProgramMode, TokenAsyncGen, TokenGen
+
+
+# NOTE: These two protocols are needed to appease mypy
+class MessagesToPromptType(Protocol):
+    def __call__(self, messages: Sequence[ChatMessage]) -> str:
+        pass
+
+
+class CompletionToPromptType(Protocol):
+    def __call__(self, prompt: str) -> str:
+        pass
 
 
 def stream_completion_response_to_tokens(
@@ -71,19 +86,17 @@ async def astream_chat_response_to_tokens(
 
 class LLM(BaseLLM):
     system_prompt: Optional[str] = Field(description="System prompt for LLM calls.")
-    messages_to_prompt: Optional[Callable[[List[ChatMessage]], str]] = Field(
+    messages_to_prompt: MessagesToPromptType = Field(
         description="Function to convert a list of messages to an LLM prompt.",
+        default=genric_messages_to_prompt,
         exclude=True,
     )
-    completion_to_prompt: Optional[Callable[[str], str]] = Field(
-        description="Function to convert a completion to an LLM prompt.", exclude=True
+    completion_to_prompt: CompletionToPromptType = Field(
+        description="Function to convert a completion to an LLM prompt.",
+        default=lambda x: x,
+        exclude=True,
     )
     pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT
-
-    # deprecated
-    query_wrapper_prompt: Optional[str] = Field(
-        description="DEPRECATED: Query wrapper prompt."
-    )
 
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any

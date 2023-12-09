@@ -34,6 +34,7 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.types import PydanticProgramMode
 
 DEFAULT_KONKO_MODEL = "meta-llama/Llama-2-13b-chat-hf"
 
@@ -79,6 +80,10 @@ class Konko(LLM):
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -109,6 +114,10 @@ class Konko(LLM):
             api_type=api_type,
             api_version=api_version,
             api_base=api_base,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
             **kwargs,
         )
 

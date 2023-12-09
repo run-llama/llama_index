@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -28,6 +28,7 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.types import PydanticProgramMode
 
 
 class Bedrock(LLM):
@@ -72,6 +73,10 @@ class Bedrock(LLM):
         max_retries: Optional[int] = 10,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         if context_size is None and model not in BEDROCK_FOUNDATION_LLMS:
             raise ValueError(
@@ -126,6 +131,10 @@ class Bedrock(LLM):
             max_retries=max_retries,
             additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
         )
 
     @classmethod

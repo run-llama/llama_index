@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -18,6 +18,7 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.types import PydanticProgramMode
 
 
 class LlamaAPI(CustomLLM):
@@ -38,6 +39,10 @@ class LlamaAPI(CustomLLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         try:
             from llamaapi import LlamaAPI as Client
@@ -55,6 +60,10 @@ class LlamaAPI(CustomLLM):
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs or {},
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
         )
 
     @classmethod
