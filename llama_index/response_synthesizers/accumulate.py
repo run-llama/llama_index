@@ -115,9 +115,9 @@ class Accumulate(BaseSynthesizer):
         )
 
         predictor = (
-            self._service_context.llm_predictor.apredict
+            self._service_context.llm.apredict
             if use_async
-            else self._service_context.llm_predictor.predict
+            else self._service_context.llm.predict
         )
 
         return [

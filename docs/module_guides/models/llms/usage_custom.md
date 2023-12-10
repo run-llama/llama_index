@@ -24,7 +24,6 @@ you may also plug in any LLM shown on Langchain's
 from llama_index import (
     KeywordTableIndex,
     SimpleDirectoryReader,
-    LLMPredictor,
     ServiceContext,
 )
 from llama_index.llms import OpenAI

@@ -10,7 +10,6 @@ from llama_index.chat_engine.types import (
     ToolOutput,
 )
 from llama_index.core import BaseRetriever
-from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.llm import LLM
 from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
@@ -69,9 +68,7 @@ class ContextChatEngine(BaseChatEngine):
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
         service_context = service_context or ServiceContext.from_defaults()
-        if not isinstance(service_context.llm_predictor, LLMPredictor):
-            raise ValueError("llm_predictor must be a LLMPredictor instance")
-        llm = service_context.llm_predictor.llm
+        llm = service_context.llm
 
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(

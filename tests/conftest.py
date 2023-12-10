@@ -68,10 +68,27 @@ def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> None:
         LLMMetadata(),
     )
 
+    monkeypatch.setattr(
+        MockLLM,
+        "predict",
+        patch_llmpredictor_predict,
+    )
+    monkeypatch.setattr(
+        MockLLM,
+        "apredict",
+        patch_llmpredictor_apredict,
+    )
+    monkeypatch.setattr(
+        MockLLM,
+        "metadata",
+        LLMMetadata(),
+    )
+
 
 @pytest.fixture()
 def mock_service_context(
-    patch_token_text_splitter: Any, patch_llm_predictor: Any
+    patch_token_text_splitter: Any,
+    patch_llm_predictor: Any,
 ) -> ServiceContext:
     return ServiceContext.from_defaults(embed_model=MockEmbedding())
 

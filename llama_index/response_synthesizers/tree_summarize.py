@@ -70,11 +70,11 @@ class TreeSummarize(BaseSynthesizer):
         if len(text_chunks) == 1:
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
-                response = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm.stream(
                     summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:
-                response = await self._service_context.llm_predictor.apredict(
+                response = await self._service_context.llm.apredict(
                     summary_template,
                     output_cls=self._output_cls,
                     context_str=text_chunks[0],
@@ -91,7 +91,7 @@ class TreeSummarize(BaseSynthesizer):
         else:
             # summarize each chunk
             tasks = [
-                self._service_context.llm_predictor.apredict(
+                self._service_context.llm.apredict(
                     summary_template,
                     output_cls=self._output_cls,
                     context_str=text_chunk,
@@ -129,11 +129,11 @@ class TreeSummarize(BaseSynthesizer):
         if len(text_chunks) == 1:
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
-                response = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm.stream(
                     summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:
-                response = self._service_context.llm_predictor.predict(
+                response = self._service_context.llm.predict(
                     summary_template,
                     output_cls=self._output_cls,
                     context_str=text_chunks[0],
@@ -151,7 +151,7 @@ class TreeSummarize(BaseSynthesizer):
             # summarize each chunk
             if self._use_async:
                 tasks = [
-                    self._service_context.llm_predictor.apredict(
+                    self._service_context.llm.apredict(
                         summary_template,
                         output_cls=self._output_cls,
                         context_str=text_chunk,
@@ -163,7 +163,7 @@ class TreeSummarize(BaseSynthesizer):
                 summaries: List[str] = run_async_tasks(tasks)
             else:
                 summaries = [
-                    self._service_context.llm_predictor.predict(
+                    self._service_context.llm.predict(
                         summary_template,
                         output_cls=self._output_cls,
                         context_str=text_chunk,

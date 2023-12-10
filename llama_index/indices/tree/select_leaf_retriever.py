@@ -129,7 +129,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             return cur_response
         else:
             context_msg = selected_node.get_content(metadata_mode=MetadataMode.LLM)
-            cur_response = self._service_context.llm_predictor.predict(
+            cur_response = self._service_context.llm.predict(
                 self._refine_template,
                 query_str=query_str,
                 existing_answer=prev_response,
@@ -172,7 +172,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            response = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm.predict(
                 query_template,
                 context_list=numbered_node_text,
             )
@@ -193,7 +193,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            response = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm.predict(
                 query_template_multiple,
                 context_list=numbered_node_text,
             )
@@ -290,7 +290,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            response = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm.predict(
                 query_template,
                 context_list=numbered_node_text,
             )
@@ -311,7 +311,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 cur_node_list, text_splitter=text_splitter
             )
 
-            response = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm.predict(
                 query_template_multiple,
                 context_list=numbered_node_text,
             )

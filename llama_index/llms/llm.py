@@ -5,7 +5,7 @@ from llama_index.bridge.pydantic import BaseModel, Field, validator
 from llama_index.callbacks import CBEventType, EventPayload
 from llama_index.llms.base import BaseLLM
 from llama_index.llms.generic_utils import (
-    messages_to_prompt as genric_messages_to_prompt,
+    messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.llms.types import (
     ChatMessage,
@@ -16,7 +16,12 @@ from llama_index.llms.types import (
     MessageRole,
 )
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.types import PydanticProgramMode, TokenAsyncGen, TokenGen
+from llama_index.types import (
+    BaseOutputParser,
+    PydanticProgramMode,
+    TokenAsyncGen,
+    TokenGen,
+)
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -84,7 +89,7 @@ class LLM(BaseLLM):
     system_prompt: Optional[str] = Field(description="System prompt for LLM calls.")
     messages_to_prompt: MessagesToPromptType = Field(
         description="Function to convert a list of messages to an LLM prompt.",
-        default=genric_messages_to_prompt,
+        default=generic_messages_to_prompt,
         exclude=True,
     )
     completion_to_prompt: CompletionToPromptType = Field(
@@ -92,13 +97,25 @@ class LLM(BaseLLM):
         default=lambda x: x,
         exclude=True,
     )
+    output_parser: Optional[BaseOutputParser] = Field(
+        description="Output parser to parse, validate, and correct errors programmatically.",
+        default=None,
+        exclude=True,
+    )
     pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT
+
+    # deprecated
+    query_wrapper_prompt: Optional[BasePromptTemplate] = Field(
+        description="Query wrapper prompt for LLM calls.",
+        default=None,
+        exclude=True,
+    )
 
     @validator("messages_to_prompt", pre=True)
     def set_messages_to_prompt(
         cls, messages_to_prompt: Optional[MessagesToPromptType]
     ) -> MessagesToPromptType:
-        return messages_to_prompt or genric_messages_to_prompt
+        return messages_to_prompt or generic_messages_to_prompt
 
     @validator("completion_to_prompt", pre=True)
     def set_completion_to_prompt(
@@ -174,6 +191,14 @@ class LLM(BaseLLM):
 
         return await program.acall(**prompt_args)
 
+    def _parse_output(self, prompt: BasePromptTemplate, output: str) -> str:
+        if prompt.output_parser is not None:
+            return str(prompt.output_parser.parse(output))
+        elif self.output_parser is not None:
+            return str(self.output_parser.parse(output))
+
+        return output
+
     def predict(
         self,
         prompt: BasePromptTemplate,
@@ -190,6 +215,8 @@ class LLM(BaseLLM):
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
             response = self.complete(formatted_prompt)
             output = response.text
+
+        self._parse_output(prompt, output)
 
         return output
 
@@ -209,6 +236,10 @@ class LLM(BaseLLM):
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
             stream_response = self.stream_complete(formatted_prompt)
             stream_tokens = stream_completion_response_to_tokens(stream_response)
+
+        if prompt.output_parser is not None or self.output_parser is not None:
+            raise NotImplementedError("Output parser is not supported for streaming.")
+
         return stream_tokens
 
     async def apredict(
@@ -228,6 +259,8 @@ class LLM(BaseLLM):
             response = await self.acomplete(formatted_prompt)
             output = response.text
 
+        self._parse_output(prompt, output)
+
         return output
 
     async def astream(
@@ -246,6 +279,10 @@ class LLM(BaseLLM):
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
             stream_response = await self.astream_complete(formatted_prompt)
             stream_tokens = await astream_completion_response_to_tokens(stream_response)
+
+        if prompt.output_parser is not None or self.output_parser is not None:
+            raise NotImplementedError("Output parser is not supported for streaming.")
+
         return stream_tokens
 
     def _extend_prompt(

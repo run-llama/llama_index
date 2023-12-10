@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from collections import ChainMap
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from typing_extensions import Self
 
@@ -331,3 +331,6 @@ class LLMPredictor(BaseLLMPredictor):
                 *messages,
             ]
         return messages
+
+
+LLMPredictorType = Union[LLMPredictor, LLM]

@@ -3,7 +3,7 @@ from typing import Any, Callable, Generator, Optional, Sequence, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.indices.utils import truncate_text
-from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL,
@@ -41,23 +41,23 @@ class DefaultRefineProgram(BasePydanticProgram):
     query_satisfied=True. In effect, doesn't do any answer filtering.
     """
 
-    def __init__(self, prompt: BasePromptTemplate, llm_predictor: BaseLLMPredictor):
+    def __init__(self, prompt: BasePromptTemplate, llm: LLMPredictorType):
         self._prompt = prompt
-        self._llm_predictor = llm_predictor
+        self._llm = llm
 
     @property
     def output_cls(self) -> Type[BaseModel]:
         return StructuredRefineResponse
 
     def __call__(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
-        answer = self._llm_predictor.predict(
+        answer = self._llm.predict(
             self._prompt,
             **kwds,
         )
         return StructuredRefineResponse(answer=answer, query_satisfied=True)
 
     async def acall(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
-        answer = await self._llm_predictor.apredict(
+        answer = await self._llm.apredict(
             self._prompt,
             **kwds,
         )
@@ -155,7 +155,7 @@ class Refine(BaseSynthesizer):
         else:
             return DefaultRefineProgram(
                 prompt=prompt,
-                llm_predictor=self._service_context.llm_predictor,
+                llm=self._service_context.llm.llm,
             )
 
     def _give_response_single(
@@ -193,7 +193,7 @@ class Refine(BaseSynthesizer):
                         f"Validation error on structured response: {e}", exc_info=True
                     )
             elif response is None and self._streaming:
-                response = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
                     output_cls=self._output_cls,
@@ -285,7 +285,7 @@ class Refine(BaseSynthesizer):
                     query_str=query_str, existing_answer=response
                 )
 
-                response = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
                     output_cls=self._output_cls,

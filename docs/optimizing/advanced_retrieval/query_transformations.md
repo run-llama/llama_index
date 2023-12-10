@@ -66,14 +66,12 @@ Here's a corresponding example code snippet over a composed graph.
 
 ```python
 # Setting: a summary index composed over multiple vector indices
-# llm_predictor_chatgpt corresponds to the ChatGPT LLM interface
+# llm_chatgpt corresponds to the ChatGPT LLM interface
 from llama_index.indices.query.query_transform.base import (
     DecomposeQueryTransform,
 )
 
-decompose_transform = DecomposeQueryTransform(
-    llm_predictor_chatgpt, verbose=True
-)
+decompose_transform = DecomposeQueryTransform(llm_chatgpt, verbose=True)
 
 # initialize indexes and graph
 ...
@@ -117,9 +115,7 @@ from llama_index.indices.query.query_transform.base import (
 )
 
 # gpt-4
-step_decompose_transform = StepDecomposeQueryTransform(
-    llm_predictor, verbose=True
-)
+step_decompose_transform = StepDecomposeQueryTransform(llm, verbose=True)
 
 query_engine = index.as_query_engine()
 query_engine = MultiStepQueryEngine(

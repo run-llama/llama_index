@@ -87,7 +87,6 @@ We can add the following functions to both initialize our LLM, as well as use it
 from llama_index import (
     Document,
     SummaryIndex,
-    LLMPredictor,
     ServiceContext,
     load_index_from_storage,
 )
