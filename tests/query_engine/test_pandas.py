@@ -84,6 +84,7 @@ def test_default_output_processor_rce(tmp_path: Path) -> None:
     assert not tmp_file.is_file(), "file has been created via RCE!"
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Requires Python 3.9 or higher")
 def test_default_output_processor_rce2(tmp_path: Path) -> None:
     """
     Test that output processor prevents RCE.
