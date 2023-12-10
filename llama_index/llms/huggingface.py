@@ -76,8 +76,8 @@ class HuggingFaceLLM(CustomLLM):
             "The model card on HuggingFace should specify if this is needed."
         ),
     )
-    query_wrapper_prompt: str = Field(
-        default="{query_str}",
+    query_wrapper_prompt: PromptTemplate = Field(
+        default=PromptTemplate("{query_str}"),
         description=(
             "The query wrapper prompt, containing the query placeholder. "
             "The model card on HuggingFace should specify if this is needed. "
@@ -219,8 +219,8 @@ class HuggingFaceLLM(CustomLLM):
 
         self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
-        if isinstance(query_wrapper_prompt, PromptTemplate):
-            query_wrapper_prompt = query_wrapper_prompt.template
+        if isinstance(query_wrapper_prompt, str):
+            query_wrapper_prompt = PromptTemplate(query_wrapper_prompt)
 
         self._messages_to_prompt = (
             messages_to_prompt or self._tokenizer_messages_to_prompt

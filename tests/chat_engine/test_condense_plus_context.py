@@ -10,7 +10,7 @@ from llama_index.prompts import BasePromptTemplate
 from llama_index.schema import NodeWithScore, TextNode
 
 
-def override_predict(self, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
+def override_predict(self: Any, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
     return prompt.format(**prompt_args)
 
 
