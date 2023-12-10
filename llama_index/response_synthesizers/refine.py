@@ -155,7 +155,7 @@ class Refine(BaseSynthesizer):
         else:
             return DefaultRefineProgram(
                 prompt=prompt,
-                llm=self._service_context.llm.llm,
+                llm=self._service_context.llm,
             )
 
     def _give_response_single(
