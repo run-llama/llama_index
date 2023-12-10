@@ -175,7 +175,7 @@ class LLMMultiSelector(BaseSelector):
             output_parser=output_parser,
             prompt_type=PromptType.MULTI_SELECT,
         )
-        return cls(service_context.llm.llm, prompt, max_outputs)
+        return cls(service_context.llm, prompt, max_outputs)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""

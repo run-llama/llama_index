@@ -151,7 +151,9 @@ class Playground:
                 token_counter = TokenCountingHandler()
                 callback_manager = CallbackManager([token_counter])
                 if isinstance(service_context.llm_predictor, LLMPredictor):
-                    service_context.llm.llm.callback_manager = callback_manager
+                    service_context.llm_predictor.llm.callback_manager = (
+                        callback_manager
+                    )
                     service_context.embed_model.callback_manager = callback_manager
 
                 try:

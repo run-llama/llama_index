@@ -317,8 +317,6 @@ class ServiceContext:
 
     @property
     def llm(self) -> LLM:
-        if not isinstance(self.llm_predictor, LLMPredictor):
-            raise ValueError("llm_predictor must be an instance of LLMPredictor")
         return self.llm_predictor.llm
 
     @property
