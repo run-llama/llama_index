@@ -52,9 +52,9 @@ Typically, generation-heavy, open-ended tasks and requiring judgement or opinion
 Against annotated datasets, whether your own data or an academic benchmark, there are a number of standard metrics that it helps to be aware of:
 
 1. **Exact Match (EM):** The percentage of queries that are answered exactly correctly.
-2. **F1:** The percentage of queries that are answered exactly correctly or with a small edit distance (e.g. 1-2 words).
-3. **Recall:** The percentage of queries that are answered correctly, regardless of the number of answers returned.
-4. **Precision:** The percentage of queries that are answered correctly, divided by the number of answers returned.
+2. **Recall:** The percentage of queries that are answered correctly, regardless of the number of answers returned.
+3. **Precision:** The percentage of queries that are answered correctly, divided by the number of answers returned.
+4. **F1:** The F1 score is the harmonic mean of precision and recall. It thus symmetrically represents both precision and recall in one metric, considering both false positives and false negatives.
 
 This [towardsdatascience article](https://towardsdatascience.com/ranking-evaluation-metrics-for-recommender-systems-263d0a66ef54) covers more technical metrics like NDCG, MAP and MRR in greater depth.
 
