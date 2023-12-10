@@ -189,7 +189,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         return_raw: bool = True,
         handle_sql_errors: bool = True,
         sql_only: bool = False,
-        callback_manager: Optional[CallbackManager] = None,        
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -282,11 +282,11 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        if(self._sql_only):            
+        if self._sql_only:
             sql_only_node = TextNode(text=f"{sql_query_str}")
             retrieved_nodes = [NodeWithScore(node=sql_only_node)]
             metadata = {}
-        else:  
+        else:
             try:
                 retrieved_nodes, metadata = self._sql_retriever.retrieve_with_metadata(
                     sql_query_str
@@ -326,11 +326,11 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        if(self._sql_only):            
+        if self._sql_only:
             sql_only_node = TextNode(text=f"{sql_query_str}")
             retrieved_nodes = [NodeWithScore(node=sql_only_node)]
             metadata = {}
-        else: 
+        else:
             try:
                 (
                     retrieved_nodes,

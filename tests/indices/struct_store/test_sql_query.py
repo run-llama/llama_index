@@ -15,6 +15,7 @@ from llama_index.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
 from sqlalchemy.exc import OperationalError
 
+
 def test_sql_index_query(
     mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
@@ -39,7 +40,7 @@ def test_sql_index_query(
         docs,
         sql_database=sql_database,
         table_name=table_name,
-        service_context=mock_service_context,        
+        service_context=mock_service_context,
         **index_kwargs
     )
 
@@ -106,7 +107,7 @@ def test_sql_index_async_query(
         service_context=mock_service_context,
         **index_kwargs
     )
-    
+
     sql_to_test = "SELECT user_id, foo FROM test_table"
     # query the index with SQL
     sql_query_engine = SQLStructStoreQueryEngine(index, **query_kwargs)
@@ -125,7 +126,7 @@ def test_sql_index_async_query(
     response = asyncio.run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
-    ## sql_only = True  ### 
+    ## sql_only = True  ###
     # query the index with SQL
     sql_query_engine = SQLStructStoreQueryEngine(index, sql_only=True, **query_kwargs)
     task = sql_query_engine.aquery(sql_to_test)

@@ -1,7 +1,7 @@
 """Default query for SQLStructStoreIndex."""
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from sqlalchemy import Table
 
@@ -86,17 +86,17 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt modules."""
         return {}
-    
-    def _run_with_sql_only_check(self, sql_query_str):
-        """ don't run sql if sql_only is true, else continue with normal path """
+
+    def _run_with_sql_only_check(self, sql_query_str:str) -> Tuple[str, Dict[str, Any]]:
+        """Don't run sql if sql_only is true, else continue with normal path."""
         if self._sql_only:
-            metadata = {}
+            metadata: Dict[str, Any] = {}
             raw_response_str = sql_query_str
-        else : 
+        else:
             raw_response_str, metadata = self._sql_database.run_sql(sql_query_str)
 
         return raw_response_str, metadata
-    
+
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         # NOTE: override query method in order to fetch the right results.
@@ -202,13 +202,13 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
             tables_desc_str = "\n\n".join(table_desc_list)
 
         return tables_desc_str
-    
-    def _run_with_sql_only_check(self, sql_query_str):
-        """ don't run sql if sql_only is true, else continue with normal path """
+
+    def _run_with_sql_only_check(self, sql_query_str: str) -> Tuple[str, Dict]:
+        """Don't run sql if sql_only is true, else continue with normal path."""
         if self._sql_only:
-            metadata = {}
+            metadata: Dict[str, Any] = {}
             raw_response_str = sql_query_str
-        else : 
+        else:
             raw_response_str, metadata = self._sql_database.run_sql(sql_query_str)
 
         return raw_response_str, metadata
@@ -401,7 +401,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             tables=tables,
             context_str_prefix=context_str_prefix,
             service_context=service_context,
-            sql_only=sql_only
+            sql_only=sql_only,
         )
         super().__init__(
             synthesize_response=synthesize_response,
