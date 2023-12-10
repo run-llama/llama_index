@@ -5,6 +5,7 @@ from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -323,6 +324,23 @@ class PGVectorStore(BasePydanticVectorStore):
             await session.commit()
         return ids
 
+    def _to_postgres_operator(self, operator: FilterOperator) -> str:
+        if operator == FilterOperator.EQ:
+            return "="
+        elif operator == FilterOperator.GT:
+            return ">"
+        elif operator == FilterOperator.LT:
+            return "<"
+        elif operator == FilterOperator.NE:
+            return "!="
+        elif operator == FilterOperator.GTE:
+            return ">="
+        elif operator == FilterOperator.LTE:
+            return "<="
+        else:
+            _logger.warning(f"Unknown operator: {operator}, fallback to '='")
+            return "="
+
     def _apply_filters_and_limit(
         self,
         stmt: Select,
@@ -331,15 +349,29 @@ class PGVectorStore(BasePydanticVectorStore):
     ) -> Any:
         import sqlalchemy
 
+        sqlalchemy_conditions = {
+            "or": sqlalchemy.sql.or_,
+            "and": sqlalchemy.sql.and_,
+        }
+
         if metadata_filters:
-            for filter_ in metadata_filters.legacy_filters():
-                bind_parameter = f"value_{filter_.key}"
-                stmt = stmt.where(  # type: ignore
-                    sqlalchemy.text(f"metadata_->>'{filter_.key}' = :{bind_parameter}")
+            if metadata_filters.condition not in sqlalchemy_conditions:
+                raise ValueError(
+                    f"Invalid condition: {metadata_filters.condition}. "
+                    f"Must be one of {list(sqlalchemy_conditions.keys())}"
                 )
-                stmt = stmt.params(  # type: ignore
-                    **{bind_parameter: str(filter_.value)}
+            stmt = stmt.where(  # type: ignore
+                sqlalchemy_conditions[metadata_filters.condition](
+                    *(
+                        sqlalchemy.text(
+                            f"metadata_->>'{filter_.key}' "
+                            f"{self._to_postgres_operator(filter_.operator)} "
+                            f"'{filter_.value}'"
+                        )
+                        for filter_ in metadata_filters.filters
+                    )
                 )
+            )
         return stmt.limit(limit)  # type: ignore
 
     def _build_query(
@@ -416,14 +448,10 @@ class PGVectorStore(BasePydanticVectorStore):
         ts_query = func.plainto_tsquery(
             type_coerce(self.text_search_config, REGCONFIG), query_str
         )
-        stmt = (
-            select(  # type: ignore
-                self._table_class,
-                func.ts_rank(self._table_class.text_search_tsv, ts_query).label("rank"),
-            )
-            .where(self._table_class.text_search_tsv.op("@@")(ts_query))
-            .order_by(text("rank desc"))
-        )
+        stmt = select(  # type: ignore
+            self._table_class,
+            func.ts_rank(self._table_class.text_search_tsv, ts_query).label("rank"),
+        ).order_by(text("rank desc"))
 
         # type: ignore
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
