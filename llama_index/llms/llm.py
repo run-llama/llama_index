@@ -216,9 +216,7 @@ class LLM(BaseLLM):
             response = self.complete(formatted_prompt)
             output = response.text
 
-        self._parse_output(prompt, output)
-
-        return output
+        return self._parse_output(prompt, output)
 
     def stream(
         self,
@@ -259,9 +257,7 @@ class LLM(BaseLLM):
             response = await self.acomplete(formatted_prompt)
             output = response.text
 
-        self._parse_output(prompt, output)
-
-        return output
+        return self._parse_output(prompt, output)
 
     async def astream(
         self,

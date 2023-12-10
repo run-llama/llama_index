@@ -74,12 +74,19 @@ class TreeSummarize(BaseSynthesizer):
                     summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:
-                response = await self._service_context.llm.apredict(
-                    summary_template,
-                    output_cls=self._output_cls,
-                    context_str=text_chunks[0],
-                    **response_kwargs,
-                )
+                if self._output_cls is None:
+                    response = await self._service_context.llm.apredict(
+                        summary_template,
+                        context_str=text_chunks[0],
+                        **response_kwargs,
+                    )
+                else:
+                    response = await self._service_context.llm.astructured_predict(
+                        self._output_cls,
+                        summary_template,
+                        context_str=text_chunks[0],
+                        **response_kwargs,
+                    )
 
             # return pydantic object if output_cls is specified
             return (
@@ -90,15 +97,25 @@ class TreeSummarize(BaseSynthesizer):
 
         else:
             # summarize each chunk
-            tasks = [
-                self._service_context.llm.apredict(
-                    summary_template,
-                    output_cls=self._output_cls,
-                    context_str=text_chunk,
-                    **response_kwargs,
-                )
-                for text_chunk in text_chunks
-            ]
+            if self._output_cls is None:
+                tasks = [
+                    self._service_context.llm.apredict(
+                        summary_template,
+                        context_str=text_chunk,
+                        **response_kwargs,
+                    )
+                    for text_chunk in text_chunks
+                ]
+            else:
+                tasks = [
+                    self._service_context.llm.astructured_predict(
+                        self._output_cls,
+                        summary_template,
+                        context_str=text_chunk,
+                        **response_kwargs,
+                    )
+                    for text_chunk in text_chunks
+                ]
 
             summaries: List[str] = await asyncio.gather(*tasks)
 
@@ -133,12 +150,19 @@ class TreeSummarize(BaseSynthesizer):
                     summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:
-                response = self._service_context.llm.predict(
-                    summary_template,
-                    output_cls=self._output_cls,
-                    context_str=text_chunks[0],
-                    **response_kwargs,
-                )
+                if self._output_cls is None:
+                    response = self._service_context.llm.predict(
+                        summary_template,
+                        context_str=text_chunks[0],
+                        **response_kwargs,
+                    )
+                else:
+                    response = self._service_context.llm.structured_predict(
+                        self._output_cls,
+                        summary_template,
+                        context_str=text_chunks[0],
+                        **response_kwargs,
+                    )
 
             # return pydantic object if output_cls is specified
             return (
@@ -150,27 +174,47 @@ class TreeSummarize(BaseSynthesizer):
         else:
             # summarize each chunk
             if self._use_async:
-                tasks = [
-                    self._service_context.llm.apredict(
-                        summary_template,
-                        output_cls=self._output_cls,
-                        context_str=text_chunk,
-                        **response_kwargs,
-                    )
-                    for text_chunk in text_chunks
-                ]
+                if self._output_cls is None:
+                    tasks = [
+                        self._service_context.llm.apredict(
+                            summary_template,
+                            context_str=text_chunk,
+                            **response_kwargs,
+                        )
+                        for text_chunk in text_chunks
+                    ]
+                else:
+                    tasks = [
+                        self._service_context.llm.astructured_predict(
+                            self._output_cls,
+                            summary_template,
+                            context_str=text_chunk,
+                            **response_kwargs,
+                        )
+                        for text_chunk in text_chunks
+                    ]
 
                 summaries: List[str] = run_async_tasks(tasks)
             else:
-                summaries = [
-                    self._service_context.llm.predict(
-                        summary_template,
-                        output_cls=self._output_cls,
-                        context_str=text_chunk,
-                        **response_kwargs,
-                    )
-                    for text_chunk in text_chunks
-                ]
+                if self._output_cls is None:
+                    summaries = [
+                        self._service_context.llm.predict(
+                            summary_template,
+                            context_str=text_chunk,
+                            **response_kwargs,
+                        )
+                        for text_chunk in text_chunks
+                    ]
+                else:
+                    summaries = [
+                        self._service_context.llm.structured_predict(
+                            self._output_cls,
+                            summary_template,
+                            context_str=text_chunk,
+                            **response_kwargs,
+                        )
+                        for text_chunk in text_chunks
+                    ]
 
             # recursively summarize the summaries
             return self.get_response(

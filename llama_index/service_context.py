@@ -164,9 +164,11 @@ class ServiceContext:
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
             llm = resolve_llm(llm)
-            llm.system_prompt = system_prompt
-            llm.query_wrapper_prompt = query_wrapper_prompt
-            llm.pydantic_program_mode = pydantic_program_mode
+            llm.system_prompt = llm.system_prompt or system_prompt
+            llm.query_wrapper_prompt = llm.query_wrapper_prompt or query_wrapper_prompt
+            llm.pydantic_program_mode = (
+                llm.pydantic_program_mode or pydantic_program_mode
+            )
 
         if llm_predictor is not None:
             print("LLMPredictor is deprecated, please use LLM instead.")

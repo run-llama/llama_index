@@ -41,26 +41,45 @@ class DefaultRefineProgram(BasePydanticProgram):
     query_satisfied=True. In effect, doesn't do any answer filtering.
     """
 
-    def __init__(self, prompt: BasePromptTemplate, llm: LLMPredictorType):
+    def __init__(
+        self, prompt: BasePromptTemplate, llm: LLMPredictorType, output_cls: BaseModel
+    ):
         self._prompt = prompt
         self._llm = llm
+        self._output_cls = output_cls
 
     @property
     def output_cls(self) -> Type[BaseModel]:
         return StructuredRefineResponse
 
     def __call__(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
-        answer = self._llm.predict(
-            self._prompt,
-            **kwds,
-        )
+        if self._output_cls is not None:
+            answer = self._llm.structured_predict(
+                self._output_cls,
+                self._prompt,
+                **kwds,
+            )
+            answer = answer.json()
+        else:
+            answer = self._llm.predict(
+                self._prompt,
+                **kwds,
+            )
         return StructuredRefineResponse(answer=answer, query_satisfied=True)
 
     async def acall(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
-        answer = await self._llm.apredict(
-            self._prompt,
-            **kwds,
-        )
+        if self._output_cls is not None:
+            answer = await self._llm.astructured_predict(
+                self._output_cls,
+                self._prompt,
+                **kwds,
+            )
+            answer = answer.json()
+        else:
+            answer = await self._llm.predict(
+                self._prompt,
+                **kwds,
+            )
         return StructuredRefineResponse(answer=answer, query_satisfied=True)
 
 
@@ -156,6 +175,7 @@ class Refine(BaseSynthesizer):
             return DefaultRefineProgram(
                 prompt=prompt,
                 llm=self._service_context.llm,
+                output_cls=self._output_cls,
             )
 
     def _give_response_single(
@@ -181,7 +201,6 @@ class Refine(BaseSynthesizer):
                         StructuredRefineResponse,
                         program(
                             context_str=cur_text_chunk,
-                            output_cls=self._output_cls,
                             **response_kwargs,
                         ),
                     )
@@ -196,7 +215,6 @@ class Refine(BaseSynthesizer):
                 response = self._service_context.llm.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
-                    output_cls=self._output_cls,
                     **response_kwargs,
                 )
                 query_satisfied = True
@@ -265,7 +283,6 @@ class Refine(BaseSynthesizer):
                         StructuredRefineResponse,
                         program(
                             context_msg=cur_text_chunk,
-                            output_cls=self._output_cls,
                             **response_kwargs,
                         ),
                     )
@@ -288,7 +305,6 @@ class Refine(BaseSynthesizer):
                 response = self._service_context.llm.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
-                    output_cls=self._output_cls,
                     **response_kwargs,
                 )
 
@@ -371,7 +387,6 @@ class Refine(BaseSynthesizer):
                 try:
                     structured_response = await program.acall(
                         context_msg=cur_text_chunk,
-                        output_cls=self._output_cls,
                         **response_kwargs,
                     )
                     structured_response = cast(
@@ -414,7 +429,6 @@ class Refine(BaseSynthesizer):
                 try:
                     structured_response = await program.acall(
                         context_str=cur_text_chunk,
-                        output_cls=self._output_cls,
                         **response_kwargs,
                     )
                     structured_response = cast(
