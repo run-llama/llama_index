@@ -76,7 +76,7 @@ class DefaultRefineProgram(BasePydanticProgram):
             )
             answer = answer.json()
         else:
-            answer = await self._llm.predict(
+            answer = await self._llm.apredict(
                 self._prompt,
                 **kwds,
             )
