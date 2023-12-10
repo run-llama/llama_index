@@ -393,9 +393,17 @@ class PGVectorStore(BasePydanticVectorStore):
         embedding: Optional[List[float]],
         limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
+        **kwargs,
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_query(embedding, limit, metadata_filters)
         with self._session() as session, session.begin():
+            from sqlalchemy import text
+
+            if kwargs.get("ivfflat_probes"):
+                session.execute(text(f"SET ivfflat.probes = {kwargs.get('ivfflat_probes')}"))
+            if kwargs.get("hnsw_ef_search"):
+                session.execute(text(f"SET hnsw.ef_search = {kwargs.get('hnsw_ef_search')}"))
+
             res = session.execute(
                 stmt,
             )
@@ -414,9 +422,17 @@ class PGVectorStore(BasePydanticVectorStore):
         embedding: Optional[List[float]],
         limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
+        **kwargs,
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_query(embedding, limit, metadata_filters)
         async with self._async_session() as async_session, async_session.begin():
+            from sqlalchemy import text
+
+            if kwargs.get("hnsw_ef_search"):
+                await async_session.execute(text(f"SET hnsw.ef_search = {kwargs.get('hnsw_ef_search')}"))
+            if kwargs.get("ivfflat_probes"):
+                await async_session.execute(text(f"SET ivfflat.probes = {kwargs.get('ivfflat_probes')}"))
+
             res = await async_session.execute(stmt)
             return [
                 DBEmbeddingRow(
@@ -495,7 +511,7 @@ class PGVectorStore(BasePydanticVectorStore):
             ]
 
     async def _async_hybrid_query(
-        self, query: VectorStoreQuery
+        self, query: VectorStoreQuery, **kwargs: Any
     ) -> List[DBEmbeddingRow]:
         import asyncio
 
@@ -506,7 +522,10 @@ class PGVectorStore(BasePydanticVectorStore):
 
         results = await asyncio.gather(
             self._aquery_with_score(
-                query.query_embedding, query.similarity_top_k, query.filters
+                query.query_embedding,
+                query.similarity_top_k,
+                query.filters,
+                **kwargs,
             ),
             self._async_sparse_query_with_rank(
                 query.query_str, sparse_top_k, query.filters
@@ -517,14 +536,17 @@ class PGVectorStore(BasePydanticVectorStore):
         all_results = dense_results + sparse_results
         return _dedup_results(all_results)
 
-    def _hybrid_query(self, query: VectorStoreQuery) -> List[DBEmbeddingRow]:
+    def _hybrid_query(self, query: VectorStoreQuery, **kwargs: Any) -> List[DBEmbeddingRow]:
         if query.alpha is not None:
             _logger.warning("postgres hybrid search does not support alpha parameter.")
 
         sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
         dense_results = self._query_with_score(
-            query.query_embedding, query.similarity_top_k, query.filters
+            query.query_embedding,
+            query.similarity_top_k,
+            query.filters,
+            **kwargs,
         )
 
         sparse_results = self._sparse_query_with_rank(
@@ -566,7 +588,7 @@ class PGVectorStore(BasePydanticVectorStore):
     ) -> VectorStoreQueryResult:
         self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
-            results = await self._async_hybrid_query(query)
+            results = await self._async_hybrid_query(query, **kwargs)
         elif query.mode in [
             VectorStoreQueryMode.SPARSE,
             VectorStoreQueryMode.TEXT_SEARCH,
@@ -577,7 +599,10 @@ class PGVectorStore(BasePydanticVectorStore):
             )
         elif query.mode == VectorStoreQueryMode.DEFAULT:
             results = await self._aquery_with_score(
-                query.query_embedding, query.similarity_top_k, query.filters
+                query.query_embedding,
+                query.similarity_top_k,
+                query.filters,
+                **kwargs,
             )
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")
@@ -587,7 +612,7 @@ class PGVectorStore(BasePydanticVectorStore):
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
-            results = self._hybrid_query(query)
+            results = self._hybrid_query(query, **kwargs)
         elif query.mode in [
             VectorStoreQueryMode.SPARSE,
             VectorStoreQueryMode.TEXT_SEARCH,
@@ -598,7 +623,10 @@ class PGVectorStore(BasePydanticVectorStore):
             )
         elif query.mode == VectorStoreQueryMode.DEFAULT:
             results = self._query_with_score(
-                query.query_embedding, query.similarity_top_k, query.filters
+                query.query_embedding,
+                query.similarity_top_k,
+                query.filters,
+                **kwargs,
             )
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")
