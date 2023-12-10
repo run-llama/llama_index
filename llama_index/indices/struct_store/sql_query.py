@@ -436,6 +436,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
+        sql_only: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -448,6 +449,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             sql_parser_mode=SQLParserMode.PGVECTOR,
             context_str_prefix=context_str_prefix,
             service_context=service_context,
+            sql_only=sql_only
         )
         super().__init__(
             synthesize_response=synthesize_response,
@@ -486,6 +488,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             table_retriever=table_retriever,
             context_str_prefix=context_str_prefix,
             service_context=service_context,
+            sql_only=sql_only
         )
         super().__init__(
             synthesize_response=synthesize_response,

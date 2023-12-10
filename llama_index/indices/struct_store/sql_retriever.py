@@ -285,7 +285,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         if self._sql_only:
             sql_only_node = TextNode(text=f"{sql_query_str}")
             retrieved_nodes = [NodeWithScore(node=sql_only_node)]
-            metadata = {}
+            metadata = {"result": sql_query_str}
         else:
             try:
                 retrieved_nodes, metadata = self._sql_retriever.retrieve_with_metadata(
@@ -329,7 +329,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         if self._sql_only:
             sql_only_node = TextNode(text=f"{sql_query_str}")
             retrieved_nodes = [NodeWithScore(node=sql_only_node)]
-            metadata = {}
+            metadata: Dict[str, Any] = {}
         else:
             try:
                 (
