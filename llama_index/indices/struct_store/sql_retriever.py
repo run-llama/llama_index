@@ -282,9 +282,8 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        if(self._sql_only):
-            #Return
-            sql_only_node = TextNode(text={sql_query_str})
+        if(self._sql_only):            
+            sql_only_node = TextNode(text=f"{sql_query_str}")
             retrieved_nodes = [NodeWithScore(node=sql_only_node)]
             metadata = {}
         else:  
@@ -326,19 +325,25 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         )
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
-        try:
-            (
-                retrieved_nodes,
-                metadata,
-            ) = await self._sql_retriever.aretrieve_with_metadata(sql_query_str)
-        except BaseException as e:
-            # if handle_sql_errors is True, then return error message
-            if self._handle_sql_errors:
-                err_node = TextNode(text=f"Error: {e!s}")
-                retrieved_nodes = [NodeWithScore(node=err_node)]
-                metadata = {}
-            else:
-                raise
+
+        if(self._sql_only):            
+            sql_only_node = TextNode(text=f"{sql_query_str}")
+            retrieved_nodes = [NodeWithScore(node=sql_only_node)]
+            metadata = {}
+        else: 
+            try:
+                (
+                    retrieved_nodes,
+                    metadata,
+                ) = await self._sql_retriever.aretrieve_with_metadata(sql_query_str)
+            except BaseException as e:
+                # if handle_sql_errors is True, then return error message
+                if self._handle_sql_errors:
+                    err_node = TextNode(text=f"Error: {e!s}")
+                    retrieved_nodes = [NodeWithScore(node=err_node)]
+                    metadata = {}
+                else:
+                    raise
         return retrieved_nodes, {"sql_query": sql_query_str, **metadata}
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
