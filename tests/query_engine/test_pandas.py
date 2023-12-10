@@ -85,7 +85,7 @@ def test_default_output_processor_rce(tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="Requires Python 3.9 or higher")
-def test_default_output_processor_rce2(tmp_path: Path) -> None:
+def test_default_output_processor_rce2() -> None:
     """
     Test that output processor prevents RCE.
     https://github.com/run-llama/llama_index/issues/7054#issuecomment-1829141330 .
@@ -96,8 +96,6 @@ def test_default_output_processor_rce2(tmp_path: Path) -> None:
             "population": [2930000, 13960000, 3645000],
         }
     )
-
-    tmp_file = tmp_path / "pwnnnnn"
 
     injected_code = "().__class__.__mro__[-1].__subclasses__()[137].__init__.__globals__['system']('ls')"
 
