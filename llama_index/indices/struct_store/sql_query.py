@@ -87,7 +87,9 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
         """Get prompt modules."""
         return {}
 
-    def _run_with_sql_only_check(self, sql_query_str:str) -> Tuple[str, Dict[str, Any]]:
+    def _run_with_sql_only_check(
+        self, sql_query_str: str
+    ) -> Tuple[str, Dict[str, Any]]:
         """Don't run sql if sql_only is true, else continue with normal path."""
         if self._sql_only:
             metadata: Dict[str, Any] = {}
@@ -449,7 +451,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             sql_parser_mode=SQLParserMode.PGVECTOR,
             context_str_prefix=context_str_prefix,
             service_context=service_context,
-            sql_only=sql_only
+            sql_only=sql_only,
         )
         super().__init__(
             synthesize_response=synthesize_response,
@@ -488,7 +490,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             table_retriever=table_retriever,
             context_str_prefix=context_str_prefix,
             service_context=service_context,
-            sql_only=sql_only
+            sql_only=sql_only,
         )
         super().__init__(
             synthesize_response=synthesize_response,
