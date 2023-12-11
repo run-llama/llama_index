@@ -157,6 +157,8 @@ class LLM(BaseLLM):
         self, prompt: BasePromptTemplate, **prompt_args: Any
     ) -> List[ChatMessage]:
         messages = prompt.format_messages(llm=self, **prompt_args)
+        if self.output_parser is not None:
+            messages = self.output_parser.format_messages(messages)
         return self._extend_messages(messages)
 
     def structured_predict(
