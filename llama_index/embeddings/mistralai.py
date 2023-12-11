@@ -2,7 +2,7 @@
 
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import Field
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
@@ -18,7 +18,7 @@ class MistralAIEmbedding(BaseEmbedding):
     """
 
     # Instance variables initialized via Pydantic's mechanism
-    mistralai_client: Any = Field(description="MistralAI client")
+    _mistralai_client: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -34,8 +34,8 @@ class MistralAIEmbedding(BaseEmbedding):
             raise ImportError(
                 "mistralai package not found, install with" "'pip install mistralai'"
             )
+        self._mistralai_client = MistralClient(api_key=api_key)
         super().__init__(
-            mistralai_client=MistralClient(api_key=api_key),
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
@@ -49,7 +49,7 @@ class MistralAIEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return (
-            self.mistralai_client.embeddings(model=self.model_name, input=[query])
+            self._mistralai_client.embeddings(model=self.model_name, input=[query])
             .data[0]
             .embedding
         )
@@ -61,7 +61,7 @@ class MistralAIEmbedding(BaseEmbedding):
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         return (
-            self.mistralai_client.embeddings(model=self.model_name, input=[text])
+            self._mistralai_client.embeddings(model=self.model_name, input=[text])
             .data[0]
             .embedding
         )
@@ -72,7 +72,7 @@ class MistralAIEmbedding(BaseEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        embedding_response = self.mistralai_client.embeddings(
+        embedding_response = self._mistralai_client.embeddings(
             model=self.model_name, input=texts
         ).data
         return [embed.embedding for embed in embedding_response]
