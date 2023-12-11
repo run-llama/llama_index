@@ -23,7 +23,7 @@ from llama_index.llms.watsonx_utils import (
     get_from_param_or_env_without_error,
     watsonx_model_to_context_size,
 )
-from llama_index.types import PydanticProgramMode
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class WatsonX(LLM):
@@ -55,6 +55,7 @@ class WatsonX(LLM):
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         """Initialize params."""
         if model_id not in WATSONX_MODELS:
@@ -102,6 +103,7 @@ class WatsonX(LLM):
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod

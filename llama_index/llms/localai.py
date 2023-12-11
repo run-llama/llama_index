@@ -15,7 +15,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.llms.types import ChatMessage, LLMMetadata
-from llama_index.types import PydanticProgramMode
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 # Use these as kwargs for OpenAILike to connect to LocalAIs
 DEFAULT_LOCALAI_PORT = 8080
@@ -52,6 +52,7 @@ class LocalAI(OpenAI):
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -61,6 +62,7 @@ class LocalAI(OpenAI):
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
             **kwargs,
         )
         warnings.warn(

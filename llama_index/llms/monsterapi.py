@@ -12,7 +12,7 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.types import PydanticProgramMode
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_MONSTER_TEMP = 0.75
 
@@ -51,6 +51,7 @@ class MonsterLLM(CustomLLM):
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         self._client, available_llms = self.initialize_client(monster_api_key)
 
@@ -75,6 +76,7 @@ class MonsterLLM(CustomLLM):
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     def initialize_client(self, monster_api_key: Optional[str]) -> Any:

@@ -29,7 +29,7 @@ from llama_index.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.types import PydanticProgramMode
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_ANTHROPIC_MODEL = "claude-2"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
@@ -80,6 +80,7 @@ class Anthropic(LLM):
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         try:
             import anthropic
@@ -112,6 +113,7 @@ class Anthropic(LLM):
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod

@@ -21,7 +21,7 @@ from llama_index.llms.xinference_utils import (
     xinference_message_to_history,
     xinference_modelname_to_contextsize,
 )
-from llama_index.types import PydanticProgramMode
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 # an approximation of the ratio between llama and GPT2 tokens
 TOKEN_RATIO = 2.5
@@ -57,6 +57,7 @@ class Xinference(CustomLLM):
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         generator, context_window, model_description = self.load_model(
             model_uid, endpoint
@@ -82,6 +83,7 @@ class Xinference(CustomLLM):
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     def load_model(self, model_uid: str, endpoint: str) -> Tuple[Any, int, dict]:

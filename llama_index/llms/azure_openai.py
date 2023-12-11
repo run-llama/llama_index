@@ -13,7 +13,7 @@ from llama_index.llms.openai_utils import (
     resolve_from_aliases,
 )
 from llama_index.llms.types import ChatMessage
-from llama_index.types import PydanticProgramMode
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class AzureOpenAI(OpenAI):
@@ -84,6 +84,7 @@ class AzureOpenAI(OpenAI):
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         engine = resolve_from_aliases(
@@ -120,6 +121,7 @@ class AzureOpenAI(OpenAI):
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
             **kwargs,
         )
 

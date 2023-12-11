@@ -1,16 +1,12 @@
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Dict, Sequence
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
+from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import llm_chat_callback, llm_completion_callback
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
-)
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.llms.types import (
     ChatMessage,
@@ -20,7 +16,6 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.types import PydanticProgramMode
 
 DEFAULT_REPLICATE_TEMP = 0.75
 
@@ -34,56 +29,22 @@ class Replicate(CustomLLM):
         lte=1.0,
     )
     image: str = Field(
-        description="The image file for multimodal model to use. (optional)"
+        default="", description="The image file for multimodal model to use. (optional)"
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",
         gt=0,
     )
-    prompt_key: str = Field(description="The key to use for the prompt in API calls.")
+    prompt_key: str = Field(
+        default="prompt", description="The key to use for the prompt in API calls."
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Replicate API."
     )
     is_chat_model: bool = Field(
         default=False, description="Whether the model is a chat model."
     )
-
-    _messages_to_prompt: Callable = PrivateAttr()
-    _completion_to_prompt: Callable = PrivateAttr()
-
-    def __init__(
-        self,
-        model: str,
-        temperature: float = DEFAULT_REPLICATE_TEMP,
-        image: Optional[str] = "",
-        additional_kwargs: Optional[Dict[str, Any]] = None,
-        context_window: int = DEFAULT_CONTEXT_WINDOW,
-        prompt_key: str = "prompt",
-        callback_manager: Optional[CallbackManager] = None,
-        is_chat_model: bool = False,
-        system_prompt: Optional[str] = None,
-        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
-        completion_to_prompt: Optional[Callable[[str], str]] = None,
-        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
-    ) -> None:
-        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
-
-        super().__init__(
-            model=model,
-            temperature=temperature,
-            image=image,
-            additional_kwargs=additional_kwargs or {},
-            context_window=context_window,
-            prompt_key=prompt_key,
-            callback_manager=callback_manager,
-            is_chat_model=is_chat_model,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -122,16 +83,16 @@ class Replicate(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        prompt = self._messages_to_prompt(messages)
-        completion_response = self.complete(prompt, **kwargs)
+        prompt = self.messages_to_prompt(messages)
+        completion_response = self.complete(prompt, formatted=True, **kwargs)
         return completion_response_to_chat_response(completion_response)
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        prompt = self._messages_to_prompt(messages)
-        completion_response = self.stream_complete(prompt, **kwargs)
+        prompt = self.messages_to_prompt(messages)
+        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
@@ -152,7 +113,8 @@ class Replicate(CustomLLM):
                 "Please install replicate with `pip install replicate`"
             )
 
-        prompt = self._completion_to_prompt(prompt)
+        if not kwargs.get("formatted", False):
+            prompt = self.completion_to_prompt(prompt)
         input_dict = self._get_input_dict(prompt, **kwargs)
         response_iter = replicate.run(self.model, input=input_dict)
 

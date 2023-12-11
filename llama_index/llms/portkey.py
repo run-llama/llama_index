@@ -26,7 +26,7 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.types import PydanticProgramMode
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 if TYPE_CHECKING:
     from portkey import (
@@ -67,6 +67,7 @@ class Portkey(CustomLLM):
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         """
         Initialize a Portkey instance.
@@ -90,6 +91,7 @@ class Portkey(CustomLLM):
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
         if api_key is not None:
             portkey.api_key = api_key

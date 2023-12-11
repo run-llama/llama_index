@@ -23,7 +23,7 @@ from llama_index.llms.types import (
     LLMMetadata,
 )
 from llama_index.llms.vllm_utils import get_response, post_http_request
-from llama_index.types import PydanticProgramMode
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class Vllm(LLM):
@@ -140,6 +140,7 @@ class Vllm(LLM):
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         try:
             from vllm import LLM as VLLModel
@@ -182,6 +183,7 @@ class Vllm(LLM):
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod
@@ -298,6 +300,7 @@ class VllmServer(Vllm):
         completion_to_prompt: Optional[Callable] = None,
         vllm_kwargs: Dict[str, Any] = {},
         callback_manager: Optional[CallbackManager] = None,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         self._client = None
         messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
@@ -325,6 +328,8 @@ class VllmServer(Vllm):
             completion_to_prompt=completion_to_prompt,
             vllm_kwargs=vllm_kwargs,
             api_url=api_url,
+            callback_manager=callback_manager,
+            output_parser=output_parser,
         )
 
     @classmethod

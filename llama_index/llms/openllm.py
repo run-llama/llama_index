@@ -61,9 +61,6 @@ class OpenLLM(LLM):
     prompt_template: Optional[str] = Field(
         description="Optional prompt template to pass for this LLM."
     )
-    system_message: Optional[str] = Field(
-        description="Optional system message to pass for this LLM."
-    )
     backend: Optional[Literal["vllm", "pt"]] = Field(
         description="Optional backend to pass for this LLM. By default, it will use vLLM if vLLM is available in local system. Otherwise, it will fallback to PyTorch."
     )
@@ -87,8 +84,6 @@ class OpenLLM(LLM):
             _llm: Any  # type: ignore[no-redef]
     else:
         _llm: Any = PrivateAttr()
-
-    _messages_to_prompt: Callable[[Sequence[ChatMessage]], Any] = PrivateAttr()
 
     def __init__(
         self,
@@ -139,7 +134,7 @@ class OpenLLM(LLM):
             model_version=self._llm.revision,
             model_tag=str(self._llm.tag),
             prompt_template=prompt_template,
-            system_message=system_message,
+            system_prompt=system_message,
             backend=self._llm.__llm_backend__,
             quantize=self._llm.quantise,
             serialization=self._llm._serialisation,
