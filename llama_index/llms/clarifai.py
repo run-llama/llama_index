@@ -29,6 +29,9 @@ class Clarifai(LLM):
     model_version_id: Optional[str] = Field(description="Model Version ID.")
     app_id: Optional[str] = Field(description="Clarifai application ID of the model.")
     user_id: Optional[str] = Field(description="Clarifai user ID of the model.")
+    pat: Optional[str] = Field(
+        description="Personal Access Tokens(PAT) to validate requests."
+    )
 
     _model: Any = PrivateAttr()
     _is_chat_model: bool = PrivateAttr()
@@ -40,6 +43,7 @@ class Clarifai(LLM):
         model_version_id: Optional[str] = "",
         app_id: Optional[str] = None,
         user_id: Optional[str] = None,
+        pat: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: int = 512,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -51,9 +55,19 @@ class Clarifai(LLM):
         output_parser: Optional[BaseOutputParser] = None,
     ):
         try:
+            import os
+
             from clarifai.client.model import Model
         except ImportError:
             raise ImportError("ClarifaiLLM requires `pip install clarifai`.")
+
+        if pat is None and os.environ.get("CLARIFAI_PAT") is not None:
+            pat = os.environ.get("CLARIFAI_PAT")
+
+        if not pat and os.environ.get("CLARIFAI_PAT") is None:
+            raise ValueError(
+                "Set `CLARIFAI_PAT` as env variable or pass `pat` as constructor argument"
+            )
 
         if model_url is not None and model_name is not None:
             raise ValueError("You can only specify one of model_url or model_name.")
@@ -71,10 +85,11 @@ class Clarifai(LLM):
                     app_id=app_id,
                     model_id=model_name,
                     model_version={"id": model_version_id},
+                    pat=pat,
                 )
 
         if model_url is not None:
-            self._model = Model(model_url)
+            self._model = Model(model_url, pat=pat)
             model_name = self._model.id
 
         self._is_chat_model = False
@@ -111,13 +126,20 @@ class Clarifai(LLM):
         )
 
     # TODO: When the Clarifai python SDK supports inference params, add here.
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    def chat(
+        self,
+        messages: Sequence[ChatMessage],
+        inference_params: Optional[Dict] = {},
+        **kwargs: Any,
+    ) -> ChatResponse:
         """Chat endpoint for LLM."""
         prompt = "".join([str(m) for m in messages])
         try:
             response = (
                 self._model.predict_by_bytes(
-                    input_bytes=prompt.encode(encoding="UTF-8"), input_type="text"
+                    input_bytes=prompt.encode(encoding="UTF-8"),
+                    input_type="text",
+                    inference_params=inference_params,
                 )
                 .outputs[0]
                 .data.text.raw
@@ -126,12 +148,16 @@ class Clarifai(LLM):
             raise Exception(f"Prediction failed: {e}")
         return ChatResponse(message=ChatMessage(content=response))
 
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, inference_params: Optional[Dict] = {}, **kwargs: Any
+    ) -> CompletionResponse:
         """Completion endpoint for LLM."""
         try:
             response = (
                 self._model.predict_by_bytes(
-                    input_bytes=prompt.encode(encoding="utf-8"), input_type="text"
+                    input_bytes=prompt.encode(encoding="utf-8"),
+                    input_type="text",
+                    inference_params=inference_params,
                 )
                 .outputs[0]
                 .data.text.raw
