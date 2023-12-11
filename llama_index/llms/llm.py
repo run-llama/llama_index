@@ -149,7 +149,8 @@ class LLM(BaseLLM):
             completion_to_prompt=self.completion_to_prompt,
             **prompt_args,
         )
-        formatted_prompt = self.output_parser.format(formatted_prompt)
+        if self.output_parser is not None:
+            formatted_prompt = self.output_parser.format(formatted_prompt)
         return self._extend_prompt(formatted_prompt)
 
     def _get_messages(
