@@ -163,7 +163,6 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         self,
         tools: List[BaseTool],
         llm: OpenAI,
-        # memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         verbose: bool,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
@@ -174,9 +173,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         self._verbose = verbose
         self._max_function_calls = max_function_calls
         self.prefix_messages = prefix_messages
-        # self.memory = memory
         self.callback_manager = callback_manager or self._llm.callback_manager
-        # self.sources: List[ToolOutput] = []
         
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -241,13 +238,13 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
             )
         return llm_chat_kwargs
 
-    def _process_message(self, chat_response: ChatResponse) -> AgentChatResponse:
+    def _process_message(self, step: TaskStep, chat_response: ChatResponse) -> AgentChatResponse:
         ai_message = chat_response.message
-        self.memory.put(ai_message)
-        return AgentChatResponse(response=str(ai_message.content), sources=self.sources)
+        step.memory.put(ai_message)
+        return AgentChatResponse(response=str(ai_message.content), sources=step.step_state["sources"])
 
     def _get_stream_ai_response(
-        self, **llm_chat_kwargs: Any
+        self, step: TaskStep, **llm_chat_kwargs: Any
     ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             chat_stream=self._llm.stream_chat(**llm_chat_kwargs),
@@ -256,7 +253,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
-            args=(self.memory,),
+            args=(step.memory,),
         )
         thread.start()
         # Wait for the event to be set
@@ -268,7 +265,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         return chat_stream_response
 
     async def _get_async_stream_ai_response(
-        self, **llm_chat_kwargs: Any
+        self, step: TaskStep, **llm_chat_kwargs: Any
     ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             achat_stream=await self._llm.astream_chat(**llm_chat_kwargs),
@@ -276,7 +273,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         )
         # create task to write chat response to history
         asyncio.create_task(
-            chat_stream_response.awrite_response_to_history(self.memory)
+            chat_stream_response.awrite_response_to_history(step.memory)
         )
         # wait until openAI functions stop executing
         await chat_stream_response._is_function_false_event.wait()
@@ -284,24 +281,24 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         return chat_stream_response
 
     def _get_agent_response(
-        self, mode: ChatResponseMode, **llm_chat_kwargs: Any
+        self, step: TaskStep, mode: ChatResponseMode, **llm_chat_kwargs: Any
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         if mode == ChatResponseMode.WAIT:
             chat_response: ChatResponse = self._llm.chat(**llm_chat_kwargs)
-            return self._process_message(chat_response)
+            return self._process_message(step, chat_response)
         elif mode == ChatResponseMode.STREAM:
-            return self._get_stream_ai_response(**llm_chat_kwargs)
+            return self._get_stream_ai_response(step, **llm_chat_kwargs)
         else:
             raise NotImplementedError
 
     async def _get_async_agent_response(
-        self, mode: ChatResponseMode, **llm_chat_kwargs: Any
+        self, step: TaskStep, mode: ChatResponseMode, **llm_chat_kwargs: Any
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         if mode == ChatResponseMode.WAIT:
             chat_response: ChatResponse = await self._llm.achat(**llm_chat_kwargs)
-            return self._process_message(chat_response)
+            return self._process_message(step, chat_response)
         elif mode == ChatResponseMode.STREAM:
-            return await self._get_async_stream_ai_response(**llm_chat_kwargs)
+            return await self._get_async_stream_ai_response(step, **llm_chat_kwargs)
         else:
             raise NotImplementedError
 
@@ -382,7 +379,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         llm_chat_kwargs = self._get_llm_chat_kwargs(
             openai_tools, current_tool_choice
         )
-        agent_chat_response = self._get_agent_response(mode=mode, **llm_chat_kwargs)
+        agent_chat_response = self._get_agent_response(step, mode=mode, **llm_chat_kwargs)
 
         # TODO: implement _should_continue
         if not self._should_continue(self.latest_tool_calls, step.step_state["n_function_calls"]):
