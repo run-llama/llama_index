@@ -56,7 +56,7 @@ class MistralAIEmbedding(BaseEmbedding):
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
-        return await self._get_query_embedding(query)
+        return self._get_query_embedding(query)
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
@@ -79,4 +79,4 @@ class MistralAIEmbedding(BaseEmbedding):
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        return await self._get_text_embeddings(texts)
+        return self._get_text_embeddings(texts)
