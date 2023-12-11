@@ -3,6 +3,7 @@ from llama_index.memory.types import BaseMemory
 from typing import List, Any, Dict, Deque
 from collections import deque
 from abc import ABC, abstractmethod
+from llama_index.tools.types import BaseTool
 
 
 class TaskStep(BaseModel):
@@ -17,7 +18,10 @@ class TaskStep(BaseModel):
     task_id: str = Field(..., type=str, description="Task ID")
     step_id: str = Field(..., type=str, description="Step ID")
     input: str = Field(..., type=str, description="User input")
-    memory: BaseMemory = Field(..., type=BaseMemory, description="Memory")
+    memory: BaseMemory = Field(..., type=BaseMemory, description="Conversational Memory")
+    step_state: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional state, carries over to next step."
+    )
 
 
 class TaskStepOutput(BaseModel):
@@ -27,6 +31,7 @@ class TaskStepOutput(BaseModel):
     is_last: bool = Field(default=False, description="Is this the last step?")
 
     def __str__(self) -> str:
+        """String representation."""
         return str(self.output)
 
 
@@ -66,9 +71,20 @@ class AgentState(BaseModel):
         return self.get_task_state(task_id).step_queue
 
 
-class BaseAgentStepEngine(ABC):
+class BaseAgentStepEngine(BaseModel, ABC):
     """Base agent step engine."""
+
+    tools: List[BaseTool] = Field(default_factory=list, description="Tools.")
     
+    @abstractmethod
+    def initialize_step(
+        self, 
+        step: TaskStep, 
+        step_queue: Deque[TaskStep],
+        **kwargs: Any
+    ) -> TaskStepOutput:
+        """Initialize step."""
+
     @abstractmethod
     def _run_step(
         self, 
