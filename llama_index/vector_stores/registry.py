@@ -20,6 +20,7 @@ from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.types import VectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.clickhouse import ClickhouseVectorStore
 
 
 class VectorStoreType(str, Enum):
@@ -41,6 +42,7 @@ class VectorStoreType(str, Enum):
     ROCKSET = "rockset"
     BAGEL = "bagel"
     EPSILLA = "epsilla"
+    CLICKHOUSE = "clickhouse"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -62,6 +64,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.ROCKSET: RocksetVectorStore,
     VectorStoreType.BAGEL: BagelVectorStore,
     VectorStoreType.EPSILLA: EpsillaVectorStore,
+    VectorStoreType.CLICKHOUSE: ClickhouseVectorStore,
 }
 
 VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE: Dict[Type[VectorStore], VectorStoreType] = {
