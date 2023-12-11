@@ -191,10 +191,8 @@ class LLM(BaseLLM):
 
         return await program.acall(**prompt_args)
 
-    def _parse_output(self, prompt: BasePromptTemplate, output: str) -> str:
-        if prompt.output_parser is not None:
-            return str(prompt.output_parser.parse(output))
-        elif self.output_parser is not None:
+    def _parse_output(self, output: str) -> str:
+        if self.output_parser is not None:
             return str(self.output_parser.parse(output))
 
         return output
@@ -216,7 +214,7 @@ class LLM(BaseLLM):
             response = self.complete(formatted_prompt)
             output = response.text
 
-        return self._parse_output(prompt, output)
+        return self._parse_output(output)
 
     def stream(
         self,
@@ -257,7 +255,7 @@ class LLM(BaseLLM):
             response = await self.acomplete(formatted_prompt)
             output = response.text
 
-        return self._parse_output(prompt, output)
+        return self._parse_output(output)
 
     async def astream(
         self,

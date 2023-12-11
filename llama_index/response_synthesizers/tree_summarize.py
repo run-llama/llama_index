@@ -89,11 +89,7 @@ class TreeSummarize(BaseSynthesizer):
                     )
 
             # return pydantic object if output_cls is specified
-            return (
-                response
-                if self._output_cls is None
-                else self._output_cls.parse_raw(response)
-            )
+            return response
 
         else:
             # summarize each chunk
@@ -117,7 +113,11 @@ class TreeSummarize(BaseSynthesizer):
                     for text_chunk in text_chunks
                 ]
 
-            summaries: List[str] = await asyncio.gather(*tasks)
+            summary_responses: List[str] = await asyncio.gather(*tasks)
+            if self._output_cls is not None:
+                summaries = [summary.json() for summary in summary_responses]
+            else:
+                summaries = summary_responses
 
             # recursively summarize the summaries
             return await self.aget_response(
@@ -164,12 +164,7 @@ class TreeSummarize(BaseSynthesizer):
                         **response_kwargs,
                     )
 
-            # return pydantic object if output_cls is specified
-            return (
-                response
-                if self._output_cls is None
-                else self._output_cls.parse_raw(response)
-            )
+            return response
 
         else:
             # summarize each chunk
@@ -194,7 +189,12 @@ class TreeSummarize(BaseSynthesizer):
                         for text_chunk in text_chunks
                     ]
 
-                summaries: List[str] = run_async_tasks(tasks)
+                summary_responses: List[str] = run_async_tasks(tasks)
+
+                if self._output_cls is not None:
+                    summaries = [summary.json() for summary in summary_responses]
+                else:
+                    summaries = summary_responses
             else:
                 if self._output_cls is None:
                     summaries = [
@@ -215,6 +215,7 @@ class TreeSummarize(BaseSynthesizer):
                         )
                         for text_chunk in text_chunks
                     ]
+                    summaries = [summary.json() for summary in summaries]
 
             # recursively summarize the summaries
             return self.get_response(
