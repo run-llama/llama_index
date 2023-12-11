@@ -15,7 +15,7 @@ from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
-    VectorStoreQueryResult,
+    VectorStoreQueryResult, FilterOperator, MetadataFilter,
 )
 from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
@@ -162,8 +162,12 @@ class AstraDBVectorStore(VectorStore):
 
     @staticmethod
     def _query_filters_to_dict(query_filters: MetadataFilters) -> Dict[str, Any]:
-        if any(not isinstance(f, ExactMatchFilter) for f in query_filters.filters):
-            raise NotImplementedError("Only `ExactMatchFilter` filters are supported")
+        # Allow only legacy ExactMatchFilter and MetadataFilter with FilterOperator.EQ
+        if not all(
+                (isinstance(f, ExactMatchFilter) or
+                 (isinstance(f, MetadataFilter) and f.operator == FilterOperator.EQ))
+                for f in query_filters.filters):
+            raise NotImplementedError("Only filters with operator=FilterOperator.EQ are supported")
         return {f"metadata.{f.key}": f.value for f in query_filters.filters}
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
