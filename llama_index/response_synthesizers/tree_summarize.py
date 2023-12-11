@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.prompts import BasePromptTemplate
@@ -113,7 +113,7 @@ class TreeSummarize(BaseSynthesizer):
                     for text_chunk in text_chunks
                 ]
 
-            summary_responses: List[str] = await asyncio.gather(*tasks)
+            summary_responses = await asyncio.gather(*tasks)
             if self._output_cls is not None:
                 summaries = [summary.json() for summary in summary_responses]
             else:
@@ -189,7 +189,7 @@ class TreeSummarize(BaseSynthesizer):
                         for text_chunk in text_chunks
                     ]
 
-                summary_responses: List[str] = run_async_tasks(tasks)
+                summary_responses = run_async_tasks(tasks)
 
                 if self._output_cls is not None:
                     summaries = [summary.json() for summary in summary_responses]

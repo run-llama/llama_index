@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.prompts import BasePromptTemplate
@@ -114,6 +114,7 @@ class Accumulate(BaseSynthesizer):
             text_qa_template, [text_chunk]
         )
 
+        predictor: Callable
         if self._output_cls is None:
             predictor = (
                 self._service_context.llm.apredict
