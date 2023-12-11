@@ -38,7 +38,7 @@ class RagExamplePrediction(BaseLlamaExamplePrediction):
     @property
     def class_name(self) -> str:
         """Data example class name."""
-        return "LlamaRagDataExample"
+        return "RagExamplePrediction"
 
 
 class LabelledRagDataExample(BaseLlamaDataExample):
@@ -76,7 +76,7 @@ class LabelledRagDataExample(BaseLlamaDataExample):
     @property
     def class_name(self) -> str:
         """Data example class name."""
-        return "LlamaRagDataExample"
+        return "LabelledRagDataExample"
 
 
 class RagPredictionDataset(BaseLlamaPredictionDataset):
@@ -147,5 +147,5 @@ class LabelledRagDataset(BaseLlamaDataset):
 
 
 # British English + American English
-LabeledRagDatasetExample = LabelledRagDataExample
+LabeledRagDataExample = LabelledRagDataExample
 LabeledRagDataset = LabelledRagDataset
