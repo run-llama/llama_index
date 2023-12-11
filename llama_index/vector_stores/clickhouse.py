@@ -205,6 +205,29 @@ class ClickhouseVectorStore(BasePydanticVectorStore):
             ENGINE = MergeTree()
             PRIMARY KEY (id);"""
         )
+        self._client.command(
+            f"""
+            CREATE TABLE IF NOT EXISTS collection_information
+            (
+                collection_id       FixedString(36),
+                name FixedString(256),
+                description String,
+                desc_embedding Array(Float32),
+                desc_embedding_meta JSON,
+                keywords Array(String),
+                state FixedString(32),
+                embedding_strategy JSON,
+                metadata JSON,
+                creation_date DateTime('Asia/Shanghai'),
+                last_modified_date DateTime('Asia/Shanghai'),
+                index_date DateTime('Asia/Shanghai'),
+                INDEX idx_collection_id collection_id TYPE set(0) GRANULARITY 1,
+                INDEX idx_state state TYPE set(0) GRANULARITY 1,
+                INDEX idx_desc_embedding desc_embedding TYPE annoy('cosineDistance') GRANULARITY 8192
+            )
+            ENGINE = MergeTree()
+            PRIMARY KEY (collection_id);"""
+        )
 
     def _initialize(self) -> None:
         if not self._is_initialized:
