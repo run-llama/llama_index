@@ -1,6 +1,6 @@
 from typing import List, Optional, Sequence, cast
 
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.prompts.mixin import PromptDictType

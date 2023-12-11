@@ -1,9 +1,13 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
-    LLM,
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -12,9 +16,8 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
 )
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
 
@@ -41,6 +44,11 @@ class Clarifai(LLM):
         max_tokens: int = 512,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ):
         try:
             from clarifai.client.model import Model
@@ -81,6 +89,11 @@ class Clarifai(LLM):
             additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
             model_name=model_name,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod

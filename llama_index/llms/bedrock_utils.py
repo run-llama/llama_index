@@ -9,17 +9,17 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.llms.base import (
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
     MessageRole,
-)
-from llama_index.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
 )
 
 HUMAN_PREFIX = "\n\nHuman:"

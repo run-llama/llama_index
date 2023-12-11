@@ -151,14 +151,11 @@ An example is shown below.
 
 ```python
 # define decompose_transform
-from llama_index import LLMPredictor
 from llama_index.indices.query.query_transform.base import (
     DecomposeQueryTransform,
 )
 
-decompose_transform = DecomposeQueryTransform(
-    LLMPredictor(llm=llm_gpt4), verbose=True
-)
+decompose_transform = DecomposeQueryTransform(llm=llm_gpt4, verbose=True)
 
 # define custom query engines
 from llama_index.query_engine.transform_query_engine import (

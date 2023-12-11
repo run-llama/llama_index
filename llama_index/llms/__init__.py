@@ -2,18 +2,6 @@ from llama_index.llms.ai21 import AI21
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anyscale import Anyscale
 from llama_index.llms.azure_openai import AzureOpenAI
-from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
-)
 from llama_index.llms.bedrock import Bedrock
 from llama_index.llms.clarifai import Clarifai
 from llama_index.llms.cohere import Cohere
@@ -25,6 +13,7 @@ from llama_index.llms.konko import Konko
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.litellm import LiteLLM
 from llama_index.llms.llama_cpp import LlamaCPP
+from llama_index.llms.llm import LLM
 from llama_index.llms.localai import LOCALAI_DEFAULTS, LocalAI
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.monsterapi import MonsterLLM
@@ -37,6 +26,17 @@ from llama_index.llms.perplexity import Perplexity
 from llama_index.llms.portkey import Portkey
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.llms.vertex import Vertex
 from llama_index.llms.vllm import Vllm, VllmServer
 from llama_index.llms.watsonx import WatsonX

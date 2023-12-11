@@ -140,7 +140,7 @@ from llama_index.indices.query.query_transform.base import (
 )
 
 decompose_transform = DecomposeQueryTransform(
-    service_context.llm_predictor, verbose=True
+    service_context.llm, verbose=True
 )
 ```
 

@@ -12,6 +12,11 @@
 - Change more than one image input for Replicate Multi-modal models from error to warning (#9360)
 - Removed GPT-Licensed `aiostream` dependency (#9403)
 
+### Breaking Changes
+
+- Updated the base `LLM` interface to match `LLMPredictor` (#9388)
+- Deprecated `LLMPredictor` (#9388)
+
 ## [0.9.13] - 2023-12-06
 
 ### New Features

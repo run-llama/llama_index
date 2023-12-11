@@ -12,7 +12,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.llms.base import MessageRole
+from llama_index.llms.types import MessageRole
 
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
 TEXT_MODELS = ["text-bison", "text-bison-32k", "text-bison@001"]

@@ -265,7 +265,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -303,7 +303,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str = await self._service_context.llm_predictor.apredict(
+        response_str = await self._service_context.llm.apredict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,

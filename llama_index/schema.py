@@ -71,8 +71,10 @@ class BaseComponent(BaseModel):
 
         # remove local functions
         keys_to_remove = []
-        for key in state["__dict__"]:
+        for key, val in state["__dict__"].items():
             if key.endswith("_fn"):
+                keys_to_remove.append(key)
+            if "function <lambda>" in str(val):
                 keys_to_remove.append(key)
         for key in keys_to_remove:
             state["__dict__"].pop(key, None)

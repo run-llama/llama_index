@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.prompts import BasePromptTemplate
@@ -114,18 +114,35 @@ class Accumulate(BaseSynthesizer):
             text_qa_template, [text_chunk]
         )
 
-        predictor = (
-            self._service_context.llm_predictor.apredict
-            if use_async
-            else self._service_context.llm_predictor.predict
-        )
-
-        return [
-            predictor(
-                text_qa_template,
-                context_str=cur_text_chunk,
-                output_cls=self._output_cls,
-                **response_kwargs,
+        predictor: Callable
+        if self._output_cls is None:
+            predictor = (
+                self._service_context.llm.apredict
+                if use_async
+                else self._service_context.llm.predict
             )
-            for cur_text_chunk in text_chunks
-        ]
+
+            return [
+                predictor(
+                    text_qa_template,
+                    context_str=cur_text_chunk,
+                    **response_kwargs,
+                )
+                for cur_text_chunk in text_chunks
+            ]
+        else:
+            predictor = (
+                self._service_context.llm.astructured_predict
+                if use_async
+                else self._service_context.llm.structured_predict
+            )
+
+            return [
+                predictor(
+                    self._output_cls,
+                    text_qa_template,
+                    context_str=cur_text_chunk,
+                    **response_kwargs,
+                )
+                for cur_text_chunk in text_chunks
+            ]
