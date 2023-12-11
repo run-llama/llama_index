@@ -203,7 +203,7 @@ class BaseIndex(Generic[IS], ABC):
 
     def delete_nodes(
         self,
-        node_ids: List[str],
+        doc_ids: List[str],
         delete_from_docstore: bool = False,
         **delete_kwargs: Any,
     ) -> None:
@@ -213,10 +213,10 @@ class BaseIndex(Generic[IS], ABC):
             doc_ids (List[str]): A list of doc_ids from the nodes to delete
 
         """
-        for node_id in node_ids:
-            self._delete_node(node_id, **delete_kwargs)
+        for doc_id in doc_ids:
+            self._delete_node(doc_id, **delete_kwargs)
             if delete_from_docstore:
-                self.docstore.delete_document(node_id, raise_error=False)
+                self.docstore.delete_document(doc_id, raise_error=False)
 
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
@@ -244,7 +244,7 @@ class BaseIndex(Generic[IS], ABC):
             return
 
         self.delete_nodes(
-            ref_doc_info.node_ids,
+            [ref_doc_id],
             delete_from_docstore=False,
             **delete_kwargs,
         )

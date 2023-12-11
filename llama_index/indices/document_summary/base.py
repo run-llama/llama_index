@@ -219,17 +219,17 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         """Insert a document."""
         self._add_nodes_to_index(self._index_struct, nodes)
 
-    def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
-        if node_id not in self._index_struct.doc_id_to_summary_id:
-            raise ValueError(f"node_id {node_id} not in index")
-        summary_id = self._index_struct.doc_id_to_summary_id[node_id]
+        if doc_id not in self._index_struct.doc_id_to_summary_id:
+            raise ValueError(f"doc_id {doc_id} not in index")
+        summary_id = self._index_struct.doc_id_to_summary_id[doc_id]
 
         # delete summary node from docstore
         self.docstore.delete_document(summary_id)
 
         # delete from index struct
-        self._index_struct.delete(node_id)
+        self._index_struct.delete(doc_id)
 
     @property
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
