@@ -13,22 +13,12 @@ Guardrails is an open-source Python package for specification/validation/correct
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.output_parsers import GuardrailsOutputParser
-from llama_index.llm_predictor import StructuredLLMPredictor
-from llama_index.prompts import PromptTemplate
-from llama_index.prompts.default_prompts import (
-    DEFAULT_TEXT_QA_PROMPT_TMPL,
-    DEFAULT_REFINE_PROMPT_TMPL,
-)
+from llama_index.llms import OpenAI
 
 
 # load documents, build index
 documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 index = VectorStoreIndex(documents, chunk_size=512)
-llm_predictor = StructuredLLMPredictor()
-
-
-# specify StructuredLLMPredictor
-# this is a special LLMPredictor that allows for structured outputs
 
 # define query / output spec
 rail_spec = """
@@ -59,22 +49,18 @@ Query string here.
 
 # define output parser
 output_parser = GuardrailsOutputParser.from_rail_string(
-    rail_spec, llm=llm_predictor.llm
+    rail_spec, llm=OpenAI()
 )
 
-# format each prompt with output parser instructions
-fmt_qa_tmpl = output_parser.format(DEFAULT_TEXT_QA_PROMPT_TMPL)
-fmt_refine_tmpl = output_parser.format(DEFAULT_REFINE_PROMPT_TMPL)
-
-qa_prompt = PromptTemplate(fmt_qa_tmpl, output_parser=output_parser)
-refine_prompt = PromptTemplate(fmt_refine_tmpl, output_parser=output_parser)
+# Attach output parser to LLM
+llm = OpenAI(output_parser=output_parser)
 
 # obtain a structured response
-query_engine = index.as_query_engine(
-    service_context=ServiceContext.from_defaults(llm_predictor=llm_predictor),
-    text_qa_template=qa_prompt,
-    refine_template=refine_prompt,
-)
+from llama_index import ServiceContext
+
+ctx = ServiceContext.from_defaults(llm=llm)
+
+query_engine = index.as_query_engine(service_context=ctx)
 response = query_engine.query(
     "What are the three items the author did growing up?",
 )
@@ -94,19 +80,13 @@ Langchain also offers output parsing modules that you can use within LlamaIndex.
 ```python
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.output_parsers import LangchainOutputParser
-from llama_index.llm_predictor import StructuredLLMPredictor
-from llama_index.prompts import PromptTemplate
-from llama_index.prompts.default_prompts import (
-    DEFAULT_TEXT_QA_PROMPT_TMPL,
-    DEFAULT_REFINE_PROMPT_TMPL,
-)
+from llama_index.llms import OpenAI
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
 
 # load documents, build index
 documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 index = VectorStoreIndex.from_documents(documents)
-llm_predictor = StructuredLLMPredictor()
 
 # define output schema
 response_schemas = [
@@ -126,18 +106,15 @@ lc_output_parser = StructuredOutputParser.from_response_schemas(
 )
 output_parser = LangchainOutputParser(lc_output_parser)
 
-# format each prompt with output parser instructions
-fmt_qa_tmpl = output_parser.format(DEFAULT_TEXT_QA_PROMPT_TMPL)
-fmt_refine_tmpl = output_parser.format(DEFAULT_REFINE_PROMPT_TMPL)
-qa_prompt = PromptTemplate(fmt_qa_tmpl, output_parser=output_parser)
-refine_prompt = PromptTemplate(fmt_refine_tmpl, output_parser=output_parser)
+# Attach output parser to LLM
+llm = OpenAI(output_parser=output_parser)
 
-# query index
-query_engine = index.as_query_engine(
-    service_context=ServiceContext.from_defaults(llm_predictor=llm_predictor),
-    text_qa_template=qa_prompt,
-    refine_template=refine_prompt,
-)
+# obtain a structured response
+from llama_index import ServiceContext
+
+ctx = ServiceContext.from_defaults(llm=llm)
+
+query_engine = index.as_query_engine(service_context=ctx)
 response = query_engine.query(
     "What are a few things the author did growing up?",
 )
