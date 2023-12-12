@@ -13,7 +13,7 @@ from llama_index.callbacks import OpenAIFineTuningHandler
 from llama_index.finetuning.openai.validate_json import validate_json
 from llama_index.finetuning.types import BaseLLMFinetuneEngine
 from llama_index.llms import OpenAI
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 
 logger = logging.getLogger(__name__)
 

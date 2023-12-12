@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.list.retrievers import SummaryIndexEmbeddingRetriever
-from llama_index.llm_predictor.base import LLMPredictor
+from llama_index.llms.mock import MockLLM
 from llama_index.prompts import BasePromptTemplate
 from llama_index.schema import Document
 from llama_index.service_context import ServiceContext
@@ -55,7 +55,7 @@ def mock_llmpredictor_predict(
 
 
 @patch.object(
-    LLMPredictor,
+    MockLLM,
     "predict",
     mock_llmpredictor_predict,
 )

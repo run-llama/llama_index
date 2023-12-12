@@ -14,8 +14,6 @@ from typing import (
     cast,
 )
 
-from aiostream import stream as async_stream
-
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
 from llama_index.agent.react.types import (
@@ -32,14 +30,15 @@ from llama_index.callbacks import (
     trace_method,
 )
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
-from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
-from llama_index.utils import async_unit_generator, print_text, unit_generator
+from llama_index.utils import print_text, unit_generator
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -302,7 +301,7 @@ class ReActAgent(BaseAgent):
         )
         return updated_stream_c
 
-    def _async_add_back_chunk_to_stream(
+    async def _async_add_back_chunk_to_stream(
         self, chunk: ChatResponse, chat_stream: AsyncGenerator[ChatResponse, None]
     ) -> AsyncGenerator[ChatResponse, None]:
         """Helper method for adding back initial chunk stream of final response
@@ -317,17 +316,9 @@ class ReActAgent(BaseAgent):
         Return:
             AsyncGenerator[ChatResponse, None]: the updated async chat_stream
         """
-        updated_stream = (
-            async_stream.combine.merge(  # need to add back partial response chunk
-                async_unit_generator(chunk),
-                chat_stream,
-            )
-        )
-        # use cast to avoid mypy issue with Stream and AsyncGenerator
-        updated_stream_c: AsyncGenerator[ChatResponse, None] = cast(
-            AsyncGenerator[ChatResponse, None], updated_stream
-        )
-        return updated_stream_c
+        yield chunk
+        async for item in chat_stream:
+            yield item
 
     @trace_method("chat")
     def chat(

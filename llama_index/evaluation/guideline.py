@@ -102,7 +102,7 @@ class GuidelineEvaluator(BaseEvaluator):
 
         await asyncio.sleep(sleep_time_in_seconds)
 
-        eval_response = await self._service_context.llm_predictor.apredict(
+        eval_response = await self._service_context.llm.apredict(
             self._eval_template,
             query=query,
             response=response,

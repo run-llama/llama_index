@@ -7,7 +7,7 @@ from llama_index.constants import (
     DEFAULT_NUM_INPUT_FILES,
     DEFAULT_NUM_OUTPUTS,
 )
-from llama_index.llms.base import (
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

@@ -69,7 +69,6 @@ Here's a complete example that sets up all objects using their default settings:
 ```python
 from llama_index import (
     ServiceContext,
-    LLMPredictor,
     OpenAIEmbedding,
     PromptHelper,
 )

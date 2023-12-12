@@ -8,7 +8,7 @@ from tqdm.auto import tqdm
 
 from llama_index import VectorStoreIndex
 from llama_index.llms import ChatMessage, OpenAI
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 from llama_index.node_parser import TokenTextSplitter
 from llama_index.schema import Document, MetadataMode
 

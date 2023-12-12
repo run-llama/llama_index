@@ -9,7 +9,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.types import ChatMessage
 
 COMMAND_MODELS = {
     "command": 4096,
