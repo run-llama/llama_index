@@ -201,7 +201,7 @@ def get_engine(
     return mode_model_dict[key]
 
 
-class OpenAIEmbedding(BaseEmbedding, validate_assignment=True):
+class OpenAIEmbedding(BaseEmbedding):
     """OpenAI class for embeddings.
 
     Args:
@@ -222,6 +222,9 @@ class OpenAIEmbedding(BaseEmbedding, validate_assignment=True):
             - OpenAIEmbeddingModelType.ADA
             - OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002
     """
+
+    class Config:
+        validate_assignment = True
 
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
