@@ -7,7 +7,11 @@ from typing import List, Optional
 from pandas import DataFrame as PandasDataFrame
 
 from llama_index.bridge.pydantic import Field
-from llama_index.evaluation import BaseEvaluator, EvaluationResult
+from llama_index.evaluation import (
+    BaseEvaluator,
+    EvaluationResult,
+    PairwiseComparisonEvaluator,
+)
 from llama_index.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,
@@ -194,3 +198,128 @@ class LabelledEvaluationDataset(BaseLlamaDataset):
 # British English + American English
 LabeledEvaluationDataExample = LabelledEvaluationDataExample
 LabeledEvaluationDataset = LabelledEvaluationDataset
+
+
+class PairwiseEvaluationExamplePrediction(EvaluationExamplePrediction):
+    """Pairwise evaluation example prediction result."""
+
+    @property
+    def class_name(self) -> str:
+        """Data example class name."""
+        return "PairwiseEvaluationExamplePrediction"
+
+
+class LabelledPairwiseEvaluationDataExample(LabelledEvaluationDataExample):
+    """Labelled pairwise evaluation data example class."""
+
+    second_answer: str = Field(
+        default_factory=str,
+        description="The second answer to the example that is to be evaluated along versus `answer`.",
+    )
+    second_answer_by: Optional[CreatedBy] = Field(
+        default=None, description="What generated the second answer."
+    )
+
+    @property
+    def class_name(self) -> str:
+        """Data example class name."""
+        return "LabelledPairwiseEvaluationDataExample"
+
+
+class PairwiseEvaluationPredictionDataset(BaseLlamaPredictionDataset):
+    """Pairwise evaluation predictions dataset class."""
+
+    _prediction_type = PairwiseEvaluationExamplePrediction
+
+    def to_pandas(self) -> PandasDataFrame:
+        """Create pandas dataframe."""
+        data = {}
+        if self.predictions:
+            data = {
+                "feedback": [t.feedback for t in self.predictions],
+                "score": [t.score for t in self.predictions],
+            }
+
+        return PandasDataFrame(data)
+
+
+class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
+    """Labelled pairwise evaluation dataset. For evaluating the evaluator in
+    performing pairwise evaluations.
+
+    Args:
+        BaseLlamaDataset (_type_): _description_
+    """
+
+    _example_type = LabelledEvaluationDataExample
+
+    def to_pandas(self) -> PandasDataFrame:
+        """Create pandas dataframe."""
+        data = {
+            "query": [t.query for t in self.examples],
+            "answer": [t.answer for t in self.examples],
+            "second_answer": [t.second_answer for t in self.examples],
+            "contexts": [t.contexts for t in self.examples],
+            "ground_truth_answer": [t.ground_truth_answer for t in self.examples],
+            "query_by": [str(t.query_by) for t in self.examples],
+            "answer_by": [str(t.answer_by) for t in self.examples],
+            "second_answer_by": [str(t.second_answer_by) for t in self.examples],
+            "ground_truth_answer_by": [
+                str(t.ground_truth_answer_by) for t in self.examples
+            ],
+            "reference_feedback": [t.reference_feedback for t in self.examples],
+            "reference_score": [t.reference_score for t in self.examples],
+            "reference_evaluation_by": [
+                t.reference_evaluation_by for t in self.examples
+            ],
+        }
+
+        return PandasDataFrame(data)
+
+    async def _apredict_example(
+        self,
+        evaluator: PairwiseComparisonEvaluator,
+        example: LabelledPairwiseEvaluationDataExample,
+        sleep_time_in_seconds: int,
+    ) -> EvaluationExamplePrediction:
+        """Async predict evaluation example with an Evaluator."""
+        await asyncio.sleep(sleep_time_in_seconds)
+        eval_kwargs = {
+            "query": example.query,
+            "response": example.answer,
+            "second_response": example.second_answer,
+            "contexts": example.contexts,
+            "reference": example.ground_truth_answer,
+            "sleep_time_in_seconds": sleep_time_in_seconds,
+        }
+        eval_result: EvaluationResult = await evaluator.aevaluate(**eval_kwargs)
+        return EvaluationExamplePrediction(
+            feedback=eval_result.feedback, score=eval_result.score
+        )
+
+    def _predict_example(
+        self,
+        evaluator: PairwiseComparisonEvaluator,
+        example: LabelledPairwiseEvaluationDataExample,
+        sleep_time_in_seconds: int = 0,
+    ) -> EvaluationExamplePrediction:
+        """Predict RAG example with a query engine."""
+        time.sleep(sleep_time_in_seconds)
+        eval_kwargs = {
+            "query": example.query,
+            "response": example.answer,
+            "second_response": example.second_answer,
+            "contexts": example.contexts,
+            "reference": example.ground_truth_answer,
+            "sleep_time_in_seconds": sleep_time_in_seconds,
+        }
+        eval_result: EvaluationResult = evaluator.evaluate(**eval_kwargs)
+        return EvaluationExamplePrediction(
+            feedback=eval_result.feedback, score=eval_result.score
+        )
+
+    def _construct_prediction_dataset(
+        self, predictions: List[PairwiseEvaluationExamplePrediction]
+    ) -> PairwiseEvaluationPredictionDataset:
+        """Construct prediction dataset."""
+        return PairwiseEvaluationPredictionDataset(predictions=predictions)
