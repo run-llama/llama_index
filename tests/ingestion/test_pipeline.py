@@ -6,7 +6,6 @@ from llama_index.node_parser import SentenceSplitter
 from llama_index.readers import ReaderConfig, StringIterableReader
 from llama_index.schema import Document
 from llama_index.storage.docstore import SimpleDocumentStore
-from tests.conftest import CachedOpenAIApiKeys
 
 
 # clean up folders after tests
@@ -17,21 +16,19 @@ def teardown_function() -> None:
 
 
 def test_build_pipeline() -> None:
-    with CachedOpenAIApiKeys():
-        pipeline = IngestionPipeline(
-            reader=ReaderConfig(
-                reader=StringIterableReader(),
-                reader_kwargs={"texts": ["This is a test."]},
-            ),
-            documents=[Document.example()],
-            transformations=[
-                SentenceSplitter(),
-                KeywordExtractor(llm=MockLLM()),
-                OpenAIEmbedding(),
-            ],
-        )
+    pipeline = IngestionPipeline(
+        reader=ReaderConfig(
+            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
+        ),
+        documents=[Document.example()],
+        transformations=[
+            SentenceSplitter(),
+            KeywordExtractor(llm=MockLLM()),
+            OpenAIEmbedding(api_key="fake"),
+        ],
+    )
 
-        assert len(pipeline.transformations) == 3
+    assert len(pipeline.transformations) == 3
 
 
 def test_run_pipeline() -> None:

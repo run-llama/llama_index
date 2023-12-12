@@ -3,7 +3,6 @@ import os
 from typing import Any, List
 from unittest.mock import patch
 
-import pytest
 from llama_index.embeddings.base import SimilarityMode, mean_agg
 from llama_index.embeddings.openai import OpenAIEmbedding
 
@@ -112,12 +111,3 @@ def test_validates_api_key_is_present() -> None:
         # We can create a new LLM when the api_key is set on the
         # class directly
         assert OpenAIEmbedding(api_key="sk-" + ("a" * 48))
-    with CachedOpenAIApiKeys(set_fake_key=False):
-        # We can't create a new LLM when the api_key is invalid
-        with pytest.raises(ValueError):
-            OpenAIEmbedding(api_key="invalid")
-        embedding = OpenAIEmbedding()
-        with pytest.raises(ValueError):
-            embedding.api_key = ""
-        with pytest.raises(ValueError):
-            embedding.api_key = "invalid"
