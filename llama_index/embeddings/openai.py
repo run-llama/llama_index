@@ -304,11 +304,11 @@ class OpenAIEmbedding(BaseEmbedding, validate_assignment=True):
         self._aclient = None
         self._http_client = http_client
 
-    @validator('api_key', pre=True)
+    @validator("api_key", pre=True)
     def _validate_api_key(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return None
-        if not v.startswith('sk-'):
+        if not v.startswith("sk-"):
             raise ValueError("API key must start with 'sk-'")
         return v
 

@@ -4,7 +4,6 @@ from typing import Any, List
 from unittest.mock import patch
 
 import pytest
-
 from llama_index.embeddings.base import SimilarityMode, mean_agg
 from llama_index.embeddings.openai import OpenAIEmbedding
 
