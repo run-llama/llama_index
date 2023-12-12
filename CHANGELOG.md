@@ -4,6 +4,7 @@
 
 ### New Features
 
+- Add MistralAI LLM (#9444)
 - Add MistralAI Embeddings (#9441)
 - Add `Ollama` Embedding class (#9341)
 - Add `FlagEmbeddingReranker` for reranking (#9285)
