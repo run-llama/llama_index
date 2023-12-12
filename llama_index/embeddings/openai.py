@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import httpx
 from openai import AsyncOpenAI, OpenAI
 
-from llama_index.bridge.pydantic import Field, PrivateAttr, validator
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.llms.openai_utils import (
@@ -223,14 +223,11 @@ class OpenAIEmbedding(BaseEmbedding):
             - OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002
     """
 
-    class Config:
-        validate_assignment = True
-
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
     )
 
-    api_key: Optional[str] = Field(description="The OpenAI API key.")
+    api_key: str = Field(description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The version for OpenAI API.")
 
@@ -306,14 +303,6 @@ class OpenAIEmbedding(BaseEmbedding):
         self._client = None
         self._aclient = None
         self._http_client = http_client
-
-    @validator("api_key", pre=True)
-    def _validate_api_key(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return None
-        if not v.startswith("sk-"):
-            raise ValueError("API key must start with 'sk-'")
-        return v
 
     def _get_client(self) -> OpenAI:
         if not self.reuse_client:
