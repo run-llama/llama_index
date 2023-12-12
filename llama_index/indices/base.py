@@ -198,8 +198,8 @@ class BaseIndex(Generic[IS], ABC):
             self.docstore.set_document_hash(document.get_doc_id(), document.hash)
 
     @abstractmethod
-    def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
-        """Delete a node."""
+    def _delete_node(self, doc_id: str, **delete_kwargs: Any) -> None:
+        """Delete nodes from doc_id."""
 
     def delete_nodes(
         self,

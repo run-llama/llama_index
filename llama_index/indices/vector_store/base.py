@@ -273,7 +273,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
     def delete_nodes(
         self,
-        node_ids: List[str],
+        doc_ids: List[str],
         delete_from_docstore: bool = False,
         **delete_kwargs: Any,
     ) -> None:
@@ -281,6 +281,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         Args:
             doc_ids (List[str]): A list of doc_ids from the nodes to delete
+            delete_from_docstore: delete the document from docstore as well
 
         """
         raise NotImplementedError(
