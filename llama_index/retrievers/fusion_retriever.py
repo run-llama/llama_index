@@ -6,9 +6,9 @@ from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.llms.utils import LLMType, resolve_llm
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.retrievers import BaseRetriever
 from llama_index.schema import NodeWithScore, QueryBundle
-from llama_index.prompts.mixin import PromptDictType
 
 QUERY_GEN_PROMPT = (
     "You are a helpful assistant that generates multiple search queries based on a "
