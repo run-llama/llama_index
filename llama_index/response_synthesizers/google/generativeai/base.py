@@ -143,16 +143,6 @@ class GoogleTextSynthesizer(BaseSynthesizer):
         except ImportError:
             raise ImportError(_import_err_msg)
 
-        _logger.debug(
-            f"""\n
-GoogleTextSynthesizer.get_response(
-    query_str="{query_str}",
-    text_chunks=[
-{_separator.join(text_chunks)}
-    ],
-    {response_kwargs})"""
-        )
-
         client = cast(genai.GenerativeServiceClient, self._client)
         response = genaix.generate_answer(
             prompt=query_str,

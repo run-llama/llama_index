@@ -124,15 +124,15 @@ class GoogleIndex(BaseManagedIndex):
         _logger.debug(f"\n\nGoogleIndex.from_documents(...)")
 
         new_display_name = f"Corpus created on {datetime.datetime.now()}"
-        c = cls(
+        instance = cls(
             vector_store=GoogleVectorStore.create_corpus(display_name=new_display_name),
             **kwargs,
         )
 
-        index = cast(GoogleIndex, c)
+        index = cast(GoogleIndex, instance)
         index.insert_documents(documents=documents, service_context=service_context)
 
-        return c
+        return instance
 
     @property
     def corpus_id(self) -> str:

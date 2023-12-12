@@ -191,9 +191,20 @@ class TestCredentials(credentials.Credentials):
         """Test credentials do nothing to the request."""
 
 
-# Retriever client.
+def _get_test_credentials() -> Optional[credentials.Credentials]:
+    """Returns a fake credential for testing or None.
+
+    If _config.testing is True, a fake credential is returned.
+    Otherwise, we are in a real environment and a None is returned.
+
+    If None is passed to the clients later on, the actual credentials will be
+    inferred by the rules specified in google.auth package.
+    """
+    return TestCredentials() if _config.testing else None
+
+
 def build_semantic_retriever() -> genai.RetrieverServiceClient:
-    credentials = TestCredentials() if _config.testing else None
+    credentials = _get_test_credentials()
     return genai.RetrieverServiceClient(
         credentials=credentials,
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
@@ -203,9 +214,8 @@ def build_semantic_retriever() -> genai.RetrieverServiceClient:
     )
 
 
-# GenerativeService client.
 def build_generative_service() -> genai.GenerativeServiceClient:
-    credentials = TestCredentials() if _config.testing else None
+    credentials = _get_test_credentials()
     return genai.GenerativeServiceClient(
         credentials=credentials,
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
@@ -213,9 +223,6 @@ def build_generative_service() -> genai.GenerativeServiceClient:
             api_endpoint=_config.api_endpoint
         ),
     )
-
-
-# Public functions.
 
 
 def list_corpora(
