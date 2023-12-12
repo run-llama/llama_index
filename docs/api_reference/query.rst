@@ -9,7 +9,7 @@ This doc shows the classes that are used to query indices.
 Main Query Classes
 ^^^^^^^^^^^^^^^^^^
 
-Querying an index involves a three main components:
+Querying an index involves three main components:
 
 - **Retrievers**: A retriever class retrieves a set of Nodes from an index given a query.
 - **Response Synthesizer**: This class takes in a set of Nodes and synthesizes an answer given a query.
