@@ -1,39 +1,40 @@
-import logging
-from llama_index.agent.v1.schema import BaseAgentStepEngine, TaskStep, TaskStepOutput, Task
 import asyncio
-from pydantic import BaseModel, Field
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.base import LLM
-from typing import List, Dict, Any, Union, Optional, cast, Deque, get_args, Tuple, Type
+import json
+import logging
+import uuid
+from threading import Thread
+from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
+
+from llama_index.agent.v1.schema import (
+    BaseAgentStepEngine,
+    Task,
+    TaskStep,
+    TaskStepOutput,
+)
+from llama_index.callbacks import (
+    CallbackManager,
+    CBEventType,
+    EventPayload,
+)
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.tools import BaseTool
+from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import OpenAIToolCall
 from llama_index.memory.types import BaseMemory
-from llama_index.llms.base import ChatMessage
-from llama_index.callbacks import (
-    CallbackManager,
-    CBEventType,
-    EventPayload,
-    trace_method,
-)
-from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.objects.base import ObjectRetriever
-from collections import deque
-import uuid
-from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
-import json
-from threading import Thread
+from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
+
 
 def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
     """Get function by name."""
@@ -156,6 +157,7 @@ def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, di
 
     return tool_choice
 
+
 class OpenAIAgentStepEngine(BaseAgentStepEngine):
     """OpenAI Agent step engine."""
 
@@ -174,7 +176,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         self._max_function_calls = max_function_calls
         self.prefix_messages = prefix_messages
         self.callback_manager = callback_manager or self._llm.callback_manager
-        
+
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
         elif len(tools) > 0:
@@ -195,6 +197,8 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "OpenAIAgentStepEngine":
         """Create an OpenAIAgent from a list of tools.
@@ -218,30 +222,52 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
                 f"Model name {llm.model} does not support function calling API. "
             )
 
+        if system_prompt is not None:
+            if prefix_messages is not None:
+                raise ValueError(
+                    "Cannot specify both system_prompt and prefix_messages"
+                )
+            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+
+        prefix_messages = prefix_messages or []
+
         return cls(
             tools=tools,
             tool_retriever=tool_retriever,
             llm=llm,
+            prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
         )
-        
+
+    def get_all_messages(self, step: TaskStep) -> List[ChatMessage]:
+        return self.prefix_messages + step.memory.get()
+
+    def get_latest_tool_calls(self, step: TaskStep) -> Optional[List[OpenAIToolCall]]:
+        return step.memory.get_all()[-1].additional_kwargs.get("tool_calls", None)
 
     def _get_llm_chat_kwargs(
-        self, openai_tools: List[dict], tool_choice: Union[str, dict] = "auto"
+        self,
+        step: TaskStep,
+        openai_tools: List[dict],
+        tool_choice: Union[str, dict] = "auto",
     ) -> Dict[str, Any]:
-        llm_chat_kwargs: dict = {"messages": self.all_messages}
+        llm_chat_kwargs: dict = {"messages": self.get_all_messages(step)}
         if openai_tools:
             llm_chat_kwargs.update(
                 tools=openai_tools, tool_choice=resolve_tool_choice(tool_choice)
             )
         return llm_chat_kwargs
 
-    def _process_message(self, step: TaskStep, chat_response: ChatResponse) -> AgentChatResponse:
+    def _process_message(
+        self, step: TaskStep, chat_response: ChatResponse
+    ) -> AgentChatResponse:
         ai_message = chat_response.message
         step.memory.put(ai_message)
-        return AgentChatResponse(response=str(ai_message.content), sources=step.step_state["sources"])
+        return AgentChatResponse(
+            response=str(ai_message.content), sources=step.step_state["sources"]
+        )
 
     def _get_stream_ai_response(
         self, step: TaskStep, **llm_chat_kwargs: Any
@@ -303,11 +329,11 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
             raise NotImplementedError
 
     def _call_function(
-        self, 
-        tools: List[BaseTool], 
+        self,
+        tools: List[BaseTool],
         tool_call: OpenAIToolCall,
         memory: BaseMemory,
-        sources: List[ToolOutput]
+        sources: List[ToolOutput],
     ) -> None:
         function_call = tool_call.function
         # validations to get passed mypy
@@ -331,14 +357,39 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         sources.append(tool_output)
         memory.put(function_message)
 
-    def initialize_step(
-        self, 
-        task: Task, 
-        **kwargs: Any
-    ) -> TaskStep:
-        """Initialize step from task."""
+    async def _acall_function(
+        self,
+        tools: List[BaseTool],
+        tool_call: OpenAIToolCall,
+        memory: BaseMemory,
+        sources: List[ToolOutput],
+    ) -> None:
+        function_call = tool_call.function
+        # validations to get passed mypy
+        assert function_call is not None
+        assert function_call.name is not None
+        assert function_call.arguments is not None
 
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: function_call.arguments,
+                EventPayload.TOOL: get_function_by_name(
+                    tools, function_call.name
+                ).metadata,
+            },
+        ) as event:
+            function_message, tool_output = await acall_function(
+                tools, tool_call, verbose=self._verbose
+            )
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        sources.append(tool_output)
+        memory.put(function_message)
+
+    def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
+        """Initialize step from task."""
         sources: List[ToolOutput] = []
+        # initialize state in this step
         step_state = {
             "sources": sources,
             "n_function_calls": 0,
@@ -351,7 +402,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
             memory=task.memory,
             step_state=step_state,
         )
-        
+
     def _should_continue(
         self, tool_calls: Optional[List[OpenAIToolCall]], n_function_calls: int
     ) -> bool:
@@ -366,10 +417,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         return self._get_tools(task_step.input)
 
     def _run_step(
-        self, 
-        step: TaskStep,
-        task: Task,
-        mode: ChatResponseMode = ChatResponseMode.WAIT
+        self, step: TaskStep, task: Task, mode: ChatResponseMode = ChatResponseMode.WAIT
     ) -> TaskStepOutput:
         """Run step."""
         # TODO: see if we want to do step-based inputs
@@ -377,17 +425,21 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(
-            openai_tools, current_tool_choice
+            step, openai_tools, current_tool_choice
         )
-        agent_chat_response = self._get_agent_response(step, mode=mode, **llm_chat_kwargs)
+        agent_chat_response = self._get_agent_response(
+            step, mode=mode, **llm_chat_kwargs
+        )
 
         # TODO: implement _should_continue
-        if not self._should_continue(self.latest_tool_calls, step.step_state["n_function_calls"]):
+        if not self._should_continue(
+            self.get_latest_tool_calls(step), step.step_state["n_function_calls"]
+        ):
             is_done = True
             # TODO: return response
         else:
             is_done = False
-            for tool_call in self.latest_tool_calls:
+            for tool_call in self.get_latest_tool_calls(step):
                 # Some validation
                 if not isinstance(tool_call, get_args(OpenAIToolCall)):
                     raise ValueError("Invalid tool_call object")
@@ -405,16 +457,19 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
                 step.step_state["n_function_calls"] += 1
 
         # generate next step, append to task queue
-        if not is_done:
-            new_steps = [TaskStep(
-                task_id=step.task_id,
-                step_id=str(uuid.uuid4()),
-                input=agent_chat_response,
-                memory=step.memory,
-            )]
-        else:
-            new_steps = []
-            
+        new_steps = (
+            [
+                TaskStep(
+                    task_id=step.task_id,
+                    step_id=str(uuid.uuid4()),
+                    input=agent_chat_response,
+                    memory=step.memory,
+                )
+            ]
+            if not is_done
+            else []
+        )
+
         return TaskStepOutput(
             output=agent_chat_response,
             task_step=step,
@@ -422,39 +477,84 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
             next_steps=new_steps,
         )
 
-    def run_step(
-        self, 
-        step: TaskStep, 
-        task: Task,
-        **kwargs: Any
+    async def _arun_step(
+        self, step: TaskStep, task: Task, mode: ChatResponseMode = ChatResponseMode.WAIT
     ) -> TaskStepOutput:
+        """Run step."""
+        # TODO: see if we want to do step-based inputs
+        tools = self.get_tools(task.input)
+        openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
+
+        llm_chat_kwargs = self._get_llm_chat_kwargs(
+            step, openai_tools, current_tool_choice
+        )
+        agent_chat_response = await self._get_async_agent_response(
+            step, mode=mode, **llm_chat_kwargs
+        )
+
+        # TODO: implement _should_continue
+        if not self._should_continue(
+            self.get_latest_tool_calls(step), step.step_state["n_function_calls"]
+        ):
+            is_done = True
+            # TODO: return response
+        else:
+            is_done = False
+            for tool_call in self.get_latest_tool_calls(step):
+                # Some validation
+                if not isinstance(tool_call, get_args(OpenAIToolCall)):
+                    raise ValueError("Invalid tool_call object")
+
+                if tool_call.type != "function":
+                    raise ValueError("Invalid tool type. Unsupported by OpenAI")
+                # TODO: maybe execute this with multi-threading
+                await self._acall_function(
+                    tools, tool_call, step.memory, step.step_state["sources"]
+                )
+                # change function call to the default value, if a custom function was given
+                # as an argument (none and auto are predefined by OpenAI)
+                if current_tool_choice not in ("auto", "none"):
+                    current_tool_choice = "auto"
+                step.step_state["n_function_calls"] += 1
+
+        # generate next step, append to task queue
+        new_steps = (
+            [
+                TaskStep(
+                    task_id=step.task_id,
+                    step_id=str(uuid.uuid4()),
+                    input=agent_chat_response,
+                    memory=step.memory,
+                )
+            ]
+            if not is_done
+            else []
+        )
+
+        return TaskStepOutput(
+            output=agent_chat_response,
+            task_step=step,
+            is_last=is_done,
+            next_steps=new_steps,
+        )
+
+    def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
         return self._run_step(step, task, mode=ChatResponseMode.WAIT)
 
     async def arun_step(
-        self,
-        step: TaskStep,
-        task: Task,
-        **kwargs: Any
+        self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
-        raise NotImplementedError
+        return await self._arun_step(step, task, mode=ChatResponseMode.WAIT)
 
-    def stream_step(
-        self,
-        step: TaskStep,
-        task: Task,
-        **kwargs: Any
-    ) -> TaskStepOutput:
+    def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
         # TODO: figure out if we need a different type for TaskStepOutput
         raise NotImplementedError
 
     async def astream_step(
-        self,
-        step: TaskStep,
-        task: Task,
-        **kwargs: Any
+        self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         raise NotImplementedError
