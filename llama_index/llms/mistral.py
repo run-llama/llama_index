@@ -11,12 +11,15 @@ from llama_index.llms.generic_utils import (
     achat_to_completion_decorator,
     astream_chat_to_completion_decorator,
     chat_to_completion_decorator,
+    get_from_param_or_env,
     stream_chat_to_completion_decorator,
 )
 from llama_index.llms.llm import LLM
 from llama_index.llms.mistralai_utils import (
     mistralai_modelname_to_contextsize,
 )
+
+# from mistralai.models.chat_completion import ChatMessage
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -57,7 +60,7 @@ class MistralAI(LLM):
     max_retries: int = Field(
         default=5, description="The maximum number of API retries.", gte=0
     )
-    safe_mode: str = Field(
+    safe_mode: bool = Field(
         default=False,
         description="The parameter to enforce guardrails in chat generations.",
     )
@@ -100,6 +103,16 @@ class MistralAI(LLM):
 
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
+
+        api_key = api_key = get_from_param_or_env(
+            "api_key", api_key, "MISTRAL_API_KEY", ""
+        )
+
+        if not api_key:
+            raise ValueError(
+                "You must provide an API key to use mistralai. "
+                "You can either pass it in as an argument or set it `MISTRAL_API_KEY`."
+            )
 
         self._client = MistralClient(
             api_key=api_key,
@@ -152,6 +165,8 @@ class MistralAI(LLM):
             "model": self.model,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
+            "random_seed": self.random_seed,
+            "safe_mode": self.safe_mode,
         }
         return {
             **base_kwargs,
@@ -166,13 +181,14 @@ class MistralAI(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        # convert messages to mistral ChatMessage
+        from mistralai.client import ChatMessage as mistral_chatmessage
+
+        messages = [
+            mistral_chatmessage(role=x.role, content=x.content) for x in messages
+        ]
         all_kwargs = self._get_all_kwargs(**kwargs)
-        response = self._client.chat(
-            messages=messages,
-            random_seed=self.random_seed,
-            safe_mode=self.safe_mode,
-            **all_kwargs
-        )
+        response = self._client.chat(messages=messages, **all_kwargs)
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT, content=response.choices[0].message.content
@@ -189,21 +205,24 @@ class MistralAI(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        # convert messages to mistral ChatMessage
+        from mistralai.client import ChatMessage as mistral_chatmessage
+
+        messages = [
+            mistral_chatmessage(role=message.role, content=message.content)
+            for message in messages
+        ]
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.chat_stream(
-            model=self.model,
-            messages=messages,
-            random_seed=self.random_seed,
-            safe_mode=self.safe_mode,
-            **all_kwargs
-        )
+        response = self._client.chat_stream(messages=messages, **all_kwargs)
 
         def gen() -> ChatResponseGen:
             content = ""
             role = MessageRole.ASSISTANT
             for chunk in response:
                 content_delta = chunk.choices[0].delta.content
+                if content_delta is None:
+                    continue
                 content += content_delta
                 yield ChatResponse(
                     message=ChatMessage(role=role, content=content),
@@ -222,14 +241,15 @@ class MistralAI(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
+        # convert messages to mistral ChatMessage
+        from mistralai.client import ChatMessage as mistral_chatmessage
+
+        messages = [
+            mistral_chatmessage(role=message.role, content=message.content)
+            for message in messages
+        ]
         all_kwargs = self._get_all_kwargs(**kwargs)
-        response = await self._aclient.chat(
-            model=self.model,
-            messages=messages,
-            random_seed=self.random_seed,
-            safe_mode=self.safe_mode,
-            **all_kwargs
-        )
+        response = await self._aclient.chat(messages=messages, **all_kwargs)
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT, content=response.choices[0].message.content
@@ -246,21 +266,23 @@ class MistralAI(LLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
+        # convert messages to mistral ChatMessage
+        from mistralai.client import ChatMessage as mistral_chatmessage
+
+        messages = [
+            mistral_chatmessage(role=x.role, content=x.content) for x in messages
+        ]
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.chat_stream(
-            model=self.model,
-            messages=messages,
-            random_seed=self.random_seed,
-            safe_mode=self.safe_mode,
-            **all_kwargs
-        )
+        response = await self._aclient.chat_stream(messages=messages, **all_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             role = MessageRole.ASSISTANT
             async for chunk in response:
                 content_delta = chunk.choices[0].delta.content
+                if content_delta is None:
+                    continue
                 content += content_delta
                 yield ChatResponse(
                     message=ChatMessage(role=role, content=content),
