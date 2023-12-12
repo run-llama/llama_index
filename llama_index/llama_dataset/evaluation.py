@@ -7,7 +7,6 @@ from typing import List, Optional
 from pandas import DataFrame as PandasDataFrame
 
 from llama_index.bridge.pydantic import Field
-from llama_index.core import BaseQueryEngine
 from llama_index.evaluation import BaseEvaluator, EvaluationResult
 from llama_index.llama_dataset.base import (
     BaseLlamaDataExample,
@@ -167,17 +166,23 @@ class LabelledEvaluationDataset(BaseLlamaDataset):
 
     def _predict_example(
         self,
-        query_engine: BaseQueryEngine,
+        evaluator: BaseEvaluator,
         example: LabelledEvaluationDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> EvaluationExamplePrediction:
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
-        response = query_engine.query(example.query)
-        # parse response into feedback and score
-        feedback = ""
-        score = ""
-        return EvaluationExamplePrediction(feedback=feedback, score=score)
+        eval_kwargs = {
+            "query": example.query,
+            "response": example.answer,
+            "contexts": example.contexts,
+            "reference": example.ground_truth_answer,
+            "sleep_time_in_seconds": sleep_time_in_seconds,
+        }
+        eval_result: EvaluationResult = evaluator.evaluate(**eval_kwargs)
+        return EvaluationExamplePrediction(
+            feedback=eval_result.feedback, score=eval_result.score
+        )
 
     def _construct_prediction_dataset(
         self, predictions: List[EvaluationExamplePrediction]
