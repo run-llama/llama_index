@@ -8,7 +8,7 @@ from langchain.base_language import BaseLanguageModel
 # callback
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.chat_models import ChatAnyscale, ChatOpenAI
+from langchain.chat_models import ChatAnyscale, ChatOpenAI, ChatOpenRouter
 from langchain.chat_models.base import BaseChatModel
 from langchain.docstore.document import Document
 from langchain.embeddings import HuggingFaceBgeEmbeddings, HuggingFaceEmbeddings
@@ -61,6 +61,7 @@ __all__ = [
     "Cohere",
     "BaseChatModel",
     "ChatAnyscale",
+    "ChatOpenRouter",
     "ChatOpenAI",
     "BaseLanguageModel",
     "Embeddings",

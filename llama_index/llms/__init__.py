@@ -22,6 +22,7 @@ from llama_index.llms.ollama import Ollama
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.openllm import OpenLLM, OpenLLMAPI
+from llama_index.llms.openrouter import OpenRouter
 from llama_index.llms.palm import PaLM
 from llama_index.llms.perplexity import Perplexity
 from llama_index.llms.portkey import Portkey
@@ -81,6 +82,7 @@ __all__ = [
     "OpenAILike",
     "OpenLLM",
     "OpenLLMAPI",
+    "OpenRouter",
     "PaLM",
     "Perplexity",
     "Portkey",
