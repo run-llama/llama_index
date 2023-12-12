@@ -21,18 +21,17 @@ if has_google:
     import llama_index.vector_stores.google.generativeai.genai_extension as genaix
 
     genaix.set_defaults(
-        genaix.Config(api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend")
+        genaix.Config(
+            api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",
+            testing=True,
+        )
     )
 
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.GenerativeServiceClient.generate_answer")
-@patch("google.auth.default")
-def test_get_response(
-    mock_auth_default: MagicMock, mock_generate_answer: MagicMock
-) -> None:
+def test_get_response(mock_generate_answer: MagicMock) -> None:
     # Arrange
-    mock_auth_default.return_value = ({}, {})
     mock_generate_answer.return_value = genai.GenerateAnswerResponse(
         answer=genai.Candidate(
             content=genai.Content(parts=[genai.Part(text="42")]),
@@ -103,12 +102,8 @@ def test_get_response(
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.GenerativeServiceClient.generate_answer")
-@patch("google.auth.default")
-def test_synthesize(
-    mock_auth_default: MagicMock, mock_generate_answer: MagicMock
-) -> None:
+def test_synthesize(mock_generate_answer: MagicMock) -> None:
     # Arrange
-    mock_auth_default.return_value = ({}, {})
     mock_generate_answer.return_value = genai.GenerateAnswerResponse(
         answer=genai.Candidate(
             content=genai.Content(parts=[genai.Part(text="42")]),

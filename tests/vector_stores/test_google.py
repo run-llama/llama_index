@@ -27,18 +27,16 @@ if has_google:
 
     # Make sure the tests do not hit actual production servers.
     genaix.set_defaults(
-        genaix.Config(api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend")
+        genaix.Config(
+            api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",
+            testing=True,
+        )
     )
 
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_corpus")
-@patch("google.auth.default")
-def test_create_corpus(
-    mock_auth_default: MagicMock, mock_create_corpus: MagicMock
-) -> None:
-    mock_auth_default.return_value = ({}, {})
-
+def test_create_corpus(mock_create_corpus: MagicMock) -> None:
     def fake_create_corpus(request: genai.CreateCorpusRequest) -> genai.Corpus:
         return request.corpus
 
@@ -59,10 +57,8 @@ def test_create_corpus(
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
-@patch("google.auth.default")
-def test_from_corpus(mock_auth_default: MagicMock, mock_get_corpus: MagicMock) -> None:
+def test_from_corpus(mock_get_corpus: MagicMock) -> None:
     # Arrange
-    mock_auth_default.return_value = ({}, {})
     mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
 
     # Act
@@ -73,11 +69,7 @@ def test_from_corpus(mock_auth_default: MagicMock, mock_get_corpus: MagicMock) -
 
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
-@patch("google.auth.default")
-def test_class_name(mock_auth_default: MagicMock) -> None:
-    # Arrange
-    mock_auth_default.return_value = ({}, {})
-
+def test_class_name() -> None:
     # Act
     class_name = GoogleVectorStore.class_name()
 
@@ -90,9 +82,7 @@ def test_class_name(mock_auth_default: MagicMock) -> None:
 @patch("google.ai.generativelanguage.RetrieverServiceClient.create_document")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_document")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
-@patch("google.auth.default")
 def test_add(
-    mock_auth_default: MagicMock,
     mock_get_corpus: MagicMock,
     mock_get_document: MagicMock,
     mock_create_document: MagicMock,
@@ -105,7 +95,6 @@ def test_add(
     # Then, we send 3 requests.
     # We expect to have 2 batches where the last batch has only 1 request.
     genaix._MAX_REQUEST_PER_CHUNK = 2
-    mock_auth_default.return_value = ({}, {})
     mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
     mock_get_document.side_effect = gapi_exception.NotFound("")
     mock_create_document.return_value = genai.Document(name="corpora/123/documents/456")
@@ -239,14 +228,11 @@ def test_add(
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.delete_document")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
-@patch("google.auth.default")
 def test_delete(
-    mock_auth_default: MagicMock,
     mock_get_corpus: MagicMock,
     mock_delete_document: MagicMock,
 ) -> None:
     # Arrange
-    mock_auth_default.return_value = ({}, {})
     mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
 
     # Act
@@ -264,14 +250,11 @@ def test_delete(
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.ai.generativelanguage.RetrieverServiceClient.query_corpus")
 @patch("google.ai.generativelanguage.RetrieverServiceClient.get_corpus")
-@patch("google.auth.default")
 def test_query(
-    mock_auth_default: MagicMock,
     mock_get_corpus: MagicMock,
     mock_query_corpus: MagicMock,
 ) -> None:
     # Arrange
-    mock_auth_default.return_value = ({}, {})
     mock_get_corpus.return_value = genai.Corpus(name="corpora/123")
     mock_query_corpus.return_value = genai.QueryCorpusResponse(
         relevant_chunks=[

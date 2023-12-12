@@ -110,10 +110,11 @@ class GoogleVectorStore(BasePydanticVectorStore):
             raise ImportError(_import_err_msg)
 
         _logger.debug(f"\n\nGoogleVectorStore.from_corpus(corpus_id={corpus_id})")
-        if genaix.get_corpus(corpus_id=corpus_id) is None:
+        client = genaix.build_semantic_retriever()
+        if genaix.get_corpus(corpus_id=corpus_id, client=client) is None:
             raise NoSuchCorpusException(corpus_id=corpus_id)
 
-        return cls(corpus_id=corpus_id, client=genaix.build_semantic_retriever())
+        return cls(corpus_id=corpus_id, client=client)
 
     @classmethod
     def create_corpus(

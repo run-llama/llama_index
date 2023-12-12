@@ -14,6 +14,7 @@ import google.ai.generativelanguage as genai
 from google.api_core import client_options as client_options_lib
 from google.api_core import exceptions as gapi_exception
 from google.api_core import gapic_v1
+from google.auth import credentials, exceptions
 from google.protobuf import timestamp_pb2
 
 import llama_index
@@ -135,60 +136,83 @@ class Config:
         api_endpoint: The Google Generative API endpoint address.
         user_agent: The user agent to use for logging.
         page_size: For paging RPCs, how many entities to return per RPC.
+        testing: Are the unit tests running?
     """
 
     api_endpoint: str = _DEFAULT_API_ENDPOINT
     user_agent: str = _USER_AGENT
     page_size: int = _DEFAULT_PAGE_SIZE
+    testing: bool = False
 
 
 def set_defaults(config: Config) -> None:
     """Set global defaults for operations with Google Generative AI API."""
     global _config
     _config = config
-    _set_default_retriever(build_semantic_retriever())
-    _set_default_generative_service(build_generative_service())
 
 
 _config = Config()
 
 
+class TestCredentials(credentials.Credentials):
+    """Credentials that do not provide any authentication information.
+
+    Useful for unit tests where the credentials are not used.
+    """
+
+    @property
+    def expired(self) -> bool:
+        """Returns `False`, test credentials never expire."""
+        return False
+
+    @property
+    def valid(self) -> bool:
+        """Returns `True`, test credentials are always valid."""
+        return True
+
+    def refresh(self, request: Any) -> None:
+        """Raises :class:``InvalidOperation``, test credentials cannot be
+        refreshed.
+        """
+        raise exceptions.InvalidOperation("Test credentials cannot be refreshed.")
+
+    def apply(self, headers: Any, token: Any = None) -> None:
+        """Anonymous credentials do nothing to the request.
+
+        The optional ``token`` argument is not supported.
+
+        Raises:
+            google.auth.exceptions.InvalidValue: If a token was specified.
+        """
+        if token is not None:
+            raise exceptions.InvalidValue("Test credentials don't support tokens.")
+
+    def before_request(self, request: Any, method: Any, url: Any, headers: Any) -> None:
+        """Test credentials do nothing to the request."""
+
+
 # Retriever client.
 def build_semantic_retriever() -> genai.RetrieverServiceClient:
+    credentials = TestCredentials() if _config.testing else None
     return genai.RetrieverServiceClient(
+        credentials=credentials,
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
         client_options=client_options_lib.ClientOptions(
             api_endpoint=_config.api_endpoint
         ),
     )
-
-
-_default_retriever: genai.RetrieverServiceClient = build_semantic_retriever()
-
-
-def _set_default_retriever(retriever: genai.RetrieverServiceClient) -> None:
-    global _default_retriever
-    _default_retriever = retriever
 
 
 # GenerativeService client.
 def build_generative_service() -> genai.GenerativeServiceClient:
+    credentials = TestCredentials() if _config.testing else None
     return genai.GenerativeServiceClient(
+        credentials=credentials,
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
         client_options=client_options_lib.ClientOptions(
             api_endpoint=_config.api_endpoint
         ),
     )
-
-
-_default_generative_service: genai.GenerativeServiceClient = build_generative_service()
-
-
-def _set_default_generative_service(
-    generative_service: genai.GenerativeServiceClient,
-) -> None:
-    global _default_generative_service
-    _default_generative_service = generative_service
 
 
 # Public functions.
@@ -196,10 +220,8 @@ def _set_default_generative_service(
 
 def list_corpora(
     *,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> Iterator[Corpus]:
-    if client is None:
-        client = _default_retriever
     for corpus in client.list_corpora(
         genai.ListCorporaRequest(page_size=_config.page_size)
     ):
@@ -209,10 +231,8 @@ def list_corpora(
 def get_corpus(
     *,
     corpus_id: str,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> Optional[Corpus]:
-    if client is None:
-        client = _default_retriever
     try:
         corpus = client.get_corpus(
             genai.GetCorpusRequest(name=str(EntityName(corpus_id=corpus_id)))
@@ -230,11 +250,8 @@ def create_corpus(
     *,
     corpus_id: Optional[str] = None,
     display_name: Optional[str] = None,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> Corpus:
-    if client is None:
-        client = _default_retriever
-
     name: Optional[str]
     if corpus_id is not None:
         name = str(EntityName(corpus_id=corpus_id))
@@ -255,10 +272,8 @@ def create_corpus(
 def delete_corpus(
     *,
     corpus_id: str,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> None:
-    if client is None:
-        client = _default_retriever
     client.delete_corpus(
         genai.DeleteCorpusRequest(name=str(EntityName(corpus_id=corpus_id)), force=True)
     )
@@ -267,10 +282,8 @@ def delete_corpus(
 def list_documents(
     *,
     corpus_id: str,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> Iterator[Document]:
-    if client is None:
-        client = _default_retriever
     for document in client.list_documents(
         genai.ListDocumentsRequest(
             parent=str(EntityName(corpus_id=corpus_id)), page_size=_DEFAULT_PAGE_SIZE
@@ -283,10 +296,8 @@ def get_document(
     *,
     corpus_id: str,
     document_id: str,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> Optional[Document]:
-    if client is None:
-        client = _default_retriever
     try:
         document = client.get_document(
             genai.GetDocumentRequest(
@@ -307,10 +318,8 @@ def create_document(
     document_id: Optional[str] = None,
     display_name: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> Document:
-    if client is None:
-        client = _default_retriever
     name: Optional[str]
     if document_id is not None:
         name = str(EntityName(corpus_id=corpus_id, document_id=document_id))
@@ -336,10 +345,8 @@ def delete_document(
     *,
     corpus_id: str,
     document_id: str,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> None:
-    if client is None:
-        client = _default_retriever
     client.delete_document(
         genai.DeleteDocumentRequest(
             name=str(EntityName(corpus_id=corpus_id, document_id=document_id)),
@@ -354,10 +361,8 @@ def batch_create_chunk(
     document_id: str,
     texts: List[str],
     metadatas: Optional[List[Dict[str, Any]]] = None,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> List[genai.Chunk]:
-    if client is None:
-        client = _default_retriever
     if metadatas is None:
         metadatas = [{} for _ in texts]
     if len(texts) != len(metadatas):
@@ -406,10 +411,8 @@ def delete_chunk(
     corpus_id: str,
     document_id: str,
     chunk_id: str,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> None:
-    if client is None:
-        client = _default_retriever
     client.delete_chunk(
         genai.DeleteChunkRequest(
             name=str(
@@ -427,10 +430,8 @@ def query_corpus(
     query: str,
     k: int = 4,
     filter: Optional[Dict[str, Any]] = None,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> List[genai.RelevantChunk]:
-    if client is None:
-        client = _default_retriever
     response = client.query_corpus(
         genai.QueryCorpusRequest(
             name=str(EntityName(corpus_id=corpus_id)),
@@ -449,10 +450,8 @@ def query_document(
     query: str,
     k: int = 4,
     filter: Optional[Dict[str, Any]] = None,
-    client: Optional[genai.RetrieverServiceClient] = None,
+    client: genai.RetrieverServiceClient,
 ) -> List[genai.RelevantChunk]:
-    if client is None:
-        client = _default_retriever
     response = client.query_document(
         genai.QueryDocumentRequest(
             name=str(EntityName(corpus_id=corpus_id, document_id=document_id)),
@@ -498,10 +497,8 @@ def generate_answer(
     answer_style: int = genai.GenerateAnswerRequest.AnswerStyle.ABSTRACTIVE,
     safety_settings: List[genai.SafetySetting] = [],
     temperature: Optional[float] = None,
-    client: Optional[genai.GenerativeServiceClient] = None,
+    client: genai.GenerativeServiceClient,
 ) -> GroundedAnswer:
-    if client is None:
-        client = _default_generative_service
     # TODO: Consider passing in the corpus ID instead of the actual
     # passages.
     response = client.generate_answer(
