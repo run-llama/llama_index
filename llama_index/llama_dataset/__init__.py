@@ -9,9 +9,15 @@ from llama_index.llama_dataset.base import (
     CreatedByType,
 )
 from llama_index.llama_dataset.download import download_llama_dataset
+from llama_index.llama_dataset.evaluation import (
+    LabeledEvaluationDataExample,
+    LabeledEvaluationDataset,
+    LabelledEvaluationDataExample,
+    LabelledEvaluationDataset,
+)
 from llama_index.llama_dataset.rag import (
+    LabeledRagDataExample,
     LabeledRagDataset,
-    LabeledRagDatasetExample,
     LabelledRagDataExample,
     LabelledRagDataset,
     RagExamplePrediction,
@@ -25,11 +31,15 @@ __all__ = [
     "BaseLlamaPredictionDataset",
     "LabelledRagDataExample",
     "LabelledRagDataset",
-    "LabeledRagDatasetExample",
+    "LabeledRagDataExample",
     "LabeledRagDataset",
     "RagExamplePrediction",
     "RagPredictionDataset",
     "CreatedByType",
     "CreatedBy",
     "download_llama_dataset",
+    "LabeledEvaluationDataset",
+    "LabelledEvaluationDataset",
+    "LabelledEvaluationDataExample",
+    "LabeledEvaluationDataExample",
 ]
