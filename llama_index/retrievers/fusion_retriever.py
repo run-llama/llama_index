@@ -1,11 +1,12 @@
 import asyncio
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, cast
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.llms.utils import LLMType, resolve_llm
+from llama_index.prompts import PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.retrievers import BaseRetriever
 from llama_index.schema import NodeWithScore, QueryBundle
@@ -52,12 +53,14 @@ class QueryFusionRetriever(BaseRetriever):
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
-        return {"query_gen_prompt": self.query_gen_prompt}
+        return {"query_gen_prompt": PromptTemplate(self.query_gen_prompt)}
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "query_gen_prompt" in prompts:
-            self.query_gen_prompt = prompts["query_gen_prompt"]
+            self.query_gen_prompt = cast(
+                PromptTemplate, prompts["query_gen_prompt"]
+            ).template
 
     def _get_queries(self, original_query: str) -> List[str]:
         prompt_str = self.query_gen_prompt.format(
