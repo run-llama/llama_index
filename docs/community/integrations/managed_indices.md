@@ -41,7 +41,7 @@ See the notebook guide for full details.
 caption: Examples
 maxdepth: 1
 ---
-/home/loganm/llama_index_proper/llama_index/docs/examples/managed/GoogleDemo.ipynb
+/examples/managed/GoogleDemo.ipynb
 ```
 
 ## Vectara
