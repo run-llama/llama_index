@@ -73,6 +73,7 @@ rank-bm25 = {optional = true, version = "^0.2.2"}
 scikit-learn = {optional = true, version = "*"}
 spacy = {optional = true, version = "^3.7.1"}
 aiohttp = "^3.8.6"
+types-protobuf = "^4.24.0.4"
 
 [tool.poetry.extras]
 langchain = [

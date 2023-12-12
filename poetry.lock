@@ -3781,7 +3781,7 @@ files = [
 [package.dependencies]
 coloredlogs = "*"
 datasets = [
-    {version = "*"},
+    {version = "*", optional = true, markers = "extra != \"onnxruntime\""},
     {version = ">=1.2.1", optional = true, markers = "extra == \"onnxruntime\""},
 ]
 evaluate = {version = "*", optional = true, markers = "extra == \"onnxruntime\""}
@@ -6994,6 +6994,17 @@ files = [
 ]
 
 [[package]]
+name = "types-protobuf"
+version = "4.24.0.4"
+description = "Typing stubs for protobuf"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "types-protobuf-4.24.0.4.tar.gz", hash = "sha256:57ab42cb171dfdba2c74bb5b50c250478538cc3c5ed95b8b368929ad0c9f90a5"},
+    {file = "types_protobuf-4.24.0.4-py3-none-any.whl", hash = "sha256:131ab7d0cbc9e444bc89c994141327dcce7bcaeded72b1acb72a94827eb9c7af"},
+]
+
+[[package]]
 name = "types-pyopenssl"
 version = "23.3.0.0"
 description = "Typing stubs for pyOpenSSL"
@@ -7625,4 +7636,4 @@ query-tools = ["guidance", "jsonpath-ng", "lm-format-enforcer", "rank-bm25", "sc
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "e74915adb3bf190b02439d1c8ce43a2d4f22ea8478b8d0b081e26e1b8aec64f2"
+content-hash = "46961671af5ebcf0f66093857b641a09daa501b3751f60cf5bdf161ccb3dfedd"
