@@ -214,7 +214,7 @@ class DatasetGenerator(PromptMixin):
 
         summary_indices: List[SummaryIndex] = []
         for node in nodes:
-            if num is not None and len(queries) >= num:
+            if num is not None and len(query_tasks) >= num:
                 break
             index = SummaryIndex.from_documents(
                 [
