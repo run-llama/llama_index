@@ -7,7 +7,7 @@ import uuid
 from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
 
-from llama_index.agent.v1.schema import (
+from llama_index.agent.types import (
     BaseAgentStepEngine,
     Task,
     TaskStep,

@@ -40,7 +40,7 @@ from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text, unit_generator
-from llama_index.agent.v1.schema import (
+from llama_index.agent.types import (
     BaseAgentStepEngine,
     Task,
     TaskStep,
@@ -88,7 +88,6 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         tools: Optional[List[BaseTool]] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         llm: Optional[LLM] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
         max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
