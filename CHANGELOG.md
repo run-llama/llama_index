@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fixed missing `default=None` for `LLM.system_prompt` (#9504)
+
 ## [0.9.15] - 2023-12-13
 
 ### New Features
