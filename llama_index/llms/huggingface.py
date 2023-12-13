@@ -69,14 +69,7 @@ class HuggingFaceLLM(CustomLLM):
         description="The maximum number of tokens to generate.",
         gt=0,
     )
-    system_prompt: str = Field(
-        default="",
-        description=(
-            "The system prompt, containing any extra instructions or context. "
-            "The model card on HuggingFace should specify if this is needed."
-        ),
-    )
-    query_wrapper_prompt: PromptTemplate = Field(
+    query_wrapper_prompt: Optional[PromptTemplate] = Field(
         default=PromptTemplate("{query_str}"),
         description=(
             "The query wrapper prompt, containing the query placeholder. "
