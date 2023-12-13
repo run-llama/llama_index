@@ -1,9 +1,8 @@
 from typing import TYPE_CHECKING, List, Optional, Sequence, cast
 
-from llama_index.indices.query.schema import QueryBundle
 from llama_index.program.guidance_program import GuidancePydanticProgram
 from llama_index.prompts.guidance_utils import convert_to_handlebars
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.question_gen.prompts import (
     DEFAULT_SUB_QUESTION_PROMPT_TMPL,
     build_tools_text,
@@ -13,6 +12,7 @@ from llama_index.question_gen.types import (
     SubQuestion,
     SubQuestionList,
 )
+from llama_index.schema import QueryBundle
 from llama_index.tools.types import ToolMetadata
 
 if TYPE_CHECKING:

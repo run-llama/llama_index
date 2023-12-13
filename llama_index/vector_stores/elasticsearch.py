@@ -103,8 +103,8 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
     Returns:
         Elasticsearch filter.
     """
-    if len(standard_filters.filters) == 1:
-        filter = standard_filters.filters[0]
+    if len(standard_filters.legacy_filters()) == 1:
+        filter = standard_filters.legacy_filters()[0]
         return {
             "term": {
                 f"metadata.{filter.key}.keyword": {
@@ -114,7 +114,7 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
         }
     else:
         operands = []
-        for filter in standard_filters.filters:
+        for filter in standard_filters.legacy_filters():
             operands.append(
                 {
                     "term": {
@@ -128,6 +128,9 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
 
 
 def _to_llama_similarities(scores: List[float]) -> List[float]:
+    if scores is None or len(scores) == 0:
+        return []
+
     scores_to_norm: np.ndarray = np.array(scores)
     return np.exp(scores_to_norm - np.max(scores_to_norm)).tolist()
 
@@ -270,6 +273,7 @@ class ElasticsearchStore(VectorStore):
         nodes: List[BaseNode],
         *,
         create_index_if_not_exists: bool = True,
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to Elasticsearch index.
 
@@ -296,6 +300,7 @@ class ElasticsearchStore(VectorStore):
         nodes: List[BaseNode],
         *,
         create_index_if_not_exists: bool = True,
+        **add_kwargs: Any,
     ) -> List[str]:
         """Asynchronous method to add nodes to Elasticsearch index.
 
@@ -412,7 +417,7 @@ class ElasticsearchStore(VectorStore):
                 logger.warning(f"Could not find text {ref_doc_id} to delete")
             else:
                 logger.debug(f"Deleted text {ref_doc_id} from index")
-        except Exception as e:
+        except Exception:
             logger.error(f"Error deleting text: {ref_doc_id}")
             raise
 
@@ -480,7 +485,7 @@ class ElasticsearchStore(VectorStore):
 
         es_query = {}
 
-        if query.filters is not None and len(query.filters.filters) > 0:
+        if query.filters is not None and len(query.filters.legacy_filters()) > 0:
             filter = [_to_elasticsearch_filter(query.filters)]
         else:
             filter = es_filter or []

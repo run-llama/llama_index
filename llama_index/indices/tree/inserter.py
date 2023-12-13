@@ -3,7 +3,6 @@
 from typing import Optional, Sequence
 
 from llama_index.data_structs.data_structs import IndexGraph
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.indices.utils import (
     extract_numbers_given_response,
@@ -15,6 +14,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 
@@ -75,7 +75,7 @@ class TreeIndexInserter:
             )
             text_chunk1 = "\n".join(truncated_chunks)
 
-            summary1 = self._service_context.llm_predictor.predict(
+            summary1 = self._service_context.llm.predict(
                 self.summary_prompt, context_str=text_chunk1
             )
             node1 = TextNode(text=summary1)
@@ -88,7 +88,7 @@ class TreeIndexInserter:
                 ],
             )
             text_chunk2 = "\n".join(truncated_chunks)
-            summary2 = self._service_context.llm_predictor.predict(
+            summary2 = self._service_context.llm.predict(
                 self.summary_prompt, context_str=text_chunk2
             )
             node2 = TextNode(text=summary2)
@@ -134,7 +134,7 @@ class TreeIndexInserter:
             numbered_text = get_numbered_text_from_nodes(
                 cur_graph_node_list, text_splitter=text_splitter
             )
-            response = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm.predict(
                 self.insert_prompt,
                 new_chunk_text=node.get_content(metadata_mode=MetadataMode.LLM),
                 num_chunks=len(cur_graph_node_list),
@@ -166,7 +166,7 @@ class TreeIndexInserter:
                 ],
             )
             text_chunk = "\n".join(truncated_chunks)
-            new_summary = self._service_context.llm_predictor.predict(
+            new_summary = self._service_context.llm.predict(
                 self.summary_prompt, context_str=text_chunk
             )
 

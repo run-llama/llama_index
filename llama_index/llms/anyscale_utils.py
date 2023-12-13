@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Sequence
 
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.types import ChatMessage, MessageRole
 
 LLAMA_MODELS = {
     "meta-llama/Llama-2-7b-chat-hf": 4096,
@@ -9,8 +9,13 @@ LLAMA_MODELS = {
     "codellama/CodeLlama-34b-Instruct-hf": 16384,
 }
 
+MISTRAL_MODELS = {
+    "mistralai/Mistral-7B-Instruct-v0.1": 4096,
+}
+
 ALL_AVAILABLE_MODELS = {
     **LLAMA_MODELS,
+    **MISTRAL_MODELS,
 }
 
 DISCONTINUED_MODELS: Dict[str, int] = {}

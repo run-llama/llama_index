@@ -29,7 +29,7 @@ MILVUS_ID_FIELD = "id"
 def _to_milvus_filter(standard_filters: MetadataFilters) -> List[str]:
     """Translate standard metadata filters to Milvus specific spec."""
     filters = []
-    for filter in standard_filters.filters:
+    for filter in standard_filters.legacy_filters():
         if isinstance(filter.value, str):
             filters.append(str(filter.key) + " == " + '"' + str(filter.value) + '"')
         else:
@@ -99,7 +99,7 @@ class MilvusVectorStore(VectorStore):
             "`pymilvus` package not found, please run `pip install pymilvus`"
         )
         try:
-            import pymilvus
+            import pymilvus  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -151,7 +151,7 @@ class MilvusVectorStore(VectorStore):
         """Get client."""
         return self.milvusclient
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into Milvus.
 
         Args:

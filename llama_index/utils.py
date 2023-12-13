@@ -21,10 +21,12 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Protocol,
     Set,
     Type,
     Union,
     cast,
+    runtime_checkable,
 )
 
 
@@ -41,7 +43,7 @@ class GlobalsHelper:
 
     @property
     def tokenizer(self) -> Callable[[str], List]:
-        """Get tokenizer."""
+        """Get tokenizer. TODO: Deprecated."""
         if self._tokenizer is None:
             tiktoken_import_err = (
                 "`tiktoken` package not found, please run `pip install tiktoken`"
@@ -85,6 +87,41 @@ class GlobalsHelper:
 
 
 globals_helper = GlobalsHelper()
+
+
+# Global Tokenizer
+@runtime_checkable
+class Tokenizer(Protocol):
+    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[Any]:
+        ...
+
+
+def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> None:
+    import llama_index
+
+    if isinstance(tokenizer, Tokenizer):
+        llama_index.global_tokenizer = tokenizer.encode
+    else:
+        llama_index.global_tokenizer = tokenizer
+
+
+def get_tokenizer() -> Callable[[str], List]:
+    import llama_index
+
+    if llama_index.global_tokenizer is None:
+        tiktoken_import_err = (
+            "`tiktoken` package not found, please run `pip install tiktoken`"
+        )
+        try:
+            import tiktoken
+        except ImportError:
+            raise ImportError(tiktoken_import_err)
+        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        tokenizer = partial(enc.encode, allowed_special="all")
+        set_global_tokenizer(tokenizer)
+
+    assert llama_index.global_tokenizer is not None
+    return llama_index.global_tokenizer
 
 
 def get_new_id(d: Set) -> str:
@@ -234,7 +271,8 @@ def get_tqdm_iterable(items: Iterable, show_progress: bool, desc: str) -> Iterab
 
 
 def count_tokens(text: str) -> int:
-    tokens = globals_helper.tokenizer(text)
+    tokenizer = get_tokenizer()
+    tokens = tokenizer(text)
     return len(tokens)
 
 

@@ -2,7 +2,6 @@ from typing import Callable, Optional
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
-from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL,
@@ -23,6 +22,7 @@ from llama_index.response_synthesizers.refine import Refine
 from llama_index.response_synthesizers.simple_summarize import SimpleSummarize
 from llama_index.response_synthesizers.tree_summarize import TreeSummarize
 from llama_index.response_synthesizers.type import ResponseMode
+from llama_index.service_context import ServiceContext
 from llama_index.types import BasePydanticProgram
 
 

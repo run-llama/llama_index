@@ -4,15 +4,21 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
-from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.callbacks.base import CallbackManager
+from llama_index.core import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, TextNode
+from llama_index.schema import (
+    BaseNode,
+    MetadataMode,
+    NodeWithScore,
+    QueryBundle,
+    TextNode,
+)
+from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import print_text, truncate_text
 
@@ -84,6 +90,7 @@ class KGTableRetriever(BaseRetriever):
         graph_store_query_depth: int = 2,
         use_global_node_triplets: bool = False,
         max_knowledge_sequence: int = REL_TEXT_LIMIT,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -113,10 +120,11 @@ class KGTableRetriever(BaseRetriever):
         except Exception as e:
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
+        super().__init__(callback_manager)
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        response = self._service_context.llm_predictor.predict(
+        response = self._service_context.llm.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,
@@ -214,15 +222,7 @@ class KGTableRetriever(BaseRetriever):
             )
             logger.debug(f"Found the following top_k rel_texts: {rel_texts!s}")
             rel_texts.extend(top_rel_texts)
-            if self._include_text:
-                keywords = self._extract_rel_text_keywords(top_rel_texts)
-                nested_node_ids = [
-                    self._index_struct.search_node_by_keyword(keyword)
-                    for keyword in keywords
-                ]
-                node_ids = [_id for ids in nested_node_ids for _id in ids]
-                for node_id in node_ids:
-                    chunk_indices_count[node_id] += 1
+
         elif len(self._index_struct.embedding_dict) == 0:
             logger.warning(
                 "Index was not constructed with embeddings, skipping embedding usage..."
@@ -242,6 +242,20 @@ class KGTableRetriever(BaseRetriever):
 
             # truncate rel_texts
             rel_texts = rel_texts[: self.max_knowledge_sequence]
+
+        # When include_text = True just get the actual content of all the nodes
+        # (Nodes with actual keyword match, Nodes which are found from the depth search and Nodes founnd from top_k similarity)
+        if self._include_text:
+            keywords = self._extract_rel_text_keywords(
+                rel_texts
+            )  # rel_texts will have all the Triplets retrieved with respect to the Query
+            nested_node_ids = [
+                self._index_struct.search_node_by_keyword(keyword)
+                for keyword in keywords
+            ]
+            node_ids = [_id for ids in nested_node_ids for _id in ids]
+            for node_id in node_ids:
+                chunk_indices_count[node_id] += 1
 
         sorted_chunk_indices = sorted(
             chunk_indices_count.keys(),
@@ -274,9 +288,14 @@ class KGTableRetriever(BaseRetriever):
             logger.info("> No relationships found, returning nodes found by keywords.")
             if len(sorted_nodes_with_scores) == 0:
                 logger.info("> No nodes found by keywords, returning empty response.")
-            return [
-                NodeWithScore(node=TextNode(text="No relationships found."), score=1.0)
-            ]
+                return [
+                    NodeWithScore(
+                        node=TextNode(text="No relationships found."), score=1.0
+                    )
+                ]
+            # In else case the sorted_nodes_with_scores is not empty
+            # thus returning the nodes found by keywords
+            return sorted_nodes_with_scores
 
         # add relationships as Node
         # TODO: make initial text customizable
@@ -397,6 +416,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         graph_traversal_depth: int = 2,
         max_knowledge_sequence: int = REL_TEXT_LIMIT,
         verbose: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the retriever."""
@@ -469,6 +489,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         except Exception as e:
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
+        super().__init__(callback_manager)
 
     def _process_entities(
         self,
@@ -503,7 +524,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         if handle_fn is not None:
             enitities_fn = handle_fn(query_str)
         if handle_llm_prompt_template is not None:
-            response = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm.predict(
                 handle_llm_prompt_template,
                 max_keywords=max_items,
                 question=query_str,
@@ -553,7 +574,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         if handle_fn is not None:
             enitities_fn = handle_fn(query_str)
         if handle_llm_prompt_template is not None:
-            response = await self._service_context.llm_predictor.apredict(
+            response = await self._service_context.llm.apredict(
                 handle_llm_prompt_template,
                 max_keywords=max_items,
                 question=query_str,

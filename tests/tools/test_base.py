@@ -3,6 +3,11 @@ import pytest
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.tools.function_tool import FunctionTool
 
+try:
+    import langchain
+except ImportError:
+    langchain = None  # type: ignore
+
 
 def tmp_function(x: int) -> str:
     return str(x)
@@ -35,6 +40,13 @@ def test_function_tool() -> None:
     assert function_tool.metadata.fn_schema is not None
     actual_schema = function_tool.metadata.fn_schema.schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
+
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+def test_function_tool_to_langchain() -> None:
+    function_tool = FunctionTool.from_defaults(
+        tmp_function, name="foo", description="bar"
+    )
 
     # test to langchain
     # NOTE: can't take in a function with int args
@@ -71,6 +83,14 @@ async def test_function_tool_async() -> None:
 
     assert str(function_tool(2)) == "2"
     assert str(await function_tool.acall(2)) == "async_2"
+
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+@pytest.mark.asyncio()
+async def test_function_tool_async_langchain() -> None:
+    function_tool = FunctionTool.from_defaults(
+        fn=tmp_function, async_fn=async_tmp_function, name="foo", description="bar"
+    )
 
     # test to langchain
     # NOTE: can't take in a function with int args
@@ -112,8 +132,58 @@ async def test_function_tool_async_defaults() -> None:
     actual_schema = function_tool.metadata.fn_schema.schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
 
+
+@pytest.mark.skipif(langchain is None, reason="langchain not installed")
+@pytest.mark.asyncio()
+async def test_function_tool_async_defaults_langchain() -> None:
+    function_tool = FunctionTool.from_defaults(
+        fn=tmp_function, name="foo", description="bar"
+    )
+
     # test to langchain
     # NOTE: can't take in a function with int args
     langchain_tool = function_tool.to_langchain_tool()
     result = await langchain_tool.arun("1")
     assert result == "1"
+
+
+from llama_index import (
+    ServiceContext,
+    VectorStoreIndex,
+)
+from llama_index.schema import Document
+from llama_index.token_counter.mock_embed_model import MockEmbedding
+from llama_index.tools import RetrieverTool, ToolMetadata
+
+
+def test_retreiver_tool() -> None:
+    doc1 = Document(
+        text=("# title1:Hello world.\n" "This is a test.\n"),
+        metadata={"file_path": "/data/personal/essay.md"},
+    )
+
+    doc2 = Document(
+        text=("# title2:This is another test.\n" "This is a test v2."),
+        metadata={"file_path": "/data/personal/essay.md"},
+    )
+    service_context = ServiceContext.from_defaults(
+        llm=None, embed_model=MockEmbedding(embed_dim=1)
+    )
+    vs_index = VectorStoreIndex.from_documents(
+        [doc1, doc2], service_context=service_context
+    )
+    vs_retriever = vs_index.as_retriever()
+    vs_ret_tool = RetrieverTool(
+        retriever=vs_retriever,
+        metadata=ToolMetadata(
+            name="knowledgebase",
+            description="test",
+        ),
+    )
+    output = vs_ret_tool.call("arg1", "arg2", key1="v1", key2="v2")
+    formated_doc = (
+        "file_path = /data/personal/essay.md\n"
+        "# title1:Hello world.\n"
+        "This is a test."
+    )
+    assert formated_doc in output.content

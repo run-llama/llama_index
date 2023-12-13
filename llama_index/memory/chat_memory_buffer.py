@@ -1,7 +1,8 @@
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.bridge.pydantic import Field, root_validator
-from llama_index.llms.base import LLM, ChatMessage
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.memory.types import BaseMemory
 from llama_index.utils import GlobalsHelper
 
@@ -82,23 +83,30 @@ class ChatMemoryBuffer(BaseMemory):
     def from_dict(cls, json_dict: dict) -> "ChatMemoryBuffer":
         return cls.parse_obj(json_dict)
 
-    def get(self) -> List[ChatMessage]:
+    def get(self, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
+        if initial_token_count > self.token_limit:
+            raise ValueError("Initial token count exceeds token limit")
+
         message_count = len(self.chat_history)
-        message_str = " ".join(
-            [str(m.content) for m in self.chat_history[-message_count:]]
+        token_count = (
+            self._token_count_for_message_count(message_count) + initial_token_count
         )
-        token_count = len(self.tokenizer_fn(message_str))
 
         while token_count > self.token_limit and message_count > 1:
             message_count -= 1
-            message_str = " ".join(
-                [str(m.content) for m in self.chat_history[-message_count:]]
+            if self.chat_history[-message_count].role == MessageRole.ASSISTANT:
+                # we cannot have an assistant message at the start of the chat history
+                # if after removal of the first, we have an assistant message,
+                # we need to remove the assistant message too
+                message_count -= 1
+
+            token_count = (
+                self._token_count_for_message_count(message_count) + initial_token_count
             )
-            token_count = len(self.tokenizer_fn(message_str))
 
         # catch one message longer than token limit
-        if token_count > self.token_limit:
+        if token_count > self.token_limit or message_count <= 0:
             return []
 
         return self.chat_history[-message_count:]
@@ -118,3 +126,9 @@ class ChatMemoryBuffer(BaseMemory):
     def reset(self) -> None:
         """Reset chat history."""
         return self.chat_history.clear()
+
+    def _token_count_for_message_count(self, message_count: int) -> int:
+        if message_count <= 0:
+            return 0
+        msg_str = " ".join(str(m.content) for m in self.chat_history[-message_count:])
+        return len(self.tokenizer_fn(msg_str))

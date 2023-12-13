@@ -5,6 +5,7 @@ from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -31,13 +32,14 @@ def get_data_model(
     text_search_config: str,
     cache_okay: bool,
     embed_dim: int = 1536,
+    use_jsonb: bool = False,
 ) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table.
     """
     from pgvector.sqlalchemy import Vector
     from sqlalchemy import Column, Computed
-    from sqlalchemy.dialects.postgresql import BIGINT, JSON, TSVECTOR, VARCHAR
+    from sqlalchemy.dialects.postgresql import BIGINT, JSON, JSONB, TSVECTOR, VARCHAR
     from sqlalchemy.schema import Index
     from sqlalchemy.types import TypeDecorator
 
@@ -49,13 +51,15 @@ def get_data_model(
     class_name = "Data%s" % index_name  # dynamic class name
     indexname = "%s_idx" % index_name  # dynamic class name
 
+    metadata_dtype = JSONB if use_jsonb else JSON
+
     if hybrid_search:
 
         class HybridAbstractData(base):  # type: ignore
             __abstract__ = True  # this line is necessary
             id = Column(BIGINT, primary_key=True, autoincrement=True)
             text = Column(VARCHAR, nullable=False)
-            metadata_ = Column(JSON)
+            metadata_ = Column(metadata_dtype)
             node_id = Column(VARCHAR)
             embedding = Column(Vector(embed_dim))  # type: ignore
             text_search_tsv = Column(  # type: ignore
@@ -82,7 +86,7 @@ def get_data_model(
             __abstract__ = True  # this line is necessary
             id = Column(BIGINT, primary_key=True, autoincrement=True)
             text = Column(VARCHAR, nullable=False)
-            metadata_ = Column(JSON)
+            metadata_ = Column(metadata_dtype)
             node_id = Column(VARCHAR)
             embedding = Column(Vector(embed_dim))  # type: ignore
 
@@ -109,7 +113,9 @@ class PGVectorStore(BasePydanticVectorStore):
     hybrid_search: bool
     text_search_config: str
     cache_ok: bool
+    perform_setup: bool
     debug: bool
+    use_jsonb: bool
 
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
@@ -129,14 +135,16 @@ class PGVectorStore(BasePydanticVectorStore):
         text_search_config: str = "english",
         embed_dim: int = 1536,
         cache_ok: bool = False,
+        perform_setup: bool = True,
         debug: bool = False,
+        use_jsonb: bool = False,
     ) -> None:
         try:
-            import asyncpg
-            import pgvector
-            import psycopg2
+            import asyncpg  # noqa
+            import pgvector  # noqa
+            import psycopg2  # noqa
             import sqlalchemy
-            import sqlalchemy.ext.asyncio
+            import sqlalchemy.ext.asyncio  # noqa
         except ImportError:
             raise ImportError(
                 "`sqlalchemy[asyncio]`, `pgvector`, `psycopg2-binary` and `asyncpg` "
@@ -164,6 +172,7 @@ class PGVectorStore(BasePydanticVectorStore):
             text_search_config,
             cache_ok,
             embed_dim=embed_dim,
+            use_jsonb=use_jsonb,
         )
 
         super().__init__(
@@ -175,7 +184,9 @@ class PGVectorStore(BasePydanticVectorStore):
             text_search_config=text_search_config,
             embed_dim=embed_dim,
             cache_ok=cache_ok,
+            perform_setup=perform_setup,
             debug=debug,
+            use_jsonb=use_jsonb,
         )
 
     async def close(self) -> None:
@@ -207,7 +218,9 @@ class PGVectorStore(BasePydanticVectorStore):
         text_search_config: str = "english",
         embed_dim: int = 1536,
         cache_ok: bool = False,
+        perform_setup: bool = True,
         debug: bool = False,
+        use_jsonb: bool = False,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
         conn_str = (
@@ -226,7 +239,9 @@ class PGVectorStore(BasePydanticVectorStore):
             text_search_config=text_search_config,
             embed_dim=embed_dim,
             cache_ok=cache_ok,
+            perform_setup=perform_setup,
             debug=debug,
+            use_jsonb=use_jsonb,
         )
 
     @property
@@ -269,9 +284,10 @@ class PGVectorStore(BasePydanticVectorStore):
     def _initialize(self) -> None:
         if not self._is_initialized:
             self._connect()
-            self._create_extension()
-            self._create_schema_if_not_exists()
-            self._create_tables_if_not_exists()
+            if self.perform_setup:
+                self._create_extension()
+                self._create_schema_if_not_exists()
+                self._create_tables_if_not_exists()
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
@@ -286,7 +302,7 @@ class PGVectorStore(BasePydanticVectorStore):
             ),
         )
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         self._initialize()
         ids = []
         with self._session() as session, session.begin():
@@ -308,6 +324,23 @@ class PGVectorStore(BasePydanticVectorStore):
             await session.commit()
         return ids
 
+    def _to_postgres_operator(self, operator: FilterOperator) -> str:
+        if operator == FilterOperator.EQ:
+            return "="
+        elif operator == FilterOperator.GT:
+            return ">"
+        elif operator == FilterOperator.LT:
+            return "<"
+        elif operator == FilterOperator.NE:
+            return "!="
+        elif operator == FilterOperator.GTE:
+            return ">="
+        elif operator == FilterOperator.LTE:
+            return "<="
+        else:
+            _logger.warning(f"Unknown operator: {operator}, fallback to '='")
+            return "="
+
     def _apply_filters_and_limit(
         self,
         stmt: Select,
@@ -316,15 +349,29 @@ class PGVectorStore(BasePydanticVectorStore):
     ) -> Any:
         import sqlalchemy
 
+        sqlalchemy_conditions = {
+            "or": sqlalchemy.sql.or_,
+            "and": sqlalchemy.sql.and_,
+        }
+
         if metadata_filters:
-            for filter_ in metadata_filters.filters:
-                bind_parameter = f"value_{filter_.key}"
-                stmt = stmt.where(  # type: ignore
-                    sqlalchemy.text(f"metadata_->>'{filter_.key}' = :{bind_parameter}")
+            if metadata_filters.condition not in sqlalchemy_conditions:
+                raise ValueError(
+                    f"Invalid condition: {metadata_filters.condition}. "
+                    f"Must be one of {list(sqlalchemy_conditions.keys())}"
                 )
-                stmt = stmt.params(  # type: ignore
-                    **{bind_parameter: str(filter_.value)}
+            stmt = stmt.where(  # type: ignore
+                sqlalchemy_conditions[metadata_filters.condition](
+                    *(
+                        sqlalchemy.text(
+                            f"metadata_->>'{filter_.key}' "
+                            f"{self._to_postgres_operator(filter_.operator)} "
+                            f"'{filter_.value}'"
+                        )
+                        for filter_ in metadata_filters.filters
+                    )
                 )
+            )
         return stmt.limit(limit)  # type: ignore
 
     def _build_query(
@@ -346,9 +393,21 @@ class PGVectorStore(BasePydanticVectorStore):
         embedding: Optional[List[float]],
         limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
+        **kwargs: Any,
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_query(embedding, limit, metadata_filters)
         with self._session() as session, session.begin():
+            from sqlalchemy import text
+
+            if kwargs.get("ivfflat_probes"):
+                session.execute(
+                    text(f"SET ivfflat.probes = {kwargs.get('ivfflat_probes')}")
+                )
+            if kwargs.get("hnsw_ef_search"):
+                session.execute(
+                    text(f"SET hnsw.ef_search = {kwargs.get('hnsw_ef_search')}")
+                )
+
             res = session.execute(
                 stmt,
             )
@@ -367,9 +426,21 @@ class PGVectorStore(BasePydanticVectorStore):
         embedding: Optional[List[float]],
         limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
+        **kwargs: Any,
     ) -> List[DBEmbeddingRow]:
         stmt = self._build_query(embedding, limit, metadata_filters)
         async with self._async_session() as async_session, async_session.begin():
+            from sqlalchemy import text
+
+            if kwargs.get("hnsw_ef_search"):
+                await async_session.execute(
+                    text(f"SET hnsw.ef_search = {kwargs.get('hnsw_ef_search')}")
+                )
+            if kwargs.get("ivfflat_probes"):
+                await async_session.execute(
+                    text(f"SET ivfflat.probes = {kwargs.get('ivfflat_probes')}")
+                )
+
             res = await async_session.execute(stmt)
             return [
                 DBEmbeddingRow(
@@ -401,14 +472,10 @@ class PGVectorStore(BasePydanticVectorStore):
         ts_query = func.plainto_tsquery(
             type_coerce(self.text_search_config, REGCONFIG), query_str
         )
-        stmt = (
-            select(  # type: ignore
-                self._table_class,
-                func.ts_rank(self._table_class.text_search_tsv, ts_query).label("rank"),
-            )
-            .where(self._table_class.text_search_tsv.op("@@")(ts_query))
-            .order_by(text("rank desc"))
-        )
+        stmt = select(  # type: ignore
+            self._table_class,
+            func.ts_rank(self._table_class.text_search_tsv, ts_query).label("rank"),
+        ).order_by(text("rank desc"))
 
         # type: ignore
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
@@ -452,7 +519,7 @@ class PGVectorStore(BasePydanticVectorStore):
             ]
 
     async def _async_hybrid_query(
-        self, query: VectorStoreQuery
+        self, query: VectorStoreQuery, **kwargs: Any
     ) -> List[DBEmbeddingRow]:
         import asyncio
 
@@ -463,7 +530,10 @@ class PGVectorStore(BasePydanticVectorStore):
 
         results = await asyncio.gather(
             self._aquery_with_score(
-                query.query_embedding, query.similarity_top_k, query.filters
+                query.query_embedding,
+                query.similarity_top_k,
+                query.filters,
+                **kwargs,
             ),
             self._async_sparse_query_with_rank(
                 query.query_str, sparse_top_k, query.filters
@@ -474,14 +544,19 @@ class PGVectorStore(BasePydanticVectorStore):
         all_results = dense_results + sparse_results
         return _dedup_results(all_results)
 
-    def _hybrid_query(self, query: VectorStoreQuery) -> List[DBEmbeddingRow]:
+    def _hybrid_query(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> List[DBEmbeddingRow]:
         if query.alpha is not None:
             _logger.warning("postgres hybrid search does not support alpha parameter.")
 
         sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
         dense_results = self._query_with_score(
-            query.query_embedding, query.similarity_top_k, query.filters
+            query.query_embedding,
+            query.similarity_top_k,
+            query.filters,
+            **kwargs,
         )
 
         sparse_results = self._sparse_query_with_rank(
@@ -521,11 +596,9 @@ class PGVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        import sqlalchemy
-
         self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
-            results = await self._async_hybrid_query(query)
+            results = await self._async_hybrid_query(query, **kwargs)
         elif query.mode in [
             VectorStoreQueryMode.SPARSE,
             VectorStoreQueryMode.TEXT_SEARCH,
@@ -536,7 +609,10 @@ class PGVectorStore(BasePydanticVectorStore):
             )
         elif query.mode == VectorStoreQueryMode.DEFAULT:
             results = await self._aquery_with_score(
-                query.query_embedding, query.similarity_top_k, query.filters
+                query.query_embedding,
+                query.similarity_top_k,
+                query.filters,
+                **kwargs,
             )
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")
@@ -546,7 +622,7 @@ class PGVectorStore(BasePydanticVectorStore):
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         self._initialize()
         if query.mode == VectorStoreQueryMode.HYBRID:
-            results = self._hybrid_query(query)
+            results = self._hybrid_query(query, **kwargs)
         elif query.mode in [
             VectorStoreQueryMode.SPARSE,
             VectorStoreQueryMode.TEXT_SEARCH,
@@ -557,7 +633,10 @@ class PGVectorStore(BasePydanticVectorStore):
             )
         elif query.mode == VectorStoreQueryMode.DEFAULT:
             results = self._query_with_score(
-                query.query_embedding, query.similarity_top_k, query.filters
+                query.query_embedding,
+                query.similarity_top_k,
+                query.filters,
+                **kwargs,
             )
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")

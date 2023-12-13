@@ -5,13 +5,15 @@ import asyncio
 import json
 import re
 import uuid
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
-from pydantic import BaseModel, Field
+from deprecated import deprecated
 
 from llama_index import Document, ServiceContext, SummaryIndex
-from llama_index.indices.postprocessor.node import KeywordNodePostprocessor
+from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.ingestion import run_transformations
 from llama_index.llms.openai import OpenAI
+from llama_index.postprocessor.node import KeywordNodePostprocessor
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
@@ -34,6 +36,10 @@ def _get_default_service_context() -> ServiceContext:
     return ServiceContext.from_defaults(llm=llm, chunk_size_limit=3000)
 
 
+@deprecated(
+    "Deprecated in favor of `LabelledRagDataset` which should be used instead.",
+    action="always",
+)
 class QueryResponseDataset(BaseModel):
     """Query Response Dataset.
 
@@ -94,6 +100,10 @@ class QueryResponseDataset(BaseModel):
         return cls(**data)
 
 
+@deprecated(
+    "Deprecated in favor of `RagDatasetGenerator` which should be used instead.",
+    action="always",
+)
 class DatasetGenerator(PromptMixin):
     """Generate dataset (question/ question-answer pairs) \
     based on the given documents.
@@ -157,7 +167,10 @@ class DatasetGenerator(PromptMixin):
         """Generate dataset from documents."""
         if service_context is None:
             service_context = _get_default_service_context()
-        nodes = service_context.node_parser.get_nodes_from_documents(documents)
+
+        nodes = run_transformations(
+            documents, service_context.transformations, show_progress=show_progress
+        )
 
         # use node postprocessor to filter nodes
         required_keywords = required_keywords or []

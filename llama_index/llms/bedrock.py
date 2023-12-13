@@ -1,19 +1,9 @@
 import json
-import warnings
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -27,7 +17,18 @@ from llama_index.llms.bedrock_utils import (
     get_text_from_response,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.custom import CustomLLM
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+)
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class Bedrock(LLM):
@@ -43,6 +44,9 @@ class Bedrock(LLM):
         description="AWS Secret Access Key to use"
     )
     aws_session_token: Optional[str] = Field(description="AWS Session Token to use")
+    aws_region_name: Optional[str] = Field(
+        description="AWS region name to use. Uses region configured in AWS CLI if not passed"
+    )
     max_retries: int = Field(
         default=10, description="The maximum number of API retries."
     )
@@ -64,10 +68,16 @@ class Bedrock(LLM):
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
+        aws_region_name: Optional[str] = None,
         timeout: Optional[float] = None,
         max_retries: Optional[int] = 10,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         if context_size is None and model not in BEDROCK_FOUNDATION_LLMS:
             raise ValueError(
@@ -77,12 +87,20 @@ class Bedrock(LLM):
             )
         try:
             import boto3
+            import botocore
 
+        except Exception as e:
+            raise ImportError(
+                "You must install the `boto3` package to use Bedrock."
+                "Please `pip install boto3`"
+            ) from e
+        try:
             if not profile_name and aws_access_key_id:
                 session = boto3.Session(
                     aws_access_key_id=aws_access_key_id,
                     aws_secret_access_key=aws_secret_access_key,
                     aws_session_token=aws_session_token,
+                    region_name=aws_region_name,
                 )
             else:
                 session = boto3.Session(profile_name=profile_name)
@@ -94,11 +112,12 @@ class Bedrock(LLM):
                 self._client = session.client("bedrock-runtime")
             else:
                 self._client = session.client("bedrock")
-        except ImportError as e:
-            raise ImportError(
-                "You must install the `boto3` package to use Bedrock."
-                "Please `pip install boto3`"
-            ) from e
+
+        except botocore.exceptions.NoRegionError as e:
+            raise ValueError(
+                "If default region is not set in AWS CLI, you must provide"
+                " the region_name argument to llama_index.llms.Bedrock"
+            )
 
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -113,6 +132,11 @@ class Bedrock(LLM):
             max_retries=max_retries,
             additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod
@@ -125,7 +149,7 @@ class Bedrock(LLM):
         return LLMMetadata(
             context_window=self.context_size,
             num_output=self.max_tokens,
-            is_chat_model=True,
+            is_chat_model=False,
             model_name=self.model,
         )
 

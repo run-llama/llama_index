@@ -96,6 +96,7 @@ class DocArrayVectorStore(VectorStore, ABC):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Adds nodes to the vector store.
 
@@ -154,7 +155,7 @@ class DocArrayVectorStore(VectorStore, ABC):
             # only for ExactMatchFilters
             filter_query = {
                 "metadata__" + filter.key: {"$eq": filter.value}
-                for filter in query.filters.filters
+                for filter in query.filters.legacy_filters()
             }
             query = (
                 self._index.build_query()  # get empty query object

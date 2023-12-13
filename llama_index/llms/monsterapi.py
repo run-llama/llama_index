@@ -3,35 +3,38 @@ from typing import Any, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import (
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
 )
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
+from llama_index.types import BaseOutputParser, PydanticProgramMode
+
+DEFAULT_MONSTER_TEMP = 0.75
 
 
 class MonsterLLM(CustomLLM):
     model: str = Field(description="The MonsterAPI model to use.")
     monster_api_key: Optional[str] = Field(description="The MonsterAPI key to use.")
-    max_new_tokens: int = Field(description="The number of tokens to generate.")
-    temperature: float = Field(description="The temperature to use for sampling.")
+    max_new_tokens: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description="The number of tokens to generate.",
+        gt=0,
+    )
+    temperature: float = Field(
+        default=DEFAULT_MONSTER_TEMP,
+        description="The temperature to use for sampling.",
+        gte=0.0,
+        lte=1.0,
+    )
     context_window: int = Field(
-        description="The number of context tokens available to the LLM."
-    )
-
-    messages_to_prompt: Callable = Field(
-        description="The function to convert messages to a prompt.", exclude=True
-    )
-    completion_to_prompt: Callable = Field(
-        description="The function to convert a completion to a prompt.", exclude=True
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The number of context tokens available to the LLM.",
+        gt=0,
     )
 
     _client: Any = PrivateAttr()
@@ -41,16 +44,16 @@ class MonsterLLM(CustomLLM):
         model: str,
         monster_api_key: Optional[str] = None,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
-        temperature: float = 0.75,
+        temperature: float = DEFAULT_MONSTER_TEMP,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         callback_manager: Optional[CallbackManager] = None,
-        messages_to_prompt: Optional[Callable] = None,
-        completion_to_prompt: Optional[Callable] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         self._client, available_llms = self.initialize_client(monster_api_key)
-
-        _messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        _completion_to_prompt = completion_to_prompt or (lambda x: x)
 
         # Check if provided model is supported
         if model not in available_llms:
@@ -69,8 +72,11 @@ class MonsterLLM(CustomLLM):
             temperature=temperature,
             context_window=context_window,
             callback_manager=callback_manager,
-            messages_to_prompt=_messages_to_prompt,
-            completion_to_prompt=_completion_to_prompt,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     def initialize_client(self, monster_api_key: Optional[str]) -> Any:

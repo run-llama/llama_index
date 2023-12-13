@@ -30,26 +30,66 @@ from llama_index.vector_stores.weaviate_utils import (
 
 logger = logging.getLogger(__name__)
 
-
-def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
-    if len(standard_filters.filters) == 1:
-        return {
-            "path": standard_filters.filters[0].key,
-            "operator": "Equal",
-            "valueText": standard_filters.filters[0].value,
-        }
-    else:
-        operands = []
-        for filter in standard_filters.filters:
-            operands.append(
-                {"path": filter.key, "operator": "Equal", "valueText": filter.value}
-            )
-        return {"operands": operands, "operator": "And"}
-
-
 import_err_msg = (
     "`weaviate` package not found, please run `pip install weaviate-client`"
 )
+
+
+def _transform_weaviate_filter_condition(condition: str) -> str:
+    """Translate standard metadata filter op to Chroma specific spec."""
+    if condition == "and":
+        return "And"
+    elif condition == "or":
+        return "Or"
+    else:
+        raise ValueError(f"Filter condition {condition} not supported")
+
+
+def _transform_weaviate_filter_operator(operator: str) -> str:
+    """Translate standard metadata filter operator to Chroma specific spec."""
+    if operator == "!=":
+        return "NotEqual"
+    elif operator == "==":
+        return "Equal"
+    elif operator == ">":
+        return "GreaterThan"
+    elif operator == "<":
+        return "LessThan"
+    elif operator == ">=":
+        return "GreaterThanEqual"
+    elif operator == "<=":
+        return "LessThanEqual"
+    else:
+        raise ValueError(f"Filter operator {operator} not supported")
+
+
+def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
+    filters_list = []
+    condition = standard_filters.condition or "and"
+    condition = _transform_weaviate_filter_condition(condition)
+
+    if standard_filters.filters:
+        for filter in standard_filters.filters:
+            value_type = "valueText"
+            if isinstance(filter.value, float):
+                value_type = "valueNumber"
+            elif isinstance(filter.value, int):
+                value_type = "valueNumber"
+            filters_list.append(
+                {
+                    "path": filter.key,
+                    "operator": _transform_weaviate_filter_operator(filter.operator),
+                    value_type: filter.value,
+                }
+            )
+    else:
+        return {}
+
+    if len(filters_list) == 1:
+        # If there is only one filter, return it directly
+        return filters_list[0]
+
+    return {"operands": filters_list, "operator": condition}
 
 
 class WeaviateVectorStore(BasePydanticVectorStore):
@@ -91,15 +131,22 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Initialize params."""
         try:
-            import weaviate
-            from weaviate import Client
+            import weaviate  # noqa
+            from weaviate import AuthApiKey, Client
         except ImportError:
             raise ImportError(import_err_msg)
 
         if weaviate_client is None:
-            raise ValueError("Missing Weaviate client!")
+            if isinstance(auth_config, dict):
+                auth_config = AuthApiKey(**auth_config)
 
-        self._client = cast(Client, weaviate_client)
+            client_kwargs = client_kwargs or {}
+            self._client = Client(
+                url=url, auth_client_secret=auth_config, **client_kwargs
+            )
+        else:
+            self._client = cast(Client, weaviate_client)
+
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
             logger.warning("class_prefix is deprecated, please use index_name")
@@ -120,7 +167,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             url=url,
             index_name=index_name,
             text_key=text_key,
-            auth_config=auth_config or {},
+            auth_config=auth_config.__dict__ if auth_config else {},
             client_kwargs=client_kwargs or {},
         )
 
@@ -136,8 +183,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     ) -> "WeaviateVectorStore":
         """Create WeaviateVectorStore from config."""
         try:
-            import weaviate
-            from weaviate import AuthApiKey, Client
+            import weaviate  # noqa
+            from weaviate import AuthApiKey, Client  # noqa
         except ImportError:
             raise ImportError(import_err_msg)
 
@@ -167,6 +214,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 
@@ -198,12 +246,19 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         where_filter = {
             "path": ["ref_doc_id"],
             "operator": "Equal",
-            "valueString": ref_doc_id,
+            "valueText": ref_doc_id,
         }
+        if "filter" in delete_kwargs and delete_kwargs["filter"] is not None:
+            where_filter = {
+                "operator": "And",
+                "operands": [where_filter, delete_kwargs["filter"]],  # type: ignore
+            }
+
         query = (
             self._client.query.get(self.index_name)
             .with_additional(["id"])
             .with_where(where_filter)
+            .with_limit(10000)  # 10,000 is the max weaviate can fetch
         )
 
         query_result = query.do()
@@ -224,7 +279,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             filter_with_doc_ids = {
                 "operator": "Or",
                 "operands": [
-                    {"path": ["doc_id"], "operator": "Equal", "valueString": doc_id}
+                    {"path": ["doc_id"], "operator": "Equal", "valueText": doc_id}
                     for doc_id in query.doc_ids
                 ],
             }
@@ -234,15 +289,18 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             filter_with_node_ids = {
                 "operator": "Or",
                 "operands": [
-                    {"path": ["id"], "operator": "Equal", "valueString": node_id}
+                    {"path": ["id"], "operator": "Equal", "valueText": node_id}
                     for node_id in query.node_ids
                 ],
             }
             query_builder = query_builder.with_where(filter_with_node_ids)
 
-        query_builder = query_builder.with_additional(["id", "vector", "distance"])
+        query_builder = query_builder.with_additional(
+            ["id", "vector", "distance", "score"]
+        )
 
         vector = query.query_embedding
+        similarity_key = "distance"
         if query.mode == VectorStoreQueryMode.DEFAULT:
             logger.debug("Using vector search")
             if vector is not None:
@@ -253,13 +311,14 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             logger.debug(f"Using hybrid search with alpha {query.alpha}")
+            similarity_key = "score"
             query_builder = query_builder.with_hybrid(
                 query=query.query_str,
                 alpha=query.alpha,
                 vector=vector,
             )
 
-        if query.filters is not None and len(query.filters.filters) > 0:
+        if query.filters is not None:
             filter = _to_weaviate_filter(query.filters)
             query_builder = query_builder.with_where(filter)
         elif "filter" in kwargs and kwargs["filter"] is not None:
@@ -275,11 +334,17 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         parsed_result = parse_get_response(query_result)
         entries = parsed_result[self.index_name]
 
-        similarities = [get_node_similarity(entry) for entry in entries]
-        nodes = [to_node(entry, text_key=self.text_key) for entry in entries]
+        similarities = []
+        nodes = []
+        node_idxs = []
 
-        nodes = nodes[: query.similarity_top_k]
-        node_idxs = [str(i) for i in range(len(nodes))]
+        for i, entry in enumerate(entries):
+            if i < query.similarity_top_k:
+                similarities.append(get_node_similarity(entry, similarity_key))
+                nodes.append(to_node(entry, text_key=self.text_key))
+                node_idxs.append(str(i))
+            else:
+                break
 
         return VectorStoreQueryResult(
             nodes=nodes, ids=node_idxs, similarities=similarities

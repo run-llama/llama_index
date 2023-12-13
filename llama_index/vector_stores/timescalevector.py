@@ -34,7 +34,7 @@ class TimescaleVectorStore(VectorStore):
         time_partition_interval: Optional[timedelta] = None,
     ) -> None:
         try:
-            from timescale_vector import client
+            from timescale_vector import client  # noqa
         except ImportError:
             raise ImportError("`timescale-vector` package should be pre installed")
 
@@ -118,26 +118,26 @@ class TimescaleVectorStore(VectorStore):
             node.embedding,
         ]
 
-    def add(self, embedding_results: List[BaseNode]) -> List[str]:
-        rows_to_insert = [self._node_to_row(node) for node in embedding_results]
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        rows_to_insert = [self._node_to_row(node) for node in nodes]
         ids = [result[0] for result in rows_to_insert]
         self._sync_client.upsert(rows_to_insert)
         return ids
 
-    async def async_add(self, embedding_results: List[BaseNode]) -> List[str]:
-        rows_to_insert = [self._node_to_row(node) for node in embedding_results]
-        ids = [result.node_id for result in embedding_results]
+    async def async_add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        rows_to_insert = [self._node_to_row(node) for node in nodes]
+        ids = [result.node_id for result in nodes]
         await self._async_client.upsert(rows_to_insert)
         return ids
 
     def _filter_to_dict(
         self, metadata_filters: Optional[MetadataFilters]
     ) -> Optional[Dict[str, str]]:
-        if metadata_filters is None:
+        if metadata_filters is None or len(metadata_filters.legacy_filters()) <= 0:
             return None
 
         res = {}
-        for filter in metadata_filters.filters:
+        for filter in metadata_filters.legacy_filters():
             res[filter.key] = filter.value
 
         return res

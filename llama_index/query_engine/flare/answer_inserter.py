@@ -1,12 +1,12 @@
 """Answer inserter."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.query_engine.flare.schema import QueryTask
+from llama_index.service_context import ServiceContext
 
 
 class BaseLookaheadAnswerInserter(PromptMixin):
@@ -173,7 +173,7 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
         for query_task, answer in zip(query_tasks, answers):
             query_answer_pairs += f"Query: {query_task.query_str}\nAnswer: {answer}\n"
 
-        return self._service_context.llm_predictor.predict(
+        return self._service_context.llm.predict(
             self._answer_insert_prompt,
             lookahead_response=response,
             query_answer_pairs=query_answer_pairs,

@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.types import (
-    MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -52,7 +51,7 @@ NOT_SUPPORT_METRIC_TYPE_ERROR = (
 
 def _try_import() -> None:
     try:
-        import tcvectordb
+        import tcvectordb  # noqa
     except ImportError:
         raise ImportError(
             "`tcvectordb` package not found, please run `pip install tcvectordb`"
@@ -398,6 +397,7 @@ class TencentVectorDB(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 
@@ -530,9 +530,9 @@ class TencentVectorDB(VectorStore):
                 if type(search_filter) is Filter
                 else Filter(search_filter)
             )
-        elif query.filters is not None:
+        elif query.filters is not None and len(query.filters.legacy_filters()) > 0:
             search_filter = " and ".join(
-                [f'{f.key} = "{f.value}"' for f in query.filters.filters]
+                [f'{f.key} = "{f.value}"' for f in query.filters.legacy_filters()]
             )
             search_filter = Filter(search_filter)
         elif query.doc_ids is not None:

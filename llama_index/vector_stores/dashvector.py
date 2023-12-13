@@ -29,7 +29,7 @@ def _to_dashvector_filter(
         return None
 
     filters = []
-    for filter in standard_filters.filters:
+    for filter in standard_filters.legacy_filters():
         if isinstance(filter.value, str):
             value = f"'{filter.value}'"
         else:
@@ -73,6 +73,7 @@ class DashVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to vector store.
 

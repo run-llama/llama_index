@@ -15,6 +15,6 @@ LlamaIndex provides a in-memory vector database allowing you to run it locally, 
 
 ##### 2. What's the difference between the vector databases?
 
-To check the difference between the vector databases, you can check at [Vector Store Options & Feature Support](../../core_modules/data_modules/storage/vector_stores.md#vector-store-options--feature-support).
+To check the difference between the vector databases, you can check at [Vector Store Options & Feature Support](../../module_guides/storing/vector_stores.md#vector-store-options--feature-support).
 
 ---

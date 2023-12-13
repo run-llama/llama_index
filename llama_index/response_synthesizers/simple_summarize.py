@@ -1,10 +1,10 @@
 from typing import Any, Generator, Optional, Sequence, cast
 
-from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import DEFAULT_TEXT_QA_PROMPT_SEL
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.response_synthesizers.base import BaseSynthesizer
+from llama_index.service_context import ServiceContext
 from llama_index.types import RESPONSE_TEXT_TYPE
 
 
@@ -42,13 +42,13 @@ class SimpleSummarize(BaseSynthesizer):
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
-            response = await self._service_context.llm_predictor.apredict(
+            response = await self._service_context.llm.apredict(
                 text_qa_template,
                 context_str=node_text,
                 **response_kwargs,
             )
         else:
-            response = self._service_context.llm_predictor.stream(
+            response = self._service_context.llm.stream(
                 text_qa_template,
                 context_str=node_text,
                 **response_kwargs,
@@ -76,13 +76,13 @@ class SimpleSummarize(BaseSynthesizer):
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
-            response = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm.predict(
                 text_qa_template,
                 context_str=node_text,
                 **kwargs,
             )
         else:
-            response = self._service_context.llm_predictor.stream(
+            response = self._service_context.llm.stream(
                 text_qa_template,
                 context_str=node_text,
                 **kwargs,

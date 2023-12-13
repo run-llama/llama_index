@@ -287,7 +287,7 @@ class CognitiveSearchVectorStore(VectorStore):
         )
 
         try:
-            import azure.search.documents
+            import azure.search.documents  # noqa
             from azure.search.documents import SearchClient
             from azure.search.documents.indexes import SearchIndexClient
         except ImportError:
@@ -397,6 +397,7 @@ class CognitiveSearchVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index associated with the configured search client.
 
@@ -480,7 +481,7 @@ class CognitiveSearchVectorStore(VectorStore):
     def _create_odata_filter(self, metadata_filters: MetadataFilters) -> str:
         """Generate an OData filter string using supplied metadata filters."""
         odata_filter: List[str] = []
-        for f in metadata_filters.filters:
+        for f in metadata_filters.legacy_filters():
             if not isinstance(f, ExactMatchFilter):
                 raise NotImplementedError(
                     "Only `ExactMatchFilter` filters are supported"

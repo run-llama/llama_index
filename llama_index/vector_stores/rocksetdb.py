@@ -4,7 +4,7 @@ from enum import Enum
 from os import getenv
 from time import sleep
 from types import ModuleType
-from typing import Any, List, Optional, Type, TypeVar
+from typing import Any, List, Type, TypeVar
 
 from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
@@ -123,7 +123,7 @@ class RocksetVectorStore(VectorStore):
     def client(self) -> Any:
         return self.rs
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Stores vectors in the collection.
 
         Args:
@@ -204,7 +204,7 @@ class RocksetVectorStore(VectorStore):
                     }
                 FROM
                     "{self.workspace}"."{self.collection}" x
-                {"WHERE" if query.node_ids or query.filters else ""} {
+                {"WHERE" if query.node_ids or (query.filters and len(query.filters.legacy_filters()) > 0) else ""} {
                     f'''({
                         ' OR '.join([
                             f"_id='{node_id}'" for node_id in query.node_ids
@@ -215,7 +215,7 @@ class RocksetVectorStore(VectorStore):
                         ' AND '.join([
                             f"x.{self.metadata_col}.{filter.key}=:{filter.key}"
                             for filter
-                            in query.filters.filters
+                            in query.filters.legacy_filters()
                         ])
                     })''' if query.filters else ""
                 }
@@ -224,7 +224,9 @@ class RocksetVectorStore(VectorStore):
                 LIMIT
                     {query.similarity_top_k}
             """,
-            params={filter.key: filter.value for filter in query.filters.filters}
+            params={
+                filter.key: filter.value for filter in query.filters.legacy_filters()
+            }
             if query.filters
             else {},
         )

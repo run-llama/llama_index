@@ -1,13 +1,14 @@
 """Relevancy evaluation."""
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+import asyncio
+from typing import Any, Sequence
 
 from llama_index import ServiceContext
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices import SummaryIndex
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import Document
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
@@ -96,6 +97,7 @@ class RelevancyEvaluator(BaseEvaluator):
         query: str | None = None,
         response: str | None = None,
         contexts: Sequence[str] | None = None,
+        sleep_time_in_seconds: int = 0,
         **kwargs: Any,
     ) -> EvaluationResult:
         """Evaluate whether the contexts and response are relevant to the query."""
@@ -108,6 +110,8 @@ class RelevancyEvaluator(BaseEvaluator):
         index = SummaryIndex.from_documents(docs, service_context=self._service_context)
 
         query_response = f"Question: {query}\nResponse: {response}"
+
+        await asyncio.sleep(sleep_time_in_seconds)
 
         query_engine = index.as_query_engine(
             text_qa_template=self._eval_template,

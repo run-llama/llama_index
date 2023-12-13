@@ -23,7 +23,7 @@ from llama_index.vector_stores.utils import node_to_metadata_dict
 def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
     """Translate standard metadata filters to Lance specific spec."""
     filters = []
-    for filter in standard_filters.filters:
+    for filter in standard_filters.legacy_filters():
         if isinstance(filter.value, str):
             filters.append(filter.key + ' = "' + filter.value + '"')
         else:
@@ -100,6 +100,7 @@ class LanceDBVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         data = []
         ids = []
@@ -167,7 +168,7 @@ class LanceDBVectorStore(VectorStore):
         nodes = []
         for _, item in results.iterrows():
             node = TextNode(
-                text=item.text,
+                text=item.text or "",  # ensure text is a string
                 id_=item.id,
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),

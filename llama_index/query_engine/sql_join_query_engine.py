@@ -4,22 +4,22 @@ import logging
 from typing import Callable, Dict, Optional, Union
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.struct_store.sql_query import (
     BaseSQLTableQueryEngine,
     NLSQLTableQueryEngine,
 )
-from llama_index.llm_predictor import LLMPredictor
-from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llm_predictor.base import LLMPredictorType
+from llama_index.llms.utils import resolve_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.schema import QueryBundle
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
 from llama_index.selectors.utils import get_selector_from_context
+from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.utils import print_text
 
@@ -110,7 +110,7 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
     after augmenting with SQL results.
 
     Args:
-        llm_predictor (LLMPredictor): LLM predictor to use for query transformation.
+        llm (LLM): LLM to use for query transformation.
         sql_augment_transform_prompt (BasePromptTemplate): PromptTemplate to use
             for query transformation.
         check_stop_parser (Optional[Callable[[str], bool]]): Check stop function.
@@ -119,12 +119,12 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm: Optional[LLMPredictorType] = None,
         sql_augment_transform_prompt: Optional[BasePromptTemplate] = None,
         check_stop_parser: Optional[Callable[[QueryBundle], bool]] = None,
     ) -> None:
         """Initialize params."""
-        self._llm_predictor = llm_predictor or LLMPredictor()
+        self._llm = llm or resolve_llm("default")
 
         self._sql_augment_transform_prompt = (
             sql_augment_transform_prompt or DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT
@@ -145,7 +145,7 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
         query_str = query_bundle.query_str
         sql_query = metadata["sql_query"]
         sql_query_response = metadata["sql_query_response"]
-        new_query_str = self._llm_predictor.predict(
+        new_query_str = self._llm.predict(
             self._sql_augment_transform_prompt,
             query_str=query_str,
             sql_query_str=sql_query,
@@ -224,9 +224,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         )
         self._sql_augment_query_transform = (
             sql_augment_query_transform
-            or SQLAugmentQueryTransform(
-                llm_predictor=self._service_context.llm_predictor
-            )
+            or SQLAugmentQueryTransform(llm=self._service_context.llm)
         )
         self._use_sql_join_synthesis = use_sql_join_synthesis
         self._verbose = verbose
@@ -284,7 +282,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             print_text(f"query engine response: {other_response}\n", color="pink")
         logger.info(f"> query engine response: {other_response}")
 
-        response_str = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm.predict(
             self._sql_join_synthesis_prompt,
             query_str=query_bundle.query_str,
             sql_query_str=sql_query,

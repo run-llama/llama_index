@@ -21,17 +21,14 @@ class KVDocumentStore(BaseDocumentStore):
     otherwise, each index would create a docstore under the hood.
 
     .. code-block:: python
-        nodes = SimpleNodeParser.get_nodes_from_documents()
+        nodes = SentenceSplitter().get_nodes_from_documents()
         docstore = SimpleDocumentStore()
         docstore.add_documents(nodes)
         storage_context = StorageContext.from_defaults(docstore=docstore)
 
         summary_index = SummaryIndex(nodes, storage_context=storage_context)
         vector_index = VectorStoreIndex(nodes, storage_context=storage_context)
-        keyword_table_index = SimpleKeywordTableIndex(
-            nodes,
-            storage_context=storage_context
-        )
+        keyword_table_index = SimpleKeywordTableIndex(nodes, storage_context=storage_context)
 
     This will use the same docstore for multiple index structures.
 
@@ -89,7 +86,8 @@ class KVDocumentStore(BaseDocumentStore):
             metadata = {"doc_hash": node.hash}
             if isinstance(node, TextNode) and node.ref_doc_id is not None:
                 ref_doc_info = self.get_ref_doc_info(node.ref_doc_id) or RefDocInfo()
-                ref_doc_info.node_ids.append(node.node_id)
+                if node.node_id not in ref_doc_info.node_ids:
+                    ref_doc_info.node_ids.append(node.node_id)
                 if not ref_doc_info.metadata:
                     ref_doc_info.metadata = node.metadata or {}
                 self._kvstore.put(
@@ -239,3 +237,12 @@ class KVDocumentStore(BaseDocumentStore):
             return metadata.get("doc_hash", None)
         else:
             return None
+
+    def get_all_document_hashes(self) -> Dict[str, str]:
+        """Get the stored hash for all documents."""
+        hashes = {}
+        for doc_id in self._kvstore.get_all(collection=self._metadata_collection):
+            hash = self.get_document_hash(doc_id)
+            if hash is not None:
+                hashes[hash] = doc_id
+        return hashes

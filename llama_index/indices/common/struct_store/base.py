@@ -6,8 +6,8 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.table import StructDatapoint
-from llama_index.indices.service_context import ServiceContext
-from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llm_predictor.base import LLMPredictorType
+from llama_index.node_parser.interface import TextSplitter
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
@@ -19,7 +19,7 @@ from llama_index.prompts.default_prompts import (
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode
-from llama_index.text_splitter import TextSplitter
+from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.utils import truncate_text
 
@@ -135,12 +135,12 @@ class BaseStructDatapointExtractor:
 
     def __init__(
         self,
-        llm_predictor: BaseLLMPredictor,
+        llm: LLMPredictorType,
         schema_extract_prompt: BasePromptTemplate,
         output_parser: OUTPUT_PARSER_TYPE,
     ) -> None:
         """Initialize params."""
-        self._llm_predictor = llm_predictor
+        self._llm = llm
         self._schema_extract_prompt = schema_extract_prompt
         self._output_parser = output_parser
 
@@ -195,7 +195,7 @@ class BaseStructDatapointExtractor:
             logger.info(f"> Adding chunk {i}: {fmt_text_chunk}")
             # if embedding specified in document, pass it to the Node
             schema_text = self._get_schema_text()
-            response_str = self._llm_predictor.predict(
+            response_str = self._llm.predict(
                 self._schema_extract_prompt,
                 text=text_chunk,
                 schema=schema_text,

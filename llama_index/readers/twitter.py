@@ -30,8 +30,6 @@ class TwitterTweetReader(BasePydanticReader):
         num_tweets: Optional[int] = 100,
     ) -> None:
         """Initialize with parameters."""
-        self.bearer_token = bearer_token
-        self.num_tweets = num_tweets
         super().__init__(
             num_tweets=num_tweets,
             bearer_token=bearer_token,

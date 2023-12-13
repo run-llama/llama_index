@@ -1,14 +1,14 @@
-from typing import Optional
+from typing import Optional, Union
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI, Tokenizer
+from llama_index.llms.types import LLMMetadata
 
 
 class OpenAILike(OpenAI):
     """
-    OpenAILike is a thin wrapper around the OpenAI model that makes it compatible with \
+    OpenAILike is a thin wrapper around the OpenAI model that makes it compatible with
     3rd party tools that provide an openai-compatible api.
 
     Currently, llama_index prevents using custom models with their OpenAI class
@@ -22,19 +22,25 @@ class OpenAILike(OpenAI):
 
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
-        description="The maximum number of context tokens for the model.",
+        description=LLMMetadata.__fields__["context_window"].field_info.description,
     )
     is_chat_model: bool = Field(
-        default=False, description="Indicates that the custom model is a chat_model."
+        default=False,
+        description=LLMMetadata.__fields__["is_chat_model"].field_info.description,
     )
     is_function_calling_model: bool = Field(
         default=False,
-        description="Indicates that the custom model is a function calling model.",
+        description=LLMMetadata.__fields__[
+            "is_function_calling_model"
+        ].field_info.description,
     )
-    tokenizer: Optional[Tokenizer] = Field(
+    tokenizer: Union[Tokenizer, str, None] = Field(
         default=None,
-        description="An instance of a tokenizer object that has an encode method. "
-        "If not provided, will default to the huggingface tokenizer for the model.",
+        description=(
+            "An instance of a tokenizer object that has an encode method, or the name"
+            " of a tokenizer model from Hugging Face. If left as None, then this"
+            " disables inference of max_tokens."
+        ),
     )
 
     @property
@@ -48,8 +54,8 @@ class OpenAILike(OpenAI):
         )
 
     @property
-    def _tokenizer(self) -> Tokenizer:
-        if not self.tokenizer:
+    def _tokenizer(self) -> Optional[Tokenizer]:
+        if isinstance(self.tokenizer, str):
             try:
                 from transformers import AutoTokenizer
             except ImportError as exc:
@@ -58,9 +64,8 @@ class OpenAILike(OpenAI):
                     "huggingface tokenizers with OpenAILike."
                 ) from exc
 
-            return AutoTokenizer.from_pretrained(self._get_model_name())
-        else:
-            return self.tokenizer
+            return AutoTokenizer.from_pretrained(self.tokenizer)
+        return self.tokenizer
 
     @classmethod
     def class_name(cls) -> str:

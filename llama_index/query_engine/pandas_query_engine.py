@@ -13,14 +13,15 @@ from typing import Any, Callable, Optional
 import numpy as np
 import pandas as pd
 
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
+from llama_index.core import BaseQueryEngine
+from llama_index.exec_utils import safe_eval, safe_exec
 from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import Response
+from llama_index.schema import QueryBundle
+from llama_index.service_context import ServiceContext
 from llama_index.utils import print_text
 
 logger = logging.getLogger(__name__)
@@ -59,23 +60,23 @@ def default_output_processor(
     try:
         tree = ast.parse(output)
         module = ast.Module(tree.body[:-1], type_ignores=[])
-        exec(ast.unparse(module), {}, local_vars)  # type: ignore
+        safe_exec(ast.unparse(module), {}, local_vars)  # type: ignore
         module_end = ast.Module(tree.body[-1:], type_ignores=[])
         module_end_str = ast.unparse(module_end)  # type: ignore
         if module_end_str.strip("'\"") != module_end_str:
             # if there's leading/trailing quotes, then we need to eval
             # string to get the actual expression
-            module_end_str = eval(module_end_str, {"np": np}, local_vars)
+            module_end_str = safe_eval(module_end_str, {"np": np}, local_vars)
         try:
             # str(pd.dataframe) will truncate output by display.max_colwidth
             # set width temporarily to extract more text
             if "max_colwidth" in output_kwargs:
                 pd.set_option("display.max_colwidth", output_kwargs["max_colwidth"])
-            output_str = str(eval(module_end_str, {"np": np}, local_vars))
+            output_str = str(safe_eval(module_end_str, {"np": np}, local_vars))
             pd.reset_option("display.max_colwidth")
             return output_str
 
-        except Exception as e:
+        except Exception:
             raise
     except Exception as e:
         err_string = (
@@ -156,7 +157,7 @@ class PandasQueryEngine(BaseQueryEngine):
         """Answer a query."""
         context = self._get_table_context()
 
-        pandas_response_str = self._service_context.llm_predictor.predict(
+        pandas_response_str = self._service_context.llm.predict(
             self._pandas_prompt,
             df_str=context,
             query_str=query_bundle.query_str,

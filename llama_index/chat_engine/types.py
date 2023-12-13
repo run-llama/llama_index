@@ -7,7 +7,7 @@ from enum import Enum
 from threading import Event
 from typing import AsyncGenerator, Generator, List, Optional, Union
 
-from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
+from llama_index.llms.types import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
 from llama_index.response.schema import Response, StreamingResponse
 from llama_index.schema import NodeWithScore
@@ -19,7 +19,7 @@ logger.setLevel(logging.WARNING)
 
 def is_function(message: ChatMessage) -> bool:
     """Utility for ChatMessage responses from OpenAI models."""
-    return "function_call" in message.additional_kwargs
+    return "tool_calls" in message.additional_kwargs
 
 
 class ChatResponseMode(str, Enum):
@@ -80,7 +80,8 @@ class StreamingAgentChatResponse:
 
     def __str__(self) -> str:
         if self._is_done and not self._queue.empty() and not self._is_function:
-            for delta in self._queue.queue:
+            while self._queue.queue:
+                delta = self._queue.queue.popleft()
                 self._unformatted_response += delta
             self.response = self._unformatted_response.strip()
         return self.response
@@ -252,6 +253,14 @@ class ChatMode(str, Enum):
 
     First retrieve text from the index using the user's message, then use the context
     in the system prompt to generate a response.
+    """
+
+    CONDENSE_PLUS_CONTEXT = "condense_plus_context"
+    """Corresponds to `CondensePlusContextChatEngine`.
+
+    First condense a conversation and latest user message to a standalone question.
+    Then build a context for the standalone question from a retriever,
+    Then pass the context along with prompt and user message to LLM to generate a response.
     """
 
     REACT = "react"

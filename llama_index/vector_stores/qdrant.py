@@ -71,9 +71,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
             raise ImportError(import_err_msg)
 
         if client is None:
-            raise ValueError("Missing Qdrant client!")
+            client_kwargs = client_kwargs or {}
+            self._client = qdrant_client.QdrantClient(
+                url=url, api_key=api_key, **client_kwargs
+            )
+        else:
+            self._client = cast(qdrant_client.QdrantClient, client)
 
-        self._client = cast(qdrant_client.QdrantClient, client)
         self._collection_initialized = self._collection_exists(collection_name)
 
         super().__init__(
@@ -86,41 +90,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
         )
 
     @classmethod
-    def from_params(
-        cls,
-        collection_name: str,
-        url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        client_kwargs: Optional[dict] = None,
-        batch_size: int = 100,
-        prefer_grpc: bool = False,
-        **kwargs: Any,
-    ) -> "QdrantVectorStore":
-        """Create a connection to a remote Qdrant vector store from a config."""
-        try:
-            import qdrant_client
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        client_kwargs = client_kwargs or {}
-        return cls(
-            collection_name=collection_name,
-            client=qdrant_client.QdrantClient(
-                url=url, api_key=api_key, prefer_grpc=prefer_grpc, **client_kwargs
-            ),
-            batch_size=batch_size,
-            prefer_grpc=prefer_grpc,
-            client_kwargs=client_kwargs,
-            url=url,
-            api_key=api_key,
-            **kwargs,
-        )
-
-    @classmethod
     def class_name(cls) -> str:
-        return "QdraantVectorStore"
+        return "QdrantVectorStore"
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
 
         Args:
@@ -374,7 +347,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
         """
-        from qdrant_client.http.models import Filter, Payload
+        from qdrant_client.http.models import Filter
 
         query_embedding = cast(List[float], query.query_embedding)
 
@@ -497,21 +470,51 @@ class QdrantVectorStore(BasePydanticVectorStore):
             return Filter(must=must_conditions)
 
         for subfilter in query.filters.filters:
-            if isinstance(subfilter.value, float):
+            # only for exact match
+            if not subfilter.operator or subfilter.operator == "==":
+                if isinstance(subfilter.value, float):
+                    must_conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            range=Range(
+                                gte=subfilter.value,
+                                lte=subfilter.value,
+                            ),
+                        )
+                    )
+                else:
+                    must_conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            match=MatchValue(value=subfilter.value),
+                        )
+                    )
+            elif subfilter.operator == "<":
                 must_conditions.append(
                     FieldCondition(
                         key=subfilter.key,
-                        range=Range(
-                            gte=subfilter.value,
-                            lte=subfilter.value,
-                        ),
+                        range=Range(lt=subfilter.value),
                     )
                 )
-            else:
+            elif subfilter.operator == ">":
                 must_conditions.append(
                     FieldCondition(
                         key=subfilter.key,
-                        match=MatchValue(value=subfilter.value),
+                        range=Range(gt=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == ">=":
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(gte=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == "<=":
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(lte=subfilter.value),
                     )
                 )
 

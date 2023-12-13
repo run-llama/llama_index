@@ -13,6 +13,7 @@ import numpy as np
 from fsspec.implementations.local import LocalFileSystem
 
 from llama_index.schema import BaseNode
+from llama_index.vector_stores.simple import DEFAULT_VECTOR_STORE, NAMESPACE_SEP
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
@@ -22,6 +23,10 @@ from llama_index.vector_stores.types import (
 )
 
 logger = logging.getLogger()
+
+DEFAULT_PERSIST_PATH = os.path.join(
+    DEFAULT_PERSIST_DIR, f"{DEFAULT_VECTOR_STORE}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
+)
 
 
 class FaissVectorStore(VectorStore):
@@ -62,7 +67,10 @@ class FaissVectorStore(VectorStore):
         persist_dir: str = DEFAULT_PERSIST_DIR,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "FaissVectorStore":
-        persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        persist_path = os.path.join(
+            DEFAULT_PERSIST_DIR,
+            f"{DEFAULT_VECTOR_STORE}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}",
+        )
         # only support local storage for now
         if fs and not isinstance(fs, LocalFileSystem):
             raise NotImplementedError("FAISS only supports local storage for now.")
@@ -91,6 +99,7 @@ class FaissVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 
@@ -116,7 +125,7 @@ class FaissVectorStore(VectorStore):
 
     def persist(
         self,
-        persist_path: str = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME),
+        persist_path: str = DEFAULT_PERSIST_PATH,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Save to file.

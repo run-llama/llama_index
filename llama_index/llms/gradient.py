@@ -1,16 +1,19 @@
-from typing import Any, Optional
+from typing import Any, Callable, Optional, Sequence
 
 from typing_extensions import override
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms import (
+from llama_index.constants import DEFAULT_NUM_OUTPUTS
+from llama_index.llms.base import llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.types import (
+    ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
-    CustomLLM,
     LLMMetadata,
 )
-from llama_index.llms.base import llm_completion_callback
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class _BaseGradientLLM(CustomLLM):
@@ -19,6 +22,7 @@ class _BaseGradientLLM(CustomLLM):
 
     # Config
     max_tokens: Optional[int] = Field(
+        default=DEFAULT_NUM_OUTPUTS,
         description="The number of tokens to generate.",
         gt=0,
         lt=512,
@@ -34,6 +38,9 @@ class _BaseGradientLLM(CustomLLM):
     workspace_id: Optional[str] = Field(
         description="The Gradient workspace id to use.",
     )
+    is_chat_model: bool = Field(
+        default=False, description="Whether the model is a chat model."
+    )
 
     def __init__(
         self,
@@ -43,6 +50,12 @@ class _BaseGradientLLM(CustomLLM):
         max_tokens: Optional[int] = None,
         workspace_id: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        is_chat_model: bool = False,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -51,6 +64,12 @@ class _BaseGradientLLM(CustomLLM):
             host=host,
             workspace_id=workspace_id,
             callback_manager=callback_manager,
+            is_chat_model=is_chat_model,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
             **kwargs,
         )
         try:
@@ -93,7 +112,7 @@ class _BaseGradientLLM(CustomLLM):
         return LLMMetadata(
             context_window=1024,
             num_output=self.max_tokens or 20,
-            is_chat_model=False,
+            is_chat_model=self.is_chat_model,
             is_function_calling_model=False,
             model_name=self._model.id,
         )
@@ -113,6 +132,7 @@ class GradientBaseModelLLM(_BaseGradientLLM):
         max_tokens: Optional[int] = None,
         workspace_id: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        is_chat_model: bool = False,
     ) -> None:
         super().__init__(
             access_token=access_token,
@@ -121,6 +141,7 @@ class GradientBaseModelLLM(_BaseGradientLLM):
             max_tokens=max_tokens,
             workspace_id=workspace_id,
             callback_manager=callback_manager,
+            is_chat_model=is_chat_model,
         )
 
         self._model = self._gradient.get_base_model(
@@ -142,6 +163,7 @@ class GradientModelAdapterLLM(_BaseGradientLLM):
         model_adapter_id: str,
         workspace_id: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        is_chat_model: bool = False,
     ) -> None:
         super().__init__(
             access_token=access_token,
@@ -150,6 +172,7 @@ class GradientModelAdapterLLM(_BaseGradientLLM):
             model_adapter_id=model_adapter_id,
             workspace_id=workspace_id,
             callback_manager=callback_manager,
+            is_chat_model=is_chat_model,
         )
         self._model = self._gradient.get_model_adapter(
             model_adapter_id=model_adapter_id

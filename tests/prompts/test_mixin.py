@@ -1,8 +1,7 @@
 """Test prompt mixin."""
 
 
-import pytest
-from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 
 

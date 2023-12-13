@@ -121,7 +121,7 @@ class ZepVectorStore(VectorStore):
 
         return docs, ids
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to the collection.
 
         Args:
@@ -147,6 +147,7 @@ class ZepVectorStore(VectorStore):
     async def async_add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Asynchronously add nodes to the collection.
 
@@ -247,7 +248,7 @@ class ZepVectorStore(VectorStore):
         """Convert filters to Zep filters. Filters are ANDed together."""
         filter_conditions: List[Dict[str, Any]] = []
 
-        for f in filters.filters:
+        for f in filters.legacy_filters():
             filter_conditions.append({"jsonpath": f'$[*] ? (@.{f.key} == "{f.value}")'})
 
         return {"where": {"and": filter_conditions}}

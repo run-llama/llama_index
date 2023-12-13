@@ -130,7 +130,7 @@ class NebulaGraphStore(GraphStore):
             **kwargs: Keyword arguments.
         """
         try:
-            import nebula3
+            import nebula3  # noqa
         except ImportError:
             raise ImportError(
                 "Please install NebulaGraph Python client first: "

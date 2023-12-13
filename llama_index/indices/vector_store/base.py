@@ -7,12 +7,12 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
+from llama_index.core import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.base import BaseIndex
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import async_embed_nodes, embed_nodes
 from llama_index.schema import BaseNode, ImageNode, IndexNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.types import VectorStore
@@ -83,6 +83,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         return VectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
+            callback_manager=self._service_context.callback_manager,
             **kwargs,
         )
 
@@ -139,13 +140,14 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         index_struct: IndexDict,
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
+        **insert_kwargs: Any,
     ) -> None:
         """Asynchronously add nodes to index."""
         if not nodes:
             return
 
         nodes = await self._aget_node_with_embedding(nodes, show_progress)
-        new_ids = self._vector_store.add(nodes)
+        new_ids = await self._vector_store.async_add(nodes, **insert_kwargs)
 
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store
@@ -178,13 +180,14 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         index_struct: IndexDict,
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
+        **insert_kwargs: Any,
     ) -> None:
         """Add document to index."""
         if not nodes:
             return
 
         nodes = self._get_node_with_embedding(nodes, show_progress)
-        new_ids = self._vector_store.add(nodes)
+        new_ids = self._vector_store.add(nodes, **insert_kwargs)
 
         if not self._vector_store.stores_text or self._store_nodes_override:
             # NOTE: if the vector store doesn't store text,
@@ -212,34 +215,48 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                         [node_without_embedding], allow_update=True
                     )
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
+    def _build_index_from_nodes(
+        self,
+        nodes: Sequence[BaseNode],
+        **insert_kwargs: Any,
+    ) -> IndexDict:
         """Build index from nodes."""
         index_struct = self.index_struct_cls()
         if self._use_async:
             tasks = [
                 self._async_add_nodes_to_index(
-                    index_struct, nodes, show_progress=self._show_progress
+                    index_struct,
+                    nodes,
+                    show_progress=self._show_progress,
+                    **insert_kwargs,
                 )
             ]
             run_async_tasks(tasks)
         else:
             self._add_nodes_to_index(
-                index_struct, nodes, show_progress=self._show_progress
+                index_struct,
+                nodes,
+                show_progress=self._show_progress,
+                **insert_kwargs,
             )
         return index_struct
 
-    def build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
+    def build_index_from_nodes(
+        self,
+        nodes: Sequence[BaseNode],
+        **insert_kwargs: Any,
+    ) -> IndexDict:
         """Build the index from nodes.
 
         NOTE: Overrides BaseIndex.build_index_from_nodes.
             VectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
-        return self._build_index_from_nodes(nodes)
+        return self._build_index_from_nodes(nodes, **insert_kwargs)
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
-        self._add_nodes_to_index(self._index_struct, nodes)
+        self._add_nodes_to_index(self._index_struct, nodes, **insert_kwargs)
 
     def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert nodes.
@@ -275,7 +292,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
         """Delete a document and it's nodes by using ref_doc_id."""
-        self._vector_store.delete(ref_doc_id)
+        self._vector_store.delete(ref_doc_id, **delete_kwargs)
 
         # delete from index_struct only if needed
         if not self._vector_store.stores_text or self._store_nodes_override:

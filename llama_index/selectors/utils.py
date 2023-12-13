@@ -1,12 +1,12 @@
 from typing import Optional
 
-from llama_index.indices.service_context import ServiceContext
 from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import (
     PydanticMultiSelector,
     PydanticSingleSelector,
 )
 from llama_index.selectors.types import BaseSelector
+from llama_index.service_context import ServiceContext
 
 
 def get_selector_from_context(
@@ -17,13 +17,13 @@ def get_selector_from_context(
 
     if is_multi:
         try:
-            llm = service_context.llm_predictor.llm
+            llm = service_context.llm
             selector = PydanticMultiSelector.from_defaults(llm=llm)  # type: ignore
         except ValueError:
             selector = LLMMultiSelector.from_defaults(service_context=service_context)
     else:
         try:
-            llm = service_context.llm_predictor.llm
+            llm = service_context.llm
             selector = PydanticSingleSelector.from_defaults(llm=llm)  # type: ignore
         except ValueError:
             selector = LLMSingleSelector.from_defaults(service_context=service_context)

@@ -1,11 +1,12 @@
 import json
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.llms.base import (
-    LLM,
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -15,20 +16,35 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
-    llm_chat_callback,
-    llm_completion_callback,
 )
+from llama_index.types import BaseOutputParser, PydanticProgramMode
+
+DEFAULT_RUNGPT_MODEL = "rungpt"
+DEFAULT_RUNGPT_TEMP = 0.75
 
 
 class RunGptLLM(LLM):
     """The opengpt of Jina AI models."""
 
-    model: Optional[str] = Field(description="The rungpt model to use.")
+    model: Optional[str] = Field(
+        default=DEFAULT_RUNGPT_MODEL, description="The rungpt model to use."
+    )
     endpoint: str = Field(description="The endpoint of serving address.")
-    temperature: float = Field(description="The temperature to use for sampling.")
-    max_tokens: Optional[int] = Field(description="Max tokens model generates.")
+    temperature: float = Field(
+        default=DEFAULT_RUNGPT_TEMP,
+        description="The temperature to use for sampling.",
+        gte=0.0,
+        lte=1.0,
+    )
+    max_tokens: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description="Max tokens model generates.",
+        gt=0,
+    )
     context_window: int = Field(
-        description="The maximum number of context tokens for the model."
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The maximum number of context tokens for the model.",
+        gt=0,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Replicate API."
@@ -39,13 +55,18 @@ class RunGptLLM(LLM):
 
     def __init__(
         self,
-        model: Optional[str] = "rungpt",
+        model: Optional[str] = DEFAULT_RUNGPT_MODEL,
         endpoint: str = "0.0.0.0:51002",
-        temperature: float = 0.75,
-        max_tokens: Optional[int] = 256,
+        temperature: float = DEFAULT_RUNGPT_TEMP,
+        max_tokens: Optional[int] = DEFAULT_NUM_OUTPUTS,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ):
         if endpoint.startswith("http://"):
             base_url = endpoint
@@ -60,6 +81,11 @@ class RunGptLLM(LLM):
             additional_kwargs=additional_kwargs or {},
             callback_manager=callback_manager or CallbackManager([]),
             base_url=base_url,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod

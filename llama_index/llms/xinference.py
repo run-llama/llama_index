@@ -1,9 +1,14 @@
 import warnings
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
@@ -11,26 +16,29 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
-    llm_chat_callback,
-    llm_completion_callback,
 )
-from llama_index.llms.custom import CustomLLM
 from llama_index.llms.xinference_utils import (
     xinference_message_to_history,
     xinference_modelname_to_contextsize,
 )
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 # an approximation of the ratio between llama and GPT2 tokens
 TOKEN_RATIO = 2.5
+DEFAULT_XINFERENCE_TEMP = 1.0
 
 
 class Xinference(CustomLLM):
     model_uid: str = Field(description="The Xinference model to use.")
     endpoint: str = Field(description="The Xinference endpoint URL to use.")
-    temperature: float = Field(description="The temperature to use for sampling.")
-    max_tokens: int = Field(description="The maximum new tokens to generate as answer.")
+    temperature: float = Field(
+        description="The temperature to use for sampling.", gte=0.0, lte=1.0
+    )
+    max_tokens: int = Field(
+        description="The maximum new tokens to generate as answer.", gt=0
+    )
     context_window: int = Field(
-        description="The maximum number of context tokens for the model."
+        description="The maximum number of context tokens for the model.", gt=0
     )
     model_description: Dict[str, Any] = Field(
         description="The model description from Xinference."
@@ -42,9 +50,14 @@ class Xinference(CustomLLM):
         self,
         model_uid: str,
         endpoint: str,
-        temperature: float = 1.0,
+        temperature: float = DEFAULT_XINFERENCE_TEMP,
         max_tokens: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         generator, context_window, model_description = self.load_model(
             model_uid, endpoint
@@ -66,6 +79,11 @@ class Xinference(CustomLLM):
             max_tokens=max_tokens,
             model_description=model_description,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     def load_model(self, model_uid: str, endpoint: str) -> Tuple[Any, int, dict]:

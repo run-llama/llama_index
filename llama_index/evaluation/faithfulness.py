@@ -1,13 +1,14 @@
 """Faithfulness evaluation."""
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+import asyncio
+from typing import Any, Sequence
 
 from llama_index import ServiceContext
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices import SummaryIndex
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import Document
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
@@ -116,11 +117,15 @@ class FaithfulnessEvaluator(BaseEvaluator):
         query: str | None = None,
         response: str | None = None,
         contexts: Sequence[str] | None = None,
+        sleep_time_in_seconds: int = 0,
         **kwargs: Any,
     ) -> EvaluationResult:
         """Evaluate whether the response is faithful to the contexts."""
         del query  # Unused
         del kwargs  # Unused
+
+        await asyncio.sleep(sleep_time_in_seconds)
+
         if contexts is None or response is None:
             raise ValueError("contexts and response must be provided")
 

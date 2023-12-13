@@ -2,19 +2,8 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
-)
+from llama_index.constants import DEFAULT_TEMPERATURE
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
 from llama_index.llms.generic_utils import (
     achat_to_completion_decorator,
     acompletion_to_chat_decorator,
@@ -28,33 +17,59 @@ from llama_index.llms.generic_utils import (
 from llama_index.llms.litellm_utils import (
     acompletion_with_retry,
     completion_with_retry,
-    from_openai_message_dict,
+    from_litellm_message,
     is_function_calling_model,
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
     validate_litellm_api_key,
 )
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+)
+from llama_index.types import BaseOutputParser, PydanticProgramMode
+
+DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
 
 class LiteLLM(LLM):
     model: str = Field(
-        description="The LiteLLM model to use."
-    )  # For complete list of providers https://docs.litellm.ai/docs/providers
-    temperature: float = Field(description="The temperature to use during generation.")
+        default=DEFAULT_LITELLM_MODEL,
+        description=(
+            "The LiteLLM model to use. "
+            "For complete list of providers https://docs.litellm.ai/docs/providers"
+        ),
+    )
+    temperature: float = Field(
+        default=DEFAULT_TEMPERATURE,
+        description="The temperature to use during generation.",
+        gte=0.0,
+        lte=1.0,
+    )
     max_tokens: Optional[int] = Field(
-        description="The maximum number of tokens to generate."
+        description="The maximum number of tokens to generate.",
+        gt=0,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the LLM API.",
         # for all inputs https://docs.litellm.ai/docs/completion/input
     )
-    max_retries: int = Field(description="The maximum number of API retries.")
+    max_retries: int = Field(
+        default=10, description="The maximum number of API retries."
+    )
 
     def __init__(
         self,
-        model: str = "gpt-3.5-turbo",
-        temperature: float = 0.1,
+        model: str = DEFAULT_LITELLM_MODEL,
+        temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
@@ -62,6 +77,11 @@ class LiteLLM(LLM):
         api_type: Optional[str] = None,
         api_base: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         if "custom_llm_provider" in kwargs:
@@ -88,6 +108,11 @@ class LiteLLM(LLM):
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
             **kwargs,
         )
 
@@ -192,7 +217,7 @@ class LiteLLM(LLM):
             **all_kwargs,
         )
         message_dict = response["choices"][0]["message"]
-        message = from_openai_message_dict(message_dict)
+        message = from_litellm_message(message_dict)
 
         return ChatResponse(
             message=message,
@@ -362,7 +387,7 @@ class LiteLLM(LLM):
             **all_kwargs,
         )
         message_dict = response["choices"][0]["message"]
-        message = from_openai_message_dict(message_dict)
+        message = from_litellm_message(message_dict)
 
         return ChatResponse(
             message=message,

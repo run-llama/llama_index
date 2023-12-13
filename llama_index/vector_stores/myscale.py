@@ -7,7 +7,6 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.indices.service_context import ServiceContext
 from llama_index.readers.myscale import (
     MyScaleSettings,
     escape_str,
@@ -20,6 +19,7 @@ from llama_index.schema import (
     RelatedNodeInfo,
     TextNode,
 )
+from llama_index.service_context import ServiceContext
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import (
     VectorStore,
@@ -214,6 +214,7 @@ class MyScaleVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 
@@ -265,9 +266,9 @@ class MyScaleVectorStore(VectorStore):
             if query.doc_ids
             else None
         )
-        if query.filters is not None:
+        if query.filters is not None and len(query.filters.legacy_filters()) > 0:
             where_str = self._append_meta_filter_condition(
-                where_str, query.filters.filters
+                where_str, query.filters.legacy_filters()
             )
 
         # build query sql

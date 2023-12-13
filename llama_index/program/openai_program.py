@@ -1,21 +1,27 @@
-from typing import Any, Dict, Generator, Optional, Tuple, Type, Union, cast
+import logging
+from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, cast
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import LLM
+from llama_index.agent.openai_agent import resolve_tool_choice
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai_utils import to_openai_function
+from llama_index.llms.openai_utils import OpenAIToolCall, to_openai_tool
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.program.utils import create_list_model
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.types import Model
 
+_logger = logging.getLogger(__name__)
 
-def _default_function_call(output_cls: Type[BaseModel]) -> Dict[str, Any]:
-    """Default OpenAI function to call."""
-    schema = output_cls.schema()
-    return {
-        "name": schema["title"],
-    }
+
+def _default_tool_choice(
+    output_cls: Type[Model], allow_multiple: bool = False
+) -> Union[str, Dict[str, Any]]:
+    """Default OpenAI tool to choose."""
+    if allow_multiple:
+        return "auto"
+    else:
+        schema = output_cls.schema()
+        return resolve_tool_choice(schema["title"])
 
 
 def _get_json_str(raw_str: str, start_idx: int) -> Tuple[Optional[str], int]:
@@ -33,6 +39,43 @@ def _get_json_str(raw_str: str, start_idx: int) -> Tuple[Optional[str], int]:
     return None, start_idx
 
 
+def _parse_tool_calls(
+    tool_calls: List[OpenAIToolCall],
+    output_cls: Type[Model],
+    allow_multiple: bool = False,
+    verbose: bool = False,
+) -> Union[Model, List[Model]]:
+    outputs = []
+    for tool_call in tool_calls:
+        function_call = tool_call.function
+        # validations to get passed mypy
+        assert function_call is not None
+        assert function_call.name is not None
+        assert function_call.arguments is not None
+        if verbose:
+            name = function_call.name
+            arguments_str = function_call.arguments
+            print(f"Function call: {name} with args: {arguments_str}")
+
+        if isinstance(function_call.arguments, dict):
+            output = output_cls.parse_obj(function_call.arguments)
+        else:
+            output = output_cls.parse_raw(function_call.arguments)
+
+        outputs.append(output)
+
+    if allow_multiple:
+        return outputs
+    else:
+        if len(outputs) > 1:
+            _logger.warning(
+                "Multiple outputs found, returning first one. "
+                "If you want to return all outputs, set output_multiple=True."
+            )
+
+        return outputs[0]
+
+
 class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     """
     An OpenAI-based function that returns a pydantic model.
@@ -45,7 +88,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         output_cls: Type[Model],
         llm: LLM,
         prompt: BasePromptTemplate,
-        function_call: Union[str, Dict[str, Any]],
+        tool_choice: Union[str, Dict[str, Any]],
+        allow_multiple: bool = False,
         verbose: bool = False,
     ) -> None:
         """Init params."""
@@ -53,7 +97,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self._llm = llm
         self._prompt = prompt
         self._verbose = verbose
-        self._function_call = function_call
+        self._allow_multiple = allow_multiple
+        self._tool_choice = tool_choice
 
     @classmethod
     def from_defaults(
@@ -63,7 +108,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         prompt: Optional[PromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
-        function_call: Optional[Union[str, Dict[str, Any]]] = None,
+        allow_multiple: bool = False,
+        tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> "OpenAIPydanticProgram":
         llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
@@ -85,17 +131,20 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             raise ValueError("Must provide either prompt or prompt_template_str.")
         if prompt_template_str is not None:
             prompt = PromptTemplate(prompt_template_str)
-        function_call = function_call or _default_function_call(output_cls)
+
+        tool_choice = tool_choice or _default_tool_choice(output_cls, allow_multiple)
+
         return cls(
             output_cls=output_cls,
             llm=llm,
             prompt=cast(PromptTemplate, prompt),
-            function_call=function_call,
+            tool_choice=tool_choice,
+            allow_multiple=allow_multiple,
             verbose=verbose,
         )
 
     @property
-    def output_cls(self) -> Type[BaseModel]:
+    def output_cls(self) -> Type[Model]:
         return self._output_cls
 
     @property
@@ -110,89 +159,84 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self,
         *args: Any,
         **kwargs: Any,
-    ) -> BaseModel:
-        openai_fn_spec = to_openai_function(self._output_cls)
+    ) -> Union[Model, List[Model]]:
+        openai_fn_spec = to_openai_tool(self._output_cls)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
         chat_response = self._llm.chat(
             messages=messages,
-            functions=[openai_fn_spec],
-            function_call=self._function_call,
+            tools=[openai_fn_spec],
+            tool_choice=self._tool_choice,
         )
         message = chat_response.message
-        if "function_call" not in message.additional_kwargs:
+        if "tool_calls" not in message.additional_kwargs:
             raise ValueError(
-                "Expected function call in ai_message.additional_kwargs, "
+                "Expected tool_calls in ai_message.additional_kwargs, "
                 "but none found."
             )
 
-        function_call = message.additional_kwargs["function_call"]
-        if self._verbose:
-            name = function_call["name"]
-            arguments_str = function_call["arguments"]
-            print(f"Function call: {name} with args: {arguments_str}")
-
-        if isinstance(function_call["arguments"], dict):
-            output = self.output_cls.parse_obj(function_call["arguments"])
-        else:
-            output = self.output_cls.parse_raw(function_call["arguments"])
-        return output
+        tool_calls = message.additional_kwargs["tool_calls"]
+        return _parse_tool_calls(
+            tool_calls,
+            output_cls=self.output_cls,
+            allow_multiple=self._allow_multiple,
+            verbose=self._verbose,
+        )
 
     async def acall(
         self,
         *args: Any,
         **kwargs: Any,
-    ) -> BaseModel:
-        openai_fn_spec = to_openai_function(self._output_cls)
+    ) -> Union[Model, List[Model]]:
+        openai_fn_spec = to_openai_tool(self._output_cls)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
         chat_response = await self._llm.achat(
             messages=messages,
-            functions=[openai_fn_spec],
-            function_call=self._function_call,
+            tools=[openai_fn_spec],
+            tool_choice=self._tool_choice,
         )
         message = chat_response.message
-        if "function_call" not in message.additional_kwargs:
+        if "tool_calls" not in message.additional_kwargs:
             raise ValueError(
                 "Expected function call in ai_message.additional_kwargs, "
                 "but none found."
             )
 
-        function_call = message.additional_kwargs["function_call"]
-        if self._verbose:
-            name = function_call["name"]
-            arguments_str = function_call["arguments"]
-            print(f"Function call: {name} with args: {arguments_str}")
+        tool_calls = message.additional_kwargs["tool_calls"]
+        return _parse_tool_calls(
+            tool_calls,
+            output_cls=self.output_cls,
+            allow_multiple=self._allow_multiple,
+            verbose=self._verbose,
+        )
 
-        if isinstance(function_call["arguments"], dict):
-            output = self.output_cls.parse_obj(function_call["arguments"])
-        else:
-            output = self.output_cls.parse_raw(function_call["arguments"])
-        return output
-
-    def stream_list(
-        self, *args: Any, **kwargs: Any
-    ) -> Generator[BaseModel, None, None]:
+    def stream_list(self, *args: Any, **kwargs: Any) -> Generator[Model, None, None]:
         """Streams a list of objects."""
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
-        # openai_fn_spec = to_openai_function(self._output_cls)
         list_output_cls = create_list_model(self._output_cls)
-        openai_fn_spec = to_openai_function(list_output_cls)
+        openai_fn_spec = to_openai_tool(list_output_cls)
 
         chat_response_gen = self._llm.stream_chat(
             messages=messages,
-            functions=[openai_fn_spec],
-            function_call=_default_function_call(list_output_cls),
+            tools=[openai_fn_spec],
+            tool_choice=_default_tool_choice(list_output_cls),
         )
         # extract function call arguments
         # obj_start_idx finds start position (before a new "{" in JSON)
         obj_start_idx: int = -1  # NOTE: uninitialized
         for stream_resp in chat_response_gen:
             kwargs = stream_resp.message.additional_kwargs
-            fn_args = kwargs["function_call"]["arguments"]
+            tool_calls = kwargs["tool_calls"]
+            if len(tool_calls) == 0:
+                continue
+
+            # NOTE: right now assume only one tool call
+            # TODO: handle parallel tool calls in streaming setting
+            fn_args = kwargs["tool_calls"][0].function.arguments
 
             # this is inspired by `get_object` from `MultiTaskBase` in
             # the openai_function_call repo

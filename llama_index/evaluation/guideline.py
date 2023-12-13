@@ -1,4 +1,5 @@
 """Guideline evaluation."""
+import asyncio
 import logging
 from typing import Any, Optional, Sequence, Union, cast
 
@@ -7,7 +8,7 @@ from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.output_parsers import PydanticOutputParser
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +86,7 @@ class GuidelineEvaluator(BaseEvaluator):
         query: Optional[str] = None,
         response: Optional[str] = None,
         contexts: Optional[Sequence[str]] = None,
+        sleep_time_in_seconds: int = 0,
         **kwargs: Any,
     ) -> EvaluationResult:
         """Evaluate whether the query and response pair passes the guidelines."""
@@ -97,7 +99,10 @@ class GuidelineEvaluator(BaseEvaluator):
         logger.debug("query: %s", query)
         logger.debug("response: %s", response)
         logger.debug("guidelines: %s", self._guidelines)
-        eval_response = await self._service_context.llm_predictor.apredict(
+
+        await asyncio.sleep(sleep_time_in_seconds)
+
+        eval_response = await self._service_context.llm.apredict(
             self._eval_template,
             query=query,
             response=response,

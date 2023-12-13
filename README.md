@@ -13,7 +13,7 @@ PyPI:
 
 LlamaIndex.TS (Typescript/Javascript): https://github.com/run-llama/LlamaIndexTS.
 
-Documentation: https://gpt-index.readthedocs.io/.
+Documentation: https://docs.llamaindex.ai/en/stable/.
 
 Twitter: https://twitter.com/llama_index.
 
@@ -70,9 +70,11 @@ To build a simple vector store index using OpenAI:
 
 ```python
 import os
+
 os.environ["OPENAI_API_KEY"] = "YOUR_OPENAI_API_KEY"
 
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
+
 documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()
 index = VectorStoreIndex.from_documents(documents)
 ```
@@ -81,24 +83,40 @@ To build a simple vector store index using non-OpenAI LLMs, e.g. Llama 2 hosted 
 
 ```python
 import os
+
 os.environ["REPLICATE_API_TOKEN"] = "YOUR_REPLICATE_API_TOKEN"
 
 from llama_index.llms import Replicate
+
 llama2_7b_chat = "meta/llama-2-7b-chat:8e6975e5ed6174911a6ff3d60540dfd4844201974602551e10e9e87ab143d81e"
 llm = Replicate(
     model=llama2_7b_chat,
     temperature=0.01,
-    additional_kwargs={"top_p": 1, "max_new_tokens":300}
+    additional_kwargs={"top_p": 1, "max_new_tokens": 300},
+)
+
+# set tokenizer to match LLM
+from llama_index import set_global_tokenizer
+from transformers import AutoTokenizer
+
+set_global_tokenizer(
+    AutoTokenizer.from_pretrained("NousResearch/Llama-2-7b-chat-hf").encode
 )
 
 from llama_index.embeddings import HuggingFaceEmbedding
 from llama_index import ServiceContext
+
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
-service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model)
+service_context = ServiceContext.from_defaults(
+    llm=llm, embed_model=embed_model
+)
 
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
+
 documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()
-index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+index = VectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
 ```
 
 To query:
@@ -121,7 +139,7 @@ To reload from disk:
 from llama_index import StorageContext, load_index_from_storage
 
 # rebuild storage context
-storage_context = StorageContext.from_defaults(persist_dir='./storage')
+storage_context = StorageContext.from_defaults(persist_dir="./storage")
 # load index
 index = load_index_from_storage(storage_context)
 ```
@@ -130,7 +148,13 @@ index = load_index_from_storage(storage_context)
 
 The main third-party package requirements are `tiktoken`, `openai`, and `langchain`.
 
-All requirements should be contained within the `setup.py` file. To run the package locally without building the wheel, simply run `pip install -r requirements.txt`.
+All requirements should be contained within the `setup.py` file.
+To run the package locally without building the wheel, simply run:
+
+```bash
+pip install poetry
+poetry install --with dev
+```
 
 ## 📖 Citation
 

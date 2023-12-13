@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
-from openai.openai_object import OpenAIObject
+from openai.resources import Completions
 from tenacity import (
     before_sleep_log,
     retry,
@@ -11,7 +11,7 @@ from tenacity import (
 )
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.types import ChatMessage
 
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for LLM.
 E.g. to use openai Please set the OPENAI_API_KEY environment variable or \
@@ -21,9 +21,14 @@ https://platform.openai.com/account/api-keys
 """
 INVALID_API_KEY_ERROR_MESSAGE = """Invalid LLM API key."""
 
+try:
+    from litellm.utils import Message
+except ModuleNotFoundError:
+    Message = Any
+
 logger = logging.getLogger(__name__)
 
-CompletionClientType = Type[OpenAIObject]
+CompletionClientType = Type[Completions]
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
@@ -103,7 +108,7 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         modelname = modelname.split(":")[0]
 
     try:
-        context_size = int(litellm.get_max_tokens(modelname)["max_tokens"])
+        context_size = int(litellm.get_max_tokens(modelname))
     except Exception:
         context_size = 2048  # by default assume models have at least 2048 tokens
 
@@ -168,6 +173,15 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     additional_kwargs.pop("content", None)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+
+
+def from_litellm_message(message: Message) -> ChatMessage:
+    """Convert litellm.utils.Message instance to generic message."""
+    role = message.get("role")
+    # NOTE: Azure OpenAI returns function calling messages without a content key
+    content = message.get("content", None)
+
+    return ChatMessage(role=role, content=content)
 
 
 def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage]:

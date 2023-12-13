@@ -35,6 +35,36 @@ DEFAULT_BATCH_SIZE = 100
 _logger = logging.getLogger(__name__)
 
 
+def _transform_pinecone_filter_condition(condition: str) -> str:
+    """Translate standard metadata filter op to Pinecone specific spec."""
+    if condition == "and":
+        return "$and"
+    elif condition == "or":
+        return "$or"
+    else:
+        raise ValueError(f"Filter condition {condition} not supported")
+
+
+def _transform_pinecone_filter_operator(operator: str) -> str:
+    """Translate standard metadata filter operator to Pinecone specific spec."""
+    if operator == "!=":
+        return "$ne"
+    elif operator == "==":
+        return "$eq"
+    elif operator == ">":
+        return "$gt"
+    elif operator == "<":
+        return "$lt"
+    elif operator == ">=":
+        return "$gte"
+    elif operator == "<=":
+        return "$lte"
+    elif operator == "in":
+        return "$in"
+    else:
+        raise ValueError(f"Filter operator {operator} not supported")
+
+
 def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
     """Build a list of sparse dictionaries from a batch of input_ids.
 
@@ -92,8 +122,29 @@ def get_default_tokenizer() -> Callable:
 def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     """Convert from standard dataclass to pinecone filter dict."""
     filters = {}
-    for filter in standard_filters.filters:
-        filters[filter.key] = filter.value
+    filters_list = []
+    condition = standard_filters.condition or "and"
+    condition = _transform_pinecone_filter_condition(condition)
+    if standard_filters.filters:
+        for filter in standard_filters.filters:
+            if filter.operator:
+                filters_list.append(
+                    {
+                        filter.key: {
+                            _transform_pinecone_filter_operator(
+                                filter.operator
+                            ): filter.value
+                        }
+                    }
+                )
+            else:
+                filters_list.append({filter.key: filter.value})
+
+    if len(filters_list) == 1:
+        # If there is only one filter, return it directly
+        return filters_list[0]
+    elif len(filters_list) > 1:
+        filters[condition] = filters_list
     return filters
 
 
@@ -130,6 +181,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     add_sparse_vector: bool
     text_key: str
     batch_size: int
+    remove_text_from_metadata: bool
 
     _pinecone_index: Any = PrivateAttr()
     _tokenizer: Optional[Callable] = PrivateAttr()
@@ -146,6 +198,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         tokenizer: Optional[Callable] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        remove_text_from_metadata: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -181,6 +234,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             add_sparse_vector=add_sparse_vector,
             text_key=text_key,
             batch_size=batch_size,
+            remove_text_from_metadata=remove_text_from_metadata,
         )
 
     @classmethod
@@ -195,6 +249,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         tokenizer: Optional[Callable] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        remove_text_from_metadata: bool = False,
         **kwargs: Any,
     ) -> "PineconeVectorStore":
         try:
@@ -216,6 +271,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             tokenizer=tokenizer,
             text_key=text_key,
             batch_size=batch_size,
+            remove_text_from_metadata=remove_text_from_metadata,
             **kwargs,
         )
 
@@ -226,6 +282,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 
@@ -239,7 +296,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
             node_id = node.node_id
 
             metadata = node_to_metadata_dict(
-                node, remove_text=False, flat_metadata=self.flat_metadata
+                node,
+                remove_text=self.remove_text_from_metadata,
+                flat_metadata=self.flat_metadata,
             )
 
             entry = {

@@ -5,7 +5,7 @@ from llama_index.finetuning.cross_encoders.dataset_gen import (
     CrossEncoderFinetuningDatasetSample,
 )
 from llama_index.finetuning.types import BaseCrossEncoderFinetuningEngine
-from llama_index.indices.postprocessor import SentenceTransformerRerank
+from llama_index.postprocessor import SentenceTransformerRerank
 
 
 class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
@@ -108,7 +108,7 @@ class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):
                 self.model.model.push_to_hub(repo_id=repo_id)
                 self.model.tokenizer.push_to_hub(repo_id=repo_id)
 
-            except ValueError as e:
+            except ValueError:
                 raise ValueError(
                     "HuggingFace CLI/Hub login not "
                     "completed provide token to login using"

@@ -1,5 +1,467 @@
 # ChangeLog
 
+## [0.9.14] - 2023-12-11
+
+### New Features
+
+- Add MistralAI LLM (#9444)
+- Add MistralAI Embeddings (#9441)
+- Add `Ollama` Embedding class (#9341)
+- Add `FlagEmbeddingReranker` for reranking (#9285)
+- feat: PgVectorStore support advanced metadata filtering (#9377)
+- Added `sql_only` parameter to SQL query engines to avoid executing SQL (#9422)
+
+### Bug Fixes / Nits
+
+- Feat/PgVector Support custom hnsw.ef_search and ivfflat.probes (#9420)
+- fix F1 score definition, update copyright year (#9424)
+- Change more than one image input for Replicate Multi-modal models from error to warning (#9360)
+- Removed GPT-Licensed `aiostream` dependency (#9403)
+- Fix result of BedrockEmbedding with Cohere model (#9396)
+- Only capture valid tool names in react agent (#9412)
+- Fixed `top_k` being multiplied by 10 in azure cosmos (#9438)
+- Fixed hybrid search for OpenSearch (#9430)
+
+### Breaking Changes
+
+- Updated the base `LLM` interface to match `LLMPredictor` (#9388)
+- Deprecated `LLMPredictor` (#9388)
+
+## [0.9.13] - 2023-12-06
+
+### New Features
+
+- Added batch prediction support for `LabelledRagDataset` (#9332)
+
+### Bug Fixes / Nits
+
+- Fixed save and load for faiss vector store (#9330)
+
+## [0.9.12] - 2023-12-05
+
+### New Features
+
+- Added an option `reuse_client` to openai/azure to help with async timeouts. Set to `False` to see improvements (#9301)
+- Added support for `vLLM` llm (#9257)
+- Add support for python 3.12 (#9304)
+- Support for `claude-2.1` model name (#9275)
+
+### Bug Fixes / Nits
+
+- Fix embedding format for bedrock cohere embeddings (#9265)
+- Use `delete_kwargs` for filtering in weaviate vector store (#9300)
+- Fixed automatic qdrant client construction (#9267)
+
+## [0.9.11] - 2023-12-03
+
+### New Features
+
+- Make `reference_contexts` optional in `LabelledRagDataset` (#9266)
+- Re-organize `download` module (#9253)
+- Added document management to ingestion pipeline (#9135)
+- Add docs for `LabelledRagDataset` (#9228)
+- Add submission template notebook and other doc updates for `LabelledRagDataset` (#9273)
+
+### Bug Fixes / Nits
+
+- Convert numpy to list for `InstructorEmbedding` (#9255)
+
+## [0.9.10] - 2023-11-30
+
+### New Features
+
+- Advanced Metadata filter for vector stores (#9216)
+- Amazon Bedrock Embeddings New models (#9222)
+- Added PromptLayer callback integration (#9190)
+- Reuse file ids for `OpenAIAssistant` (#9125)
+
+### Breaking Changes / Deprecations
+
+- Deprecate ExactMatchFilter (#9216)
+
+## [0.9.9] - 2023-11-29
+
+### New Features
+
+- Add new abstractions for `LlamaDataset`'s (#9165)
+- Add metadata filtering and MMR mode support for `AstraDBVectorStore` (#9193)
+- Allowing newest `scikit-learn` versions (#9213)
+
+### Breaking Changes / Deprecations
+
+- Added `LocalAI` demo and began deprecation cycle (#9151)
+- Deprecate `QueryResponseDataset` and `DatasetGenerator` of `evaluaton` module (#9165)
+
+### Bug Fixes / Nits
+
+- Fix bug in `download_utils.py` with pointing to wrong repo (#9215)
+- Use `azure_deployment` kwarg in `AzureOpenAILLM` (#9174)
+- Fix similarity score return for `AstraDBVectorStore` Integration (#9193)
+
+## [0.9.8] - 2023-11-26
+
+### New Features
+
+- Add `persist` and `persist_from_dir` methods to `ObjectIndex` that are able to support it (#9064)
+- Added async metadata extraction + pipeline support (#9121)
+- Added back support for start/end char idx in nodes (#9143)
+
+### Bug Fixes / Nits
+
+- Fix for some kwargs not being set properly in global service context (#9137)
+- Small fix for `memory.get()` when system/prefix messages are large (#9149)
+- Minor fixes for global service context (#9137)
+
+## [0.9.7] - 2023-11-24
+
+### New Features
+
+- Add support for `PGVectoRsStore` (#9087)
+- Enforcing `requests>=2.31` for security, while unpinning `urllib3` (#9108)
+
+### Bug Fixes / Nits
+
+- Increased default memory token limit for context chat engine (#9123)
+- Added system prompt to `CondensePlusContextChatEngine` that gets prepended to the `context_prompt` (#9123)
+- Fixed bug in `CondensePlusContextChatEngine` not using chat history properly (#9129)
+
+## [0.9.6] - 2023-11-22
+
+### New Features
+
+- Added `default_headers` argument to openai LLMs (#9090)
+- Added support for `download_llama_pack()` and LlamaPack integrations
+- Added support for `llamaindex-cli` command line tool
+
+### Bug Fixed / Nits
+
+- store normalize as bool for huggingface embedding (#9089)
+
+## [0.9.5] - 2023-11-21
+
+### Bug Fixes / Nits
+
+- Fixed bug with AzureOpenAI logic for inferring if stream chunk is a tool call (#9018)
+
+### New Features
+
+- `FastEmbed` embeddings provider (#9043)
+- More precise testing of `OpenAILike` (#9026)
+- Added callback manager to each retriever (#8871)
+- Ability to bypass `max_tokens` inference with `OpenAILike` (#9032)
+
+### Bug Fixes / Nits
+
+- Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)
+- Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
+- Restored `mypy` for Python 3.8 (#9031)
+- Loosened `dataclasses-json` version range,
+  and removes unnecessary `jinja2` extra from `pandas` (#9042)
+
+## [0.9.4] - 2023-11-19
+
+### New Features
+
+- Added `CondensePlusContextChatEngine` (#8949)
+
+### Smaller Features / Bug Fixes / Nits
+
+- Fixed bug with `OpenAIAgent` inserting errors into chat history (#9000)
+- Fixed various bugs with LiteLLM and the new OpenAI client (#9003)
+- Added context window attribute to perplexity llm (#9012)
+- Add `node_parser` attribute back to service context (#9013)
+- Refactor MM retriever classes (#8998)
+- Fix TextNode instantiation on SupabaseVectorIndexDemo (#8994)
+
+## [0.9.3] - 2023-11-17
+
+### New Features
+
+- Add perplexity LLM integration (#8734)
+
+### Bug Fixes / Nits
+
+- Fix token counting for new openai client (#8981)
+- Fix small pydantic bug in postgres vector db (#8962)
+- Fixed `chunk_overlap` and `doc_id` bugs in `HierarchicalNodeParser` (#8983)
+
+## [0.9.2] - 2023-11-16
+
+### New Features
+
+- Added new notebook guide for Multi-Modal Rag Evaluation (#8945)
+- Added `MultiModalRelevancyEvaluator`, and `MultiModalFaithfulnessEvaluator` (#8945)
+
+## [0.9.1] - 2023-11-15
+
+### New Features
+
+- Added Cohere Reranker fine-tuning (#8859)
+- Support for custom httpx client in `AzureOpenAI` LLM (#8920)
+
+### Bug Fixes / Nits
+
+- Fixed issue with `set_global_service_context` not propagating settings (#8940)
+- Fixed issue with building index with Google Palm embeddings (#8936)
+- Fixed small issue with parsing ImageDocuments/Nodes that have no text (#8938)
+- Fixed issue with large data inserts in Astra DB (#8937)
+- Optimize `QueryEngineTool` for agents (#8933)
+
+## [0.9.0] - 2023-11-15
+
+### New Features / Breaking Changes / Deprecations
+
+- New `IngestionPipeline` concept for ingesting and transforming data
+- Data ingestion and transforms are now automatically cached
+- Updated interface for node parsing/text splitting/metadata extraction modules
+- Changes to the default tokenizer, as well as customizing the tokenizer
+- Packaging/Installation changes with PyPi (reduced bloat, new install options)
+- More predictable and consistent import paths
+- Plus, in beta: MultiModal RAG Modules for handling text and images!
+- Find more details at: `https://medium.com/@llama_index/719f03282945`
+
+## [0.8.69.post1] - 2023-11-13
+
+### Bug Fixes / Nits
+
+- Increase max weaivate delete size to max of 10,000 (#8887)
+- Final pickling remnant fix (#8902)
+
+## [0.8.69] - 2023-11-13
+
+### Bug Fixes / Nits
+
+- Fixed bug in loading pickled objects (#8880)
+- Fix `custom_path` vs `custom_dir` in `download_loader` (#8865)
+
+## [0.8.68] - 2023-11-11
+
+### New Features
+
+- openai assistant agent + advanced retrieval cookbook (#8863)
+- add retrieval API benchmark (#8850)
+- Add JinaEmbedding class (#8704)
+
+### Bug Fixes / Nits
+
+- Improved default timeouts/retries for OpenAI (#8819)
+- Add back key validation for OpenAI (#8819)
+- Disable automatic LLM/Embedding model downloads, give informative error (#8819)
+- fix openai assistant tool creation + retrieval notebook (#8862)
+- Quick fix Replicate MultiModal example (#8861)
+- fix: paths treated as hidden (#8860)
+- fix Replicate multi-modal LLM + notebook (#8854)
+- Feature/citation metadata (#8722)
+- Fix ImageNode type from NodeWithScore for SimpleMultiModalQueryEngine (#8844)
+
+## [0.8.67] - 2023-11-10
+
+### New Features
+
+- Advanced Multi Modal Retrieval Example and docs (#8822, #8823)
+
+### Bug Fixes / Nits
+
+- Fix retriever node postprocessors for `CitationQueryEngine` (#8818)
+- Fix `cannot pickle 'builtins.CoreBPE' object` in most scenarios (#8835)
+
+## [0.8.66] - 2023-11-09
+
+### New Features
+
+- Support parallel function calling with new OpenAI client in `OpenAIPydanticProgram` (#8793)
+
+### Bug Fixes / Nits
+
+- Fix bug in pydantic programs with new OpenAI client (#8793)
+- Fixed bug with un-listable fsspec objects (#8795)
+
+## [0.8.65] - 2023-11-08
+
+### New Features
+
+- `OpenAIAgent` parallel function calling (#8738)
+
+### New Features
+
+- Properly supporting Hugging Face recommended model (#8784)
+
+### Bug Fixes / Nits
+
+- Fixed missing import for `embeddings.__all__` (#8779)
+
+### Breaking Changes / Deprecations
+
+- Use `tool_choice` over `function_call` and `tool` over `functions` in `OpenAI(LLM)` (#8738)
+- Deprecate `to_openai_function` in favor of `to_openai_tool` (#8738)
+
+## [0.8.64] - 2023-11-06
+
+### New Features
+
+- `OpenAIAgent` parallel function calling (#8738)
+- Add AI assistant agent (#8735)
+- OpenAI GPT4v Abstraction (#8719)
+- Add support for `Lantern` VectorStore (#8714)
+
+### Bug Fixes / Nits
+
+- Fix returning zero nodes in elastic search vector store (#8746)
+- Add try/except for `SimpleDirectoryReader` loop to avoid crashing on a single document (#8744)
+- Fix for `deployment_name` in async embeddings (#8748)
+
+## [0.8.63] - 2023-11-05
+
+### New Features
+
+- added native sync and async client support for the lasted `openai` client package (#8712)
+- added support for `AzureOpenAIEmbedding` (#8712)
+
+### Bug Fixes / Nits
+
+- Fixed errors about "no host supplied" with `download_loader` (#8723)
+
+### Breaking Changes
+
+- `OpenAIEmbedding` no longer supports azure, moved into the `AzureOpenAIEmbedding` class (#8712)
+
+## [0.8.62.post1] - 2023-11-05
+
+### Breaking Changes
+
+- add new devday models (#8713)
+- moved `max_docs` parameter from constructor to `lazy_load_data()` for `SimpleMongoReader` (#8686)
+
+## [0.8.61] - 2023-11-05
+
+### New Features
+
+- [experimental] Hyperparameter tuner (#8687)
+
+### Bug Fixes / Nits
+
+- Fix typo error in CohereAIModelName class: cohere light models was missing v3 (#8684)
+- Update deeplake.py (#8683)
+
+## [0.8.60] - 2023-11-04
+
+### New Features
+
+- prompt optimization guide (#8659)
+- VoyageEmbedding (#8634)
+- Multilingual support for `YoutubeTranscriptReader` (#8673)
+- emotion prompt guide (#8674)
+
+### Bug Fixes / Nits
+
+- Adds mistral 7b instruct v0.1 to available anyscale models (#8652)
+- Make pgvector's setup (extension, schema, and table creation) optional (#8656)
+- Allow init of stores_text variable for Pinecone vector store (#8633)
+- fix: azure ad support (#8667)
+- Fix nltk bug in multi-threaded environments (#8668)
+- Fix google colab link in cohereai notebook (#8677)
+- passing max_tokens to the `Cohere` llm (#8672)
+
+## [0.8.59] - 2023-11-02
+
+- Deepmemory support (#8625)
+- Add CohereAI embeddings (#8650)
+- Add Azure AD (Microsoft Entra ID) support (#8667)
+
+## [0.8.58] - 2023-11-02
+
+### New Features
+
+- Add `lm-format-enforcer` integration for structured output (#8601)
+- Google Vertex Support (#8626)
+
+## [0.8.57] - 2023-10-31
+
+### New Features
+
+- Add `VoyageAIEmbedding` integration (#8634)
+- Add fine-tuning evaluator notebooks (#8596)
+- Add `SingleStoreDB` integration (#7991)
+- Add support for ChromaDB PersistentClient (#8582)
+- Add DataStax Astra DB support (#8609)
+
+### Bug Fixes / Nits
+
+- Update dataType in Weaviate (#8608)
+- In Knowledge Graph Index with hybrid retriever_mode,
+  - return the nodes found by keyword search when 'No Relationship found'
+- Fix exceed context length error in chat engines (#8530)
+- Retrieve actual content of all the triplets from KG (#8579)
+- Return the nodes found by Keywords when no relationship is found by embeddings in hybrid retriever_mode in `KnowledgeGraphIndex` (#8575)
+- Optimize content of retriever tool and minor bug fix (#8588)
+
+## [0.8.56] - 2023-10-30
+
+### New Features
+
+- Add Amazon `BedrockEmbedding` (#8550)
+- Moves `HuggingFaceEmbedding` to center on `Pooling` enum for pooling (#8467)
+- Add IBM WatsonX LLM support (#8587)
+
+### Bug Fixes / Nits
+
+- [Bug] Patch Clarifai classes (#8529)
+- fix retries for bedrock llm (#8528)
+- Fix : VectorStore’s QueryResult always returns saved Node as TextNode (#8521)
+- Added default file_metadata to get basic metadata that many postprocessors use, for SimpleDirectoryReader (#8486)
+- Handle metadata with None values in chromadb (#8584)
+
+## [0.8.55] - 2023-10-29
+
+### New Features
+
+- allow prompts to take in functions with `function_mappings` (#8548)
+- add advanced prompt + "prompt engineering for RAG" notebook (#8555)
+- Leverage Replicate API for serving LLaVa modal (#8539)
+
+### Bug Fixes / Nits
+
+- Update pull request template with google colab support inclusion (#8525)
+
+## [0.8.54] - 2023-10-28
+
+### New Features
+
+- notebook showing how to fine-tune llama2 on structured outputs (#8540)
+  - added GradientAIFineTuningHandler
+  - added pydantic_program_mode to ServiceContext
+- Initialize MultiModal Retrieval using LlamaIndex (#8507)
+
+### Bug Fixes / Nits
+
+- Add missing import to `ChatEngine` usage pattern `.md` doc (#8518)
+- :bug: fixed async add (#8531)
+- fix: add the needed CondenseQuestionChatEngine import in the usage_pa… (#8518)
+- Add import LongLLMLinguaPostprocessor for LongLLMLingua.ipynb (#8519)
+
+## [0.8.53] - 2023-10-27
+
+### New Features
+
+- Docs refactor (#8500)
+  An overhaul of the docs organization. Major changes
+  - Added a big new "understanding" section
+  - Added a big new "optimizing" section
+  - Overhauled Getting Started content
+  - Categorized and moved module guides to a single section
+
+## [0.8.52] - 2023-10-26
+
+### New Features
+
+- Add longllmlingua (#8485)
+- Add google colab support for notebooks (#7560)
+
+### Bug Fixes / Nits
+
+- Adapt Cassandra VectorStore constructor DB connection through cassio.init (#8255)
+- Allow configuration of service context and storage context in managed index (#8487)
+
 ## [0.8.51.post1] - 2023-10-25
 
 ### New Features
@@ -7,7 +469,7 @@
 - Add Llava MultiModal QA examples for Tesla 10k RAG (#8271)
 - fix bug streaming on react chat agent not working as expected (#8459)
 
-## Bug Fixes / Nits
+### Bug Fixes / Nits
 
 - patch: add selected result to response metadata for router query engines, fix bug (#8483)
 - add Jina AI embeddings notebook + huggingface embedding fix (#8478)
@@ -66,7 +528,7 @@
 ### New Features
 
 - add response synthesis to text-to-SQL (#8196)
-- Added support for `LLMRailsEmbeddings` (#8169)
+- Added support for `LLMRailsEmbedding` (#8169)
 - Inferring MPS device with PyTorch (#8195)
 - Consolidated query/text prepending (#8189)
 
@@ -221,7 +683,7 @@
 - Updated `KeywordNodePostprocessor` to use spacy to support more languages (#7894)
 - `LocalAI` supporting global or per-query `/chat/completions` vs `/completions` (#7921)
 - Added notebook on using REBEL + Wikipedia filtering for knowledge graphs (#7919)
-- Added support for `ElasticsearchEmbeddings` (#7914)
+- Added support for `ElasticsearchEmbedding` (#7914)
 
 ## [0.8.37] - 2023-09-30
 

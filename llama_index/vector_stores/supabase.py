@@ -75,11 +75,11 @@ class SupabaseVectorStore(VectorStore):
     def _to_vecs_filters(self, filters: MetadataFilters) -> Any:
         """Convert llama filters to vecs filters. $eq is the only supported operator."""
         vecs_filter = {}
-        for f in filters.filters:
+        for f in filters.legacy_filters():
             vecs_filter[f.key] = {"$eq": f.value}
         return vecs_filter
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
 
         Args:
@@ -106,7 +106,7 @@ class SupabaseVectorStore(VectorStore):
 
         return ids
 
-    def get_by_id(self, doc_id: str) -> list:
+    def get_by_id(self, doc_id: str, **kwargs: Any) -> list:
         """Get row ids by doc id.
 
         Args:
@@ -119,6 +119,7 @@ class SupabaseVectorStore(VectorStore):
             filters=filters,
             include_value=False,
             include_metadata=False,
+            **kwargs,
         )
 
         # NOTE: list of row ids

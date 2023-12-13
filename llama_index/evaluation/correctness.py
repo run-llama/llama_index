@@ -1,8 +1,8 @@
 """Correctness evaluation."""
+import asyncio
 from typing import Any, Optional, Sequence, Union
 
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts import (
     BasePromptTemplate,
     ChatMessage,
@@ -10,7 +10,8 @@ from llama_index.prompts import (
     MessageRole,
     PromptTemplate,
 )
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
+from llama_index.service_context import ServiceContext
 
 DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.
@@ -113,16 +114,19 @@ class CorrectnessEvaluator(BaseEvaluator):
         response: Optional[str] = None,
         contexts: Optional[Sequence[str]] = None,
         reference: Optional[str] = None,
+        sleep_time_in_seconds: int = 0,
         **kwargs: Any,
     ) -> EvaluationResult:
         del kwargs  # Unused
         del contexts  # Unused
 
+        await asyncio.sleep(sleep_time_in_seconds)
+
         if query is None or response is None or reference is None:
             print(query, response, reference, flush=True)
             raise ValueError("query, response, and reference must be provided")
 
-        eval_response = await self._service_context.llm_predictor.apredict(
+        eval_response = await self._service_context.llm.apredict(
             prompt=self._eval_template,
             query=query,
             generated_answer=response,

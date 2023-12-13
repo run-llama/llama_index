@@ -23,7 +23,7 @@ def _to_bagel_filter(standard_filters: MetadataFilters) -> dict:
     Translate standard metadata filters to Bagel specific spec.
     """
     filters = {}
-    for filter in standard_filters.filters:
+    for filter in standard_filters.legacy_filters():
         filters[filter.key] = filter.value
     return filters
 
@@ -55,7 +55,7 @@ class BagelVectorStore(VectorStore):
 
         self._collection = collection
 
-    def add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """
         Add a list of nodes with embeddings to the vector store.
 

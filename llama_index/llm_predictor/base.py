@@ -3,28 +3,45 @@
 import logging
 from abc import ABC, abstractmethod
 from collections import ChainMap
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
+
+from typing_extensions import Self
 
 from llama_index.bridge.pydantic import BaseModel, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llm_predictor.utils import (
+from llama_index.llms.llm import (
+    LLM,
     astream_chat_response_to_tokens,
     astream_completion_response_to_tokens,
     stream_chat_response_to_tokens,
     stream_completion_response_to_tokens,
 )
-from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
+from llama_index.llms.types import (
+    ChatMessage,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseComponent
-from llama_index.types import TokenAsyncGen, TokenGen
+from llama_index.types import PydanticProgramMode, TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
 
 
 class BaseLLMPredictor(BaseComponent, ABC):
     """Base LLM Predictor."""
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().dict(**kwargs)
+        data["llm"] = self.llm.to_dict()
+        return data
+
+    def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().to_dict(**kwargs)
+        data["llm"] = self.llm.to_dict()
+        return data
 
     @property
     @abstractmethod
@@ -76,6 +93,8 @@ class LLMPredictor(BaseLLMPredictor):
 
     system_prompt: Optional[str]
     query_wrapper_prompt: Optional[BasePromptTemplate]
+    pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT
+
     _llm: LLM = PrivateAttr()
 
     def __init__(
@@ -84,6 +103,7 @@ class LLMPredictor(BaseLLMPredictor):
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         query_wrapper_prompt: Optional[BasePromptTemplate] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         """Initialize params."""
         self._llm = resolve_llm(llm)
@@ -92,8 +112,26 @@ class LLMPredictor(BaseLLMPredictor):
             self._llm.callback_manager = callback_manager
 
         super().__init__(
-            system_prompt=system_prompt, query_wrapper_prompt=query_wrapper_prompt
+            system_prompt=system_prompt,
+            query_wrapper_prompt=query_wrapper_prompt,
+            pydantic_program_mode=pydantic_program_mode,
         )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+        if isinstance(kwargs, dict):
+            data.update(kwargs)
+
+        data.pop("class_name", None)
+
+        llm = data.get("llm", "default")
+        if llm != "default":
+            from llama_index.llms.loading import load_llm
+
+            llm = load_llm(llm)
+
+        data["llm"] = llm
+        return cls(**data)
 
     @classmethod
     def class_name(cls) -> str:
@@ -141,7 +179,12 @@ class LLMPredictor(BaseLLMPredictor):
     ) -> str:
         from llama_index.program.utils import get_program_for_llm
 
-        program = get_program_for_llm(output_cls, prompt, self._llm)
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self._llm,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
 
         chat_response = program(**prompt_args)
         return chat_response.json()
@@ -154,7 +197,12 @@ class LLMPredictor(BaseLLMPredictor):
     ) -> str:
         from llama_index.program.utils import get_program_for_llm
 
-        program = get_program_for_llm(output_cls, prompt, self._llm)
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self._llm,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
 
         chat_response = await program.acall(**prompt_args)
         return chat_response.json()
@@ -283,3 +331,6 @@ class LLMPredictor(BaseLLMPredictor):
                 *messages,
             ]
         return messages
+
+
+LLMPredictorType = Union[LLMPredictor, LLM]

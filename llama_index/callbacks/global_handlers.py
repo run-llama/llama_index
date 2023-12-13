@@ -6,6 +6,7 @@ from llama_index.callbacks.arize_phoenix_callback import arize_phoenix_callback_
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.honeyhive_callback import honeyhive_callback_handler
 from llama_index.callbacks.open_inference_callback import OpenInferenceCallbackHandler
+from llama_index.callbacks.promptlayer_handler import PromptLayerHandler
 from llama_index.callbacks.simple_llm_handler import SimpleLLMHandler
 from llama_index.callbacks.wandb_callback import WandbCallbackHandler
 
@@ -27,6 +28,8 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         handler = arize_phoenix_callback_handler(**eval_params)
     elif eval_mode == "honeyhive":
         handler = honeyhive_callback_handler(**eval_params)
+    elif eval_mode == "promptlayer":
+        handler = PromptLayerHandler(**eval_params)
     elif eval_mode == "simple":
         handler = SimpleLLMHandler(**eval_params)
     else:

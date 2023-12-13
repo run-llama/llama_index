@@ -22,9 +22,9 @@ class ImageVisionLLMReader(BaseReader):
         """Init params."""
         if parser_config is None:
             try:
-                import sentencepiece
+                import sentencepiece  # noqa
                 import torch
-                from PIL import Image
+                from PIL import Image  # noqa
                 from transformers import Blip2ForConditionalGeneration, Blip2Processor
             except ImportError:
                 raise ImportError(
@@ -87,6 +87,7 @@ class ImageVisionLLMReader(BaseReader):
             ImageDocument(
                 text=text_str,
                 image=image_str,
+                image_path=str(file),
                 metadata=extra_info or {},
             )
         ]

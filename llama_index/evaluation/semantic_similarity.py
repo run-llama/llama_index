@@ -2,8 +2,8 @@ from typing import Any, Callable, Optional, Sequence
 
 from llama_index.embeddings.base import SimilarityMode, similarity
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.indices.service_context import ServiceContext
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
+from llama_index.service_context import ServiceContext
 
 
 class SemanticSimilarityEvaluator(BaseEvaluator):

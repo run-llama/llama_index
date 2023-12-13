@@ -1,22 +1,13 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import DEFAULT_TEMPERATURE
 from llama_index.llms.anthropic_utils import (
     anthropic_modelname_to_contextsize,
     messages_to_anthropic_prompt,
 )
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -26,19 +17,46 @@ from llama_index.llms.generic_utils import (
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
 )
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
+from llama_index.types import BaseOutputParser, PydanticProgramMode
+
+DEFAULT_ANTHROPIC_MODEL = "claude-2"
+DEFAULT_ANTHROPIC_MAX_TOKENS = 512
 
 
 class Anthropic(LLM):
-    model: str = Field(description="The anthropic model to use.")
-    temperature: float = Field(description="The temperature to use for sampling.")
-    max_tokens: int = Field(description="The maximum number of tokens to generate.")
+    model: str = Field(
+        default=DEFAULT_ANTHROPIC_MODEL, description="The anthropic model to use."
+    )
+    temperature: float = Field(
+        default=DEFAULT_TEMPERATURE,
+        description="The temperature to use for sampling.",
+        gte=0.0,
+        lte=1.0,
+    )
+    max_tokens: int = Field(
+        default=DEFAULT_ANTHROPIC_MAX_TOKENS,
+        description="The maximum number of tokens to generate.",
+        gt=0,
+    )
 
     base_url: Optional[str] = Field(default=None, description="The base URL to use.")
     timeout: Optional[float] = Field(
-        default=None, description="The timeout to use in seconds."
+        default=None, description="The timeout to use in seconds.", gte=0
     )
     max_retries: int = Field(
-        default=10, description="The maximum number of API retries."
+        default=10, description="The maximum number of API retries.", gte=0
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the anthropic API."
@@ -49,15 +67,20 @@ class Anthropic(LLM):
 
     def __init__(
         self,
-        model: str = "claude-2",
-        temperature: float = 0.1,
-        max_tokens: int = 512,
+        model: str = DEFAULT_ANTHROPIC_MODEL,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: int = DEFAULT_ANTHROPIC_MAX_TOKENS,
         base_url: Optional[str] = None,
         timeout: Optional[float] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         try:
             import anthropic
@@ -86,6 +109,11 @@ class Anthropic(LLM):
             max_retries=max_retries,
             model=model,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod

@@ -1,16 +1,16 @@
 from typing import List, Optional, Sequence, cast
 
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.question_gen.prompts import build_tools_text
 from llama_index.question_gen.types import (
     BaseQuestionGenerator,
     SubQuestion,
     SubQuestionList,
 )
+from llama_index.schema import QueryBundle
 from llama_index.tools.types import ToolMetadata
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
@@ -84,8 +84,9 @@ class OpenAIQuestionGenerator(BaseQuestionGenerator):
     ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
-        question_list = self._program(query_str=query_str, tools_str=tools_str)
-        question_list = cast(SubQuestionList, question_list)
+        question_list = cast(
+            SubQuestionList, self._program(query_str=query_str, tools_str=tools_str)
+        )
         return question_list.items
 
     async def agenerate(
@@ -93,8 +94,9 @@ class OpenAIQuestionGenerator(BaseQuestionGenerator):
     ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
-        question_list = await self._program.acall(
-            query_str=query_str, tools_str=tools_str
+        question_list = cast(
+            SubQuestionList,
+            await self._program.acall(query_str=query_str, tools_str=tools_str),
         )
-        question_list = cast(SubQuestionList, question_list)
+        assert isinstance(question_list, SubQuestionList)
         return question_list.items

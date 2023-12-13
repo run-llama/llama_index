@@ -49,7 +49,6 @@ You can more about the [DeepEval Framework](https://docs.confident-ai.com/docs/f
 DeepEval integrates nicely with LlamaIndex's `BaseEvaluator` class. Below is an example of the factual consistency documentation.
 
 ```python
-
 from llama_index.response.schema import Response
 from typing import List
 from llama_index.schema import Document
@@ -59,7 +58,6 @@ from llama_index import (
     TreeIndex,
     VectorStoreIndex,
     SimpleDirectoryReader,
-    LLMPredictor,
     ServiceContext,
     Response,
 )
@@ -84,7 +82,7 @@ from llama_index import download_loader
 WikipediaReader = download_loader("WikipediaReader")
 
 loader = WikipediaReader()
-documents = loader.load_data(pages=['Tokyo'])
+documents = loader.load_data(pages=["Tokyo"])
 tree_index = TreeIndex.from_documents(documents=documents)
 vector_index = VectorStoreIndex.from_documents(
     documents, service_context=service_context_gpt4

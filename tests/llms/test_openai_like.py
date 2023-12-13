@@ -1,92 +1,141 @@
 from typing import List
-from unittest.mock import patch
+from unittest.mock import MagicMock, call, patch
 
-from llama_index.llms import OpenAILike
-from llama_index.llms.base import ChatMessage
+from llama_index.llms import LOCALAI_DEFAULTS, OpenAILike
+from llama_index.llms.openai import Tokenizer
+from llama_index.llms.types import ChatMessage, MessageRole
+from openai.types import Completion, CompletionChoice
+from openai.types.chat.chat_completion import ChatCompletion, Choice
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
 
-class MockTokenizer:
-    def encode(self, text: str) -> List[str]:
-        return text.split(" ")
+class StubTokenizer(Tokenizer):
+    def encode(self, text: str) -> List[int]:
+        return [sum(ord(letter) for letter in word) for word in text.split(" ")]
+
+
+STUB_MODEL_NAME = "models/stub.gguf"
+STUB_API_KEY = "stub_key"
 
 
 def test_interfaces() -> None:
-    llm = OpenAILike(model="placeholder")
+    llm = OpenAILike(model=STUB_MODEL_NAME, api_key=STUB_API_KEY)
     assert llm.class_name() == type(llm).__name__
-    assert llm.model == "placeholder"
+    assert llm.model == STUB_MODEL_NAME
 
 
-def test_completion() -> None:
+def mock_chat_completion(text: str) -> ChatCompletion:
+    return ChatCompletion(
+        id="chatcmpl-abc123",
+        object="chat.completion",
+        created=1677858242,
+        model=STUB_MODEL_NAME,
+        usage={"prompt_tokens": 13, "completion_tokens": 7, "total_tokens": 20},
+        choices=[
+            Choice(
+                message=ChatCompletionMessage(role="assistant", content=text),
+                finish_reason="stop",
+                index=0,
+            )
+        ],
+    )
+
+
+def mock_completion(text: str) -> Completion:
+    return Completion(
+        id="cmpl-abc123",
+        object="text_completion",
+        created=1677858242,
+        model=STUB_MODEL_NAME,
+        usage={"prompt_tokens": 13, "completion_tokens": 7, "total_tokens": 20},
+        choices=[
+            CompletionChoice(
+                text=text,
+                finish_reason="stop",
+                index=0,
+            )
+        ],
+    )
+
+
+@patch("llama_index.llms.openai.SyncOpenAI")
+def test_completion(MockSyncOpenAI: MagicMock) -> None:
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.completions.create.side_effect = [
+        mock_completion("1"),
+        mock_completion("2"),
+    ]
+
     llm = OpenAILike(
-        model="placeholder",
-        is_chat_model=False,
+        **LOCALAI_DEFAULTS, model=STUB_MODEL_NAME, context_window=1024, max_tokens=None
+    )
+    response = llm.complete("A long time ago in a galaxy far, far away")
+    expected_calls = [
+        # NOTE: has no max_tokens or tokenizer, so won't infer max_tokens
+        call(
+            prompt="A long time ago in a galaxy far, far away",
+            stream=False,
+            model=STUB_MODEL_NAME,
+            temperature=0.1,
+        )
+    ]
+    assert response.text == "1"
+    mock_instance.completions.create.assert_has_calls(expected_calls)
+
+    llm = OpenAILike(
+        model=STUB_MODEL_NAME,
         context_window=1024,
-        tokenizer=MockTokenizer(),
+        tokenizer=StubTokenizer(),
     )
-
-    text = "...\n\nIt was just another day at the office. The sun had ris"
-    with patch(
-        "llama_index.llms.openai.completion_with_retry",
-        return_value={
-            "id": "123",
-            "object": "text_completion",
-            "created": 1696036786,
-            "model": "models/placeholder.gguf",
-            "choices": [
-                {
-                    "text": text,
-                    "index": 0,
-                    "logprobs": None,
-                    "finish_reason": "length",
-                }
-            ],
-            "usage": {"prompt_tokens": 13, "completion_tokens": 16, "total_tokens": 29},
-        },
-    ) as mock_completion:
-        response = llm.complete("A long time ago in a galaxy far, far away")
-    assert response.text == text
-    mock_completion.assert_called_once()
+    response = llm.complete("A long time ago in a galaxy far, far away")
+    expected_calls += [
+        # NOTE: has tokenizer, so will infer max_tokens
+        call(
+            prompt="A long time ago in a galaxy far, far away",
+            stream=False,
+            model=STUB_MODEL_NAME,
+            temperature=0.1,
+            max_tokens=1014,
+        )
+    ]
+    assert response.text == "2"
+    mock_instance.completions.create.assert_has_calls(expected_calls)
 
 
-def test_chat() -> None:
-    llm = OpenAILike(
-        model="models/placeholder", is_chat_model=True, tokenizer=MockTokenizer()
-    )
+@patch("llama_index.llms.openai.SyncOpenAI")
+def test_chat(MockSyncOpenAI: MagicMock) -> None:
     content = "placeholder"
-    with patch(
-        "llama_index.llms.openai.completion_with_retry",
-        return_value={
-            "id": "123",
-            "object": "chat.completion",
-            "created": 1696283017,
-            "model": "models/placeholder.gguf",
-            "choices": [
-                {
-                    "index": 0,
-                    "message": {
-                        "role": "assistant",
-                        "content": content,
-                    },
-                    "finish_reason": "length",
-                }
-            ],
-            "usage": {"prompt_tokens": 5, "completion_tokens": 16, "total_tokens": 21},
-        },
-    ) as mock_chat:
-        response = llm.chat([ChatMessage(role="user", content="test message")])
+
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_chat_completion(content)
+
+    llm = OpenAILike(
+        model=STUB_MODEL_NAME, is_chat_model=True, tokenizer=StubTokenizer()
+    )
+
+    response = llm.chat([ChatMessage(role=MessageRole.USER, content="test message")])
     assert response.message.content == content
-    mock_chat.assert_called_once()
+    mock_instance.chat.completions.create.assert_called_once_with(
+        messages=[{"role": MessageRole.USER, "content": "test message"}],
+        stream=False,
+        model=STUB_MODEL_NAME,
+        temperature=0.1,
+    )
 
 
 def test_serialization() -> None:
     llm = OpenAILike(
-        model="placeholder",
+        model=STUB_MODEL_NAME,
         is_chat_model=True,
-        context_window=42,
-        tokenizer=MockTokenizer(),
+        max_tokens=42,
+        context_window=43,
+        tokenizer=StubTokenizer(),
     )
 
     serialized = llm.to_dict()
-
+    # Check OpenAI base class specifics
+    assert "api_key" not in serialized
+    assert serialized["max_tokens"] == 42
+    # Check OpenAILike subclass specifics
+    assert serialized["context_window"] == 43
     assert serialized["is_chat_model"]
-    assert serialized["context_window"] == 42

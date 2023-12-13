@@ -1,4 +1,4 @@
-from llama_index.indices.query.base import BaseQueryEngine
+from llama_index.core import BaseQueryEngine
 
 # SQL
 from llama_index.indices.struct_store.sql_query import (
@@ -7,12 +7,14 @@ from llama_index.indices.struct_store.sql_query import (
     SQLTableRetrieverQueryEngine,
 )
 from llama_index.query_engine.citation_query_engine import CitationQueryEngine
+from llama_index.query_engine.cogniswitch_query_engine import CogniswitchQueryEngine
 from llama_index.query_engine.custom import CustomQueryEngine
 from llama_index.query_engine.flare.base import FLAREInstructQueryEngine
 from llama_index.query_engine.graph_query_engine import ComposableGraphQueryEngine
 from llama_index.query_engine.knowledge_graph_query_engine import (
     KnowledgeGraphQueryEngine,
 )
+from llama_index.query_engine.multi_modal import SimpleMultiModalQueryEngine
 from llama_index.query_engine.multistep_query_engine import MultiStepQueryEngine
 from llama_index.query_engine.pandas_query_engine import PandasQueryEngine
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
@@ -36,6 +38,7 @@ from llama_index.query_engine.transform_query_engine import TransformQueryEngine
 
 __all__ = [
     "CitationQueryEngine",
+    "CogniswitchQueryEngine",
     "ComposableGraphQueryEngine",
     "RetrieverQueryEngine",
     "TransformQueryEngine",
@@ -55,7 +58,10 @@ __all__ = [
     "KnowledgeGraphQueryEngine",
     "BaseQueryEngine",
     "CustomQueryEngine",
+    # multimodal
+    "SimpleMultiModalQueryEngine",
     # SQL
     "SQLTableRetrieverQueryEngine",
-    "NLSQLTableQueryEngine" "PGVectorSQLQueryEngine",
+    "NLSQLTableQueryEngine",
+    "PGVectorSQLQueryEngine",
 ]

@@ -8,10 +8,10 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.data_structs import IndexGraph
-from llama_index.indices.service_context import ServiceContext
 from llama_index.indices.utils import get_sorted_node_list, truncate_text
 from llama_index.prompts import BasePromptTemplate
 from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.utils import get_tqdm_iterable
@@ -149,7 +149,7 @@ class GPTTreeIndexBuilder:
         ) as event:
             if self._use_async:
                 tasks = [
-                    self._service_context.llm_predictor.apredict(
+                    self._service_context.llm.apredict(
                         self.summary_prompt, context_str=text_chunk
                     )
                     for text_chunk in text_chunks
@@ -167,7 +167,7 @@ class GPTTreeIndexBuilder:
                     desc="Generating summaries",
                 )
                 summaries = [
-                    self._service_context.llm_predictor.predict(
+                    self._service_context.llm.predict(
                         self.summary_prompt, context_str=text_chunk
                     )
                     for text_chunk in text_chunks_progress
@@ -217,7 +217,7 @@ class GPTTreeIndexBuilder:
                 desc="Generating summaries",
             )
             tasks = [
-                self._service_context.llm_predictor.apredict(
+                self._service_context.llm.apredict(
                     self.summary_prompt, context_str=text_chunk
                 )
                 for text_chunk in text_chunks_progress

@@ -122,6 +122,7 @@ class CassandraVectorStore(VectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 
@@ -193,7 +194,9 @@ class CassandraVectorStore(VectorStore):
 
     @staticmethod
     def _query_filters_to_dict(query_filters: MetadataFilters) -> Dict[str, Any]:
-        if any(not isinstance(f, ExactMatchFilter) for f in query_filters.filters):
+        if any(
+            not isinstance(f, ExactMatchFilter) for f in query_filters.legacy_filters()
+        ):
             raise NotImplementedError("Only `ExactMatchFilter` filters are supported")
         return {f.key: f.value for f in query_filters.filters}
 

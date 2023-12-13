@@ -5,8 +5,6 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
 from llama_index.program.predefined.evaporate.prompts import (
     DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
     DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
@@ -15,7 +13,8 @@ from llama_index.program.predefined.evaporate.prompts import (
     FnGeneratePrompt,
     SchemaIDPrompt,
 )
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 
 
 class TimeoutException(Exception):
@@ -131,8 +130,8 @@ class EvaporateExtractor:
         """
         field2count: dict = defaultdict(int)
         for node in nodes:
-            llm_predictor = self._service_context.llm_predictor
-            result = llm_predictor.predict(
+            llm = self._service_context.llm
+            result = llm.predict(
                 self._schema_id_prompt,
                 topic=topic,
                 chunk=node.get_content(metadata_mode=MetadataMode.LLM),
@@ -231,7 +230,7 @@ class EvaporateExtractor:
                 with time_limit(1):
                     exec(fn_str, globals())
                     exec(f"result = get_{function_field}_field(node_text)", globals())
-            except TimeoutException as e:
+            except TimeoutException:
                 raise
             results.append(result)  # type: ignore[name-defined]
         return results

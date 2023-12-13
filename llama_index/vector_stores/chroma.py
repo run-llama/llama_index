@@ -21,11 +21,62 @@ from llama_index.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
-def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
+def _transform_chroma_filter_condition(condition: str) -> str:
+    """Translate standard metadata filter op to Chroma specific spec."""
+    if condition == "and":
+        return "$and"
+    elif condition == "or":
+        return "$or"
+    else:
+        raise ValueError(f"Filter condition {condition} not supported")
+
+
+def _transform_chroma_filter_operator(operator: str) -> str:
+    """Translate standard metadata filter operator to Chroma specific spec."""
+    if operator == "!=":
+        return "$ne"
+    elif operator == "==":
+        return "$eq"
+    elif operator == ">":
+        return "$gt"
+    elif operator == "<":
+        return "$lt"
+    elif operator == ">=":
+        return "$gte"
+    elif operator == "<=":
+        return "$lte"
+    else:
+        raise ValueError(f"Filter operator {operator} not supported")
+
+
+def _to_chroma_filter(
+    standard_filters: MetadataFilters,
+) -> dict:
     """Translate standard metadata filters to Chroma specific spec."""
     filters = {}
-    for filter in standard_filters.filters:
-        filters[filter.key] = filter.value
+    filters_list = []
+    condition = standard_filters.condition or "and"
+    condition = _transform_chroma_filter_condition(condition)
+    if standard_filters.filters:
+        for filter in standard_filters.filters:
+            if filter.operator:
+                filters_list.append(
+                    {
+                        filter.key: {
+                            _transform_chroma_filter_operator(
+                                filter.operator
+                            ): filter.value
+                        }
+                    }
+                )
+            else:
+                filters_list.append({filter.key: filter.value})
+
+    if len(filters_list) == 1:
+        # If there is only one filter, return it directly
+        return filters_list[0]
+    elif len(filters_list) > 1:
+        filters[condition] = filters_list
     return filters
 
 
@@ -67,21 +118,25 @@ class ChromaVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    collection_name: Optional[str]
     host: Optional[str]
     port: Optional[str]
     ssl: bool
     headers: Optional[Dict[str, str]]
+    persist_dir: Optional[str]
     collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     _collection: Any = PrivateAttr()
 
     def __init__(
         self,
-        chroma_collection: Any,
+        chroma_collection: Optional[Any] = None,
+        collection_name: Optional[str] = None,
         host: Optional[str] = None,
         port: Optional[str] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
+        persist_dir: Optional[str] = None,
         collection_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
@@ -92,13 +147,21 @@ class ChromaVectorStore(BasePydanticVectorStore):
             raise ImportError(import_err_msg)
         from chromadb.api.models.Collection import Collection
 
-        self._collection = cast(Collection, chroma_collection)
+        if chroma_collection is None:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            self._collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            self._collection = cast(Collection, chroma_collection)
 
         super().__init__(
             host=host,
             port=port,
             ssl=ssl,
             headers=headers,
+            collection_name=collection_name,
+            persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
         )
 
@@ -110,25 +173,35 @@ class ChromaVectorStore(BasePydanticVectorStore):
         port: Optional[str] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
-        collection_kwargs: Optional[dict] = None,
+        persist_dir: Optional[str] = None,
+        collection_kwargs: Optional[dict] = {},
         **kwargs: Any,
     ) -> "ChromaVectorStore":
         try:
             import chromadb
         except ImportError:
             raise ImportError(import_err_msg)
-
-        client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
-        collection = client.get_or_create_collection(
-            name=collection_name, **collection_kwargs
-        )
-
+        if persist_dir:
+            client = chromadb.PersistentClient(path=persist_dir)
+            collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        elif host and port:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            raise ValueError(
+                "Either `persist_dir` or (`host`,`port`) must be specified"
+            )
         return cls(
             chroma_collection=collection,
             host=host,
             port=port,
             ssl=ssl,
             headers=headers,
+            persist_dir=persist_dir,
             collection_kwargs=collection_kwargs,
             **kwargs,
         )
@@ -137,7 +210,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "ChromaVectorStore"
 
-    def add(self, nodes: List[BaseNode]) -> List[str]:
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
 
         Args:
@@ -158,11 +231,12 @@ class ChromaVectorStore(BasePydanticVectorStore):
             documents = []
             for node in node_chunk:
                 embeddings.append(node.get_embedding())
-                metadatas.append(
-                    node_to_metadata_dict(
-                        node, remove_text=True, flat_metadata=self.flat_metadata
-                    )
+                metadata_dict = node_to_metadata_dict(
+                    node, remove_text=True, flat_metadata=self.flat_metadata
                 )
+                if "context" in metadata_dict and metadata_dict["context"] is None:
+                    metadata_dict["context"] = ""
+                metadatas.append(metadata_dict)
                 ids.append(node.node_id)
                 documents.append(node.get_content(metadata_mode=MetadataMode.NONE))
 
