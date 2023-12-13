@@ -90,7 +90,7 @@ class NvidiaTriton(LLM):
         description="True if a Triton load model API call should be made before using the client",
     )
 
-    _client: Optional[Any] = PrivateAttr()
+    _client: Optional[GrpcTritonClient] = PrivateAttr()
 
     def __init__(
         self,
