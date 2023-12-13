@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, cast
 
 from llama_index.agent.types import BaseAgent
 from llama_index.agent.v1.schema import (
@@ -54,6 +54,9 @@ class AgentEngine(BaseModel, BaseAgent):
         default_factory=dict, description="Initial task state kwargs."
     )
 
+    class Config:
+        arbitrary_types_allowed = True
+
     def __init__(
         self,
         step_executor: BaseAgentStepEngine,
@@ -78,7 +81,14 @@ class AgentEngine(BaseModel, BaseAgent):
             init_task_state_kwargs=init_task_state_kwargs,
         )
 
-    def create_task(self, input: str, **kwargs) -> Task:
+    @property
+    def chat_history(self) -> List[ChatMessage]:
+        return self.memory.get_all()
+
+    def reset(self) -> None:
+        self.memory.reset()
+
+    def create_task(self, input: str, **kwargs: Any) -> Task:
         """Create task."""
         task = Task(
             input=input,
@@ -175,7 +185,10 @@ class AgentEngine(BaseModel, BaseAgent):
             if cur_step_output.is_last:
                 result_output = cur_step_output
                 break
-        return Response(response=str(result_output))
+        if result_output is None:
+            raise ValueError("result_output is None")
+        else:
+            return cast(AGENT_CHAT_RESPONSE_TYPE, cur_step_output.output)
 
     async def _achat(
         self,
@@ -195,7 +208,10 @@ class AgentEngine(BaseModel, BaseAgent):
             if cur_step_output.is_last:
                 result_output = cur_step_output
                 break
-        return Response(response=str(result_output))
+        if result_output is None:
+            raise ValueError("result_output is None")
+        else:
+            return cast(AGENT_CHAT_RESPONSE_TYPE, cur_step_output.output)
 
     @trace_method("chat")
     def chat(

@@ -412,21 +412,23 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
             return False
         return True
 
-    def get_tools(self, task_step: TaskStep) -> List[BaseTool]:
+    def get_tools(self, input: str) -> List[BaseTool]:
         """Get tools."""
-        return self._get_tools(task_step.input)
+        return self._get_tools(input)
 
     def _run_step(
-        self, step: TaskStep, task: Task, mode: ChatResponseMode = ChatResponseMode.WAIT
+        self,
+        step: TaskStep,
+        task: Task,
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
+        tool_choice: Union[str, dict] = "auto",
     ) -> TaskStepOutput:
         """Run step."""
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
-        llm_chat_kwargs = self._get_llm_chat_kwargs(
-            step, openai_tools, current_tool_choice
-        )
+        llm_chat_kwargs = self._get_llm_chat_kwargs(step, openai_tools, tool_choice)
         agent_chat_response = self._get_agent_response(
             step, mode=mode, **llm_chat_kwargs
         )
@@ -452,8 +454,8 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
                 )
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
-                if current_tool_choice not in ("auto", "none"):
-                    current_tool_choice = "auto"
+                if tool_choice not in ("auto", "none"):
+                    tool_choice = "auto"
                 step.step_state["n_function_calls"] += 1
 
         # generate next step, append to task queue
@@ -478,16 +480,18 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         )
 
     async def _arun_step(
-        self, step: TaskStep, task: Task, mode: ChatResponseMode = ChatResponseMode.WAIT
+        self,
+        step: TaskStep,
+        task: Task,
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
+        tool_choice: Union[str, dict] = "auto",
     ) -> TaskStepOutput:
         """Run step."""
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
-        llm_chat_kwargs = self._get_llm_chat_kwargs(
-            step, openai_tools, current_tool_choice
-        )
+        llm_chat_kwargs = self._get_llm_chat_kwargs(step, openai_tools, tool_choice)
         agent_chat_response = await self._get_async_agent_response(
             step, mode=mode, **llm_chat_kwargs
         )
@@ -513,8 +517,8 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
                 )
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
-                if current_tool_choice not in ("auto", "none"):
-                    current_tool_choice = "auto"
+                if tool_choice not in ("auto", "none"):
+                    tool_choice = "auto"
                 step.step_state["n_function_calls"] += 1
 
         # generate next step, append to task queue
@@ -540,13 +544,19 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
 
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
-        return self._run_step(step, task, mode=ChatResponseMode.WAIT)
+        tool_choice = kwargs.get("tool_choice", "auto")
+        return self._run_step(
+            step, task, mode=ChatResponseMode.WAIT, tool_choice=tool_choice
+        )
 
     async def arun_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
-        return await self._arun_step(step, task, mode=ChatResponseMode.WAIT)
+        tool_choice = kwargs.get("tool_choice", "auto")
+        return await self._arun_step(
+            step, task, mode=ChatResponseMode.WAIT, tool_choice=tool_choice
+        )
 
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""

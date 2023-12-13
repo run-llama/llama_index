@@ -18,7 +18,7 @@ class TaskStep(BaseModel):
 
     """
 
-    task_id: str = Field(..., description="Task ID")
+    task_id: str = Field(..., diescription="Task ID")
     step_id: str = Field(..., description="Step ID")
     input: str = Field(..., description="User input")
     memory: BaseMemory = Field(
@@ -50,7 +50,7 @@ class Task(BaseModel):
     """
 
     task_id: str = Field(
-        default_factory=str(uuid.uuid4()), type=str, description="Task ID"
+        default_factory=lambda: str(uuid.uuid4()), type=str, description="Task ID"
     )
     input: str = Field(..., type=str, description="User input")
 
@@ -66,7 +66,7 @@ class Task(BaseModel):
         default_factory=list, description="Completed step outputs."
     )
     extra_state: Dict[str, Any] = Field(
-        default_factory=dict, description="Additonal state for task."
+        default_factory=dict, description="Additional state for task."
     )
 
 
@@ -92,6 +92,9 @@ class AgentState(BaseModel):
 
 class BaseAgentStepEngine(ABC):
     """Base agent step engine."""
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @abstractmethod
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
