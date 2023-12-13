@@ -4,14 +4,22 @@ import queue
 import random
 import time
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
-import google.protobuf.json_format
+if TYPE_CHECKING:
+    import tritonclient.grpc as grpcclient
+    import tritonclient.http as httpclient
+
 import numpy as np
-import tritonclient.grpc as grpcclient
-import tritonclient.http as httpclient
-from tritonclient.grpc.service_pb2 import ModelInferResponse
-from tritonclient.utils import InferenceServerException, np_to_triton_dtype
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -174,7 +182,7 @@ class NvidiaTriton(LLM):
         }
 
     def _get_client(self) -> Any:
-        """Create or reuse a Triton client connection"""
+        """Create or reuse a Triton client connection."""
         if not self.reuse_client:
             return GrpcTritonClient(self.server_url)
 
@@ -184,12 +192,14 @@ class NvidiaTriton(LLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        """Gather and return metadata about the user Triton configured LLM model"""
+        """Gather and return metadata about the user Triton configured LLM model."""
         return LLMMetadata(
             model_name=self.model_name,
         )
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        from tritonclient.utils import InferenceServerException
+
         client = self._get_client()
 
         invocation_params = self._get_model_default_parameters
@@ -321,7 +331,8 @@ class _BaseTritonClient(abc.ABC):
     def _inference_server_client(
         self,
     ) -> Union[
-        Type[grpcclient.InferenceServerClient], Type[httpclient.InferenceServerClient]
+        Type["grpcclient.InferenceServerClient"],
+        Type["httpclient.InferenceServerClient"],
     ]:
         """Return the preferred InferenceServerClient class."""
 
@@ -329,7 +340,7 @@ class _BaseTritonClient(abc.ABC):
     @abc.abstractmethod
     def _infer_input(
         self,
-    ) -> Union[Type[grpcclient.InferInput], Type[httpclient.InferInput]]:
+    ) -> Union[Type["grpcclient.InferInput"], Type["httpclient.InferInput"]]:
         """Return the preferred InferInput."""
 
     @property
@@ -337,7 +348,7 @@ class _BaseTritonClient(abc.ABC):
     def _infer_output(
         self,
     ) -> Union[
-        Type[grpcclient.InferRequestedOutput], Type[httpclient.InferRequestedOutput]
+        Type["grpcclient.InferRequestedOutput"], Type["httpclient.InferRequestedOutput"]
     ]:
         """Return the preferred InferRequestedOutput."""
 
@@ -370,7 +381,7 @@ class _BaseTritonClient(abc.ABC):
 
     def _generate_stop_signals(
         self,
-    ) -> List[Union[grpcclient.InferInput, httpclient.InferInput]]:
+    ) -> List[Union["grpcclient.InferInput", "httpclient.InferInput"]]:
         """Generate the signal to stop the stream."""
         inputs = [
             self._infer_input("input_ids", [1, 1], "INT32"),
@@ -386,14 +397,18 @@ class _BaseTritonClient(abc.ABC):
 
     def _generate_outputs(
         self,
-    ) -> List[Union[grpcclient.InferRequestedOutput, httpclient.InferRequestedOutput]]:
+    ) -> List[
+        Union["grpcclient.InferRequestedOutput", "httpclient.InferRequestedOutput"]
+    ]:
         """Generate the expected output structure."""
         return [self._infer_output("text_output")]
 
     def _prepare_tensor(
         self, name: str, input_data: Any
-    ) -> Union[grpcclient.InferInput, httpclient.InferInput]:
+    ) -> Union["grpcclient.InferInput", "httpclient.InferInput"]:
         """Prepare an input data structure."""
+        from tritonclient.utils import np_to_triton_dtype
+
         t = self._infer_input(
             name, input_data.shape, np_to_triton_dtype(input_data.dtype)
         )
@@ -411,7 +426,7 @@ class _BaseTritonClient(abc.ABC):
         repetition_penalty: float = 1,
         length_penalty: float = 1.0,
         stream: bool = True,
-    ) -> List[Union[grpcclient.InferInput, httpclient.InferInput]]:
+    ) -> List[Union["grpcclient.InferInput", "httpclient.InferInput"]]:
         """Create the input for the triton inference server."""
         query = np.array(prompt).astype(object)
         request_output_len = np.array([tokens]).astype(np.uint32).reshape((1, -1))
@@ -456,20 +471,26 @@ class GrpcTritonClient(_BaseTritonClient):
     @property
     def _inference_server_client(
         self,
-    ) -> Type[grpcclient.InferenceServerClient]:
+    ) -> Type["grpcclient.InferenceServerClient"]:
         """Return the preferred InferenceServerClient class."""
+        import tritonclient.grpc as grpcclient
+
         return grpcclient.InferenceServerClient  # type: ignore
 
     @property
-    def _infer_input(self) -> Type[grpcclient.InferInput]:
+    def _infer_input(self) -> Type["grpcclient.InferInput"]:
         """Return the preferred InferInput."""
+        import tritonclient.grpc as grpcclient
+
         return grpcclient.InferInput  # type: ignore
 
     @property
     def _infer_output(
         self,
-    ) -> Type[grpcclient.InferRequestedOutput]:
+    ) -> Type["grpcclient.InferRequestedOutput"]:
         """Return the preferred InferRequestedOutput."""
+        import tritonclient.grpc as grpcclient
+
         return grpcclient.InferRequestedOutput  # type: ignore
 
     def _send_stop_signals(self, model_name: str, request_id: str) -> None:
@@ -485,6 +506,10 @@ class GrpcTritonClient(_BaseTritonClient):
     @staticmethod
     def _process_result(result: Dict[str, str]) -> str:
         """Post-process the result from the server."""
+        import google.protobuf.json_format
+        import tritonclient.grpc as grpcclient
+        from tritonclient.grpc.service_pb2 import ModelInferResponse
+
         message = ModelInferResponse()
         generated_text: str = ""
         google.protobuf.json_format.Parse(json.dumps(result), message)
