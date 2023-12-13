@@ -1,5 +1,18 @@
 # ChangeLog
 
+## [0.9.15] - 2023-12-13
+
+### New Features
+
+- Added full support for Google Gemini text+vision models (#9452)
+- Added new Google Semantic Retriever (#9440)
+- added `from_existing()` method + async support to OpenAI assistants (#9367)
+
+### Bug Fixes / Nits
+
+- Fixed huggingface LLM system prompt and messages to prompt (#9465)
+- Fixed ollama additional kwargs usage (#9455)
+
 ## [0.9.14] - 2023-12-11
 
 ### New Features
