@@ -10,7 +10,7 @@
 
 ### Bug Fixes / Nits
 
-- Fixed huggingface LLM system prompt and messages to prompt (#9465)
+- Fixed huggingface LLM system prompt and messages to prompt (#9463)
 - Fixed ollama additional kwargs usage (#9455)
 
 ## [0.9.14] - 2023-12-11
