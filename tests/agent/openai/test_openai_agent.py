@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from llama_index.agent.openai_agent import OpenAIAgent, call_tool_with_error_handling
 from llama_index.chat_engine.types import AgentChatResponse
-from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.types import ChatMessage, ChatResponse
 from llama_index.tools.function_tool import FunctionTool
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage

@@ -10,7 +10,7 @@ from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser, TextSplitter
@@ -164,6 +164,14 @@ class ServiceContext:
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
             llm = resolve_llm(llm)
+            llm.system_prompt = llm.system_prompt or system_prompt
+            llm.query_wrapper_prompt = llm.query_wrapper_prompt or query_wrapper_prompt
+            llm.pydantic_program_mode = (
+                llm.pydantic_program_mode or pydantic_program_mode
+            )
+
+        if llm_predictor is not None:
+            print("LLMPredictor is deprecated, please use LLM instead.")
         llm_predictor = llm_predictor or LLMPredictor(
             llm=llm, pydantic_program_mode=pydantic_program_mode
         )
@@ -311,8 +319,6 @@ class ServiceContext:
 
     @property
     def llm(self) -> LLM:
-        if not isinstance(self.llm_predictor, LLMPredictor):
-            raise ValueError("llm_predictor must be an instance of LLMPredictor")
         return self.llm_predictor.llm
 
     @property

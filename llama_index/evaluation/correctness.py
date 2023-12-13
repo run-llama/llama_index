@@ -126,7 +126,7 @@ class CorrectnessEvaluator(BaseEvaluator):
             print(query, response, reference, flush=True)
             raise ValueError("query, response, and reference must be provided")
 
-        eval_response = await self._service_context.llm_predictor.apredict(
+        eval_response = await self._service_context.llm.apredict(
             prompt=self._eval_template,
             query=query,
             generated_answer=response,

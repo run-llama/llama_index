@@ -183,7 +183,7 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         """Generate a Graph Store Query from a query bundle."""
         # Get the query engine query string
 
-        graph_store_query: str = self._service_context.llm_predictor.predict(
+        graph_store_query: str = self._service_context.llm.predict(
             self._graph_query_synthesis_prompt,
             query_str=query_str,
             schema=self._graph_schema,
@@ -195,7 +195,7 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         """Generate a Graph Store Query from a query bundle."""
         # Get the query engine query string
 
-        graph_store_query: str = await self._service_context.llm_predictor.apredict(
+        graph_store_query: str = await self._service_context.llm.apredict(
             self._graph_query_synthesis_prompt,
             query_str=query_str,
             schema=self._graph_schema,

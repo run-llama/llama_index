@@ -1,16 +1,44 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.15] - 2023-12-13
 
 ### New Features
 
-- Add `Ollama` Embedding class (#9341)
-- Add `FlagEmbeddingReranker` for reranking (#9285)
+- Added full support for Google Gemini text+vision models (#9452)
+- Added new Google Semantic Retriever (#9440)
+- added `from_existing()` method + async support to OpenAI assistants (#9367)
 
 ### Bug Fixes / Nits
 
+- Fixed huggingface LLM system prompt and messages to prompt (#9465)
+- Fixed ollama additional kwargs usage (#9455)
+
+## [0.9.14] - 2023-12-11
+
+### New Features
+
+- Add MistralAI LLM (#9444)
+- Add MistralAI Embeddings (#9441)
+- Add `Ollama` Embedding class (#9341)
+- Add `FlagEmbeddingReranker` for reranking (#9285)
+- feat: PgVectorStore support advanced metadata filtering (#9377)
+- Added `sql_only` parameter to SQL query engines to avoid executing SQL (#9422)
+
+### Bug Fixes / Nits
+
+- Feat/PgVector Support custom hnsw.ef_search and ivfflat.probes (#9420)
+- fix F1 score definition, update copyright year (#9424)
 - Change more than one image input for Replicate Multi-modal models from error to warning (#9360)
 - Removed GPT-Licensed `aiostream` dependency (#9403)
+- Fix result of BedrockEmbedding with Cohere model (#9396)
+- Only capture valid tool names in react agent (#9412)
+- Fixed `top_k` being multiplied by 10 in azure cosmos (#9438)
+- Fixed hybrid search for OpenSearch (#9430)
+
+### Breaking Changes
+
+- Updated the base `LLM` interface to match `LLMPredictor` (#9388)
+- Deprecated `LLMPredictor` (#9388)
 
 ## [0.9.13] - 2023-12-06
 

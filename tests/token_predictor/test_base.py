@@ -6,7 +6,7 @@ from unittest.mock import patch
 from llama_index.indices.keyword_table.base import KeywordTableIndex
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.tree.base import TreeIndex
-from llama_index.llm_predictor.mock import MockLLMPredictor
+from llama_index.llms.mock import MockLLM
 from llama_index.node_parser import TokenTextSplitter
 from llama_index.schema import Document
 from llama_index.service_context import ServiceContext
@@ -26,8 +26,8 @@ def test_token_predictor(mock_split: Any) -> None:
         "This is a test v2."
     )
     document = Document(text=doc_text)
-    llm_predictor = MockLLMPredictor(max_tokens=256)
-    service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)
+    llm = MockLLM(max_tokens=256)
+    service_context = ServiceContext.from_defaults(llm=llm)
 
     # test tree index
     index = TreeIndex.from_documents([document], service_context=service_context)

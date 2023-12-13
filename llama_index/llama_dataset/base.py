@@ -280,9 +280,12 @@ class BaseLlamaDataset(BaseModel):
             asyncio_mod = asyncio_module(show_progress=show_progress)
 
             try:
-                batch_predictions = await asyncio_mod.gather(
-                    *tasks, desc="Batch processing of predictions"
-                )
+                if show_progress:
+                    batch_predictions = await asyncio_mod.gather(
+                        *tasks, desc="Batch processing of predictions"
+                    )
+                else:
+                    batch_predictions = await asyncio_mod.gather(*tasks)
             except RateLimitError as err:
                 if show_progress:
                     asyncio_mod.close()

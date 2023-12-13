@@ -68,7 +68,7 @@ class FaissVectorStore(VectorStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "FaissVectorStore":
         persist_path = os.path.join(
-            DEFAULT_PERSIST_DIR,
+            persist_dir,
             f"{DEFAULT_VECTOR_STORE}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}",
         )
         # only support local storage for now

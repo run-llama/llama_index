@@ -5,13 +5,13 @@ import pytest
 from llama_index.agent.react.base import ReActAgent
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
-from llama_index.llms.base import (
+from llama_index.llms.mock import MockLLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
     MessageRole,
 )
-from llama_index.llms.mock import MockLLM
 from llama_index.tools.function_tool import FunctionTool
 
 

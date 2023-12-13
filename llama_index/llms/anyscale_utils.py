@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Sequence, Optional, Tuple
 
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_ANYSCALE_API_BASE = "https://api.endpoints.anyscale.com/v1"

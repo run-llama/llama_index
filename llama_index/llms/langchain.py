@@ -1,13 +1,14 @@
 from threading import Thread
-from typing import TYPE_CHECKING, Any, Generator, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Generator, Optional, Sequence
 
 if TYPE_CHECKING:
     from langchain.base_language import BaseLanguageModel
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    LLM,
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -16,9 +17,8 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
 )
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class LangChainLLM(LLM):
@@ -30,9 +30,21 @@ class LangChainLLM(LLM):
         self,
         llm: "BaseLanguageModel",
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         self._llm = llm
-        super().__init__(callback_manager=callback_manager)
+        super().__init__(
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+        )
 
     @classmethod
     def class_name(cls) -> str:
