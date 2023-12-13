@@ -67,6 +67,11 @@ class MilvusVectorStore(VectorStore):
             name. Defaults to False.
         text_key (str, optional): What key text is stored in in the passed collection.
             Used when bringing your own collection. Defaults to None.
+        index_config (dict, optional): The configuration used for building the
+            Milvus index. Defaults to None.
+        search_config (dict, optional): The configuration used for searching
+            the Milvus index. Note that this must be compatible with the index
+            type specified by `index_config`. Defaults to None.
 
     Raises:
         ImportError: Unable to import `pymilvus`.
