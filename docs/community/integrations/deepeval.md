@@ -58,7 +58,6 @@ from llama_index import (
     TreeIndex,
     VectorStoreIndex,
     SimpleDirectoryReader,
-    LLMPredictor,
     ServiceContext,
     Response,
 )

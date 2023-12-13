@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, cast
 
 from llama_index.agent.openai_agent import resolve_tool_choice
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import OpenAIToolCall, to_openai_tool
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram

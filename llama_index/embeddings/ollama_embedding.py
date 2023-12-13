@@ -83,7 +83,7 @@ class OllamaEmbedding(BaseEmbedding):
         ollama_request_body = {
             "prompt": prompt,
             "model": self.model_name,
-            **self.ollama_additional_kwargs,
+            "options": self.ollama_additional_kwargs,
         }
 
         response = requests.post(

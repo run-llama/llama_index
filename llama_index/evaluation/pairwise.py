@@ -117,7 +117,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         reference: Optional[str],
     ) -> EvaluationResult:
         """Get evaluation result."""
-        eval_response = await self._service_context.llm_predictor.apredict(
+        eval_response = await self._service_context.llm.apredict(
             prompt=self._eval_template,
             query=query,
             answer_1=response,

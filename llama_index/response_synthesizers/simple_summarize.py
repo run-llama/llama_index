@@ -42,13 +42,13 @@ class SimpleSummarize(BaseSynthesizer):
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
-            response = await self._service_context.llm_predictor.apredict(
+            response = await self._service_context.llm.apredict(
                 text_qa_template,
                 context_str=node_text,
                 **response_kwargs,
             )
         else:
-            response = self._service_context.llm_predictor.stream(
+            response = self._service_context.llm.stream(
                 text_qa_template,
                 context_str=node_text,
                 **response_kwargs,
@@ -76,13 +76,13 @@ class SimpleSummarize(BaseSynthesizer):
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
-            response = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm.predict(
                 text_qa_template,
                 context_str=node_text,
                 **kwargs,
             )
         else:
-            response = self._service_context.llm_predictor.stream(
+            response = self._service_context.llm.stream(
                 text_qa_template,
                 context_str=node_text,
                 **kwargs,

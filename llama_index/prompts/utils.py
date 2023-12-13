@@ -1,7 +1,7 @@
 from string import Formatter
 from typing import List
 
-from llama_index.llms.base import LLM
+from llama_index.llms.base import BaseLLM
 
 
 def get_template_vars(template_str: str) -> List[str]:
@@ -16,5 +16,5 @@ def get_template_vars(template_str: str) -> List[str]:
     return variables
 
 
-def is_chat_model(llm: LLM) -> bool:
+def is_chat_model(llm: BaseLLM) -> bool:
     return llm.metadata.is_chat_model

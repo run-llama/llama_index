@@ -131,6 +131,15 @@ maxdepth: 1
 /examples/llm/localai.ipynb
 ```
 
+## MistralAI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/mistralai.ipynb
+```
+
 ## MonsterAPI
 
 ```{toctree}

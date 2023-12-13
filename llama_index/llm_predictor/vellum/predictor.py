@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Tuple, cast
 
+from deprecated import deprecated
+
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -16,6 +18,7 @@ from llama_index.prompts import BasePromptTemplate
 from llama_index.types import TokenAsyncGen, TokenGen
 
 
+@deprecated("VellumPredictor is deprecated and will be removed in a future release.")
 class VellumPredictor(BaseLLMPredictor):
     _callback_manager: CallbackManager = PrivateAttr(default_factory=CallbackManager)
 

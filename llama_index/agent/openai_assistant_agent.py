@@ -1,4 +1,5 @@
 """OpenAI Assistant Agent."""
+import asyncio
 import json
 import logging
 import time
@@ -18,8 +19,8 @@ from llama_index.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.llms.base import ChatMessage, MessageRole
-from llama_index.tools import BaseTool, ToolOutput
+from llama_index.llms.types import ChatMessage, MessageRole
+from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -88,6 +89,38 @@ def call_function(
     )
 
 
+async def acall_function(
+    tools: List[BaseTool], fn_obj: Any, verbose: bool = False
+) -> Tuple[ChatMessage, ToolOutput]:
+    """Call an async function and return the output as a string."""
+    from openai.types.beta.threads.required_action_function_tool_call import Function
+
+    fn_obj = cast(Function, fn_obj)
+    # TMP: consolidate with other abstractions
+    name = fn_obj.name
+    arguments_str = fn_obj.arguments
+    if verbose:
+        print("=== Calling Function ===")
+        print(f"Calling function: {name} with args: {arguments_str}")
+    tool = get_function_by_name(tools, name)
+    argument_dict = json.loads(arguments_str)
+    async_tool = adapt_to_async_tool(tool)
+    output = await async_tool.acall(**argument_dict)
+    if verbose:
+        print(f"Got output: {output!s}")
+        print("========================")
+    return (
+        ChatMessage(
+            content=str(output),
+            role=MessageRole.FUNCTION,
+            additional_kwargs={
+                "name": fn_obj.name,
+            },
+        ),
+        output,
+    )
+
+
 def _process_files(client: Any, files: List[str]) -> Dict[str, str]:
     """Process files."""
     from openai import OpenAI
@@ -112,7 +145,7 @@ class OpenAIAssistantAgent(BaseAgent):
         self,
         client: Any,
         assistant: Any,
-        tools: List[BaseTool],
+        tools: Optional[List[BaseTool]],
         callback_manager: Optional[CallbackManager] = None,
         thread_id: Optional[str] = None,
         instructions_prefix: Optional[str] = None,
@@ -126,7 +159,7 @@ class OpenAIAssistantAgent(BaseAgent):
 
         self._client = cast(OpenAI, client)
         self._assistant = cast(Assistant, assistant)
-        self._tools = tools
+        self._tools = tools or []
         if thread_id is None:
             thread = self._client.beta.threads.create()
             thread_id = thread.id
@@ -153,6 +186,7 @@ class OpenAIAssistantAgent(BaseAgent):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         file_ids: Optional[List[str]] = None,
+        api_key: Optional[str] = None,
     ) -> "OpenAIAssistantAgent":
         """From new assistant.
 
@@ -164,9 +198,12 @@ class OpenAIAssistantAgent(BaseAgent):
             thread_id: thread id
             model: model
             run_retrieve_sleep_time: run retrieve sleep time
+            files: files
             instructions_prefix: instructions prefix
             callback_manager: callback manager
             verbose: verbose
+            file_ids: list of file ids
+            api_key: OpenAI API key
 
         """
         from openai import OpenAI
@@ -179,7 +216,7 @@ class OpenAIAssistantAgent(BaseAgent):
         all_openai_tools = openai_tools + tool_fns
 
         # initialize client
-        client = OpenAI()
+        client = OpenAI(api_key=api_key)
 
         # process files
         files = files or []
@@ -205,6 +242,51 @@ class OpenAIAssistantAgent(BaseAgent):
             thread_id=thread_id,
             instructions_prefix=instructions_prefix,
             file_dict=file_dict,
+            run_retrieve_sleep_time=run_retrieve_sleep_time,
+            verbose=verbose,
+        )
+
+    @classmethod
+    def from_existing(
+        cls,
+        assistant_id: str,
+        tools: Optional[List[BaseTool]] = None,
+        thread_id: Optional[str] = None,
+        instructions_prefix: Optional[str] = None,
+        run_retrieve_sleep_time: float = 0.1,
+        callback_manager: Optional[CallbackManager] = None,
+        api_key: Optional[str] = None,
+        verbose: bool = False,
+    ) -> "OpenAIAssistantAgent":
+        """From existing assistant id.
+
+        Args:
+            assistant_id: id of assistant
+            tools: list of BaseTools Assistant can use
+            thread_id: thread id
+            run_retrieve_sleep_time: run retrieve sleep time
+            instructions_prefix: instructions prefix
+            callback_manager: callback manager
+            api_key: OpenAI API key
+            verbose: verbose
+
+        """
+        from openai import OpenAI
+
+        # initialize client
+        client = OpenAI(api_key=api_key)
+
+        # get assistant
+        assistant = client.beta.assistants.retrieve(assistant_id)
+        # assistant.tools is incompatible with BaseTools so have to pass from params
+
+        return cls(
+            client,
+            assistant,
+            tools=tools,
+            callback_manager=callback_manager,
+            thread_id=thread_id,
+            instructions_prefix=instructions_prefix,
             run_retrieve_sleep_time=run_retrieve_sleep_time,
             verbose=verbose,
         )
@@ -283,6 +365,29 @@ class OpenAIAssistantAgent(BaseAgent):
         )
         return tool_output_objs
 
+    async def _arun_function_calling(self, run: Any) -> List[ToolOutput]:
+        """Run function calling."""
+        tool_calls = run.required_action.submit_tool_outputs.tool_calls
+        tool_output_dicts = []
+        tool_output_objs: List[ToolOutput] = []
+        for tool_call in tool_calls:
+            fn_obj = tool_call.function
+            _, tool_output = await acall_function(
+                self._tools, fn_obj, verbose=self._verbose
+            )
+            tool_output_dicts.append(
+                {"tool_call_id": tool_call.id, "output": str(tool_output)}
+            )
+            tool_output_objs.append(tool_output)
+
+        # submit tool outputs
+        self._client.beta.threads.runs.submit_tool_outputs(
+            thread_id=self._thread_id,
+            run_id=run.id,
+            tool_outputs=cast(List[Any], tool_output_dicts),
+        )
+        return tool_output_objs
+
     def run_assistant(
         self, instructions_prefix: Optional[str] = None
     ) -> Tuple[Any, Dict]:
@@ -291,7 +396,7 @@ class OpenAIAssistantAgent(BaseAgent):
         run = self._client.beta.threads.runs.create(
             thread_id=self._thread_id,
             assistant_id=self._assistant.id,
-            instructions=self._instructions_prefix,
+            instructions=instructions_prefix,
         )
         from openai.types.beta.threads import Run
 
@@ -308,6 +413,37 @@ class OpenAIAssistantAgent(BaseAgent):
                 sources.extend(cur_tool_outputs)
 
             time.sleep(self._run_retrieve_sleep_time)
+        if run.status == "failed":
+            raise ValueError(
+                f"Run failed with status {run.status}.\n" f"Error: {run.last_error}"
+            )
+        return run, {"sources": sources}
+
+    async def arun_assistant(
+        self, instructions_prefix: Optional[str] = None
+    ) -> Tuple[Any, Dict]:
+        """Run assistant."""
+        instructions_prefix = instructions_prefix or self._instructions_prefix
+        run = self._client.beta.threads.runs.create(
+            thread_id=self._thread_id,
+            assistant_id=self._assistant.id,
+            instructions=instructions_prefix,
+        )
+        from openai.types.beta.threads import Run
+
+        run = cast(Run, run)
+
+        sources = []
+
+        while run.status in ["queued", "in_progress", "requires_action"]:
+            run = self._client.beta.threads.runs.retrieve(
+                thread_id=self._thread_id, run_id=run.id
+            )
+            if run.status == "requires_action":
+                cur_tool_outputs = await self._arun_function_calling(run)
+                sources.extend(cur_tool_outputs)
+
+            await asyncio.sleep(self._run_retrieve_sleep_time)
         if run.status == "failed":
             raise ValueError(
                 f"Run failed with status {run.status}.\n" f"Error: {run.last_error}"
@@ -351,11 +487,16 @@ class OpenAIAssistantAgent(BaseAgent):
         function_call: Union[str, dict] = "auto",
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
-        return self._chat(
-            message,
-            chat_history=chat_history,
-            function_call=function_call,
-            mode=mode,
+        """Asynchronous main chat interface."""
+        self.add_message(message)
+        run, metadata = await self.arun_assistant(
+            instructions_prefix=self._instructions_prefix,
+        )
+        latest_message = self.latest_message
+        # get most recent message content
+        return AgentChatResponse(
+            response=str(latest_message.content),
+            sources=metadata["sources"],
         )
 
     @trace_method("chat")

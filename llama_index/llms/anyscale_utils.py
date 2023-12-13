@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Sequence
 
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.types import ChatMessage, MessageRole
 
 LLAMA_MODELS = {
     "meta-llama/Llama-2-7b-chat-hf": 4096,
