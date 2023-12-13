@@ -63,7 +63,7 @@ class Ollama(CustomLLM):
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "temperature": self.temperature,
-            "max_length": self.context_window,
+            "num_ctx": self.context_window,
         }
         return {
             **base_kwargs,
@@ -117,7 +117,7 @@ class Ollama(CustomLLM):
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
-            json={"prompt": prompt, "model": self.model, **all_kwargs},
+            json={"prompt": prompt, "model": self.model, "options": all_kwargs},
             stream=True,
         )
         response.encoding = "utf-8"
