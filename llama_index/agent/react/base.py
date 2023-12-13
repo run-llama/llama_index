@@ -8,55 +8,33 @@ from llama_index.agent.legacy.react.base import ReActAgent
 ```
 
 """
-from llama_index.agent.legacy.react.base import ReActAgent
-
-from llama_index.agent.types import BaseAgent
-from llama_index.agent.react.step import ReActAgentStepEngine
-from llama_index.agent.executor.base import AgentEngine
-
-import asyncio
-from itertools import chain
-from threading import Thread
 from typing import (
     Any,
-    AsyncGenerator,
-    Dict,
-    Generator,
     List,
     Optional,
     Sequence,
-    Tuple,
     Type,
-    cast,
 )
 
+from llama_index.agent.executor.base import AgentEngine
+from llama_index.agent.legacy.react.base import ReActAgent
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
-from llama_index.agent.react.types import (
-    ActionReasoningStep,
-    BaseReasoningStep,
-    ObservationReasoningStep,
-    ResponseReasoningStep,
-)
+from llama_index.agent.react.step import ReActAgentStepEngine
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
-    CBEventType,
-    EventPayload,
-    trace_method,
 )
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
-from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
-from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
-from llama_index.tools.types import AsyncBaseTool
-from llama_index.utils import print_text, unit_generator
-
+from llama_index.tools import BaseTool
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
+
 
 class ReActAgent(BaseAgent):
     """ReAct agent.
@@ -67,7 +45,7 @@ class ReActAgent(BaseAgent):
     ```python
     from llama_index.agent.legacy.react.base import ReActAgent
     ```
-    
+
     """
 
     def __init__(
@@ -144,7 +122,7 @@ class ReActAgent(BaseAgent):
             callback_manager=callback_manager,
             verbose=verbose,
         )
-    
+
     @property
     def chat_history(self) -> List[ChatMessage]:
         """Chat history."""
@@ -158,12 +136,14 @@ class ReActAgent(BaseAgent):
     ) -> AgentChatResponse:
         """Chat."""
         return self._agent_engine.chat(message=message, chat_history=chat_history)
-    
+
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Chat."""
-        return await self._agent_engine.achat(message=message, chat_history=chat_history)
+        return await self._agent_engine.achat(
+            message=message, chat_history=chat_history
+        )
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -180,4 +160,3 @@ class ReActAgent(BaseAgent):
         return await self._agent_engine.astream_chat(
             message=message, chat_history=chat_history
         )
-

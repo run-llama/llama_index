@@ -1,7 +1,7 @@
 from typing import Any, List, Optional, Union, cast
 
 from llama_index.agent.types import BaseAgent
-from llama_index.agent.v1.schema import (
+from llama_index.agent.types import (
     AgentState,
     BaseAgentStepEngine,
     Task,
@@ -94,7 +94,7 @@ class AgentEngine(BaseModel, BaseAgent):
             completed_steps=[],
             memory=self.memory,
             extra_state=self.init_task_state_kwargs,
-            **kwargs
+            **kwargs,
         )
         # add it to state
         self.state.task_dict[task.task_id] = task

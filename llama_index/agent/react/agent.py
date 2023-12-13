@@ -1,4 +1,3 @@
-
 """ReAct agent.
 
 Simple wrapper around AgentEngine + ReActAgentStepEngine.

@@ -76,7 +76,6 @@ class OpenAIAgent(BaseAgent):
             max_function_calls=max_function_calls,
             callback_manager=self.callback_manager,
             prefix_messages=prefix_messages,
-            verbose=verbose,
         )
         self._agent_engine = AgentEngine(
             self._step_engine,

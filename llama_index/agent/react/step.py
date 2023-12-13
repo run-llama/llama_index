@@ -2,7 +2,6 @@
 
 import uuid
 from itertools import chain
-from threading import Thread
 from typing import (
     Any,
     AsyncGenerator,
@@ -12,7 +11,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    Type,
     cast,
 )
 
@@ -24,29 +22,24 @@ from llama_index.agent.react.types import (
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
-from llama_index.agent.types import BaseAgent
-from llama_index.callbacks import (
-    CallbackManager,
-    CBEventType,
-    EventPayload,
-    trace_method,
-)
-from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
-from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
-from llama_index.llms.openai import OpenAI
-from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
-from llama_index.memory.types import BaseMemory
-from llama_index.objects.base import ObjectRetriever
-from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
-from llama_index.tools.types import AsyncBaseTool
-from llama_index.utils import print_text, unit_generator
 from llama_index.agent.types import (
     BaseAgentStepEngine,
     Task,
     TaskStep,
     TaskStepOutput,
 )
-import uuid
+from llama_index.callbacks import (
+    CallbackManager,
+    CBEventType,
+    EventPayload,
+)
+from llama_index.chat_engine.types import AgentChatResponse
+from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.openai import OpenAI
+from llama_index.objects.base import ObjectRetriever
+from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.tools.types import AsyncBaseTool
+from llama_index.utils import print_text, unit_generator
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
