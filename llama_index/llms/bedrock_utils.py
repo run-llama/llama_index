@@ -112,11 +112,12 @@ def completion_to_anthopic_prompt(completion: str) -> str:
 class AnthropicProvider(Provider):
     max_tokens_key = "max_tokens_to_sample"
 
+    def __init__(self) -> None:
+        self.messages_to_prompt = messages_to_anthropic_prompt
+        self.completion_to_prompt = completion_to_anthopic_prompt
+
     def get_text_from_response(self, response: dict) -> str:
         return response["completion"]
-
-    messages_to_prompt = messages_to_anthropic_prompt
-    completion_to_prompt = completion_to_anthopic_prompt
 
 
 class CohereProvider(Provider):
@@ -129,11 +130,12 @@ class CohereProvider(Provider):
 class MetaProvider(Provider):
     max_tokens_key = "max_gen_len"
 
+    def __init__(self) -> None:
+        self.messages_to_prompt = messages_to_llama_prompt
+        self.completion_to_prompt = completion_to_llama_prompt
+
     def get_text_from_response(self, response: dict) -> str:
         return response["generation"]
-
-    messages_to_prompt = messages_to_llama_prompt
-    completion_to_prompt = completion_to_llama_prompt
 
 
 PROVIDERS = {
