@@ -20,7 +20,7 @@ DEFAULT_VECTOR_INDEX_PARAMS = {
 }
 _logger = logging.getLogger(__name__)
 
-@dataclasses
+@dataclass
 class Record:
     id: str
     hash: str
