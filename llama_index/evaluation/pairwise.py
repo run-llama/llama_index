@@ -217,13 +217,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         del kwargs  # Unused
         del contexts  # Unused
 
-        if (
-            query is None
-            or response is None
-            or second_response is None
-            or reference is None
-        ):
-            print(query, response, second_response, reference, flush=True)
+        if query is None or response is None or second_response is None:
             raise ValueError(
                 "query, response, second_response, and reference must be provided"
             )

@@ -12,8 +12,14 @@ from llama_index.llama_dataset.download import download_llama_dataset
 from llama_index.llama_dataset.evaluation import (
     LabeledEvaluationDataExample,
     LabeledEvaluationDataset,
+    LabeledPairwiseEvaluationDataExample,
+    LabeledPairwiseEvaluationDataset,
     LabelledEvaluationDataExample,
     LabelledEvaluationDataset,
+    LabelledPairwiseEvaluationDataExample,
+    LabelledPairwiseEvaluationDataset,
+    PairwiseEvaluationExamplePrediction,
+    PairwiseEvaluationPredictionDataset,
 )
 from llama_index.llama_dataset.rag import (
     LabeledRagDataExample,
@@ -42,4 +48,10 @@ __all__ = [
     "LabelledEvaluationDataset",
     "LabelledEvaluationDataExample",
     "LabeledEvaluationDataExample",
+    "LabelledPairwiseEvaluationDataExample",
+    "LabelledPairwiseEvaluationDataset",
+    "LabeledPairwiseEvaluationDataExample",
+    "LabeledPairwiseEvaluationDataset",
+    "PairwiseEvaluationExamplePrediction",
+    "PairwiseEvaluationPredictionDataset",
 ]

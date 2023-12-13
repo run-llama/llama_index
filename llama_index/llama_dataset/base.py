@@ -12,6 +12,9 @@ from pandas import DataFrame as PandasDataFrame
 from llama_index.async_utils import asyncio_module
 from llama_index.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core import BaseQueryEngine
+from llama_index.evaluation import BaseEvaluator
+
+PredictorType = Union[BaseQueryEngine, BaseEvaluator]
 
 
 class CreatedByType(str, Enum):
@@ -159,7 +162,7 @@ class BaseLlamaDataset(BaseModel):
     @abstractmethod
     def _predict_example(
         self,
-        query_engine: BaseQueryEngine,
+        predictor: PredictorType,
         example: BaseLlamaDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> BaseLlamaExamplePrediction:
@@ -168,7 +171,7 @@ class BaseLlamaDataset(BaseModel):
         NOTE: Subclasses need to implement this.
 
         Args:
-            query_engine (BaseQueryEngine): Query engine to make the prediciton with.
+            predictor (BaseQueryEngine): Query engine to make the prediciton with.
             example (BaseLlamaDataExample): The example to predict on.
 
         Returns:
@@ -177,7 +180,7 @@ class BaseLlamaDataset(BaseModel):
 
     def make_predictions_with(
         self,
-        query_engine: BaseQueryEngine,
+        predictor: PredictorType,
         show_progress: bool = False,
         batch_size: int = 20,
         sleep_time_in_seconds: int = 0,
@@ -185,7 +188,7 @@ class BaseLlamaDataset(BaseModel):
         """Predict with a given query engine.
 
         Args:
-            query_engine (BaseQueryEngine): The query engine to make predictions with.
+            predictor (BaseQueryEngine): The query engine to make predictions with.
             show_progress (bool, optional): Show progress of making predictions.
             batch_size (int): Used to batch async calls, especially to reduce chances
                             of hitting RateLimitError from openai.
@@ -209,7 +212,7 @@ class BaseLlamaDataset(BaseModel):
                 example_iterator = batch
             for example in example_iterator:
                 self._predictions_cache.append(
-                    self._predict_example(query_engine, example, sleep_time_in_seconds)
+                    self._predict_example(predictor, example, sleep_time_in_seconds)
                 )
 
         return self._construct_prediction_dataset(predictions=self._predictions_cache)
@@ -218,7 +221,7 @@ class BaseLlamaDataset(BaseModel):
     @abstractmethod
     async def _apredict_example(
         self,
-        query_engine: BaseQueryEngine,
+        predictor: PredictorType,
         example: BaseLlamaDataExample,
         sleep_time_in_seconds: int,
     ) -> BaseLlamaExamplePrediction:
@@ -227,7 +230,7 @@ class BaseLlamaDataset(BaseModel):
         NOTE: Subclasses need to implement this.
 
         Args:
-            query_engine (BaseQueryEngine): Query engine to make the prediciton with.
+            predictor (BaseQueryEngine): Query engine to make the prediciton with.
             example (BaseLlamaDataExample): The example to predict on.
 
         Returns:
@@ -246,7 +249,7 @@ class BaseLlamaDataset(BaseModel):
 
     async def amake_predictions_with(
         self,
-        query_engine: BaseQueryEngine,
+        predictor: PredictorType,
         show_progress: bool = False,
         batch_size: int = 20,
         sleep_time_in_seconds: int = 1,
@@ -254,7 +257,7 @@ class BaseLlamaDataset(BaseModel):
         """Async predict with a given query engine.
 
         Args:
-            query_engine (BaseQueryEngine): The query engine to make predictions with.
+            predictor (BaseQueryEngine): The query engine to make predictions with.
             show_progress (bool, optional): Show progress of making predictions.
             batch_size (int): Used to batch async calls, especially to reduce chances
                             of hitting RateLimitError from openai.
@@ -275,7 +278,7 @@ class BaseLlamaDataset(BaseModel):
             tasks = []
             for example in batch:
                 tasks.append(
-                    self._apredict_example(query_engine, example, sleep_time_in_seconds)
+                    self._apredict_example(predictor, example, sleep_time_in_seconds)
                 )
             asyncio_mod = asyncio_module(show_progress=show_progress)
 
