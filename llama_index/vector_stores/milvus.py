@@ -4,7 +4,7 @@ An index that is built within Milvus.
 
 """
 import logging
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from llama_index.schema import BaseNode, TextNode
 from llama_index.vector_stores.types import (
@@ -119,8 +119,13 @@ class MilvusVectorStore(VectorStore):
         self.consistency_level = consistency_level
         self.overwrite = overwrite
         self.text_key = text_key
-        self.index_config = index_config.copy() if index_config else {}
-        self.search_config = search_config.copy() if search_config else {}
+        self.index_config: Dict[str, Any] = index_config.copy() if index_config else {}
+        # Note: The search configuration is set at construction to avoid having
+        # to change the API for usage of the vector store (i.e. to pass the
+        # search config along with the rest of the query).
+        self.search_config: Dict[str, Any] = (
+            search_config.copy() if search_config else {}
+        )
 
         # Select the similarity metric
         if similarity_metric.lower() in ("ip"):
@@ -309,17 +314,22 @@ class MilvusVectorStore(VectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    def _create_index_if_required(self, force=False) -> None:
+    def _create_index_if_required(self, force: bool = False) -> None:
+        # This helper method is introduced to allow the index to be created
+        # both in the constructor and in the `add` method. The `force` flag is
+        # provided to ensure that the index is created in the constructor even
+        # if self.overwrite is false. In the `add` method, the index is
+        # recreated only if self.overwrite is true.
         if (self.collection.has_index() and self.overwrite) or force:
             self.collection.release()
             self.collection.drop_index()
-            index_params = {
-                "params": self.index_config.copy(),
+            base_params: Dict[str, Any] = self.index_config.copy()
+            index_type: str = base_params.pop("index_type", "FLAT")
+            index_params: Dict[str, Union[str, Dict[str, Any]]] = {
+                "params": base_params,
                 "metric_type": self.similarity_metric,
+                "index_type": index_type,
             }
-            index_params["index_type"] = index_params["params"].pop(
-                "index_type", "FLAT"
-            )
             self.collection.create_index(
                 self.embedding_field, index_params=index_params
             )
