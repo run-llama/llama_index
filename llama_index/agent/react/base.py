@@ -55,6 +55,9 @@ from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text, unit_generator
 
+
+DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
+
 class ReActAgent(BaseAgent):
     """ReAct agent.
 
