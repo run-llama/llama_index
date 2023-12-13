@@ -15,6 +15,7 @@ from llama_index.llms.gemini_utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
     completion_from_gemini_response,
+    merge_neighboring_same_role_messages,
 )
 from llama_index.llms.types import (
     ChatMessage,
@@ -146,7 +147,8 @@ class Gemini(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        *history, next_msg = map(chat_message_to_gemini, messages)
+        merged_messages = merge_neighboring_same_role_messages(messages)
+        *history, next_msg = map(chat_message_to_gemini, merged_messages)
         chat = self._model.start_chat(history=history)
         response = chat.send_message(next_msg)
         return chat_from_gemini_response(response)
@@ -154,7 +156,8 @@ class Gemini(CustomLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        *history, next_msg = map(chat_message_to_gemini, messages)
+        merged_messages = merge_neighboring_same_role_messages(messages)
+        *history, next_msg = map(chat_message_to_gemini, merged_messages)
         chat = self._model.start_chat(history=history)
         it = chat.send_message(next_msg, stream=True)
         yield from map(chat_from_gemini_response, it)
