@@ -1,5 +1,6 @@
 """Pairwise evaluation."""
 
+import asyncio
 from enum import Enum
 from typing import Any, Optional, Sequence, Union
 
@@ -116,7 +117,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         reference: Optional[str],
     ) -> EvaluationResult:
         """Get evaluation result."""
-        eval_response = await self._service_context.llm_predictor.apredict(
+        eval_response = await self._service_context.llm.apredict(
             prompt=self._eval_template,
             query=query,
             answer_1=response,
@@ -210,6 +211,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         contexts: Optional[Sequence[str]] = None,
         second_response: Optional[str] = None,
         reference: Optional[str] = None,
+        sleep_time_in_seconds: int = 0,
         **kwargs: Any,
     ) -> EvaluationResult:
         del kwargs  # Unused
@@ -225,6 +227,8 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
             raise ValueError(
                 "query, response, second_response, and reference must be provided"
             )
+
+        await asyncio.sleep(sleep_time_in_seconds)
 
         eval_result = await self._get_eval_result(
             query, response, second_response, reference

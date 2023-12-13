@@ -5,7 +5,7 @@ from typing import Sequence
 from unittest.mock import MagicMock
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import (
+from llama_index.llms.types import (
     CompletionResponse,
 )
 from llama_index.multi_modal_llms import MultiModalLLMMetadata

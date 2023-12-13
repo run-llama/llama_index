@@ -27,10 +27,10 @@ class Models(str, Enum):
 
 PROVIDER_SPECIFIC_IDENTIFIERS = {
     PROVIDERS.AMAZON.value: {
-        "embeddings": "embedding",
+        "get_embeddings_func": lambda r: r.get("embedding"),
     },
     PROVIDERS.COHERE.value: {
-        "embeddings": "embeddings",
+        "get_embeddings_func": lambda r: r.get("embeddings")[0],
     },
 }
 
@@ -215,7 +215,7 @@ class BedrockEmbedding(BaseEmbedding):
         identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider, None)
         if identifiers is None:
             raise ValueError("Provider not supported")
-        return resp.get(identifiers.get("embeddings"))
+        return identifiers["get_embeddings_func"](resp)
 
     def _get_query_embedding(self, query: str) -> Embedding:
         return self._get_embedding(query, "query")

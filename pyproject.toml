@@ -30,6 +30,8 @@ homepage = "https://llamaindex.ai"
 keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
 license = "MIT"
 maintainers = [
+    "Andrei Fajardo <andrei@runllama.ai>",
+    "Haotian Zhang <ht@runllama.ai>",
     "Jerry Liu <jerry@llamaindex.ai>",
     "Logan Markewich <logan@llamaindex.ai>",
     "Simon Suo <simon@llamaindex.ai>",
@@ -39,7 +41,7 @@ name = "llama-index"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.9.12"
+version = "0.9.15"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -72,9 +74,9 @@ jsonpath-ng = {optional = true, version = "^1.6.0"}
 rank-bm25 = {optional = true, version = "^0.2.2"}
 scikit-learn = {optional = true, version = "*"}
 spacy = {optional = true, version = "^3.7.1"}
-aiostream = "^0.5.2"
 tritonclient = {optional = true, version = ">=2.39.0"}
 aiohttp = "^3.8.6"
+types-protobuf = "^4.24.0.4"
 
 [tool.poetry.extras]
 langchain = [
@@ -103,7 +105,7 @@ query_tools = [
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 boto3 = "1.33.6"  # needed for tests
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
-google-generativeai = {python = ">=3.9,<3.12", version = "^0.2.1"}
+google-ai-generativelanguage = {python = ">=3.9,<3.12", version = "^0.4.0"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"

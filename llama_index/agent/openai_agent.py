@@ -18,9 +18,10 @@ from llama_index.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai_utils import OpenAIToolCall, is_function_calling_model
+from llama_index.llms.openai_utils import OpenAIToolCall
+from llama_index.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
@@ -585,7 +586,7 @@ class OpenAIAgent(BaseOpenAIAgent):
 
         memory = memory or memory_cls.from_defaults(chat_history, llm=llm)
 
-        if not is_function_calling_model(llm.model):
+        if not llm.metadata.is_function_calling_model:
             raise ValueError(
                 f"Model name {llm.model} does not support function calling API. "
             )

@@ -11,8 +11,20 @@ from openai.types.chat.chat_completion_chunk import (
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import (
+from llama_index.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+    DEFAULT_TEMPERATURE,
+)
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.llms.openai_utils import (
+    from_openai_message,
+    resolve_openai_credentials,
+    to_openai_message_dicts,
+)
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -22,10 +34,6 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     MessageRole,
 )
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
-from llama_index.llms.openai_utils import from_openai_message, to_openai_message_dicts
 from llama_index.multi_modal_llms import (
     MultiModalLLM,
     MultiModalLLMMetadata,
@@ -40,20 +48,26 @@ from llama_index.schema import ImageDocument
 class OpenAIMultiModal(MultiModalLLM):
     model: str = Field(description="The Multi-Modal model to use from OpenAI.")
     temperature: float = Field(description="The temperature to use for sampling.")
-    max_new_tokens: int = Field(
-        description=" The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt"
+    max_new_tokens: Optional[int] = Field(
+        description=" The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt",
+        gt=0,
     )
-    context_window: int = Field(
-        description="The maximum number of context tokens for the model."
+    context_window: Optional[int] = Field(
+        description="The maximum number of context tokens for the model.",
+        gt=0,
     )
-    prompt_key: str = Field(description="The key to use for the prompt in API calls.")
-    image_key: str = Field(description="The key to use for the image in API calls.")
     image_detail: str = Field(
-        description="The level of details for image in API calls."
+        description="The level of details for image in API calls. Can be low, high, or auto"
     )
-
     max_retries: int = Field(
-        default=10, description="Maximum number of retries.", gte=0
+        default=3,
+        description="Maximum number of retries.",
+        gte=0,
+    )
+    timeout: float = Field(
+        default=60.0,
+        description="The timeout, in seconds, for API requests.",
+        gte=0,
     )
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
     api_base: str = Field(description="The base URL for OpenAI API.")
@@ -69,17 +83,16 @@ class OpenAIMultiModal(MultiModalLLM):
     def __init__(
         self,
         model: str = "gpt-4-vision-preview",
-        temperature: float = 0.75,
-        max_new_tokens: int = 300,
-        num_input_files: int = 100,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_new_tokens: Optional[int] = 300,
         additional_kwargs: Optional[Dict[str, Any]] = None,
-        context_window: int = DEFAULT_CONTEXT_WINDOW,
-        prompt_key: str = "text",
-        image_key: str = "image_url",
-        max_retries: int = 10,
+        context_window: Optional[int] = DEFAULT_CONTEXT_WINDOW,
+        max_retries: int = 3,
+        timeout: float = 60.0,
         image_detail: str = "low",
         api_key: Optional[str] = None,
-        api_base: Optional[str] = "https://api.openai.com/v1",
+        api_base: Optional[str] = None,
+        api_version: Optional[str] = None,
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -87,22 +100,24 @@ class OpenAIMultiModal(MultiModalLLM):
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
-        api_key = api_key
-        api_base = api_base
+        api_key, api_base, api_version = resolve_openai_credentials(
+            api_key=api_key,
+            api_base=api_base,
+            api_version=api_version,
+        )
 
         super().__init__(
             model=model,
             temperature=temperature,
             max_new_tokens=max_new_tokens,
-            num_input_files=num_input_files,
             additional_kwargs=additional_kwargs or {},
             context_window=context_window,
-            prompt_key=prompt_key,
-            image_key=image_key,
             image_detail=image_detail,
             max_retries=max_retries,
+            timeout=timeout,
             api_key=api_key,
             api_base=api_base,
+            api_version=api_version,
             callback_manager=callback_manager,
         )
         self._client, self._aclient = self._get_clients(**kwargs)
@@ -120,8 +135,7 @@ class OpenAIMultiModal(MultiModalLLM):
     def metadata(self) -> MultiModalLLMMetadata:
         """Multi Modal LLM metadata."""
         return MultiModalLLMMetadata(
-            context_window=self.context_window,
-            num_output=DEFAULT_NUM_OUTPUTS,
+            num_output=self.max_new_tokens or DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
         )
 
@@ -130,6 +144,7 @@ class OpenAIMultiModal(MultiModalLLM):
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
+            "timeout": self.timeout,
             **kwargs,
         }
 
@@ -158,7 +173,7 @@ class OpenAIMultiModal(MultiModalLLM):
                 f"Invalid model {self.model}. "
                 f"Available models are: {list(GPT4V_MODELS.keys())}"
             )
-        base_kwargs = {"model": self.model, **kwargs}
+        base_kwargs = {"model": self.model, "temperature": self.temperature, **kwargs}
         if self.max_new_tokens is not None:
             # If max_tokens is None, don't include in the payload:
             # https://platform.openai.com/docs/api-reference/chat
@@ -334,7 +349,7 @@ class OpenAIMultiModal(MultiModalLLM):
         message_dict = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
-        response = self._client.chat.completions.create(
+        response = await self._aclient.chat.completions.create(
             messages=message_dict,
             stream=False,
             **all_kwargs,
@@ -362,7 +377,7 @@ class OpenAIMultiModal(MultiModalLLM):
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
 
-            for response in self._client.chat.completions.create(
+            async for response in await self._aclient.chat.completions.create(
                 messages=message_dict,
                 stream=True,
                 **all_kwargs,
@@ -391,7 +406,7 @@ class OpenAIMultiModal(MultiModalLLM):
     ) -> ChatResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(messages)
-        response = self._client.chat.completions.create(
+        response = await self._aclient.chat.completions.create(
             messages=message_dicts,
             stream=False,
             **all_kwargs,
@@ -415,7 +430,7 @@ class OpenAIMultiModal(MultiModalLLM):
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
-            for response in self._client.chat.completions.create(
+            async for response in await self._aclient.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
                 **self._get_model_kwargs(**kwargs),

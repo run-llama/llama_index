@@ -2,6 +2,7 @@
 
 
 from llama_index.postprocessor.cohere_rerank import CohereRerank
+from llama_index.postprocessor.flag_embedding_reranker import FlagEmbeddingReranker
 from llama_index.postprocessor.llm_rerank import LLMRerank
 from llama_index.postprocessor.longllmlingua import LongLLMLinguaPostprocessor
 from llama_index.postprocessor.metadata_replacement import (
@@ -43,4 +44,5 @@ __all__ = [
     "MetadataReplacementPostProcessor",
     "LongContextReorder",
     "LongLLMLinguaPostprocessor",
+    "FlagEmbeddingReranker",
 ]

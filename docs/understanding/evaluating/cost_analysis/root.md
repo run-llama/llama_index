@@ -81,7 +81,7 @@ You may also predict the token usage of embedding calls with `MockEmbedding`.
 from llama_index import ServiceContext, set_global_service_context
 from llama_index import MockEmbedding
 
-# specify a MockLLMPredictor
+# specify a MockEmbedding
 embed_model = MockEmbedding(embed_dim=1536)
 
 service_context = ServiceContext.from_defaults(embed_model=embed_model)

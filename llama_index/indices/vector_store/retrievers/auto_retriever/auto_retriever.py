@@ -40,7 +40,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
             parameters.
         prompt_template_str: custom prompt template string for LLM.
             Uses default template string if None.
-        service_context: service context containing reference to LLMPredictor.
+        service_context: service context containing reference to an LLM.
             Uses service context from index be default if None.
         similarity_top_k (int): number of top k results to return.
         max_top_k (int):
@@ -89,7 +89,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         schema_str = VectorStoreQuerySpec.schema_json(indent=4)
 
         # call LLM
-        output = self._service_context.llm_predictor.predict(
+        output = self._service_context.llm.predict(
             self._prompt,
             schema_str=schema_str,
             info_str=info_str,

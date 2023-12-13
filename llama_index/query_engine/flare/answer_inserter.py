@@ -173,7 +173,7 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
         for query_task, answer in zip(query_tasks, answers):
             query_answer_pairs += f"Query: {query_task.query_str}\nAnswer: {answer}\n"
 
-        return self._service_context.llm_predictor.predict(
+        return self._service_context.llm.predict(
             self._answer_insert_prompt,
             lookahead_response=response,
             query_answer_pairs=query_answer_pairs,

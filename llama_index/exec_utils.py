@@ -1,4 +1,5 @@
 import copy
+import re
 from types import CodeType, ModuleType
 from typing import Any, Dict, Mapping, Sequence, Union
 
@@ -90,6 +91,22 @@ def _get_restricted_globals(__globals: Union[dict, None]) -> Any:
     return restricted_globals
 
 
+def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
+    pattern = r"_{1,2}\w+_{0,2}"
+
+    if isinstance(__source, CodeType):
+        raise RuntimeError("Direct execution of CodeType is forbidden!")
+    if isinstance(__source, bytes):
+        __source = __source.decode()
+
+    matches = re.findall(pattern, __source)
+
+    if matches:
+        raise RuntimeError(
+            "Execution of code containing references to private or dunder methods is forbidden!"
+        )
+
+
 def safe_eval(
     __source: Union[str, bytes, CodeType],
     __globals: Union[Dict[str, Any], None] = None,
@@ -98,6 +115,7 @@ def safe_eval(
     """
     eval within safe global context.
     """
+    _verify_source_safety(__source)
     return eval(__source, _get_restricted_globals(__globals), __locals)
 
 
@@ -109,4 +127,5 @@ def safe_exec(
     """
     eval within safe global context.
     """
+    _verify_source_safety(__source)
     return exec(__source, _get_restricted_globals(__globals), __locals)
