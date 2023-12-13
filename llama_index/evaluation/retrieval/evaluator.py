@@ -37,12 +37,15 @@ class RetrieverEvaluator(BaseRetrievalEvaluator):
         """Init params."""
         super().__init__(metrics=metrics, retriever=retriever, **kwargs)
 
-    async def _aget_retrieved_ids(
+    async def _aget_retrieved_ids_and_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
     ) -> List[str]:
         """Get retrieved ids."""
         retrieved_nodes = await self.retriever.aretrieve(query)
-        return [node.node.node_id for node in retrieved_nodes]
+        return (
+            [node.node.node_id for node in retrieved_nodes],
+            [node.node.text for node in retrieved_nodes],
+        )
 
 
 class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
@@ -67,7 +70,7 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
         """Init params."""
         super().__init__(metrics=metrics, retriever=retriever, **kwargs)
 
-    async def _aget_retrieved_ids(
+    async def _aget_retrieved_ids_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
     ) -> List[str]:
         """Get retrieved ids."""
@@ -83,8 +86,14 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
                 text_nodes.append(node)
 
         if mode == "text":
-            return [node.node_id for node in text_nodes]
+            return (
+                [node.node_id for node in text_nodes],
+                [node.text for node in text_nodes],
+            )
         elif mode == "image":
-            return [node.node_id for node in image_nodes]
+            return (
+                [node.node_id for node in image_nodes],
+                [node.text for node in image_nodes],
+            )
         else:
             raise ValueError("Unsupported mode.")

@@ -49,3 +49,27 @@ class BaseRetrievalMetric(ABC):
             **kwargs: Additional keyword arguments
 
         """
+
+
+class BaseIndexlessRetrievalMetric(ABC):
+    """Base class for retrieval metrics."""
+
+    metric_name: str
+
+    @abstractmethod
+    def compute(
+        self,
+        query: Optional[str] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> RetrievalMetricResult:
+        """Compute metric.
+
+        Args:
+            query (Optional[str]): Query string
+            expected_texts (Optional[List[str]]): Expected texts
+            retrieved_texts (Optional[List[str]]): Retrieved texts
+            **kwargs: Additional keyword arguments
+
+        """
