@@ -3,7 +3,7 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.evaluation.retrieval.metrics import resolve_metrics
@@ -76,7 +76,7 @@ class RetrievalEvalResult(BaseModel):
 class BaseRetrievalEvaluator(BaseModel):
     """Base Retrieval Evaluator class."""
 
-    metrics: List[BaseRetrievalMetric] = Field(
+    metrics: List[Union[BaseRetrievalMetric, BaseIndexlessRetrievalMetric]] = Field(
         ..., description="List of metrics to evaluate"
     )
 
@@ -94,8 +94,8 @@ class BaseRetrievalEvaluator(BaseModel):
             **kwargs: Additional arguments for the evaluator
 
         """
-        metrics = resolve_metrics(metric_names)
-        return cls(metrics=metrics, **kwargs)
+        metric_types = resolve_metrics(metric_names)
+        return cls(metrics=[metric() for metric in metric_types], **kwargs)
 
     @abstractmethod
     async def _aget_retrieved_ids_and_texts(
@@ -147,7 +147,9 @@ class BaseRetrievalEvaluator(BaseModel):
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
         """
-        retrieved_ids, retrieved_texts = await self._aget_retrieved_ids(query, mode)
+        retrieved_ids, retrieved_texts = await self._aget_retrieved_ids_and_texts(
+            query, mode
+        )
         metric_dict = {}
         for metric in self.metrics:
             if isinstance(metric, BaseRetrievalMetric):

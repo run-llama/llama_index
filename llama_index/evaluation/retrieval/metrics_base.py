@@ -27,7 +27,7 @@ class RetrievalMetricResult(BaseModel):
         return self.score
 
 
-class BaseRetrievalMetric(ABC):
+class BaseRetrievalMetric(BaseModel, ABC):
     """Base class for retrieval metrics."""
 
     metric_name: str
@@ -50,8 +50,11 @@ class BaseRetrievalMetric(ABC):
 
         """
 
+    class Config:
+        arbitrary_types_allowed = True
 
-class BaseIndexlessRetrievalMetric(ABC):
+
+class BaseIndexlessRetrievalMetric(BaseModel, ABC):
     """Base class for retrieval metrics."""
 
     metric_name: str
@@ -73,3 +76,6 @@ class BaseIndexlessRetrievalMetric(ABC):
             **kwargs: Additional keyword arguments
 
         """
+
+    class Config:
+        arbitrary_types_allowed = True
