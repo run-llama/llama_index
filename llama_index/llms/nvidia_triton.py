@@ -4,14 +4,14 @@ import queue
 import random
 import time
 from functools import partial
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import google.protobuf.json_format
 import numpy as np
 import tritonclient.grpc as grpcclient
 import tritonclient.http as httpclient
 from tritonclient.grpc.service_pb2 import ModelInferResponse
-from tritonclient.utils import np_to_triton_dtype
+from tritonclient.utils import InferenceServerException, np_to_triton_dtype
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -26,13 +26,9 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     llm_chat_callback,
-    llm_completion_callback,
 )
 from llama_index.llms.generic_utils import (
-    acompletion_to_chat_decorator,
-    astream_completion_to_chat_decorator,
     completion_to_chat_decorator,
-    stream_completion_to_chat_decorator,
 )
 
 STOP_WORDS = ["</s>"]
@@ -49,7 +45,6 @@ DEFAULT_MAX_TOKENS = 100
 DEFAULT_BEAM_WIDTH = 1
 DEFAULT_REPTITION_PENALTY = 1.0
 DEFAULT_LENGTH_PENALTY = 1.0
-DEFAULT_STREAM_RESPONSES = True
 DEFAULT_REUSE_CLIENT = True
 DEFAULT_TRITON_LOAD_MODEL = True
 
@@ -99,10 +94,6 @@ class NvidiaTriton(LLM):
         default=DEFAULT_TIMEOUT,
         description="Maximum time (seconds) allowed for a Triton client call before erroring"
     )
-    streaming: Optional[bool] = Field(
-        default=DEFAULT_STREAM_RESPONSES,
-        description="True for streaming responses over batch"
-    )
     reuse_client: Optional[bool] = Field(
         default=DEFAULT_REUSE_CLIENT,
         description="True for reusing the same client instance between invocations",
@@ -128,7 +119,6 @@ class NvidiaTriton(LLM):
         max_retries: int = DEFAULT_MAX_RETRIES,
         timeout: float = DEFAULT_TIMEOUT,
         reuse_client: bool = DEFAULT_REUSE_CLIENT,
-        streaming: bool = DEFAULT_STREAM_RESPONSES,
         triton_load_model_call: bool = DEFAULT_TRITON_LOAD_MODEL,
         callback_manager: Optional[CallbackManager] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -149,7 +139,6 @@ class NvidiaTriton(LLM):
             max_retries=max_retries,
             timeout=timeout,
             reuse_client=reuse_client,
-            streaming=streaming,
             triton_load_model_call=triton_load_model_call,
             callback_manager=callback_manager,
             additional_kwargs=additional_kwargs,
@@ -157,14 +146,11 @@ class NvidiaTriton(LLM):
         )
 
         try:
-            if streaming:
-                self._client = GrpcTritonClient(server_url)
-            else:
-                self._client = HttpTritonClient(server_url)
+            self._client = GrpcTritonClient(server_url)
         except ImportError as err:
             raise ImportError(
                 "Could not import triton client python package. "
-                "Please install it with `pip install tritonclient[all]`."
+                "Please install it with `pip install tritonclient`."
             ) from err
 
     @property
@@ -210,9 +196,6 @@ class NvidiaTriton(LLM):
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         client = self._get_client()
 
-        # TODO: wire up text_callback properly
-        text_callback = None
-
         invocation_params = self._get_model_default_parameters
         invocation_params.update(kwargs)
         invocation_params["prompt"] = [[prompt]]
@@ -223,17 +206,20 @@ class NvidiaTriton(LLM):
         if self.triton_load_model_call:
             client.load_model(model_params["model_name"])
 
-        if isinstance(self._client, GrpcTritonClient):
-            resp_text = self._streaming_request(
-                model_params, request_id, invocation_params, text_callback
-            )
-        else:
-            resp_text = self._request(
-                model_params, invocation_params, text_callback 
-            )
+
+        result_queue = self._client.request_streaming(
+            model_params["model_name"], request_id, **invocation_params
+        )
+
+        response = ""
+        for token in result_queue:
+            if isinstance(token, InferenceServerException):
+                self._client.stop_stream(model_params["model_name"], request_id)
+                raise token
+            response = response + token
 
         return CompletionResponse(
-            text=resp_text,
+            text=response,
         )
         
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
@@ -241,8 +227,6 @@ class NvidiaTriton(LLM):
         client = self._get_client()
     
         def gen() -> CompletionResponseGen:
-            # TODO: wire up text_callback properly
-            text_callback = None
 
             invocation_params = self._get_model_default_parameters
             invocation_params.update(kwargs)
@@ -257,65 +241,28 @@ class NvidiaTriton(LLM):
 
             text = ""
             for token in result_queue:
-                if text_callback:
-                    text_callback(token)
                 text = text + token
                 yield CompletionResponse(
                     text=text,
                 )
 
         return gen()
-    
-    def _request(
-        self,
-        model_params: Dict[str, Any],
-        invocation_params: Dict[str, Any],
-        text_callback: Optional[Callable[[str], None]],
-    ) -> str:
-        """Request a streaming inference session."""
-        token: str = self._client.request(
-            model_params["model_name"], **invocation_params
-        )
-        if text_callback:
-            text_callback(token)
-        return token
-
-    def _streaming_request(
-        self,
-        model_params: Dict[str, Any],
-        request_id: str,
-        invocation_params: Dict[str, Any],
-        text_callback: Optional[Callable[[str], None]],
-    ) -> str:
-        """Request a streaming inference session."""
-        result_queue = self._client.request_streaming(
-            model_params["model_name"], request_id, **invocation_params
-        )
-
-        response = ""
-        for token in result_queue:
-            if text_callback:
-                text_callback(token)
-            response = response + token
-        return response
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         chat_fn = completion_to_chat_decorator(self._complete)
         return chat_fn(messages, **kwargs)
     
-    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        stream_chat_fn = stream_completion_to_chat_decorator(self._stream_complete)
-        return stream_chat_fn(messages, **kwargs)
+         raise NotImplementedError
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         return self._complete(prompt, **kwargs)
 
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        return self._stream_complete(prompt, **kwargs)
+         raise NotImplementedError
 
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -638,49 +585,3 @@ class GrpcTritonClient(_BaseTritonClient):
         if signal:
             self._send_stop_signals(model_name, request_id)
         self._client.stop_stream()
-
-
-class HttpTritonClient(_BaseTritonClient):
-    """HTTP connection to a triton inference server."""
-
-    @property
-    def _inference_server_client(
-        self,
-    ) -> Type[httpclient.InferenceServerClient]:
-        """Return the preferred InferenceServerClient class."""
-        return httpclient.InferenceServerClient  # type: ignore
-
-    @property
-    def _infer_input(self) -> Type[httpclient.InferInput]:
-        """Return the preferred InferInput."""
-        return httpclient.InferInput  # type: ignore
-
-    @property
-    def _infer_output(
-        self,
-    ) -> Type[httpclient.InferRequestedOutput]:
-        """Return the preferred InferRequestedOutput."""
-        return httpclient.InferRequestedOutput  # type: ignore
-
-    def request(
-        self,
-        model_name: str,
-        **params: Any,
-    ) -> str:
-        """Request inferencing from the triton server."""
-        if not self._client.is_model_ready(model_name):
-            raise RuntimeError("Cannot request streaming, model is not loaded")
-
-        # create model inputs and outputs
-        inputs = self._generate_inputs(stream=False, **params)
-        outputs = self._generate_outputs()
-
-        # call the model for inference
-        result = self._client.infer(model_name, inputs=inputs, outputs=outputs)
-        result_str = "".join(
-            [val.decode("utf-8") for val in result.as_numpy("text_output").tolist()]
-        )
-
-        # extract the generated part of the prompt
-        # return(result_str)
-        return self._trim_batch_response(result_str)
