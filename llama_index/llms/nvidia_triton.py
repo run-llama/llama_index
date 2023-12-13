@@ -56,43 +56,39 @@ class NvidiaTriton(LLM):
     )
     model_name: str = Field(
         default=DEFAULT_MODEL,
-        description="The name of the Triton hosted model this client should use"
+        description="The name of the Triton hosted model this client should use",
     )
     temperature: Optional[float] = Field(
-        default=DEFAULT_TEMPERATURE,
-        description="Temperature to use for sampling"
+        default=DEFAULT_TEMPERATURE, description="Temperature to use for sampling"
     )
     top_p: Optional[float] = Field(
-        default=DEFAULT_TOP_P,
-        description="The top-p value to use for sampling"
+        default=DEFAULT_TOP_P, description="The top-p value to use for sampling"
     )
     top_k: Optional[float] = Field(
-        default=DEFAULT_TOP_K,
-        description="The top k value to use for sampling"
+        default=DEFAULT_TOP_K, description="The top k value to use for sampling"
     )
     tokens: Optional[int] = Field(
         default=DEFAULT_MAX_TOKENS,
-        description="The maximum number of tokens to generate."
+        description="The maximum number of tokens to generate.",
     )
     beam_width: Optional[int] = Field(
-        default=DEFAULT_BEAM_WIDTH,
-        description="Last n number of tokens to penalize"
+        default=DEFAULT_BEAM_WIDTH, description="Last n number of tokens to penalize"
     )
     repetition_penalty: Optional[float] = Field(
         default=DEFAULT_REPTITION_PENALTY,
-        description="Last n number of tokens to penalize"
+        description="Last n number of tokens to penalize",
     )
     length_penalty: Optional[float] = Field(
         default=DEFAULT_LENGTH_PENALTY,
-        description="The penalty to apply repeated tokens"
+        description="The penalty to apply repeated tokens",
     )
     max_retries: Optional[int] = Field(
         default=DEFAULT_MAX_RETRIES,
-        description="Maximum number of attempts to retry Triton client invocation before erroring"
+        description="Maximum number of attempts to retry Triton client invocation before erroring",
     )
     timeout: Optional[float] = Field(
         default=DEFAULT_TIMEOUT,
-        description="Maximum time (seconds) allowed for a Triton client call before erroring"
+        description="Maximum time (seconds) allowed for a Triton client call before erroring",
     )
     reuse_client: Optional[bool] = Field(
         default=DEFAULT_REUSE_CLIENT,
@@ -100,7 +96,7 @@ class NvidiaTriton(LLM):
     )
     triton_load_model_call: Optional[bool] = Field(
         default=DEFAULT_TRITON_LOAD_MODEL,
-        description="True if a Triton load model API call should be made before using the client"
+        description="True if a Triton load model API call should be made before using the client",
     )
 
     _client: Optional[Any] = PrivateAttr()
@@ -176,7 +172,7 @@ class NvidiaTriton(LLM):
             "server_url": self.server_url,
             "model_name": self.model_name,
         }
-    
+
     def _get_client(self) -> Any:
         """Create or reuse a Triton client connection"""
         if not self.reuse_client:
@@ -192,7 +188,7 @@ class NvidiaTriton(LLM):
         return LLMMetadata(
             model_name=self.model_name,
         )
-    
+
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         client = self._get_client()
 
@@ -205,7 +201,6 @@ class NvidiaTriton(LLM):
 
         if self.triton_load_model_call:
             client.load_model(model_params["model_name"])
-
 
         result_queue = self._client.request_streaming(
             model_params["model_name"], request_id, **invocation_params
@@ -221,13 +216,12 @@ class NvidiaTriton(LLM):
         return CompletionResponse(
             text=response,
         )
-        
+
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         """Request a streaming inference session."""
         client = self._get_client()
-    
-        def gen() -> CompletionResponseGen:
 
+        def gen() -> CompletionResponseGen:
             invocation_params = self._get_model_default_parameters
             invocation_params.update(kwargs)
             invocation_params["prompt"] = [[prompt]]
@@ -252,17 +246,17 @@ class NvidiaTriton(LLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         chat_fn = completion_to_chat_decorator(self._complete)
         return chat_fn(messages, **kwargs)
-    
+
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-         raise NotImplementedError
+        raise NotImplementedError
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         return self._complete(prompt, **kwargs)
 
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-         raise NotImplementedError
+        raise NotImplementedError
 
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
