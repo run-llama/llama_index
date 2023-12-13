@@ -16,6 +16,7 @@ if typing.TYPE_CHECKING:
 ROLES_TO_GEMINI = {
     MessageRole.USER: "user",
     MessageRole.ASSISTANT: "model",
+    ## Gemini only has user and model roles. Put the rest in user role.
     MessageRole.SYSTEM: "user",
 }
 ROLES_FROM_GEMINI = {v: k for k, v in ROLES_TO_GEMINI.items()}
