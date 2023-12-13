@@ -9,10 +9,42 @@ of documents. Once constructed, the index can be used for querying.
 
 If the Index has been previously populated with documents - it can also be used directly for querying.
 
-`VectaraIndex` is currently the only supported managed index, although we expect more to be available soon.
-Below we show how to use it.
+## Google Generative Language Semantic Retriever.
 
-**Vectara Index Construction/Querying**
+Google's Semantic Retrieve provides both querying and retrieval capabilities. Create a managed index, insert documents, and use a query engine or retriever anywhere in LlamaIndex!
+
+```python
+from llama_index import SimpleDirectoryReader
+from llama_index.indices.managed.google.generativeai import GoogleIndex
+
+# Create a corpus
+index = GoogleIndex.create_corpus(display_name="My first corpus!")
+print(f"Newly created corpus ID is {index.corpus_id}.")
+
+# Ingestion
+documents = SimpleDirectoryReader("data").load_data()
+index.insert_documents(documents)
+
+# Querying
+query_engine = index.as_query_engine()
+response = query_engine.query("What did the author do growing up?")
+
+# Retrieving
+retriever = index.as_retriever()
+source_nodes = retriever.retrieve("What did the author do growing up?")
+```
+
+See the notebook guide for full details.
+
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+/examples/managed/GoogleDemo.ipynb
+```
+
+## Vectara
 
 First, [sign up](https://vectara.com/integrations/llama_index) and use the Vectara Console to create a corpus (aka Index), and add an API key for access.
 Then put the customer id, corpus id, and API key in your environment.
