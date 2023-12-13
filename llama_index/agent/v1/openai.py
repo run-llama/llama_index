@@ -166,7 +166,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         tools: List[BaseTool],
         llm: OpenAI,
         prefix_messages: List[ChatMessage],
-        verbose: bool,
+        verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
@@ -461,11 +461,10 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         # generate next step, append to task queue
         new_steps = (
             [
-                TaskStep(
-                    task_id=step.task_id,
+                step.get_next_step(
                     step_id=str(uuid.uuid4()),
-                    input=agent_chat_response,
-                    memory=step.memory,
+                    # NOTE: input is unused
+                    input=None,
                 )
             ]
             if not is_done
@@ -524,11 +523,10 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         # generate next step, append to task queue
         new_steps = (
             [
-                TaskStep(
-                    task_id=step.task_id,
+                step.get_next_step(
                     step_id=str(uuid.uuid4()),
-                    input=agent_chat_response,
-                    memory=step.memory,
+                    # NOTE: input is unused
+                    input=None,
                 )
             ]
             if not is_done

@@ -1,7 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Any, Deque, Dict, List
+from typing import Any, Deque, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,13 +20,31 @@ class TaskStep(BaseModel):
 
     task_id: str = Field(..., diescription="Task ID")
     step_id: str = Field(..., description="Step ID")
-    input: str = Field(..., description="User input")
+    input: Optional[str] = Field(default=None, description="User input")
     memory: BaseMemory = Field(
         ..., type=BaseMemory, description="Conversational Memory"
     )
     step_state: Dict[str, Any] = Field(
         default_factory=dict, description="Additional state, carries over to next step."
     )
+
+    def get_next_step(
+        self,
+        step_id: str,
+        input: Optional[str] = None,
+    ) -> "TaskStep":
+        """Convenience function to get next step.
+
+        Preserve task_id, memory, step_state.
+
+        """
+        return TaskStep(
+            task_id=self.task_id,
+            step_id=step_id,
+            input=input,
+            memory=self.memory,
+            step_state=self.step_state,
+        )
 
 
 class TaskStepOutput(BaseModel):

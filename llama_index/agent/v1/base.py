@@ -24,7 +24,6 @@ from llama_index.chat_engine.types import (
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
-from llama_index.response.schema import Response
 
 # def _add_initial_step(step_queue: Deque[TaskStep], task: Task):
 #     """Add initial step."""
@@ -66,7 +65,6 @@ class AgentEngine(BaseModel, BaseAgent):
         llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         init_task_state_kwargs: Optional[dict] = None,
-        verbose: bool = False,
     ) -> None:
         """Initialize."""
         memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
