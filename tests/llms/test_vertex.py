@@ -1,5 +1,5 @@
 import pytest
-from llama_index.llms.base import CompletionResponse
+from llama_index.llms.types import CompletionResponse
 from llama_index.llms.vertex import Vertex
 from llama_index.llms.vertex_utils import init_vertexai
 

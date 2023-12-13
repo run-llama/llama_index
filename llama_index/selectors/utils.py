@@ -17,13 +17,13 @@ def get_selector_from_context(
 
     if is_multi:
         try:
-            llm = service_context.llm_predictor.llm
+            llm = service_context.llm
             selector = PydanticMultiSelector.from_defaults(llm=llm)  # type: ignore
         except ValueError:
             selector = LLMMultiSelector.from_defaults(service_context=service_context)
     else:
         try:
-            llm = service_context.llm_predictor.llm
+            llm = service_context.llm
             selector = PydanticSingleSelector.from_defaults(llm=llm)  # type: ignore
         except ValueError:
             selector = LLMSingleSelector.from_defaults(service_context=service_context)

@@ -11,24 +11,21 @@ from llama_index.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.llms.base import (
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
 )
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
-)
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 from llama_index.utils import get_cache_dir
 
 DEFAULT_LLAMA_CPP_GGML_MODEL = (
@@ -65,12 +62,6 @@ class LlamaCPP(CustomLLM):
         description="The maximum number of context tokens for the model.",
         gt=0,
     )
-    messages_to_prompt: Callable = Field(
-        description="The function to convert messages to a prompt.", exclude=True
-    )
-    completion_to_prompt: Callable = Field(
-        description="The function to convert a completion to a prompt.", exclude=True
-    )
     generate_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Kwargs used for generation."
     )
@@ -91,12 +82,15 @@ class LlamaCPP(CustomLLM):
         temperature: float = DEFAULT_TEMPERATURE,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
-        messages_to_prompt: Optional[Callable] = None,
-        completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
         generate_kwargs: Optional[Dict[str, Any]] = None,
         model_kwargs: Optional[Dict[str, Any]] = None,
         verbose: bool = DEFAULT_LLAMA_CPP_MODEL_VERBOSITY,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         try:
             from llama_cpp import Llama
@@ -135,9 +129,6 @@ class LlamaCPP(CustomLLM):
             self._model = Llama(model_path=model_path, **model_kwargs)
 
         model_path = model_path
-        messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        completion_to_prompt = completion_to_prompt or (lambda x: x)
-
         generate_kwargs = generate_kwargs or {}
         generate_kwargs.update(
             {"temperature": temperature, "max_tokens": max_new_tokens}
@@ -149,12 +140,15 @@ class LlamaCPP(CustomLLM):
             temperature=temperature,
             context_window=context_window,
             max_new_tokens=max_new_tokens,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
             callback_manager=callback_manager,
             generate_kwargs=generate_kwargs,
             model_kwargs=model_kwargs,
             verbose=verbose,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod

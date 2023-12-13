@@ -1,9 +1,14 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    LLM,
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.generic_utils import (
+    completion_to_chat_decorator,
+    stream_completion_to_chat_decorator,
+)
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -12,18 +17,13 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.llms.generic_utils import (
-    completion_to_chat_decorator,
-    stream_completion_to_chat_decorator,
 )
 from llama_index.llms.watsonx_utils import (
     WATSONX_MODELS,
     get_from_param_or_env_without_error,
     watsonx_model_to_context_size,
 )
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class WatsonX(LLM):
@@ -51,6 +51,11 @@ class WatsonX(LLM):
         temperature: Optional[float] = 0.1,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         """Initialize params."""
         if model_id not in WATSONX_MODELS:
@@ -94,6 +99,11 @@ class WatsonX(LLM):
             additional_kwargs=additional_kwargs,
             model_info=self._model.get_details(),
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod

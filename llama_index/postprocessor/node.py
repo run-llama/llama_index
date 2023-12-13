@@ -268,7 +268,6 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
 
     Args:
         docstore (BaseDocumentStore): The document store.
-        llm_predictor (LLMPredictor): The LLM predictor.
         num_nodes (int): The number of nodes to return (default: 1)
         infer_prev_next_tmpl (str): The template to use for inference.
             Required fields are {context_str} and {query_str}.
@@ -319,7 +318,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
         all_nodes: Dict[str, NodeWithScore] = {}
         for node in nodes:
             all_nodes[node.node.node_id] = node
-            # use response builder instead of llm_predictor directly
+            # use response builder instead of llm directly
             # to be more robust to handling long context
             response_builder = get_response_synthesizer(
                 service_context=self.service_context,

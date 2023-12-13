@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Sequence
 
 import httpx
 from openai import AsyncAzureOpenAI
@@ -12,6 +12,8 @@ from llama_index.llms.openai_utils import (
     refresh_openai_azuread_token,
     resolve_from_aliases,
 )
+from llama_index.llms.types import ChatMessage
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class AzureOpenAI(OpenAI):
@@ -77,6 +79,12 @@ class AzureOpenAI(OpenAI):
         deployment: Optional[str] = None,
         # custom httpx client
         http_client: Optional[httpx.Client] = None,
+        # base class
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         engine = resolve_from_aliases(
@@ -109,6 +117,11 @@ class AzureOpenAI(OpenAI):
             use_azure_ad=use_azure_ad,
             api_version=api_version,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
             **kwargs,
         )
 

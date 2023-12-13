@@ -16,7 +16,7 @@ from llama_index.types import BaseOutputParser
 
 
 def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
-    pattern = r"\s*Thought: (.*?)\nAction: (.*?)\nAction Input: (\{.*?\})"
+    pattern = r"\s*Thought: (.*?)\nAction: ([a-zA-Z0-9_]+).*?\nAction Input: (\{.*?\})"
 
     match = re.search(pattern, input_text, re.DOTALL)
     if not match:

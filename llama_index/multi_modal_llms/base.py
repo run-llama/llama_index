@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.constants import (
@@ -7,7 +7,7 @@ from llama_index.constants import (
     DEFAULT_NUM_INPUT_FILES,
     DEFAULT_NUM_OUTPUTS,
 )
-from llama_index.llms.base import (
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -20,21 +20,21 @@ from llama_index.schema import BaseComponent, ImageDocument
 
 
 class MultiModalLLMMetadata(BaseModel):
-    context_window: int = Field(
+    context_window: Optional[int] = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=(
             "Total number of tokens the model can be input when generating a response."
         ),
     )
-    num_output: int = Field(
+    num_output: Optional[int] = Field(
         default=DEFAULT_NUM_OUTPUTS,
         description="Number of tokens the model can output when generating a response.",
     )
-    num_input_files: int = Field(
+    num_input_files: Optional[int] = Field(
         default=DEFAULT_NUM_INPUT_FILES,
         description="Number of input files the model can take when generating a response.",
     )
-    is_function_calling_model: bool = Field(
+    is_function_calling_model: Optional[bool] = Field(
         default=False,
         # SEE: https://openai.com/blog/function-calling-and-other-api-updates
         description=(

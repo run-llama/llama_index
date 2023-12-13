@@ -12,9 +12,10 @@ from llama_index.chat_engine.types import (
     AgentChatResponse,
 )
 from llama_index.core import BaseRetriever
-from llama_index.llms.base import LLM, ChatMessage
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
+from llama_index.llms.types import ChatMessage
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.prompts import PromptTemplate
 from llama_index.schema import NodeWithScore

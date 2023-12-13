@@ -1,5 +1,5 @@
 import os
-from typing import Any, Optional
+from typing import Any, Callable, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -8,13 +8,15 @@ from llama_index.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.llms.base import (
+from llama_index.llms.base import llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.types import (
+    ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
-    llm_completion_callback,
 )
-from llama_index.llms.custom import CustomLLM
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class PredibaseLLM(CustomLLM):
@@ -49,6 +51,11 @@ class PredibaseLLM(CustomLLM):
         temperature: float = DEFAULT_TEMPERATURE,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         predibase_api_key = (
             predibase_api_key
@@ -66,6 +73,11 @@ class PredibaseLLM(CustomLLM):
             temperature=temperature,
             context_window=context_window,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @staticmethod

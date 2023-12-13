@@ -1,9 +1,9 @@
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Callable, Iterator
 
-from llama_index.llms.base import LLM
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.llms.llama_cpp import LlamaCPP
+from llama_index.llms.llm import LLM
 
 if TYPE_CHECKING:
     from lmformatenforcer import CharacterLevelParser

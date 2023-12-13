@@ -181,5 +181,5 @@ Take a look here!
 ---
 maxdepth: 1
 ---
-/core_modules/data_modules/transformations/metadata_extractor_usage_pattern.md
+/module_guides/loading/documents_and_nodes/usage_metadata_extractor.md
 ```
