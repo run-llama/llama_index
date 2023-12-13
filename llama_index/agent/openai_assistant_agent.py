@@ -20,10 +20,8 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.llms.types import ChatMessage, MessageRole
+from llama_index.logger import logger
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
 
 
 def from_openai_thread_message(thread_message: Any) -> ChatMessage:

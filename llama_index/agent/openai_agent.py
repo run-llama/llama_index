@@ -22,12 +22,15 @@ from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import OpenAIToolCall
 from llama_index.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.logger import logger
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
-logger = logging.getLogger(__name__)
+
+# logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
+# logger.error(f'logger {__name__}')
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
@@ -79,7 +82,7 @@ def call_function(
     assert tool_call.function.arguments is not None
 
     id_ = tool_call.id
-    function_call = tool_call.function
+    # function_call = tool_call.function
     name = tool_call.function.name
     arguments_str = tool_call.function.arguments
     if verbose:
