@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Literal, Optional, Type
+from typing import Any, Callable, Dict, List, Literal, Optional, Type
 
 import numpy as np
 
@@ -10,7 +10,7 @@ from llama_index.evaluation.retrieval.metrics_base import (
     RetrievalMetricResult,
 )
 
-_AGG_FUNC: Dict[str, callable] = {"mean": np.mean, "median": np.median, "max": np.max}
+_AGG_FUNC: Dict[str, Callable] = {"mean": np.mean, "median": np.median, "max": np.max}
 
 
 class HitRate(BaseRetrievalMetric):
@@ -89,7 +89,7 @@ class CohereRerankRelevancyMetric(BaseIndexlessRetrievalMetric):
         self._client = Client(api_key=api_key)
         super().__init__(model=model)
 
-    def _get_agg_func(self, agg: Literal["max", "median", "mean"]) -> callable:
+    def _get_agg_func(self, agg: Literal["max", "median", "mean"]) -> Callable:
         """Get agg func."""
         return _AGG_FUNC[agg]
 
@@ -130,7 +130,7 @@ METRIC_REGISTRY: Dict[str, Type[BaseRetrievalMetric]] = {
 }
 
 
-def resolve_metrics(metrics: List[str]) -> List[BaseRetrievalMetric]:
+def resolve_metrics(metrics: List[str]) -> List[Type[BaseRetrievalMetric]]:
     """Resolve metrics from list of metric names."""
     for metric in metrics:
         if metric not in METRIC_REGISTRY:

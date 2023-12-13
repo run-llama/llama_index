@@ -1,6 +1,6 @@
 """Retrieval evaluators."""
 
-from typing import Any, List, Sequence
+from typing import Any, List, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field
 from llama_index.core import BaseRetriever
@@ -12,7 +12,7 @@ from llama_index.evaluation.retrieval.metrics_base import (
     BaseRetrievalMetric,
 )
 from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.schema import BaseNode, ImageNode
+from llama_index.schema import ImageNode, TextNode
 
 
 class RetrieverEvaluator(BaseRetrievalEvaluator):
@@ -39,7 +39,7 @@ class RetrieverEvaluator(BaseRetrievalEvaluator):
 
     async def _aget_retrieved_ids_and_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
-    ) -> List[str]:
+    ) -> Tuple[List[str], List[str]]:
         """Get retrieved ids."""
         retrieved_nodes = await self.retriever.aretrieve(query)
         return (
@@ -72,11 +72,11 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
 
     async def _aget_retrieved_ids_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
-    ) -> List[str]:
+    ) -> Tuple[List[str], List[str]]:
         """Get retrieved ids."""
         retrieved_nodes = await self.retriever.aretrieve(query)
         image_nodes: List[ImageNode] = []
-        text_nodes: List[BaseNode] = []
+        text_nodes: List[TextNode] = []
 
         for scored_node in retrieved_nodes:
             node = scored_node.node

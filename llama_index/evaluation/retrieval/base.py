@@ -3,7 +3,7 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.evaluation.retrieval.metrics import resolve_metrics
@@ -100,7 +100,7 @@ class BaseRetrievalEvaluator(BaseModel):
     @abstractmethod
     async def _aget_retrieved_ids_and_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
-    ) -> List[str]:
+    ) -> Tuple[List[str], List[str]]:
         """Get retrieved ids and texts."""
         raise NotImplementedError
 
