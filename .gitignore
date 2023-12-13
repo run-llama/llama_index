@@ -147,3 +147,4 @@ Pipfile.lock
 
 # pyright
 pyrightconfig.json
+poetry.lock
