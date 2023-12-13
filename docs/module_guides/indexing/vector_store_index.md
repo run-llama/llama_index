@@ -4,7 +4,9 @@ Vector Stores are a key component of retrieval-augmented generation (RAG) and so
 
 Vector stores accept a list of [`Node` objects](/module_guides/loading/documents_and_nodes/root.md) and build an index from them
 
-## Basic usage
+## Loading data into the index
+
+### Basic usage
 
 The simplest way to use a Vector Store is to load a set of documents and build an index from them using `from_documents`:
 
@@ -81,7 +83,7 @@ metadata_extraction.md
 document_management.md
 ```
 
-## Using Vector Stores
+## Storing the vector index
 
 LlamaIndex supports [dozens of vector stores](/module_guides/storing/vector_stores.md). You can specify which one to use by passing in a `StorageContext`, on which in turn you specify the `vector_store` argument, as in this example using Pinecone:
 
