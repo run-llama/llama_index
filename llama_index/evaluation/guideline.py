@@ -1,6 +1,5 @@
 """Guideline evaluation."""
 import asyncio
-import logging
 from typing import Any, Optional, Sequence, Union, cast
 
 from llama_index import ServiceContext

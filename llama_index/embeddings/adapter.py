@@ -1,6 +1,5 @@
 """Embedding adapter model."""
 
-import logging
 from typing import Any, List, Optional, Type, cast
 
 from llama_index.bridge.pydantic import PrivateAttr

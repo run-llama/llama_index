@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import queue
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field

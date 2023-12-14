@@ -1,6 +1,5 @@
 """Base query engine."""
 
-import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence
 

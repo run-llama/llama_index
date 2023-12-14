@@ -1,4 +1,3 @@
-import logging
 import uuid
 from abc import ABC
 from collections import defaultdict

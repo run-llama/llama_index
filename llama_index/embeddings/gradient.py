@@ -1,4 +1,3 @@
-import logging
 from typing import Any, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr

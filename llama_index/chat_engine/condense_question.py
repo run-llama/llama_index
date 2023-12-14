@@ -1,4 +1,3 @@
-import logging
 from threading import Thread
 from typing import Any, List, Optional, Type
 

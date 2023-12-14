@@ -1,7 +1,6 @@
 """Adapter utils."""
 
 import json
-import logging
 import os
 from abc import abstractmethod
 from typing import Callable, Dict

@@ -1,7 +1,6 @@
 """OpenAI Assistant Agent."""
 import asyncio
 import json
-import logging
 import time
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
