@@ -30,10 +30,33 @@ from llama_index.schema import BaseNode, Document
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.google.generativeai import (
     GoogleVectorStore,
+    genai_extension,
     google_service_context,
 )
 
 _logger = logging.getLogger(__name__)
+
+
+def set_google_auth_credentials(auth_creds: "credentials.Credentials") -> None:
+    genai_extension.set_config(genai_extension.Config.with_credentials(auth_creds))
+
+
+"""Sets a Google Auth credentials such as using a service account.
+
+Example:
+    from google.oauth2 import service_account
+    credentials = service_account.Credentials.from_service_account_file(
+        "/path/to/service.json",
+        scopes=[
+            "https://www.googleapis.com/auth/cloud-platform",
+            "https://www.googleapis.com/auth/generative-language.retriever",
+        ],
+    )
+    set_google_auth_credentials(credentials)
+
+Refer to for documentation more information:
+https://developers.google.com/identity/protocols/oauth2/service-account#creatinganaccount.
+"""
 
 
 class GoogleIndex(BaseManagedIndex):

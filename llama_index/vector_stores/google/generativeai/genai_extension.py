@@ -137,18 +137,30 @@ class Config:
         user_agent: The user agent to use for logging.
         page_size: For paging RPCs, how many entities to return per RPC.
         testing: Are the unit tests running?
+        google_auth_credentials: For setting credentials such as using service accounts
     """
 
     api_endpoint: str = _DEFAULT_API_ENDPOINT
     user_agent: str = _USER_AGENT
     page_size: int = _DEFAULT_PAGE_SIZE
     testing: bool = False
+    google_auth_credentials: Optional[credentials.Credentials] = None
+
+    @classmethod
+    def with_credentials(cls, auth_creds: credentials.Credentials) -> "Config":
+        return cls(
+            google_auth_credentials=auth_creds,
+        )
 
 
-def set_defaults(config: Config) -> None:
+def set_config(config: Config) -> None:
     """Set global defaults for operations with Google Generative AI API."""
     global _config
     _config = config
+
+
+def get_config() -> Config:
+    return _config
 
 
 _config = Config()
@@ -191,20 +203,24 @@ class TestCredentials(credentials.Credentials):
         """Test credentials do nothing to the request."""
 
 
-def _get_test_credentials() -> Optional[credentials.Credentials]:
-    """Returns a fake credential for testing or None.
+def _get_credentials() -> Optional[credentials.Credentials]:
+    """Returns a credential from the config if set or a fake credentials for unit testing.
 
     If _config.testing is True, a fake credential is returned.
-    Otherwise, we are in a real environment and a None is returned.
+    Otherwise, we are in a real environment and will use credentials if provided or None is returned.
 
     If None is passed to the clients later on, the actual credentials will be
     inferred by the rules specified in google.auth package.
     """
-    return TestCredentials() if _config.testing else None
+    if _config.testing:
+        return TestCredentials()
+    elif _config.auth_credentials:
+        return _config.auth_credentials
+    return None
 
 
 def build_semantic_retriever() -> genai.RetrieverServiceClient:
-    credentials = _get_test_credentials()
+    credentials = _get_credentials()
     return genai.RetrieverServiceClient(
         credentials=credentials,
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
@@ -215,7 +231,7 @@ def build_semantic_retriever() -> genai.RetrieverServiceClient:
 
 
 def build_generative_service() -> genai.GenerativeServiceClient:
-    credentials = _get_test_credentials()
+    credentials = _get_credentials()
     return genai.GenerativeServiceClient(
         credentials=credentials,
         client_info=gapic_v1.client_info.ClientInfo(user_agent=_USER_AGENT),
