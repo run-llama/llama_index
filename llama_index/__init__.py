@@ -5,8 +5,6 @@ with open(Path(__file__).absolute().parents[0] / "VERSION") as _f:
     __version__ = _f.read().strip()
 
 
-import logging
-from logging import NullHandler
 from typing import Callable, Optional
 
 # import global eval handler
@@ -83,10 +81,6 @@ from llama_index.utilities.sql_wrapper import SQLDatabase
 
 # global tokenizer
 from llama_index.utils import get_tokenizer, set_global_tokenizer
-
-# best practices for library logging:
-# https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
-logging.getLogger(__name__).addHandler(NullHandler())
 
 __all__ = [
     "StorageContext",
