@@ -98,6 +98,17 @@ class _BaseGradientLLM(CustomLLM):
             ).generated_output
         )
 
+    @llm_completion_callback()
+    @override
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        grdt_reponse = await self._model.acomplete(
+            query=prompt,
+            max_generated_token_count=self.max_tokens,
+            **kwargs,
+        )
+
+        return CompletionResponse(text=grdt_reponse.generated_output)
+
     @override
     def stream_complete(
         self,
