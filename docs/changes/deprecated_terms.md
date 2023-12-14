@@ -10,17 +10,17 @@ This has been renamed to `VectorStoreIndex`, as well as unifying all vector inde
 
 Please see the following links for more details on usage.
 
-- [Index Usage Pattern](/module_guides/indexing/usage_pattern.md)
-- [Vector Store Guide](/module_guides/indexing/vector_store_guide.ipynb)
-- [Vector Store Integrations](/community/integrations/vector_stores.md)
+- [Index Usage Pattern](/docs/module_guides/evaluating/usage_pattern.md)
+- [Vector Store Guide](/docs/module_guides/indexing/vector_store_guide.ipynb)
+- [Vector Store Integrations](/docs/community/integrations/vector_stores.md)
 
 ## GPTVectorStoreIndex
 
 This has been renamed to `VectorStoreIndex`, but it is only a cosmetic change. Please see the following links for more details on usage.
 
-- [Index Usage Pattern](/module_guides/indexing/usage_pattern.md)
-- [Vector Store Guide](/module_guides/indexing/vector_store_guide.ipynb)
-- [Vector Store Integrations](/community/integrations/vector_stores.md)
+- [Index Usage Pattern](docs/module_guides/evaluating/usage_pattern.md)
+- [Vector Store Guide](/docs/module_guides/indexing/vector_store_guide.ipynb)
+- [Vector Store Integrations](/docs/community/integrations/vector_stores.md)
 
 ## LLMPredictor
 
