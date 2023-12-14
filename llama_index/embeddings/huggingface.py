@@ -209,26 +209,15 @@ class HuggingFaceInferenceAPIEmbedding(HuggingFaceInferenceAPI, BaseEmbedding): 
 
     pooling: Optional[Pooling] = Field(
         default=Pooling.CLS,
-        description=(
-            "Optional pooling technique to use with embeddings capability, if"
-            " the model's raw output needs pooling."
-        ),
+        description=("Pooling technique to use with embeddings capability."),
     )
     query_instruction: Optional[str] = Field(
         default=None,
-        description=(
-            "Instruction to prepend during query embedding."
-            " Use of None means infer the instruction based on the model."
-            " Use of empty string will defeat instruction prepending entirely."
-        ),
+        description=("Instruction to prepend during query embedding."),
     )
     text_instruction: Optional[str] = Field(
         default=None,
-        description=(
-            "Instruction to prepend during text embedding."
-            " Use of None means infer the instruction based on the model."
-            " Use of empty string will defeat instruction prepending entirely."
-        ),
+        description=("Instruction to prepend during text embedding."),
     )
 
     @classmethod
@@ -236,11 +225,14 @@ class HuggingFaceInferenceAPIEmbedding(HuggingFaceInferenceAPI, BaseEmbedding): 
         return "HuggingFaceInferenceAPIEmbedding"
 
     async def _async_embed_single(self, text: str) -> Embedding:
-        embedding = (await self._async_client.feature_extraction(text)).squeeze(axis=0)
+        embedding = await self._async_client.feature_extraction(text)
+        if len(embedding.shape) == 1:
+            return embedding.tolist()
+        embedding = embedding.squeeze(axis=0)
         if len(embedding.shape) == 1:  # Some models pool internally
-            return list(embedding)
+            return embedding.tolist()
         try:
-            return list(self.pooling(embedding))  # type: ignore[misc]
+            return self.pooling(embedding).tolist()  # type: ignore[misc]
         except TypeError as exc:
             raise ValueError(
                 f"Pooling is required for {self.model_name} because it returned"

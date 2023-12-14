@@ -6,7 +6,12 @@ from enum import Enum
 from typing import Generic, Sequence, Type, TypeVar
 
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.embeddings import OpenAIEmbedding
+from llama_index.embeddings import (
+    AzureOpenAIEmbedding,
+    BedrockEmbedding,
+    HuggingFaceInferenceAPIEmbedding,
+    OpenAIEmbedding,
+)
 from llama_index.extractors import (
     KeywordExtractor,
     QuestionsAnsweredExtractor,
@@ -166,6 +171,21 @@ class ConfigurableTransformations(Enum):
         name="OpenAI Embedding",
         transformation_category=TransformationCategories.EMBEDDING,
         component_type=OpenAIEmbedding,
+    )
+    AZURE_EMBEDDING = ConfigurableTransformation(
+        name="Azure OpenAI Embedding",
+        transformation_category=TransformationCategories.EMBEDDING,
+        component_type=AzureOpenAIEmbedding,
+    )
+    BEDROCK_EMBEDDING = ConfigurableTransformation(
+        name="Bedrock Embedding",
+        transformation_category=TransformationCategories.EMBEDDING,
+        component_type=BedrockEmbedding,
+    )
+    HUGGINGFACE_API_EMBEDDING = ConfigurableTransformation(
+        name="HuggingFace API Embedding",
+        transformation_category=TransformationCategories.EMBEDDING,
+        component_type=HuggingFaceInferenceAPIEmbedding,
     )
 
     @classmethod
