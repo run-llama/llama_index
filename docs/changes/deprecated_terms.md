@@ -26,8 +26,8 @@ This has been renamed to `VectorStoreIndex`, but it is only a cosmetic change. P
 
 The `LLMPredictor` object is no longer intended to be used by users. Instead, you can setup an LLM directly and pass it into the `ServiceContext`. The `LLM` class itself has similar attributes and methods as the `LLMPredictor`.
 
-- [LLMs in LlamaIndex](/module_guides/models/llms.md)
-- [Setting LLMs in the ServiceContext](/module_guides/supporting_modules/service_context.md)
+- [LLMs in LlamaIndex](/docs/module_guides/models/llms.md)
+- [Setting LLMs in the ServiceContext](/docs/module_guides/supporting_modules/service_context.md)
 
 ## PromptHelper and max_input_size/
 
@@ -37,5 +37,5 @@ The `PromptHelper` in general has been deprecated in favour of specifying parame
 
 See the following links for more details.
 
-- [Configuring settings in the Service Context](/module_guides/supporting_modules/service_context.md)
-- [Parsing Documents into Nodes](/module_guides/loading/node_parsers/root.md)
+- [Configuring settings in the Service Context](/docs/module_guides/supporting_modules/service_context.md)
+- [Parsing Documents into Nodes](/docs/module_guides/loading/node_parsers/root.md)
