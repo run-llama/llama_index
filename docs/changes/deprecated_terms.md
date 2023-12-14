@@ -18,7 +18,7 @@ Please see the following links for more details on usage.
 
 This has been renamed to `VectorStoreIndex`, but it is only a cosmetic change. Please see the following links for more details on usage.
 
-- [Index Usage Pattern](docs/module_guides/evaluating/usage_pattern.md)
+- [Index Usage Pattern](/docs/module_guides/evaluating/usage_pattern.md)
 - [Vector Store Guide](/docs/module_guides/indexing/vector_store_guide.ipynb)
 - [Vector Store Integrations](/docs/community/integrations/vector_stores.md)
 
