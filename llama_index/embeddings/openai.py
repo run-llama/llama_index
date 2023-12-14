@@ -10,6 +10,8 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.llms.openai_utils import (
+    DEFAULT_OPENAI_API_BASE,
+    DEFAULT_OPENAI_API_VERSION,
     create_retry_decorator,
     resolve_openai_credentials,
 )
@@ -228,8 +230,12 @@ class OpenAIEmbedding(BaseEmbedding):
     )
 
     api_key: str = Field(description="The OpenAI API key.")
-    api_base: str = Field(description="The base URL for OpenAI API.")
-    api_version: str = Field(description="The version for OpenAI API.")
+    api_base: str = Field(
+        default=DEFAULT_OPENAI_API_BASE, description="The base URL for OpenAI API."
+    )
+    api_version: str = Field(
+        default=DEFAULT_OPENAI_API_VERSION, description="The version for OpenAI API."
+    )
 
     max_retries: int = Field(
         default=10, description="Maximum number of retries.", gte=0
