@@ -276,7 +276,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
     ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             chat_stream=self._llm.stream_chat(**llm_chat_kwargs),
-            sources=self.sources,
+            sources=step.step_state["sources"],
         )
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
@@ -289,6 +289,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         # If it is executing an openAI function, wait for the thread to finish
         if chat_stream_response._is_function:
             thread.join()
+
         # if it's false, return the answer (to stream)
         return chat_stream_response
 
@@ -297,7 +298,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
     ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             achat_stream=await self._llm.astream_chat(**llm_chat_kwargs),
-            sources=self.sources,
+            sources=step.step_state["sources"],
         )
         # create task to write chat response to history
         asyncio.create_task(
@@ -431,6 +432,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(step, openai_tools, tool_choice)
+
         agent_chat_response = self._get_agent_response(
             step, mode=mode, **llm_chat_kwargs
         )
@@ -569,3 +571,31 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         return await self._arun_step(
             step, task, mode=ChatResponseMode.STREAM, tool_choice=tool_choice
         )
+
+    def undo_step(self, task: Task, **kwargs: Any) -> Optional[TaskStep]:
+        """Undo step from task.
+
+        If this cannot be implemented, return None.
+
+        """
+        raise NotImplementedError("Undo is not yet implemented")
+        # if len(task.completed_steps) == 0:
+        #     return None
+
+        # # pop last step output
+        # last_step_output = task.completed_steps.pop()
+        # # add step to the front of the queue
+        # task.step_queue.appendleft(last_step_output.task_step)
+
+        # # undo any `step_state` variables that have changed
+        # last_step_output.step_state["n_function_calls"] -= 1
+
+        # # TODO: we don't have memory pop capabilities yet
+        # # # now pop the memory until we get to the state
+        # # last_step_response = cast(AgentChatResponse, last_step_output.output)
+        # # while last_step_response != task.memory.:
+        # #     last_message = last_step_output.task_step.memory.pop()
+        # #     if last_message == cast(AgentChatResponse, last_step_output.output).response:
+        # #         break
+
+        # # while cast(AgentChatResponse, last_step_output.output).response !=

@@ -97,8 +97,12 @@ class AgentEngine(BaseModel, BaseAgent):
 
         return task
 
-    def run_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+    def _run_step(
+        self, 
+        task_id: str, 
+        step: Optional[TaskStep] = None, 
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
+        **kwargs: Any
     ) -> TaskStepOutput:
         """Execute step."""
         task = self.state.get_task(task_id)
@@ -107,45 +111,77 @@ class AgentEngine(BaseModel, BaseAgent):
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
 
-        cur_step_output = self.step_executor.run_step(step, task, **kwargs)
+        if mode == ChatResponseMode.WAIT:
+            cur_step_output = self.step_executor.run_step(step, task, **kwargs)
+        elif mode == ChatResponseMode.STREAM:
+            cur_step_output = self.step_executor.stream_step(step, task, **kwargs)
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
         # append cur_step_output next steps to queue
         next_steps = cur_step_output.next_steps
         task.step_queue.extend(next_steps)
         return cur_step_output
+
+    async def _arun_step(
+        self, 
+        task_id: str, 
+        step: Optional[TaskStep] = None, 
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
+        **kwargs: Any
+    ) -> TaskStepOutput:
+        """Execute step."""
+        task = self.state.get_task(task_id)
+        step = step or task.step_queue.popleft()
+
+        # TODO: figure out if you can dynamically swap in different step executors
+        # not clear when you would do that by theoretically possible
+        if mode == ChatResponseMode.WAIT:
+            cur_step_output = await self.step_executor.arun_step(step, task, **kwargs)
+        elif mode == ChatResponseMode.STREAM:
+            cur_step_output = await self.step_executor.astream_step(step, task, **kwargs)
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
+        # append cur_step_output next steps to queue
+        next_steps = cur_step_output.next_steps
+        task.step_queue.extend(next_steps)
+        return cur_step_output
+
+    def run_step(
+        self, 
+        task: Task, 
+        step: Optional[TaskStep] = None, 
+        **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step."""
+        return self._run_step(task.task_id, step, mode=ChatResponseMode.WAIT, **kwargs)
 
     async def arun_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any
     ) -> TaskStepOutput:
-        """Execute step."""
-        task = self.state.get_task(task_id)
-        step = step or task.step_queue.popleft()
+        """Run step (async)."""
+        return await self._arun_step(task_id, step, mode=ChatResponseMode.WAIT, **kwargs)
 
-        # TODO: figure out if you can dynamically swap in different step executors
-        # not clear when you would do that by theoretically possible
+    def stream_step(
+        self,
+        task: Task,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step (stream)."""
+        return self._run_step(task.task_id, step, mode=ChatResponseMode.STREAM, **kwargs)
 
-        cur_step_output = await self.step_executor.arun_step(step, task, **kwargs)
-        # append cur_step_output next steps to queue
-        next_steps = cur_step_output.next_steps
-        task.step_queue.extend(next_steps)
-        return cur_step_output
-
-    # def _query(self, query: QueryBundle) -> Response:
-    #     """Run an e2e execution of a query."""
-    #     task = self.create_task(query)
-
-    #     initial_step = self.step_executor.initialize_step(task)
-    #     task.step_queue.append(initial_step)
-
-    #     result_output = None
-    #     while True:
-    #         # pass step queue in as argument, assume step executor is stateless
-    #         cur_step_output = self.run_step(task.task_id)
-
-    #         if cur_step_output.is_last:
-    #             result_output = cur_step_output
-    #             break
-    #     return Response(response=str(result_output))
-
+    async def astream_step(
+        self,
+        task_id: str,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step (async stream)."""
+        return await self._arun_step(task_id, step, mode=ChatResponseMode.STREAM, **kwargs)
+            
     def _chat(
         self,
         message: str,
@@ -161,7 +197,7 @@ class AgentEngine(BaseModel, BaseAgent):
         result_output = None
         while True:
             # pass step queue in as argument, assume step executor is stateless
-            cur_step_output = self.run_step(task.task_id)
+            cur_step_output = self._run_step(task.task_id, mode=mode)
 
             if cur_step_output.is_last:
                 # if cur_step_output.output is not AGENT_CHAT_RESPONSE_TYPE,
@@ -193,9 +229,16 @@ class AgentEngine(BaseModel, BaseAgent):
         result_output = None
         while True:
             # pass step queue in as argument, assume step executor is stateless
-            cur_step_output = await self.arun_step(task.task_id)
+            cur_step_output = await self._arun_step(task.task_id, mode=mode)
 
             if cur_step_output.is_last:
+                # if cur_step_output.output is not AGENT_CHAT_RESPONSE_TYPE,
+                # raise error
+                if not isinstance(cur_step_output.output, AGENT_CHAT_RESPONSE_TYPE):
+                    raise ValueError(
+                        "When `is_last` is True, cur_step_output.output must be "
+                        f"AGENT_CHAT_RESPONSE_TYPE: {cur_step_output.output}"
+                    )
                 result_output = cur_step_output
                 break
         if result_output is None:

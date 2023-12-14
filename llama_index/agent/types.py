@@ -65,7 +65,7 @@ class BaseAgent(BaseChatEngine, BaseQueryEngine):
 
 
 class TaskStep(BaseModel):
-    """ "Agent task step.
+    """Agent task step.
 
     Represents a single input step within the execution run ("Task") of an agent
     given a user input.
@@ -197,3 +197,4 @@ class BaseAgentStepEngine(ABC):
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         raise NotImplementedError
+

@@ -272,9 +272,6 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
     ) -> TaskStepOutput:
         """Get task step response."""
         if is_done:
-            step.memory.put(
-                ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
-            )
             new_steps = []
         else:
             new_steps = [
@@ -362,7 +359,6 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         self,
         step: TaskStep,
         task: Task,
-        chat_response_mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> TaskStepOutput:
         """Run step."""
         # TODO: see if we want to do step-based inputs
@@ -384,6 +380,10 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         agent_response = self._get_response(
             step.step_state["current_reasoning"], step.step_state["sources"]
         )
+        if is_done:
+            step.memory.put(
+                ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
+            )
 
         return self._get_task_step_response(agent_response, step, is_done)
 
@@ -411,6 +411,10 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         agent_response = self._get_response(
             step.step_state["current_reasoning"], step.step_state["sources"]
         )
+        if is_done:
+            step.memory.put(
+                ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
+            )
 
         return self._get_task_step_response(agent_response, step, is_done)
 
@@ -439,11 +443,13 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         for latest_chunk in chat_stream:
             full_response = latest_chunk
             is_done = self._infer_stream_chunk_is_final(latest_chunk)
+            if is_done:
+                break
 
         if not is_done:
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
-                tools=tools, output=full_response, is_streaming=True
+                step, tools=tools, output=full_response, is_streaming=True
             )
             step.step_state["current_reasoning"].extend(reasoning_steps)
             # use _get_response to return intermediate response
@@ -462,7 +468,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
             )
             thread = Thread(
                 target=agent_response.write_response_to_history,
-                args=(step.step_state["memory"],),
+                args=(step.memory,),
             )
             thread.start()
 
@@ -493,11 +499,13 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         async for latest_chunk in chat_stream:
             full_response = latest_chunk
             is_done = self._infer_stream_chunk_is_final(latest_chunk)
+            if is_done:
+                break
 
         if not is_done:
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
-                tools=tools, output=full_response, is_streaming=True
+                step, tools=tools, output=full_response, is_streaming=True
             )
             step.step_state["current_reasoning"].extend(reasoning_steps)
             # use _get_response to return intermediate response
@@ -511,17 +519,17 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
             )
 
             agent_response = StreamingAgentChatResponse(
-                chat_stream=response_stream,
+                achat_stream=response_stream,
                 sources=step.step_state["sources"],
             )
             # create task to write chat response to history
-            asyncio.create_task(agent_response.awrite_response_to_history(self._memory))
+            asyncio.create_task(agent_response.awrite_response_to_history(step.memory))
 
         return self._get_task_step_response(agent_response, step, is_done)
 
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
-        return self._run_step(step, task, chat_response_mode=ChatResponseMode.WAIT)
+        return self._run_step(step, task)
 
     async def arun_step(
         self, step: TaskStep, task: Task, **kwargs: Any
@@ -532,10 +540,10 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
         # TODO: figure out if we need a different type for TaskStepOutput
-        raise NotImplementedError
+        return self._run_step_stream(step, task)
 
     async def astream_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async stream)."""
-        raise NotImplementedError
+        return await self._arun_step_stream(step, task)

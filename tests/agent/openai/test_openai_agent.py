@@ -2,8 +2,9 @@ from typing import Any, List, Sequence
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.agent.openai_agent import OpenAIAgent, call_tool_with_error_handling
-from llama_index.chat_engine.types import AgentChatResponse
+from llama_index.agent.openai.base import OpenAIAgent
+from llama_index.agent.openai.step import call_tool_with_error_handling
+from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
@@ -34,6 +35,9 @@ def mock_chat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
             )
         ],
     )
+
+async def mock_achat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
+    return mock_chat_completion(*args, **kwargs)
 
 
 @pytest.fixture()
@@ -85,6 +89,41 @@ def test_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
     response = agent.chat("What is 1 + 1?")
     assert isinstance(response, AgentChatResponse)
     assert response.response == "\n\nThis is a test!"
+
+
+@patch("llama_index.llms.openai.AsyncOpenAI")
+@pytest.mark.asyncio()
+async def test_achat_basic(MockAsyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
+    mock_instance = MockAsyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_achat_completion()
+
+    llm = OpenAI(model="gpt-3.5-turbo")
+
+    agent = OpenAIAgent.from_tools(
+        tools=[add_tool],
+        llm=llm,
+    )
+    response = await agent.achat("What is 1 + 1?")
+    assert isinstance(response, AgentChatResponse)
+    assert response.response == "\n\nThis is a test!"
+
+
+@patch("llama_index.llms.openai.SyncOpenAI")
+def test_stream_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_chat_completion()
+
+    llm = OpenAI(model="gpt-3.5-turbo")
+
+    agent = OpenAIAgent.from_tools(
+        tools=[add_tool],
+        llm=llm,
+    )
+    response = agent.stream_chat("What is 1 + 1?")
+    assert isinstance(response, StreamingAgentChatResponse)
+    print(str(response))
+    raise Exception
+    assert str(response) == "\n\nThis is a test!"
 
 
 @patch("llama_index.llms.openai.SyncOpenAI")

@@ -95,11 +95,13 @@ class StreamingAgentChatResponse:
         self._new_item_event.set()
 
     def write_response_to_history(self, memory: BaseMemory) -> None:
+        print('hello world')
         if self.chat_stream is None:
             raise ValueError(
                 "chat_stream is None. Cannot write to history without chat_stream."
             )
 
+        print('hello world2')
         # try/except to prevent hanging on error
         try:
             final_text = ""
@@ -114,6 +116,7 @@ class StreamingAgentChatResponse:
                 memory.put(chat.message)
         except Exception as e:
             logger.warning(f"Encountered exception writing response to history: {e}")
+        print(f'hello world3: {final_text}')
 
         self._is_done = True
 
