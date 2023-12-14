@@ -1,8 +1,8 @@
 from typing import Any, List, Optional, Union, cast
 
-from llama_index.agent.types import BaseAgent
 from llama_index.agent.types import (
     AgentState,
+    BaseAgent,
     BaseAgentStepEngine,
     Task,
     TaskStep,
@@ -24,17 +24,6 @@ from llama_index.chat_engine.types import (
 from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
-
-# def _add_initial_step(step_queue: Deque[TaskStep], task: Task):
-#     """Add initial step."""
-#     step_queue.append(
-#         TaskStep(
-#             task_id=task.task_id,
-#             step_id=0,
-#             input=task.input,
-#             memory=task.memory,
-#         )
-#     )
 
 
 class AgentEngine(BaseModel, BaseAgent):

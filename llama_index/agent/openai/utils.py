@@ -1,7 +1,9 @@
 """Utils for OpenAI agent."""
 
-from llama_index.tools import BaseTool
 from typing import List
+
+from llama_index.tools import BaseTool
+
 
 def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
     """Get function by name."""

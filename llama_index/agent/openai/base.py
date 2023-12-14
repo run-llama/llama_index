@@ -9,39 +9,31 @@ from llama_index.agent.legacy.openai.base import OpenAIAgent
 """
 
 
-from llama_index.agent.types import BaseAgent
-from llama_index.agent.openai.step import OpenAIAgentStepEngine
-from llama_index.agent.executor.base import AgentEngine
-
 from typing import (
     Any,
-    Optional,
-    Sequence,
     List,
+    Optional,
     Type,
 )
 
+from llama_index.agent.executor.base import AgentEngine
+from llama_index.agent.openai.step import OpenAIAgentStepEngine
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
-    CBEventType,
-    EventPayload,
-    trace_method,
 )
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
-from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.base import LLM, ChatMessage
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
-from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
-from llama_index.tools.types import AsyncBaseTool
-from llama_index.utils import print_text, unit_generator
-
+from llama_index.tools import BaseTool
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
+
 
 class OpenAIAgent(BaseAgent):
     """OpenAI agent.
@@ -52,7 +44,7 @@ class OpenAIAgent(BaseAgent):
     ```python
     from llama_index.agent.legacy.openai.base import OpenAIAgent
     ```
-    
+
     """
 
     def __init__(
@@ -143,7 +135,7 @@ class OpenAIAgent(BaseAgent):
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
         )
-    
+
     @property
     def chat_history(self) -> List[ChatMessage]:
         """Chat history."""
@@ -157,12 +149,14 @@ class OpenAIAgent(BaseAgent):
     ) -> AgentChatResponse:
         """Chat."""
         return self._agent_engine.chat(message=message, chat_history=chat_history)
-    
+
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Chat."""
-        return await self._agent_engine.achat(message=message, chat_history=chat_history)
+        return await self._agent_engine.achat(
+            message=message, chat_history=chat_history
+        )
 
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -179,4 +173,3 @@ class OpenAIAgent(BaseAgent):
         return await self._agent_engine.astream_chat(
             message=message, chat_history=chat_history
         )
-

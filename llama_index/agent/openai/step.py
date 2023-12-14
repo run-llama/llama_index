@@ -556,10 +556,16 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
         # TODO: figure out if we need a different type for TaskStepOutput
-        raise NotImplementedError
+        tool_choice = kwargs.get("tool_choice", "auto")
+        return self._run_step(
+            step, task, mode=ChatResponseMode.STREAM, tool_choice=tool_choice
+        )
 
     async def astream_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async stream)."""
-        raise NotImplementedError
+        tool_choice = kwargs.get("tool_choice", "auto")
+        return await self._arun_step(
+            step, task, mode=ChatResponseMode.STREAM, tool_choice=tool_choice
+        )
