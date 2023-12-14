@@ -73,16 +73,21 @@ def get_results_df(
 def _download_llama_dataset_from_hub(llama_dataset_id: str) -> LabelledRagDataset:
     """Uses a subprocess and llamaindex-cli to download a dataset from llama-hub."""
     with tempfile.TemporaryDirectory() as tmp:
-        subprocess.run(
-            [
-                "llamaindex-cli",
-                "download-llamadataset",
-                f"{llama_dataset_id}",
-                "--download-dir",
-                f"{tmp}",
-            ]
-        )
-        return LabelledRagDataset.from_json(f"{tmp}/rag_dataset.json")
+        try:
+            subprocess.run(
+                [
+                    "llamaindex-cli",
+                    "download-llamadataset",
+                    f"{llama_dataset_id}",
+                    "--download-dir",
+                    f"{tmp}",
+                ]
+            )
+            return LabelledRagDataset.from_json(f"{tmp}/rag_dataset.json")
+        except FileNotFoundError as err:
+            raise ValueError(
+                "No dataset associated with the supplied `llama_dataset_id`"
+            ) from err
 
 
 def upload_eval_dataset(
