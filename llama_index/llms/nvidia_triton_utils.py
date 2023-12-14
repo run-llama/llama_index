@@ -1,9 +1,9 @@
 import abc
 import json
-import queue
 import random
 import time
 from functools import partial
+from queue import Queue
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,7 +24,7 @@ STOP_WORDS = ["</s>"]
 RANDOM_SEED = 0
 
 
-class StreamingResponseGenerator(queue.Queue[Optional[str]]):
+class StreamingResponseGenerator(Queue[Optional[str]]):
     """A Generator that provides the inference results from an LLM."""
 
     def __init__(
@@ -261,7 +261,7 @@ class GrpcTritonClient(_BaseTritonClient):
 
     def _stream_callback(
         self,
-        result_queue: queue.Queue[Union[Optional[Dict[str, str]], str]],
+        result_queue: Queue[Union[Optional[Dict[str, str]], str]],
         force_batch: bool,
         result: Any,
         error: str,

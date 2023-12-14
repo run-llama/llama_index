@@ -205,14 +205,14 @@ class NvidiaTriton(LLM):
         if self.triton_load_model_call:
             client.load_model(model_params["model_name"])
 
-        result_queue = self._client.request_streaming(
+        result_queue = client.request_streaming(
             model_params["model_name"], request_id, **invocation_params
         )
 
         response = ""
         for token in result_queue:
             if isinstance(token, InferenceServerException):
-                self._client.stop_stream(model_params["model_name"], request_id)
+                client.stop_stream(model_params["model_name"], request_id)
                 raise token
             response = response + token
 
