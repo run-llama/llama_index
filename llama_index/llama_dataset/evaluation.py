@@ -12,6 +12,7 @@ from llama_index.evaluation import (
     EvaluationResult,
     PairwiseComparisonEvaluator,
 )
+from llama_index.evaluation.pairwise import EvaluationSource
 from llama_index.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,
@@ -33,8 +34,8 @@ class EvaluationExamplePrediction(BaseLlamaExamplePrediction):
         default_factory=str,
         description="The generated (predicted) response that can be compared to a reference (ground-truth) answer.",
     )
-    score: str = Field(
-        default_factory=str,
+    score: float = Field(
+        default_factory=float,
         description="The generated (predicted) response that can be compared to a reference (ground-truth) answer.",
     )
 
@@ -195,13 +196,51 @@ class LabelledEvaluationDataset(BaseLlamaDataset):
         return EvaluationPredictionDataset(predictions=predictions)
 
 
-class PairwiseEvaluationExamplePrediction(EvaluationExamplePrediction):
-    """Pairwise evaluation example prediction result."""
+class PairwiseEvaluationExamplePrediction(BaseLlamaExamplePrediction):
+    """Pairwise evaluation example prediction class.
+
+    Args:
+        feedback (Optional[str]): The evaluator's feedback.
+        score (Optional[float]): The evaluator's score.
+        evaluation_source (EvaluationSource): If the evaluation came from original order or flipped; or inconclusive.
+    """
+
+    feedback: str = Field(
+        default_factory=str,
+        description="The generated (predicted) response that can be compared to a reference (ground-truth) answer.",
+    )
+    score: float = Field(
+        default_factory=float,
+        description="The generated (predicted) response that can be compared to a reference (ground-truth) answer.",
+    )
+    evaluation_source: EvaluationSource = Field(
+        description=(
+            "Whether the evaluation comes from original, or flipped ordering. Can also be neither here indicating inconclusive judgement."
+        )
+    )
 
     @property
     def class_name(self) -> str:
         """Data example class name."""
         return "PairwiseEvaluationExamplePrediction"
+
+
+class PairwiseEvaluationPredictionDataset(BaseLlamaPredictionDataset):
+    """Pairwise evaluation predictions dataset class."""
+
+    _prediction_type = PairwiseEvaluationExamplePrediction
+
+    def to_pandas(self) -> PandasDataFrame:
+        """Create pandas dataframe."""
+        data = {}
+        if self.predictions:
+            data = {
+                "feedback": [t.feedback for t in self.predictions],
+                "score": [t.score for t in self.predictions],
+                "ordering": [t.evaluation_source.value for t in self.predictions],
+            }
+
+        return PandasDataFrame(data)
 
 
 class LabelledPairwiseEvaluationDataExample(LabelledEvaluationDataExample):
@@ -221,23 +260,6 @@ class LabelledPairwiseEvaluationDataExample(LabelledEvaluationDataExample):
         return "LabelledPairwiseEvaluationDataExample"
 
 
-class PairwiseEvaluationPredictionDataset(BaseLlamaPredictionDataset):
-    """Pairwise evaluation predictions dataset class."""
-
-    _prediction_type = PairwiseEvaluationExamplePrediction
-
-    def to_pandas(self) -> PandasDataFrame:
-        """Create pandas dataframe."""
-        data = {}
-        if self.predictions:
-            data = {
-                "feedback": [t.feedback for t in self.predictions],
-                "score": [t.score for t in self.predictions],
-            }
-
-        return PandasDataFrame(data)
-
-
 class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
     """Labelled pairwise evaluation dataset. For evaluating the evaluator in
     performing pairwise evaluations.
@@ -246,7 +268,7 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
         BaseLlamaDataset (_type_): _description_
     """
 
-    _example_type = LabelledEvaluationDataExample
+    _example_type = LabelledPairwiseEvaluationDataExample
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
@@ -276,7 +298,7 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
         evaluator: PairwiseComparisonEvaluator,
         example: LabelledPairwiseEvaluationDataExample,
         sleep_time_in_seconds: int,
-    ) -> EvaluationExamplePrediction:
+    ) -> PairwiseEvaluationExamplePrediction:
         """Async predict evaluation example with an Evaluator."""
         await asyncio.sleep(sleep_time_in_seconds)
         eval_kwargs = {
@@ -295,8 +317,10 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
             reference=example.ground_truth_answer,
             sleep_time_in_seconds=sleep_time_in_seconds,
         )
-        return EvaluationExamplePrediction(
-            feedback=eval_result.feedback, score=eval_result.score
+        return PairwiseEvaluationExamplePrediction(
+            feedback=eval_result.feedback,
+            score=eval_result.score,
+            evaluation_source=eval_result.pairwise_source,
         )
 
     def _predict_example(
@@ -304,7 +328,7 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
         evaluator: PairwiseComparisonEvaluator,
         example: LabelledPairwiseEvaluationDataExample,
         sleep_time_in_seconds: int = 0,
-    ) -> EvaluationExamplePrediction:
+    ) -> PairwiseEvaluationExamplePrediction:
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
         eval_kwargs = {
@@ -316,8 +340,10 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
             "sleep_time_in_seconds": sleep_time_in_seconds,
         }
         eval_result: EvaluationResult = evaluator.evaluate(**eval_kwargs)
-        return EvaluationExamplePrediction(
-            feedback=eval_result.feedback, score=eval_result.score
+        return PairwiseEvaluationExamplePrediction(
+            feedback=eval_result.feedback,
+            score=eval_result.score,
+            evaluation_source=eval_result.pairwise_source,
         )
 
     def _construct_prediction_dataset(
