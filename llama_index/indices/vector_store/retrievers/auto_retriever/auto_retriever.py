@@ -12,6 +12,7 @@ from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
     DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL,
     VectorStoreQueryPrompt,
 )
+from llama_index.logger import logger
 from llama_index.output_parsers.base import OutputParserException, StructuredOutput
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext

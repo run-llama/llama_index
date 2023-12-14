@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.logger import logger as _logger
 from llama_index.schema import BaseNode, ImageNode, MetadataMode
 from llama_index.utils import globals_helper, truncate_text
 from llama_index.vector_stores.types import VectorStoreQueryResult
@@ -45,7 +46,7 @@ def log_vector_store_query_result(
     result: VectorStoreQueryResult, logger: Optional[logging.Logger] = None
 ) -> None:
     """Log vector store query result."""
-    logger = logger or logger
+    logger = logger or _logger
 
     assert result.ids is not None
     assert result.nodes is not None
