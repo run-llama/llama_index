@@ -8,7 +8,6 @@ from typing import Generic, Sequence, Type, TypeVar
 from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
 from llama_index.embeddings import (
     AzureOpenAIEmbedding,
-    BedrockEmbedding,
     HuggingFaceInferenceAPIEmbedding,
     OpenAIEmbedding,
 )
@@ -176,11 +175,6 @@ class ConfigurableTransformations(Enum):
         name="Azure OpenAI Embedding",
         transformation_category=TransformationCategories.EMBEDDING,
         component_type=AzureOpenAIEmbedding,
-    )
-    BEDROCK_EMBEDDING = ConfigurableTransformation(
-        name="Bedrock Embedding",
-        transformation_category=TransformationCategories.EMBEDDING,
-        component_type=BedrockEmbedding,
     )
     HUGGINGFACE_API_EMBEDDING = ConfigurableTransformation(
         name="HuggingFace API Embedding",
