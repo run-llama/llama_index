@@ -61,7 +61,7 @@ set_global_tokenizer(
 
 ## LLM Compatibility Tracking
 
-While LLMs are powerful, not every LLM is easy to set up. Furthermore, even with proper setup, some LLMs have trouble performning tasks that require strict instruction following.
+While LLMs are powerful, not every LLM is easy to set up. Furthermore, even with proper setup, some LLMs have trouble performing tasks that require strict instruction following.
 
 LlamaIndex offers integrations with nearly every LLM, but it can be often unclear if the LLM will work well out of the box, or if further customization is needed.
 
