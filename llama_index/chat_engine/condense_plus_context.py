@@ -22,7 +22,6 @@ from llama_index.prompts.base import PromptTemplate
 from llama_index.schema import MetadataMode, NodeWithScore
 from llama_index.utilities.token_counting import TokenCounter
 
-
 DEFAULT_CONTEXT_PROMPT_TEMPLATE = """
   The following is a friendly conversation between a user and an AI assistant.
   The assistant is talkative and provides lots of specific details from its context.

@@ -1,6 +1,5 @@
 """Pandas csv structured store."""
 
-import logging
 from typing import Any, Optional, Sequence
 
 import pandas as pd
@@ -8,9 +7,8 @@ import pandas as pd
 from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.table import PandasStructTable
 from llama_index.indices.struct_store.base import BaseStructStoreIndex
-from llama_index.schema import BaseNode
-
 from llama_index.logger import logger
+from llama_index.schema import BaseNode
 
 
 class PandasIndex(BaseStructStoreIndex[PandasStructTable]):

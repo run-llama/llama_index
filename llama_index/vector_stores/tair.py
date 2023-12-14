@@ -20,7 +20,6 @@ from llama_index.vector_stores.types import (
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict
 
-
 if TYPE_CHECKING:
     from tair import Tair
 

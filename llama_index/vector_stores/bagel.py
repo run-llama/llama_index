@@ -1,7 +1,7 @@
-import logging
 import math
 from typing import Any, List
 
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -14,8 +14,6 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-from llama_index.logger import logger
 
 
 def _to_bagel_filter(standard_filters: MetadataFilters) -> dict:

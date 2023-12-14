@@ -1,6 +1,5 @@
 """Sentence Transformer Finetuning Engine."""
 
-import logging
 from typing import Any, List, Optional, Tuple, Type, cast
 
 from llama_index.embeddings.adapter import AdapterEmbeddingModel

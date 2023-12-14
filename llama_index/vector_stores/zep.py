@@ -1,6 +1,6 @@
-import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -9,8 +9,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
-
-from llama_index.logger import logger
 
 if TYPE_CHECKING:
     from zep_python.document import Document as ZepDocument

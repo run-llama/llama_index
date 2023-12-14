@@ -1,5 +1,4 @@
 """Token splitter."""
-import logging
 from typing import Callable, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -10,7 +9,6 @@ from llama_index.logging import logger
 from llama_index.node_parser.interface import MetadataAwareTextSplitter
 from llama_index.node_parser.text.utils import split_by_char, split_by_sep
 from llama_index.utils import get_tokenizer
-
 
 # NOTE: this is the number of tokens we reserve for metadata formatting
 DEFAULT_METADATA_FORMAT_LEN = 2

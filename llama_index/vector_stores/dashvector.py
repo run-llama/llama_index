@@ -1,5 +1,4 @@
 """DashVector Vector Store."""
-import logging
 from typing import Any, List, Optional, cast
 
 from llama_index.schema import BaseNode, TextNode

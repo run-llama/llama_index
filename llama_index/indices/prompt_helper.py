@@ -8,7 +8,6 @@ make use of the available context window (and thereby reducing the number of LLM
 needed), or truncating them so that they fit in a single LLM call.
 """
 
-import logging
 from copy import deepcopy
 from string import Formatter
 from typing import Callable, List, Optional, Sequence
@@ -31,8 +30,6 @@ from llama_index.utilities.token_counting import TokenCounter
 
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
-
-from llama_index.logger import logger
 
 
 class PromptHelper(BaseComponent):

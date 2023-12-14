@@ -4,11 +4,11 @@ An index that that is built on top of an existing vector store.
 
 """
 
-import logging
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.logger import logger
 from llama_index.schema import BaseNode
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
@@ -27,8 +27,6 @@ from llama_index.vector_stores.weaviate_utils import (
     parse_get_response,
     to_node,
 )
-
-from llama_index.logger import logger
 
 import_err_msg = (
     "`weaviate` package not found, please run `pip install weaviate-client`"

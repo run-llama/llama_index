@@ -6,14 +6,12 @@ discord.py module.
 """
 
 import asyncio
-import logging
 import os
 from typing import List, Optional
 
+from llama_index.logger import logger
 from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
-
-from llama_index.logger import logger
 
 
 async def read_channel(

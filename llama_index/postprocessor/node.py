@@ -1,17 +1,15 @@
 """Node postprocessor."""
 
-import logging
 from typing import Dict, List, Optional, cast
 
 from llama_index.bridge.pydantic import Field, validator
+from llama_index.logger import logger
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.base import PromptTemplate
 from llama_index.response_synthesizers import ResponseMode, get_response_synthesizer
 from llama_index.schema import NodeRelationship, NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore import BaseDocumentStore
-
-from llama_index.logger import logger
 
 
 class KeywordNodePostprocessor(BaseNodePostprocessor):

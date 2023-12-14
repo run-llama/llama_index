@@ -1,4 +1,3 @@
-import logging
 from threading import Thread
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union
 

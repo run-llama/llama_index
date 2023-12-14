@@ -4,7 +4,6 @@ Build a KG by extracting triplets, and leveraging the KG during query-time.
 
 """
 
-import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.constants import GRAPH_STORE_KEY
@@ -13,6 +12,7 @@ from llama_index.data_structs.data_structs import KG
 from llama_index.graph_stores.simple import SimpleGraphStore
 from llama_index.graph_stores.types import GraphStore
 from llama_index.indices.base import BaseIndex
+from llama_index.logger import logger
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
 from llama_index.schema import BaseNode, MetadataMode
@@ -20,8 +20,6 @@ from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import get_tqdm_iterable
-
-from llama_index.logger import logger
 
 
 class KnowledgeGraphIndex(BaseIndex[KG]):

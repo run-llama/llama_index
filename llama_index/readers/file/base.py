@@ -1,5 +1,4 @@
 """Simple reader that reads files of different formats from a directory."""
-import logging
 import mimetypes
 import os
 from datetime import datetime

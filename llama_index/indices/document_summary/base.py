@@ -5,7 +5,6 @@ the summary to the underlying Nodes.
 This summary can be used for retrieval.
 
 """
-import logging
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union, cast
@@ -14,6 +13,7 @@ from llama_index.core import BaseRetriever
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.utils import embed_nodes
+from llama_index.logger import logger
 from llama_index.response.schema import Response
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
@@ -32,9 +32,6 @@ from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import get_tqdm_iterable
 from llama_index.vector_stores.types import VectorStore
-
-from llama_index.logger import logger
-
 
 DEFAULT_SUMMARY_QUERY = (
     "Describe what the provided text is about. "

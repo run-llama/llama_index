@@ -1,5 +1,4 @@
 """KG Retrievers."""
-import logging
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple

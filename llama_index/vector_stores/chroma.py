@@ -1,9 +1,9 @@
 """Chroma vector store."""
-import logging
 import math
 from typing import Any, Dict, Generator, List, Optional, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.utils import truncate_text
 from llama_index.vector_stores.types import (
@@ -17,8 +17,6 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-from llama_index.logger import logger
 
 
 def _transform_chroma_filter_condition(condition: str) -> str:

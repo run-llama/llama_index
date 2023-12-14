@@ -1,13 +1,11 @@
 import json
-import logging
 import os
 from typing import Dict, Optional
 
 import fsspec
 
-from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseInMemoryKVStore
-
 from llama_index.logger import logger
+from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseInMemoryKVStore
 
 DATA_TYPE = Dict[str, Dict[str, dict]]
 

@@ -1,4 +1,3 @@
-import logging
 from typing import Callable, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
@@ -6,6 +5,7 @@ from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.logger import logger
 from llama_index.objects.base import ObjectRetriever
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
@@ -24,8 +24,6 @@ from llama_index.selectors.utils import get_selector_from_context
 from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.types import ToolMetadata
-
-from llama_index.logger import logger
 
 
 def combine_responses(

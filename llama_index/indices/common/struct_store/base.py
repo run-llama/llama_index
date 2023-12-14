@@ -1,12 +1,12 @@
 """Common classes for structured operations."""
 
-import logging
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.table import StructDatapoint
 from llama_index.llm_predictor.base import LLMPredictorType
+from llama_index.logger import logger
 from llama_index.node_parser.interface import TextSplitter
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
@@ -22,8 +22,6 @@ from llama_index.schema import BaseNode, MetadataMode
 from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.utils import truncate_text
-
-from llama_index.logger import logger
 
 
 class SQLDocumentContextBuilder:

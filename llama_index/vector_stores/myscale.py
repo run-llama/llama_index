@@ -4,9 +4,9 @@ An index that is built on top of an existing MyScale cluster.
 
 """
 import json
-import logging
 from typing import Any, Dict, List, Optional, cast
 
+from llama_index.logger import logger
 from llama_index.readers.myscale import (
     MyScaleSettings,
     escape_str,
@@ -27,8 +27,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-
-from llama_index.logger import logger
 
 
 class MyScaleVectorStore(VectorStore):

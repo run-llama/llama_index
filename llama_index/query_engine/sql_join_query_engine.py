@@ -1,6 +1,5 @@
 """SQL Join query engine."""
 
-import logging
 from typing import Callable, Dict, Optional, Union
 
 from llama_index.callbacks.base import CallbackManager
@@ -12,6 +11,7 @@ from llama_index.indices.struct_store.sql_query import (
 )
 from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.llms.utils import resolve_llm
+from llama_index.logger import logger
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
@@ -22,9 +22,6 @@ from llama_index.selectors.utils import get_selector_from_context
 from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.utils import print_text
-
-from llama_index.logger import logger
-
 
 DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT_TMPL = """
 The original question is given below.

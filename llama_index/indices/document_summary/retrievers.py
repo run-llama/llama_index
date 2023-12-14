@@ -4,7 +4,6 @@ This module contains retrievers for document summary indices.
 
 """
 
-import logging
 from typing import Any, Callable, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
@@ -19,8 +18,6 @@ from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import VectorStoreQuery
-
-from llama_index.logger import logger
 
 
 class DocumentSummaryIndexLLMRetriever(BaseRetriever):

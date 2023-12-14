@@ -1,6 +1,5 @@
 """Wrapper functions around an LLM chain."""
 
-import logging
 from abc import ABC, abstractmethod
 from collections import ChainMap
 from typing import Any, Dict, List, Optional, Union
@@ -23,11 +22,10 @@ from llama_index.llms.types import (
     MessageRole,
 )
 from llama_index.llms.utils import LLMType, resolve_llm
+from llama_index.logger import logger
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseComponent
 from llama_index.types import PydanticProgramMode, TokenAsyncGen, TokenGen
-
-from llama_index.logger import logger
 
 
 class BaseLLMPredictor(BaseComponent, ABC):

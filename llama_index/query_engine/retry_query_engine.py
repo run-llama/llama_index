@@ -1,4 +1,3 @@
-import logging
 from typing import Optional
 
 from llama_index.callbacks.base import CallbackManager
@@ -8,11 +7,10 @@ from llama_index.evaluation.guideline import GuidelineEvaluator
 from llama_index.indices.query.query_transform.feedback_transform import (
     FeedbackQueryTransformation,
 )
+from llama_index.logger import logger
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import QueryBundle
-
-from llama_index.logger import logger
 
 
 class RetryQueryEngine(BaseQueryEngine):

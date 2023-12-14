@@ -10,7 +10,6 @@ from llama_index.core import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.utils import async_embed_nodes, embed_nodes
-from llama_index.logger import logger
 from llama_index.schema import BaseNode, ImageNode, IndexNode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo

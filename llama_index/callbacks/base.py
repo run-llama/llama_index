@@ -14,7 +14,6 @@ from llama_index.callbacks.schema import (
 )
 from llama_index.logger import logger
 
-
 global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
 empty_trace_ids: List[str] = []
 global_stack_trace_ids = ContextVar("trace_ids", default=empty_trace_ids)

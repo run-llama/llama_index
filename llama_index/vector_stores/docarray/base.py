@@ -1,10 +1,10 @@
-import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
 import numpy as np
 
 from llama_index.bridge.pydantic import Field
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     VectorStore,
@@ -16,8 +16,6 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-from llama_index.logger import logger
 
 
 class DocArrayVectorStore(VectorStore, ABC):

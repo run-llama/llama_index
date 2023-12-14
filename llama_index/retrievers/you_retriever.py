@@ -1,6 +1,5 @@
 """You Retriever."""
 
-import logging
 import os
 from typing import List, Optional
 
@@ -10,8 +9,6 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.core import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
-
-from llama_index.logger import logger
 
 
 class YouRetriever(BaseRetriever):

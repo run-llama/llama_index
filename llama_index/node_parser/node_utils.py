@@ -1,9 +1,9 @@
 """General node utils."""
 
 
-import logging
 from typing import List, Optional
 
+from llama_index.logger import logger
 from llama_index.schema import (
     BaseNode,
     Document,
@@ -13,8 +13,6 @@ from llama_index.schema import (
     TextNode,
 )
 from llama_index.utils import truncate_text
-
-from llama_index.logger import logger
 
 
 def build_nodes_from_splits(

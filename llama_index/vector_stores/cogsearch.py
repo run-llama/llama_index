@@ -1,10 +1,10 @@
 """Azure Cognitive Search vector store."""
 import enum
 import json
-import logging
 from enum import auto
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
@@ -19,8 +19,6 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-from llama_index.logger import logger
 
 
 class MetadataIndexFieldType(int, enum.Enum):

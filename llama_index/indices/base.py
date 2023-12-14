@@ -1,5 +1,4 @@
 """Base index classes."""
-import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, cast
 

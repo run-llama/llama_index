@@ -1,15 +1,13 @@
-import logging
 from typing import Callable, List, Optional, cast
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core import BaseRetriever
 from llama_index.indices.vector_store.base import VectorStoreIndex
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, NodeWithScore, QueryBundle
 from llama_index.storage.docstore.types import BaseDocumentStore
 from llama_index.utils import get_tokenizer
-
-from llama_index.logger import logger
 
 
 class BM25Retriever(BaseRetriever):

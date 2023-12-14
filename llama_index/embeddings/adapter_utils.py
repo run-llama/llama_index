@@ -9,8 +9,6 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
-from llama_index.logger import logger
-
 
 class BaseAdapter(nn.Module):
     """Base adapter.

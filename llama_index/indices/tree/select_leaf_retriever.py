@@ -1,6 +1,5 @@
 """Leaf query mechanism."""
 
-import logging
 from typing import Any, Dict, List, Optional, cast
 
 from llama_index.callbacks.base import CallbackManager

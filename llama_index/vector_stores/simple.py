@@ -1,7 +1,6 @@
 """Simple vector store index."""
 
 import json
-import logging
 import os
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Mapping, Optional, cast
@@ -27,7 +26,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict
-
 
 LEARNER_MODES = {
     VectorStoreQueryMode.SVM,

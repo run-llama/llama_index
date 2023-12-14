@@ -9,7 +9,6 @@ from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.logger import logger
 from llama_index.schema import ImageType
 
-
 AVAILABLE_CLIP_MODELS = (
     "RN50",
     "RN101",

@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict, Optional, Sequence
 
 from llama_index.multi_modal_llms.base import ChatMessage
@@ -20,8 +19,6 @@ openai.api_key prior to initialization.
 API keys can be found or created at \
 https://platform.openai.com/account/api-keys
 """
-
-from llama_index.logger import logger
 
 
 def generate_openai_multi_modal_chat_message(

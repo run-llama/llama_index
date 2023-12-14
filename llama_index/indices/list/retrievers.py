@@ -1,5 +1,4 @@
 """Retrievers for SummaryIndex."""
-import logging
 from typing import Any, Callable, List, Optional, Tuple
 
 from llama_index.callbacks.base import CallbackManager
@@ -10,14 +9,13 @@ from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
+from llama_index.logger import logger
 from llama_index.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_CHOICE_SELECT_PROMPT,
 )
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
-
-from llama_index.logger import logger
 
 
 class SummaryIndexRetriever(BaseRetriever):

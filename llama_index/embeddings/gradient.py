@@ -8,7 +8,6 @@ from llama_index.embeddings.base import (
 )
 from llama_index.logger import logger
 
-
 # For bge models that Gradient AI provides, it is suggested to add the instruction for retrieval.
 # Reference: https://huggingface.co/BAAI/bge-large-en-v1.5#model-list
 QUERY_INSTRUCTION_FOR_RETRIEVAL = (

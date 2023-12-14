@@ -1,9 +1,9 @@
-import logging
 from abc import abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Type
 
 import pandas as pd
 
+from llama_index.logger import logger
 from llama_index.program.predefined.df import (
     DataFrameRow,
     DataFrameRowsOnly,
@@ -20,8 +20,6 @@ from llama_index.schema import BaseNode, TextNode
 from llama_index.service_context import ServiceContext
 from llama_index.types import BasePydanticProgram, Model
 from llama_index.utils import print_text
-
-from llama_index.logger import logger
 
 
 class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):

@@ -1,11 +1,7 @@
-import logging
 from typing import Callable, List
 
+from llama_index.logger import logger
 from llama_index.node_parser.interface import TextSplitter
-
-from llama_index.logger import logger
-
-from llama_index.logger import logger
 
 
 def truncate_text(text: str, text_splitter: TextSplitter) -> str:

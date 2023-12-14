@@ -3,7 +3,6 @@
 An index that that is built on top of multiple vector stores for different modalities.
 
 """
-import logging
 from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.core import BaseQueryEngine, BaseRetriever
@@ -22,8 +21,6 @@ from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import DEFAULT_VECTOR_STORE, SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
-
-from llama_index.logger import logger
 
 
 class MultiModalVectorStoreIndex(VectorStoreIndex):

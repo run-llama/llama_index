@@ -10,7 +10,6 @@ from llama_index.output_parsers import PydanticOutputParser
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
 
-
 DEFAULT_GUIDELINES = (
     "The response should fully answer the query.\n"
     "The response should avoid being vague or ambiguous.\n"

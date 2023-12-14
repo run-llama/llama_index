@@ -1,5 +1,4 @@
 import json
-import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from llama_index.core import BaseQueryEngine
@@ -12,7 +11,6 @@ from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.utils import print_text
 
-from llama_index.logger import logger
 IMPORT_ERROR_MSG = (
     "`jsonpath_ng` package not found, please run `pip install jsonpath-ng`"
 )

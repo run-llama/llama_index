@@ -3,7 +3,6 @@
 An index that is built within DeepLake.
 
 """
-import logging
 from typing import Any, List, Optional, cast
 
 from llama_index.schema import BaseNode, MetadataMode
@@ -23,8 +22,6 @@ try:
     DEEPLAKE_INSTALLED = True
 except ImportError:
     DEEPLAKE_INSTALLED = False
-
-from llama_index.logger import logger
 
 
 class DeepLakeVectorStore(VectorStoreBase):

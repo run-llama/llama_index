@@ -1,10 +1,8 @@
 """Simple graph store index."""
 
-import logging
 from typing import Any, Dict, List, Optional
 
 from llama_index.graph_stores.types import GraphStore
-
 from llama_index.logger import logger
 
 

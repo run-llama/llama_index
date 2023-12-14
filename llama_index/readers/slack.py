@@ -1,5 +1,4 @@
 """Slack reader."""
-import logging
 import os
 import time
 from datetime import datetime
@@ -7,10 +6,9 @@ from ssl import SSLContext
 from typing import Any, List, Optional
 
 from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.logger import logger
 from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
-
-from llama_index.logger import logger
 
 
 class SlackReader(BasePydanticReader):

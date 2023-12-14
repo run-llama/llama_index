@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from typing import List, Optional, Sequence, cast
 
 from llama_index.async_utils import run_async_tasks
@@ -7,6 +6,7 @@ from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core import BaseQueryEngine
+from llama_index.logger import logger
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.openai_generator import OpenAIQuestionGenerator
@@ -17,8 +17,6 @@ from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.utils import get_color_mapping, print_text
-
-from llama_index.logger import logger
 
 
 class SubQuestionAnswerPair(BaseModel):

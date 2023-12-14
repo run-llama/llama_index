@@ -2,21 +2,19 @@
 
 
 import asyncio
-import logging
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.indices.utils import get_sorted_node_list, truncate_text
+from llama_index.logger import logger
 from llama_index.prompts import BasePromptTemplate
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.utils import get_tqdm_iterable
-
-from llama_index.logger import logger
 
 
 class GPTTreeIndexBuilder:

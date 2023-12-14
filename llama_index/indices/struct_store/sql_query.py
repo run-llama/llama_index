@@ -1,5 +1,4 @@
 """Default query for SQLStructStoreIndex."""
-import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
@@ -11,6 +10,7 @@ from llama_index.indices.struct_store.container_builder import (
 )
 from llama_index.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.indices.struct_store.sql_retriever import NLSQLRetriever, SQLParserMode
+from llama_index.logger import logger
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
@@ -27,9 +27,6 @@ from llama_index.response_synthesizers import (
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
-
-from llama_index.logger import logger
-
 
 # **NOTE**: deprecated (for older versions of sql query engine)
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (

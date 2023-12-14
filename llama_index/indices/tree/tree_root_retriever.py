@@ -1,5 +1,4 @@
 """Retrieve query."""
-import logging
 from typing import Any, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
@@ -7,9 +6,8 @@ from llama_index.core import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.utils import get_sorted_node_list
-from llama_index.schema import NodeWithScore, QueryBundle
-
 from llama_index.logger import logger
+from llama_index.schema import NodeWithScore, QueryBundle
 
 
 class TreeRootRetriever(BaseRetriever):

@@ -1,6 +1,5 @@
 """SQL Vector query engine."""
 
-import logging
 from typing import Any, Optional, Union
 
 from llama_index.callbacks.base import CallbackManager
@@ -22,9 +21,6 @@ from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
 from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
-
-from llama_index.logger import logger
-
 
 DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL = """
 The original question is given below.

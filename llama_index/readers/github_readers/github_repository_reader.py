@@ -9,12 +9,12 @@ the text extracted from the files using the parser.
 import asyncio
 import base64
 import binascii
-import logging
 import os
 import pathlib
 import tempfile
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from llama_index.logger import logger
 from llama_index.readers.base import BaseReader
 from llama_index.readers.file.base import DEFAULT_FILE_READER_CLS
 from llama_index.readers.github_readers.github_api_client import (
@@ -29,8 +29,6 @@ from llama_index.readers.github_readers.utils import (
     print_if_verbose,
 )
 from llama_index.schema import Document
-
-from llama_index.logger import logger
 
 
 class GithubRepositoryReader(BaseReader):

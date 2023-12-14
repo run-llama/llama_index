@@ -1,7 +1,7 @@
 """Epsilla vector store."""
-import logging
 from typing import Any, List, Optional
 
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
@@ -18,8 +18,6 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-from llama_index.logger import logger
 
 
 class EpsillaVectorStore(VectorStore):

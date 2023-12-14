@@ -19,7 +19,6 @@ from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.service_context import ServiceContext
 from llama_index.tools import ToolOutput
 
-
 DEFAULT_TEMPLATE = """\
 Given a conversation (between Human and Assistant) and a follow up message from Human, \
 rewrite the message to be a standalone question that captures all relevant context \

@@ -1,13 +1,11 @@
 """Query Tree using embedding similarity between query and node text."""
 
-import logging
 from typing import Dict, List, Tuple, cast
 
 from llama_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
 from llama_index.indices.utils import get_sorted_node_list
-from llama_index.schema import BaseNode, MetadataMode, QueryBundle
-
 from llama_index.logger import logger
+from llama_index.schema import BaseNode, MetadataMode, QueryBundle
 
 
 class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):

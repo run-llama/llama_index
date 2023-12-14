@@ -1,12 +1,10 @@
-import logging
 from typing import Any, List, Optional, Sequence
 
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_CLASS
-from llama_index.storage.storage_context import StorageContext
-
 from llama_index.logger import logger
+from llama_index.storage.storage_context import StorageContext
 
 
 def load_index_from_storage(

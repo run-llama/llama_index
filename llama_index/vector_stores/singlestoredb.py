@@ -1,9 +1,9 @@
 import json
-import logging
 from typing import Any, List, Optional, Sequence
 
 from sqlalchemy.pool import QueuePool
 
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     BaseNode,
@@ -12,8 +12,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
-
-from llama_index.logger import logger
 
 
 class SingleStoreVectorStore(VectorStore):

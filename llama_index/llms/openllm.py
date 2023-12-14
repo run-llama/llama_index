@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -34,9 +33,8 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.types import PydanticProgramMode
-
 from llama_index.logger import logger
+from llama_index.types import PydanticProgramMode
 
 if TYPE_CHECKING:
     from typing import TypeVar

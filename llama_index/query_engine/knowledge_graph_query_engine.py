@@ -1,6 +1,5 @@
 """ Knowledge Graph Query Engine."""
 
-import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -9,6 +8,7 @@ from llama_index.graph_stores.registry import (
     GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE,
     GraphStoreType,
 )
+from llama_index.logger import logger
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE
@@ -17,8 +17,6 @@ from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import print_text
-
-from llama_index.logger import logger
 
 # Prompt
 DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT_TMPL = """

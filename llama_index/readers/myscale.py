@@ -1,11 +1,8 @@
 """MyScale reader."""
-import logging
 from typing import Any, List, Optional
 
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
-
-from llama_index.logger import logger
 
 
 def escape_str(value: str) -> str:
