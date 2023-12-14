@@ -28,10 +28,6 @@ from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 
-# logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
-# logger.error(f'logger {__name__}')
-
 DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
