@@ -97,6 +97,17 @@ class AgentEngine(BaseModel, BaseAgent):
 
         return task
 
+    def delete_task(
+        self,
+        task_id: str,
+    ) -> None:
+        """Delete task.
+
+        NOTE: this will not delete any previous executions from memory.
+
+        """
+        self.state.task_dict.pop(task_id)
+
     def _run_step(
         self, 
         task_id: str, 
@@ -209,6 +220,9 @@ class AgentEngine(BaseModel, BaseAgent):
                     )
                 result_output = cur_step_output
                 break
+
+        # now that it is done, delete task
+        self.delete_task(task.task_id)
         if result_output is None:
             raise ValueError("result_output is None")
         else:
@@ -241,6 +255,9 @@ class AgentEngine(BaseModel, BaseAgent):
                     )
                 result_output = cur_step_output
                 break
+
+        # now that it is done, delete task
+        self.delete_task(task.task_id)
         if result_output is None:
             raise ValueError("result_output is None")
         else:
