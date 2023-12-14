@@ -46,8 +46,8 @@ from llama_index.vector_stores.types import BasePydanticVectorStore
 
 DEFAULT_PIPELINE_NAME = "default"
 DEFAULT_PROJECT_NAME = "default"
-DEFAULT_BASE_URL = "http://localhost:8000"
-DEFAULT_APP_URL = "http://localhost:3000"
+DEFAULT_BASE_URL = "https://api.prod.llamaindex.ai/"
+DEFAULT_APP_URL = "https://prod.llamaindex.ai"
 
 
 def deserialize_transformation_component(
