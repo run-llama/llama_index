@@ -34,7 +34,7 @@ maxdepth: 1
 Choosing the right embedding model plays a large role in overall performance.
 
 - Maybe you need something better than the default `text-embedding-ada-002` model from OpenAI?
-- Maybe you want to scale to a local sever?
+- Maybe you want to scale to a local server?
 - Maybe you need an embedding model that works well for a specific language?
 
 Beyond OpenAI, many options existing for embedding APIs, running your own embedding model locally, or even hosting your own server.
