@@ -86,7 +86,7 @@ PROVIDER_STREAM_RESPONSE_LOADER = {
     "anthropic": lambda x: x["completion"],
     "meta": lambda x: x["generation"],
 }
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 def bedrock_model_to_param_name(model: str, param_name: str) -> str:

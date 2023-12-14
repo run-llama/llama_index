@@ -28,7 +28,7 @@ from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 # **NOTE**: deprecated (for older versions of sql query engine)

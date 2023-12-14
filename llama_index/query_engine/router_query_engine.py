@@ -25,7 +25,7 @@ from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.types import ToolMetadata
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 def combine_responses(

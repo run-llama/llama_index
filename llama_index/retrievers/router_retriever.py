@@ -13,7 +13,7 @@ from llama_index.selectors.utils import get_selector_from_context
 from llama_index.service_context import ServiceContext
 from llama_index.tools.retriever_tool import RetrieverTool
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class RouterRetriever(BaseRetriever):

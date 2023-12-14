@@ -23,7 +23,7 @@ from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
 from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT_TMPL = """

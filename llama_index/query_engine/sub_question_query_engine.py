@@ -18,7 +18,7 @@ from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.utils import get_color_mapping, print_text
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class SubQuestionAnswerPair(BaseModel):

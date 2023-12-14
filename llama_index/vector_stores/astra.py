@@ -24,7 +24,7 @@ from llama_index.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-_logger = logging.getLogger(__name__)
+_from llama_index.logger import logger
 
 DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 MAX_INSERT_BATCH_SIZE = 20

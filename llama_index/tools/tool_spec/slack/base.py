@@ -10,7 +10,7 @@ from llama_index.readers.slack import SlackReader
 from llama_index.schema import Document
 from llama_index.tools.tool_spec.base import BaseToolSpec
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class SlackToolSpec(BaseToolSpec):

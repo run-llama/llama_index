@@ -20,7 +20,7 @@ from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import VectorStoreQuery
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class DocumentSummaryIndexLLMRetriever(BaseRetriever):

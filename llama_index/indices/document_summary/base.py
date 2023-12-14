@@ -33,7 +33,7 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import get_tqdm_iterable
 from llama_index.vector_stores.types import VectorStore
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 DEFAULT_SUMMARY_QUERY = (

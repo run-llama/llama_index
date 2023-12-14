@@ -13,7 +13,7 @@ from llama_index.indices.managed.types import ManagedIndexQueryMode
 from llama_index.indices.managed.vectara.base import VectaraIndex
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 
-_logger = logging.getLogger(__name__)
+_from llama_index.logger import logger
 
 
 class VectaraRetriever(BaseRetriever):

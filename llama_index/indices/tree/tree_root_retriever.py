@@ -9,7 +9,7 @@ from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.utils import get_sorted_node_list
 from llama_index.schema import NodeWithScore, QueryBundle
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class TreeRootRetriever(BaseRetriever):

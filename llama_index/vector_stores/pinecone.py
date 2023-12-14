@@ -32,7 +32,7 @@ METADATA_KEY = "metadata"
 
 DEFAULT_BATCH_SIZE = 100
 
-_logger = logging.getLogger(__name__)
+_from llama_index.logger import logger
 
 
 def _transform_pinecone_filter_condition(condition: str) -> str:

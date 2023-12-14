@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Pattern
 
 import numpy as np
 
-_logger = logging.getLogger(__name__)
+_from llama_index.logger import logger
 
 if TYPE_CHECKING:
     from redis.client import Redis as RedisType

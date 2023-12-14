@@ -18,7 +18,7 @@ from llama_index.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 def _transform_chroma_filter_condition(condition: str) -> str:

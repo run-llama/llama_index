@@ -16,7 +16,7 @@ from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.utils import get_tqdm_iterable
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class GPTTreeIndexBuilder:

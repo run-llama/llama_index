@@ -30,7 +30,7 @@ from llama_index.readers.github_readers.utils import (
 )
 from llama_index.schema import Document
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class GithubRepositoryReader(BaseReader):

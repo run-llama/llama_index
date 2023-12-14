@@ -6,7 +6,7 @@ from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.indices.registry import INDEX_STRUCT_TYPE_TO_INDEX_CLASS
 from llama_index.storage.storage_context import StorageContext
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 def load_index_from_storage(

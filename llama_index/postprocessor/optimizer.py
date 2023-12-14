@@ -9,7 +9,7 @@ from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class SentenceEmbeddingOptimizer(BaseNodePostprocessor):

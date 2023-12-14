@@ -14,6 +14,7 @@ from llama_index.indices.query.embedding_utils import (
     get_top_k_embeddings_learner,
     get_top_k_mmr_embeddings,
 )
+from llama_index.logger import logger
 from llama_index.schema import BaseNode
 from llama_index.utils import concat_dirs
 from llama_index.vector_stores.types import (
@@ -27,7 +28,6 @@ from llama_index.vector_stores.types import (
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict
 
-logger = logging.getLogger(__name__)
 
 LEARNER_MODES = {
     VectorStoreQueryMode.SVM,

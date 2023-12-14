@@ -7,8 +7,7 @@ from llama_index.embeddings.base import (
     BaseEmbedding,
     Embedding,
 )
-
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 # For bge models that Gradient AI provides, it is suggested to add the instruction for retrieval.

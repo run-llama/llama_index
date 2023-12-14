@@ -9,7 +9,7 @@ from llama_index.schema import BaseNode, ImageNode, MetadataMode
 from llama_index.utils import globals_helper, truncate_text
 from llama_index.vector_stores.types import VectorStoreQueryResult
 
-_logger = logging.getLogger(__name__)
+_from llama_index.logger import logger
 
 
 def get_sorted_node_list(node_dict: Dict[int, BaseNode]) -> List[BaseNode]:

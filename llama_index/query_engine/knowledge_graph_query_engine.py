@@ -18,7 +18,7 @@ from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import print_text
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 # Prompt
 DEFAULT_NEBULAGRAPH_NL2CYPHER_PROMPT_TMPL = """

@@ -23,7 +23,7 @@ from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.simple import DEFAULT_VECTOR_STORE, SimpleVectorStore
 from llama_index.vector_stores.types import VectorStore
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class MultiModalVectorStoreIndex(VectorStoreIndex):

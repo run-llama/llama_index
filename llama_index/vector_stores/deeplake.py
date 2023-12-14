@@ -24,7 +24,7 @@ try:
 except ImportError:
     DEEPLAKE_INSTALLED = False
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class DeepLakeVectorStore(VectorStoreBase):

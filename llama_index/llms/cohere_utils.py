@@ -29,7 +29,7 @@ REPRESENTATION_MODELS = {
 ALL_AVAILABLE_MODELS = {**COMMAND_MODELS, **GENERATION_MODELS, **REPRESENTATION_MODELS}
 CHAT_MODELS = {**COMMAND_MODELS}
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:

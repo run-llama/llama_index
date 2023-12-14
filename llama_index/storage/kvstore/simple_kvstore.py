@@ -7,7 +7,7 @@ import fsspec
 
 from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseInMemoryKVStore
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 DATA_TYPE = Dict[str, Dict[str, dict]]
 

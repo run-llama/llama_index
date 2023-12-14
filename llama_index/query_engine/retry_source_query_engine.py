@@ -11,7 +11,7 @@ from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import Document, QueryBundle
 from llama_index.service_context import ServiceContext
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class RetrySourceQueryEngine(BaseQueryEngine):

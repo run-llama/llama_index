@@ -9,7 +9,7 @@ from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import QueryBundle
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 DEFAULT_RESYNTHESIS_PROMPT_TMPL = (
     "Here is the original query:\n"

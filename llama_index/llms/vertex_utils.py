@@ -20,7 +20,7 @@ CODE_MODELS = ["code-bison", "code-bison-32k", "code-bison@001"]
 CODE_CHAT_MODELS = ["codechat-bison", "codechat-bison-32k", "codechat-bison@001"]
 
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:

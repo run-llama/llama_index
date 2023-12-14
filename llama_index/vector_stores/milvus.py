@@ -21,7 +21,7 @@ from llama_index.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 MILVUS_ID_FIELD = "id"
 

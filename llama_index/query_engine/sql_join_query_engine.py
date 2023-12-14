@@ -23,7 +23,7 @@ from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.utils import print_text
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT_TMPL = """

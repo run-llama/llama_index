@@ -15,7 +15,7 @@ from llama_index.response_synthesizers.base import BaseSynthesizer
 from llama_index.service_context import ServiceContext
 from llama_index.types import RESPONSE_TEXT_TYPE, BasePydanticProgram
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class StructuredRefineResponse(BaseModel):

@@ -13,7 +13,7 @@ BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
 DATABASE_URL_TMPL = "https://api.notion.com/v1/databases/{database_id}/query"
 SEARCH_URL = "https://api.notion.com/v1/search"
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 # TODO: Notion DB reader coming soon!

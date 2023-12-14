@@ -22,7 +22,7 @@ from llama_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class BaseKeywordTableRetriever(BaseRetriever):

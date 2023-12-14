@@ -3,9 +3,9 @@ from typing import Callable, List
 
 from llama_index.node_parser.interface import TextSplitter
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 def truncate_text(text: str, text_splitter: TextSplitter) -> str:

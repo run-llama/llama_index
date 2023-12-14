@@ -19,6 +19,7 @@ from llama_index.download.utils import (
     initialize_directory,
     rewrite_exports,
 )
+from llama_index.logger import logger
 
 LLAMA_HUB_CONTENTS_URL = f"https://raw.githubusercontent.com/run-llama/llama-hub/main"
 LLAMA_HUB_PATH = "/llama_hub"
@@ -26,7 +27,6 @@ LLAMA_HUB_URL = LLAMA_HUB_CONTENTS_URL + LLAMA_HUB_PATH
 
 PATH_TYPE = Union[str, Path]
 
-logger = logging.getLogger(__name__)
 LLAMAHUB_ANALYTICS_PROXY_SERVER = "https://llamahub.ai/api/analytics/downloads"
 
 

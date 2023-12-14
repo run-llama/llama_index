@@ -32,7 +32,7 @@ from llama_index.utilities.token_counting import TokenCounter
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class PromptHelper(BaseComponent):

@@ -14,7 +14,7 @@ from llama_index.schema import (
 )
 from llama_index.utils import truncate_text
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 def build_nodes_from_splits(

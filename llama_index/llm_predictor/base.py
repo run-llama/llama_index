@@ -27,7 +27,7 @@ from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseComponent
 from llama_index.types import PydanticProgramMode, TokenAsyncGen, TokenGen
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class BaseLLMPredictor(BaseComponent, ABC):

@@ -21,7 +21,7 @@ from llama_index.schema import NodeWithScore, QueryBundle, QueryType, TextNode
 from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class SQLRetriever(BaseRetriever):

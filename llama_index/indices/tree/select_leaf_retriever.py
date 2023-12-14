@@ -12,6 +12,7 @@ from llama_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
 )
+from llama_index.logger import logger
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
 from llama_index.prompts.default_prompts import (
@@ -23,8 +24,6 @@ from llama_index.response.schema import Response
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
 from llama_index.utils import print_text, truncate_text
-
-logger = logging.getLogger(__name__)
 
 
 def get_text_from_node(

@@ -41,7 +41,7 @@ DISCONTINUED_MODELS: Dict[str, int] = {}
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for Konko AI.
 Please set KONKO_API_KEY environment variable"""
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:

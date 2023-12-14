@@ -22,7 +22,7 @@ from llama_index.multi_modal_llms import (
 )
 from llama_index.schema import ImageDocument
 
-_logger = logging.getLogger(__name__)
+_from llama_index.logger import logger
 
 REPLICATE_MULTI_MODAL_LLM_MODELS = {
     "llava-13b": "yorickvp/llava-13b:e272157381e2a3bf12df3a8edd1f38d1dbd736bbb7437277c8b34175f8fce358",

@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict, List, Optional
 
 try:
@@ -8,9 +7,7 @@ except ModuleNotFoundError:
 
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import CBEventType, EventPayload
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+from llama_index.logger import logger
 
 
 class AimCallback(BaseCallbackHandler):

@@ -10,7 +10,7 @@ from llama_index.program.utils import create_list_model
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.types import Model
 
-_logger = logging.getLogger(__name__)
+_from llama_index.logger import logger
 
 
 def _default_tool_choice(

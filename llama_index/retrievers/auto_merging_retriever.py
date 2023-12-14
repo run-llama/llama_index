@@ -12,7 +12,7 @@ from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRet
 from llama_index.schema import BaseNode, NodeWithScore, QueryBundle
 from llama_index.storage.storage_context import StorageContext
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class AutoMergingRetriever(BaseRetriever):

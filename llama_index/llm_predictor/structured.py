@@ -10,7 +10,7 @@ from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.prompts.base import BasePromptTemplate
 from llama_index.types import TokenGen
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 @deprecated("StructuredLLMPredictor is deprecated. Use llm.structured_predict().")

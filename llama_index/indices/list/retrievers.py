@@ -17,7 +17,7 @@ from llama_index.prompts.default_prompts import (
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class SummaryIndexRetriever(BaseRetriever):

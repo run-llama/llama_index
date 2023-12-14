@@ -10,7 +10,7 @@ from llama_index.data_structs.table import PandasStructTable
 from llama_index.indices.struct_store.base import BaseStructStoreIndex
 from llama_index.schema import BaseNode
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class PandasIndex(BaseStructStoreIndex[PandasStructTable]):

@@ -20,7 +20,7 @@ from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 
-_logger = logging.getLogger(__name__)
+_from llama_index.logger import logger
 
 
 class VectaraIndexStruct(IndexDict):

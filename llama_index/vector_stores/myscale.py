@@ -28,7 +28,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class MyScaleVectorStore(VectorStore):

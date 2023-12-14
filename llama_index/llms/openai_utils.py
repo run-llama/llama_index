@@ -117,7 +117,7 @@ API keys can be found or created at \
 https://platform.openai.com/account/api-keys
 """
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 OpenAIToolCall = Union[ChatCompletionMessageToolCall, ChoiceDeltaToolCall]
 

@@ -1,8 +1,8 @@
-import logging
 import math
 from typing import Any, List
 
 from llama_index.constants import DEFAULT_EMBEDDING_DIM
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -15,8 +15,6 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class SupabaseVectorStore(VectorStore):

@@ -18,7 +18,7 @@ from llama_index.vector_stores.utils import (
 )
 
 DEFAULT_BATCH_SIZE = 100
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 def _to_dashvector_filter(

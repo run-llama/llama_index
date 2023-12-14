@@ -10,7 +10,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class BaseAdapter(nn.Module):

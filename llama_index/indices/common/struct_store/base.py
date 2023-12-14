@@ -23,7 +23,7 @@ from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.utils import truncate_text
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class SQLDocumentContextBuilder:

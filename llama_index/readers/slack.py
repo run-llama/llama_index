@@ -10,7 +10,7 @@ from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.readers.base import BasePydanticReader
 from llama_index.schema import Document
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class SlackReader(BasePydanticReader):

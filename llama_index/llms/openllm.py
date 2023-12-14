@@ -36,7 +36,7 @@ from llama_index.llms.types import (
 )
 from llama_index.types import PydanticProgramMode
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 if TYPE_CHECKING:
     from typing import TypeVar

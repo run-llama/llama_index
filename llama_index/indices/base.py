@@ -17,7 +17,7 @@ from llama_index.storage.storage_context import StorageContext
 IS = TypeVar("IS", bound=IndexStruct)
 IndexType = TypeVar("IndexType", bound="BaseIndex")
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class BaseIndex(Generic[IS], ABC):

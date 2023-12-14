@@ -21,7 +21,7 @@ from llama_index.service_context import ServiceContext
 from llama_index.types import BasePydanticProgram, Model
 from llama_index.utils import print_text
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):

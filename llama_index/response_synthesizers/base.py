@@ -24,7 +24,7 @@ from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundl
 from llama_index.service_context import ServiceContext
 from llama_index.types import RESPONSE_TEXT_TYPE
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 QueryTextType = Union[str, QueryBundle]
 

@@ -26,7 +26,7 @@ try:
 except ModuleNotFoundError:
     Message = Any
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 CompletionClientType = Type[Completions]
 

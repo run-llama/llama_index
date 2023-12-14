@@ -12,7 +12,7 @@ from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
 from llama_index.llms.llm import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.logger import LlamaLogger
+from llama_index.logger import LlamaLogger, logger
 from llama_index.node_parser.interface import NodeParser, TextSplitter
 from llama_index.node_parser.text.sentence import (
     DEFAULT_CHUNK_SIZE,
@@ -22,8 +22,6 @@ from llama_index.node_parser.text.sentence import (
 from llama_index.prompts.base import BasePromptTemplate
 from llama_index.schema import TransformComponent
 from llama_index.types import PydanticProgramMode
-
-logger = logging.getLogger(__name__)
 
 
 def _get_default_node_parser(

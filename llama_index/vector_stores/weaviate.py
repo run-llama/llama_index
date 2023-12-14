@@ -28,7 +28,7 @@ from llama_index.vector_stores.weaviate_utils import (
     to_node,
 )
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 import_err_msg = (
     "`weaviate` package not found, please run `pip install weaviate-client`"

@@ -21,7 +21,7 @@ class DBEmbeddingRow(NamedTuple):
     similarity: float
 
 
-_logger = logging.getLogger(__name__)
+_from llama_index.logger import logger
 
 
 def get_data_model(

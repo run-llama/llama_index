@@ -2,9 +2,9 @@
 
 An index that is built on top of Alibaba Cloud's Tair database.
 """
-import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from llama_index.logger import logger
 from llama_index.schema import (
     BaseNode,
     MetadataMode,
@@ -19,8 +19,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import node_to_metadata_dict
-
-_logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
@@ -146,7 +144,7 @@ class TairVectorStore(VectorStore):
                 self.delete_index()
                 self._create_index()
             else:
-                logging.info(f"Adding document to existing index {self._index_name}")
+                logger.info(f"Adding document to existing index {self._index_name}")
         else:
             self._create_index()
 
@@ -171,7 +169,7 @@ class TairVectorStore(VectorStore):
                 **attributes,
             )
 
-        _logger.info(f"Added {len(ids)} documents to index {self._index_name}")
+        logger.info(f"Added {len(ids)} documents to index {self._index_name}")
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -187,7 +185,7 @@ class TairVectorStore(VectorStore):
 
     def delete_index(self) -> None:
         """Delete the index and all documents."""
-        _logger.info(f"Deleting index {self._index_name}")
+        logger.info(f"Deleting index {self._index_name}")
         self._tair_client.tvs_del_index(self._index_name)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -209,7 +207,7 @@ class TairVectorStore(VectorStore):
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
 
-        _logger.info(f"Querying index {self._index_name}")
+        logger.info(f"Querying index {self._index_name}")
 
         query_args = self._query_args
         if self._index_type == "HNSW" and "ef_search" in kwargs:
@@ -246,7 +244,7 @@ class TairVectorStore(VectorStore):
             )
             ids.append(doc_id)
             nodes.append(node)
-        _logger.info(f"Found {len(nodes)} results for query with id {ids}")
+        logger.info(f"Found {len(nodes)} results for query with id {ids}")
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
@@ -258,7 +256,7 @@ class TairVectorStore(VectorStore):
                 "Could not import tair-py python package. "
                 "Please install it with `pip install tair`."
             )
-        _logger.info(f"Creating index {self._index_name}")
+        logger.info(f"Creating index {self._index_name}")
         self._tair_client.tvs_create_index(
             self._index_name,
             self.dim,

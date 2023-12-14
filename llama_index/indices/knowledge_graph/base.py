@@ -21,7 +21,7 @@ from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import get_tqdm_iterable
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class KnowledgeGraphIndex(BaseIndex[KG]):

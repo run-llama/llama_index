@@ -16,13 +16,13 @@ from llama_index.indices.service_context import ServiceContext
 from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.llms.llm import LLM
 from llama_index.llms.types import ChatMessage, MessageRole
+from llama_index.logger import logger
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.base import PromptTemplate
 from llama_index.schema import MetadataMode, NodeWithScore
 from llama_index.utilities.token_counting import TokenCounter
 
-logger = logging.getLogger(__name__)
 
 DEFAULT_CONTEXT_PROMPT_TEMPLATE = """
   The following is a friendly conversation between a user and an AI assistant.

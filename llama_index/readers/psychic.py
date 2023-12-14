@@ -6,7 +6,7 @@ from typing import List, Optional
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class PsychicReader(BaseReader):

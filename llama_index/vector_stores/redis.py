@@ -30,7 +30,7 @@ from llama_index.vector_stores.types import (
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
-_logger = logging.getLogger(__name__)
+_from llama_index.logger import logger
 
 
 if TYPE_CHECKING:

@@ -9,7 +9,7 @@ from llama_index.schema import BaseNode, NodeWithScore, QueryBundle
 from llama_index.storage.docstore.types import BaseDocumentStore
 from llama_index.utils import get_tokenizer
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class BM25Retriever(BaseRetriever):

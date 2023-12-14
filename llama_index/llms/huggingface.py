@@ -46,7 +46,7 @@ if TYPE_CHECKING:
         ConversationalOutput = dict
         ModelInfo = Any
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class HuggingFaceLLM(CustomLLM):

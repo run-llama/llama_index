@@ -7,7 +7,7 @@ from llama_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriev
 from llama_index.indices.utils import get_sorted_node_list
 from llama_index.schema import BaseNode, MetadataMode, QueryBundle
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):

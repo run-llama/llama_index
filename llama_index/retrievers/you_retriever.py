@@ -11,7 +11,7 @@ from llama_index.core import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 
-logger = logging.getLogger(__name__)
+from llama_index.logger import logger
 
 
 class YouRetriever(BaseRetriever):
