@@ -232,12 +232,6 @@ class BaseOpenAIAgent(BaseAgent):
         if chat_stream_response._is_function:
             thread.join()
 
-        print(f'CURRENT CHAT STREAM RESPONSE: {chat_stream_response}')
-        print(str(chat_stream_response))
-        print(chat_stream_response._is_done)
-        print(llm_chat_kwargs)
-        print(type(self._llm))
-
         # if it's false, return the answer (to stream)
         return chat_stream_response
 

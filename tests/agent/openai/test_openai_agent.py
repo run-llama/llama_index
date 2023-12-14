@@ -1,4 +1,4 @@
-from typing import Any, List, Sequence
+from typing import Any, List, Sequence, Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,6 +10,7 @@ from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.tools.function_tool import FunctionTool
 from openai.types.chat.chat_completion import ChatCompletion, Choice
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
 
@@ -32,6 +33,32 @@ def mock_chat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
                 ),
                 finish_reason="stop",
                 index=0,
+            )
+        ],
+    )
+
+def mock_chat_stream(*args: Any, **kwargs: Any) -> Generator[ChatCompletionChunk, None, None]:
+    if "functions" in kwargs:
+        if not kwargs["functions"]:
+            raise ValueError("functions must not be empty")
+
+    yield ChatCompletionChunk(
+        id="chatcmpl-abc123",
+        object="chat.completion.chunk",
+        created=1677858242,
+        model="gpt-3.5-turbo-0301",
+        usage={"prompt_tokens": 13, "completion_tokens": 7, "total_tokens": 20},
+        choices=[
+            Choice(
+                message=ChatCompletionMessage(
+                    role="assistant", content="\n\nThis is a test!"
+                ),
+                finish_reason="stop",
+                index=0,
+                delta=ChoiceDelta(
+                    role="assistant",
+                    content="\n\nThis is a test!",
+                )
             )
         ],
     )
@@ -111,19 +138,18 @@ async def test_achat_basic(MockAsyncOpenAI: MagicMock, add_tool: FunctionTool) -
 @patch("llama_index.llms.openai.SyncOpenAI")
 def test_stream_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
     mock_instance = MockSyncOpenAI.return_value
-    mock_instance.chat.completions.create.return_value = mock_chat_completion()
+    mock_instance.chat.completions.create.side_effect = mock_chat_stream
 
     llm = OpenAI(model="gpt-3.5-turbo")
-
+    
     agent = OpenAIAgent.from_tools(
         tools=[add_tool],
         llm=llm,
     )
     response = agent.stream_chat("What is 1 + 1?")
     assert isinstance(response, StreamingAgentChatResponse)
-    print(str(response))
-    raise Exception
-    assert str(response) == "\n\nThis is a test!"
+    # str() strips newline values
+    assert str(response) == "This is a test!"
 
 
 @patch("llama_index.llms.openai.SyncOpenAI")
