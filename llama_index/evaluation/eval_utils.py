@@ -92,7 +92,7 @@ def _download_llama_dataset_from_hub(llama_dataset_id: str) -> LabelledRagDatase
 
 def upload_eval_dataset(
     dataset_name: str,
-    questions: Optional[List[str]],
+    questions: Optional[List[str]] = None,
     llama_dataset_id: Optional[str] = None,
     project_name: str = DEFAULT_PROJECT_NAME,
     platform_base_url: Optional[str] = None,
@@ -103,7 +103,7 @@ def upload_eval_dataset(
     """Upload questions to platform dataset."""
     if questions is None and llama_dataset_id is None:
         raise ValueError(
-            "Must supply either a list of questions, or a llama-dataset id to import from llama-hub."
+            "Must supply either a list of `questions`, or a `llama_dataset_id` to import from llama-hub."
         )
 
     platform_base_url = platform_base_url or os.environ.get(
