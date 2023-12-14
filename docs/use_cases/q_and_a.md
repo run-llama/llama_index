@@ -17,6 +17,7 @@ Q&A has all sorts of sub-types, such as:
 
 - **Over documents**: LlamaIndex can pull in unstructured text, PDFs, Notion and Slack documents and more and index the data within them.
   - [Example of search over documents](combine-multiple-sources)
+  - [Building a multi-document agent over the LlamaIndex docs](/examples/agent/multi_document_agents-v1.ipynb)
 - **Over structured data**: if your data already exists in a SQL database, as JSON or as any number of other structured formats, LlamaIndex can query the data in these sources.
   - [Searching Pandas tables](/examples/query_engine/pandas_query_engine.md)
   - [Text to SQL](/examples/index_structs/struct_indices/SQLIndexDemo.md)
