@@ -21,7 +21,7 @@ In general, LlamaIndex components offer more explicit, constrained behavior for 
 capable of general reasoning.
 
 There are tradeoffs for using both - less-capable LLMs typically do better with more constraints. Take a look at [our blog post on this](https://medium.com/llamaindex-blog/dumber-llm-agents-need-more-constraints-and-better-tools-17a524c59e12) for
-a more information + a detailed analysis.
+more information + a detailed analysis.
 
 ## Learn more
 
