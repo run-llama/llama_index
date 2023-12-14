@@ -6,6 +6,8 @@ NOTE: These are beta functions, might change.
 
 import asyncio
 import os
+import subprocess
+import tempfile
 from collections import defaultdict
 from typing import Any, List, Optional
 
@@ -19,6 +21,7 @@ from llama_index.async_utils import asyncio_module
 from llama_index.core import BaseQueryEngine
 from llama_index.evaluation.base import EvaluationResult
 from llama_index.ingestion.pipeline import DEFAULT_BASE_URL, DEFAULT_PROJECT_NAME
+from llama_index.llama_dataset import LabelledRagDataset
 
 
 async def aget_responses(
@@ -67,9 +70,30 @@ def get_results_df(
     return pd.DataFrame(metric_dict)
 
 
+def _download_llama_dataset_from_hub(llama_dataset_id: str) -> LabelledRagDataset:
+    """Uses a subprocess and llamaindex-cli to download a dataset from llama-hub."""
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            subprocess.run(
+                [
+                    "llamaindex-cli",
+                    "download-llamadataset",
+                    f"{llama_dataset_id}",
+                    "--download-dir",
+                    f"{tmp}",
+                ]
+            )
+            return LabelledRagDataset.from_json(f"{tmp}/rag_dataset.json")
+        except FileNotFoundError as err:
+            raise ValueError(
+                "No dataset associated with the supplied `llama_dataset_id`"
+            ) from err
+
+
 def upload_eval_dataset(
     dataset_name: str,
-    questions: List[str],
+    questions: Optional[List[str]] = None,
+    llama_dataset_id: Optional[str] = None,
     project_name: str = DEFAULT_PROJECT_NAME,
     platform_base_url: Optional[str] = None,
     platform_api_key: Optional[str] = None,
@@ -77,6 +101,11 @@ def upload_eval_dataset(
     append: bool = False,
 ) -> str:
     """Upload questions to platform dataset."""
+    if questions is None and llama_dataset_id is None:
+        raise ValueError(
+            "Must supply either a list of `questions`, or a `llama_dataset_id` to import from llama-hub."
+        )
+
     platform_base_url = platform_base_url or os.environ.get(
         "PLATFORM_BASE_URL", DEFAULT_BASE_URL
     )
@@ -117,6 +146,15 @@ def upload_eval_dataset(
         eval_dataset = cur_dataset
 
     assert eval_dataset.id is not None
+
+    # create questions
+    if questions:
+        questions = questions
+    else:
+        # download `LabelledRagDataset` from llama-hub
+        assert llama_dataset_id is not None
+        rag_dataset = _download_llama_dataset_from_hub(llama_dataset_id)
+        questions = [example.query for example in rag_dataset[:]]
 
     eval_questions = client.eval.create_questions(
         dataset_id=eval_dataset.id,
