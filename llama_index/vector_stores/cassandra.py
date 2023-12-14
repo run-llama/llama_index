@@ -5,12 +5,12 @@ powered by the cassIO library
 
 """
 
-import logging
 from typing import Any, Dict, Iterable, List, Optional, TypeVar, cast
 
 from llama_index.indices.query.embedding_utils import (
     get_top_k_mmr_embeddings,
 )
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
@@ -24,8 +24,6 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-_from llama_index.logger import logger
 
 DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 DEFAULT_INSERTION_BATCH_SIZE = 20
@@ -107,7 +105,7 @@ class CassandraVectorStore(VectorStore):
         self._ttl_seconds = ttl_seconds
         self._insertion_batch_size = insertion_batch_size
 
-        _logger.debug("Creating the Cassandra table")
+        logger.debug("Creating the Cassandra table")
         self.vector_table = ClusteredMetadataVectorCassandraTable(
             session=self._session,
             keyspace=self._keyspace,
@@ -145,7 +143,7 @@ class CassandraVectorStore(VectorStore):
             node_metadatas.append(metadata)
             node_embeddings.append(node.get_embedding())
 
-        _logger.debug(f"Adding {len(node_ids)} rows to table")
+        logger.debug(f"Adding {len(node_ids)} rows to table")
         # Concurrent batching of inserts:
         insertion_tuples = zip(node_ids, node_contents, node_metadatas, node_embeddings)
         for insertion_batch in _batch_iterable(
@@ -182,7 +180,7 @@ class CassandraVectorStore(VectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        _logger.debug("Deleting a document from the Cassandra table")
+        logger.debug("Deleting a document from the Cassandra table")
         self.vector_table.delete_partition(
             partition_id=ref_doc_id,
         )
@@ -239,7 +237,7 @@ class CassandraVectorStore(VectorStore):
         else:
             query_metadata = {}
 
-        _logger.debug(
+        logger.debug(
             f"Running ANN search on the Cassandra table (query mode: {query.mode})"
         )
         if query.mode == VectorStoreQueryMode.DEFAULT:

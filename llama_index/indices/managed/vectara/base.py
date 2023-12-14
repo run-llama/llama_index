@@ -6,7 +6,6 @@ interfaces a managed service.
 """
 
 import json
-import logging
 import os
 from hashlib import blake2b
 from typing import Any, Dict, List, Optional, Sequence, Type
@@ -16,11 +15,10 @@ import requests
 from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
-
-_from llama_index.logger import logger
 
 
 class VectaraIndexStruct(IndexDict):
@@ -78,13 +76,13 @@ class VectaraIndex(BaseManagedIndex):
             or self._vectara_corpus_id is None
             or self._vectara_api_key is None
         ):
-            _logger.warning(
+            logger.warning(
                 "Can't find Vectara credentials, customer_id or corpus_id in "
                 "environment."
             )
             raise ValueError("Missing Vectara credentials")
         else:
-            _logger.debug(f"Using corpus id {self._vectara_corpus_id}")
+            logger.debug(f"Using corpus id {self._vectara_corpus_id}")
 
         # setup requests session with max 3 retries and 90s timeout
         # for calling Vectara API
@@ -148,7 +146,7 @@ class VectaraIndex(BaseManagedIndex):
         )
 
         if response.status_code != 200:
-            _logger.error(
+            logger.error(
                 f"Delete request failed for doc_id = {doc_id} with status code "
                 f"{response.status_code}, reason {response.reason}, text "
                 f"{response.text}"
@@ -249,7 +247,7 @@ class VectaraIndex(BaseManagedIndex):
             List of ids associated with each of the files indexed
         """
         if not os.path.exists(file_path):
-            _logger.error(f"File {file_path} does not exist")
+            logger.error(f"File {file_path} does not exist")
             return None
 
         metadata = metadata or {}
@@ -270,7 +268,7 @@ class VectaraIndex(BaseManagedIndex):
 
         if response.status_code == 409:
             doc_id = response.json()["document"]["documentId"]
-            _logger.info(
+            logger.info(
                 f"File {file_path} already exists on Vectara "
                 f"(doc_id={doc_id}), skipping"
             )
@@ -278,7 +276,7 @@ class VectaraIndex(BaseManagedIndex):
         elif response.status_code == 200:
             return response.json()["document"]["documentId"]
         else:
-            _logger.info(f"Error indexing file {file_path}: {response.json()}")
+            logger.info(f"Error indexing file {file_path}: {response.json()}")
             return None
 
     def delete_ref_doc(

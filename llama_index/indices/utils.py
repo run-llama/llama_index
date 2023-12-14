@@ -9,8 +9,6 @@ from llama_index.schema import BaseNode, ImageNode, MetadataMode
 from llama_index.utils import globals_helper, truncate_text
 from llama_index.vector_stores.types import VectorStoreQueryResult
 
-_from llama_index.logger import logger
-
 
 def get_sorted_node_list(node_dict: Dict[int, BaseNode]) -> List[BaseNode]:
     """Get sorted node list. Used by tree-strutured indices."""
@@ -47,7 +45,7 @@ def log_vector_store_query_result(
     result: VectorStoreQueryResult, logger: Optional[logging.Logger] = None
 ) -> None:
     """Log vector store query result."""
-    logger = logger or _logger
+    logger = logger or logger
 
     assert result.ids is not None
     assert result.nodes is not None

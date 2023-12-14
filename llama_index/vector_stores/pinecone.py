@@ -4,7 +4,6 @@ An index that that is built on top of an existing vector store.
 
 """
 
-import logging
 from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
@@ -32,7 +31,7 @@ METADATA_KEY = "metadata"
 
 DEFAULT_BATCH_SIZE = 100
 
-_from llama_index.logger import logger
+from llama_index.logger import logger
 
 
 def _transform_pinecone_filter_condition(condition: str) -> str:
@@ -406,9 +405,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 node.embedding = match.values
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
-                _logger.debug(
-                    "Failed to parse Node metadata, fallback to legacy logic."
-                )
+                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     match.metadata, text_key=self.text_key
                 )

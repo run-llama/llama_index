@@ -4,12 +4,12 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 
 """
 
-import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 if TYPE_CHECKING:
     from weaviate import Client
 
+from llama_index.logger import logger
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
@@ -17,8 +17,6 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-_from llama_index.logger import logger
 
 NODE_SCHEMA: List[Dict] = [
     {
@@ -123,7 +121,7 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
         node.text = text
         node.embedding = embedding
     except Exception as e:
-        _logger.debug("Failed to parse Node metadata, fallback to legacy logic.", e)
+        logger.debug("Failed to parse Node metadata, fallback to legacy logic.", e)
         metadata, node_info, relationships = legacy_metadata_dict_to_node(entry)
 
         node = TextNode(

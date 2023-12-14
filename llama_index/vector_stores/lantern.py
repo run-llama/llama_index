@@ -1,4 +1,3 @@
-import logging
 from typing import Any, List, NamedTuple, Optional, Type
 
 from llama_index.bridge.pydantic import PrivateAttr
@@ -20,7 +19,7 @@ class DBEmbeddingRow(NamedTuple):
     similarity: float
 
 
-_from llama_index.logger import logger
+from llama_index.logger import logger
 
 
 def get_data_model(
@@ -511,7 +510,7 @@ class LanternVectorStore(BasePydanticVectorStore):
         import asyncio
 
         if query.alpha is not None:
-            _logger.warning("postgres hybrid search does not support alpha parameter.")
+            logger.warning("postgres hybrid search does not support alpha parameter.")
 
         sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
@@ -530,7 +529,7 @@ class LanternVectorStore(BasePydanticVectorStore):
 
     def _hybrid_query(self, query: VectorStoreQuery) -> List[DBEmbeddingRow]:
         if query.alpha is not None:
-            _logger.warning("postgres hybrid search does not support alpha parameter.")
+            logger.warning("postgres hybrid search does not support alpha parameter.")
 
         sparse_top_k = query.sparse_top_k or query.similarity_top_k
 

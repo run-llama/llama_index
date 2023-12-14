@@ -1,16 +1,14 @@
-import logging
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, cast
 
 from llama_index.agent.openai_agent import resolve_tool_choice
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import OpenAIToolCall, to_openai_tool
+from llama_index.logger import logger
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.program.utils import create_list_model
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.types import Model
-
-_from llama_index.logger import logger
 
 
 def _default_tool_choice(
@@ -68,7 +66,7 @@ def _parse_tool_calls(
         return outputs
     else:
         if len(outputs) > 1:
-            _logger.warning(
+            logger.warning(
                 "Multiple outputs found, returning first one. "
                 "If you want to return all outputs, set output_multiple=True."
             )

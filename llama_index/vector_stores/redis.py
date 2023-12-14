@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import fsspec
 
 from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.logger import logger
 from llama_index.readers.redis.utils import (
     TokenEscaper,
     array_to_buffer,
@@ -29,9 +30,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
-
-_from llama_index.logger import logger
-
 
 if TYPE_CHECKING:
     from redis.client import Redis as RedisType
@@ -182,7 +180,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             key = "_".join([self._prefix, str(node.node_id)])
             self._redis_client.hset(key, mapping=mapping)  # type: ignore
 
-        _logger.info(f"Added {len(ids)} documents to index {self._index_name}")
+        logger.info(f"Added {len(ids)} documents to index {self._index_name}")
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -200,7 +198,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         if len(results.docs) == 0:
             # don't raise an error but warn the user that document wasn't found
             # could be a result of eviction policy
-            _logger.warning(
+            logger.warning(
                 f"Document with doc_id {ref_doc_id} not found "
                 f"in index {self._index_name}"
             )
@@ -208,13 +206,13 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         for doc in results.docs:
             self._redis_client.delete(doc.id)
-        _logger.info(
+        logger.info(
             f"Deleted {len(results.docs)} documents from index {self._index_name}"
         )
 
     def delete_index(self) -> None:
         """Delete the index and all documents."""
-        _logger.info(f"Deleting index {self._index_name}")
+        logger.info(f"Deleting index {self._index_name}")
         self._redis_client.ft(self._index_name).dropindex(delete_documents=True)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -246,7 +244,7 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         filters = _to_redis_filters(query.filters) if query.filters is not None else "*"
 
-        _logger.info(f"Using filters: {filters}")
+        logger.info(f"Using filters: {filters}")
 
         redis_query = get_redis_query(
             return_fields=return_fields,
@@ -261,17 +259,17 @@ class RedisVectorStore(BasePydanticVectorStore):
         query_params = {
             "vector": array_to_buffer(query.query_embedding),
         }
-        _logger.info(f"Querying index {self._index_name}")
+        logger.info(f"Querying index {self._index_name}")
 
         try:
             results = self._redis_client.ft(self._index_name).search(
                 redis_query, query_params=query_params  # type: ignore
             )
         except RedisTimeoutError as e:
-            _logger.error(f"Query timed out on {self._index_name}: {e}")
+            logger.error(f"Query timed out on {self._index_name}: {e}")
             raise
         except RedisError as e:
-            _logger.error(f"Error querying {self._index_name}: {e}")
+            logger.error(f"Error querying {self._index_name}: {e}")
             raise
 
         if len(results.docs) == 0:
@@ -302,7 +300,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             ids.append(doc.id)
             nodes.append(node)
             scores.append(1 - float(doc.vector_score))
-        _logger.info(f"Found {len(nodes)} results for query with id {ids}")
+        logger.info(f"Found {len(nodes)} results for query with id {ids}")
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
@@ -328,14 +326,14 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         try:
             if in_background:
-                _logger.info("Saving index to disk in background")
+                logger.info("Saving index to disk in background")
                 self._redis_client.bgsave()
             else:
-                _logger.info("Saving index to disk")
+                logger.info("Saving index to disk")
                 self._redis_client.save()
 
         except RedisError as e:
-            _logger.error(f"Error saving index to disk: {e}")
+            logger.error(f"Error saving index to disk: {e}")
             raise
 
     def _create_index(self) -> None:
@@ -364,7 +362,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             #   doc_id, id, and other vector fields)
             fields.append(TagField(metadata_field, sortable=False))
 
-        _logger.info(f"Creating index {self._index_name}")
+        logger.info(f"Creating index {self._index_name}")
         self._redis_client.ft(self._index_name).create_index(
             fields=fields,
             definition=IndexDefinition(

@@ -4,7 +4,6 @@ An index that that is built on top of an existing vector store.
 
 """
 
-import logging
 from typing import Any, Callable, List, Optional, cast
 
 from llama_index.schema import BaseNode, MetadataMode, TextNode
@@ -22,8 +21,6 @@ from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-_from llama_index.logger import logger
 
 DEFAULT_COLLECTION_NAME = "default_collection"
 DEFAULT_BATCH_SIZE = 100

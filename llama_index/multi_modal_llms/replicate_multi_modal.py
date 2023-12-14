@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -16,13 +15,12 @@ from llama_index.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
 )
+from llama_index.logger import logger
 from llama_index.multi_modal_llms import (
     MultiModalLLM,
     MultiModalLLMMetadata,
 )
 from llama_index.schema import ImageDocument
-
-_from llama_index.logger import logger
 
 REPLICATE_MULTI_MODAL_LLM_MODELS = {
     "llava-13b": "yorickvp/llava-13b:e272157381e2a3bf12df3a8edd1f38d1dbd736bbb7437277c8b34175f8fce358",
@@ -173,7 +171,7 @@ class ReplicateMultiModal(MultiModalLLM):
 
         # TODO: at the current moment, only support uploading one image document
         if len(image_documents) > 1:
-            _logger.warning(
+            logger.warning(
                 "ReplicateMultiModal currently only supports uploading one image document"
                 "we are using the first image document for completion."
             )
@@ -242,7 +240,7 @@ class ReplicateMultiModal(MultiModalLLM):
 
         # TODO: at the current moment, only support uploading one image document
         if len(image_documents) > 1:
-            _logger.warning(
+            logger.warning(
                 "ReplicateMultiModal currently only supports uploading one image document"
                 "we are using the first image document for completion."
             )

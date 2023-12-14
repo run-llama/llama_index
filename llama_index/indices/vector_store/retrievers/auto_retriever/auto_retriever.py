@@ -101,16 +101,16 @@ class VectorIndexAutoRetriever(BaseRetriever):
             )
             query_spec = cast(VectorStoreQuerySpec, structured_output.parsed_output)
         except OutputParserException:
-            _logger.warning("Failed to parse query spec, using defaults as fallback.")
+            logger.warning("Failed to parse query spec, using defaults as fallback.")
             query_spec = VectorStoreQuerySpec(
                 query=query_bundle.query_str,
                 filters=[],
                 top_k=None,
             )
 
-        _logger.info(f"Using query str: {query_spec.query}")
+        logger.info(f"Using query str: {query_spec.query}")
         filter_dict = {filter.key: filter.value for filter in query_spec.filters}
-        _logger.info(f"Using filters: {filter_dict}")
+        logger.info(f"Using filters: {filter_dict}")
 
         if query_spec.top_k is None:
             similarity_top_k = self._similarity_top_k
@@ -119,7 +119,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
                 query_spec.top_k, self._max_top_k, self._similarity_top_k
             )
 
-        _logger.info(f"Using top_k: {similarity_top_k}")
+        logger.info(f"Using top_k: {similarity_top_k}")
 
         retriever = VectorIndexRetriever(
             self._index,

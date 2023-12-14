@@ -3,7 +3,6 @@ An index that that is built on top of Vectara.
 """
 
 import json
-import logging
 from typing import Any, List, Optional, Tuple
 
 from llama_index.callbacks.base import CallbackManager
@@ -11,9 +10,8 @@ from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core import BaseRetriever
 from llama_index.indices.managed.types import ManagedIndexQueryMode
 from llama_index.indices.managed.vectara.base import VectaraIndex
+from llama_index.logger import logger
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
-
-_from llama_index.logger import logger
 
 
 class VectaraRetriever(BaseRetriever):
@@ -168,7 +166,7 @@ class VectaraRetriever(BaseRetriever):
         )
 
         if response.status_code != 200:
-            _logger.error(
+            logger.error(
                 "Query failed %s",
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",

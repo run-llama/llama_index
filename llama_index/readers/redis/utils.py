@@ -1,10 +1,9 @@
-import logging
 import re
 from typing import TYPE_CHECKING, Any, List, Optional, Pattern
 
 import numpy as np
 
-_from llama_index.logger import logger
+from llama_index.logger import logger
 
 if TYPE_CHECKING:
     from redis.client import Redis as RedisType
@@ -59,7 +58,7 @@ def check_redis_modules_exist(client: "RedisType") -> None:
         "You must add the RediSearch (>= 2.4) module from Redis Stack. "
         "Please refer to Redis Stack docs: https://redis.io/docs/stack/"
     )
-    _logger.error(error_message)
+    logger.error(error_message)
     raise ValueError(error_message)
 
 
