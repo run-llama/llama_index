@@ -349,8 +349,8 @@ class IngestionPipeline(BaseModel):
                 readers.append(source_component)
             elif (
                 data_source.source_type == ConfigurableDataSourceNames.DOCUMENT
-                and isinstance(data_source, BaseNode)
-                and data_source.get_content()
+                and isinstance(source_component, BaseNode)
+                and source_component.get_content()
             ):
                 documents.append(source_component)
 
