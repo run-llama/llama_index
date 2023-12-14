@@ -414,7 +414,7 @@ class HuggingFaceInferenceAPI(LLM):
     headers: Dict[str, str] = Field(
         default=None,
         description=(
-            "Additional headers to send to the serverF. By default only the"
+            "Additional headers to send to the server. By default only the"
             " authorization and user-agent headers are sent. Values in this dictionary"
             " will override the default values."
         ),
