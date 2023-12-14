@@ -1,24 +1,16 @@
-from typing import Any, Dict, Optional, List
-
-from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
-from llama_index.llms.anyscale_utils import (
-    anyscale_modelname_to_contextsize,
-)
-from llama_index.llms.base import (
-    LLMMetadata,
-)
+from typing import Any, Dict, List, Optional
 
 import httpx
 from openai import AsyncOpenAI, OpenAI
 
-from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.llms.anyscale_utils import (
+    resolve_anyscale_credentials,
+)
 from llama_index.llms.openai_utils import create_retry_decorator
-
-from llama_index.llms.anyscale_utils import resolve_anyscale_credentials
 
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "thenlper/gte-large"
@@ -31,9 +23,11 @@ embedding_retry_decorator = create_retry_decorator(
     max_seconds=20,
 )
 
+
 @embedding_retry_decorator
 def get_embedding(client: OpenAI, text: str, engine: str, **kwargs: Any) -> List[float]:
-    """Get embedding.
+    """
+    Get embedding.
 
     NOTE: Copied from OpenAI's embedding utils:
     https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
@@ -53,7 +47,8 @@ def get_embedding(client: OpenAI, text: str, engine: str, **kwargs: Any) -> List
 async def aget_embedding(
     aclient: AsyncOpenAI, text: str, engine: str, **kwargs: Any
 ) -> List[float]:
-    """Asynchronously get embedding.
+    """
+    Asynchronously get embedding.
 
     NOTE: Copied from OpenAI's embedding utils:
     https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
@@ -75,7 +70,8 @@ async def aget_embedding(
 def get_embeddings(
     client: OpenAI, list_of_text: List[str], engine: str, **kwargs: Any
 ) -> List[List[float]]:
-    """Get embeddings.
+    """
+    Get embeddings.
 
     NOTE: Copied from OpenAI's embedding utils:
     https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
@@ -99,7 +95,8 @@ async def aget_embeddings(
     engine: str,
     **kwargs: Any,
 ) -> List[List[float]]:
-    """Asynchronously get embeddings.
+    """
+    Asynchronously get embeddings.
 
     NOTE: Copied from OpenAI's embedding utils:
     https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
@@ -119,7 +116,8 @@ async def aget_embeddings(
 
 
 class AnyscaleEmbedding(BaseEmbedding):
-    """Anyscale class for embeddings.
+    """
+    Anyscale class for embeddings.
 
     Args:
         model (str): Model for embedding.
@@ -178,12 +176,12 @@ class AnyscaleEmbedding(BaseEmbedding):
             api_base=api_base,
             api_version=api_version,
         )
-        
+
         if "model_name" in kwargs:
             model_name = kwargs.pop("model_name")
         else:
             model_name = model
-        
+
         self._query_engine = model_name
         self._text_engine = model_name
 
@@ -277,7 +275,8 @@ class AnyscaleEmbedding(BaseEmbedding):
         )
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Get text embeddings.
+        """
+        Get text embeddings.
 
         By default, this is a wrapper around _get_text_embedding.
         Can be overridden for batch queries.

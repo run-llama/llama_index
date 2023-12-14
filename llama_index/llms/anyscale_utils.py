@@ -1,7 +1,7 @@
-from typing import Any, Dict, List, Sequence, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.llms.generic_utils import get_from_param_or_env
+from llama_index.llms.types import ChatMessage, MessageRole
 
 DEFAULT_ANYSCALE_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_ANYSCALE_API_VERSION = ""
@@ -20,7 +20,7 @@ MISTRAL_MODELS = {
 }
 
 ZEPHYR_MODELS = {
-    "HuggingFaceH4/zephyr-7b-beta":16384,
+    "HuggingFaceH4/zephyr-7b-beta": 16384,
 }
 
 ALL_AVAILABLE_MODELS = {
@@ -33,7 +33,8 @@ DISCONTINUED_MODELS: Dict[str, int] = {}
 
 
 def anyscale_modelname_to_contextsize(modelname: str) -> int:
-    """Calculate the maximum number of tokens possible to generate for a model.
+    """
+    Calculate the maximum number of tokens possible to generate for a model.
 
     Args:
         modelname: The modelname we want to know the context size for.
@@ -93,7 +94,8 @@ def resolve_anyscale_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str]:
-    """ "Resolve OpenAI credentials.
+    """
+    "Resolve OpenAI credentials.
 
     The order of precedence is:
     1. param
