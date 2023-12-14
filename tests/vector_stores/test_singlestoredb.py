@@ -3,6 +3,7 @@ import os
 from typing import Generator
 
 import pytest
+from llama_index.logger import logger
 from llama_index.schema import TextNode
 from llama_index.vector_stores import SingleStoreVectorStore
 from llama_index.vector_stores.types import (
@@ -11,7 +12,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
 )
 
-logger = logging.getLogger(__name__)
 
 singlestoredb_found = False
 

@@ -78,7 +78,6 @@ def call_function(
     assert tool_call.function.arguments is not None
 
     id_ = tool_call.id
-    # function_call = tool_call.function
     name = tool_call.function.name
     arguments_str = tool_call.function.arguments
     if verbose:
