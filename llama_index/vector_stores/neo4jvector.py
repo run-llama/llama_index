@@ -65,8 +65,10 @@ def _get_search_index_query(hybrid: bool) -> str:
     )
 
 
-def remove_lucene_chars(text: str) -> str:
+def remove_lucene_chars(text: Optional[str]) -> [str]:
     """Remove Lucene special characters."""
+    if not text:
+        return None
     special_chars = [
         "+",
         "-",
