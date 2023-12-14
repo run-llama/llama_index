@@ -69,7 +69,7 @@ The tables below attempt to validate the **initial** experience with various Lla
 
 Generally, paid APIs such as OpenAI or Anthropic are viewed as more reliable. However, local open-source models have been gaining popularity due to their customizability and approach to transparency.
 
-**Contributing:** Anyone is welcome to contribute new LLMs to the documentation. Simply copy an existing notebook, setup and test your LLM, and open a PR with your resutls.
+**Contributing:** Anyone is welcome to contribute new LLMs to the documentation. Simply copy an existing notebook, setup and test your LLM, and open a PR with your results.
 
 If you have ways to improve the setup for existing notebooks, contributions to change this are welcome!
 
