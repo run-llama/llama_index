@@ -138,18 +138,7 @@ class Config:
         user_agent: The user agent to use for logging.
         page_size: For paging RPCs, how many entities to return per RPC.
         testing: Are the unit tests running?
-        auth_credentials: For setting credentials such as using service accounts
-
-    Example:
-        from google.oauth2 import service_account
-        credentials = service_account.Credentials.from_service_account_file(
-            "/path/to/service.json",
-            scopes=[
-                "https://www.googleapis.com/auth/cloud-platform",
-                "https://www.googleapis.com/auth/generative-language.retriever",
-            ],
-        )
-        set_config(Config(auth_credentials=credentials))
+        auth_credentials: For setting credentials such as using service accounts.
     """
 
     api_endpoint: str = _DEFAULT_API_ENDPOINT

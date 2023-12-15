@@ -16,7 +16,6 @@ except ImportError:
     has_google = False
 
 from llama_index.vector_stores.google.generativeai import (
-    GoogleConfig,
     GoogleVectorStore,
     set_google_config,
 )
@@ -28,8 +27,8 @@ if has_google:
     import llama_index.vector_stores.google.generativeai.genai_extension as genaix
 
     # Make sure the tests do not hit actual production servers.
-    set_google_config(
-        GoogleConfig(
+    genaix.set_config(
+        genaix.Config(
             api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",
             testing=True,
         )
@@ -39,7 +38,7 @@ if has_google:
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.auth.credentials.Credentials")
 def test_set_google_config(mock_credentials: MagicMock) -> None:
-    set_google_config(GoogleConfig(auth_credentials=mock_credentials))
+    set_google_config(auth_credentials=mock_credentials)
     config = genaix.get_config()
     assert config.auth_credentials == mock_credentials
 
