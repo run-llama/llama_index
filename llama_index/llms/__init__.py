@@ -7,6 +7,7 @@ from llama_index.llms.clarifai import Clarifai
 from llama_index.llms.cohere import Cohere
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.everlyai import EverlyAI
+from llama_index.llms.gemini import Gemini
 from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
 from llama_index.llms.huggingface import HuggingFaceInferenceAPI, HuggingFaceLLM
 from llama_index.llms.konko import Konko
@@ -15,6 +16,7 @@ from llama_index.llms.litellm import LiteLLM
 from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.llms.llm import LLM
 from llama_index.llms.localai import LOCALAI_DEFAULTS, LocalAI
+from llama_index.llms.mistral import MistralAI
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.monsterapi import MonsterLLM
 from llama_index.llms.ollama import Ollama
@@ -60,6 +62,7 @@ __all__ = [
     "CompletionResponseGen",
     "CustomLLM",
     "EverlyAI",
+    "Gemini",
     "GradientBaseModelLLM",
     "GradientModelAdapterLLM",
     "HuggingFaceInferenceAPI",
@@ -74,6 +77,7 @@ __all__ = [
     "MessageRole",
     "MockLLM",
     "MonsterLLM",
+    "MistralAI",
     "Ollama",
     "OpenAI",
     "OpenAILike",

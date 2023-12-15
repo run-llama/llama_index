@@ -101,7 +101,7 @@ Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/m
 Multi-step query transformations are a generalization on top of existing single-step query transformation approaches.
 
 Given an initial, complex query, the query is transformed and executed against an index. The response is retrieved from the query.
-Given the response (along with prior responses) and the query, followup questions may be asked against the index as well. This technique allows a query to be run against a single knowledge source until that query has satisfied all questions.
+Given the response (along with prior responses) and the query, follow-up questions may be asked against the index as well. This technique allows a query to be run against a single knowledge source until that query has satisfied all questions.
 
 An example image is shown below.
 

@@ -1,5 +1,7 @@
 # Q&A patterns
 
+(Semantic-search)=
+
 ## Semantic Search
 
 The most basic example usage of LlamaIndex is through semantic search. We provide a simple in-memory vector store for you to get started, but you can also choose to use any one of our [vector store integrations](/community/integrations/vector_stores.md):
@@ -22,6 +24,8 @@ print(response)
 **Guides**
 
 - [Example](/examples/vector_stores/SimpleIndexDemo.ipynb) ([Notebook](https://github.com/run-llama/llama_index/tree/main/docs/examples/vector_stores/SimpleIndexDemo.ipynb))
+
+(Summarization)=
 
 ## Summarization
 
@@ -57,6 +61,8 @@ Here are some relevant resources:
 - [SQL Guide (Core)](/examples/index_structs/struct_indices/SQLIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
 - [Pandas Demo](/examples/query_engine/pandas_query_engine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/pandas_query_engine.ipynb))
 
+(Combine-multiple-sources)=
+
 ## Synthesis over Heterogeneous Data
 
 LlamaIndex supports synthesizing across heterogeneous data sources. This can be done by composing a graph over your existing data.
@@ -80,6 +86,8 @@ response = query_engine.query("<query_str>")
 **Guides**
 
 - [City Analysis](/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
+
+(Route-across-multiple-sources)=
 
 ## Routing over Heterogeneous Data
 
@@ -152,6 +160,8 @@ This module will help break down a complex query into a simpler one over your ex
 - [City Analysis Compare/Contrast Example](/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb))
 
 You can also rely on the LLM to _infer_ whether to perform compare/contrast queries (see Multi-Document Queries below).
+
+(Multi-document-queries)=
 
 ## Multi-Document Queries
 

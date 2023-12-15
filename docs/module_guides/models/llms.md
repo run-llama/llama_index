@@ -61,7 +61,7 @@ set_global_tokenizer(
 
 ## LLM Compatibility Tracking
 
-While LLMs are powerful, not every LLM is easy to set up. Furthermore, even with proper setup, some LLMs have trouble performning tasks that require strict instruction following.
+While LLMs are powerful, not every LLM is easy to set up. Furthermore, even with proper setup, some LLMs have trouble performing tasks that require strict instruction following.
 
 LlamaIndex offers integrations with nearly every LLM, but it can be often unclear if the LLM will work well out of the box, or if further customization is needed.
 
@@ -69,7 +69,7 @@ The tables below attempt to validate the **initial** experience with various Lla
 
 Generally, paid APIs such as OpenAI or Anthropic are viewed as more reliable. However, local open-source models have been gaining popularity due to their customizability and approach to transparency.
 
-**Contributing:** Anyone is welcome to contribute new LLMs to the documentation. Simply copy an existing notebook, setup and test your LLM, and open a PR with your resutls.
+**Contributing:** Anyone is welcome to contribute new LLMs to the documentation. Simply copy an existing notebook, setup and test your LLM, and open a PR with your results.
 
 If you have ways to improve the setup for existing notebooks, contributions to change this are welcome!
 

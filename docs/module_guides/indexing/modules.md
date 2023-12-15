@@ -4,7 +4,7 @@
 ---
 maxdepth: 1
 ---
-vector_store_guide.ipynb
+VectorStoreIndex <./vector_store_index.md>
 Summary Index <./index_guide.md>
 Tree Index <./index_guide.md>
 Keyword Table Index <./index_guide.md>
