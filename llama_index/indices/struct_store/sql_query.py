@@ -18,6 +18,9 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT,
     DEFAULT_TEXT_TO_SQL_PROMPT,
 )
+from llama_index.prompts.default_prompt_selectors import (
+    DEFAULT_REFINE_PROMPT_SEL,
+)
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response.schema import Response
@@ -130,6 +133,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
+        refine_template: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -143,6 +147,10 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         self._response_synthesis_prompt = (
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT
         )
+        self._refine_template = (
+            refine_template or DEFAULT_REFINE_PROMPT_SEL
+        )
+
         self._context_query_kwargs = context_query_kwargs or {}
         self._synthesize_response = synthesize_response
         super().__init__(index.service_context.callback_manager)
@@ -239,15 +247,15 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         return Response(response=response_str, metadata=metadata)
 
 
-def _validate_prompt(response_synthesis_prompt: BasePromptTemplate) -> None:
+def _validate_prompt(response_synthesis_prompt: BasePromptTemplate, default_synthesis_prompt: BasePromptTemplate) -> None:
     """Validate prompt."""
     if (
         response_synthesis_prompt.template_vars
-        != DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2.template_vars
+        != default_synthesis_prompt.template_vars
     ):
         raise ValueError(
             "response_synthesis_prompt must have the following template variables: "
-            "query_str, sql_query, context_str"
+            f"{default_synthesis_prompt.template_vars}"
         )
 
 
@@ -257,6 +265,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
+        refine_template: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -265,7 +274,14 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2
         )
         # do some basic prompt validation
-        _validate_prompt(self._response_synthesis_prompt)
+        _validate_prompt(self._response_synthesis_prompt, DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2)
+
+        self._refine_template = (
+            refine_template or DEFAULT_REFINE_PROMPT_SEL
+        )
+        # do some basic prompt validation
+        _validate_prompt(self._refine_template, DEFAULT_REFINE_PROMPT_SEL)
+
         self._synthesize_response = synthesize_response
         super().__init__(self._service_context.callback_manager, **kwargs)
 
@@ -303,10 +319,14 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             partial_synthesis_prompt = self._response_synthesis_prompt.partial_format(
                 sql_query=sql_query_str,
             )
+            partial_refine_prompt = self._refine_template.partial_format(
+                sql_query=sql_query_str,
+            )
             response_synthesizer = get_response_synthesizer(
                 service_context=self._service_context,
                 callback_manager=self._service_context.callback_manager,
                 text_qa_template=partial_synthesis_prompt,
+                refine_template=partial_refine_prompt
             )
             response = response_synthesizer.synthesize(
                 query=query_bundle.query_str,
@@ -333,6 +353,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 service_context=self._service_context,
                 callback_manager=self._service_context.callback_manager,
                 text_qa_template=partial_synthesis_prompt,
+                refine_template=self.refine_template
             )
             response = await response_synthesizer.asynthesize(
                 query=query_bundle.query_str,
@@ -359,6 +380,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
+        refine_template: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
@@ -378,6 +400,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             synthesize_response=synthesize_response,
             response_synthesis_prompt=response_synthesis_prompt,
             service_context=service_context,
+            refine_template=refine_template,
             **kwargs,
         )
 
