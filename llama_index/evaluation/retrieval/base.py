@@ -3,12 +3,11 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.evaluation.retrieval.metrics import resolve_metrics
 from llama_index.evaluation.retrieval.metrics_base import (
-    BaseIndexlessRetrievalMetric,
     BaseRetrievalMetric,
     RetrievalMetricResult,
 )
@@ -76,7 +75,7 @@ class RetrievalEvalResult(BaseModel):
 class BaseRetrievalEvaluator(BaseModel):
     """Base Retrieval Evaluator class."""
 
-    metrics: List[Union[BaseRetrievalMetric, BaseIndexlessRetrievalMetric]] = Field(
+    metrics: List[BaseRetrievalMetric] = Field(
         ..., description="List of metrics to evaluate"
     )
 
@@ -152,12 +151,9 @@ class BaseRetrievalEvaluator(BaseModel):
         )
         metric_dict = {}
         for metric in self.metrics:
-            if isinstance(metric, BaseRetrievalMetric):
-                eval_result = metric.compute(query, expected_ids, retrieved_ids)
-            elif isinstance(metric, BaseIndexlessRetrievalMetric):
-                eval_result = metric.compute(query, expected_texts, retrieved_texts)
-            else:
-                raise ValueError("Metric type is not supported.")
+            eval_result = metric.compute(
+                query, expected_ids, retrieved_ids, expected_texts, retrieved_texts
+            )
             metric_dict[metric.metric_name] = eval_result
 
         return RetrievalEvalResult(

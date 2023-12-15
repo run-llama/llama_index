@@ -5,7 +5,6 @@ import numpy as np
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.evaluation.retrieval.metrics_base import (
-    BaseIndexlessRetrievalMetric,
     BaseRetrievalMetric,
     RetrievalMetricResult,
 )
@@ -23,6 +22,8 @@ class HitRate(BaseRetrievalMetric):
         query: Optional[str] = None,
         expected_ids: Optional[List[str]] = None,
         retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute metric."""
@@ -44,6 +45,8 @@ class MRR(BaseRetrievalMetric):
         query: Optional[str] = None,
         expected_ids: Optional[List[str]] = None,
         retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute metric."""
@@ -59,7 +62,7 @@ class MRR(BaseRetrievalMetric):
         )
 
 
-class CohereRerankRelevancyMetric(BaseIndexlessRetrievalMetric):
+class CohereRerankRelevancyMetric(BaseRetrievalMetric):
     """Cohere rerank relevancy metric."""
 
     model: str = Field(description="Cohere model name.")
@@ -96,6 +99,8 @@ class CohereRerankRelevancyMetric(BaseIndexlessRetrievalMetric):
     def compute(
         self,
         query: Optional[str] = None,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
         expected_texts: Optional[List[str]] = None,
         retrieved_texts: Optional[List[str]] = None,
         agg: Literal["max", "median", "mean"] = "max",
