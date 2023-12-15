@@ -1,4 +1,4 @@
-from typing import Any, List, Sequence, Generator, AsyncGenerator
+from typing import Any, AsyncGenerator, Generator, List, Sequence
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -38,7 +38,10 @@ def mock_chat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
         ],
     )
 
-def mock_chat_stream(*args: Any, **kwargs: Any) -> Generator[ChatCompletionChunk, None, None]:
+
+def mock_chat_stream(
+    *args: Any, **kwargs: Any
+) -> Generator[ChatCompletionChunk, None, None]:
     if "functions" in kwargs:
         if not kwargs["functions"]:
             raise ValueError("functions must not be empty")
@@ -59,16 +62,22 @@ def mock_chat_stream(*args: Any, **kwargs: Any) -> Generator[ChatCompletionChunk
                 delta=ChoiceDelta(
                     role="assistant",
                     content="\n\nThis is a test!",
-                )
+                ),
             )
         ],
     )
 
+
 async def mock_achat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
     return mock_chat_completion(*args, **kwargs)
 
-async def mock_achat_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[ChatCompletionChunk, None]:
-    async def _mock_achat_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[ChatCompletionChunk, None]:
+
+async def mock_achat_stream(
+    *args: Any, **kwargs: Any
+) -> AsyncGenerator[ChatCompletionChunk, None]:
+    async def _mock_achat_stream(
+        *args: Any, **kwargs: Any
+    ) -> AsyncGenerator[ChatCompletionChunk, None]:
         if "functions" in kwargs:
             if not kwargs["functions"]:
                 raise ValueError("functions must not be empty")
@@ -89,10 +98,11 @@ async def mock_achat_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[ChatCom
                     delta=ChoiceDelta(
                         role="assistant",
                         content="\n\nThis is a test!",
-                    )
+                    ),
                 )
             ],
         )
+
     return _mock_achat_stream(*args, **kwargs)
 
 
@@ -170,7 +180,7 @@ def test_stream_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) ->
     mock_instance.chat.completions.create.side_effect = mock_chat_stream
 
     llm = OpenAI(model="gpt-3.5-turbo")
-    
+
     agent = OpenAIAgent.from_tools(
         tools=[add_tool],
         llm=llm,
@@ -183,12 +193,14 @@ def test_stream_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) ->
 
 @patch("llama_index.llms.openai.AsyncOpenAI")
 @pytest.mark.asyncio()
-async def test_astream_chat_basic(MockAsyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
+async def test_astream_chat_basic(
+    MockAsyncOpenAI: MagicMock, add_tool: FunctionTool
+) -> None:
     mock_instance = MockAsyncOpenAI.return_value
     mock_instance.chat.completions.create.side_effect = mock_achat_stream
 
     llm = OpenAI(model="gpt-3.5-turbo")
-    
+
     agent = OpenAIAgent.from_tools(
         tools=[add_tool],
         llm=llm,

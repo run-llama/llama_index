@@ -28,7 +28,7 @@ from llama_index.callbacks import (
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.types import ChatMessage
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever

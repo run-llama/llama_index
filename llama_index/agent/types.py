@@ -197,4 +197,3 @@ class BaseAgentStepEngine(ABC):
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         raise NotImplementedError
-
