@@ -109,7 +109,7 @@
 ### Breaking Changes / Deprecations
 
 - Added `LocalAI` demo and began deprecation cycle (#9151)
-- Deprecate `QueryResponseDataset` and `DatasetGenerator` of `evaluaton` module (#9165)
+- Deprecate `QueryResponseDataset` and `DatasetGenerator` of `evaluation` module (#9165)
 
 ### Bug Fixes / Nits
 

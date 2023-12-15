@@ -2,7 +2,7 @@
 
 ## `Neo4jGraphStore`
 
-`Neo4j` is supported as a graph store integration. You can persist, visualze, and query graphs using LlamaIndex and Neo4j. Furthermore, existing Neo4j graphs are directly supported using `text2cypher` and the `KnowledgeGraphQueryEngine`.
+`Neo4j` is supported as a graph store integration. You can persist, visualize, and query graphs using LlamaIndex and Neo4j. Furthermore, existing Neo4j graphs are directly supported using `text2cypher` and the `KnowledgeGraphQueryEngine`.
 
 If you've never used Neo4j before, you can download the desktop client [here](https://neo4j.com/download/).
 

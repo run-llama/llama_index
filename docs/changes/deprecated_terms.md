@@ -24,7 +24,7 @@ This has been renamed to `VectorStoreIndex`, but it is only a cosmetic change. P
 
 ## LLMPredictor
 
-The `LLMPredictor` object is no longer intended to be used by users. Instead, you can setup an LLM directly and pass it into the `ServiceContext`. THe `LLM` class itself has similar attributes and methods as the `LLMPredictor`.
+The `LLMPredictor` object is no longer intended to be used by users. Instead, you can setup an LLM directly and pass it into the `ServiceContext`. The `LLM` class itself has similar attributes and methods as the `LLMPredictor`.
 
 - [LLMs in LlamaIndex](/module_guides/models/llms.md)
 - [Setting LLMs in the ServiceContext](/module_guides/supporting_modules/service_context.md)

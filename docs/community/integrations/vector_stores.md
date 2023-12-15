@@ -45,7 +45,7 @@ Once constructed, the index can be used for querying.
 
 **Default Vector Store Index Construction/Querying**
 
-By default, `VectorStoreIndex` uses a in-memory `SimpleVectorStore`
+By default, `VectorStoreIndex` uses an in-memory `SimpleVectorStore`
 that's initialized as part of the default storage context.
 
 ```python
