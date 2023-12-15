@@ -16,7 +16,15 @@ from llama_index.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.llms.base import (
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.llms.openai_utils import (
+    from_openai_message,
+    resolve_openai_credentials,
+    to_openai_message_dicts,
+)
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -26,10 +34,6 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     MessageRole,
 )
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
-from llama_index.llms.openai_utils import from_openai_message, to_openai_message_dicts
 from llama_index.multi_modal_llms import (
     MultiModalLLM,
     MultiModalLLMMetadata,
@@ -87,7 +91,8 @@ class OpenAIMultiModal(MultiModalLLM):
         timeout: float = 60.0,
         image_detail: str = "low",
         api_key: Optional[str] = None,
-        api_base: Optional[str] = "https://api.openai.com/v1",
+        api_base: Optional[str] = None,
+        api_version: Optional[str] = None,
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -95,8 +100,11 @@ class OpenAIMultiModal(MultiModalLLM):
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
-        api_key = api_key
-        api_base = api_base
+        api_key, api_base, api_version = resolve_openai_credentials(
+            api_key=api_key,
+            api_base=api_base,
+            api_version=api_version,
+        )
 
         super().__init__(
             model=model,
@@ -109,6 +117,7 @@ class OpenAIMultiModal(MultiModalLLM):
             timeout=timeout,
             api_key=api_key,
             api_base=api_base,
+            api_version=api_version,
             callback_manager=callback_manager,
         )
         self._client, self._aclient = self._get_clients(**kwargs)
@@ -126,8 +135,7 @@ class OpenAIMultiModal(MultiModalLLM):
     def metadata(self) -> MultiModalLLMMetadata:
         """Multi Modal LLM metadata."""
         return MultiModalLLMMetadata(
-            context_window=self.context_window,
-            num_output=DEFAULT_NUM_OUTPUTS,
+            num_output=self.max_new_tokens or DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
         )
 

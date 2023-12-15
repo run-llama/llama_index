@@ -36,8 +36,8 @@ sys.modules["google.generativeai"] = MockPalmPackage()
 
 from typing import Any
 
-from llama_index.llms.base import CompletionResponse
 from llama_index.llms.palm import PaLM
+from llama_index.llms.types import CompletionResponse
 
 
 @pytest.mark.skipif(

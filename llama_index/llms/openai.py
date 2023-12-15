@@ -27,16 +27,6 @@ from llama_index.constants import (
     DEFAULT_TEMPERATURE,
 )
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -50,6 +40,7 @@ from llama_index.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai_utils import (
     from_openai_message,
     is_chat_model,
@@ -58,6 +49,18 @@ from llama_index.llms.openai_utils import (
     resolve_openai_credentials,
     to_openai_message_dicts,
 )
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 
@@ -131,6 +134,12 @@ class OpenAI(LLM):
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
+        # base class
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -154,6 +163,11 @@ class OpenAI(LLM):
             timeout=timeout,
             reuse_client=reuse_client,
             default_headers=default_headers,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
             **kwargs,
         )
 

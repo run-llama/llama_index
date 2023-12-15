@@ -1,11 +1,14 @@
 """Mock LLM Predictor."""
 from typing import Any, Dict
 
+from deprecated import deprecated
+
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.llms.base import LLM, LLMMetadata
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import LLMMetadata
 from llama_index.prompts.base import BasePromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.token_counter.utils import (
@@ -82,6 +85,7 @@ def _mock_knowledge_graph_triplet_extract(prompt_args: Dict, max_triplets: int) 
     )
 
 
+@deprecated("MockLLMPredictor is deprecated. Use MockLLM instead.")
 class MockLLMPredictor(BaseLLMPredictor):
     """Mock LLM Predictor."""
 

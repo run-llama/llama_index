@@ -3,20 +3,25 @@
 import logging
 from abc import ABC, abstractmethod
 from collections import ChainMap
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from typing_extensions import Self
 
 from llama_index.bridge.pydantic import BaseModel, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llm_predictor.utils import (
+from llama_index.llms.llm import (
+    LLM,
     astream_chat_response_to_tokens,
     astream_completion_response_to_tokens,
     stream_chat_response_to_tokens,
     stream_completion_response_to_tokens,
 )
-from llama_index.llms.base import LLM, ChatMessage, LLMMetadata, MessageRole
+from llama_index.llms.types import (
+    ChatMessage,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseComponent
@@ -326,3 +331,6 @@ class LLMPredictor(BaseLLMPredictor):
                 *messages,
             ]
         return messages
+
+
+LLMPredictorType = Union[LLMPredictor, LLM]

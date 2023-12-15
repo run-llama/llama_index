@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from llama_index.callbacks import trace_method
 from llama_index.chat_engine.types import BaseChatEngine, StreamingAgentChatResponse
 from llama_index.core import BaseQueryEngine
-from llama_index.llms.base import ChatMessage
+from llama_index.llms.types import ChatMessage
 from llama_index.memory.types import BaseMemory
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.response.schema import RESPONSE_TYPE, Response

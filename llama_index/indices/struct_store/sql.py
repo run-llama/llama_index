@@ -107,7 +107,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
             return index_struct
         else:
             data_extractor = SQLStructDatapointExtractor(
-                self._service_context.llm_predictor,
+                self._service_context.llm,
                 self.schema_extract_prompt,
                 self.output_parser,
                 self.sql_database,
@@ -127,7 +127,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         data_extractor = SQLStructDatapointExtractor(
-            self._service_context.llm_predictor,
+            self._service_context.llm,
             self.schema_extract_prompt,
             self.output_parser,
             self.sql_database,

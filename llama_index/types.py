@@ -14,7 +14,7 @@ from typing import (
 )
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms.types import ChatMessage, MessageRole
 
 Model = TypeVar("Model", bound=BaseModel)
 
@@ -33,9 +33,9 @@ class BaseOutputParser(Protocol):
     def parse(self, output: str) -> Any:
         """Parse, validate, and correct errors programmatically."""
 
-    @abstractmethod
     def format(self, query: str) -> str:
         """Format a query with structured output formatting instructions."""
+        return query
 
     def format_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
         """Format a list of messages with structured output formatting instructions."""
