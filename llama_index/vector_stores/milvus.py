@@ -295,7 +295,10 @@ class MilvusVectorStore(VectorStore):
         for hit in res[0]:
             if not self.text_key:
                 node = metadata_dict_to_node(
-                    {"_node_content": hit["entity"].get("_node_content", None)}
+                    {
+                        "_node_content": hit["entity"].get("_node_content", None),
+                        "_node_type": hit["entity"].get("_node_type", None),
+                    }
                 )
             else:
                 try:
