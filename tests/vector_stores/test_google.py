@@ -27,11 +27,9 @@ if has_google:
     import llama_index.vector_stores.google.generativeai.genai_extension as genaix
 
     # Make sure the tests do not hit actual production servers.
-    genaix.set_config(
-        genaix.Config(
-            api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",
-            testing=True,
-        )
+    set_google_config(
+        api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",
+        testing=True,
     )
 
 

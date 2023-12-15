@@ -40,10 +40,12 @@ See the docstring for `GoogleVectorStore` for usage example.
 
 
 def set_google_config(
+    *,
     api_endpoint: Optional[str] = None,
     user_agent: Optional[str] = None,
     page_size: Optional[int] = None,
     auth_credentials: Optional["credentials.Credentials"] = None,
+    **kwargs,
 ) -> None:
     """
     Set the configuration for Google Generative AI API.
@@ -77,6 +79,7 @@ def set_google_config(
         "user_agent": user_agent,
         "page_size": page_size,
         "auth_credentials": auth_credentials,
+        "testing": kwargs.get("testing", None),
     }
     attrs = {k: v for k, v in config_attrs.items() if v is not None}
     config = genaix.Config(**attrs)
