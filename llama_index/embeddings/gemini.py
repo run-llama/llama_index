@@ -18,10 +18,9 @@ class GeminiEmbedding(BaseEmbedding):
     """
 
     _model: Any = PrivateAttr()
-    ## TBD: whether put title and task_type in the init or not
     title: Optional[str] = Field(
         default="",
-        description="The title for the content for the embedding model.",
+        description="Title is only applicable for retrieval_document tasks, and is used to represent a document title. For other tasks, title is invalid.",
     )
     task_type: Optional[str] = Field(
         default="retrieval_document",
@@ -92,7 +91,8 @@ class GeminiEmbedding(BaseEmbedding):
         ]
 
     ### Async methods ###
-    # need to wait async calls from Gemini side to be implemented
+    # need to wait async calls from Gemini side to be implemented.
+    # Issue: https://github.com/google/generative-ai-python/issues/125
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
         return self._get_query_embedding(query)
