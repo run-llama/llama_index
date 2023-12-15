@@ -6,7 +6,7 @@ LlamaIndex offers key modules to measure the quality of generated results. We al
 
 ## Response Evaluation
 
-Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelines? Here's a simple example that evaluates a single response for Faithfulness, i.e. whether the response contains hallucinations:
+Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelines? Here's a simple example that evaluates a single response for Faithfulness, i.e. whether the response is aligned to the context, such as being free from hallucinations:
 
 ```python
 from llama_index import VectorStoreIndex, ServiceContext
@@ -19,6 +19,7 @@ service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
 ...
+vector_index = VectorStoreIndex(...)
 
 # define evaluator
 evaluator = FaithfulnessEvaluator(service_context=service_context)
