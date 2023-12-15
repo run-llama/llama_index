@@ -41,7 +41,6 @@ class OptimumEmbedding(BaseEmbedding):
         device: Optional[str] = None,
     ):
         try:
-            import torch
             from optimum.onnxruntime import ORTModelForFeatureExtraction
             from transformers import AutoTokenizer
         except ImportError:
