@@ -22,8 +22,8 @@ SKIP_TEST_REASON = "Google GenerativeAI is not installed"
 if has_google:
     import llama_index.vector_stores.google.generativeai.genai_extension as genaix
 
-    genaix.set_config(
-        genaix.Config(
+    set_google_config(
+        GoogleConfig(
             api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",
             testing=True,
         )
