@@ -38,13 +38,13 @@ Section 1. General Terms of Use and Redistributing Project
 Gutenberg-tm electronic works
 
 1.A. By reading or using any part of this Project Gutenberg-tm
-electronic work, you indicate that you have read, understand, agree to
-and accept all the terms of this license and intellectual property
+electronic work, you indicate that you have read, understood, and agreed to
+accept all the terms of this license and intellectual property
 (trademark/copyright) agreement. If you do not agree to abide by all
 the terms of this agreement, you must cease using and return or
 destroy all copies of Project Gutenberg-tm electronic works in your
 possession. If you paid a fee for obtaining a copy of or access to a
-Project Gutenberg-tm electronic work and you do not agree to be bound
+Project Gutenberg-tm electronic work and you disagree to be bound
 by the terms of this agreement, you may obtain a refund from the
 person or entity to whom you paid the fee as set forth in paragraph
 1.E.8.
@@ -70,7 +70,7 @@ displaying or creating derivative works based on the work as long as
 all references to Project Gutenberg are removed. Of course, we hope
 that you will support the Project Gutenberg-tm mission of promoting
 free access to electronic works by freely sharing Project Gutenberg-tm
-works in compliance with the terms of this agreement for keeping the
+works in compliance with the terms of this agreement to keep the
 Project Gutenberg-tm name associated with the work. You can easily
 comply with the terms of this agreement by keeping this work in the
 same format with its attached full Project Gutenberg-tm License when
@@ -122,7 +122,7 @@ will be linked to the Project Gutenberg-tm License for all works
 posted with the permission of the copyright holder found at the
 beginning of this work.
 
-1.E.4. Do not unlink or detach or remove the full Project Gutenberg-tm
+1.E.4. Do not unlink, detach or remove the full Project Gutenberg-tm
 License terms from this work, or any files containing a part of this
 work or any other work associated with Project Gutenberg-tm.
 
@@ -137,7 +137,7 @@ compressed, marked up, nonproprietary or proprietary form, including
 any word processing or hypertext form. However, if you provide access
 to or distribute copies of a Project Gutenberg-tm work in a format
 other than "Plain Vanilla ASCII" or other format used in the official
-version posted on the official Project Gutenberg-tm web site
+version posted on the official Project Gutenberg-tm website
 (www.gutenberg.org), you must, at no additional cost, fee or expense
 to the user, provide a copy, a means of exporting a copy, or a means
 of obtaining a copy upon request, of the work in its original "Plain
@@ -315,7 +315,7 @@ against accepting unsolicited donations from donors in such states who
 approach us with offers to donate.
 
 International donations are gratefully accepted, but we cannot make
-any statements concerning tax treatment of donations received from
+any statements concerning the tax treatment of donations received from
 outside the United States. U.S. laws alone swamp our small staff.
 
 Please check the Project Gutenberg Web pages for current donation

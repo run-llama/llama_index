@@ -11,33 +11,20 @@ which enables question & answer and chat over your data.
 
 Under the hood, `Indexes` store data in `Node` objects (which represent chunks of the original documents), and expose a [Retriever](/module_guides/querying/retriever/root.md) interface that supports additional configuration and automation.
 
-For a more in-depth explanation, check out our guide below:
+The most common index by far is the `VectorStoreIndex`; the best place to start is the [VectorStoreIndex usage guide](/module_guides/indexing/vector_store_index.md).
+
+For other indexes, check out our guide to [how each index works](/module_guides/indexing/index_guide.md) to help you decide which one matches your use-case.
 
 ```{toctree}
 ---
 maxdepth: 1
+hidden: True
 ---
+vector_store_index.md
 index_guide.md
 ```
 
-## Usage Pattern
-
-Get started with:
-
-```python
-from llama_index import VectorStoreIndex
-
-index = VectorStoreIndex.from_documents(docs)
-```
-
-```{toctree}
----
-maxdepth: 2
----
-usage_pattern.md
-```
-
-## Modules
+## Other Index resources
 
 ```{toctree}
 ---

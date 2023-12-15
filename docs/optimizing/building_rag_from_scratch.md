@@ -25,7 +25,7 @@ maxdepth: 1
 
 ## Building Vector Retrieval from Scratch
 
-This tutorial shows you how to build a retriever to query an vector store.
+This tutorial shows you how to build a retriever to query a vector store.
 
 ```{toctree}
 ---

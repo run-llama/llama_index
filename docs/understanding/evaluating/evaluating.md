@@ -4,7 +4,7 @@ Evaluation and benchmarking are crucial concepts in LLM development. To improve 
 
 LlamaIndex offers key modules to measure the quality of generated results. We also offer key modules to measure retrieval quality.
 
-- **Response Evaluation**: Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelnes?
+- **Response Evaluation**: Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelines?
 - **Retrieval Evaluation**: Are the retrieved sources relevant to the query?
 
 You can learn more about how evaluation works in LlamaIndex in our [module guides](/module_guides/evaluating/root.md).

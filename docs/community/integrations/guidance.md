@@ -33,7 +33,7 @@ and supplying a suitable prompt template.
 
 > Note: guidance uses handlebars-style templates, which uses double braces for variable substitution, and single braces for literal braces. This is the opposite convention of Python format strings.
 
-> Note: We provide an utility function `from llama_index.prompts.guidance_utils import convert_to_handlebars` that can convert from the Python format string style template to guidance handlebars-style template.
+> Note: We provide a utility function `from llama_index.prompts.guidance_utils import convert_to_handlebars` that can convert from the Python format string style template to guidance handlebars-style template.
 
 ```python
 program = GuidancePydanticProgram(
@@ -70,7 +70,7 @@ You can play with [this notebook](/examples/output_parsing/guidance_pydantic_pro
 ### Using guidance to improve the robustness of our sub-question query engine.
 
 LlamaIndex provides a toolkit of advanced query engines for tackling different use-cases.
-Several relies on structured output in intermediate steps.
+Several rely on structured output in intermediate steps.
 We can use guidance to improve the robustness of these query engines, by making sure the
 intermediate response has the expected structure (so that they can be parsed correctly to a structured object).
 
