@@ -32,6 +32,7 @@ from llama_index.indices.loading import (
     load_indices_from_storage,
 )
 from llama_index.indices.managed.vectara import VectaraIndex
+from llama_index.indices.managed.zilliz import ZillizCloudPipelineIndex
 from llama_index.indices.multi_modal import MultiModalVectorStoreIndex
 from llama_index.indices.struct_store.pandas import GPTPandasIndex, PandasIndex
 from llama_index.indices.struct_store.sql import (
@@ -51,6 +52,7 @@ __all__ = [
     "SummaryIndex",
     "TreeIndex",
     "VectaraIndex",
+    "ZillizCloudPipelineIndex",
     "DocumentSummaryIndex",
     "KnowledgeGraphIndex",
     "PandasIndex",
