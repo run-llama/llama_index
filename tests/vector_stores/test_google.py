@@ -16,8 +16,9 @@ except ImportError:
     has_google = False
 
 from llama_index.vector_stores.google.generativeai import (
+    GoogleConfig,
     GoogleVectorStore,
-    set_google_auth_credentials,
+    set_google_config,
 )
 
 SKIP_TEST_REASON = "Google GenerativeAI is not installed"
@@ -37,10 +38,10 @@ if has_google:
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.auth.credentials.Credentials")
-def test_set_google_auth_credentials(mock_credential: MagicMock) -> None:
-    set_google_auth_credentials(mock_credential)
+def test_set_google_config(mock_credentials: MagicMock) -> None:
+    set_google_config(GoogleConfig(auth_credentials=mock_credentials))
     config = genaix.get_config()
-    assert config.google_auth_credentials == mock_credential
+    assert config.auth_credentials == mock_credentials
 
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
