@@ -14,4 +14,5 @@ Memory Module
 
 .. automodule:: llama_index.langchain_helpers.memory_wrapper
    :members:
-   :inherited-members:
+   :undoc-members:
+   :show-inheritance:
