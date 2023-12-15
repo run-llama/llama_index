@@ -32,7 +32,7 @@ if has_google:
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
 @patch("google.auth.credentials.Credentials")
-def set_google_config(mock_credentials: MagicMock) -> None:
+def test_set_google_config(mock_credentials: MagicMock) -> None:
     set_google_config(GoogleConfig(auth_credentials=mock_credentials))
     config = genaix.get_config()
     assert config.auth_credentials == mock_credentials
