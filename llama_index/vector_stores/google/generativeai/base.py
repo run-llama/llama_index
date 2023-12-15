@@ -8,7 +8,7 @@ https://developers.generativeai.google/guide
 
 import logging
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field, PrivateAttr  # type: ignore
 from llama_index.indices.service_context import ServiceContext
@@ -19,6 +19,10 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+
+if TYPE_CHECKING:
+    from google.auth import credentials
+
 
 _logger = logging.getLogger(__name__)
 _import_err_msg = "`google.generativeai` package not found, please run `pip install google-generativeai`"
@@ -53,7 +57,7 @@ def set_google_config(
     Parameters are optional, Normally, the defaults should work fine.
     If provided, they will override the default values in the Config class.
     See the docstring in `genai_extension.py` for more details.
-
+    auth_credentials: Optional["credentials.Credentials"] = None,
     Use this to pass Google Auth credentials such as using a service account.
     Refer to for auth credentials documentation:
     https://developers.google.com/identity/protocols/oauth2/service-account#creatinganaccount.
