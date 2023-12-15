@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass, fields
 from typing import Any, Dict, List, Optional
 from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode, NodeRelationship
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -12,7 +12,7 @@ from llama_index.vector_stores.types import (
 from llama_index.vector_stores.utils import node_to_metadata_dict
 
 
-IMPORT_ERROR_MSG = "`clickhouse_connect` package not found, please run `pip install clickhouse_connect`"
+IMPORT_ERROR_MSG = "`clickhouse-connect` package not found, please run `pip install clickhouse-connect`"
 DEFAULT_DATABASE = "llama_index"
 DEFAULT_VECTOR_STORE_TABLE = "vector_store"
 DEFAULT_VECTOR_INDEX_PARAMS = {
@@ -24,17 +24,21 @@ _logger = logging.getLogger(__name__)
 class Record:
     id: str
     hash: str
-    type: int
+    type: str
     chunk_type: str
     text: str
 
     doc_id: Optional[str]
     doc_path: Optional[str]
     doc_version: Optional[str]
-    doc_mark_deleted: bool
+    doc_author: Optional[str]
+    doc_category: Optional[str]
+    doc_owner: Optional[str]
+
+    deleted: bool
 
     abstract: str
-    keyword: List[str]
+    keywords: List[str]
 
     previous: Optional[str]
     next: Optional[str]
@@ -59,23 +63,48 @@ class Record:
 
     @staticmethod
     def from_node(node: BaseNode) -> "Record":
+        _previous = ""
+        _next = ""
+        _parent = ""
+        if node.relationships.get(NodeRelationship.PREVIOUS) is not None:
+            _previous = (node.relationships.get(NodeRelationship.PREVIOUS).node_id)
+        if node.relationships.get(NodeRelationship.NEXT) is not None:
+            _next = (node.relationships.get(NodeRelationship.NEXT).node_id)
+        if node.relationships.get(NodeRelationship.PARENT) is not None:
+            _parent = (node.relationships.get(NodeRelationship.PARENT).node_id)
+
         return Record(
             id=node.node_id,
-            type=int(node.get_type()),
             hash=node.hash,
-            ref_doc_id=node.ref_doc_id,
-            embedding=node.get_embedding(),
+            type=node.get_type(),
+            chunk_type=node.metadata.get("chunk_type"),
+            text=node.get_content(metadata_mode=MetadataMode.NONE),
+
+            doc_id=node.metadata.get("doc_id"),
+            doc_path=node.metadata.get("doc_path"),
+            doc_version=node.metadata.get("doc_version"),
+            doc_author=node.metadata.get("doc_author"),
+            doc_category=node.metadata.get("doc_category"),
+            doc_owner=node.metadata.get("doc_owner"),
+
+            deleted=node.metadata.get("deleted"),
+
+            abstract=node.metadata.get("abstract"),
+            keywords=node.metadata.get("keywords"),
+
+            previous=_previous,
+            next=_next,
+            parent=_parent,
+
             metadata=node_to_metadata_dict(
                 node,
                 remove_text=True,
                 flat_metadata=True,
             ),
-            excluded_embed_metadata_keys=[],
-            excluded_llm_metadata_keys=[],
-            relationships=node.dict().get("relationships", {}),
-            text=node.get_content(metadata_mode=MetadataMode.NONE),
-            start_char_idx=0,
-            end_char_idx=0,
+            embedding=node.get_embedding(),
+            embedding_optional_1=[0],
+            embedding_optional_2=[0],
+            embedding_optional_3=[0],
         )
 class IndexOptions:
     def __init__(self, index_type: str, index_params: dict[str, Any]):
@@ -96,7 +125,7 @@ class ClickhouseVectorStore(BasePydanticVectorStore):
     database: str
     table_name: str
 
-    embedding_dimension: int
+    ##embedding_dimension: int
     index_type: str
     index_params: dict[str, Any]
     perform_setup: bool
@@ -127,7 +156,7 @@ class ClickhouseVectorStore(BasePydanticVectorStore):
             username=username,
             password=password,
             table_name=table_name,
-            embedding_dimension=embedding_dimension,
+            ##embedding_dimension=embedding_dimension,  embedding槽位扩宽，不再固定
             index_type=index_type,
             index_params=index_params,
             perform_setup=perform_setup,
@@ -170,63 +199,43 @@ class ClickhouseVectorStore(BasePydanticVectorStore):
         self._client.command("SET allow_experimental_annoy_index = 1;")
         self._client.command(
             f"""
-        CREATE TABLE IF NOT EXISTS {self.database}.{self.table_name}
-        (
-              id                  FixedString(256),
-              hash                FixedString(256),
-              type                FixedString(32),
-              chunk_type          FixedString(32),
-              text                String,
-              doc_id              FixedString(256),
-              doc_path            String,
-              doc_version         FixedString(64),
-              doc_mark_deleted    Bool,
-              abstract            String,
-              keywords            Array(String),
-              previous            FixedString(256),
-              next                FixedString(256),
-              parent              FixedString(256),
-              metadata            JSON,
-              embedding           Array(Float32),
-              embedding_optional_1 Array(Float32),
-              embedding_optional_2 Array(Float32),
-              embedding_optional_3 Array(Float32),
-              INDEX idx_doc_id doc_id TYPE set(0) GRANULARITY 1,
-              INDEX idx_doc_version doc_version TYPE set(0) GRANULARITY 1,
-              INDEX idx_doc_mark_deleted doc_mark_deleted TYPE set(0) GRANULARITY 1,
-              INDEX idx_previous previous TYPE set(0) GRANULARITY 1,
-              INDEX idx_next next TYPE set(0) GRANULARITY 1,
-              INDEX idx_parent parent TYPE set(0) GRANULARITY 1,
-              INDEX idx_embedding embedding TYPE annoy('cosineDistance') GRANULARITY 8192,
-              INDEX idx_embedding_optional_1 embedding_optional_1 TYPE annoy('cosineDistance') GRANULARITY 8192,
-              INDEX idx_embedding_optional_2 embedding_optional_2 TYPE annoy('cosineDistance') GRANULARITY 8192,
-              INDEX idx_embedding_optional_3 embedding_optional_3 TYPE annoy('cosineDistance') GRANULARITY 8192
+            CREATE TABLE IF NOT EXISTS {self.database}.{self.table_name}
+            (
+                  id                  FixedString(256),
+                  hash                FixedString(256),
+                  type                FixedString(32),
+                  chunk_type          FixedString(32),
+                  text                String,
+                  doc_id              Nullable(FixedString(256)),
+                  doc_path            Nullable(String),
+                  doc_version         Nullable(FixedString(64)),
+                  doc_author          Nullable(FixedString(64)),
+                  doc_category        Nullable(FixedString(64)),
+                  doc_owner           Nullable(FixedString(64)),
+                  deleted             Bool,
+                  abstract            Nullable(String),
+                  keywords            Nullable(String),
+                  previous            Nullable(FixedString(256)),
+                  next                Nullable(FixedString(256)),
+                  parent              Nullable(FixedString(256)),
+                  metadata            JSON,
+                  embedding           Array(Float32),
+                  embedding_optional_1 Array(Float32),
+                  embedding_optional_2 Array(Float32),
+                  embedding_optional_3 Array(Float32),
+                  INDEX idx_doc_id doc_id TYPE set(0) GRANULARITY 1,
+                  INDEX idx_doc_version doc_version TYPE set(0) GRANULARITY 1,
+                  INDEX deleted deleted TYPE set(0) GRANULARITY 1,
+                  INDEX idx_previous previous TYPE set(0) GRANULARITY 1,
+                  INDEX idx_next next TYPE set(0) GRANULARITY 1,
+                  INDEX idx_parent parent TYPE set(0) GRANULARITY 1,
+                  INDEX idx_embedding embedding TYPE annoy('cosineDistance') GRANULARITY 8192,
+                  INDEX idx_embedding_optional_1 embedding_optional_1 TYPE annoy('cosineDistance') GRANULARITY 8192,
+                  INDEX idx_embedding_optional_2 embedding_optional_2 TYPE annoy('cosineDistance') GRANULARITY 8192,
+                  INDEX idx_embedding_optional_3 embedding_optional_3 TYPE annoy('cosineDistance') GRANULARITY 8192
             )
             ENGINE = MergeTree()
             PRIMARY KEY (id);"""
-        )
-        self._client.command(
-            f"""
-            CREATE TABLE IF NOT EXISTS collection_information
-            (
-                collection_id       FixedString(36),
-                name FixedString(256),
-                description String,
-                desc_embedding Array(Float32),
-                desc_embedding_meta JSON,
-                keywords Array(String),
-                state FixedString(32),
-                embedding_strategy JSON,
-                metadata JSON,
-                creation_date DateTime('Asia/Shanghai'),
-                last_modified_date DateTime('Asia/Shanghai'),
-                index_date DateTime('Asia/Shanghai'),
-                INDEX idx_collection_id collection_id TYPE set(0) GRANULARITY 1,
-                INDEX idx_state state TYPE set(0) GRANULARITY 1,
-                INDEX idx_desc_embedding desc_embedding TYPE annoy('cosineDistance') GRANULARITY 8192
-            )
-            ENGINE = MergeTree()
-            PRIMARY KEY (collection_id);"""
         )
 
     def _initialize(self) -> None:

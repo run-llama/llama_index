@@ -41,6 +41,7 @@ from llama_index.llms.vertex import Vertex
 from llama_index.llms.vllm import Vllm, VllmServer
 from llama_index.llms.watsonx import WatsonX
 from llama_index.llms.xinference import Xinference
+from llama_index.llms.cwlm import CwLM
 
 __all__ = [
     "AI21",
@@ -89,4 +90,5 @@ __all__ = [
     "Vllm",
     "VllmServer",
     "Vertex",
+    "CwLM"
 ]
