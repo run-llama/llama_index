@@ -23,6 +23,7 @@ class OptimumEmbedding(BaseEmbedding):
 
     _model: Any = PrivateAttr()
     _tokenizer: Any = PrivateAttr()
+    _device: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -36,8 +37,10 @@ class OptimumEmbedding(BaseEmbedding):
         tokenizer: Optional[Any] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
+        device: Optional[str] = None,
     ):
         try:
+            import torch
             from optimum.onnxruntime import ORTModelForFeatureExtraction
             from transformers import AutoTokenizer
         except ImportError:
@@ -49,6 +52,7 @@ class OptimumEmbedding(BaseEmbedding):
 
         self._model = model or ORTModelForFeatureExtraction.from_pretrained(folder_name)
         self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
+        self._device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
         if max_length is None:
             try:
@@ -139,7 +143,7 @@ class OptimumEmbedding(BaseEmbedding):
             embeddings = self._cls_pooling(model_output)
         else:
             embeddings = self._mean_pooling(
-                model_output, encoded_input["attention_mask"]
+                model_output, encoded_input["attention_mask"].to(self._device)
             )
 
         if self.normalize:
