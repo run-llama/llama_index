@@ -137,7 +137,5 @@ def docIdgen(
         version: Optional[str] = ""):
     s = version + path
     # 使用 SHA256 算法
-    hash_object = hashlib.sha256(s.encode())
-    #base64_hash = base64.b64encode(hash_object.digest())
-    #return base64_hash
+    hash_object = hashlib.sha256(s.encode("utf-8", "surrogatepass"))
     return hash_object.hexdigest()
