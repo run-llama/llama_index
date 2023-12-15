@@ -49,7 +49,7 @@ def set_google_config(
     user_agent: Optional[str] = None,
     page_size: Optional[int] = None,
     auth_credentials: Optional["credentials.Credentials"] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """
     Set the configuration for Google Generative AI API.
