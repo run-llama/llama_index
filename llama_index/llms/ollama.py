@@ -111,6 +111,7 @@ class Ollama(CustomLLM):
                 "Please install requests with `pip install requests`"
             )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        del all_kwargs["formatted"]  # ollama throws 400 if it receives this option
 
         if not kwargs.get("formatted", False):
             prompt = self.completion_to_prompt(prompt)
