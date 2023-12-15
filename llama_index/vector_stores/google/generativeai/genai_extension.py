@@ -149,7 +149,7 @@ class Config:
                 "https://www.googleapis.com/auth/generative-language.retriever",
             ],
         )
-        set_google_config(Config(auth_credentials=credentials))
+        set_config(Config(auth_credentials=credentials))
     """
 
     api_endpoint: str = _DEFAULT_API_ENDPOINT
