@@ -105,6 +105,13 @@ class GeminiMultiModal(MultiModalLLM):
         # Explicitly passed args take precedence over the generation_config.
         final_gen_config = {"temperature": temperature} | base_gen_config
 
+        # Check whether the Gemini Model is supported or not
+        if model_name not in GEMINI_MM_MODELS:
+            raise ValueError(
+                f"Invalid model {model_name}. "
+                f"Available models are: {GEMINI_MM_MODELS}"
+            )
+
         self._model = genai.GenerativeModel(
             model_name=model_name,
             generation_config=final_gen_config,
