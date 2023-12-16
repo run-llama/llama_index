@@ -37,7 +37,6 @@ from llama_index.callbacks import (
 )
 from llama_index.chat_engine.types import (
     AgentChatResponse,
-    ChatResponseMode,
     StreamingAgentChatResponse,
 )
 from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole

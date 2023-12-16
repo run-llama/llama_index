@@ -109,11 +109,11 @@ class AgentEngine(BaseModel, BaseAgent):
         self.state.task_dict.pop(task_id)
 
     def _run_step(
-        self, 
-        task_id: str, 
-        step: Optional[TaskStep] = None, 
+        self,
+        task_id: str,
+        step: Optional[TaskStep] = None,
         mode: ChatResponseMode = ChatResponseMode.WAIT,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
         task = self.state.get_task(task_id)
@@ -134,11 +134,11 @@ class AgentEngine(BaseModel, BaseAgent):
         return cur_step_output
 
     async def _arun_step(
-        self, 
-        task_id: str, 
-        step: Optional[TaskStep] = None, 
+        self,
+        task_id: str,
+        step: Optional[TaskStep] = None,
         mode: ChatResponseMode = ChatResponseMode.WAIT,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
         task = self.state.get_task(task_id)
@@ -149,7 +149,9 @@ class AgentEngine(BaseModel, BaseAgent):
         if mode == ChatResponseMode.WAIT:
             cur_step_output = await self.step_executor.arun_step(step, task, **kwargs)
         elif mode == ChatResponseMode.STREAM:
-            cur_step_output = await self.step_executor.astream_step(step, task, **kwargs)
+            cur_step_output = await self.step_executor.astream_step(
+                step, task, **kwargs
+            )
         else:
             raise ValueError(f"Invalid mode: {mode}")
         # append cur_step_output next steps to queue
@@ -158,41 +160,35 @@ class AgentEngine(BaseModel, BaseAgent):
         return cur_step_output
 
     def run_step(
-        self, 
-        task: Task, 
-        step: Optional[TaskStep] = None, 
-        **kwargs: Any
+        self, task: Task, step: Optional[TaskStep] = None, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step."""
         return self._run_step(task.task_id, step, mode=ChatResponseMode.WAIT, **kwargs)
 
     async def arun_step(
-        self,
-        task_id: str,
-        step: Optional[TaskStep] = None,
-        **kwargs: Any
+        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
-        return await self._arun_step(task_id, step, mode=ChatResponseMode.WAIT, **kwargs)
+        return await self._arun_step(
+            task_id, step, mode=ChatResponseMode.WAIT, **kwargs
+        )
 
     def stream_step(
-        self,
-        task: Task,
-        step: Optional[TaskStep] = None,
-        **kwargs: Any
+        self, task: Task, step: Optional[TaskStep] = None, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (stream)."""
-        return self._run_step(task.task_id, step, mode=ChatResponseMode.STREAM, **kwargs)
+        return self._run_step(
+            task.task_id, step, mode=ChatResponseMode.STREAM, **kwargs
+        )
 
     async def astream_step(
-        self,
-        task_id: str,
-        step: Optional[TaskStep] = None,
-        **kwargs: Any
+        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async stream)."""
-        return await self._arun_step(task_id, step, mode=ChatResponseMode.STREAM, **kwargs)
-            
+        return await self._arun_step(
+            task_id, step, mode=ChatResponseMode.STREAM, **kwargs
+        )
+
     def _chat(
         self,
         message: str,

@@ -84,6 +84,13 @@ class TaskStep(BaseModel):
         default_factory=dict, description="Additional state, carries over to next step."
     )
 
+    next_steps: Dict[str, "TaskStep"] = Field(
+        default_factory=dict, description="Next steps to be executed."
+    )
+    prev_steps: Dict[str, "TaskStep"] = Field(
+        default_factory=dict, description="Previous steps that were dependencies for this step."
+    )
+
     def get_next_step(
         self,
         step_id: str,
@@ -101,6 +108,18 @@ class TaskStep(BaseModel):
             memory=self.memory,
             step_state=self.step_state,
         )
+
+    def link_step(
+        self,
+        next_step: "TaskStep",
+    ) -> None:
+        """Link to next step.
+
+        Add link from this step to next, and from next step to current.
+        
+        """
+        self.next_steps[next_step.step_id] = next_step
+        next_step.prev_steps[self.step_id] = self
 
 
 class TaskStepOutput(BaseModel):
@@ -133,12 +152,13 @@ class Task(BaseModel):
         ..., type=BaseMemory, description="Conversational Memory"
     )
 
-    step_queue: Deque[TaskStep] = Field(
-        default_factory=deque, description="Task step queue."
-    )
-    completed_steps: List[TaskStepOutput] = Field(
-        default_factory=list, description="Completed step outputs."
-    )
+    # step_queue: Deque[TaskStep] = Field(
+    #     default_factory=deque, description="Task step queue."
+    # )
+    # completed_steps: List[TaskStepOutput] = Field(
+    #     default_factory=list, description="Completed step outputs."
+    # )
+
     extra_state: Dict[str, Any] = Field(
         default_factory=dict, description="Additional state for task."
     )

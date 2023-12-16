@@ -1,10 +1,12 @@
 """Test agent executor."""
 
+import uuid
+from typing import Any
+
 from llama_index.agent.executor.base import AgentEngine
 from llama_index.agent.types import BaseAgentStepEngine, Task, TaskStep, TaskStepOutput
 from llama_index.chat_engine.types import AgentChatResponse
-from typing import Any
-import uuid
+
 
 # define mock step engine
 class MockAgentStepEngine(BaseAgentStepEngine):
@@ -13,7 +15,7 @@ class MockAgentStepEngine(BaseAgentStepEngine):
     def __init__(self, limit: int = 2):
         """Initialize."""
         self.limit = limit
-    
+
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
         counter = 0
@@ -83,5 +85,5 @@ def test_agent():
     # NOTE: to use chat, output needs to be AgentChatResponse
     agent_engine = AgentEngine(step_executor=MockAgentStepEngine(limit=10))
     response = agent_engine.chat("hello world")
-    assert str(response) == "counter: 10" 
+    assert str(response) == "counter: 10"
     assert agent_engine.state.task_dict == {}
