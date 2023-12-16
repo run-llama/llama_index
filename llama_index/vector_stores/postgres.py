@@ -476,13 +476,17 @@ class PGVectorStore(BasePydanticVectorStore):
         ts_query = func.plainto_tsquery(
             type_coerce(self.text_search_config, REGCONFIG), query_str
         )
-        stmt = select(  # type: ignore
-            self._table_class.id,
-            self._table_class.node_id,
-            self._table_class.text,
-            self._table_class.metadata_,
-            func.ts_rank(self._table_class.text_search_tsv, ts_query).label("rank"),
-        ).order_by(text("rank desc"))
+        stmt = (
+            select(  # type: ignore
+                self._table_class.id,
+                self._table_class.node_id,
+                self._table_class.text,
+                self._table_class.metadata_,
+                func.ts_rank(self._table_class.text_search_tsv, ts_query).label("rank"),
+            )
+            .where(self._table_class.text_search_tsv.op("@@")(ts_query))
+            .order_by(text("rank desc"))
+        )
 
         # type: ignore
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
