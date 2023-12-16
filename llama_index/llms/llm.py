@@ -86,7 +86,9 @@ async def astream_chat_response_to_tokens(
 
 
 class LLM(BaseLLM):
-    system_prompt: Optional[str] = Field(description="System prompt for LLM calls.")
+    system_prompt: Optional[str] = Field(
+        default=None, description="System prompt for LLM calls."
+    )
     messages_to_prompt: MessagesToPromptType = Field(
         description="Function to convert a list of messages to an LLM prompt.",
         default=generic_messages_to_prompt,

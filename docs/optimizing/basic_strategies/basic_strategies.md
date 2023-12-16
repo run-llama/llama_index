@@ -34,7 +34,7 @@ maxdepth: 1
 Choosing the right embedding model plays a large role in overall performance.
 
 - Maybe you need something better than the default `text-embedding-ada-002` model from OpenAI?
-- Maybe you want to scale to a local sever?
+- Maybe you want to scale to a local server?
 - Maybe you need an embedding model that works well for a specific language?
 
 Beyond OpenAI, many options existing for embedding APIs, running your own embedding model locally, or even hosting your own server.
@@ -49,7 +49,7 @@ We have a list of [all supported embedding model integrations](/module_guides/mo
 
 Depending on the type of data you are indexing, or the results from your retrieval, you may want to customize the chunk size or chunk overlap.
 
-When documents are ingested into an index, the are split into chunks with a certain amount of overlap. The default chunk size is 1024, while the default chunk overlap is 20.
+When documents are ingested into an index, they are split into chunks with a certain amount of overlap. The default chunk size is 1024, while the default chunk overlap is 20.
 
 Changing either of these parameters will change the embeddings that are calculated. A smaller chunk size means the embeddings are more precise, while a larger chunk size means that the embeddings may be more general, but can miss fine-grained details.
 

@@ -111,13 +111,28 @@ class Ollama(CustomLLM):
                 "Please install requests with `pip install requests`"
             )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        del all_kwargs["formatted"]  # ollama throws 400 if it receives this option
 
         if not kwargs.get("formatted", False):
             prompt = self.completion_to_prompt(prompt)
+
+        ollama_request_json: Dict[str, Any] = {
+            "prompt": prompt,
+            "model": self.model,
+            "options": all_kwargs,
+        }
+        if all_kwargs.get("system"):
+            ollama_request_json["system"] = all_kwargs["system"]
+            del all_kwargs["system"]
+
+        if all_kwargs.get("formatted"):
+            ollama_request_json["format"] = "json" if all_kwargs["formatted"] else None
+        del all_kwargs["formatted"]
+
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
-            json={"prompt": prompt, "model": self.model, "options": all_kwargs},
+            json=ollama_request_json,
             stream=True,
         )
         response.encoding = "utf-8"
