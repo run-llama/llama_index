@@ -103,6 +103,12 @@ class BaseLlamaPredictionDataset(BaseModel):
             predictions=predictions,
         )
 
+    @property
+    @abstractmethod
+    def class_name(self) -> str:
+        """Class name."""
+        return "BaseLlamaPredictionDataset"
+
 
 class BaseLlamaDataset(BaseModel):
     _example_type: Type[BaseLlamaDataExample] = BaseLlamaDataExample  # type: ignore[misc]
@@ -307,3 +313,9 @@ class BaseLlamaDataset(BaseModel):
         )
         self._predictions_cache = []  # clear cache
         return prediction_dataset
+
+    @property
+    @abstractmethod
+    def class_name(self) -> str:
+        """Class name."""
+        return "BaseLlamaDataset"

@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pandas import DataFrame as PandasDataFrame
 
@@ -10,6 +10,7 @@ from llama_index.bridge.pydantic import Field
 from llama_index.evaluation import (
     BaseEvaluator,
     EvaluationResult,
+    InvalidEvaluationResult,
     PairwiseComparisonEvaluator,
 )
 from llama_index.evaluation.pairwise import EvaluationSource
@@ -34,9 +35,15 @@ class EvaluationExamplePrediction(BaseLlamaExamplePrediction):
         default_factory=str,
         description="The generated (predicted) response that can be compared to a reference (ground-truth) answer.",
     )
-    score: float = Field(
-        default_factory=float,
+    score: Optional[float] = Field(
+        default=None,
         description="The generated (predicted) response that can be compared to a reference (ground-truth) answer.",
+    )
+    invalid_prediction: bool = Field(
+        default=False, description="Whether or not the prediction is a valid one."
+    )
+    invalid_reason: Optional[str] = Field(
+        default=None, description="Reason as to why prediction is invalid."
     )
 
     @property
@@ -122,6 +129,11 @@ class EvaluationPredictionDataset(BaseLlamaPredictionDataset):
 
         return PandasDataFrame(data)
 
+    @property
+    def class_name(self) -> str:
+        """Class name."""
+        return "EvaluationPredictionDataset"
+
 
 class LabelledEvaluationDataset(BaseLlamaDataset):
     """LabelledEvalationDataset class."""
@@ -164,7 +176,9 @@ class LabelledEvaluationDataset(BaseLlamaDataset):
             "reference": example.ground_truth_answer,
             "sleep_time_in_seconds": sleep_time_in_seconds,
         }
-        eval_result: EvaluationResult = await evaluator.aevaluate(**eval_kwargs)
+        eval_result: Union[
+            EvaluationResult, InvalidEvaluationResult
+        ] = await evaluator.aevaluate(**eval_kwargs)
         return EvaluationExamplePrediction(
             feedback=eval_result.feedback, score=eval_result.score
         )
@@ -195,6 +209,10 @@ class LabelledEvaluationDataset(BaseLlamaDataset):
         """Construct prediction dataset."""
         return EvaluationPredictionDataset(predictions=predictions)
 
+    def class_name(self) -> str:
+        """Class name."""
+        return "LabelledEvaluationDataset"
+
 
 class PairwiseEvaluationExamplePrediction(BaseLlamaExamplePrediction):
     """Pairwise evaluation example prediction class.
@@ -209,14 +227,21 @@ class PairwiseEvaluationExamplePrediction(BaseLlamaExamplePrediction):
         default_factory=str,
         description="The generated (predicted) response that can be compared to a reference (ground-truth) answer.",
     )
-    score: float = Field(
-        default_factory=float,
+    score: Optional[float] = Field(
+        default=None,
         description="The generated (predicted) response that can be compared to a reference (ground-truth) answer.",
     )
-    evaluation_source: EvaluationSource = Field(
+    evaluation_source: Optional[EvaluationSource] = Field(
+        default=None,
         description=(
             "Whether the evaluation comes from original, or flipped ordering. Can also be neither here indicating inconclusive judgement."
-        )
+        ),
+    )
+    invalid_prediction: bool = Field(
+        default=False, description="Whether or not the prediction is a valid one."
+    )
+    invalid_reason: Optional[str] = Field(
+        default=None, description="Reason as to why prediction is invalid."
     )
 
     @property
@@ -241,6 +266,10 @@ class PairwiseEvaluationPredictionDataset(BaseLlamaPredictionDataset):
             }
 
         return PandasDataFrame(data)
+
+    def class_name(self) -> str:
+        """Class name."""
+        return "PairwiseEvaluationPredictionDataset"
 
 
 class LabelledPairwiseEvaluationDataExample(LabelledEvaluationDataExample):
@@ -301,15 +330,9 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
     ) -> PairwiseEvaluationExamplePrediction:
         """Async predict evaluation example with an Evaluator."""
         await asyncio.sleep(sleep_time_in_seconds)
-        eval_kwargs = {
-            "query": example.query,
-            "response": example.answer,
-            "second_response": example.second_answer,
-            "contexts": example.contexts,
-            "reference": example.ground_truth_answer,
-            "sleep_time_in_seconds": sleep_time_in_seconds,
-        }
-        eval_result: EvaluationResult = await evaluator.aevaluate(
+        eval_result: Union[
+            InvalidEvaluationResult, EvaluationResult
+        ] = await evaluator.aevaluate(
             query=example.query,
             response=example.answer,
             second_response=example.second_answer,
@@ -317,11 +340,16 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
             reference=example.ground_truth_answer,
             sleep_time_in_seconds=sleep_time_in_seconds,
         )
-        return PairwiseEvaluationExamplePrediction(
-            feedback=eval_result.feedback,
-            score=eval_result.score,
-            evaluation_source=eval_result.pairwise_source,
-        )
+        if isinstance(eval_result, EvaluationResult):
+            return PairwiseEvaluationExamplePrediction(
+                feedback=eval_result.feedback,
+                score=eval_result.score,
+                evaluation_source=eval_result.pairwise_source,
+            )
+        else:
+            return PairwiseEvaluationExamplePrediction(
+                invalid_prediction=True, invalid_reason=eval_result.invalid_reason
+            )
 
     def _predict_example(
         self,
@@ -351,6 +379,10 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
     ) -> PairwiseEvaluationPredictionDataset:
         """Construct prediction dataset."""
         return PairwiseEvaluationPredictionDataset(predictions=predictions)
+
+    def class_name(self) -> str:
+        """Class name."""
+        return "PairwiseEvaluationPredictionDataset"
 
 
 # British English + American English

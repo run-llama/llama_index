@@ -95,6 +95,11 @@ class RagPredictionDataset(BaseLlamaPredictionDataset):
 
         return PandasDataFrame(data)
 
+    @property
+    def class_name(self) -> str:
+        """Class name."""
+        return "RagPredictionDataset"
+
 
 class LabelledRagDataset(BaseLlamaDataset):
     """RagDataset class."""
@@ -144,6 +149,11 @@ class LabelledRagDataset(BaseLlamaDataset):
     ) -> RagPredictionDataset:
         """Construct prediction dataset."""
         return RagPredictionDataset(predictions=predictions)
+
+    @property
+    def class_name(self) -> str:
+        """Class name."""
+        return "LabelledRagDataset"
 
 
 # British English + American English
