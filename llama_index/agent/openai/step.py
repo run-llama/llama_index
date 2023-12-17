@@ -33,6 +33,7 @@ from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.agent.openai.utils import resolve_tool_choice
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -150,17 +151,6 @@ async def acall_function(
         ),
         output,
     )
-
-
-def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
-    """Resolve tool choice.
-
-    If tool_choice is a function name string, return the appropriate dict.
-    """
-    if isinstance(tool_choice, str) and tool_choice not in ["none", "auto"]:
-        return {"type": "function", "function": {"name": tool_choice}}
-
-    return tool_choice
 
 
 class OpenAIAgentWorker(BaseAgentWorker):
