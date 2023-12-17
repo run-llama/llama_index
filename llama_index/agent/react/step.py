@@ -177,7 +177,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
     def _process_actions(
         self,
         task: Task,
-        tools: Sequence[AsyncBaseTool],
+        tools: List[BaseTool],
         output: ChatResponse,
         is_streaming: bool = False,
     ) -> Tuple[List[BaseReasoningStep], bool]:

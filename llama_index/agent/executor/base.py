@@ -124,15 +124,17 @@ class AgentEngine(BaseAgentEngine):
             extra_state=self.init_task_state_kwargs,
             **kwargs,
         )
-        # add it to state
-        self.state.task_dict[task.task_id] = task
-
         # put input into memory
         self.memory.put(ChatMessage(content=input, role=MessageRole.USER))
 
         # get initial step from task, and put it in the step queue
         initial_step = self.step_executor.initialize_step(task)
-        task.step_queue.append(initial_step)
+        task_state = TaskState(
+            task=task,
+            step_queue=deque([initial_step]),
+        )
+        # add it to state
+        self.state.task_dict[task.task_id] = task_state
 
         return task
 
@@ -156,7 +158,8 @@ class AgentEngine(BaseAgentEngine):
     ) -> TaskStepOutput:
         """Execute step."""
         task = self.state.get_task(task_id)
-        step = step or task.step_queue.popleft()
+        step_queue = self.state.get_step_queue(task_id)
+        step = step or step_queue.popleft()
 
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
@@ -169,7 +172,7 @@ class AgentEngine(BaseAgentEngine):
             raise ValueError(f"Invalid mode: {mode}")
         # append cur_step_output next steps to queue
         next_steps = cur_step_output.next_steps
-        task.step_queue.extend(next_steps)
+        step_queue.extend(next_steps)
         return cur_step_output
 
     async def _arun_step(
