@@ -28,7 +28,7 @@ from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 
 
-class BaseAgentEngine(BaseModel, BaseAgent):
+class BaseAgentEngine(BaseAgent):
     """Base Agent engine."""
 
 
@@ -67,21 +67,21 @@ class AgentState(BaseModel):
 class AgentEngine(BaseAgentEngine):
     """Agent engine."""
 
-    # TODO: implement this
-    step_executor: BaseAgentStepEngine
-    # stores tasks and their states
-    state: AgentState
-    # stores conversation history
-    # (currently assume agent engine handles a single message thread)
-    memory: BaseMemory
-    callback_manager: CallbackManager = Field(..., description="Callback manager.")
+    # # TODO: implement this
+    # step_executor: BaseAgentStepEngine
+    # # stores tasks and their states
+    # state: AgentState
+    # # stores conversation history
+    # # (currently assume agent engine handles a single message thread)
+    # memory: BaseMemory
+    # callback_manager: CallbackManager = Field(..., description="Callback manager.")
 
-    init_task_state_kwargs: Optional[dict] = Field(
-        default_factory=dict, description="Initial task state kwargs."
-    )
+    # init_task_state_kwargs: Optional[dict] = Field(
+    #     default_factory=dict, description="Initial task state kwargs."
+    # )
 
-    class Config:
-        arbitrary_types_allowed = True
+    # class Config:
+    #     arbitrary_types_allowed = True
 
     def __init__(
         self,
@@ -94,17 +94,11 @@ class AgentEngine(BaseAgentEngine):
         init_task_state_kwargs: Optional[dict] = None,
     ) -> None:
         """Initialize."""
-        memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
-        state = state or AgentState()
-        callback_manager = callback_manager or CallbackManager([])
-        init_task_state_kwargs = init_task_state_kwargs or {}
-        super().__init__(
-            step_executor=step_executor,
-            state=state,
-            memory=memory,
-            callback_manager=callback_manager,
-            init_task_state_kwargs=init_task_state_kwargs,
-        )
+        self.step_executor = step_executor
+        self.state = state or AgentState()
+        self.memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
+        self.callback_manager = callback_manager or CallbackManager([])
+        self.init_task_state_kwargs = init_task_state_kwargs or {}
 
     @property
     def chat_history(self) -> List[ChatMessage]:
@@ -251,7 +245,10 @@ class AgentEngine(BaseAgentEngine):
             if cur_step_output.is_last:
                 # if cur_step_output.output is not AGENT_CHAT_RESPONSE_TYPE,
                 # raise error
-                if not isinstance(cur_step_output.output, AGENT_CHAT_RESPONSE_TYPE):
+                if not isinstance(
+                    cur_step_output.output,
+                    (AgentChatResponse, StreamingAgentChatResponse),
+                ):
                     raise ValueError(
                         "When `is_last` is True, cur_step_output.output must be "
                         f"AGENT_CHAT_RESPONSE_TYPE: {cur_step_output.output}"
@@ -286,7 +283,10 @@ class AgentEngine(BaseAgentEngine):
             if cur_step_output.is_last:
                 # if cur_step_output.output is not AGENT_CHAT_RESPONSE_TYPE,
                 # raise error
-                if not isinstance(cur_step_output.output, AGENT_CHAT_RESPONSE_TYPE):
+                if not isinstance(
+                    cur_step_output.output,
+                    (AgentChatResponse, StreamingAgentChatResponse),
+                ):
                     raise ValueError(
                         "When `is_last` is True, cur_step_output.output must be "
                         f"AGENT_CHAT_RESPONSE_TYPE: {cur_step_output.output}"
