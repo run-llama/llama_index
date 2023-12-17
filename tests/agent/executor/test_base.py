@@ -147,6 +147,7 @@ def test_agent() -> None:
     assert task.extra_state["counter"] == 2
     assert str(step_output.output) == "counter: 2"
     assert step_output.is_last is True
+    assert len(agent_runner.state.task_dict[task.task_id].completed_steps) == 2
 
     # test e2e chat
     # NOTE: to use chat, output needs to be AgentChatResponse
@@ -177,3 +178,4 @@ def test_dag_agent() -> None:
     # TODO: deal with having multiple `is_last` outputs in chat later.
     assert step_outputs[0].is_last is True
     assert step_outputs[1].is_last is True
+    assert len(agent_runner.state.task_dict[task.task_id].completed_steps) == 3

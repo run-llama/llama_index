@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Union, cast
 
@@ -30,6 +31,87 @@ from llama_index.memory.types import BaseMemory
 
 class BaseAgentRunner(BaseAgent):
     """Base agent runner."""
+
+    @abstractmethod
+    def create_task(self, input: str, **kwargs: Any) -> Task:
+        """Create task."""
+
+    @abstractmethod
+    def delete_task(
+        self,
+        task_id: str,
+    ) -> None:
+        """Delete task.
+
+        NOTE: this will not delete any previous executions from memory.
+
+        """
+
+    @abstractmethod
+    def list_tasks(
+        self, **kwargs: Any
+    ) -> List[Task]:
+        """List tasks."""
+
+    @abstractmethod
+    def get_task(
+        self, task_id: str, **kwargs: Any
+    ) -> Task:
+        """Get task."""
+
+    @abstractmethod
+    def get_completed_steps(
+        self, task_id: str, **kwargs: Any
+    ) -> List[TaskStepOutput]:
+        """Get completed steps."""
+
+    def get_completed_step(
+        self, task_id: str, step_id: str, **kwargs: Any
+    ) -> TaskStepOutput:
+        """Get completed step."""
+        # call get_completed_steps, and then find the right task
+        completed_steps = self.get_completed_steps(task_id, **kwargs)
+        for step_output in completed_steps:
+            if step_output.task_step.step_id == step_id:
+                return step_output
+        raise ValueError(f"Could not find step_id: {step_id}")
+
+    @abstractmethod
+    def run_step(
+        self, task: Task, step: Optional[TaskStep] = None, **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step."""
+
+    @abstractmethod
+    async def arun_step(
+        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step (async)."""
+
+    @abstractmethod
+    def stream_step(
+        self, task: Task, step: Optional[TaskStep] = None, **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step (stream)."""
+
+    @abstractmethod
+    async def astream_step(
+        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step (async stream)."""
+
+    @abstractmethod
+    def finalize_response(
+        self,
+        task_id: str,
+        step_output: Optional[TaskStepOutput] = None,
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        """Finalize response."""
+
+    @abstractmethod
+    def undo_step(self, task_id: str) -> None:
+        """Undo previous step."""
+        raise NotImplementedError("undo_step not implemented")
 
 
 class TaskState(BaseModel):
@@ -67,7 +149,7 @@ class AgentState(BaseModel):
 class AgentRunner(BaseAgentRunner):
     """Agent runner.
 
-    Top-level agent orchestrator that can create tasks, run each step in a task, 
+    Top-level agent orchestrator that can create tasks, run each step in a task,
     or run a task e2e. Stores state and keeps track of tasks.
 
     Args:
@@ -78,10 +160,10 @@ class AgentRunner(BaseAgentRunner):
         llm (Optional[LLM], optional): LLM. Defaults to None.
         callback_manager (Optional[CallbackManager], optional): callback manager. Defaults to None.
         init_task_state_kwargs (Optional[dict], optional): init task state kwargs. Defaults to None.
-    
+
     """
 
-    # # TODO: implement this in Pydantic 
+    # # TODO: implement this in Pydantic
 
     def __init__(
         self,
@@ -92,6 +174,7 @@ class AgentRunner(BaseAgentRunner):
         llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         init_task_state_kwargs: Optional[dict] = None,
+        delete_task_on_finish: bool = True,
     ) -> None:
         """Initialize."""
         self.agent_worker = agent_worker
@@ -99,6 +182,7 @@ class AgentRunner(BaseAgentRunner):
         self.memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
         self.callback_manager = callback_manager or CallbackManager([])
         self.init_task_state_kwargs = init_task_state_kwargs or {}
+        self.delete_task_on_finish = delete_task_on_finish
 
     @property
     def chat_history(self) -> List[ChatMessage]:
@@ -111,8 +195,6 @@ class AgentRunner(BaseAgentRunner):
         """Create task."""
         task = Task(
             input=input,
-            step_queue=[],
-            completed_steps=[],
             memory=self.memory,
             extra_state=self.init_task_state_kwargs,
             **kwargs,
@@ -142,6 +224,24 @@ class AgentRunner(BaseAgentRunner):
         """
         self.state.task_dict.pop(task_id)
 
+    def list_tasks(
+        self, **kwargs: Any
+    ) -> List[Task]:
+        """List tasks."""
+        return list(self.state.task_dict.values())
+
+    def get_task(
+        self, task_id: str, **kwargs: Any
+    ) -> Task:
+        """Get task."""
+        return self.state.get_task(task_id)
+
+    def get_completed_steps(
+        self, task_id: str, **kwargs: Any
+    ) -> List[TaskStepOutput]:
+        """Get completed steps."""
+        return self.state.get_completed_steps(task_id)
+
     def _run_step(
         self,
         task_id: str,
@@ -166,6 +266,11 @@ class AgentRunner(BaseAgentRunner):
         # append cur_step_output next steps to queue
         next_steps = cur_step_output.next_steps
         step_queue.extend(next_steps)
+
+        # add cur_step_output to completed steps
+        completed_steps = self.state.get_completed_steps(task_id)
+        completed_steps.append(cur_step_output)
+
         return cur_step_output
 
     async def _arun_step(
@@ -185,14 +290,17 @@ class AgentRunner(BaseAgentRunner):
         if mode == ChatResponseMode.WAIT:
             cur_step_output = await self.agent_worker.arun_step(step, task, **kwargs)
         elif mode == ChatResponseMode.STREAM:
-            cur_step_output = await self.agent_worker.astream_step(
-                step, task, **kwargs
-            )
+            cur_step_output = await self.agent_worker.astream_step(step, task, **kwargs)
         else:
             raise ValueError(f"Invalid mode: {mode}")
         # append cur_step_output next steps to queue
         next_steps = cur_step_output.next_steps
         step_queue.extend(next_steps)
+
+        # add cur_step_output to completed steps
+        completed_steps = self.state.get_completed_steps(task_id)
+        completed_steps.append(cur_step_output)
+
         return cur_step_output
 
     def run_step(
@@ -225,6 +333,29 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, mode=ChatResponseMode.STREAM, **kwargs
         )
 
+    def finalize_response(
+        self,
+        task_id: str,
+        step_output: Optional[TaskStepOutput] = None,
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        """Finalize response."""
+        if step_output is None:
+            step_output = self.state.get_completed_steps(task_id)[-1]
+
+        if not isinstance(
+            step_output.output,
+            (AgentChatResponse, StreamingAgentChatResponse),
+        ):
+            raise ValueError(
+                "When `is_last` is True, cur_step_output.output must be "
+                f"AGENT_CHAT_RESPONSE_TYPE: {step_output.output}"
+            )
+
+        if self.delete_task_on_finish:
+            self.delete_task(task_id)
+
+        return cast(AGENT_CHAT_RESPONSE_TYPE, step_output.output)
+
     def _chat(
         self,
         message: str,
@@ -243,25 +374,10 @@ class AgentRunner(BaseAgentRunner):
             cur_step_output = self._run_step(task.task_id, mode=mode)
 
             if cur_step_output.is_last:
-                # if cur_step_output.output is not AGENT_CHAT_RESPONSE_TYPE,
-                # raise error
-                if not isinstance(
-                    cur_step_output.output,
-                    (AgentChatResponse, StreamingAgentChatResponse),
-                ):
-                    raise ValueError(
-                        "When `is_last` is True, cur_step_output.output must be "
-                        f"AGENT_CHAT_RESPONSE_TYPE: {cur_step_output.output}"
-                    )
                 result_output = cur_step_output
                 break
 
-        # now that it is done, delete task
-        self.delete_task(task.task_id)
-        if result_output is None:
-            raise ValueError("result_output is None")
-        else:
-            return cast(AGENT_CHAT_RESPONSE_TYPE, cur_step_output.output)
+        return self.finalize_response(task.task_id, result_output)
 
     async def _achat(
         self,
@@ -281,25 +397,10 @@ class AgentRunner(BaseAgentRunner):
             cur_step_output = await self._arun_step(task.task_id, mode=mode)
 
             if cur_step_output.is_last:
-                # if cur_step_output.output is not AGENT_CHAT_RESPONSE_TYPE,
-                # raise error
-                if not isinstance(
-                    cur_step_output.output,
-                    (AgentChatResponse, StreamingAgentChatResponse),
-                ):
-                    raise ValueError(
-                        "When `is_last` is True, cur_step_output.output must be "
-                        f"AGENT_CHAT_RESPONSE_TYPE: {cur_step_output.output}"
-                    )
                 result_output = cur_step_output
                 break
 
-        # now that it is done, delete task
-        self.delete_task(task.task_id)
-        if result_output is None:
-            raise ValueError("result_output is None")
-        else:
-            return cast(AGENT_CHAT_RESPONSE_TYPE, cur_step_output.output)
+        return self.finalize_response(task.task_id, result_output)
 
     @trace_method("chat")
     def chat(
