@@ -33,6 +33,20 @@ class EvaluationResult(BaseModel):
     )
 
 
+class InvalidEvaluationResult(BaseModel):
+    """Invalid evaluation result."""
+
+    query: Optional[str] = Field(None, description="Query string")
+    contexts: Optional[Sequence[str]] = Field(None, description="Context strings")
+    response: Optional[str] = Field(None, description="Response string")
+    evaluation_string: Optional[str] = Field(
+        None, description="Evaluation response string"
+    )
+    invalid_reason: str = Field(
+        default_factory=str, description="Reason for invalid evaluation."
+    )
+
+
 class BaseEvaluator(PromptMixin):
     """Base Evaluator class."""
 

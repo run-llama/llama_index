@@ -2,10 +2,14 @@
 
 import asyncio
 from enum import Enum
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
 from llama_index import ServiceContext
-from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.evaluation.base import (
+    BaseEvaluator,
+    EvaluationResult,
+    InvalidEvaluationResult,
+)
 from llama_index.prompts import (
     BasePromptTemplate,
     ChatMessage,
@@ -56,6 +60,27 @@ DEFAULT_EVAL_TEMPLATE = ChatPromptTemplate(
 )
 
 
+def _default_parser_function(
+    eval_response: str,
+) -> Tuple[Optional[bool], Optional[float], Optional[str]]:
+    # Extract from response
+    feedback = ""
+    if "[[A]]" in eval_response:
+        passing: Optional[bool] = True
+        score = 1.0
+    elif "[[B]]" in eval_response:
+        passing = False
+        score = 0.0
+    elif "[[C]]" in eval_response:
+        passing = None
+        score = 0.5
+    else:
+        passing = None
+        score = None
+        feedback = None
+    return passing, score, feedback
+
+
 class EvaluationSource(str, Enum):
     """To distinguish between flipped or original."""
 
@@ -86,6 +111,9 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         self,
         service_context: Optional[ServiceContext] = None,
         eval_template: Optional[Union[BasePromptTemplate, str]] = None,
+        parser_function: Callable[
+            [str], Tuple[Optional[bool], Optional[float], Optional[str]]
+        ] = _default_parser_function,
         enforce_consensus: bool = True,
     ) -> None:
         self._service_context = service_context or ServiceContext.from_defaults()
@@ -97,6 +125,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
             self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
 
         self._enforce_consensus = enforce_consensus
+        self._parser_function = parser_function
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -115,7 +144,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         response: str,
         second_response: str,
         reference: Optional[str],
-    ) -> EvaluationResult:
+    ) -> Union[EvaluationResult, InvalidEvaluationResult]:
         """Get evaluation result."""
         eval_response = await self._service_context.llm.apredict(
             prompt=self._eval_template,
@@ -126,25 +155,23 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         )
 
         # Extract from response
-        if "[[A]]" in eval_response:
-            passing: Optional[bool] = True
-            score = 1.0
-        elif "[[B]]" in eval_response:
-            passing = False
-            score = 0.0
-        elif "[[C]]" in eval_response:
-            passing = None
-            score = 0.5
-        else:
-            raise ValueError("Unable to parse response")
+        passing, score, feedback = self._parser_function(eval_response)
 
-        return EvaluationResult(
-            query=query,
-            response=eval_response,
-            passing=passing,
-            score=score,
-            feedback=eval_response,
-        )
+        if passing is None and score is None and feedback is None:
+            return InvalidEvaluationResult(
+                query=query,
+                invalid_reason="Output cannot be parsed",
+                evaluation_string=eval_response,
+            )
+        else:
+            return EvaluationResult(
+                query=query,
+                response=eval_response,
+                passing=passing,
+                score=score,
+                feedback=eval_response,
+                pairwise_source=EvaluationSource.ORIGINAL,
+            )
 
     async def _resolve_results(
         self,
@@ -213,7 +240,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         reference: Optional[str] = None,
         sleep_time_in_seconds: int = 0,
         **kwargs: Any,
-    ) -> EvaluationResult:
+    ) -> Union[EvaluationResult, InvalidEvaluationResult]:
         del kwargs  # Unused
         del contexts  # Unused
 
@@ -227,15 +254,25 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         eval_result = await self._get_eval_result(
             query, response, second_response, reference
         )
-        if self._enforce_consensus:
+        if self._enforce_consensus and isinstance(eval_result, EvaluationResult):
             # Flip the order of the answers and see if the answer is consistent
             # (which means that the score should flip from 0 to 1 and vice-versa)
             # if not, then we return a tie
             flipped_eval_result = await self._get_eval_result(
                 query, second_response, response, reference
             )
-            resolved_eval_result = await self._resolve_results(
-                eval_result, flipped_eval_result
-            )
+            if isinstance(flipped_eval_result, EvaluationResult):
+                resolved_eval_result = await self._resolve_results(
+                    eval_result, flipped_eval_result
+                )
+            else:
+                resolved_eval_result = InvalidEvaluationResult(
+                    query=eval_result.query,
+                    response=eval_result.response,
+                    evaluation_string=flipped_eval_result.response,
+                    invalid_reason="Output cannot be parsed.",
+                )
+        else:
+            resolved_eval_result = eval_result
 
         return resolved_eval_result
