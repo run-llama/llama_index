@@ -84,7 +84,7 @@ class TaskStep(BaseModel):
         default_factory=dict, description="Additional state for a given step."
     )
 
-    # NOTE: the state below may change throuhgout the course of execution
+    # NOTE: the state below may change throughout the course of execution
     # this tracks the relationships to other steps
     next_steps: Dict[str, "TaskStep"] = Field(
         default_factory=dict, description="Next steps to be executed."

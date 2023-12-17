@@ -30,7 +30,9 @@ from llama_index.callbacks import (
     trace_method,
 )
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
-from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.base import ChatMessage, ChatResponse
+from llama_index.llms.types import MessageRole
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory

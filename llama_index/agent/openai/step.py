@@ -245,19 +245,19 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
             callback_manager=callback_manager,
         )
 
-    def get_all_messages(self, step: TaskStep) -> List[ChatMessage]:
-        return self.prefix_messages + step.memory.get()
+    def get_all_messages(self, task: Task) -> List[ChatMessage]:
+        return self.prefix_messages + task.memory.get()
 
-    def get_latest_tool_calls(self, step: TaskStep) -> Optional[List[OpenAIToolCall]]:
-        return step.memory.get_all()[-1].additional_kwargs.get("tool_calls", None)
+    def get_latest_tool_calls(self, task: Task) -> Optional[List[OpenAIToolCall]]:
+        return task.memory.get_all()[-1].additional_kwargs.get("tool_calls", None)
 
     def _get_llm_chat_kwargs(
         self,
-        step: TaskStep,
+        task: Task,
         openai_tools: List[dict],
         tool_choice: Union[str, dict] = "auto",
     ) -> Dict[str, Any]:
-        llm_chat_kwargs: dict = {"messages": self.get_all_messages(step)}
+        llm_chat_kwargs: dict = {"messages": self.get_all_messages(task)}
         if openai_tools:
             llm_chat_kwargs.update(
                 tools=openai_tools, tool_choice=resolve_tool_choice(tool_choice)
@@ -432,7 +432,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         tools = self.get_tools(task.input)
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
-        llm_chat_kwargs = self._get_llm_chat_kwargs(step, openai_tools, tool_choice)
+        llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
 
         agent_chat_response = self._get_agent_response(
             task, mode=mode, **llm_chat_kwargs
@@ -440,14 +440,14 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
 
         # TODO: implement _should_continue
         if not self._should_continue(
-            self.get_latest_tool_calls(step), task.extra_state["n_function_calls"]
+            self.get_latest_tool_calls(task), task.extra_state["n_function_calls"]
         ):
             is_done = True
             new_steps = []
             # TODO: return response
         else:
             is_done = False
-            for tool_call in self.get_latest_tool_calls(step):
+            for tool_call in self.get_latest_tool_calls(task):
                 # Some validation
                 if not isinstance(tool_call, get_args(OpenAIToolCall)):
                     raise ValueError("Invalid tool_call object")
@@ -492,20 +492,20 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         tools = self.get_tools(task.input)
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
-        llm_chat_kwargs = self._get_llm_chat_kwargs(step, openai_tools, tool_choice)
+        llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
         agent_chat_response = await self._get_async_agent_response(
             step, mode=mode, **llm_chat_kwargs
         )
 
         # TODO: implement _should_continue
         if not self._should_continue(
-            self.get_latest_tool_calls(step), task.extra_state["n_function_calls"]
+            self.get_latest_tool_calls(task), task.extra_state["n_function_calls"]
         ):
             is_done = True
             # TODO: return response
         else:
             is_done = False
-            for tool_call in self.get_latest_tool_calls(step):
+            for tool_call in self.get_latest_tool_calls(task):
                 # Some validation
                 if not isinstance(tool_call, get_args(OpenAIToolCall)):
                     raise ValueError("Invalid tool_call object")

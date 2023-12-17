@@ -36,10 +36,11 @@ from llama_index.callbacks import (
     EventPayload,
 )
 from llama_index.chat_engine.types import (
+    AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
     StreamingAgentChatResponse,
 )
-from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.types import MessageRole
@@ -213,7 +214,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
 
     async def _aprocess_actions(
         self,
-        task: TaskStep,
+        task: Task,
         tools: Sequence[AsyncBaseTool],
         output: ChatResponse,
         is_streaming: bool = False,
@@ -366,7 +367,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=step.memory.get(),
+            chat_history=task.memory.get(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -381,7 +382,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
             task.extra_state["current_reasoning"], task.extra_state["sources"]
         )
         if is_done:
-            step.memory.put(
+            task.memory.put(
                 ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
             )
 
@@ -398,7 +399,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=step.memory.get(),
+            chat_history=task.memory.get(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
@@ -412,7 +413,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
             task.extra_state["current_reasoning"], task.extra_state["sources"]
         )
         if is_done:
-            step.memory.put(
+            task.memory.put(
                 ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
             )
 
@@ -429,7 +430,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=step.memory.get(),
+            chat_history=task.memory.get(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -453,7 +454,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
             )
             task.extra_state["current_reasoning"].extend(reasoning_steps)
             # use _get_response to return intermediate response
-            agent_response = self._get_response(
+            agent_response: AGENT_CHAT_RESPONSE_TYPE = self._get_response(
                 task.extra_state["current_reasoning"], task.extra_state["sources"]
             )
         else:
@@ -468,7 +469,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
             )
             thread = Thread(
                 target=agent_response.write_response_to_history,
-                args=(step.memory,),
+                args=(task.memory,),
             )
             thread.start()
 
@@ -523,7 +524,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
                 sources=task.extra_state["sources"],
             )
             # create task to write chat response to history
-            asyncio.create_task(agent_response.awrite_response_to_history(step.memory))
+            asyncio.create_task(agent_response.awrite_response_to_history(task.memory))
 
         return self._get_task_step_response(agent_response, step, is_done)
 
