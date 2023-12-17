@@ -1,6 +1,6 @@
 """ReAct agent.
 
-Simple wrapper around AgentEngine + ReActAgentStepEngine.
+Simple wrapper around AgentRunner + ReActAgentWorker.
 
 For the legacy implementation see:
 ```python
@@ -16,11 +16,10 @@ from typing import (
     Type,
 )
 
-from llama_index.agent.executor.base import AgentEngine
-from llama_index.agent.legacy.react.base import ReActAgent
+from llama_index.agent.executor.base import AgentRunner
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
-from llama_index.agent.react.step import ReActAgentStepEngine
+from llama_index.agent.react.step import ReActAgentWorker
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
@@ -40,7 +39,7 @@ DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 class ReActAgent(BaseAgent):
     """ReAct agent.
 
-    Simple wrapper around AgentEngine + ReActAgentStepEngine.
+    Simple wrapper around AgentRunner + ReActAgentWorker.
 
     For the legacy implementation see:
     ```python
@@ -63,7 +62,7 @@ class ReActAgent(BaseAgent):
     ) -> None:
         super().__init__(callback_manager=callback_manager or llm.callback_manager)
 
-        self._step_engine = ReActAgentStepEngine.from_tools(
+        self._step_engine = ReActAgentWorker.from_tools(
             tools=tools,
             tool_retriever=tool_retriever,
             llm=llm,
@@ -73,7 +72,7 @@ class ReActAgent(BaseAgent):
             callback_manager=self.callback_manager,
             verbose=verbose,
         )
-        self._agent_engine = AgentEngine(
+        self._agent_runner = AgentRunner(
             self._step_engine,
             memory=memory,
             llm=llm,
@@ -127,22 +126,22 @@ class ReActAgent(BaseAgent):
     @property
     def chat_history(self) -> List[ChatMessage]:
         """Chat history."""
-        return self._agent_engine.memory.get_all()
+        return self._agent_runner.memory.get_all()
 
     def reset(self) -> None:
-        self._agent_engine.memory.reset()
+        self._agent_runner.memory.reset()
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Chat."""
-        return self._agent_engine.chat(message=message, chat_history=chat_history)
+        return self._agent_runner.chat(message=message, chat_history=chat_history)
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Chat."""
-        return await self._agent_engine.achat(
+        return await self._agent_runner.achat(
             message=message, chat_history=chat_history
         )
 
@@ -150,7 +149,7 @@ class ReActAgent(BaseAgent):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         """Stream chat."""
-        return self._agent_engine.stream_chat(
+        return self._agent_runner.stream_chat(
             message=message, chat_history=chat_history
         )
 
@@ -158,6 +157,6 @@ class ReActAgent(BaseAgent):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         """Async stream chat."""
-        return await self._agent_engine.astream_chat(
+        return await self._agent_runner.astream_chat(
             message=message, chat_history=chat_history
         )

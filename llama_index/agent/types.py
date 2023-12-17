@@ -1,8 +1,7 @@
 """Base agent type."""
 import uuid
 from abc import ABC, abstractmethod
-from collections import deque
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -77,17 +76,31 @@ class TaskStep(BaseModel):
     task_id: str = Field(..., diescription="Task ID")
     step_id: str = Field(..., description="Step ID")
     input: Optional[str] = Field(default=None, description="User input")
-    memory: BaseMemory = Field(
-        ..., type=BaseMemory, description="Conversational Memory"
-    )
+    # memory: BaseMemory = Field(
+    #     ..., type=BaseMemory, description="Conversational Memory"
+    # )
     step_state: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional state, carries over to next step."
+        default_factory=dict, description="Additional state for a given step."
+    )
+
+    # NOTE: the state below may change throughout the course of execution
+    # this tracks the relationships to other steps
+    next_steps: Dict[str, "TaskStep"] = Field(
+        default_factory=dict, description="Next steps to be executed."
+    )
+    prev_steps: Dict[str, "TaskStep"] = Field(
+        default_factory=dict,
+        description="Previous steps that were dependencies for this step.",
+    )
+    is_ready: bool = Field(
+        default=True, description="Is this step ready to be executed?"
     )
 
     def get_next_step(
         self,
         step_id: str,
         input: Optional[str] = None,
+        step_state: Optional[Dict[str, Any]] = None,
     ) -> "TaskStep":
         """Convenience function to get next step.
 
@@ -98,9 +111,21 @@ class TaskStep(BaseModel):
             task_id=self.task_id,
             step_id=step_id,
             input=input,
-            memory=self.memory,
-            step_state=self.step_state,
+            # memory=self.memory,
+            step_state=step_state or self.step_state,
         )
+
+    def link_step(
+        self,
+        next_step: "TaskStep",
+    ) -> None:
+        """Link to next step.
+
+        Add link from this step to next, and from next step to current.
+
+        """
+        self.next_steps[next_step.step_id] = next_step
+        next_step.prev_steps[self.step_id] = self
 
 
 class TaskStepOutput(BaseModel):
@@ -130,42 +155,24 @@ class Task(BaseModel):
 
     # NOTE: this is state that may be modified throughout the course of execution of the task
     memory: BaseMemory = Field(
-        ..., type=BaseMemory, description="Conversational Memory"
+        ...,
+        type=BaseMemory,
+        description=(
+            "Conversational Memory. Maintains state before execution of this task."
+        ),
     )
 
-    step_queue: Deque[TaskStep] = Field(
-        default_factory=deque, description="Task step queue."
-    )
-    completed_steps: List[TaskStepOutput] = Field(
-        default_factory=list, description="Completed step outputs."
-    )
     extra_state: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional state for task."
+        default_factory=dict,
+        description=(
+            "Additional user-specified state for a given task. "
+            "Can be modified throughout the execution of a task."
+        ),
     )
 
 
-class AgentState(BaseModel):
-    """Agent state."""
-
-    task_dict: Dict[str, Task] = Field(
-        default_factory=dict, description="Task dictionary."
-    )
-
-    def get_task(self, task_id: str) -> Task:
-        """Get task state."""
-        return self.task_dict[task_id]
-
-    def get_completed_steps(self, task_id: str) -> List[TaskStepOutput]:
-        """Get completed steps."""
-        return self.get_task(task_id).completed_steps
-
-    def get_step_queue(self, task_id: str) -> Deque[TaskStep]:
-        """Get step queue."""
-        return self.get_task(task_id).step_queue
-
-
-class BaseAgentStepEngine(ABC):
-    """Base agent step engine."""
+class BaseAgentWorker(ABC):
+    """Base agent worker."""
 
     class Config:
         arbitrary_types_allowed = True
@@ -197,3 +204,7 @@ class BaseAgentStepEngine(ABC):
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         raise NotImplementedError
+
+    @abstractmethod
+    def finalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""
