@@ -3,7 +3,7 @@ from typing import Any, Deque, Dict, List, Optional, Union, cast
 
 from llama_index.agent.types import (
     BaseAgent,
-    BaseAgentStepEngine,
+    BaseAgentWorker,
     Task,
     TaskStep,
     TaskStepOutput,
@@ -65,27 +65,27 @@ class AgentState(BaseModel):
 
 
 class AgentRunner(BaseAgentRunner):
-    """agent runner."""
+    """Agent runner.
 
-    # # TODO: implement this
-    # step_executor: BaseAgentStepEngine
-    # # stores tasks and their states
-    # state: AgentState
-    # # stores conversation history
-    # # (currently assume agent runner handles a single message thread)
-    # memory: BaseMemory
-    # callback_manager: CallbackManager = Field(..., description="Callback manager.")
+    Top-level agent orchestrator that can create tasks, run each step in a task, 
+    or run a task e2e. Stores state and keeps track of tasks.
 
-    # init_task_state_kwargs: Optional[dict] = Field(
-    #     default_factory=dict, description="Initial task state kwargs."
-    # )
+    Args:
+        agent_worker (BaseAgentWorker): step executor
+        chat_history (Optional[List[ChatMessage]], optional): chat history. Defaults to None.
+        state (Optional[AgentState], optional): agent state. Defaults to None.
+        memory (Optional[BaseMemory], optional): memory. Defaults to None.
+        llm (Optional[LLM], optional): LLM. Defaults to None.
+        callback_manager (Optional[CallbackManager], optional): callback manager. Defaults to None.
+        init_task_state_kwargs (Optional[dict], optional): init task state kwargs. Defaults to None.
+    
+    """
 
-    # class Config:
-    #     arbitrary_types_allowed = True
+    # # TODO: implement this in Pydantic 
 
     def __init__(
         self,
-        step_executor: BaseAgentStepEngine,
+        agent_worker: BaseAgentWorker,
         chat_history: Optional[List[ChatMessage]] = None,
         state: Optional[AgentState] = None,
         memory: Optional[BaseMemory] = None,
@@ -94,7 +94,7 @@ class AgentRunner(BaseAgentRunner):
         init_task_state_kwargs: Optional[dict] = None,
     ) -> None:
         """Initialize."""
-        self.step_executor = step_executor
+        self.agent_worker = agent_worker
         self.state = state or AgentState()
         self.memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
         self.callback_manager = callback_manager or CallbackManager([])
@@ -121,7 +121,7 @@ class AgentRunner(BaseAgentRunner):
         self.memory.put(ChatMessage(content=input, role=MessageRole.USER))
 
         # get initial step from task, and put it in the step queue
-        initial_step = self.step_executor.initialize_step(task)
+        initial_step = self.agent_worker.initialize_step(task)
         task_state = TaskState(
             task=task,
             step_queue=deque([initial_step]),
@@ -158,9 +158,9 @@ class AgentRunner(BaseAgentRunner):
         # not clear when you would do that by theoretically possible
 
         if mode == ChatResponseMode.WAIT:
-            cur_step_output = self.step_executor.run_step(step, task, **kwargs)
+            cur_step_output = self.agent_worker.run_step(step, task, **kwargs)
         elif mode == ChatResponseMode.STREAM:
-            cur_step_output = self.step_executor.stream_step(step, task, **kwargs)
+            cur_step_output = self.agent_worker.stream_step(step, task, **kwargs)
         else:
             raise ValueError(f"Invalid mode: {mode}")
         # append cur_step_output next steps to queue
@@ -183,9 +183,9 @@ class AgentRunner(BaseAgentRunner):
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
         if mode == ChatResponseMode.WAIT:
-            cur_step_output = await self.step_executor.arun_step(step, task, **kwargs)
+            cur_step_output = await self.agent_worker.arun_step(step, task, **kwargs)
         elif mode == ChatResponseMode.STREAM:
-            cur_step_output = await self.step_executor.astream_step(
+            cur_step_output = await self.agent_worker.astream_step(
                 step, task, **kwargs
             )
         else:

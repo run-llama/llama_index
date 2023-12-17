@@ -1,4 +1,4 @@
-"""OpenAI step engine."""
+"""OpenAI agent worker."""
 
 import asyncio
 import json
@@ -8,7 +8,7 @@ from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
 
 from llama_index.agent.types import (
-    BaseAgentStepEngine,
+    BaseAgentWorker,
     Task,
     TaskStep,
     TaskStepOutput,
@@ -162,8 +162,8 @@ def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, di
     return tool_choice
 
 
-class OpenAIAgentStepEngine(BaseAgentStepEngine):
-    """OpenAI Agent step engine."""
+class OpenAIAgentWorker(BaseAgentWorker):
+    """OpenAI Agent agent worker."""
 
     def __init__(
         self,
@@ -204,7 +204,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
-    ) -> "OpenAIAgentStepEngine":
+    ) -> "OpenAIAgentWorker":
         """Create an OpenAIAgent from a list of tools.
 
         Similar to `from_defaults` in other classes, this method will

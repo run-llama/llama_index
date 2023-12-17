@@ -1,6 +1,6 @@
 """ReAct agent.
 
-Simple wrapper around AgentRunner + ReActAgentStepEngine.
+Simple wrapper around AgentRunner + ReActAgentWorker.
 
 For the legacy implementation see:
 ```python
@@ -19,7 +19,7 @@ from typing import (
 from llama_index.agent.executor.base import AgentRunner
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
-from llama_index.agent.react.step import ReActAgentStepEngine
+from llama_index.agent.react.step import ReActAgentWorker
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
@@ -39,7 +39,7 @@ DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 class ReActAgent(BaseAgent):
     """ReAct agent.
 
-    Simple wrapper around AgentRunner + ReActAgentStepEngine.
+    Simple wrapper around AgentRunner + ReActAgentWorker.
 
     For the legacy implementation see:
     ```python
@@ -62,7 +62,7 @@ class ReActAgent(BaseAgent):
     ) -> None:
         super().__init__(callback_manager=callback_manager or llm.callback_manager)
 
-        self._step_engine = ReActAgentStepEngine.from_tools(
+        self._step_engine = ReActAgentWorker.from_tools(
             tools=tools,
             tool_retriever=tool_retriever,
             llm=llm,

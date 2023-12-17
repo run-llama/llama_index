@@ -1,4 +1,4 @@
-"""ReAct step engine."""
+"""ReAct agent worker."""
 
 import asyncio
 import uuid
@@ -25,7 +25,7 @@ from llama_index.agent.react.types import (
     ResponseReasoningStep,
 )
 from llama_index.agent.types import (
-    BaseAgentStepEngine,
+    BaseAgentWorker,
     Task,
     TaskStep,
     TaskStepOutput,
@@ -52,8 +52,8 @@ from llama_index.utils import print_text, unit_generator
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
-class ReActAgentStepEngine(BaseAgentStepEngine):
-    """OpenAI Agent step engine."""
+class ReActAgentWorker(BaseAgentWorker):
+    """OpenAI Agent agent worker."""
 
     def __init__(
         self,
@@ -95,7 +95,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         **kwargs: Any,
-    ) -> "ReActAgentStepEngine":
+    ) -> "ReActAgentWorker":
         """Convenience constructor method from set of of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words

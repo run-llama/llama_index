@@ -1,6 +1,6 @@
 """OpenAI Agent.
 
-Simple wrapper around AgentRunner + OpenAIAgentStepEngine.
+Simple wrapper around AgentRunner + OpenAIAgentWorker.
 
 For the legacy implementation see:
 ```python
@@ -17,7 +17,7 @@ from typing import (
 )
 
 from llama_index.agent.executor.base import AgentRunner
-from llama_index.agent.openai.step import OpenAIAgentStepEngine
+from llama_index.agent.openai.step import OpenAIAgentWorker
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
@@ -39,7 +39,7 @@ DEFAULT_MAX_FUNCTION_CALLS = 5
 class OpenAIAgent(BaseAgent):
     """OpenAI agent.
 
-    Simple wrapper around AgentRunner + OpenAIAgentStepEngine.
+    Simple wrapper around AgentRunner + OpenAIAgentWorker.
 
     For the legacy implementation see:
     ```python
@@ -61,7 +61,7 @@ class OpenAIAgent(BaseAgent):
     ) -> None:
         super().__init__(callback_manager=callback_manager or llm.callback_manager)
 
-        self._step_engine = OpenAIAgentStepEngine.from_tools(
+        self._step_engine = OpenAIAgentWorker.from_tools(
             tools=tools,
             tool_retriever=tool_retriever,
             llm=llm,

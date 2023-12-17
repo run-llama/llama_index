@@ -5,13 +5,13 @@ from typing import Any
 
 from llama_index.agent.executor.base import AgentRunner
 from llama_index.agent.executor.parallel import ParallelAgentRunner
-from llama_index.agent.types import BaseAgentStepEngine, Task, TaskStep, TaskStepOutput
+from llama_index.agent.types import BaseAgentWorker, Task, TaskStep, TaskStepOutput
 from llama_index.chat_engine.types import AgentChatResponse
 
 
-# define mock step engine
-class MockAgentStepEngine(BaseAgentStepEngine):
-    """Mock agent step engine."""
+# define mock agent worker
+class MockAgentWorker(BaseAgentWorker):
+    """Mock agent agent worker."""
 
     def __init__(self, limit: int = 2):
         """Initialize."""
@@ -61,9 +61,9 @@ class MockAgentStepEngine(BaseAgentStepEngine):
         raise NotImplementedError
 
 
-# define mock step engine
-class MockForkStepEngine(BaseAgentStepEngine):
-    """Mock step engine that adds an exponential # steps."""
+# define mock agent worker
+class MockForkStepEngine(BaseAgentWorker):
+    """Mock agent worker that adds an exponential # steps."""
 
     def __init__(self, limit: int = 2):
         """Initialize."""
@@ -129,7 +129,7 @@ class MockForkStepEngine(BaseAgentStepEngine):
 
 def test_agent() -> None:
     """Test executor."""
-    agent_runner = AgentRunner(step_executor=MockAgentStepEngine(limit=2))
+    agent_runner = AgentRunner(agent_worker=MockAgentWorker(limit=2))
 
     # test create_task
     task = agent_runner.create_task("hello world")
@@ -150,7 +150,7 @@ def test_agent() -> None:
 
     # test e2e chat
     # NOTE: to use chat, output needs to be AgentChatResponse
-    agent_runner = AgentRunner(step_executor=MockAgentStepEngine(limit=10))
+    agent_runner = AgentRunner(agent_worker=MockAgentWorker(limit=10))
     response = agent_runner.chat("hello world")
     assert str(response) == "counter: 10"
     assert agent_runner.state.task_dict == {}
@@ -158,7 +158,7 @@ def test_agent() -> None:
 
 def test_dag_agent() -> None:
     """Test DAG agent executor."""
-    agent_runner = ParallelAgentRunner(step_executor=MockForkStepEngine(limit=2))
+    agent_runner = ParallelAgentRunner(agent_worker=MockForkStepEngine(limit=2))
 
     # test create_task
     task = agent_runner.create_task("hello world")

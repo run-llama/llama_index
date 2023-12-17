@@ -174,8 +174,8 @@ class Task(BaseModel):
     )
 
 
-class BaseAgentStepEngine(ABC):
-    """Base agent step engine."""
+class BaseAgentWorker(ABC):
+    """Base agent agent worker."""
 
     class Config:
         arbitrary_types_allowed = True
