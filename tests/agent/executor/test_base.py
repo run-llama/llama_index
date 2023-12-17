@@ -60,7 +60,7 @@ class MockAgentStepEngine(BaseAgentStepEngine):
         raise NotImplementedError
 
 
-def test_agent():
+def test_agent() -> None:
     """Test executor."""
     agent_engine = AgentEngine(step_executor=MockAgentStepEngine(limit=2))
 

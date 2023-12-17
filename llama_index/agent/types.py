@@ -1,8 +1,7 @@
 """Base agent type."""
 import uuid
 from abc import ABC, abstractmethod
-from collections import deque
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -172,38 +171,6 @@ class Task(BaseModel):
             "Can be modified throughout the execution of a task."
         ),
     )
-
-
-class TaskState(BaseModel):
-    """Task state."""
-
-    task: Task = Field(..., description="Task.")
-    step_queue: Deque[TaskStep] = Field(
-        default_factory=deque, description="Task step queue."
-    )
-    completed_steps: List[TaskStepOutput] = Field(
-        default_factory=list, description="Completed step outputs."
-    )
-
-
-class AgentState(BaseModel):
-    """Agent state."""
-
-    task_dict: Dict[str, TaskState] = Field(
-        default_factory=dict, description="Task dictionary."
-    )
-
-    def get_task(self, task_id: str) -> Task:
-        """Get task state."""
-        return self.task_dict[task_id].task
-
-    def get_completed_steps(self, task_id: str) -> List[TaskStepOutput]:
-        """Get completed steps."""
-        return self.task_dict[task_id].completed_steps
-
-    def get_step_queue(self, task_id: str) -> Deque[TaskStep]:
-        """Get step queue."""
-        return self.task_dict[task_id].step_queue
 
 
 class BaseAgentStepEngine(ABC):

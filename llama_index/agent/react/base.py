@@ -17,7 +17,6 @@ from typing import (
 )
 
 from llama_index.agent.executor.base import AgentEngine
-from llama_index.agent.legacy.react.base import ReActAgent
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
 from llama_index.agent.react.step import ReActAgentStepEngine

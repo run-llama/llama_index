@@ -86,7 +86,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
     @classmethod
     def from_tools(
         cls,
-        tools: Optional[List[BaseTool]] = None,
+        tools: Optional[Sequence[BaseTool]] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         llm: Optional[LLM] = None,
         max_iterations: int = 10,
@@ -138,7 +138,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
             input=task.input,
         )
 
-    def get_tools(self, input: str) -> List[BaseTool]:
+    def get_tools(self, input: str) -> List[AsyncBaseTool]:
         """Get tools."""
         return [adapt_to_async_tool(t) for t in self._get_tools(input)]
 
@@ -177,7 +177,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
     def _process_actions(
         self,
         task: Task,
-        tools: List[BaseTool],
+        tools: Sequence[AsyncBaseTool],
         output: ChatResponse,
         is_streaming: bool = False,
     ) -> Tuple[List[BaseReasoningStep], bool]:
@@ -269,7 +269,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         return AgentChatResponse(response=response_str, sources=sources)
 
     def _get_task_step_response(
-        self, agent_response: AgentChatResponse, step: TaskStep, is_done: bool
+        self, agent_response: AGENT_CHAT_RESPONSE_TYPE, step: TaskStep, is_done: bool
     ) -> TaskStepOutput:
         """Get task step response."""
         if is_done:
@@ -510,7 +510,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
             )
             task.extra_state["current_reasoning"].extend(reasoning_steps)
             # use _get_response to return intermediate response
-            agent_response = self._get_response(
+            agent_response: AGENT_CHAT_RESPONSE_TYPE = self._get_response(
                 task.extra_state["current_reasoning"], task.extra_state["sources"]
             )
         else:

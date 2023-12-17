@@ -495,18 +495,19 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
         agent_chat_response = await self._get_async_agent_response(
-            step, mode=mode, **llm_chat_kwargs
+            task, mode=mode, **llm_chat_kwargs
         )
 
         # TODO: implement _should_continue
+        latest_tool_calls = self.get_latest_tool_calls(task) or []
         if not self._should_continue(
-            self.get_latest_tool_calls(task), task.extra_state["n_function_calls"]
+            latest_tool_calls, task.extra_state["n_function_calls"]
         ):
             is_done = True
             # TODO: return response
         else:
             is_done = False
-            for tool_call in self.get_latest_tool_calls(task):
+            for tool_call in latest_tool_calls:
                 # Some validation
                 if not isinstance(tool_call, get_args(OpenAIToolCall)):
                     raise ValueError("Invalid tool_call object")
