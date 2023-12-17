@@ -1,6 +1,6 @@
 # agent runner + step engine
-from llama_index.agent.executor.base import AgentEngine
-from llama_index.agent.executor.parallel import ParallelAgentEngine
+from llama_index.agent.executor.base import AgentRunner
+from llama_index.agent.executor.parallel import ParallelAgentRunner
 from llama_index.agent.legacy.context_retriever_agent import ContextRetrieverOpenAIAgent
 from llama_index.agent.legacy.openai_agent import OpenAIAgent as OldOpenAIAgent
 from llama_index.agent.legacy.react.base import ReActAgent as OldReActAgent
@@ -15,8 +15,8 @@ from llama_index.agent.react.step import ReActAgentStepEngine
 RetrieverOpenAIAgent = FnRetrieverOpenAIAgent
 
 __all__ = [
-    "AgentEngine",
-    "ParallelAgentEngine",
+    "AgentRunner",
+    "ParallelAgentRunner",
     "OpenAIAgentStepEngine",
     "ReActAgentStepEngine",
     "OpenAIAgent",

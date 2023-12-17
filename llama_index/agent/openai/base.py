@@ -1,6 +1,6 @@
 """OpenAI Agent.
 
-Simple wrapper around AgentEngine + OpenAIAgentStepEngine.
+Simple wrapper around AgentRunner + OpenAIAgentStepEngine.
 
 For the legacy implementation see:
 ```python
@@ -16,7 +16,7 @@ from typing import (
     Type,
 )
 
-from llama_index.agent.executor.base import AgentEngine
+from llama_index.agent.executor.base import AgentRunner
 from llama_index.agent.openai.step import OpenAIAgentStepEngine
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
@@ -39,7 +39,7 @@ DEFAULT_MAX_FUNCTION_CALLS = 5
 class OpenAIAgent(BaseAgent):
     """OpenAI agent.
 
-    Simple wrapper around AgentEngine + OpenAIAgentStepEngine.
+    Simple wrapper around AgentRunner + OpenAIAgentStepEngine.
 
     For the legacy implementation see:
     ```python
@@ -70,7 +70,7 @@ class OpenAIAgent(BaseAgent):
             callback_manager=self.callback_manager,
             prefix_messages=prefix_messages,
         )
-        self._agent_engine = AgentEngine(
+        self._agent_runner = AgentRunner(
             self._step_engine,
             memory=memory,
             llm=llm,
@@ -140,22 +140,22 @@ class OpenAIAgent(BaseAgent):
     @property
     def chat_history(self) -> List[ChatMessage]:
         """Chat history."""
-        return self._agent_engine.memory.get_all()
+        return self._agent_runner.memory.get_all()
 
     def reset(self) -> None:
-        self._agent_engine.memory.reset()
+        self._agent_runner.memory.reset()
 
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Chat."""
-        return self._agent_engine.chat(message=message, chat_history=chat_history)
+        return self._agent_runner.chat(message=message, chat_history=chat_history)
 
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
         """Chat."""
-        return await self._agent_engine.achat(
+        return await self._agent_runner.achat(
             message=message, chat_history=chat_history
         )
 
@@ -163,7 +163,7 @@ class OpenAIAgent(BaseAgent):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         """Stream chat."""
-        return self._agent_engine.stream_chat(
+        return self._agent_runner.stream_chat(
             message=message, chat_history=chat_history
         )
 
@@ -171,6 +171,6 @@ class OpenAIAgent(BaseAgent):
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
         """Async stream chat."""
-        return await self._agent_engine.astream_chat(
+        return await self._agent_runner.astream_chat(
             message=message, chat_history=chat_history
         )

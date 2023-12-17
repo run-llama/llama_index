@@ -28,8 +28,8 @@ from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 
 
-class BaseAgentEngine(BaseAgent):
-    """Base Agent engine."""
+class BaseAgentRunner(BaseAgent):
+    """Base agent runner."""
 
 
 class TaskState(BaseModel):
@@ -64,15 +64,15 @@ class AgentState(BaseModel):
         return self.task_dict[task_id].step_queue
 
 
-class AgentEngine(BaseAgentEngine):
-    """Agent engine."""
+class AgentRunner(BaseAgentRunner):
+    """agent runner."""
 
     # # TODO: implement this
     # step_executor: BaseAgentStepEngine
     # # stores tasks and their states
     # state: AgentState
     # # stores conversation history
-    # # (currently assume agent engine handles a single message thread)
+    # # (currently assume agent runner handles a single message thread)
     # memory: BaseMemory
     # callback_manager: CallbackManager = Field(..., description="Callback manager.")
 

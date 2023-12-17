@@ -1,6 +1,6 @@
 """ReAct agent.
 
-Simple wrapper around AgentEngine + ReActAgentStepEngine.
+Simple wrapper around AgentRunner + ReActAgentStepEngine.
 
 For the legacy implementation see:
 ```python
