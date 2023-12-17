@@ -17,7 +17,7 @@ QUERY_INSTRUCTION_FOR_RETRIEVAL = (
     "Represent this sentence for searching relevant passages:"
 )
 
-GRADIENT_EMBED_BATCH_SIZE = 32_768
+GRADIENT_EMBED_BATCH_SIZE: int = 32_768
 
 
 class GradientEmbedding(BaseEmbedding):
