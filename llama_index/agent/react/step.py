@@ -48,6 +48,7 @@ from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text, unit_generator
+from llama_index.memory import ChatMemoryBuffer
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -124,11 +125,14 @@ class ReActAgentWorker(BaseAgentWorker):
         """Initialize step from task."""
         sources: List[ToolOutput] = []
         current_reasoning: List[BaseReasoningStep] = []
+        # temporary memory for new messages
+        new_memory = ChatMemoryBuffer.from_defaults()
 
         # initialize task state
         task_state = {
             "sources": sources,
             "current_reasoning": current_reasoning,
+            "new_memory": new_memory,
         }
         task.extra_state.update(task_state)
 
@@ -367,7 +371,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get(),
+            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -382,7 +386,7 @@ class ReActAgentWorker(BaseAgentWorker):
             task.extra_state["current_reasoning"], task.extra_state["sources"]
         )
         if is_done:
-            task.memory.put(
+            task.extra_state["new_memory"].put(
                 ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
             )
 
@@ -399,7 +403,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get(),
+            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
@@ -413,7 +417,7 @@ class ReActAgentWorker(BaseAgentWorker):
             task.extra_state["current_reasoning"], task.extra_state["sources"]
         )
         if is_done:
-            task.memory.put(
+            task.extra_state["new_memory"].put(
                 ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
             )
 
@@ -430,7 +434,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get(),
+            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -469,7 +473,7 @@ class ReActAgentWorker(BaseAgentWorker):
             )
             thread = Thread(
                 target=agent_response.write_response_to_history,
-                args=(task.memory,),
+                args=(task.extra_state["new_memory"],),
             )
             thread.start()
 
@@ -486,7 +490,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get(),
+            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -524,7 +528,7 @@ class ReActAgentWorker(BaseAgentWorker):
                 sources=task.extra_state["sources"],
             )
             # create task to write chat response to history
-            asyncio.create_task(agent_response.awrite_response_to_history(task.memory))
+            asyncio.create_task(agent_response.awrite_response_to_history(task.extra_state["new_memory"]))
 
         return self._get_task_step_response(agent_response, step, is_done)
 
@@ -548,3 +552,10 @@ class ReActAgentWorker(BaseAgentWorker):
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         return await self._arun_step_stream(step, task)
+
+    def finalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""
+        # add new messages to memory
+        task.memory.set(task.memory.get() + task.extra_state["new_memory"].get_all())
+        # reset new memory
+        task.extra_state["new_memory"].reset()

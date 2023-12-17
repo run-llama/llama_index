@@ -341,6 +341,10 @@ class AgentRunner(BaseAgentRunner):
         """Finalize response."""
         if step_output is None:
             step_output = self.state.get_completed_steps(task_id)[-1]
+        if not step_output.is_last:
+            raise ValueError(
+                "finalize_response can only be called on the last step output"
+            )
 
         if not isinstance(
             step_output.output,
@@ -350,6 +354,9 @@ class AgentRunner(BaseAgentRunner):
                 "When `is_last` is True, cur_step_output.output must be "
                 f"AGENT_CHAT_RESPONSE_TYPE: {step_output.output}"
             )
+
+        # finalize task
+        self.agent_worker.finalize_task(self.state.get_task(task_id))
 
         if self.delete_task_on_finish:
             self.delete_task(task_id)

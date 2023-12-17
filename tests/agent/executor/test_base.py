@@ -60,6 +60,10 @@ class MockAgentWorker(BaseAgentWorker):
         """Run step (async stream)."""
         raise NotImplementedError
 
+    def finalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""
+        pass
+
 
 # define mock agent worker
 class MockForkStepEngine(BaseAgentWorker):
@@ -125,6 +129,10 @@ class MockForkStepEngine(BaseAgentWorker):
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         raise NotImplementedError
+
+    def finalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""
+        pass
 
 
 def test_agent() -> None:

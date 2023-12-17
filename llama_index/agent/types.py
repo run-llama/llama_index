@@ -155,7 +155,9 @@ class Task(BaseModel):
 
     # NOTE: this is state that may be modified throughout the course of execution of the task
     memory: BaseMemory = Field(
-        ..., type=BaseMemory, description="Conversational Memory"
+        ..., type=BaseMemory, description=(
+            "Conversational Memory. Maintains state before execution of this task."
+        )
     )
 
     extra_state: Dict[str, Any] = Field(
@@ -168,7 +170,7 @@ class Task(BaseModel):
 
 
 class BaseAgentWorker(ABC):
-    """Base agent agent worker."""
+    """Base agent worker."""
 
     class Config:
         arbitrary_types_allowed = True
@@ -200,3 +202,7 @@ class BaseAgentWorker(ABC):
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         raise NotImplementedError
+
+    @abstractmethod
+    def finalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""

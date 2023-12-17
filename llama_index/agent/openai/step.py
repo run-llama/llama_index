@@ -32,6 +32,7 @@ from llama_index.llms.types import MessageRole
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.memory import BaseMemory, ChatMemoryBuffer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -246,7 +247,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         )
 
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
-        return self.prefix_messages + task.memory.get()
+        return self.prefix_messages + task.memory.get() + task.extra_state["new_memory"].get_all()
 
     def get_latest_tool_calls(self, task: Task) -> Optional[List[OpenAIToolCall]]:
         return task.memory.get_all()[-1].additional_kwargs.get("tool_calls", None)
@@ -268,7 +269,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         self, task: Task, chat_response: ChatResponse
     ) -> AgentChatResponse:
         ai_message = chat_response.message
-        task.memory.put(ai_message)
+        task.extra_state["new_memory"].put(ai_message)
         return AgentChatResponse(
             response=str(ai_message.content), sources=task.extra_state["sources"]
         )
@@ -283,7 +284,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
-            args=(task.memory,),
+            args=(task.extra_state["new_memory"],),
         )
         thread.start()
         # Wait for the event to be set
@@ -304,7 +305,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         )
         # create task to write chat response to history
         asyncio.create_task(
-            chat_stream_response.awrite_response_to_history(task.memory)
+            chat_stream_response.awrite_response_to_history(task.extra_state["new_memory"])
         )
         # wait until openAI functions stop executing
         await chat_stream_response._is_function_false_event.wait()
@@ -394,10 +395,13 @@ class OpenAIAgentWorker(BaseAgentWorker):
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
         sources: List[ToolOutput] = []
+        # temporary memory for new messages
+        new_memory = ChatMemoryBuffer.from_defaults()
         # initialize task state
         task_state = {
             "sources": sources,
             "n_function_calls": 0,
+            "new_memory": new_memory,
         }
         task.extra_state.update(task_state)
 
@@ -457,7 +461,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
                 # TODO: maybe execute this with multi-threading
                 self._call_function(
-                    tools, tool_call, task.memory, task.extra_state["sources"]
+                    tools, tool_call, task.extra_state["new_memory"], task.extra_state["sources"]
                 )
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
@@ -504,7 +508,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             latest_tool_calls, task.extra_state["n_function_calls"]
         ):
             is_done = True
-            # TODO: return response
+            
         else:
             is_done = False
             for tool_call in latest_tool_calls:
@@ -516,7 +520,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
                 # TODO: maybe execute this with multi-threading
                 await self._acall_function(
-                    tools, tool_call, task.memory, task.extra_state["sources"]
+                    tools, tool_call, task.extra_state["new_memory"], task.extra_state["sources"]
                 )
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
@@ -576,6 +580,14 @@ class OpenAIAgentWorker(BaseAgentWorker):
         return await self._arun_step(
             step, task, mode=ChatResponseMode.STREAM, tool_choice=tool_choice
         )
+
+    def finalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""
+        # add new messages to memory
+        task.memory.set(task.memory.get() + task.extra_state["new_memory"].get_all())
+        # reset new memory
+        task.extra_state["new_memory"].reset()
+        
 
     def undo_step(self, task: Task, **kwargs: Any) -> Optional[TaskStep]:
         """Undo step from task.
