@@ -100,6 +100,7 @@ class TaskStep(BaseModel):
         self,
         step_id: str,
         input: Optional[str] = None,
+        step_state: Optional[Dict[str, Any]] = None,
     ) -> "TaskStep":
         """Convenience function to get next step.
 
@@ -111,7 +112,7 @@ class TaskStep(BaseModel):
             step_id=step_id,
             input=input,
             # memory=self.memory,
-            step_state=self.step_state,
+            step_state=step_state or self.step_state,
         )
 
     def link_step(
