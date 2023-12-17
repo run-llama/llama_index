@@ -39,8 +39,10 @@ from llama_index.chat_engine.types import (
     AgentChatResponse,
     StreamingAgentChatResponse,
 )
-from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.base import ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.types import MessageRole
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
@@ -122,18 +124,17 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         sources: List[ToolOutput] = []
         current_reasoning: List[BaseReasoningStep] = []
 
-        # initialize state in this step
-        step_state = {
+        # initialize task state
+        task_state = {
             "sources": sources,
             "current_reasoning": current_reasoning,
         }
+        task.extra_state.update(task_state)
 
         return TaskStep(
             task_id=task.task_id,
             step_id=str(uuid.uuid4()),
             input=task.input,
-            memory=task.memory,
-            step_state=step_state,
         )
 
     def get_tools(self, input: str) -> List[BaseTool]:
@@ -174,7 +175,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
 
     def _process_actions(
         self,
-        step: TaskStep,
+        task: Task,
         tools: Sequence[AsyncBaseTool],
         output: ChatResponse,
         is_streaming: bool = False,
@@ -202,7 +203,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
             tool_output = tool.call(**reasoning_step.action_input)
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
-        step.step_state["sources"].append(tool_output)
+        task.extra_state["sources"].append(tool_output)
 
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
@@ -212,7 +213,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
 
     async def _aprocess_actions(
         self,
-        step: TaskStep,
+        task: TaskStep,
         tools: Sequence[AsyncBaseTool],
         output: ChatResponse,
         is_streaming: bool = False,
@@ -238,7 +239,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
             tool_output = await tool.acall(**reasoning_step.action_input)
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
-        step.step_state["sources"].append(tool_output)
+        task.extra_state["sources"].append(tool_output)
 
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
@@ -366,18 +367,18 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         input_chat = self._react_chat_formatter.format(
             tools,
             chat_history=step.memory.get(),
-            current_reasoning=step.step_state["current_reasoning"],
+            current_reasoning=task.extra_state["current_reasoning"],
         )
 
         # send prompt
         chat_response = self._llm.chat(input_chat)
         # given react prompt outputs, call tools or return response
         reasoning_steps, is_done = self._process_actions(
-            step, tools, output=chat_response
+            task, tools, output=chat_response
         )
-        step.step_state["current_reasoning"].extend(reasoning_steps)
+        task.extra_state["current_reasoning"].extend(reasoning_steps)
         agent_response = self._get_response(
-            step.step_state["current_reasoning"], step.step_state["sources"]
+            task.extra_state["current_reasoning"], task.extra_state["sources"]
         )
         if is_done:
             step.memory.put(
@@ -398,17 +399,17 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         input_chat = self._react_chat_formatter.format(
             tools,
             chat_history=step.memory.get(),
-            current_reasoning=step.step_state["current_reasoning"],
+            current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
         chat_response = await self._llm.achat(input_chat)
         # given react prompt outputs, call tools or return response
         reasoning_steps, is_done = await self._aprocess_actions(
-            step, tools, output=chat_response
+            task, tools, output=chat_response
         )
-        step.step_state["current_reasoning"].extend(reasoning_steps)
+        task.extra_state["current_reasoning"].extend(reasoning_steps)
         agent_response = self._get_response(
-            step.step_state["current_reasoning"], step.step_state["sources"]
+            task.extra_state["current_reasoning"], task.extra_state["sources"]
         )
         if is_done:
             step.memory.put(
@@ -429,7 +430,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         input_chat = self._react_chat_formatter.format(
             tools,
             chat_history=step.memory.get(),
-            current_reasoning=step.step_state["current_reasoning"],
+            current_reasoning=task.extra_state["current_reasoning"],
         )
 
         chat_stream = self._llm.stream_chat(input_chat)
@@ -448,12 +449,12 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         if not is_done:
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
-                step, tools=tools, output=full_response, is_streaming=True
+                task, tools=tools, output=full_response, is_streaming=True
             )
-            step.step_state["current_reasoning"].extend(reasoning_steps)
+            task.extra_state["current_reasoning"].extend(reasoning_steps)
             # use _get_response to return intermediate response
             agent_response = self._get_response(
-                step.step_state["current_reasoning"], step.step_state["sources"]
+                task.extra_state["current_reasoning"], task.extra_state["sources"]
             )
         else:
             # Get the response in a separate thread so we can yield the response
@@ -463,7 +464,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
 
             agent_response = StreamingAgentChatResponse(
                 chat_stream=response_stream,
-                sources=step.step_state["sources"],
+                sources=task.extra_state["sources"],
             )
             thread = Thread(
                 target=agent_response.write_response_to_history,
@@ -484,8 +485,8 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=step.memory.get(),
-            current_reasoning=step.step_state["current_reasoning"],
+            chat_history=task.memory.get(),
+            current_reasoning=task.extra_state["current_reasoning"],
         )
 
         chat_stream = await self._llm.astream_chat(input_chat)
@@ -504,12 +505,12 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
         if not is_done:
             # given react prompt outputs, call tools or return response
             reasoning_steps, _ = self._process_actions(
-                step, tools=tools, output=full_response, is_streaming=True
+                task, tools=tools, output=full_response, is_streaming=True
             )
-            step.step_state["current_reasoning"].extend(reasoning_steps)
+            task.extra_state["current_reasoning"].extend(reasoning_steps)
             # use _get_response to return intermediate response
             agent_response = self._get_response(
-                step.step_state["current_reasoning"], step.step_state["sources"]
+                task.extra_state["current_reasoning"], task.extra_state["sources"]
             )
         else:
             # Get the response in a separate thread so we can yield the response
@@ -519,7 +520,7 @@ class ReActAgentStepEngine(BaseAgentStepEngine):
 
             agent_response = StreamingAgentChatResponse(
                 achat_stream=response_stream,
-                sources=step.step_state["sources"],
+                sources=task.extra_state["sources"],
             )
             # create task to write chat response to history
             asyncio.create_task(agent_response.awrite_response_to_history(step.memory))

@@ -1,4 +1,5 @@
-from typing import Any, List, Optional, Union, cast
+from collections import deque
+from typing import Any, Deque, Dict, List, Optional, Union, cast
 
 from llama_index.agent.types import (
     AgentState,
@@ -21,12 +22,50 @@ from llama_index.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.llms.base import LLM, ChatMessage, MessageRole
+from llama_index.llms.base import ChatMessage
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 
 
-class AgentEngine(BaseModel, BaseAgent):
+class BaseAgentEngine(BaseModel, BaseAgent):
+    """Base Agent engine."""
+
+
+class TaskState(BaseModel):
+    """Task state."""
+
+    task: Task = Field(..., description="Task.")
+    step_queue: Deque[TaskStep] = Field(
+        default_factory=deque, description="Task step queue."
+    )
+    completed_steps: List[TaskStepOutput] = Field(
+        default_factory=list, description="Completed step outputs."
+    )
+
+
+class AgentState(BaseModel):
+    """Agent state."""
+
+    task_dict: Dict[str, TaskState] = Field(
+        default_factory=dict, description="Task dictionary."
+    )
+
+    def get_task(self, task_id: str) -> Task:
+        """Get task state."""
+        return self.task_dict[task_id].task
+
+    def get_completed_steps(self, task_id: str) -> List[TaskStepOutput]:
+        """Get completed steps."""
+        return self.task_dict[task_id].completed_steps
+
+    def get_step_queue(self, task_id: str) -> Deque[TaskStep]:
+        """Get step queue."""
+        return self.task_dict[task_id].step_queue
+
+
+class AgentEngine(BaseAgentEngine):
     """Agent engine."""
 
     # TODO: implement this

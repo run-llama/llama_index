@@ -24,9 +24,11 @@ from llama_index.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.llms.base import LLM, ChatMessage, ChatResponse, MessageRole
+from llama_index.llms.base import ChatMessage, ChatResponse
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import OpenAIToolCall
+from llama_index.llms.types import MessageRole
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
@@ -263,25 +265,25 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         return llm_chat_kwargs
 
     def _process_message(
-        self, step: TaskStep, chat_response: ChatResponse
+        self, task: Task, chat_response: ChatResponse
     ) -> AgentChatResponse:
         ai_message = chat_response.message
-        step.memory.put(ai_message)
+        task.memory.put(ai_message)
         return AgentChatResponse(
-            response=str(ai_message.content), sources=step.step_state["sources"]
+            response=str(ai_message.content), sources=task.extra_state["sources"]
         )
 
     def _get_stream_ai_response(
-        self, step: TaskStep, **llm_chat_kwargs: Any
+        self, task: Task, **llm_chat_kwargs: Any
     ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             chat_stream=self._llm.stream_chat(**llm_chat_kwargs),
-            sources=step.step_state["sources"],
+            sources=task.extra_state["sources"],
         )
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
-            args=(step.memory,),
+            args=(task.memory,),
         )
         thread.start()
         # Wait for the event to be set
@@ -294,15 +296,15 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         return chat_stream_response
 
     async def _get_async_stream_ai_response(
-        self, step: TaskStep, **llm_chat_kwargs: Any
+        self, task: Task, **llm_chat_kwargs: Any
     ) -> StreamingAgentChatResponse:
         chat_stream_response = StreamingAgentChatResponse(
             achat_stream=await self._llm.astream_chat(**llm_chat_kwargs),
-            sources=step.step_state["sources"],
+            sources=task.extra_state["sources"],
         )
         # create task to write chat response to history
         asyncio.create_task(
-            chat_stream_response.awrite_response_to_history(step.memory)
+            chat_stream_response.awrite_response_to_history(task.memory)
         )
         # wait until openAI functions stop executing
         await chat_stream_response._is_function_false_event.wait()
@@ -310,24 +312,24 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         return chat_stream_response
 
     def _get_agent_response(
-        self, step: TaskStep, mode: ChatResponseMode, **llm_chat_kwargs: Any
+        self, task: Task, mode: ChatResponseMode, **llm_chat_kwargs: Any
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         if mode == ChatResponseMode.WAIT:
             chat_response: ChatResponse = self._llm.chat(**llm_chat_kwargs)
-            return self._process_message(step, chat_response)
+            return self._process_message(task, chat_response)
         elif mode == ChatResponseMode.STREAM:
-            return self._get_stream_ai_response(step, **llm_chat_kwargs)
+            return self._get_stream_ai_response(task, **llm_chat_kwargs)
         else:
             raise NotImplementedError
 
     async def _get_async_agent_response(
-        self, step: TaskStep, mode: ChatResponseMode, **llm_chat_kwargs: Any
+        self, task: Task, mode: ChatResponseMode, **llm_chat_kwargs: Any
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         if mode == ChatResponseMode.WAIT:
             chat_response: ChatResponse = await self._llm.achat(**llm_chat_kwargs)
-            return self._process_message(step, chat_response)
+            return self._process_message(task, chat_response)
         elif mode == ChatResponseMode.STREAM:
-            return await self._get_async_stream_ai_response(step, **llm_chat_kwargs)
+            return await self._get_async_stream_ai_response(task, **llm_chat_kwargs)
         else:
             raise NotImplementedError
 
@@ -392,18 +394,17 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
         sources: List[ToolOutput] = []
-        # initialize state in this step
-        step_state = {
+        # initialize task state
+        task_state = {
             "sources": sources,
             "n_function_calls": 0,
         }
+        task.extra_state.update(task_state)
 
         return TaskStep(
             task_id=task.task_id,
             step_id=str(uuid.uuid4()),
             input=task.input,
-            memory=task.memory,
-            step_state=step_state,
         )
 
     def _should_continue(
@@ -434,12 +435,12 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
         llm_chat_kwargs = self._get_llm_chat_kwargs(step, openai_tools, tool_choice)
 
         agent_chat_response = self._get_agent_response(
-            step, mode=mode, **llm_chat_kwargs
+            task, mode=mode, **llm_chat_kwargs
         )
 
         # TODO: implement _should_continue
         if not self._should_continue(
-            self.get_latest_tool_calls(step), step.step_state["n_function_calls"]
+            self.get_latest_tool_calls(step), task.extra_state["n_function_calls"]
         ):
             is_done = True
             new_steps = []
@@ -455,13 +456,13 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
                 # TODO: maybe execute this with multi-threading
                 self._call_function(
-                    tools, tool_call, step.memory, step.step_state["sources"]
+                    tools, tool_call, task.memory, task.extra_state["sources"]
                 )
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
                 if tool_choice not in ("auto", "none"):
                     tool_choice = "auto"
-                step.step_state["n_function_calls"] += 1
+                task.extra_state["n_function_calls"] += 1
             new_steps = [
                 step.get_next_step(
                     step_id=str(uuid.uuid4()),
@@ -469,6 +470,8 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
                     input=None,
                 )
             ]
+
+        # attach next step to task
 
         return TaskStepOutput(
             output=agent_chat_response,
@@ -496,7 +499,7 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
 
         # TODO: implement _should_continue
         if not self._should_continue(
-            self.get_latest_tool_calls(step), step.step_state["n_function_calls"]
+            self.get_latest_tool_calls(step), task.extra_state["n_function_calls"]
         ):
             is_done = True
             # TODO: return response
@@ -511,13 +514,13 @@ class OpenAIAgentStepEngine(BaseAgentStepEngine):
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
                 # TODO: maybe execute this with multi-threading
                 await self._acall_function(
-                    tools, tool_call, step.memory, step.step_state["sources"]
+                    tools, tool_call, task.memory, task.extra_state["sources"]
                 )
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
                 if tool_choice not in ("auto", "none"):
                     tool_choice = "auto"
-                step.step_state["n_function_calls"] += 1
+                task.extra_state["n_function_calls"] += 1
 
         # generate next step, append to task queue
         new_steps = (
