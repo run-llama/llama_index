@@ -102,6 +102,7 @@ class SentenceWindowNodeParser(NodeParser):
             nodes = build_nodes_from_splits(
                 text_splits,
                 doc,
+                id_func=self.id_func,
             )
 
             # add window to each node

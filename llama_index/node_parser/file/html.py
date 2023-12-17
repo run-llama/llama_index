@@ -123,7 +123,7 @@ class HTMLNodeParser(NodeParser):
         metadata: dict,
     ) -> TextNode:
         """Build node from single text split."""
-        node = build_nodes_from_splits([text_split], node)[0]
+        node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
 
         if self.include_metadata:
             node.metadata = {**node.metadata, **metadata}

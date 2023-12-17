@@ -7,7 +7,9 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_OVERLAP, DEFAULT_CHUNK_SIZE
 from llama_index.node_parser.interface import MetadataAwareTextSplitter
+from llama_index.node_parser.node_utils import default_id_func
 from llama_index.node_parser.text.utils import split_by_char, split_by_sep
+from llama_index.schema import Document
 from llama_index.utils import get_tokenizer
 
 _logger = logging.getLogger(__name__)
@@ -49,6 +51,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         backup_separators: Optional[List[str]] = ["\n"],
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
+        id_func: Optional[Callable[[int, Document], str]] = None,
     ):
         """Initialize with parameters."""
         if chunk_overlap > chunk_size:
@@ -57,7 +60,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 f"({chunk_size}), should be smaller."
             )
         callback_manager = callback_manager or CallbackManager([])
-
+        id_func = id_func or default_id_func
         self._tokenizer = tokenizer or get_tokenizer()
 
         all_seps = [separator] + (backup_separators or [])
@@ -71,6 +74,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             callback_manager=callback_manager,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
+            id_func=id_func,
         )
 
     @classmethod
