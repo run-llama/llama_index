@@ -22,4 +22,3 @@ def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, di
         return {"type": "function", "function": {"name": tool_choice}}
 
     return tool_choice
-

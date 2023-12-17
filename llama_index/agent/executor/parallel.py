@@ -1,17 +1,18 @@
 """Agent executor."""
 
 import asyncio
-from llama_index.agent.executor.base import BaseAgentRunner
-from typing import Any, List, Optional, Union, cast, Dict
+from collections import deque
+from typing import Any, Deque, Dict, List, Optional, Union, cast
 
+from pydantic import BaseModel, Field
+
+from llama_index.agent.executor.base import BaseAgentRunner
 from llama_index.agent.types import (
-    BaseAgent,
     BaseAgentWorker,
     Task,
     TaskStep,
     TaskStepOutput,
 )
-from pydantic import Field, BaseModel
 from llama_index.callbacks import (
     CallbackManager,
     CBEventType,
@@ -25,16 +26,15 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.llms.base import ChatMessage
-from llama_index.llms.types import MessageRole
 from llama_index.llms.llm import LLM
+from llama_index.llms.types import MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
-from collections import deque
-from typing import Deque
 
 
 class DAGTaskState(BaseModel):
     """DAG Task state."""
+
     task: Task = Field(..., description="Task.")
     root_step: TaskStep = Field(..., description="Root step.")
     step_queue: Deque[TaskStep] = Field(
@@ -48,6 +48,7 @@ class DAGTaskState(BaseModel):
     def task_id(self) -> str:
         """Task id."""
         return self.task.task_id
+
 
 class DAGAgentState(BaseModel):
     """Agent state."""
@@ -73,7 +74,7 @@ class ParallelAgentRunner(BaseAgentRunner):
     """Parallel agent runner.
 
     Executes steps in queue in parallel. Requires async support.
-   
+
     """
 
     def __init__(
@@ -137,21 +138,15 @@ class ParallelAgentRunner(BaseAgentRunner):
         """
         self.state.task_dict.pop(task_id)
 
-    def list_tasks(
-        self, **kwargs: Any
-    ) -> List[Task]:
+    def list_tasks(self, **kwargs: Any) -> List[Task]:
         """List tasks."""
         return list(self.state.task_dict.values())
 
-    def get_task(
-        self, task_id: str, **kwargs: Any
-    ) -> Task:
+    def get_task(self, task_id: str, **kwargs: Any) -> Task:
         """Get task."""
         return self.state.get_task(task_id)
 
-    def get_completed_steps(
-        self, task_id: str, **kwargs: Any
-    ) -> List[TaskStepOutput]:
+    def get_completed_steps(self, task_id: str, **kwargs: Any) -> List[TaskStepOutput]:
         """Get completed steps."""
         return self.state.get_completed_steps(task_id)
 
@@ -166,9 +161,8 @@ class ParallelAgentRunner(BaseAgentRunner):
         Run all steps in queue, clearing it out.
 
         Assume that all steps can be run in parallel.
-        
-        """
 
+        """
         return asyncio.run(self.arun_steps_in_queue(task_id, mode=mode, **kwargs))
 
     async def arun_steps_in_queue(
@@ -180,7 +174,7 @@ class ParallelAgentRunner(BaseAgentRunner):
         """Execute all steps in queue.
 
         All steps in queue are assumed to be ready.
-        
+
         """
         # first pop all steps from step_queue
         steps: List[TaskStep] = []
@@ -190,9 +184,7 @@ class ParallelAgentRunner(BaseAgentRunner):
         # take every item in the queue, and run it
         tasks = []
         for step in steps:
-            tasks.append(self._arun_step(
-                task_id, step=step, mode=mode, **kwargs
-            ))
+            tasks.append(self._arun_step(task_id, step=step, mode=mode, **kwargs))
 
         step_outputs = await asyncio.gather(*tasks)
         return step_outputs
@@ -213,7 +205,9 @@ class ParallelAgentRunner(BaseAgentRunner):
             raise ValueError(f"Step {step.step_id} is not ready")
 
         if mode == ChatResponseMode.WAIT:
-            cur_step_output: TaskStepOutput = self.agent_worker.run_step(step, task, **kwargs)
+            cur_step_output: TaskStepOutput = self.agent_worker.run_step(
+                step, task, **kwargs
+            )
         elif mode == ChatResponseMode.STREAM:
             cur_step_output = self.agent_worker.stream_step(step, task, **kwargs)
         else:
@@ -337,12 +331,16 @@ class ParallelAgentRunner(BaseAgentRunner):
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_outputs = self.run_steps_in_queue(task.task_id, mode=mode)
-            
+
             # check if a step output is_last
-            is_last = any([cur_step_output.is_last for cur_step_output in cur_step_outputs])
+            is_last = any(
+                [cur_step_output.is_last for cur_step_output in cur_step_outputs]
+            )
             if is_last:
                 if len(cur_step_outputs) > 1:
-                    raise ValueError("More than one step output returned in final step.")
+                    raise ValueError(
+                        "More than one step output returned in final step."
+                    )
                 cur_step_output = cur_step_outputs[0]
                 result_output = cur_step_output
                 break
@@ -365,12 +363,16 @@ class ParallelAgentRunner(BaseAgentRunner):
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_outputs = await self.arun_steps_in_queue(task.task_id, mode=mode)
-            
+
             # check if a step output is_last
-            is_last = any([cur_step_output.is_last for cur_step_output in cur_step_outputs])
+            is_last = any(
+                [cur_step_output.is_last for cur_step_output in cur_step_outputs]
+            )
             if is_last:
                 if len(cur_step_outputs) > 1:
-                    raise ValueError("More than one step output returned in final step.")
+                    raise ValueError(
+                        "More than one step output returned in final step."
+                    )
                 cur_step_output = cur_step_outputs[0]
                 result_output = cur_step_output
                 break
@@ -452,5 +454,3 @@ class ParallelAgentRunner(BaseAgentRunner):
     def undo_step(self, task_id: str) -> None:
         """Undo previous step."""
         raise NotImplementedError("undo_step not implemented")
-
-
