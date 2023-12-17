@@ -44,11 +44,11 @@ from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.types import MessageRole
+from llama_index.memory import ChatMemoryBuffer
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text, unit_generator
-from llama_index.memory import ChatMemoryBuffer
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -528,7 +528,11 @@ class ReActAgentWorker(BaseAgentWorker):
                 sources=task.extra_state["sources"],
             )
             # create task to write chat response to history
-            asyncio.create_task(agent_response.awrite_response_to_history(task.extra_state["new_memory"]))
+            asyncio.create_task(
+                agent_response.awrite_response_to_history(
+                    task.extra_state["new_memory"]
+                )
+            )
 
         return self._get_task_step_response(agent_response, step, is_done)
 

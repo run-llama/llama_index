@@ -155,9 +155,11 @@ class Task(BaseModel):
 
     # NOTE: this is state that may be modified throughout the course of execution of the task
     memory: BaseMemory = Field(
-        ..., type=BaseMemory, description=(
+        ...,
+        type=BaseMemory,
+        description=(
             "Conversational Memory. Maintains state before execution of this task."
-        )
+        ),
     )
 
     extra_state: Dict[str, Any] = Field(

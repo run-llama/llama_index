@@ -1,6 +1,8 @@
-from abc import abstractmethod
-from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Union, cast
+"""Agent executor."""
+
+import asyncio
+from llama_index.agent.executor.base import BaseAgentRunner
+from typing import Any, List, Optional, Union, cast, Dict
 
 from llama_index.agent.types import (
     BaseAgent,
@@ -9,7 +11,7 @@ from llama_index.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.bridge.pydantic import BaseModel, Field
+from pydantic import Field, BaseModel
 from llama_index.callbacks import (
     CallbackManager,
     CBEventType,
@@ -23,95 +25,18 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.llms.base import ChatMessage
-from llama_index.llms.llm import LLM
 from llama_index.llms.types import MessageRole
+from llama_index.llms.llm import LLM
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
+from collections import deque
+from typing import Deque
 
 
-class BaseAgentRunner(BaseAgent):
-    """Base agent runner."""
-
-    @abstractmethod
-    def create_task(self, input: str, **kwargs: Any) -> Task:
-        """Create task."""
-
-    @abstractmethod
-    def delete_task(
-        self,
-        task_id: str,
-    ) -> None:
-        """Delete task.
-
-        NOTE: this will not delete any previous executions from memory.
-
-        """
-
-    @abstractmethod
-    def list_tasks(self, **kwargs: Any) -> List[Task]:
-        """List tasks."""
-
-    @abstractmethod
-    def get_task(self, task_id: str, **kwargs: Any) -> Task:
-        """Get task."""
-
-    @abstractmethod
-    def get_completed_steps(self, task_id: str, **kwargs: Any) -> List[TaskStepOutput]:
-        """Get completed steps."""
-
-    def get_completed_step(
-        self, task_id: str, step_id: str, **kwargs: Any
-    ) -> TaskStepOutput:
-        """Get completed step."""
-        # call get_completed_steps, and then find the right task
-        completed_steps = self.get_completed_steps(task_id, **kwargs)
-        for step_output in completed_steps:
-            if step_output.task_step.step_id == step_id:
-                return step_output
-        raise ValueError(f"Could not find step_id: {step_id}")
-
-    @abstractmethod
-    def run_step(
-        self, task: Task, step: Optional[TaskStep] = None, **kwargs: Any
-    ) -> TaskStepOutput:
-        """Run step."""
-
-    @abstractmethod
-    async def arun_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
-    ) -> TaskStepOutput:
-        """Run step (async)."""
-
-    @abstractmethod
-    def stream_step(
-        self, task: Task, step: Optional[TaskStep] = None, **kwargs: Any
-    ) -> TaskStepOutput:
-        """Run step (stream)."""
-
-    @abstractmethod
-    async def astream_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
-    ) -> TaskStepOutput:
-        """Run step (async stream)."""
-
-    @abstractmethod
-    def finalize_response(
-        self,
-        task_id: str,
-        step_output: Optional[TaskStepOutput] = None,
-    ) -> AGENT_CHAT_RESPONSE_TYPE:
-        """Finalize response."""
-
-    @abstractmethod
-    def undo_step(self, task_id: str) -> None:
-        """Undo previous step."""
-        raise NotImplementedError("undo_step not implemented")
-
-
-class TaskState(BaseModel):
-    """Task state."""
-
+class DAGTaskState(BaseModel):
+    """DAG Task state."""
     task: Task = Field(..., description="Task.")
+    root_step: TaskStep = Field(..., description="Root step.")
     step_queue: Deque[TaskStep] = Field(
         default_factory=deque, description="Task step queue."
     )
@@ -119,11 +44,15 @@ class TaskState(BaseModel):
         default_factory=list, description="Completed step outputs."
     )
 
+    @property
+    def task_id(self) -> str:
+        """Task id."""
+        return self.task.task_id
 
-class AgentState(BaseModel):
+class DAGAgentState(BaseModel):
     """Agent state."""
 
-    task_dict: Dict[str, TaskState] = Field(
+    task_dict: Dict[str, DAGTaskState] = Field(
         default_factory=dict, description="Task dictionary."
     )
 
@@ -140,30 +69,18 @@ class AgentState(BaseModel):
         return self.task_dict[task_id].step_queue
 
 
-class AgentRunner(BaseAgentRunner):
-    """Agent runner.
+class ParallelAgentRunner(BaseAgentRunner):
+    """Parallel agent runner.
 
-    Top-level agent orchestrator that can create tasks, run each step in a task,
-    or run a task e2e. Stores state and keeps track of tasks.
-
-    Args:
-        agent_worker (BaseAgentWorker): step executor
-        chat_history (Optional[List[ChatMessage]], optional): chat history. Defaults to None.
-        state (Optional[AgentState], optional): agent state. Defaults to None.
-        memory (Optional[BaseMemory], optional): memory. Defaults to None.
-        llm (Optional[LLM], optional): LLM. Defaults to None.
-        callback_manager (Optional[CallbackManager], optional): callback manager. Defaults to None.
-        init_task_state_kwargs (Optional[dict], optional): init task state kwargs. Defaults to None.
-
+    Executes steps in queue in parallel. Requires async support.
+   
     """
-
-    # # TODO: implement this in Pydantic
 
     def __init__(
         self,
         agent_worker: BaseAgentWorker,
         chat_history: Optional[List[ChatMessage]] = None,
-        state: Optional[AgentState] = None,
+        state: Optional[DAGAgentState] = None,
         memory: Optional[BaseMemory] = None,
         llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -171,11 +88,11 @@ class AgentRunner(BaseAgentRunner):
         delete_task_on_finish: bool = True,
     ) -> None:
         """Initialize."""
-        self.agent_worker = agent_worker
-        self.state = state or AgentState()
         self.memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
+        self.state = state or DAGAgentState()
         self.callback_manager = callback_manager or CallbackManager([])
         self.init_task_state_kwargs = init_task_state_kwargs or {}
+        self.agent_worker = agent_worker
         self.delete_task_on_finish = delete_task_on_finish
 
     @property
@@ -196,13 +113,15 @@ class AgentRunner(BaseAgentRunner):
         # put input into memory
         self.memory.put(ChatMessage(content=input, role=MessageRole.USER))
 
+        # add it to state
         # get initial step from task, and put it in the step queue
         initial_step = self.agent_worker.initialize_step(task)
-        task_state = TaskState(
+        task_state = DAGTaskState(
             task=task,
+            root_step=initial_step,
             step_queue=deque([initial_step]),
         )
-        # add it to state
+
         self.state.task_dict[task.task_id] = task_state
 
         return task
@@ -218,17 +137,65 @@ class AgentRunner(BaseAgentRunner):
         """
         self.state.task_dict.pop(task_id)
 
-    def list_tasks(self, **kwargs: Any) -> List[Task]:
+    def list_tasks(
+        self, **kwargs: Any
+    ) -> List[Task]:
         """List tasks."""
         return list(self.state.task_dict.values())
 
-    def get_task(self, task_id: str, **kwargs: Any) -> Task:
+    def get_task(
+        self, task_id: str, **kwargs: Any
+    ) -> Task:
         """Get task."""
         return self.state.get_task(task_id)
 
-    def get_completed_steps(self, task_id: str, **kwargs: Any) -> List[TaskStepOutput]:
+    def get_completed_steps(
+        self, task_id: str, **kwargs: Any
+    ) -> List[TaskStepOutput]:
         """Get completed steps."""
         return self.state.get_completed_steps(task_id)
+
+    def run_steps_in_queue(
+        self,
+        task_id: str,
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
+        **kwargs: Any,
+    ) -> List[TaskStepOutput]:
+        """Execute steps in queue.
+
+        Run all steps in queue, clearing it out.
+
+        Assume that all steps can be run in parallel.
+        
+        """
+
+        return asyncio.run(self.arun_steps_in_queue(task_id, mode=mode, **kwargs))
+
+    async def arun_steps_in_queue(
+        self,
+        task_id: str,
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
+        **kwargs: Any,
+    ) -> List[TaskStepOutput]:
+        """Execute all steps in queue.
+
+        All steps in queue are assumed to be ready.
+        
+        """
+        # first pop all steps from step_queue
+        steps: List[TaskStep] = []
+        while len(self.state.get_step_queue(task_id)) > 0:
+            steps.append(self.state.get_step_queue(task_id).popleft())
+
+        # take every item in the queue, and run it
+        tasks = []
+        for step in steps:
+            tasks.append(self._arun_step(
+                task_id, step=step, mode=mode, **kwargs
+            ))
+
+        step_outputs = await asyncio.gather(*tasks)
+        return step_outputs
 
     def _run_step(
         self,
@@ -239,21 +206,22 @@ class AgentRunner(BaseAgentRunner):
     ) -> TaskStepOutput:
         """Execute step."""
         task = self.state.get_task(task_id)
-        step_queue = self.state.get_step_queue(task_id)
-        step = step or step_queue.popleft()
+        task_queue = self.state.get_step_queue(task_id)
+        step = step or task_queue.popleft()
 
-        # TODO: figure out if you can dynamically swap in different step executors
-        # not clear when you would do that by theoretically possible
+        if not step.is_ready:
+            raise ValueError(f"Step {step.step_id} is not ready")
 
         if mode == ChatResponseMode.WAIT:
-            cur_step_output = self.agent_worker.run_step(step, task, **kwargs)
+            cur_step_output: TaskStepOutput = self.agent_worker.run_step(step, task, **kwargs)
         elif mode == ChatResponseMode.STREAM:
             cur_step_output = self.agent_worker.stream_step(step, task, **kwargs)
         else:
             raise ValueError(f"Invalid mode: {mode}")
-        # append cur_step_output next steps to queue
-        next_steps = cur_step_output.next_steps
-        step_queue.extend(next_steps)
+
+        for next_step in cur_step_output.next_steps:
+            if next_step.is_ready:
+                task_queue.append(next_step)
 
         # add cur_step_output to completed steps
         completed_steps = self.state.get_completed_steps(task_id)
@@ -270,20 +238,22 @@ class AgentRunner(BaseAgentRunner):
     ) -> TaskStepOutput:
         """Execute step."""
         task = self.state.get_task(task_id)
-        step_queue = self.state.get_step_queue(task_id)
-        step = step or step_queue.popleft()
+        task_queue = self.state.get_step_queue(task_id)
+        step = step or task_queue.popleft()
 
-        # TODO: figure out if you can dynamically swap in different step executors
-        # not clear when you would do that by theoretically possible
+        if not step.is_ready:
+            raise ValueError(f"Step {step.step_id} is not ready")
+
         if mode == ChatResponseMode.WAIT:
             cur_step_output = await self.agent_worker.arun_step(step, task, **kwargs)
         elif mode == ChatResponseMode.STREAM:
             cur_step_output = await self.agent_worker.astream_step(step, task, **kwargs)
         else:
             raise ValueError(f"Invalid mode: {mode}")
-        # append cur_step_output next steps to queue
-        next_steps = cur_step_output.next_steps
-        step_queue.extend(next_steps)
+
+        for next_step in cur_step_output.next_steps:
+            if next_step.is_ready:
+                task_queue.append(next_step)
 
         # add cur_step_output to completed steps
         completed_steps = self.state.get_completed_steps(task_id)
@@ -366,9 +336,14 @@ class AgentRunner(BaseAgentRunner):
         result_output = None
         while True:
             # pass step queue in as argument, assume step executor is stateless
-            cur_step_output = self._run_step(task.task_id, mode=mode)
-
-            if cur_step_output.is_last:
+            cur_step_outputs = self.run_steps_in_queue(task.task_id, mode=mode)
+            
+            # check if a step output is_last
+            is_last = any([cur_step_output.is_last for cur_step_output in cur_step_outputs])
+            if is_last:
+                if len(cur_step_outputs) > 1:
+                    raise ValueError("More than one step output returned in final step.")
+                cur_step_output = cur_step_outputs[0]
                 result_output = cur_step_output
                 break
 
@@ -389,9 +364,14 @@ class AgentRunner(BaseAgentRunner):
         result_output = None
         while True:
             # pass step queue in as argument, assume step executor is stateless
-            cur_step_output = await self._arun_step(task.task_id, mode=mode)
-
-            if cur_step_output.is_last:
+            cur_step_outputs = await self.arun_steps_in_queue(task.task_id, mode=mode)
+            
+            # check if a step output is_last
+            is_last = any([cur_step_output.is_last for cur_step_output in cur_step_outputs])
+            if is_last:
+                if len(cur_step_outputs) > 1:
+                    raise ValueError("More than one step output returned in final step.")
+                cur_step_output = cur_step_outputs[0]
                 result_output = cur_step_output
                 break
 
@@ -472,3 +452,5 @@ class AgentRunner(BaseAgentRunner):
     def undo_step(self, task_id: str) -> None:
         """Undo previous step."""
         raise NotImplementedError("undo_step not implemented")
+
+

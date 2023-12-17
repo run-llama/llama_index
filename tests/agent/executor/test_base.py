@@ -62,7 +62,6 @@ class MockAgentWorker(BaseAgentWorker):
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
-        pass
 
 
 # define mock agent worker
@@ -132,7 +131,6 @@ class MockForkStepEngine(BaseAgentWorker):
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
-        pass
 
 
 def test_agent() -> None:

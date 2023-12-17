@@ -29,10 +29,10 @@ from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import OpenAIToolCall
 from llama_index.llms.types import MessageRole
+from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
-from llama_index.memory import BaseMemory, ChatMemoryBuffer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -247,10 +247,18 @@ class OpenAIAgentWorker(BaseAgentWorker):
         )
 
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
-        return self.prefix_messages + task.memory.get() + task.extra_state["new_memory"].get_all()
+        return (
+            self.prefix_messages
+            + task.memory.get()
+            + task.extra_state["new_memory"].get_all()
+        )
 
     def get_latest_tool_calls(self, task: Task) -> Optional[List[OpenAIToolCall]]:
-        return task.memory.get_all()[-1].additional_kwargs.get("tool_calls", None)
+        return (
+            task.extra_state["new_memory"]
+            .get_all()[-1]
+            .additional_kwargs.get("tool_calls", None)
+        )
 
     def _get_llm_chat_kwargs(
         self,
@@ -305,7 +313,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
         )
         # create task to write chat response to history
         asyncio.create_task(
-            chat_stream_response.awrite_response_to_history(task.extra_state["new_memory"])
+            chat_stream_response.awrite_response_to_history(
+                task.extra_state["new_memory"]
+            )
         )
         # wait until openAI functions stop executing
         await chat_stream_response._is_function_false_event.wait()
@@ -461,7 +471,10 @@ class OpenAIAgentWorker(BaseAgentWorker):
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
                 # TODO: maybe execute this with multi-threading
                 self._call_function(
-                    tools, tool_call, task.extra_state["new_memory"], task.extra_state["sources"]
+                    tools,
+                    tool_call,
+                    task.extra_state["new_memory"],
+                    task.extra_state["sources"],
                 )
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
@@ -508,7 +521,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             latest_tool_calls, task.extra_state["n_function_calls"]
         ):
             is_done = True
-            
+
         else:
             is_done = False
             for tool_call in latest_tool_calls:
@@ -520,7 +533,10 @@ class OpenAIAgentWorker(BaseAgentWorker):
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
                 # TODO: maybe execute this with multi-threading
                 await self._acall_function(
-                    tools, tool_call, task.extra_state["new_memory"], task.extra_state["sources"]
+                    tools,
+                    tool_call,
+                    task.extra_state["new_memory"],
+                    task.extra_state["sources"],
                 )
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
@@ -587,7 +603,6 @@ class OpenAIAgentWorker(BaseAgentWorker):
         task.memory.set(task.memory.get() + task.extra_state["new_memory"].get_all())
         # reset new memory
         task.extra_state["new_memory"].reset()
-        
 
     def undo_step(self, task: Task, **kwargs: Any) -> Optional[TaskStep]:
         """Undo step from task.
