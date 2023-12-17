@@ -533,6 +533,8 @@ class ReActAgentWorker(BaseAgentWorker):
                     task.extra_state["new_memory"]
                 )
             )
+            # wait until response writing is done
+            await agent_response._is_function_false_event.wait()
 
         return self._get_task_step_response(agent_response, step, is_done)
 

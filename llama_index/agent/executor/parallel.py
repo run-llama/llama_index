@@ -140,7 +140,8 @@ class ParallelAgentRunner(BaseAgentRunner):
 
     def list_tasks(self, **kwargs: Any) -> List[Task]:
         """List tasks."""
-        return list(self.state.task_dict.values())
+        task_states = list(self.state.task_dict.values())
+        return [task_state.task for task_state in task_states]
 
     def get_task(self, task_id: str, **kwargs: Any) -> Task:
         """Get task."""
@@ -186,8 +187,7 @@ class ParallelAgentRunner(BaseAgentRunner):
         for step in steps:
             tasks.append(self._arun_step(task_id, step=step, mode=mode, **kwargs))
 
-        step_outputs = await asyncio.gather(*tasks)
-        return step_outputs
+        return await asyncio.gather(*tasks)
 
     def _run_step(
         self,
@@ -334,7 +334,7 @@ class ParallelAgentRunner(BaseAgentRunner):
 
             # check if a step output is_last
             is_last = any(
-                [cur_step_output.is_last for cur_step_output in cur_step_outputs]
+                cur_step_output.is_last for cur_step_output in cur_step_outputs
             )
             if is_last:
                 if len(cur_step_outputs) > 1:
@@ -366,7 +366,7 @@ class ParallelAgentRunner(BaseAgentRunner):
 
             # check if a step output is_last
             is_last = any(
-                [cur_step_output.is_last for cur_step_output in cur_step_outputs]
+                cur_step_output.is_last for cur_step_output in cur_step_outputs
             )
             if is_last:
                 if len(cur_step_outputs) > 1:
