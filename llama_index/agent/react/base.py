@@ -16,10 +16,10 @@ from typing import (
     Type,
 )
 
-from llama_index.agent.runner.base import AgentRunner
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
 from llama_index.agent.react.step import ReActAgentWorker
+from llama_index.agent.runner.base import AgentRunner
 from llama_index.callbacks import (
     CallbackManager,
 )
