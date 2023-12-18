@@ -11,7 +11,7 @@ from typing import List, Optional
 import llama_index
 from llama_index.embeddings import CwEmbedding
 from llama_index.llms import OpenAI, CwLM
-from llama_index.node_parser.node_utils import docIdgen, build_nodes_from_splits_v2
+from llama_index.node_parser.node_utils import docIdGen, build_nodes_from_splits_v2
 from llama_index.readers.file.base import default_file_metadata_func
 from llama_index import Document, VectorStoreIndex, ServiceContext, OpenAIEmbedding, StorageContext
 from llama_index.schema import TextNode, NodeRelationship, RelatedNodeInfo, ObjectType, BaseNode
@@ -40,7 +40,7 @@ def gen_pdf_sample_nodes(nodesNums: Optional[int] = 5) -> List[BaseNode]:
     fpath = "data/chinese_low/《中华人名共和国刑法典》_2023.pdf"
     # metadata = default_file_metadata_func(fpath)   # 文档是这样,，非文档类的自定义
 
-    doc_id = docIdgen(version="", path=fpath)
+    doc_id = docIdGen(version="", path=fpath)
 
     doc_metadata = {}
     # 默认爬取
@@ -105,7 +105,7 @@ def gen_pdf_sample_nodes(nodesNums: Optional[int] = 5) -> List[BaseNode]:
     return nodes
 
 
-if __name__ == '__main__':
+def main():
     sample_nodes = gen_pdf_sample_nodes(5)
     document = None
     for x in sample_nodes:
@@ -160,3 +160,8 @@ if __name__ == '__main__':
     #index.delete_ref_doc(ref_doc_id=document.node_id, delete_from_docstore=True)
 
     print("Fin")
+
+if __name__ == '__main__':
+    main()
+
+
