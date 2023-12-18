@@ -9,9 +9,9 @@ Logging [can be configured](https://docs.python.org/3/howto/logging.html#configu
 import logging
 from llama_index import ...
 
+# Configure Llama Index's logger from within your application.
 logging.basicConfig()
-logger = logging.getLogger("llama_index")
-logger.setLevel(logging.DEBUG)
+logging.getLogger("llama_index").setLevel(logging.DEBUG)
 ```
 
 
@@ -30,9 +30,7 @@ from llama_index.logger.base import LlamaLogger
 
 __all__ = ["LlamaLogger", "logger"]
 
-"""
 
-"""
 logger = logging.getLogger("llama_index")
 
 # best practices for library logging:

@@ -12,6 +12,7 @@ from llama_index.indices.keyword_table.utils import (
     rake_extract_keywords,
     simple_extract_keywords,
 )
+from llama_index.logger import logger
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
@@ -21,8 +22,6 @@ from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
-
-from llama_index.logger import logger
 
 
 class BaseKeywordTableRetriever(BaseRetriever):
