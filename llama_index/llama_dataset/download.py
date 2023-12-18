@@ -10,8 +10,24 @@ from llama_index.download.dataset import (
 )
 from llama_index.download.module import LLAMA_HUB_URL, MODULE_TYPE, track_download
 from llama_index.llama_dataset.base import BaseLlamaDataset
+from llama_index.llama_dataset.evaluation import (
+    LabelledEvaluationDataset,
+    LabelledPairwiseEvaluationDataset,
+)
 from llama_index.llama_dataset.rag import LabelledRagDataset
 from llama_index.readers import SimpleDirectoryReader
+
+
+def _resolve_dataset_class(filename: str) -> Type[BaseLlamaDataset]:
+    """Resolve appropriate llama dataset class based on file name."""
+    if "rag_dataset.json" in filename:
+        return LabelledRagDataset
+    elif "pairwise_evaluation_dataset.json" in filename:
+        return LabelledPairwiseEvaluationDataset
+    elif "single_evaluation_dataset.json" in filename:
+        return LabelledEvaluationDataset
+    else:
+        raise ValueError("Unknown filename.")
 
 
 def download_llama_dataset(
@@ -42,7 +58,7 @@ def download_llama_dataset(
         show_progress: Boolean for showing progress on downloading source files
 
     Returns:
-        a `LabelledRagDataset` and a `List[Document]`
+        a `BaseLlamaDataset` and a `List[Document]`
     """
     filenames: Tuple[str, str] = download(
         llama_dataset_class,
@@ -56,11 +72,17 @@ def download_llama_dataset(
         override_path=True,
         show_progress=show_progress,
     )
-    rag_dataset_filename, source_files_dir = filenames
+    dataset_filename, source_files_dir = filenames
     track_download(llama_dataset_class, MODULE_TYPE.DATASETS)
-    return (
-        LabelledRagDataset.from_json(rag_dataset_filename),
-        SimpleDirectoryReader(input_dir=source_files_dir).load_data(
+
+    dataset = _resolve_dataset_class(dataset_filename).from_json(dataset_filename)
+    documents = []
+
+    # for now only rag datasets need to provide the documents
+    # in order to build an index over them
+    if "rag_dataset.json" in dataset_filename:
+        documents = SimpleDirectoryReader(input_dir=source_files_dir).load_data(
             show_progress=show_progress
-        ),
-    )
+        )
+
+    return (dataset, documents)

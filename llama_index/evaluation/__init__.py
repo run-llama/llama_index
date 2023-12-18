@@ -3,6 +3,7 @@
 from llama_index.evaluation.base import (
     BaseEvaluator,
     EvaluationResult,
+    InvalidEvaluationResult,
 )
 from llama_index.evaluation.batch_runner import BatchEvalRunner
 from llama_index.evaluation.correctness import CorrectnessEvaluator
@@ -44,6 +45,7 @@ LabelledQADataset = EmbeddingQAFinetuneDataset
 __all__ = [
     "BaseEvaluator",
     "EvaluationResult",
+    "InvalidEvaluationResult",
     "FaithfulnessEvaluator",
     "RelevancyEvaluator",
     "RelevanceEvaluator",

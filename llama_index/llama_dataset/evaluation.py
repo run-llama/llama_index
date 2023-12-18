@@ -342,6 +342,7 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
                 sleep_time_in_seconds=sleep_time_in_seconds,
             )
         except Exception as err:
+            # TODO: raise warning here as well
             return PairwiseEvaluationExamplePrediction(
                 invalid_prediction=True, invalid_reason=f"Caught error {err!s}"
             )
