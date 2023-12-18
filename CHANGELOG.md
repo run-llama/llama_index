@@ -2,8 +2,6 @@
 
 ## [0.9.16] - 2023-12-18
 
-fix pydantic fields to float (#9542)
-
 ### New Features
 
 - agent refactor: step-wise execution (#9584)
