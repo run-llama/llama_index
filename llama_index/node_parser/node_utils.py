@@ -18,7 +18,7 @@ from llama_index.utils import truncate_text
 logger = logging.getLogger(__name__)
 
 
-def default_id_func(i: int, doc: Document):
+def default_id_func(i: int, doc: BaseNode) -> str:
     return str(uuid.uuid4())
 
 
