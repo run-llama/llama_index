@@ -18,11 +18,9 @@ from typing import (
 
 from llama_index.agent.executor.base import AgentRunner
 from llama_index.agent.openai.step import OpenAIAgentWorker
-from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
 )
-from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
@@ -36,10 +34,10 @@ DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
 
-class OpenAIAgent(BaseAgent):
+class OpenAIAgent(AgentRunner):
     """OpenAI agent.
 
-    Simple wrapper around AgentRunner + OpenAIAgentWorker.
+    Subclasses AgentRunner with a OpenAIAgentWorker.
 
     For the legacy implementation see:
     ```python
@@ -59,22 +57,20 @@ class OpenAIAgent(BaseAgent):
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     ) -> None:
-        super().__init__(callback_manager=callback_manager or llm.callback_manager)
-
-        self._step_engine = OpenAIAgentWorker.from_tools(
+        step_engine = OpenAIAgentWorker.from_tools(
             tools=tools,
             tool_retriever=tool_retriever,
             llm=llm,
             verbose=verbose,
             max_function_calls=max_function_calls,
-            callback_manager=self.callback_manager,
+            callback_manager=callback_manager,
             prefix_messages=prefix_messages,
         )
-        self._agent_runner = AgentRunner(
-            self._step_engine,
+        super().__init__(
+            step_engine,
             memory=memory,
             llm=llm,
-            callback_manager=self.callback_manager,
+            callback_manager=callback_manager,
         )
 
     @classmethod
@@ -135,42 +131,4 @@ class OpenAIAgent(BaseAgent):
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
-        )
-
-    @property
-    def chat_history(self) -> List[ChatMessage]:
-        """Chat history."""
-        return self._agent_runner.memory.get_all()
-
-    def reset(self) -> None:
-        self._agent_runner.memory.reset()
-
-    def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
-        """Chat."""
-        return self._agent_runner.chat(message=message, chat_history=chat_history)
-
-    async def achat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
-        """Chat."""
-        return await self._agent_runner.achat(
-            message=message, chat_history=chat_history
-        )
-
-    def stream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> StreamingAgentChatResponse:
-        """Stream chat."""
-        return self._agent_runner.stream_chat(
-            message=message, chat_history=chat_history
-        )
-
-    async def astream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> StreamingAgentChatResponse:
-        """Async stream chat."""
-        return await self._agent_runner.astream_chat(
-            message=message, chat_history=chat_history
         )

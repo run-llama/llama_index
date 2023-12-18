@@ -20,11 +20,9 @@ from llama_index.agent.executor.base import AgentRunner
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
 from llama_index.agent.react.step import ReActAgentWorker
-from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
 )
-from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.types import ChatMessage
@@ -36,10 +34,10 @@ from llama_index.tools import BaseTool
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
-class ReActAgent(BaseAgent):
+class ReActAgent(AgentRunner):
     """ReAct agent.
 
-    Simple wrapper around AgentRunner + ReActAgentWorker.
+    Subclasses AgentRunner with a ReActAgentWorker.
 
     For the legacy implementation see:
     ```python
@@ -60,23 +58,22 @@ class ReActAgent(BaseAgent):
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     ) -> None:
-        super().__init__(callback_manager=callback_manager or llm.callback_manager)
-
-        self._step_engine = ReActAgentWorker.from_tools(
+        """Init params."""
+        step_engine = ReActAgentWorker.from_tools(
             tools=tools,
             tool_retriever=tool_retriever,
             llm=llm,
             max_iterations=max_iterations,
             react_chat_formatter=react_chat_formatter,
             output_parser=output_parser,
-            callback_manager=self.callback_manager,
+            callback_manager=callback_manager,
             verbose=verbose,
         )
-        self._agent_runner = AgentRunner(
-            self._step_engine,
+        super().__init__(
+            step_engine,
             memory=memory,
             llm=llm,
-            callback_manager=self.callback_manager,
+            callback_manager=callback_manager,
         )
 
     @classmethod
@@ -121,42 +118,4 @@ class ReActAgent(BaseAgent):
             output_parser=output_parser,
             callback_manager=callback_manager,
             verbose=verbose,
-        )
-
-    @property
-    def chat_history(self) -> List[ChatMessage]:
-        """Chat history."""
-        return self._agent_runner.memory.get_all()
-
-    def reset(self) -> None:
-        self._agent_runner.memory.reset()
-
-    def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
-        """Chat."""
-        return self._agent_runner.chat(message=message, chat_history=chat_history)
-
-    async def achat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
-        """Chat."""
-        return await self._agent_runner.achat(
-            message=message, chat_history=chat_history
-        )
-
-    def stream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> StreamingAgentChatResponse:
-        """Stream chat."""
-        return self._agent_runner.stream_chat(
-            message=message, chat_history=chat_history
-        )
-
-    async def astream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> StreamingAgentChatResponse:
-        """Async stream chat."""
-        return await self._agent_runner.astream_chat(
-            message=message, chat_history=chat_history
         )
