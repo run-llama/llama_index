@@ -15,7 +15,7 @@ Our "agents" are composed of `AgentRunner` objects that interact with `AgentWork
 - `AgentRunner`s are orchestrators that store state (including conversational memory), create and maintain tasks, run steps through each task, and offer the user-facing, high-level interface for users to interact with.
 - `AgentWorker`s **control the step-wise execution of a Task**. Given an input step, an agent worker is responsible for generating the next step. They can be initialized with parameters and act upon state passed down from the Task/TaskStep objects, but do not inherently store state themselves. The outer `AgentRunner` is responsible for calling an `AgentWorker` and collecting/aggregating the results.
 
-Some auxilliary classes:
+Some auxiliary classes:
 
 - `Task`: high-level task, takes in a user query + passes along other info like memory
 - `TaskStep`: represents a single step. Feed this in as input to `AgentWorker`, get back a `TaskStepOutput`. Completing a `Task` can involve multiple `TaskStep`.
@@ -31,7 +31,7 @@ Here are some key benefits to using this lower-level API:
 - Get greater debuggability into the execution of each step.
 - Get greater visibility: view completed steps and next steps.
 - [Coming Soon] Steerability: directly control/modify intermediate steps by injecting human feedback
-- Abandon task: give up if a task has derailed thorughout the course of execution, without affecting the core agent memory.
+- Abandon task: give up if a task has derailed throughout the course of execution, without affecting the core agent memory.
 - [Coming Soon] Undoing a step.
 - Easier Customization: it's easy to subclass/implement new agent algorithms (incl. ReAct, OpenAI, but also plan+solve, LLMCompiler) by implementing an `AgentWorker`.
 
