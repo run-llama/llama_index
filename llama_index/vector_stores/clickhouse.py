@@ -40,6 +40,7 @@ class Record:
     abstract: str
     keywords: List[str]
 
+    source: Optional[str]
     previous: Optional[str]
     next: Optional[str]
     parent: Optional[str]
@@ -63,9 +64,12 @@ class Record:
 
     @staticmethod
     def from_node(node: BaseNode) -> "Record":
+        _source = ""
         _previous = ""
         _next = ""
         _parent = ""
+        if node.relationships.get(NodeRelationship.PREVIOUS) is not None:
+            _source = (node.relationships.get(NodeRelationship.SOURCE).node_id)
         if node.relationships.get(NodeRelationship.PREVIOUS) is not None:
             _previous = (node.relationships.get(NodeRelationship.PREVIOUS).node_id)
         if node.relationships.get(NodeRelationship.NEXT) is not None:
@@ -92,6 +96,7 @@ class Record:
             abstract=node.metadata.get("abstract"),
             keywords=node.metadata.get("keywords"),
 
+            source=_source,
             previous=_previous,
             next=_next,
             parent=_parent,
@@ -215,6 +220,7 @@ class ClickhouseVectorStore(BasePydanticVectorStore):
                   deleted             Bool,
                   abstract            Nullable(String),
                   keywords            Nullable(String),
+                  source              Nullable(FixedString(256)),
                   previous            Nullable(FixedString(256)),
                   next                Nullable(FixedString(256)),
                   parent              Nullable(FixedString(256)),
@@ -260,7 +266,7 @@ class ClickhouseVectorStore(BasePydanticVectorStore):
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         self._initialize()
         self._client.command(
-            f"DELETE FROM {self.database}.{self.table_name} WHERE ref_doc_id = '{ref_doc_id}'"
+            f"DELETE FROM {self.database}.{self.table_name} WHERE doc_id = '{ref_doc_id}'"
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:

@@ -107,6 +107,7 @@ def gen_pdf_sample_nodes(nodesNums: Optional[int] = 5) -> List[BaseNode]:
 
 if __name__ == '__main__':
     sample_nodes = gen_pdf_sample_nodes(5)
+    document = None
     for x in sample_nodes:
         print(x.id_)
         print(x.metadata)
@@ -116,6 +117,7 @@ if __name__ == '__main__':
             x.metadata["embedding_meta_dimension"] = 1536
             x.metadata["embedding_meta_ctime"] = datetime.now().strftime("%Y-%m-%d")
             x.metadata["embedding_meta_desc"] = "default, 对text字段做embedding"
+            document = x
 
     namespace_id = "ns_0518"
     collection_id = "tb_9172"
@@ -144,8 +146,17 @@ if __name__ == '__main__':
     service_context = ServiceContext.from_defaults(llm=llm,
                                                    embed_model=embed_model
                                                    )
-    index = VectorStoreIndex(sample_nodes,
+    index = VectorStoreIndex([],
                              storage_context=storage_context,
                              service_context=service_context
                              )
+
+    index.insert_nodes(sample_nodes)
+    document.set_content(document.get_content()+" 我被更新了")
+    print(document)
+    index.update_ref_doc(document)
+
+
+    #index.delete_ref_doc(ref_doc_id=document.node_id, delete_from_docstore=True)
+
     print("Fin")
