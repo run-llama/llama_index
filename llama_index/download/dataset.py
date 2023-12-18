@@ -145,7 +145,6 @@ def download_dataset_and_source_files(
         os.makedirs(module_path, exist_ok=True)
 
         base_file_name = _resolve_dataset_file_name(dataset_class_name)
-        print(f"filename: {base_file_name}", flush=True)
 
         dataset_raw_content, _ = get_file_content(
             str(remote_lfs_dir_path), f"/{dataset_id}/{base_file_name}"
