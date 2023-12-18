@@ -7,10 +7,6 @@ from .cli_add import register_add_cli
 from .cli_init import register_init_cli
 from .cli_query import register_query_cli
 
-# does this need to be a different logger?
-# see below for verbosity config
-logger = logging.getLogger(__name__)
-
 
 def main() -> None:
     parser = ArgumentParser(description=None)

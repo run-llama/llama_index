@@ -1,7 +1,6 @@
 """DynamoDB vector store index."""
 from __future__ import annotations
 
-from logging import getLogger
 from typing import Any, Dict, List, cast
 
 from llama_index.indices.query.embedding_utils import (
@@ -16,8 +15,6 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-
-logger = getLogger(__name__)
 
 DEFAULT_NAMESPACE = "vector_store"
 
