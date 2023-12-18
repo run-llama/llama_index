@@ -5,12 +5,14 @@ Langchain Integrations
 
 Agent Tools + Functions
 
-.. automodule:: llama_index.langchain_helpers.agents
+.. automodule:: llama_index.langchain_helpers.agents.agents
    :members:
-   :inherited-members:
+   :undoc-members:
+   :show-inheritance:
 
 Memory Module
 
 .. automodule:: llama_index.langchain_helpers.memory_wrapper
    :members:
-   :inherited-members:
+   :undoc-members:
+   :show-inheritance:
