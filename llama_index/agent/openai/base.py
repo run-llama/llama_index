@@ -16,7 +16,7 @@ from typing import (
     Type,
 )
 
-from llama_index.agent.executor.base import AgentRunner
+from llama_index.agent.runner.base import AgentRunner
 from llama_index.agent.openai.step import OpenAIAgentWorker
 from llama_index.callbacks import (
     CallbackManager,

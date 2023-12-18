@@ -6,7 +6,7 @@ from typing import Any, Deque, Dict, List, Optional, Union, cast
 
 from pydantic import BaseModel, Field
 
-from llama_index.agent.executor.base import BaseAgentRunner
+from llama_index.agent.runner.base import BaseAgentRunner
 from llama_index.agent.types import (
     BaseAgentWorker,
     Task,
