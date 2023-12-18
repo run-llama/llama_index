@@ -87,7 +87,7 @@ class Ollama(CustomLLM):
 
     @llm_chat_callback()
     def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+            self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         prompt = self.messages_to_prompt(messages)
         completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
@@ -111,28 +111,18 @@ class Ollama(CustomLLM):
                 "Please install requests with `pip install requests`"
             )
         all_kwargs = self._get_all_kwargs(**kwargs)
-        del all_kwargs["formatted"]  # ollama throws 400 if it receives this option
 
-        if not kwargs.get("formatted", False):
+        if not kwargs.pop("formatted", False):
             prompt = self.completion_to_prompt(prompt)
-
-        ollama_request_json: Dict[str, Any] = {
-            "prompt": prompt,
-            "model": self.model,
-            "options": all_kwargs,
-        }
-        if all_kwargs.get("system"):
-            ollama_request_json["system"] = all_kwargs["system"]
-            del all_kwargs["system"]
-
-        if all_kwargs.get("formatted"):
-            ollama_request_json["format"] = "json" if all_kwargs["formatted"] else None
-            del all_kwargs["formatted"]
 
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
-            json=ollama_request_json,
+            json={
+                "prompt": prompt,
+                "model": self.model,
+                **all_kwargs,
+            },
             stream=True,
         )
         response.encoding = "utf-8"
