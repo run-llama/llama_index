@@ -90,7 +90,9 @@ class Ollama(CustomLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         prompt = self.messages_to_prompt(messages)
-        completion_response = self.stream_complete(prompt, prompt_formatted=True, **kwargs)
+        completion_response = self.stream_complete(
+            prompt, prompt_formatted=True, **kwargs
+        )
         return stream_completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
