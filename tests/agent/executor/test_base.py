@@ -143,7 +143,7 @@ def test_agent() -> None:
     assert task.task_id in agent_runner.state.task_dict
 
     # test run step
-    step_output = agent_runner.run_step(task=task)
+    step_output = agent_runner.run_step(task.task_id)
     assert task.extra_state["counter"] == 1
     assert str(step_output.output) == "counter: 1"
     assert step_output.is_last is False
@@ -153,7 +153,7 @@ def test_agent() -> None:
     assert agent_runner.get_task(task_id=task.task_id) == task
 
     # test run step again
-    step_output = agent_runner.run_step(task=task)
+    step_output = agent_runner.run_step(task.task_id)
     assert task.extra_state["counter"] == 2
     assert str(step_output.output) == "counter: 2"
     assert step_output.is_last is True
@@ -164,7 +164,7 @@ def test_agent() -> None:
     agent_runner = AgentRunner(agent_worker=MockAgentWorker(limit=10))
     response = agent_runner.chat("hello world")
     assert str(response) == "counter: 10"
-    assert agent_runner.state.task_dict == {}
+    assert len(agent_runner.state.task_dict) == 1
 
 
 def test_dag_agent() -> None:

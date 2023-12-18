@@ -65,6 +65,12 @@ task.get_completed_steps(task.task_id)
 print(str(response))
 ```
 
+**NOTE**: The older legacy implementations of `OpenAIAgent` and `ReActAgent` (which did not allow for step-wise execution) are still available via:
+
+```python
+from llama_index.agent import OldOpenAIAgent, OldReActAgent
+```
+
 ## Additional Module Guides
 
 Check out our lower-level [agent module guides](lower-level-agent-api) for more details!
