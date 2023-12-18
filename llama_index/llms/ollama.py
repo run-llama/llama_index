@@ -127,7 +127,7 @@ class Ollama(CustomLLM):
 
         if all_kwargs.get("formatted"):
             ollama_request_json["format"] = "json" if all_kwargs["formatted"] else None
-        del all_kwargs["formatted"]
+            del all_kwargs["formatted"]
 
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
