@@ -105,17 +105,16 @@ def build_nodes_from_splits_v2(
     for i, item in enumerate(all_splits):
         logger.debug(f"> Adding chunk: {truncate_text(item['text'], 50)}")
         if isinstance(document, ImageDocument):
-            # image_node = ImageNode()
-            # nodes.append(image_node)
             print("Can't handle ImageDocument")
         elif isinstance(document, Document):
-            print('遇到Documnet节点', document)
             if parent_node == None and i == 0:
+                print('遇到Documnet节点', document)
                 parent_node = document
                 prev_node = parent_node
                 nodes.append(document)
                 continue
 
+            print('遇到TextNode节点', document)
             current_node = textNodeGen(item)
             if i < len(all_splits) - 1:
                 next_node = textNodeGen(all_splits[i + 1])
