@@ -48,7 +48,7 @@ class EvaluatorEvaluationExamplePrediction(BaseLlamaExamplePrediction):
     @property
     def class_name(self) -> str:
         """Data example class name."""
-        return "EvaluatorExamplePrediction"
+        return "EvaluatorEvaluationExamplePrediction"
 
 
 class LabelledEvaluatorEvaluationDataExample(BaseLlamaDataExample):
@@ -244,7 +244,7 @@ class PairwiseEvaluatorEvaluationExamplePrediction(BaseLlamaExamplePrediction):
     @property
     def class_name(self) -> str:
         """Data example class name."""
-        return "PairwiseEvaluatorExamplePrediction"
+        return "PairwiseEvaluatorEvaluationExamplePrediction"
 
 
 class PairwiseEvaluatorEvaluationPredictionDataset(BaseLlamaPredictionDataset):
@@ -386,7 +386,7 @@ class LabelledPairwiseEvaluatorEvaluationDataset(BaseLlamaDataset):
 
     def class_name(self) -> str:
         """Class name."""
-        return "PairwiseEvaluatorEvaluationPredictionDataset"
+        return "LabelledPairwiseEvaluatorEvaluationDataset"
 
 
 # British English + American English
