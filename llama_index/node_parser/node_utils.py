@@ -108,14 +108,14 @@ def build_nodes_from_splits_v2(
             print("Can't handle ImageDocument")
         elif isinstance(document, Document):
             if parent_node == None and i == 0:
-                print('遇到Documnet节点', document)
+                #print('遇到Documnet节点', document)
                 parent_node = document
                 prev_node = parent_node
                 nodes.append(document)
                 continue
 
             current_node = textNodeGen(item)
-            print('遇到TextNode节点', current_node)
+            #print('遇到TextNode节点', current_node)
             if i < len(all_splits) - 1:
                 next_node = textNodeGen(all_splits[i + 1])
 

@@ -105,6 +105,10 @@ def gen_pdf_sample_nodes(nodesNums: Optional[int] = 5) -> List[BaseNode]:
     return nodes
 
 
+def gen_pdf_sample_splits(chunkNums: Optional[int] = 5) -> List[dict[str]]:
+    #TODO
+    return None
+
 def main():
     sample_nodes = gen_pdf_sample_nodes(5)
     document = None
