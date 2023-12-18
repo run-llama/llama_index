@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New Features
+
+- added support for `OpenRouter` llm (#9464)
+
 ### Bug Fixes / Nits
 
 - Fixed missing `default=None` for `LLM.system_prompt` (#9504)
