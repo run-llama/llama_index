@@ -254,14 +254,14 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         eval_result = await self._get_eval_result(
             query, response, second_response, reference
         )
-        if self._enforce_consensus and isinstance(eval_result, EvaluationResult):
+        if self._enforce_consensus and not eval_result.invalid_result:
             # Flip the order of the answers and see if the answer is consistent
             # (which means that the score should flip from 0 to 1 and vice-versa)
             # if not, then we return a tie
             flipped_eval_result = await self._get_eval_result(
                 query, second_response, response, reference
             )
-            if isinstance(flipped_eval_result, EvaluationResult):
+            if not flipped_eval_result.invalid_result:
                 resolved_eval_result = await self._resolve_results(
                     eval_result, flipped_eval_result
                 )
