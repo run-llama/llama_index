@@ -18,6 +18,7 @@ from llama_index.callbacks import (
     CallbackManager,
     CBEventType,
     EventPayload,
+    trace_method,
 )
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
@@ -554,6 +555,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             next_steps=new_steps,
         )
 
+    @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
         tool_choice = kwargs.get("tool_choice", "auto")
@@ -561,6 +563,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             step, task, mode=ChatResponseMode.WAIT, tool_choice=tool_choice
         )
 
+    @trace_method("run_step")
     async def arun_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
@@ -570,6 +573,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             step, task, mode=ChatResponseMode.WAIT, tool_choice=tool_choice
         )
 
+    @trace_method("run_step")
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
         # TODO: figure out if we need a different type for TaskStepOutput
@@ -578,6 +582,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             step, task, mode=ChatResponseMode.STREAM, tool_choice=tool_choice
         )
 
+    @trace_method("run_step")
     async def astream_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:

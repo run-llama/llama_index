@@ -34,6 +34,7 @@ from llama_index.callbacks import (
     CallbackManager,
     CBEventType,
     EventPayload,
+    trace_method,
 )
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
@@ -538,21 +539,25 @@ class ReActAgentWorker(BaseAgentWorker):
 
         return self._get_task_step_response(agent_response, step, is_done)
 
+    @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
         return self._run_step(step, task)
 
+    @trace_method("run_step")
     async def arun_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
         return await self._arun_step(step, task)
 
+    @trace_method("run_step")
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
         # TODO: figure out if we need a different type for TaskStepOutput
         return self._run_step_stream(step, task)
 
+    @trace_method("run_step")
     async def astream_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
