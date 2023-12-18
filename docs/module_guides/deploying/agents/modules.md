@@ -43,6 +43,7 @@ maxdepth: 1
 ```
 
 (lower-level-agent-api)=
+
 ## Lower-Level Agent API
 
 ```{toctree}

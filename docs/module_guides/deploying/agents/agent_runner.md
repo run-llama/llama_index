@@ -1,6 +1,6 @@
 # Lower-Level Agent API
 
-We offer a lower-level agent API that offers a host of capabilities beyond simply executing a user query end-to-end. 
+We offer a lower-level agent API that offers a host of capabilities beyond simply executing a user query end-to-end.
 
 These capabilities let you step through and control the agent in a much more granular fashion. The end goal is that you can create **reliable** agentic software systems over your data.
 
@@ -25,11 +25,11 @@ Some auxilliary classes:
 
 ## Benefits
 
-Here are some key benefits to using this lower-level API: 
+Here are some key benefits to using this lower-level API:
 
 - Decouple task creation from execution - control when you want to execute a given task.
 - Get greater debuggability into the execution of each step.
-- Get greater visibility: view completed steps and next steps. 
+- Get greater visibility: view completed steps and next steps.
 - [Coming Soon] Steerability: directly control/modify intermediate steps by injecting human feedback
 - Abandon task: give up if a task has derailed thorughout the course of execution, without affecting the core agent memory.
 - [Coming Soon] Undoing a step.
@@ -48,7 +48,7 @@ agent = AgentRunner(openai_step_engine)
 
 # create task
 task = agent.create_task("What is (121 * 3) + 42?")
- 
+
 # execute step
 step_output = agent.run_step(task)
 
@@ -63,14 +63,8 @@ task.list_tasks()
 task.get_completed_steps(task.task_id)
 
 print(str(response))
-
 ```
 
 ## Additional Module Guides
 
 Check out our lower-level [agent module guides](lower-level-agent-api) for more details!
-
-
-
-
-

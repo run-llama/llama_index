@@ -79,7 +79,6 @@ maxdepth: 2
 modules.md
 ```
 
-
 ```{toctree}
 ---
 maxdepth: 2
@@ -88,5 +87,3 @@ hidden: true
 /module_guides/deploying/agents/tools/root.md
 /module_guides/deploying/agents/agent_runner.md
 ```
-
-
