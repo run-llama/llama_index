@@ -28,6 +28,14 @@ def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
     return thought, action, action_input
 
 
+def action_input_parser(json_str):
+    processed_string = re.sub(r'(?<!\w)\'|\'(?!\w)', '"', json_str)
+    pattern = r'"(\w+)":\s*"([^"]*)"'
+    matches = re.findall(pattern, processed_string)
+    result_dict = {key: value for key, value in matches}
+    return result_dict
+
+
 def extract_final_response(input_text: str) -> Tuple[str, str]:
     pattern = r"\s*Thought:(.*?)Answer:(.*?)(?:$)"
 
@@ -84,7 +92,7 @@ class ReActOutputParser(BaseOutputParser):
             try:
                 action_input_dict = json.loads(json_str)
             except json.JSONDecodeError:
-                action_input_dict = ast.literal_eval(json_str)
+                action_input_dict = action_input_parser(json_str)
 
             return ActionReasoningStep(
                 thought=thought, action=action, action_input=action_input_dict
