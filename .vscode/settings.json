@@ -2,7 +2,7 @@
   "[python]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.fixAll": "explicit"
+      "source.fixAll": true
     },
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
