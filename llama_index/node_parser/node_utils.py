@@ -114,6 +114,7 @@ def build_nodes_from_splits_v2(
                 nodes.append(document)
                 continue
 
+            print('遇到TextNode节点', document)
             current_node = textNodeGen(item)
             print('遇到TextNode节点', current_node)
             if i < len(all_splits) - 1:
