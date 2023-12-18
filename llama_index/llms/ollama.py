@@ -63,7 +63,7 @@ class Ollama(CustomLLM):
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "temperature": self.temperature,
-            "max_length": self.context_window,
+            "num_ctx": self.context_window,
         }
         return {
             **base_kwargs,
@@ -82,7 +82,7 @@ class Ollama(CustomLLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         prompt = self.messages_to_prompt(messages)
-        completion_response = self.complete(prompt, formatted=True, **kwargs)
+        completion_response = self.complete(prompt, prompt_formatted=True, **kwargs)
         return completion_response_to_chat_response(completion_response)
 
     @llm_chat_callback()
@@ -90,7 +90,9 @@ class Ollama(CustomLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         prompt = self.messages_to_prompt(messages)
-        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
+        completion_response = self.stream_complete(
+            prompt, prompt_formatted=True, **kwargs
+        )
         return stream_completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
@@ -112,12 +114,17 @@ class Ollama(CustomLLM):
             )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        if not kwargs.get("formatted", False):
+        if not kwargs.pop("prompt_formatted", False):
             prompt = self.completion_to_prompt(prompt)
+
         response = requests.post(
             url=f"{self.base_url}/api/generate/",
             headers={"Content-Type": "application/json"},
-            json={"prompt": prompt, "model": self.model, **all_kwargs},
+            json={
+                "prompt": prompt,
+                "model": self.model,
+                **all_kwargs,
+            },
             stream=True,
         )
         response.encoding = "utf-8"

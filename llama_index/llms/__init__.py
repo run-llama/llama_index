@@ -7,6 +7,7 @@ from llama_index.llms.clarifai import Clarifai
 from llama_index.llms.cohere import Cohere
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.everlyai import EverlyAI
+from llama_index.llms.gemini import Gemini
 from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
 from llama_index.llms.huggingface import HuggingFaceInferenceAPI, HuggingFaceLLM
 from llama_index.llms.konko import Konko
@@ -22,6 +23,7 @@ from llama_index.llms.ollama import Ollama
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.openllm import OpenLLM, OpenLLMAPI
+from llama_index.llms.openrouter import OpenRouter
 from llama_index.llms.palm import PaLM
 from llama_index.llms.perplexity import Perplexity
 from llama_index.llms.portkey import Portkey
@@ -61,6 +63,7 @@ __all__ = [
     "CompletionResponseGen",
     "CustomLLM",
     "EverlyAI",
+    "Gemini",
     "GradientBaseModelLLM",
     "GradientModelAdapterLLM",
     "HuggingFaceInferenceAPI",
@@ -81,6 +84,7 @@ __all__ = [
     "OpenAILike",
     "OpenLLM",
     "OpenLLMAPI",
+    "OpenRouter",
     "PaLM",
     "Perplexity",
     "Portkey",

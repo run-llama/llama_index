@@ -4,6 +4,7 @@ from abc import abstractmethod
 from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast, get_args
 
+from llama_index.agent.openai.utils import get_function_by_name
 from llama_index.agent.types import BaseAgent
 from llama_index.callbacks import (
     CallbackManager,
@@ -28,14 +29,6 @@ from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
-
-
-def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
-    """Get function by name."""
-    name_to_tool = {tool.metadata.name: tool for tool in tools}
-    if name not in name_to_tool:
-        raise ValueError(f"Tool with name {name} not found")
-    return name_to_tool[name]
 
 
 def call_tool_with_error_handling(
@@ -235,6 +228,7 @@ class BaseOpenAIAgent(BaseAgent):
         # If it is executing an openAI function, wait for the thread to finish
         if chat_stream_response._is_function:
             thread.join()
+
         # if it's false, return the answer (to stream)
         return chat_stream_response
 

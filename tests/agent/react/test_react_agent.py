@@ -209,12 +209,7 @@ def test_stream_chat_basic(
             content="2 is the final answer.",
             role=MessageRole.ASSISTANT,
         ),
-    ]  # thread = Thread(
-    #     target=lambda x: asyncio.run(
-    #         chat_stream_response.awrite_response_to_history(x)
-    #     ),
-    #     args=(self._memory,),
-    # )
+    ]
 
 
 @pytest.mark.asyncio()
