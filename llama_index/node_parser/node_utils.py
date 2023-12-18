@@ -128,8 +128,8 @@ def build_nodes_from_splits_v2(
 
         elif isinstance(document, TextNode):
             print("Not suitable")
-    else:
-        raise ValueError(f"Unknown document type: {type(document)}")
+        else:
+            raise ValueError(f"Unknown document type: {type(document)}")
 
     return nodes
 
