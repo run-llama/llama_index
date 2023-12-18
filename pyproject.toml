@@ -79,6 +79,11 @@ aiohttp = "^3.8.6"
 types-protobuf = "^4.24.0.4"
 
 [tool.poetry.extras]
+
+gradientai = [
+    "gradientai",
+]
+
 langchain = [
     "langchain",
 ]
