@@ -41,3 +41,15 @@ maxdepth: 1
 ---
 /examples/agent/react_agent_with_query_engine.ipynb
 ```
+
+(lower-level-agent-api)=
+
+## Lower-Level Agent API
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/agent/agent_runner/agent_runner.ipynb
+/examples/agent/agent_runner/agent_runner_rag.ipynb
+```
