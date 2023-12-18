@@ -177,7 +177,7 @@ class BaseLlamaDataset(BaseModel):
         NOTE: Subclasses need to implement this.
 
         Args:
-            predictor (BaseQueryEngine): Query engine to make the prediciton with.
+            predictor (PredictorType): The predictor to make the prediciton with.
             example (BaseLlamaDataExample): The example to predict on.
 
         Returns:
@@ -194,7 +194,7 @@ class BaseLlamaDataset(BaseModel):
         """Predict with a given query engine.
 
         Args:
-            predictor (BaseQueryEngine): The query engine to make predictions with.
+            predictor (PredictorType): The predictor to make predictions with.
             show_progress (bool, optional): Show progress of making predictions.
             batch_size (int): Used to batch async calls, especially to reduce chances
                             of hitting RateLimitError from openai.
@@ -236,7 +236,7 @@ class BaseLlamaDataset(BaseModel):
         NOTE: Subclasses need to implement this.
 
         Args:
-            predictor (BaseQueryEngine): Query engine to make the prediciton with.
+            predictor (PredictorType): The predictor to make the prediciton with.
             example (BaseLlamaDataExample): The example to predict on.
 
         Returns:
@@ -263,7 +263,7 @@ class BaseLlamaDataset(BaseModel):
         """Async predict with a given query engine.
 
         Args:
-            predictor (BaseQueryEngine): The query engine to make predictions with.
+            predictor (PredictorType): The predictor to make predictions with.
             show_progress (bool, optional): Show progress of making predictions.
             batch_size (int): Used to batch async calls, especially to reduce chances
                             of hitting RateLimitError from openai.
