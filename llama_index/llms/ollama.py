@@ -82,15 +82,15 @@ class Ollama(CustomLLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         prompt = self.messages_to_prompt(messages)
-        completion_response = self.complete(prompt, formatted=True, **kwargs)
+        completion_response = self.complete(prompt, prompt_formatted=True, **kwargs)
         return completion_response_to_chat_response(completion_response)
 
     @llm_chat_callback()
     def stream_chat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         prompt = self.messages_to_prompt(messages)
-        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
+        completion_response = self.stream_complete(prompt, prompt_formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
@@ -112,7 +112,7 @@ class Ollama(CustomLLM):
             )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        if not kwargs.pop("formatted", False):
+        if not kwargs.pop("prompt_formatted", False):
             prompt = self.completion_to_prompt(prompt)
 
         response = requests.post(
