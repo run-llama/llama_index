@@ -4,8 +4,6 @@ import asyncio
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Union, cast
 
-from pydantic import BaseModel, Field
-
 from llama_index.agent.runner.base import BaseAgentRunner
 from llama_index.agent.types import (
     BaseAgentWorker,
@@ -13,6 +11,7 @@ from llama_index.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks import (
     CallbackManager,
     CBEventType,

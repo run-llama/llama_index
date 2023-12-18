@@ -3,8 +3,7 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
-
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks import trace_method
 from llama_index.chat_engine.types import BaseChatEngine, StreamingAgentChatResponse
 from llama_index.core import BaseQueryEngine
