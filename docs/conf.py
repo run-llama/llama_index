@@ -76,6 +76,7 @@ html_js_files = [
         {"defer": "defer"},
     ),
     ("js/algolia.js", {"defer": "defer"}),
+    "js/readTheDocPatch.js",
 ]
 
 nb_execution_mode = "off"
