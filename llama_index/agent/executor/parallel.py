@@ -86,7 +86,7 @@ class ParallelAgentRunner(BaseAgentRunner):
         llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         init_task_state_kwargs: Optional[dict] = None,
-        delete_task_on_finish: bool = True,
+        delete_task_on_finish: bool = False,
     ) -> None:
         """Initialize."""
         self.memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
@@ -146,6 +146,10 @@ class ParallelAgentRunner(BaseAgentRunner):
     def get_task(self, task_id: str, **kwargs: Any) -> Task:
         """Get task."""
         return self.state.get_task(task_id)
+
+    def get_upcoming_steps(self, task_id: str, **kwargs: Any) -> List[TaskStep]:
+        """Get upcoming steps."""
+        return list(self.state.get_step_queue(task_id))
 
     def get_completed_steps(self, task_id: str, **kwargs: Any) -> List[TaskStepOutput]:
         """Get completed steps."""
@@ -256,10 +260,10 @@ class ParallelAgentRunner(BaseAgentRunner):
         return cur_step_output
 
     def run_step(
-        self, task: Task, step: Optional[TaskStep] = None, **kwargs: Any
+        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step."""
-        return self._run_step(task.task_id, step, mode=ChatResponseMode.WAIT, **kwargs)
+        return self._run_step(task_id, step, mode=ChatResponseMode.WAIT, **kwargs)
 
     async def arun_step(
         self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
@@ -270,12 +274,10 @@ class ParallelAgentRunner(BaseAgentRunner):
         )
 
     def stream_step(
-        self, task: Task, step: Optional[TaskStep] = None, **kwargs: Any
+        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (stream)."""
-        return self._run_step(
-            task.task_id, step, mode=ChatResponseMode.STREAM, **kwargs
-        )
+        return self._run_step(task_id, step, mode=ChatResponseMode.STREAM, **kwargs)
 
     async def astream_step(
         self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
