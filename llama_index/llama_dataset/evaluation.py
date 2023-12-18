@@ -330,16 +330,22 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
     ) -> PairwiseEvaluationExamplePrediction:
         """Async predict evaluation example with an Evaluator."""
         await asyncio.sleep(sleep_time_in_seconds)
-        eval_result: Union[
-            InvalidEvaluationResult, EvaluationResult
-        ] = await evaluator.aevaluate(
-            query=example.query,
-            response=example.answer,
-            second_response=example.second_answer,
-            contexts=example.contexts,
-            reference=example.ground_truth_answer,
-            sleep_time_in_seconds=sleep_time_in_seconds,
-        )
+        try:
+            eval_result: Union[
+                InvalidEvaluationResult, EvaluationResult
+            ] = await evaluator.aevaluate(
+                query=example.query,
+                response=example.answer,
+                second_response=example.second_answer,
+                contexts=example.contexts,
+                reference=example.ground_truth_answer,
+                sleep_time_in_seconds=sleep_time_in_seconds,
+            )
+        except Exception as err:
+            return PairwiseEvaluationExamplePrediction(
+                invalid_prediction=True, invalid_reason=f"Caught error {err!s}"
+            )
+
         if isinstance(eval_result, EvaluationResult):
             return PairwiseEvaluationExamplePrediction(
                 feedback=eval_result.feedback,
