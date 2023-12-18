@@ -7,14 +7,14 @@ from llama_index.constants import (
     DEFAULT_TEMPERATURE,
 )
 from llama_index.llms.generic_utils import get_from_param_or_env
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.types import LLMMetadata
 
 DEFAULT_API_BASE = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "gryphe/mythomax-l2-13b"
 
 
-class OpenRouter(OpenAI):
+class OpenRouter(OpenAILike):
     model: str = Field(
         description="The OpenRouter model to use. See https://openrouter.ai/models for options."
     )
@@ -22,6 +22,10 @@ class OpenRouter(OpenAI):
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model. See https://openrouter.ai/models for options.",
         gt=0,
+    )
+    is_chat_model: bool = Field(
+        default=True,
+        description=LLMMetadata.__fields__["is_chat_model"].field_info.description,
     )
 
     def __init__(
@@ -54,16 +58,3 @@ class OpenRouter(OpenAI):
     @classmethod
     def class_name(cls) -> str:
         return "OpenRouter_LLM"
-
-    @property
-    def metadata(self) -> LLMMetadata:
-        return LLMMetadata(
-            context_window=self.context_window,
-            num_output=self.max_tokens,
-            is_chat_model=True,
-            model_name=self.model,
-        )
-
-    @property
-    def _is_chat_model(self) -> bool:
-        return True
