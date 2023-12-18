@@ -104,9 +104,7 @@ class MistralAI(LLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
-        api_key = api_key = get_from_param_or_env(
-            "api_key", api_key, "MISTRAL_API_KEY", ""
-        )
+        api_key = get_from_param_or_env("api_key", api_key, "MISTRAL_API_KEY", "")
 
         if not api_key:
             raise ValueError(

@@ -10,7 +10,8 @@ LLAMA_MODELS = {
 }
 
 MISTRAL_MODELS = {
-    "mistralai/Mistral-7B-Instruct-v0.1": 4096,
+    "mistralai/Mistral-7B-Instruct-v0.1": 16384,
+    "mistralai/Mixtral-8x7B-Instruct-v0.1": 32768,
 }
 
 ALL_AVAILABLE_MODELS = {

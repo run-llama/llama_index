@@ -150,7 +150,7 @@ class HuggingFaceLLM(CustomLLM):
         generate_kwargs: Optional[dict] = None,
         is_chat_model: Optional[bool] = False,
         callback_manager: Optional[CallbackManager] = None,
-        system_prompt: Optional[str] = None,
+        system_prompt: str = "",
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
@@ -223,9 +223,7 @@ class HuggingFaceLLM(CustomLLM):
         if isinstance(query_wrapper_prompt, str):
             query_wrapper_prompt = PromptTemplate(query_wrapper_prompt)
 
-        self._messages_to_prompt = (
-            messages_to_prompt or self._tokenizer_messages_to_prompt
-        )
+        messages_to_prompt = messages_to_prompt or self._tokenizer_messages_to_prompt
 
         super().__init__(
             context_window=context_window,
@@ -354,7 +352,7 @@ class HuggingFaceLLM(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        prompt = self._messages_to_prompt(messages)
+        prompt = self.messages_to_prompt(messages)
         completion_response = self.complete(prompt, formatted=True, **kwargs)
         return completion_response_to_chat_response(completion_response)
 
@@ -362,7 +360,7 @@ class HuggingFaceLLM(CustomLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        prompt = self._messages_to_prompt(messages)
+        prompt = self.messages_to_prompt(messages)
         completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
 

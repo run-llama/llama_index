@@ -124,7 +124,7 @@ class OpenLLM(LLM):
         )
         if messages_to_prompt is None:
             messages_to_prompt = self._tokenizer_messages_to_prompt
-        self._messages_to_prompt = messages_to_prompt
+
         # NOTE: We need to do this here to ensure model is saved and revision is set correctly.
         assert self._llm.bentomodel
 
@@ -210,7 +210,7 @@ class OpenLLM(LLM):
         messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponse:
-        response = await self.acomplete(self._messages_to_prompt(messages), **kwargs)
+        response = await self.acomplete(self.messages_to_prompt(messages), **kwargs)
         return completion_response_to_chat_response(response)
 
     @llm_completion_callback()
@@ -239,7 +239,7 @@ class OpenLLM(LLM):
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         async for response_chunk in self.astream_complete(
-            self._messages_to_prompt(messages), **kwargs
+            self.messages_to_prompt(messages), **kwargs
         ):
             yield completion_response_to_chat_response(response_chunk)
 

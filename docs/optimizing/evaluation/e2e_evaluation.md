@@ -58,7 +58,7 @@ It may be expensive to use GPT-4 to carry out evaluation especially as your dev 
 
 Metrics ensembling uses an ensemble of weaker signals (exact match, F1, ROUGE, BLEU, BERT-NLI and BERT-similarity) to predict the output of a more expensive evaluation methods that are closer to the gold labels (human-labelled/GPT-4).
 
-It is intenteded for two purposes:
+It is intended for two purposes:
 
 1. Evaluating changes cheaply and quickly across a large dataset during the development stage.
 2. Flagging outliers for further evaluation (GPT-4 / human alerting) during the production monitoring stage.
