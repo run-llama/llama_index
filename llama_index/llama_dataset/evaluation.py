@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from pandas import DataFrame as PandasDataFrame
 
@@ -10,7 +10,6 @@ from llama_index.bridge.pydantic import Field
 from llama_index.evaluation import (
     BaseEvaluator,
     EvaluationResult,
-    InvalidEvaluationResult,
     PairwiseComparisonEvaluator,
 )
 from llama_index.evaluation.pairwise import EvaluationSource
@@ -176,9 +175,7 @@ class LabelledEvaluationDataset(BaseLlamaDataset):
             "reference": example.ground_truth_answer,
             "sleep_time_in_seconds": sleep_time_in_seconds,
         }
-        eval_result: Union[
-            EvaluationResult, InvalidEvaluationResult
-        ] = await evaluator.aevaluate(**eval_kwargs)
+        eval_result: EvaluationResult = await evaluator.aevaluate(**eval_kwargs)
         return EvaluationExamplePrediction(
             feedback=eval_result.feedback, score=eval_result.score
         )
@@ -331,9 +328,7 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
         """Async predict evaluation example with an Evaluator."""
         await asyncio.sleep(sleep_time_in_seconds)
         try:
-            eval_result: Union[
-                InvalidEvaluationResult, EvaluationResult
-            ] = await evaluator.aevaluate(
+            eval_result: EvaluationResult = await evaluator.aevaluate(
                 query=example.query,
                 response=example.answer,
                 second_response=example.second_answer,
@@ -347,7 +342,7 @@ class LabelledPairwiseEvaluationDataset(BaseLlamaDataset):
                 invalid_prediction=True, invalid_reason=f"Caught error {err!s}"
             )
 
-        if isinstance(eval_result, EvaluationResult):
+        if not eval_result.invalid_result:
             return PairwiseEvaluationExamplePrediction(
                 feedback=eval_result.feedback,
                 score=eval_result.score,

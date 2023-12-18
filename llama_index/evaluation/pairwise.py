@@ -8,7 +8,6 @@ from llama_index import ServiceContext
 from llama_index.evaluation.base import (
     BaseEvaluator,
     EvaluationResult,
-    InvalidEvaluationResult,
 )
 from llama_index.prompts import (
     BasePromptTemplate,
@@ -144,7 +143,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         response: str,
         second_response: str,
         reference: Optional[str],
-    ) -> Union[EvaluationResult, InvalidEvaluationResult]:
+    ) -> EvaluationResult:
         """Get evaluation result."""
         eval_response = await self._service_context.llm.apredict(
             prompt=self._eval_template,
@@ -158,10 +157,11 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         passing, score, feedback = self._parser_function(eval_response)
 
         if passing is None and score is None and feedback is None:
-            return InvalidEvaluationResult(
+            return EvaluationResult(
                 query=query,
+                invalid_result=True,
                 invalid_reason="Output cannot be parsed",
-                evaluation_string=eval_response,
+                feedback=eval_response,
             )
         else:
             return EvaluationResult(
@@ -240,7 +240,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         reference: Optional[str] = None,
         sleep_time_in_seconds: int = 0,
         **kwargs: Any,
-    ) -> Union[EvaluationResult, InvalidEvaluationResult]:
+    ) -> EvaluationResult:
         del kwargs  # Unused
         del contexts  # Unused
 
@@ -266,10 +266,11 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
                     eval_result, flipped_eval_result
                 )
             else:
-                resolved_eval_result = InvalidEvaluationResult(
+                resolved_eval_result = EvaluationResult(
                     query=eval_result.query,
                     response=eval_result.response,
-                    evaluation_string=flipped_eval_result.response,
+                    feedback=flipped_eval_result.response,
+                    invalid_result=True,
                     invalid_reason="Output cannot be parsed.",
                 )
         else:

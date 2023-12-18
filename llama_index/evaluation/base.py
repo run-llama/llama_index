@@ -31,19 +31,11 @@ class EvaluationResult(BaseModel):
             " presented answers or flipped order"
         ),
     )
-
-
-class InvalidEvaluationResult(BaseModel):
-    """Invalid evaluation result."""
-
-    query: Optional[str] = Field(None, description="Query string")
-    contexts: Optional[Sequence[str]] = Field(None, description="Context strings")
-    response: Optional[str] = Field(None, description="Response string")
-    evaluation_string: Optional[str] = Field(
-        None, description="Evaluation response string"
+    invalid_result: bool = Field(
+        default=False, description="Whether the evaluation result is an invalid one."
     )
-    invalid_reason: str = Field(
-        default_factory=str, description="Reason for invalid evaluation."
+    invalid_reason: Optional[str] = Field(
+        default=None, description="Reason for invalid evaluation."
     )
 
 
