@@ -57,6 +57,8 @@ class OpenAIAgent(AgentRunner):
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     ) -> None:
+        """Init params."""
+        callback_manager = callback_manager or llm.callback_manager
         step_engine = OpenAIAgentWorker.from_tools(
             tools=tools,
             tool_retriever=tool_retriever,

@@ -59,6 +59,7 @@ class ReActAgent(AgentRunner):
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     ) -> None:
         """Init params."""
+        callback_manager = callback_manager or llm.callback_manager
         step_engine = ReActAgentWorker.from_tools(
             tools=tools,
             tool_retriever=tool_retriever,
