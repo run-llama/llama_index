@@ -26,7 +26,6 @@ from llama_index.chat_engine.types import (
 )
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 
