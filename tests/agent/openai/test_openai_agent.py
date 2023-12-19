@@ -246,3 +246,80 @@ def test_call_tool_with_error_handling() -> None:
         tool, {"a": "1", "b": 1}, error_message="Error!"
     )
     assert output.content == "Error!"
+
+
+@patch("llama_index.llms.openai.SyncOpenAI")
+def test_add_step(
+    MockSyncOpenAI: MagicMock,
+    add_tool: FunctionTool,
+) -> None:
+    """Test add step."""
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_chat_completion()
+
+    llm = OpenAI(model="gpt-3.5-turbo")
+    # sync
+    agent = OpenAIAgent.from_tools(
+        tools=[add_tool],
+        llm=llm,
+    )
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    step_output = agent.run_step(task.task_id)
+    # add human input (not used but should be in memory)
+    step_output = agent.run_step(task.task_id, input="tmp")
+    chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
+    assert "tmp" in [m.content for m in chat_history]
+
+    # # stream_step
+    # agent = OpenAIAgent.from_tools(
+    #     tools=[add_tool],
+    #     llm=llm,
+    # )
+    # task = agent.create_task("What is 1 + 1?")
+    # # first step
+    # step_output = agent.stream_step(task.task_id)
+    # # add human input (not used but should be in memory)
+    # step_output = agent.stream_step(task.task_id, input="tmp")
+    # chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
+    # assert "tmp" in [m.content for m in chat_history]
+
+
+@patch("llama_index.llms.openai.AsyncOpenAI")
+@pytest.mark.asyncio()
+async def test_async_add_step(
+    MockAsyncOpenAI: MagicMock,
+    add_tool: FunctionTool,
+) -> None:
+    mock_instance = MockAsyncOpenAI.return_value
+
+    llm = OpenAI(model="gpt-3.5-turbo")
+    # async
+    agent = OpenAIAgent.from_tools(
+        tools=[add_tool],
+        llm=llm,
+    )
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    mock_instance.chat.completions.create.return_value = mock_achat_completion()
+    step_output = await agent.arun_step(task.task_id)
+    # add human input (not used but should be in memory)
+    mock_instance.chat.completions.create.return_value = mock_achat_completion()
+    step_output = await agent.arun_step(task.task_id, input="tmp")
+    chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
+    assert "tmp" in [m.content for m in chat_history]
+
+    # async stream step
+    agent = OpenAIAgent.from_tools(
+        tools=[add_tool],
+        llm=llm,
+    )
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    mock_instance.chat.completions.create.side_effect = mock_achat_stream
+    step_output = await agent.astream_step(task.task_id)
+    # add human input (not used but should be in memory)
+    mock_instance.chat.completions.create.side_effect = mock_achat_stream
+    step_output = await agent.astream_step(task.task_id, input="tmp")
+    chat_history = task.extra_state["new_memory"].get_all()
+    assert "tmp" in [m.content for m in chat_history]
