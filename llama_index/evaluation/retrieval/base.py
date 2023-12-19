@@ -3,7 +3,7 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.evaluation.retrieval.metrics import resolve_metrics
@@ -49,7 +49,12 @@ class RetrievalEvalResult(BaseModel):
 
     query: str = Field(..., description="Query string")
     expected_ids: List[str] = Field(..., description="Expected ids")
+    expected_texts: Optional[List[str]] = Field(
+        default=None,
+        description="Expected texts associated with nodes provided in `expected_ids`",
+    )
     retrieved_ids: List[str] = Field(..., description="Retrieved ids")
+    retrieved_texts: List[str] = Field(..., description="Retrieved texts")
     mode: "RetrievalEvalMode" = Field(
         default=RetrievalEvalMode.TEXT, description="text or image"
     )
@@ -88,20 +93,21 @@ class BaseRetrievalEvaluator(BaseModel):
             **kwargs: Additional arguments for the evaluator
 
         """
-        metrics = resolve_metrics(metric_names)
-        return cls(metrics=metrics, **kwargs)
+        metric_types = resolve_metrics(metric_names)
+        return cls(metrics=[metric() for metric in metric_types], **kwargs)
 
     @abstractmethod
-    async def _aget_retrieved_ids(
+    async def _aget_retrieved_ids_and_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
-    ) -> List[str]:
-        """Get retrieved ids."""
+    ) -> Tuple[List[str], List[str]]:
+        """Get retrieved ids and texts."""
         raise NotImplementedError
 
     def evaluate(
         self,
         query: str,
         expected_ids: List[str],
+        expected_texts: Optional[List[str]] = None,
         mode: RetrievalEvalMode = RetrievalEvalMode.TEXT,
         **kwargs: Any,
     ) -> RetrievalEvalResult:
@@ -116,7 +122,13 @@ class BaseRetrievalEvaluator(BaseModel):
 
         """
         return asyncio.run(
-            self.aevaluate(query=query, expected_ids=expected_ids, mode=mode, **kwargs)
+            self.aevaluate(
+                query=query,
+                expected_ids=expected_ids,
+                expected_texts=expected_texts,
+                mode=mode,
+                **kwargs,
+            )
         )
 
     # @abstractmethod
@@ -124,6 +136,7 @@ class BaseRetrievalEvaluator(BaseModel):
         self,
         query: str,
         expected_ids: List[str],
+        expected_texts: Optional[List[str]] = None,
         mode: RetrievalEvalMode = RetrievalEvalMode.TEXT,
         **kwargs: Any,
     ) -> RetrievalEvalResult:
@@ -133,15 +146,22 @@ class BaseRetrievalEvaluator(BaseModel):
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
         """
-        retrieved_ids = await self._aget_retrieved_ids(query, mode)
+        retrieved_ids, retrieved_texts = await self._aget_retrieved_ids_and_texts(
+            query, mode
+        )
         metric_dict = {}
         for metric in self.metrics:
-            eval_result = metric.compute(query, expected_ids, retrieved_ids)
+            eval_result = metric.compute(
+                query, expected_ids, retrieved_ids, expected_texts, retrieved_texts
+            )
             metric_dict[metric.metric_name] = eval_result
+
         return RetrievalEvalResult(
             query=query,
             expected_ids=expected_ids,
+            expected_texts=expected_texts,
             retrieved_ids=retrieved_ids,
+            retrieved_texts=retrieved_texts,
             mode=mode,
             metric_dict=metric_dict,
         )
