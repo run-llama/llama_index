@@ -29,6 +29,8 @@ DATASET_CLASS_FILENAME_REGISTRY = {
     "LabeledRagDataset": "rag_dataset.json",
     "LabelledPairwiseEvaluatorDataset": "pairwise_evaluator_dataset.json",
     "LabeledPairwiseEvaluatorDataset": "pairwise_evaluator_dataset.json",
+    "LabelledEvaluatorDataset": "evaluator_dataset.json",
+    "LabeledEvaluatorDataset": "evaluator_dataset.json",
 }
 
 
