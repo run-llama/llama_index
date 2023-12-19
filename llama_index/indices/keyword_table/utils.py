@@ -28,6 +28,10 @@ def rake_extract_keywords(
 ) -> Set[str]:
     """Extract keywords with RAKE."""
     try:
+        import nltk
+    except ImportError:
+        raise ImportError("Please install nltk: `pip install nltk`")
+    try:
         from rake_nltk import Rake
     except ImportError:
         raise ImportError("Please install rake_nltk: `pip install rake_nltk`")
