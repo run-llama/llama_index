@@ -5,9 +5,7 @@ from llama_index.download.dataset import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
 )
-from llama_index.download.dataset import (
-    download_llama_dataset as download,
-)
+from llama_index.download.dataset import download_llama_dataset as download
 from llama_index.download.module import LLAMA_HUB_URL, MODULE_TYPE, track_download
 from llama_index.llama_dataset.base import BaseLlamaDataset
 from llama_index.llama_dataset.evaluator_evaluation import (
@@ -22,9 +20,9 @@ def _resolve_dataset_class(filename: str) -> Type[BaseLlamaDataset]:
     """Resolve appropriate llama dataset class based on file name."""
     if "rag_dataset.json" in filename:
         return LabelledRagDataset
-    elif "pairwise_evaluation_dataset.json" in filename:
+    elif "pairwise_evaluator_dataset.json" in filename:
         return LabelledPairwiseEvaluatorDataset
-    elif "single_evaluation_dataset.json" in filename:
+    elif "evaluator_dataset.json" in filename:
         return LabelledEvaluatorDataset
     else:
         raise ValueError("Unknown filename.")
