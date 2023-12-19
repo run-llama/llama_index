@@ -10,6 +10,8 @@ from llama_index.llama_dataset.base import (
 )
 from llama_index.llama_dataset.download import download_llama_dataset
 from llama_index.llama_dataset.evaluator_evaluation import (
+    EvaluatorExamplePrediction,
+    EvaluatorPredictionDataset,
     LabeledEvaluatorDataExample,
     LabeledEvaluatorDataset,
     LabeledPairwiseEvaluatorDataExample,
@@ -44,6 +46,8 @@ __all__ = [
     "CreatedByType",
     "CreatedBy",
     "download_llama_dataset",
+    "EvaluatorExamplePrediction",
+    "EvaluatorPredictionDataset",
     "LabeledEvaluatorDataset",
     "LabelledEvaluatorDataset",
     "LabelledEvaluatorDataExample",
