@@ -8,13 +8,19 @@ from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
 
 from llama_index.agent.openai.utils import resolve_tool_choice
-from llama_index.agent.types import (BaseAgentWorker, Task, TaskStep,
-                                     TaskStepOutput)
-from llama_index.callbacks import (CallbackManager, CBEventType, EventPayload,
-                                   trace_method)
-from llama_index.chat_engine.types import (AGENT_CHAT_RESPONSE_TYPE,
-                                           AgentChatResponse, ChatResponseMode,
-                                           StreamingAgentChatResponse)
+from llama_index.agent.types import BaseAgentWorker, Task, TaskStep, TaskStepOutput
+from llama_index.callbacks import (
+    CallbackManager,
+    CBEventType,
+    EventPayload,
+    trace_method,
+)
+from llama_index.chat_engine.types import (
+    AGENT_CHAT_RESPONSE_TYPE,
+    AgentChatResponse,
+    ChatResponseMode,
+    StreamingAgentChatResponse,
+)
 from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
