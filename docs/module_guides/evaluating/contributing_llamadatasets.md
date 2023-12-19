@@ -19,7 +19,7 @@ other required steps to make your submission. Please refer to the "LlamaDataset 
 
 The general process for contributing any of our other llama-datasets such as the
 `LabelledEvaluatorDataset` is the same as for the `LabelledRagDataset` previously
-described. Submission templates for these other datasets are linked below.
+described. Submission templates for these other datasets are coming soon!
 
 ```{toctree}
 ---
