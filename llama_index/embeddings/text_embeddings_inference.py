@@ -76,7 +76,7 @@ class TextEmbeddingsInference(BaseEmbedding):
         headers = {"Content-Type": "application/json"}
         if self.auth_token is not None:
             if callable(self.auth_token):
-                headers["Authorization"] = self.auth_token(self.model_name)
+                headers["Authorization"] = self.auth_token(self.base_url)
             else:
                 headers["Authorization"] = self.auth_token
         json_data = {"inputs": texts, "truncate": self.truncate_text}
@@ -97,7 +97,7 @@ class TextEmbeddingsInference(BaseEmbedding):
         headers = {"Content-Type": "application/json"}
         if self.auth_token is not None:
             if callable(self.auth_token):
-                headers["Authorization"] = self.auth_token(self.model_name)
+                headers["Authorization"] = self.auth_token(self.base_url)
             else:
                 headers["Authorization"] = self.auth_token
         json_data = {"inputs": texts, "truncate": self.truncate_text}
