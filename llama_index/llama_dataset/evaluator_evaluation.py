@@ -22,7 +22,7 @@ from llama_index.llama_dataset.base import (
 )
 
 
-class EvaluatorEvaluationExamplePrediction(BaseLlamaExamplePrediction):
+class EvaluatorExamplePrediction(BaseLlamaExamplePrediction):
     """Evaluation example prediction class.
 
     Args:
@@ -48,10 +48,10 @@ class EvaluatorEvaluationExamplePrediction(BaseLlamaExamplePrediction):
     @property
     def class_name(self) -> str:
         """Data example class name."""
-        return "EvaluatorEvaluationExamplePrediction"
+        return "EvaluatorExamplePrediction"
 
 
-class LabelledEvaluatorEvaluationDataExample(BaseLlamaDataExample):
+class LabelledEvaluatorDataExample(BaseLlamaDataExample):
     """Evaluation example class.
 
     This data class contains the ingredients to perform a new "prediction" i.e.,
@@ -109,13 +109,13 @@ class LabelledEvaluatorEvaluationDataExample(BaseLlamaDataExample):
     @property
     def class_name(self) -> str:
         """Data example class name."""
-        return "LabelledEvaluatorEvaluationDataExample"
+        return "LabelledEvaluatorDataExample"
 
 
-class EvaluatorEvaluationPredictionDataset(BaseLlamaPredictionDataset):
+class EvaluatorPredictionDataset(BaseLlamaPredictionDataset):
     """Evaluation Prediction Dataset Class."""
 
-    _prediction_type = EvaluatorEvaluationExamplePrediction
+    _prediction_type = EvaluatorExamplePrediction
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
@@ -131,13 +131,13 @@ class EvaluatorEvaluationPredictionDataset(BaseLlamaPredictionDataset):
     @property
     def class_name(self) -> str:
         """Class name."""
-        return "EvaluatorEvaluationPredictionDataset"
+        return "EvaluatorPredictionDataset"
 
 
-class LabelledEvaluatorEvaluationDataset(BaseLlamaDataset):
+class LabelledEvaluatorDataset(BaseLlamaDataset):
     """LabelledEvalationDataset class."""
 
-    _example_type = LabelledEvaluatorEvaluationDataExample
+    _example_type = LabelledEvaluatorDataExample
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
@@ -163,9 +163,9 @@ class LabelledEvaluatorEvaluationDataset(BaseLlamaDataset):
     async def _apredict_example(
         self,
         evaluator: BaseEvaluator,
-        example: LabelledEvaluatorEvaluationDataExample,
+        example: LabelledEvaluatorDataExample,
         sleep_time_in_seconds: int,
-    ) -> EvaluatorEvaluationExamplePrediction:
+    ) -> EvaluatorExamplePrediction:
         """Async predict RAG example with a query engine."""
         await asyncio.sleep(sleep_time_in_seconds)
         eval_kwargs = {
@@ -176,16 +176,16 @@ class LabelledEvaluatorEvaluationDataset(BaseLlamaDataset):
             "sleep_time_in_seconds": sleep_time_in_seconds,
         }
         eval_result: EvaluationResult = await evaluator.aevaluate(**eval_kwargs)
-        return EvaluatorEvaluationExamplePrediction(
+        return EvaluatorExamplePrediction(
             feedback=eval_result.feedback, score=eval_result.score
         )
 
     def _predict_example(
         self,
         evaluator: BaseEvaluator,
-        example: LabelledEvaluatorEvaluationDataExample,
+        example: LabelledEvaluatorDataExample,
         sleep_time_in_seconds: int = 0,
-    ) -> EvaluatorEvaluationExamplePrediction:
+    ) -> EvaluatorExamplePrediction:
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
         eval_kwargs = {
@@ -196,22 +196,22 @@ class LabelledEvaluatorEvaluationDataset(BaseLlamaDataset):
             "sleep_time_in_seconds": sleep_time_in_seconds,
         }
         eval_result: EvaluationResult = evaluator.evaluate(**eval_kwargs)
-        return EvaluatorEvaluationExamplePrediction(
+        return EvaluatorExamplePrediction(
             feedback=eval_result.feedback, score=eval_result.score
         )
 
     def _construct_prediction_dataset(
-        self, predictions: List[EvaluatorEvaluationExamplePrediction]
-    ) -> EvaluatorEvaluationPredictionDataset:
+        self, predictions: List[EvaluatorExamplePrediction]
+    ) -> EvaluatorPredictionDataset:
         """Construct prediction dataset."""
-        return EvaluatorEvaluationPredictionDataset(predictions=predictions)
+        return EvaluatorPredictionDataset(predictions=predictions)
 
     def class_name(self) -> str:
         """Class name."""
-        return "LabelledEvaluatorEvaluationDataset"
+        return "LabelledEvaluatorDataset"
 
 
-class PairwiseEvaluatorEvaluationExamplePrediction(BaseLlamaExamplePrediction):
+class PairwiseEvaluatorExamplePrediction(BaseLlamaExamplePrediction):
     """Pairwise evaluation example prediction class.
 
     Args:
@@ -244,13 +244,13 @@ class PairwiseEvaluatorEvaluationExamplePrediction(BaseLlamaExamplePrediction):
     @property
     def class_name(self) -> str:
         """Data example class name."""
-        return "PairwiseEvaluatorEvaluationExamplePrediction"
+        return "PairwiseEvaluatorExamplePrediction"
 
 
-class PairwiseEvaluatorEvaluationPredictionDataset(BaseLlamaPredictionDataset):
+class PairwiseEvaluatorPredictionDataset(BaseLlamaPredictionDataset):
     """Pairwise evaluation predictions dataset class."""
 
-    _prediction_type = PairwiseEvaluatorEvaluationExamplePrediction
+    _prediction_type = PairwiseEvaluatorExamplePrediction
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
@@ -266,12 +266,10 @@ class PairwiseEvaluatorEvaluationPredictionDataset(BaseLlamaPredictionDataset):
 
     def class_name(self) -> str:
         """Class name."""
-        return "PairwiseEvaluatorEvaluationPredictionDataset"
+        return "PairwiseEvaluatorPredictionDataset"
 
 
-class LabelledPairwiseEvaluatorEvaluationDataExample(
-    LabelledEvaluatorEvaluationDataExample
-):
+class LabelledPairwiseEvaluatorDataExample(LabelledEvaluatorDataExample):
     """Labelled pairwise evaluation data example class."""
 
     second_answer: str = Field(
@@ -285,10 +283,10 @@ class LabelledPairwiseEvaluatorEvaluationDataExample(
     @property
     def class_name(self) -> str:
         """Data example class name."""
-        return "LabelledPairwiseEvaluatorEvaluationDataExample"
+        return "LabelledPairwiseEvaluatorDataExample"
 
 
-class LabelledPairwiseEvaluatorEvaluationDataset(BaseLlamaDataset):
+class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset):
     """Labelled pairwise evaluation dataset. For evaluating the evaluator in
     performing pairwise evaluations.
 
@@ -296,7 +294,7 @@ class LabelledPairwiseEvaluatorEvaluationDataset(BaseLlamaDataset):
         BaseLlamaDataset (_type_): _description_
     """
 
-    _example_type = LabelledPairwiseEvaluatorEvaluationDataExample
+    _example_type = LabelledPairwiseEvaluatorDataExample
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
@@ -324,9 +322,9 @@ class LabelledPairwiseEvaluatorEvaluationDataset(BaseLlamaDataset):
     async def _apredict_example(
         self,
         evaluator: PairwiseComparisonEvaluator,
-        example: LabelledPairwiseEvaluatorEvaluationDataExample,
+        example: LabelledPairwiseEvaluatorDataExample,
         sleep_time_in_seconds: int,
-    ) -> PairwiseEvaluatorEvaluationExamplePrediction:
+    ) -> PairwiseEvaluatorExamplePrediction:
         """Async predict evaluation example with an Evaluator."""
         await asyncio.sleep(sleep_time_in_seconds)
         try:
@@ -340,27 +338,27 @@ class LabelledPairwiseEvaluatorEvaluationDataset(BaseLlamaDataset):
             )
         except Exception as err:
             # TODO: raise warning here as well
-            return PairwiseEvaluatorEvaluationExamplePrediction(
+            return PairwiseEvaluatorExamplePrediction(
                 invalid_prediction=True, invalid_reason=f"Caught error {err!s}"
             )
 
         if not eval_result.invalid_result:
-            return PairwiseEvaluatorEvaluationExamplePrediction(
+            return PairwiseEvaluatorExamplePrediction(
                 feedback=eval_result.feedback,
                 score=eval_result.score,
                 evaluation_source=eval_result.pairwise_source,
             )
         else:
-            return PairwiseEvaluatorEvaluationExamplePrediction(
+            return PairwiseEvaluatorExamplePrediction(
                 invalid_prediction=True, invalid_reason=eval_result.invalid_reason
             )
 
     def _predict_example(
         self,
         evaluator: PairwiseComparisonEvaluator,
-        example: LabelledPairwiseEvaluatorEvaluationDataExample,
+        example: LabelledPairwiseEvaluatorDataExample,
         sleep_time_in_seconds: int = 0,
-    ) -> PairwiseEvaluatorEvaluationExamplePrediction:
+    ) -> PairwiseEvaluatorExamplePrediction:
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
         eval_kwargs = {
@@ -372,27 +370,25 @@ class LabelledPairwiseEvaluatorEvaluationDataset(BaseLlamaDataset):
             "sleep_time_in_seconds": sleep_time_in_seconds,
         }
         eval_result: EvaluationResult = evaluator.evaluate(**eval_kwargs)
-        return PairwiseEvaluatorEvaluationExamplePrediction(
+        return PairwiseEvaluatorExamplePrediction(
             feedback=eval_result.feedback,
             score=eval_result.score,
             evaluation_source=eval_result.pairwise_source,
         )
 
     def _construct_prediction_dataset(
-        self, predictions: List[PairwiseEvaluatorEvaluationExamplePrediction]
-    ) -> PairwiseEvaluatorEvaluationPredictionDataset:
+        self, predictions: List[PairwiseEvaluatorExamplePrediction]
+    ) -> PairwiseEvaluatorPredictionDataset:
         """Construct prediction dataset."""
-        return PairwiseEvaluatorEvaluationPredictionDataset(predictions=predictions)
+        return PairwiseEvaluatorPredictionDataset(predictions=predictions)
 
     def class_name(self) -> str:
         """Class name."""
-        return "LabelledPairwiseEvaluatorEvaluationDataset"
+        return "LabelledPairwiseEvaluatorDataset"
 
 
 # British English + American English
-LabeledEvaluatorEvaluationDataExample = LabelledEvaluatorEvaluationDataExample
-LabeledEvaluatorEvaluationDataset = LabelledEvaluatorEvaluationDataset
-LabeledPairwiseEvaluatorEvaluationDataExample = (
-    LabelledPairwiseEvaluatorEvaluationDataExample
-)
-LabeledPairwiseEvaluatorEvaluationDataset = LabelledPairwiseEvaluatorEvaluationDataset
+LabeledEvaluatorDataExample = LabelledEvaluatorDataExample
+LabeledEvaluatorDataset = LabelledEvaluatorDataset
+LabeledPairwiseEvaluatorDataExample = LabelledPairwiseEvaluatorDataExample
+LabeledPairwiseEvaluatorDataset = LabelledPairwiseEvaluatorDataset

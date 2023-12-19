@@ -11,8 +11,8 @@ from llama_index.download.dataset import (
 from llama_index.download.module import LLAMA_HUB_URL, MODULE_TYPE, track_download
 from llama_index.llama_dataset.base import BaseLlamaDataset
 from llama_index.llama_dataset.evaluator_evaluation import (
-    LabelledEvaluatorEvaluationDataset,
-    LabelledPairwiseEvaluatorEvaluationDataset,
+    LabelledEvaluatorDataset,
+    LabelledPairwiseEvaluatorDataset,
 )
 from llama_index.llama_dataset.rag import LabelledRagDataset
 from llama_index.readers import SimpleDirectoryReader
@@ -23,9 +23,9 @@ def _resolve_dataset_class(filename: str) -> Type[BaseLlamaDataset]:
     if "rag_dataset.json" in filename:
         return LabelledRagDataset
     elif "pairwise_evaluation_dataset.json" in filename:
-        return LabelledPairwiseEvaluatorEvaluationDataset
+        return LabelledPairwiseEvaluatorDataset
     elif "single_evaluation_dataset.json" in filename:
-        return LabelledEvaluatorEvaluationDataset
+        return LabelledEvaluatorDataset
     else:
         raise ValueError("Unknown filename.")
 
