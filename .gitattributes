@@ -1,0 +1,5 @@
+llama_index/_static/ filter=lfs diff=lfs merge=lfs -text
+llama_index/_static/nltk_cache filter=lfs diff=lfs merge=lfs -text
+llama_index/_static/tiktoken_cache filter=lfs diff=lfs merge=lfs -text
+llama_index/_static/** filter=lfs diff=lfs merge=lfs -text
+llama_index/_static/**/* filter=lfs diff=lfs merge=lfs -text
