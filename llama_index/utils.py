@@ -25,7 +25,6 @@ from typing import (
     Set,
     Type,
     Union,
-    cast,
     runtime_checkable,
 )
 
@@ -38,24 +37,34 @@ class GlobalsHelper:
 
     """
 
-    _tokenizer: Optional[Callable[[str], List]] = None
     _stopwords: Optional[List[str]] = None
+    _nltk_data_dir: Optional[str] = None
 
-    @property
-    def tokenizer(self) -> Callable[[str], List]:
-        """Get tokenizer. TODO: Deprecated."""
-        if self._tokenizer is None:
-            tiktoken_import_err = (
-                "`tiktoken` package not found, please run `pip install tiktoken`"
-            )
-            try:
-                import tiktoken
-            except ImportError:
-                raise ImportError(tiktoken_import_err)
-            enc = tiktoken.get_encoding("gpt2")
-            self._tokenizer = cast(Callable[[str], List], enc.encode)
-            self._tokenizer = partial(self._tokenizer, allowed_special="all")
-        return self._tokenizer  # type: ignore
+    def __init__(self) -> None:
+        """Initialize NLTK stopwords and punkt."""
+        import nltk
+
+        self._nltk_data_dir = os.environ.get(
+            "NLTK_DATA",
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "_static/nltk_cache",
+            ),
+        )
+
+        if self._nltk_data_dir not in nltk.data.path:
+            nltk.data.path.append(self._nltk_data_dir)
+
+        # ensure access to data is there
+        try:
+            nltk.data.find("corpora/stopwords", paths=[self._nltk_data_dir])
+        except LookupError:
+            nltk.download("stopwords", download_dir=self._nltk_data_dir)
+
+        try:
+            nltk.data.find("tokenizers/punkt", paths=[self._nltk_data_dir])
+        except LookupError:
+            nltk.download("punkt", download_dir=self._nltk_data_dir)
 
     @property
     def stopwords(self) -> List[str]:
@@ -69,19 +78,10 @@ class GlobalsHelper:
                     "`nltk` package not found, please run `pip install nltk`"
                 )
 
-            from llama_index.utils import get_cache_dir
-
-            cache_dir = get_cache_dir()
-            nltk_data_dir = os.environ.get("NLTK_DATA", cache_dir)
-
-            # update nltk path for nltk so that it finds the data
-            if nltk_data_dir not in nltk.data.path:
-                nltk.data.path.append(nltk_data_dir)
-
             try:
-                nltk.data.find("corpora/stopwords")
+                nltk.data.find("corpora/stopwords", paths=[self._nltk_data_dir])
             except LookupError:
-                nltk.download("stopwords", download_dir=nltk_data_dir)
+                nltk.download("stopwords", download_dir=self._nltk_data_dir)
             self._stopwords = stopwords.words("english")
         return self._stopwords
 
@@ -116,9 +116,22 @@ def get_tokenizer() -> Callable[[str], List]:
             import tiktoken
         except ImportError:
             raise ImportError(tiktoken_import_err)
+
+        # set tokenizer cache temporarily
+        should_revert = False
+        if "TIKTOKEN_CACHE_DIR" not in os.environ:
+            should_revert = True
+            os.environ["TIKTOKEN_CACHE_DIR"] = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "_static/tiktoken_cache",
+            )
+
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
         tokenizer = partial(enc.encode, allowed_special="all")
         set_global_tokenizer(tokenizer)
+
+        if should_revert:
+            del os.environ["TIKTOKEN_CACHE_DIR"]
 
     assert llama_index.global_tokenizer is not None
     return llama_index.global_tokenizer

@@ -27,7 +27,7 @@ class RetrievalMetricResult(BaseModel):
         return self.score
 
 
-class BaseRetrievalMetric(ABC):
+class BaseRetrievalMetric(BaseModel, ABC):
     """Base class for retrieval metrics."""
 
     metric_name: str
@@ -38,6 +38,8 @@ class BaseRetrievalMetric(ABC):
         query: Optional[str] = None,
         expected_ids: Optional[List[str]] = None,
         retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute metric.
@@ -49,3 +51,6 @@ class BaseRetrievalMetric(ABC):
             **kwargs: Additional keyword arguments
 
         """
+
+    class Config:
+        arbitrary_types_allowed = True

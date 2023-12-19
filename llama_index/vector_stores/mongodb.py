@@ -8,8 +8,6 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
-from pymongo import MongoClient
-
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -49,7 +47,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def __init__(
         self,
-        mongodb_client: Optional[MongoClient] = None,
+        mongodb_client: Optional[Any] = None,
         db_name: str = "default_db",
         collection_name: str = "default_collection",
         index_name: str = "default",

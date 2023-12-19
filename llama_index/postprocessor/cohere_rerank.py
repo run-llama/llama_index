@@ -47,6 +47,8 @@ class CohereRerank(BaseNodePostprocessor):
     ) -> List[NodeWithScore]:
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
+        if len(nodes) == 0:
+            return []
 
         with self.callback_manager.event(
             CBEventType.RERANKING,

@@ -1,10 +1,44 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.17] - 2023-12-19
+
+### New Features
+
+- [example] adding user feedback (#9601)
+- FEATURE: Cohere ReRank Relevancy Metric for Retrieval Eval (#9495)
+
+### Bug Fixes / Nits
+
+- Fix Gemini Chat Mode (#9599)
+- Fixed `types-protobuf` from being a primary dependency (#9595)
+- Adding an optional auth token to the TextEmbeddingInference class (#9606)
+- fix: out of index get latest tool call (#9608)
+- fix(azure_openai.py): add missing return to subclass override (#9598)
+- fix mix up b/w 'formatted' and 'format' params for ollama api call (#9594)
+
+## [0.9.16] - 2023-12-18
+
+### New Features
+
+- agent refactor: step-wise execution (#9584)
+- Add OpenRouter, with Mixtral demo (#9464)
+- Add hybrid search to neo4j vector store (#9530)
+- Add support for auth service accounts for Google Semantic Retriever (#9545)
 
 ### Bug Fixes / Nits
 
 - Fixed missing `default=None` for `LLM.system_prompt` (#9504)
+- Fix #9580 : Incorporate metadata properly (#9582)
+- Integrations: Gradient[Embeddings,LLM] - sdk-upgrade (#9528)
+- Add mixtral 8x7b model to anyscale available models (#9573)
+- Gemini Model Checks (#9563)
+- Update OpenAI fine-tuning with latest changes (#9564)
+- fix/Reintroduce `WHERE` filter to the Sparse Query for PgVectorStore (#9529)
+- Update Ollama API for ollama v0.1.16 (#9558)
+- ollama: strip invalid `formatted` option (#9555)
+- add a device in optimum push #9541 (#9554)
+- Title vs content difference for Gemini Embedding (#9547)
+- fix pydantic fields to float (#9542)
 
 ## [0.9.15] - 2023-12-13
 
