@@ -1,10 +1,20 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.17] - 2023-12-19
+
+### New Features
+
+- [example] adding user feedback (#9601)
+- FEATURE: Cohere ReRank Relevancy Metric for Retrieval Eval (#9495)
 
 ### Bug Fixes / Nits
 
+- Fix Gemini Chat Mode (#9599)
 - Fixed `types-protobuf` from being a primary dependency (#9595)
+- Adding an optional auth token to the TextEmbeddingInference class (#9606)
+- fix: out of index get latest tool call (#9608)
+- fix(azure_openai.py): add missing return to subclass override (#9598)
+- fix mix up b/w 'formatted' and 'format' params for ollama api call (#9594)
 
 ## [0.9.16] - 2023-12-18
 
