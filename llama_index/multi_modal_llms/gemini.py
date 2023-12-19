@@ -7,6 +7,7 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.llms.gemini_utils import (
+    ROLES_FROM_GEMINI,
     chat_from_gemini_response,
     chat_message_to_gemini,
     completion_from_gemini_response,
@@ -178,8 +179,28 @@ class GeminiMultiModal(MultiModalLLM):
     ) -> ChatResponseGen:
         *history, next_msg = map(chat_message_to_gemini, messages)
         chat = self._model.start_chat(history=history)
-        it = chat.send_message(next_msg, stream=True)
-        yield from map(chat_from_gemini_response, it)
+        response = chat.send_message(next_msg, stream=True)
+
+        def gen() -> ChatResponseGen:
+            content = ""
+            for r in response:
+                top_candidate = r.candidates[0]
+                content_delta = top_candidate.content.parts[0].text
+                role = ROLES_FROM_GEMINI[top_candidate.content.role]
+                raw = {
+                    **(type(top_candidate).to_dict(top_candidate)),
+                    **(
+                        type(response.prompt_feedback).to_dict(response.prompt_feedback)
+                    ),
+                }
+                content += content_delta
+                yield ChatResponse(
+                    message=ChatMessage(role=role, content=content),
+                    delta=content_delta,
+                    raw=raw,
+                )
+
+        return gen()
 
     async def acomplete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
@@ -215,10 +236,25 @@ class GeminiMultiModal(MultiModalLLM):
     ) -> ChatResponseAsyncGen:
         *history, next_msg = map(chat_message_to_gemini, messages)
         chat = self._model.start_chat(history=history)
-        ait = await chat.send_message_async(next_msg, stream=True)
+        response = await chat.send_message_async(next_msg, stream=True)
 
         async def gen() -> ChatResponseAsyncGen:
-            async for comp in ait:
-                yield chat_from_gemini_response(comp)
+            content = ""
+            for r in response:
+                top_candidate = r.candidates[0]
+                content_delta = top_candidate.content.parts[0].text
+                role = ROLES_FROM_GEMINI[top_candidate.content.role]
+                raw = {
+                    **(type(top_candidate).to_dict(top_candidate)),
+                    **(
+                        type(response.prompt_feedback).to_dict(response.prompt_feedback)
+                    ),
+                }
+                content += content_delta
+                yield ChatResponse(
+                    message=ChatMessage(role=role, content=content),
+                    delta=content_delta,
+                    raw=raw,
+                )
 
         return gen()
