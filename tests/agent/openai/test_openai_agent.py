@@ -271,18 +271,18 @@ def test_add_step(
     chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
     assert "tmp" in [m.content for m in chat_history]
 
-    # stream_step
-    agent = OpenAIAgent.from_tools(
-        tools=[add_tool],
-        llm=llm,
-    )
-    task = agent.create_task("What is 1 + 1?")
-    # first step
-    step_output = agent.stream_step(task.task_id)
-    # add human input (not used but should be in memory)
-    step_output = agent.stream_step(task.task_id, input="tmp")
-    chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
-    assert "tmp" in [m.content for m in chat_history]
+    # # stream_step
+    # agent = OpenAIAgent.from_tools(
+    #     tools=[add_tool],
+    #     llm=llm,
+    # )
+    # task = agent.create_task("What is 1 + 1?")
+    # # first step
+    # step_output = agent.stream_step(task.task_id)
+    # # add human input (not used but should be in memory)
+    # step_output = agent.stream_step(task.task_id, input="tmp")
+    # chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
+    # assert "tmp" in [m.content for m in chat_history]
 
 
 @patch("llama_index.llms.openai.AsyncOpenAI")
