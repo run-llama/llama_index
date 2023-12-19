@@ -170,15 +170,14 @@ class LabelledEvaluatorDataset(BaseLlamaDataset):
         """Async predict RAG example with a query engine."""
         await asyncio.sleep(sleep_time_in_seconds)
         evaluator = cast(BaseEvaluator, predictor)
-        eval_kwargs = {
-            "query": example.query,
-            "response": example.answer,
-            "contexts": example.contexts,
-            "reference": example.ground_truth_answer,
-            "sleep_time_in_seconds": sleep_time_in_seconds,
-        }
         try:
-            eval_result: EvaluationResult = await evaluator.aevaluate(**eval_kwargs)
+            eval_result: EvaluationResult = await evaluator.aevaluate(
+                query=example.query,
+                response=example.answer,
+                contexts=example.contexts,
+                reference=example.ground_truth_answer,
+                sleep_time_in_seconds=sleep_time_in_seconds,
+            )
         except Exception as err:
             # TODO: raise warning here as well
             return EvaluatorExamplePrediction(
@@ -203,15 +202,14 @@ class LabelledEvaluatorDataset(BaseLlamaDataset):
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
         evaluator = cast(BaseEvaluator, predictor)
-        eval_kwargs = {
-            "query": example.query,
-            "response": example.answer,
-            "contexts": example.contexts,
-            "reference": example.ground_truth_answer,
-            "sleep_time_in_seconds": sleep_time_in_seconds,
-        }
         try:
-            eval_result: EvaluationResult = evaluator.evaluate(**eval_kwargs)
+            eval_result: EvaluationResult = evaluator.evaluate(
+                query=example.query,
+                response=example.answer,
+                contexts=example.contexts,
+                reference=example.ground_truth_answer,
+                sleep_time_in_seconds=sleep_time_in_seconds,
+            )
         except Exception as err:
             # TODO: raise warning here as well
             return EvaluatorExamplePrediction(
@@ -390,14 +388,6 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset):
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
         evaluator = cast(predictor, PairwiseComparisonEvaluator)
-        eval_kwargs = {
-            "query": example.query,
-            "response": example.answer,
-            "second_response": example.second_answer,
-            "contexts": example.contexts,
-            "reference": example.ground_truth_answer,
-            "sleep_time_in_seconds": sleep_time_in_seconds,
-        }
         try:
             eval_result: EvaluationResult = evaluator.evaluate(
                 query=example.query,
