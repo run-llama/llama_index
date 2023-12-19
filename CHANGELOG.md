@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Fixed `types-protobuf` from being a primary dependency (#9595)
+
 ## [0.9.16] - 2023-12-18
 
 ### New Features
