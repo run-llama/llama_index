@@ -231,6 +231,7 @@ class LabelledEvaluatorDataset(BaseLlamaDataset):
         """Construct prediction dataset."""
         return EvaluatorPredictionDataset(predictions=predictions)
 
+    @property
     def class_name(self) -> str:
         """Class name."""
         return "LabelledEvaluatorDataset"
@@ -289,6 +290,7 @@ class PairwiseEvaluatorPredictionDataset(BaseLlamaPredictionDataset):
 
         return PandasDataFrame(data)
 
+    @property
     def class_name(self) -> str:
         """Class name."""
         return "PairwiseEvaluatorPredictionDataset"
@@ -387,7 +389,7 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset):
     ) -> PairwiseEvaluatorExamplePrediction:
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
-        evaluator = cast(predictor, PairwiseComparisonEvaluator)
+        evaluator = cast(PairwiseComparisonEvaluator, predictor)
         try:
             eval_result: EvaluationResult = evaluator.evaluate(
                 query=example.query,
