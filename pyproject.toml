@@ -8,12 +8,12 @@ check-hidden = true
 ignore-words-list = "astroid,gallary,momento,narl,ot,rouge"
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
-skip = "./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+skip = "./llama_index/_static,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
-exclude = ["build", "examples", "notebooks", "venv"]
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
 
@@ -27,6 +27,7 @@ classifiers = [
 description = "Interface between LLMs and your data"
 documentation = "https://docs.llamaindex.ai/en/stable/"
 homepage = "https://llamaindex.ai"
+include = ["llama_index/_static"]
 keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
 license = "MIT"
 maintainers = [
@@ -147,6 +148,7 @@ llamaindex-cli = 'llama_index.command_line.command_line:main'
 
 [tool.ruff]
 exclude = [
+    "_static",
     "examples",
     "notebooks",
 ]

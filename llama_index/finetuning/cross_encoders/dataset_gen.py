@@ -3,10 +3,9 @@ import re
 from dataclasses import dataclass
 from typing import List, Optional
 
-import tiktoken
 from tqdm.auto import tqdm
 
-from llama_index import VectorStoreIndex
+from llama_index import VectorStoreIndex, get_tokenizer
 from llama_index.llms import ChatMessage, OpenAI
 from llama_index.llms.llm import LLM
 from llama_index.node_parser import TokenTextSplitter
@@ -46,7 +45,7 @@ def generate_synthetic_queries_over_documents(
         chunk_size=max_chunk_length,
         chunk_overlap=0,
         backup_separators=["\n"],
-        tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode,
+        tokenizer=get_tokenizer(),
     )
 
     llm = llm or OpenAI(model="gpt-3.5-turbo-16k", temperature=0.3)
@@ -123,7 +122,7 @@ def generate_ce_fine_tuning_dataset(
         chunk_size=max_chunk_length,
         chunk_overlap=0,
         backup_separators=["\n"],
-        tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode,
+        tokenizer=get_tokenizer(),
     )
 
     # Use logit bias in case of OpenAI for the tokens for Yes and No
