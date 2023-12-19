@@ -37,7 +37,7 @@ def build_nodes_from_splits(
 
         if isinstance(document, ImageDocument):
             image_node = ImageNode(
-                id=id_func(i, document),
+                id_=id_func(i, document),
                 text=text_chunk,
                 embedding=document.embedding,
                 image=document.image,
@@ -53,7 +53,7 @@ def build_nodes_from_splits(
             nodes.append(image_node)  # type: ignore
         elif isinstance(document, Document):
             node = TextNode(
-                id=id_func(i, document),
+                id_=id_func(i, document),
                 text=text_chunk,
                 embedding=document.embedding,
                 excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
@@ -66,7 +66,7 @@ def build_nodes_from_splits(
             nodes.append(node)
         elif isinstance(document, TextNode):
             node = TextNode(
-                id=id_func(i, document),
+                id_=id_func(i, document),
                 text=text_chunk,
                 embedding=document.embedding,
                 excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
