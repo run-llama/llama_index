@@ -13,7 +13,6 @@ from llama_index.tools.function_tool import FunctionTool
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
-import asyncio
 
 
 def mock_chat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
@@ -293,7 +292,6 @@ async def test_async_add_step(
     add_tool: FunctionTool,
 ) -> None:
     mock_instance = MockAsyncOpenAI.return_value
-    mock_instance.chat.completions.create.return_value = mock_achat_completion()
 
     llm = OpenAI(model="gpt-3.5-turbo")
     # async
@@ -303,8 +301,10 @@ async def test_async_add_step(
     )
     task = agent.create_task("What is 1 + 1?")
     # first step
+    mock_instance.chat.completions.create.return_value = mock_achat_completion()
     step_output = await agent.arun_step(task.task_id)
     # add human input (not used but should be in memory)
+    mock_instance.chat.completions.create.return_value = mock_achat_completion()
     step_output = await agent.arun_step(task.task_id, input="tmp")
     chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
     assert "tmp" in [m.content for m in chat_history]
@@ -316,8 +316,10 @@ async def test_async_add_step(
     )
     task = agent.create_task("What is 1 + 1?")
     # first step
+    mock_instance.chat.completions.create.side_effect = mock_achat_stream
     step_output = await agent.astream_step(task.task_id)
     # add human input (not used but should be in memory)
+    mock_instance.chat.completions.create.side_effect = mock_achat_stream
     step_output = await agent.astream_step(task.task_id, input="tmp")
     chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
     assert "tmp" in [m.content for m in chat_history]
