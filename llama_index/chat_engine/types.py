@@ -82,8 +82,7 @@ class StreamingAgentChatResponse:
         if self._is_done and not self._queue.empty() and not self._is_function:
             while self._queue.queue:
                 delta = self._queue.queue.popleft()
-                if delta is not None:  # Check if delta is not None
-                    self._unformatted_response += delta
+                self._unformatted_response += delta
             self.response = self._unformatted_response.strip()
         return self.response
 
@@ -155,9 +154,8 @@ class StreamingAgentChatResponse:
         while not self._is_done or not self._queue.empty():
             try:
                 delta = self._queue.get(block=False)
-                if delta is not None:  # Check if delta is not None
-                    self._unformatted_response += delta
-                    yield delta
+                self._unformatted_response += delta
+                yield delta
             except queue.Empty:
                 # Queue is empty, but we're not done yet
                 continue
@@ -167,9 +165,8 @@ class StreamingAgentChatResponse:
         while not self._is_done or not self._aqueue.empty():
             if not self._aqueue.empty():
                 delta = self._aqueue.get_nowait()
-                if delta is not None:  # Check if delta is not None
-                    self._unformatted_response += delta
-                    yield delta
+                self._unformatted_response += delta
+                yield delta
             else:
                 await self._new_item_event.wait()  # Wait until a new item is added
                 self._new_item_event.clear()  # Clear the event for the next wait
