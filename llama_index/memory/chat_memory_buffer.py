@@ -1,10 +1,10 @@
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional
 
 from llama_index.bridge.pydantic import Field, root_validator
 from llama_index.llms.llm import LLM
 from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.memory.types import BaseMemory
-from llama_index.utils import GlobalsHelper
+from llama_index.utils import get_tokenizer
 
 DEFUALT_TOKEN_LIMIT_RATIO = 0.75
 DEFAULT_TOKEN_LIMIT = 3000
@@ -16,7 +16,7 @@ class ChatMemoryBuffer(BaseMemory):
     token_limit: int
     tokenizer_fn: Callable[[str], List] = Field(
         # NOTE: mypy does not handle the typing here well, hence the cast
-        default_factory=cast(Callable[[], Any], GlobalsHelper().tokenizer),
+        default_factory=get_tokenizer,
         exclude=True,
     )
     chat_history: List[ChatMessage] = Field(default_factory=list)
@@ -42,7 +42,7 @@ class ChatMemoryBuffer(BaseMemory):
         # Validate tokenizer -- this avoids errors when loading from json/dict
         tokenizer_fn = values.get("tokenizer_fn", None)
         if tokenizer_fn is None:
-            values["tokenizer_fn"] = GlobalsHelper().tokenizer
+            values["tokenizer_fn"] = get_tokenizer()
 
         return values
 
@@ -63,7 +63,7 @@ class ChatMemoryBuffer(BaseMemory):
 
         return cls(
             token_limit=token_limit,
-            tokenizer_fn=tokenizer_fn or GlobalsHelper().tokenizer,
+            tokenizer_fn=tokenizer_fn or get_tokenizer(),
             chat_history=chat_history or [],
         )
 
