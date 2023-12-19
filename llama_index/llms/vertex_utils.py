@@ -5,7 +5,6 @@ import base64
 import logging
 from typing import Any, Callable, Dict, Optional, Union
 
-from google.ai.generativelanguage_v1 import Part
 from tenacity import (
     before_sleep_log,
     retry,
@@ -147,31 +146,6 @@ def init_vertexai(
     )
 
 
-def _convert_gemini_part_to_prompt(part: Union[str, Dict]) -> Part:
-    from vertexai.preview.generative_models import Image, Part
-
-    if isinstance(part, str):
-        return Part.from_text(part)
-
-    if not isinstance(part, Dict):
-        raise ValueError(
-            f"Message's content is expected to be a dict, got {type(part)}!"
-        )
-    if part["type"] == "text":
-        return Part.from_text(part["text"])
-    elif part["type"] == "image_url":
-        path = part["image_url"]["url"]
-        if path.startswith("gs://"):
-            raise ValueError("Only local image path is supported!")
-        elif path.startswith("data:image/jpeg;base64,"):
-            image = Image.from_bytes(base64.b64decode(path[23:]))
-        else:
-            image = Image.load_from_file(path)
-    else:
-        raise ValueError("Only text and image_url types are supported!")
-    return Part.from_image(image)
-
-
 def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
     """Parse a sequence of messages into history.
 
@@ -194,7 +168,31 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
                 raise ValueError("Gemini model don't support system messages")
         elif message.role == MessageRole.ASSISTANT or message.role == MessageRole.USER:
             if is_gemini:
-                from vertexai.preview.generative_models import Content
+                from vertexai.preview.generative_models import Content, Part
+
+                def _convert_gemini_part_to_prompt(part: Union[str, Dict]) -> Part:
+                    from vertexai.preview.generative_models import Image, Part
+
+                    if isinstance(part, str):
+                        return Part.from_text(part)
+
+                    if not isinstance(part, Dict):
+                        raise ValueError(
+                            f"Message's content is expected to be a dict, got {type(part)}!"
+                        )
+                    if part["type"] == "text":
+                        return Part.from_text(part["text"])
+                    elif part["type"] == "image_url":
+                        path = part["image_url"]["url"]
+                        if path.startswith("gs://"):
+                            raise ValueError("Only local image path is supported!")
+                        elif path.startswith("data:image/jpeg;base64,"):
+                            image = Image.from_bytes(base64.b64decode(path[23:]))
+                        else:
+                            image = Image.load_from_file(path)
+                    else:
+                        raise ValueError("Only text and image_url types are supported!")
+                    return Part.from_image(image)
 
                 raw_content = message.content
                 if isinstance(raw_content, str):
