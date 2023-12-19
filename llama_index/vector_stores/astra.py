@@ -5,6 +5,7 @@ An index based on a DB table with vector search capabilities,
 powered by the astrapy library
 
 """
+import json
 import logging
 from typing import Any, Dict, List, Optional, cast
 
@@ -272,16 +273,17 @@ class AstraDBVectorStore(VectorStore):
         top_k_ids = []
 
         # Get every match
-        for my_match in matches:
-            # Grab the node information
-            my_match["_node_content"] = "{}"
+        for match in matches:
+            # Check whether we have a llama-generated node content field
+            if "_node_content" not in match["metadata"]:
+                match["metadata"]["_node_content"] = json.dumps(match)
 
-            node = metadata_dict_to_node(my_match["metadata"])
-            node.set_content(my_match["content"])
+            # Create a new node object from the node metadata
+            node = metadata_dict_to_node(match["metadata"], text=match["content"])
 
             # Append to the respective lists
             top_k_nodes.append(node)
-            top_k_ids.append(my_match["_id"])
+            top_k_ids.append(match["_id"])
 
         # return our final result
         return VectorStoreQueryResult(
