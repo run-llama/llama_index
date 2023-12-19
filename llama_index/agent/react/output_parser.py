@@ -1,7 +1,6 @@
 """ReAct output parser."""
 
 
-import ast
 import json
 import re
 from typing import Tuple
@@ -29,11 +28,10 @@ def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
 
 
 def action_input_parser(json_str):
-    processed_string = re.sub(r'(?<!\w)\'|\'(?!\w)', '"', json_str)
+    processed_string = re.sub(r"(?<!\w)\'|\'(?!\w)", '"', json_str)
     pattern = r'"(\w+)":\s*"([^"]*)"'
     matches = re.findall(pattern, processed_string)
-    result_dict = {key: value for key, value in matches}
-    return result_dict
+    return dict(matches)
 
 
 def extract_final_response(input_text: str) -> Tuple[str, str]:
