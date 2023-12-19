@@ -1,8 +1,9 @@
 # utils script
 import base64
+
 # generation with retry
 import logging
-from typing import Any, Callable, Optional, Union, Dict, List
+from typing import Any, Callable, Dict, Optional, Union
 
 from google.ai.generativelanguage_v1 import Part
 from tenacity import (
@@ -12,14 +13,14 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-from vertexai.vision_models import Image
 
-from llama_index.llms.types import MessageRole, ChatMessage
+from llama_index.llms.types import MessageRole
 
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
 TEXT_MODELS = ["text-bison", "text-bison-32k", "text-bison@001"]
 CODE_MODELS = ["code-bison", "code-bison-32k", "code-bison@001"]
 CODE_CHAT_MODELS = ["codechat-bison", "codechat-bison-32k", "codechat-bison@001"]
+
 
 def is_gemini_model(model: str) -> bool:
     return model.startswith("gemini")
@@ -68,7 +69,9 @@ def completion_with_retry(
 
             generation = client.start_chat(history=history)
             generation_config = dict(kwargs)
-            return generation.send_message(prompt, stream=stream, generation_config=generation_config)
+            return generation.send_message(
+                prompt, stream=stream, generation_config=generation_config
+            )
         elif chat:
             generation = client.start_chat(**params)
             if stream:
@@ -103,7 +106,9 @@ async def acompletion_with_retry(
 
             generation = client.start_chat(history=history)
             generation_config = dict(kwargs)
-            return await generation.send_message_async(prompt, generation_config=generation_config)
+            return await generation.send_message_async(
+                prompt, generation_config=generation_config
+            )
         elif chat:
             generation = client.start_chat(**params)
             return await generation.send_message_async(prompt, **kwargs)
@@ -143,7 +148,8 @@ def init_vertexai(
 
 
 def _convert_gemini_part_to_prompt(part: Union[str, Dict]) -> Part:
-    from vertexai.preview.generative_models import Content, Image, Part
+    from vertexai.preview.generative_models import Image, Part
+
     if isinstance(part, str):
         return Part.from_text(part)
 
@@ -165,6 +171,7 @@ def _convert_gemini_part_to_prompt(part: Union[str, Dict]) -> Part:
         raise ValueError("Only text and image_url types are supported!")
     return Part.from_image(image)
 
+
 def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
     """Parse a sequence of messages into history.
 
@@ -184,20 +191,25 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
     for i, message in enumerate(history):
         if i == 0 and message.role == MessageRole.SYSTEM:
             if is_gemini:
-                raise ValueError(
-                    "Gemini model don't support system messages"
-                )
+                raise ValueError("Gemini model don't support system messages")
         elif message.role == MessageRole.ASSISTANT or message.role == MessageRole.USER:
             if is_gemini:
-                from vertexai.preview.generative_models import Content, Image, Part
+                from vertexai.preview.generative_models import Content
+
                 raw_content = message.content
                 if isinstance(raw_content, str):
                     raw_content = [raw_content]
                 parts = [_convert_gemini_part_to_prompt(part) for part in raw_content]
-                vertex_message = Content(role="user" if message.role == MessageRole.USER else "model", parts=parts)
+                vertex_message = Content(
+                    role="user" if message.role == MessageRole.USER else "model",
+                    parts=parts,
+                )
                 vertex_messages.append(vertex_message)
             else:
-                vertex_message = ChatMessage(content=message.content, author="bot" if message.role == MessageRole.ASSISTANT else "user")
+                vertex_message = ChatMessage(
+                    content=message.content,
+                    author="bot" if message.role == MessageRole.ASSISTANT else "user",
+                )
                 vertex_messages.append(vertex_message)
         else:
             raise ValueError(

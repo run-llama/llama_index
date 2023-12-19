@@ -27,11 +27,10 @@ from llama_index.llms.vertex_utils import (
     _parse_examples,
     acompletion_with_retry,
     completion_with_retry,
-    init_vertexai, is_gemini_model,
+    init_vertexai,
+    is_gemini_model,
 )
 from llama_index.types import BaseOutputParser, PydanticProgramMode
-
-
 
 
 class Vertex(LLM):
@@ -98,6 +97,7 @@ class Vertex(LLM):
             self._client = TextGenerationModel.from_pretrained(model)
         elif is_gemini_model(model):
             from vertexai.preview.generative_models import GenerativeModel
+
             self._client = GenerativeModel(model_name=model)
             self._chat_client = self._client
             self._is_gemini = True
@@ -177,7 +177,7 @@ class Vertex(LLM):
             is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
-            **params
+            **params,
         )
 
         return ChatResponse(
@@ -193,7 +193,11 @@ class Vertex(LLM):
             raise (ValueError("candidate_count is not supported by the codey model's"))
 
         completion = completion_with_retry(
-            self._client, prompt, max_retries=self.max_retries, is_gemini=self._is_gemini, **params
+            self._client,
+            prompt,
+            max_retries=self.max_retries,
+            is_gemini=self._is_gemini,
+            **params,
         )
         return CompletionResponse(text=completion.text, raw=completion.__dict__)
 
@@ -225,7 +229,7 @@ class Vertex(LLM):
             is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
-            **params
+            **params,
         )
 
         def gen() -> ChatResponseGen:
@@ -255,7 +259,7 @@ class Vertex(LLM):
             stream=True,
             is_gemini=self._is_gemini,
             max_retries=self.max_retries,
-            **params
+            **params,
         )
 
         def gen() -> CompletionResponseGen:
@@ -295,7 +299,7 @@ class Vertex(LLM):
             is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
-            **params
+            **params,
         )
         ##this is due to a bug in vertex AI we have to await twice
         if self.iscode:
@@ -312,7 +316,11 @@ class Vertex(LLM):
         if self.iscode and "candidate_count" in params:
             raise (ValueError("candidate_count is not supported by the codey model's"))
         completion = await acompletion_with_retry(
-            client=self._client, prompt=prompt, max_retries=self.max_retries, is_gemini=self._is_gemini, **params
+            client=self._client,
+            prompt=prompt,
+            max_retries=self.max_retries,
+            is_gemini=self._is_gemini,
+            **params,
         )
         return CompletionResponse(text=completion.text)
 

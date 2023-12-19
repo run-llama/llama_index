@@ -1,18 +1,12 @@
-import logging
-
 import pytest
-from llama_index.llms.types import CompletionResponse, ChatMessage
+from llama_index.llms.types import ChatMessage, CompletionResponse
 from llama_index.llms.vertex import Vertex
 from llama_index.llms.vertex_utils import init_vertexai
-import os
 
 try:
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/nicoloboschi/dev/vertex-ai-accountjson.json"
     init_vertexai()
     vertex_init = True
 except Exception as e:
-    logging.info(e)
-    print(e)
     vertex_init = False
 
 
@@ -84,8 +78,11 @@ async def test_vertex_gemini_call() -> None:
     assert "foo" in async_output.text
 
     # chat
-    history = [ChatMessage(role="user", content="Say foo:"), ChatMessage(role="assistant", content="Foo with love !"),
-               ChatMessage(role="user", content="Please repeat")]
+    history = [
+        ChatMessage(role="user", content="Say foo:"),
+        ChatMessage(role="assistant", content="Foo with love !"),
+        ChatMessage(role="user", content="Please repeat"),
+    ]
     output = llm.chat(history)
     assert "Foo with love !" in output.message.content
     streaming_output = list(llm.stream_chat(history))
