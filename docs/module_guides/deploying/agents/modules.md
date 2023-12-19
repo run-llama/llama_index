@@ -52,4 +52,5 @@ maxdepth: 1
 ---
 /examples/agent/agent_runner/agent_runner.ipynb
 /examples/agent/agent_runner/agent_runner_rag.ipynb
+/examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
 ```
