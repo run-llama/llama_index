@@ -27,8 +27,8 @@ LLAMA_SOURCE_FILES_PATH = "source_files"
 DATASET_CLASS_FILENAME_REGISTRY = {
     "LabelledRagDataset": "rag_dataset.json",
     "LabeledRagDataset": "rag_dataset.json",
-    "LabelledPairwiseEvaluatorDataset": "pairwise_evaluation_dataset.json",
-    "LabeledPairwiseEvaluatorDataset": "pairwise_evaluation_dataset.json",
+    "LabelledPairwiseEvaluatorDataset": "pairwise_evaluator_dataset.json",
+    "LabeledPairwiseEvaluatorDataset": "pairwise_evaluator_dataset.json",
 }
 
 
