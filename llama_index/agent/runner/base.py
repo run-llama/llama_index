@@ -76,25 +76,41 @@ class BaseAgentRunner(BaseAgent):
 
     @abstractmethod
     def run_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step."""
 
     @abstractmethod
     async def arun_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (async)."""
 
     @abstractmethod
     def stream_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (stream)."""
 
     @abstractmethod
     async def astream_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (async stream)."""
 

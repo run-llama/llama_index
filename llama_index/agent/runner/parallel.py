@@ -258,13 +258,21 @@ class ParallelAgentRunner(BaseAgentRunner):
         return cur_step_output
 
     def run_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step."""
         return self._run_step(task_id, step, mode=ChatResponseMode.WAIT, **kwargs)
 
     async def arun_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (async)."""
         return await self._arun_step(
@@ -272,13 +280,21 @@ class ParallelAgentRunner(BaseAgentRunner):
         )
 
     def stream_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (stream)."""
         return self._run_step(task_id, step, mode=ChatResponseMode.STREAM, **kwargs)
 
     async def astream_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         return await self._arun_step(
