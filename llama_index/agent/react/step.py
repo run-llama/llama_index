@@ -45,7 +45,8 @@ from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.types import MessageRole
-from llama_index.memory import ChatMemoryBuffer
+from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
+from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
@@ -55,13 +56,21 @@ DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
 def add_user_step_to_reasoning(
-    step: TaskStep, current_reasoning: List[BaseReasoningStep], verbose: bool = False
+    step: TaskStep,
+    memory: BaseMemory,
+    current_reasoning: List[BaseReasoningStep],
+    verbose: bool = False,
 ) -> None:
     """Add user step to memory."""
-    reasoning_step = ObservationReasoningStep(observation=step.input)
-    current_reasoning.append(reasoning_step)
-    if verbose:
-        print(f"Added user message to memory: {step.input}")
+    if "is_first" in step.step_state and step.step_state["is_first"]:
+        # add to new memory
+        memory.put(ChatMessage(content=step.input, role=MessageRole.USER))
+        step.step_state["is_first"] = False
+    else:
+        reasoning_step = ObservationReasoningStep(observation=step.input)
+        current_reasoning.append(reasoning_step)
+        if verbose:
+            print(f"Added user message to memory: {step.input}")
 
 
 class ReActAgentWorker(BaseAgentWorker):
@@ -151,6 +160,7 @@ class ReActAgentWorker(BaseAgentWorker):
             task_id=task.task_id,
             step_id=str(uuid.uuid4()),
             input=task.input,
+            step_state={"is_first": True},
         )
 
     def get_tools(self, input: str) -> List[AsyncBaseTool]:
@@ -379,7 +389,10 @@ class ReActAgentWorker(BaseAgentWorker):
         """Run step."""
         if step.input is not None:
             add_user_step_to_reasoning(
-                step, task.extra_state["current_reasoning"], verbose=self._verbose
+                step,
+                task.extra_state["new_memory"],
+                task.extra_state["current_reasoning"],
+                verbose=self._verbose,
             )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
@@ -415,7 +428,10 @@ class ReActAgentWorker(BaseAgentWorker):
         """Run step."""
         if step.input is not None:
             add_user_step_to_reasoning(
-                step, task.extra_state["current_reasoning"], verbose=self._verbose
+                step,
+                task.extra_state["new_memory"],
+                task.extra_state["current_reasoning"],
+                verbose=self._verbose,
             )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
@@ -450,7 +466,10 @@ class ReActAgentWorker(BaseAgentWorker):
         """Run step."""
         if step.input is not None:
             add_user_step_to_reasoning(
-                step, task.extra_state["current_reasoning"], verbose=self._verbose
+                step,
+                task.extra_state["new_memory"],
+                task.extra_state["current_reasoning"],
+                verbose=self._verbose,
             )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
@@ -510,7 +529,10 @@ class ReActAgentWorker(BaseAgentWorker):
         """Run step."""
         if step.input is not None:
             add_user_step_to_reasoning(
-                step, task.extra_state["current_reasoning"], verbose=self._verbose
+                step,
+                task.extra_state["new_memory"],
+                task.extra_state["current_reasoning"],
+                verbose=self._verbose,
             )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)

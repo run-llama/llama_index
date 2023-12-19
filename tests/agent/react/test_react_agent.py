@@ -270,11 +270,10 @@ def _get_agent(tools: List[BaseTool]) -> ReActAgent:
             ),
         ]
     )
-    agent = ReActAgent.from_tools(
+    return ReActAgent.from_tools(
         tools=tools,
         llm=mock_llm,
     )
-    return agent
 
 
 def _get_observations(task: Task) -> List[str]:
