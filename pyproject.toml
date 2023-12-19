@@ -27,6 +27,7 @@ classifiers = [
 description = "Interface between LLMs and your data"
 documentation = "https://docs.llamaindex.ai/en/stable/"
 homepage = "https://llamaindex.ai"
+include = ["llama_index/_static"]
 keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
 license = "MIT"
 maintainers = [
