@@ -1,9 +1,10 @@
 # utils script
-
+import base64
 # generation with retry
 import logging
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union, Dict, List
 
+from google.ai.generativelanguage_v1 import Part
 from tenacity import (
     before_sleep_log,
     retry,
@@ -11,13 +12,17 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+from vertexai.vision_models import Image
 
-from llama_index.llms.types import MessageRole
+from llama_index.llms.types import MessageRole, ChatMessage
 
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
 TEXT_MODELS = ["text-bison", "text-bison-32k", "text-bison@001"]
 CODE_MODELS = ["code-bison", "code-bison-32k", "code-bison@001"]
 CODE_CHAT_MODELS = ["codechat-bison", "codechat-bison-32k", "codechat-bison@001"]
+
+def is_gemini_model(model: str) -> bool:
+    return model.startswith("gemini")
 
 
 logger = logging.getLogger(__name__)
@@ -49,6 +54,7 @@ def completion_with_retry(
     max_retries: int = 5,
     chat: bool = False,
     stream: bool = False,
+    is_gemini: bool = False,
     params: Any = {},
     **kwargs: Any,
 ) -> Any:
@@ -57,7 +63,13 @@ def completion_with_retry(
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
-        if chat:
+        if is_gemini:
+            history = params["message_history"] if "message_history" in params else []
+
+            generation = client.start_chat(history=history)
+            generation_config = dict(kwargs)
+            return generation.send_message(prompt, stream=stream, generation_config=generation_config)
+        elif chat:
             generation = client.start_chat(**params)
             if stream:
                 return generation.send_message_streaming(prompt, **kwargs)
@@ -77,6 +89,7 @@ async def acompletion_with_retry(
     prompt: Optional[str],
     max_retries: int = 5,
     chat: bool = False,
+    is_gemini: bool = False,
     params: Any = {},
     **kwargs: Any,
 ) -> Any:
@@ -85,7 +98,13 @@ async def acompletion_with_retry(
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        if chat:
+        if is_gemini:
+            history = params["message_history"] if "message_history" in params else []
+
+            generation = client.start_chat(history=history)
+            generation_config = dict(kwargs)
+            return await generation.send_message_async(prompt, generation_config=generation_config)
+        elif chat:
             generation = client.start_chat(**params)
             return await generation.send_message_async(prompt, **kwargs)
         else:
@@ -123,7 +142,30 @@ def init_vertexai(
     )
 
 
-def _parse_chat_history(history: Any) -> Any:
+def _convert_gemini_part_to_prompt(part: Union[str, Dict]) -> Part:
+    from vertexai.preview.generative_models import Content, Image, Part
+    if isinstance(part, str):
+        return Part.from_text(part)
+
+    if not isinstance(part, Dict):
+        raise ValueError(
+            f"Message's content is expected to be a dict, got {type(part)}!"
+        )
+    if part["type"] == "text":
+        return Part.from_text(part["text"])
+    elif part["type"] == "image_url":
+        path = part["image_url"]["url"]
+        if path.startswith("gs://"):
+            raise ValueError("Only local image path is supported!")
+        elif path.startswith("data:image/jpeg;base64,"):
+            image = Image.from_bytes(base64.b64decode(path[23:]))
+        else:
+            image = Image.load_from_file(path)
+    else:
+        raise ValueError("Only text and image_url types are supported!")
+    return Part.from_image(image)
+
+def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
     """Parse a sequence of messages into history.
 
     Args:
@@ -141,13 +183,22 @@ def _parse_chat_history(history: Any) -> Any:
     vertex_messages, context = [], None
     for i, message in enumerate(history):
         if i == 0 and message.role == MessageRole.SYSTEM:
-            context = message.content
-        elif message.role == MessageRole.ASSISTANT:
-            vertex_message = ChatMessage(content=message.content, author="bot")
-            vertex_messages.append(vertex_message)
-        elif message.role == MessageRole.USER:
-            vertex_message = ChatMessage(content=message.content, author="user")
-            vertex_messages.append(vertex_message)
+            if is_gemini:
+                raise ValueError(
+                    "Gemini model don't support system messages"
+                )
+        elif message.role == MessageRole.ASSISTANT or message.role == MessageRole.USER:
+            if is_gemini:
+                from vertexai.preview.generative_models import Content, Image, Part
+                raw_content = message.content
+                if isinstance(raw_content, str):
+                    raw_content = [raw_content]
+                parts = [_convert_gemini_part_to_prompt(part) for part in raw_content]
+                vertex_message = Content(role="user" if message.role == MessageRole.USER else "model", parts=parts)
+                vertex_messages.append(vertex_message)
+            else:
+                vertex_message = ChatMessage(content=message.content, author="bot" if message.role == MessageRole.ASSISTANT else "user")
+                vertex_messages.append(vertex_message)
         else:
             raise ValueError(
                 f"Unexpected message with type {type(message)} at the position {i}."

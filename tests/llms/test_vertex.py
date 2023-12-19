@@ -1,12 +1,18 @@
+import logging
+
 import pytest
-from llama_index.llms.types import CompletionResponse
+from llama_index.llms.types import CompletionResponse, ChatMessage
 from llama_index.llms.vertex import Vertex
 from llama_index.llms.vertex_utils import init_vertexai
+import os
 
 try:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/nicoloboschi/dev/vertex-ai-accountjson.json"
     init_vertexai()
     vertex_init = True
 except Exception as e:
+    logging.info(e)
+    print(e)
     vertex_init = False
 
 
@@ -54,6 +60,7 @@ def test_vertex_stream() -> None:
 
 
 @pytest.mark.skipif(vertex_init is False, reason="vertex not installed")
+@pytest.mark.asyncio()
 async def test_vertex_consistency() -> None:
     llm = Vertex(temperature=0)
     output = llm.complete("Please say foo:")
@@ -61,3 +68,27 @@ async def test_vertex_consistency() -> None:
     async_output = await llm.acomplete("Please say foo:")
     assert output.text == streaming_output[-1].text
     assert output.text == async_output.text
+
+
+@pytest.mark.skipif(vertex_init is False, reason="vertex not installed")
+@pytest.mark.asyncio()
+async def test_vertex_gemini_call() -> None:
+    # complete
+    llm = Vertex(temperature=0, model="gemini-pro")
+    output = llm.complete("Say foo:")
+    assert "foo" in output.text.lower()
+    streaming_output = list(llm.stream_complete("Please say foo:"))
+    assert "foo" in streaming_output[-1].text
+
+    async_output = await llm.acomplete("Please say foo:")
+    assert "foo" in async_output.text
+
+    # chat
+    history = [ChatMessage(role="user", content="Say foo:"), ChatMessage(role="assistant", content="Foo with love !"),
+               ChatMessage(role="user", content="Please repeat")]
+    output = llm.chat(history)
+    assert "Foo with love !" in output.message.content
+    streaming_output = list(llm.stream_chat(history))
+    assert "Foo with love !" in streaming_output[-1].message.content
+    async_output = await llm.achat(history)
+    assert "Foo with love !" in async_output.message.content
