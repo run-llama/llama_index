@@ -13,6 +13,7 @@ from llama_index.tools.function_tool import FunctionTool
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
+import asyncio
 
 
 def mock_chat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
@@ -248,9 +249,15 @@ def test_call_tool_with_error_handling() -> None:
     assert output.content == "Error!"
 
 
+@patch("llama_index.llms.openai.SyncOpenAI")
 def test_add_step(
+    MockSyncOpenAI: MagicMock,
     add_tool: FunctionTool,
 ) -> None:
+    """Test add step."""
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_chat_completion()
+
     llm = OpenAI(model="gpt-3.5-turbo")
     # sync
     agent = OpenAIAgent.from_tools(
@@ -279,10 +286,15 @@ def test_add_step(
     assert "tmp" in [m.content for m in chat_history]
 
 
+@patch("llama_index.llms.openai.AsyncOpenAI")
 @pytest.mark.asyncio()
 async def test_async_add_step(
+    MockAsyncOpenAI: MagicMock,
     add_tool: FunctionTool,
 ) -> None:
+    mock_instance = MockAsyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_achat_completion()
+
     llm = OpenAI(model="gpt-3.5-turbo")
     # async
     agent = OpenAIAgent.from_tools(
