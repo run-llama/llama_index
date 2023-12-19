@@ -321,5 +321,5 @@ async def test_async_add_step(
     # add human input (not used but should be in memory)
     mock_instance.chat.completions.create.side_effect = mock_achat_stream
     step_output = await agent.astream_step(task.task_id, input="tmp")
-    chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
+    chat_history = task.extra_state["new_memory"].get_all()
     assert "tmp" in [m.content for m in chat_history]
