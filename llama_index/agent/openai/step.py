@@ -8,12 +8,7 @@ from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
 
 from llama_index.agent.openai.utils import resolve_tool_choice
-from llama_index.agent.types import (
-    BaseAgentWorker,
-    Task,
-    TaskStep,
-    TaskStepOutput,
-)
+from llama_index.agent.types import BaseAgentWorker, Task, TaskStep, TaskStepOutput
 from llama_index.callbacks import (
     CallbackManager,
     CBEventType,
@@ -245,10 +240,11 @@ class OpenAIAgentWorker(BaseAgentWorker):
         )
 
     def get_latest_tool_calls(self, task: Task) -> Optional[List[OpenAIToolCall]]:
+        chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
         return (
-            task.extra_state["new_memory"]
-            .get_all()[-1]
-            .additional_kwargs.get("tool_calls", None)
+            chat_history[-1].additional_kwargs.get("tool_calls", None)
+            if chat_history
+            else None
         )
 
     def _get_llm_chat_kwargs(
