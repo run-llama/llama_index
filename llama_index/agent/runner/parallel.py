@@ -110,8 +110,8 @@ class ParallelAgentRunner(BaseAgentRunner):
             extra_state=self.init_task_state_kwargs,
             **kwargs,
         )
-        # put input into memory
-        self.memory.put(ChatMessage(content=input, role=MessageRole.USER))
+        # # put input into memory
+        # self.memory.put(ChatMessage(content=input, role=MessageRole.USER))
 
         # add it to state
         # get initial step from task, and put it in the step queue
