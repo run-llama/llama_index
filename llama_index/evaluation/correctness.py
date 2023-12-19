@@ -125,9 +125,8 @@ class CorrectnessEvaluator(BaseEvaluator):
 
         await asyncio.sleep(sleep_time_in_seconds)
 
-        if query is None or response is None or reference is None:
-            print(query, response, reference, flush=True)
-            raise ValueError("query, response, and reference must be provided")
+        if query is None or response is None:
+            raise ValueError("query, and response must be provided")
 
         eval_response = await self._service_context.llm.apredict(
             prompt=self._eval_template,

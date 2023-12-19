@@ -175,10 +175,22 @@ class LabelledEvaluatorDataset(BaseLlamaDataset):
             "reference": example.ground_truth_answer,
             "sleep_time_in_seconds": sleep_time_in_seconds,
         }
-        eval_result: EvaluationResult = await evaluator.aevaluate(**eval_kwargs)
-        return EvaluatorExamplePrediction(
-            feedback=eval_result.feedback, score=eval_result.score
-        )
+        try:
+            eval_result: EvaluationResult = await evaluator.aevaluate(**eval_kwargs)
+        except Exception as err:
+            # TODO: raise warning here as well
+            return EvaluatorExamplePrediction(
+                invalid_prediction=True, invalid_reason=f"Caught error {err!s}"
+            )
+
+        if not eval_result.invalid_result:
+            return EvaluatorExamplePrediction(
+                feedback=eval_result.feedback, score=eval_result.score
+            )
+        else:
+            return EvaluatorExamplePrediction(
+                invalid_prediction=True, invalid_reason=eval_result.invalid_reason
+            )
 
     def _predict_example(
         self,
@@ -195,10 +207,22 @@ class LabelledEvaluatorDataset(BaseLlamaDataset):
             "reference": example.ground_truth_answer,
             "sleep_time_in_seconds": sleep_time_in_seconds,
         }
-        eval_result: EvaluationResult = evaluator.evaluate(**eval_kwargs)
-        return EvaluatorExamplePrediction(
-            feedback=eval_result.feedback, score=eval_result.score
-        )
+        try:
+            eval_result: EvaluationResult = evaluator.evaluate(**eval_kwargs)
+        except Exception as err:
+            # TODO: raise warning here as well
+            return EvaluatorExamplePrediction(
+                invalid_prediction=True, invalid_reason=f"Caught error {err!s}"
+            )
+
+        if not eval_result.invalid_result:
+            return EvaluatorExamplePrediction(
+                feedback=eval_result.feedback, score=eval_result.score
+            )
+        else:
+            return EvaluatorExamplePrediction(
+                invalid_prediction=True, invalid_reason=eval_result.invalid_reason
+            )
 
     def _construct_prediction_dataset(
         self, predictions: List[EvaluatorExamplePrediction]
@@ -369,12 +393,31 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset):
             "reference": example.ground_truth_answer,
             "sleep_time_in_seconds": sleep_time_in_seconds,
         }
-        eval_result: EvaluationResult = evaluator.evaluate(**eval_kwargs)
-        return PairwiseEvaluatorExamplePrediction(
-            feedback=eval_result.feedback,
-            score=eval_result.score,
-            evaluation_source=eval_result.pairwise_source,
-        )
+        try:
+            eval_result: EvaluationResult = evaluator.evaluate(
+                query=example.query,
+                response=example.answer,
+                second_response=example.second_answer,
+                contexts=example.contexts,
+                reference=example.ground_truth_answer,
+                sleep_time_in_seconds=sleep_time_in_seconds,
+            )
+        except Exception as err:
+            # TODO: raise warning here as well
+            return PairwiseEvaluatorExamplePrediction(
+                invalid_prediction=True, invalid_reason=f"Caught error {err!s}"
+            )
+
+        if not eval_result.invalid_result:
+            return PairwiseEvaluatorExamplePrediction(
+                feedback=eval_result.feedback,
+                score=eval_result.score,
+                evaluation_source=eval_result.pairwise_source,
+            )
+        else:
+            return PairwiseEvaluatorExamplePrediction(
+                invalid_prediction=True, invalid_reason=eval_result.invalid_reason
+            )
 
     def _construct_prediction_dataset(
         self, predictions: List[PairwiseEvaluatorExamplePrediction]
