@@ -14,6 +14,7 @@ from llama_index.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
+from llama_index.agent.utils import add_user_step_to_memory
 from llama_index.callbacks import (
     CallbackManager,
     CBEventType,
@@ -433,6 +434,10 @@ class OpenAIAgentWorker(BaseAgentWorker):
         tool_choice: Union[str, dict] = "auto",
     ) -> TaskStepOutput:
         """Run step."""
+        if step.input is not None:
+            add_user_step_to_memory(
+                step, task.extra_state["new_memory"], verbose=self._verbose
+            )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
@@ -497,6 +502,11 @@ class OpenAIAgentWorker(BaseAgentWorker):
         tool_choice: Union[str, dict] = "auto",
     ) -> TaskStepOutput:
         """Run step."""
+        if step.input is not None:
+            add_user_step_to_memory(
+                step, task.extra_state["new_memory"], verbose=self._verbose
+            )
+
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]

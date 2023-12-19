@@ -246,3 +246,66 @@ def test_call_tool_with_error_handling() -> None:
         tool, {"a": "1", "b": 1}, error_message="Error!"
     )
     assert output.content == "Error!"
+
+
+def test_add_step(
+    add_tool: FunctionTool,
+) -> None:
+    llm = OpenAI(model="gpt-3.5-turbo")
+    # sync
+    agent = OpenAIAgent.from_tools(
+        tools=[add_tool],
+        llm=llm,
+    )
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    step_output = agent.run_step(task.task_id)
+    # add human input (not used but should be in memory)
+    step_output = agent.run_step(task.task_id, input="tmp")
+    chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
+    assert "tmp" in [m.content for m in chat_history]
+
+    # stream_step
+    agent = OpenAIAgent.from_tools(
+        tools=[add_tool],
+        llm=llm,
+    )
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    step_output = agent.stream_step(task.task_id)
+    # add human input (not used but should be in memory)
+    step_output = agent.stream_step(task.task_id, input="tmp")
+    chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
+    assert "tmp" in [m.content for m in chat_history]
+
+
+@pytest.mark.asyncio()
+async def test_async_add_step(
+    add_tool: FunctionTool,
+) -> None:
+    llm = OpenAI(model="gpt-3.5-turbo")
+    # async
+    agent = OpenAIAgent.from_tools(
+        tools=[add_tool],
+        llm=llm,
+    )
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    step_output = await agent.arun_step(task.task_id)
+    # add human input (not used but should be in memory)
+    step_output = await agent.arun_step(task.task_id, input="tmp")
+    chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
+    assert "tmp" in [m.content for m in chat_history]
+
+    # async stream step
+    agent = OpenAIAgent.from_tools(
+        tools=[add_tool],
+        llm=llm,
+    )
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    step_output = await agent.astream_step(task.task_id)
+    # add human input (not used but should be in memory)
+    step_output = await agent.astream_step(task.task_id, input="tmp")
+    chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
+    assert "tmp" in [m.content for m in chat_history]

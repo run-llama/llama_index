@@ -54,6 +54,16 @@ from llama_index.utils import print_text, unit_generator
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
+def add_user_step_to_reasoning(
+    step: TaskStep, current_reasoning: List[BaseReasoningStep], verbose: bool = False
+) -> None:
+    """Add user step to memory."""
+    reasoning_step = ObservationReasoningStep(observation=step.input)
+    current_reasoning.append(reasoning_step)
+    if verbose:
+        print(f"Added user message to memory: {step.input}")
+
+
 class ReActAgentWorker(BaseAgentWorker):
     """OpenAI Agent agent worker."""
 
@@ -367,6 +377,10 @@ class ReActAgentWorker(BaseAgentWorker):
         task: Task,
     ) -> TaskStepOutput:
         """Run step."""
+        if step.input is not None:
+            add_user_step_to_reasoning(
+                step, task.extra_state["current_reasoning"], verbose=self._verbose
+            )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
 
@@ -399,6 +413,10 @@ class ReActAgentWorker(BaseAgentWorker):
         task: Task,
     ) -> TaskStepOutput:
         """Run step."""
+        if step.input is not None:
+            add_user_step_to_reasoning(
+                step, task.extra_state["current_reasoning"], verbose=self._verbose
+            )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
 
@@ -430,6 +448,10 @@ class ReActAgentWorker(BaseAgentWorker):
         task: Task,
     ) -> TaskStepOutput:
         """Run step."""
+        if step.input is not None:
+            add_user_step_to_reasoning(
+                step, task.extra_state["current_reasoning"], verbose=self._verbose
+            )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
 
@@ -486,6 +508,10 @@ class ReActAgentWorker(BaseAgentWorker):
         task: Task,
     ) -> TaskStepOutput:
         """Run step."""
+        if step.input is not None:
+            add_user_step_to_reasoning(
+                step, task.extra_state["current_reasoning"], verbose=self._verbose
+            )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
 

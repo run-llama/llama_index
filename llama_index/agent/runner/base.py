@@ -1,3 +1,4 @@
+import uuid
 from abc import abstractmethod
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Union, cast
@@ -110,6 +111,26 @@ class BaseAgentRunner(BaseAgent):
     def undo_step(self, task_id: str) -> None:
         """Undo previous step."""
         raise NotImplementedError("undo_step not implemented")
+
+
+def validate_step_from_args(
+    task_id: str, input: Optional[str] = None, step: Optional[Any] = None, **kwargs: Any
+) -> Optional[TaskStep]:
+    """Validate step from args."""
+    if step is not None:
+        if input is not None:
+            raise ValueError("Cannot specify both `step` and `input`")
+        if not isinstance(step, TaskStep):
+            raise ValueError(f"step must be TaskStep: {step}")
+        return step
+    else:
+        return (
+            None
+            if input is None
+            else TaskStep(
+                task_id=task_id, step_id=str(uuid.uuid4()), input=input, **kwargs
+            )
+        )
 
 
 class TaskState(BaseModel):
@@ -300,29 +321,49 @@ class AgentRunner(BaseAgentRunner):
         return cur_step_output
 
     def run_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step."""
+        step = validate_step_from_args(task_id, input, step, **kwargs)
         return self._run_step(task_id, step, mode=ChatResponseMode.WAIT, **kwargs)
 
     async def arun_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (async)."""
+        step = validate_step_from_args(task_id, input, step, **kwargs)
         return await self._arun_step(
             task_id, step, mode=ChatResponseMode.WAIT, **kwargs
         )
 
     def stream_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (stream)."""
+        step = validate_step_from_args(task_id, input, step, **kwargs)
         return self._run_step(task_id, step, mode=ChatResponseMode.STREAM, **kwargs)
 
     async def astream_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (async stream)."""
+        step = validate_step_from_args(task_id, input, step, **kwargs)
         return await self._arun_step(
             task_id, step, mode=ChatResponseMode.STREAM, **kwargs
         )
