@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import (
@@ -11,12 +11,14 @@ from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.types import LLMMetadata
 
 DEFAULT_API_BASE = "https://openrouter.ai/api/v1"
-DEFAULT_MODEL = "gryphe/mythomax-l2-13b"
 
 
 class OpenRouter(OpenAILike):
     model: str = Field(
-        description="The OpenRouter model to use. See https://openrouter.ai/models for options."
+        description="The OpenRouter model to use. See https://openrouter.ai/models for options. Alternatively, you can specify multiple `models`"
+    )
+    models: List[str] = Field(
+        description="The OpenRouter models to use, sorted by priority. See https://openrouter.ai/models for options."
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
@@ -30,7 +32,8 @@ class OpenRouter(OpenAILike):
 
     def __init__(
         self,
-        model: str = DEFAULT_MODEL,
+        model: str = None,
+        models: List[str] = None,
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: int = DEFAULT_NUM_OUTPUTS,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -46,6 +49,7 @@ class OpenRouter(OpenAILike):
 
         super().__init__(
             model=model,
+            models=models,
             temperature=temperature,
             max_tokens=max_tokens,
             api_base=api_base,
