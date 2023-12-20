@@ -1,17 +1,16 @@
 from typing import Callable, List, Tuple
 
-import torch
-
 SparseEncoderCallable = Callable[[List[str]], Tuple[List[List[int]], List[List[float]]]]
 
 
 def default_sparse_encoder(model_id: str) -> SparseEncoderCallable:
     try:
+        import torch
         from transformers import AutoModelForMaskedLM, AutoTokenizer
     except ImportError:
         raise ImportError(
-            "Could not import transformers library."
-            "Please install transformers with `pip install transformers`"
+            "Could not import transformers library. "
+            'Please install transformers with `pip install "transformers[torch]"`'
         )
 
     tokenizer = AutoTokenizer.from_pretrained(model_id)
