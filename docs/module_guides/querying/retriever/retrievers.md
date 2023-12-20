@@ -55,4 +55,5 @@ Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 /examples/index_structs/struct_indices/SQLIndexDemo.ipynb
 DeepMemory (Activeloop) </examples/retrievers/deep_memory.ipynb>
 /examples/managed/GoogleDemo.ipynb
+/examples/query_engine/multi_doc_auto_retrieval/multi_doc_auto_retrieval.ipynb
 ```

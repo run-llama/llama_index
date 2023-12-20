@@ -312,11 +312,12 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         elif query.mode == VectorStoreQueryMode.HYBRID:
             logger.debug(f"Using hybrid search with alpha {query.alpha}")
             similarity_key = "score"
-            query_builder = query_builder.with_hybrid(
-                query=query.query_str,
-                alpha=query.alpha,
-                vector=vector,
-            )
+            if vector is not None and query.query_str:
+                query_builder = query_builder.with_hybrid(
+                    query=query.query_str,
+                    alpha=query.alpha,
+                    vector=vector,
+                )
 
         if query.filters is not None:
             filter = _to_weaviate_filter(query.filters)
