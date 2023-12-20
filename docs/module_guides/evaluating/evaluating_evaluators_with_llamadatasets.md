@@ -56,3 +56,17 @@ comparing a pair of LLM responses to a given query and to determine the better o
 amongst them. The usage flow described above is exactly the same as it is for the
 `LabelledEvaluatorDataset`, with the exception that the LLM evaluator must be
 equipped to perform the pairwise evaluation task — i.e., should be a `PairwiseComparisonEvaluator`.
+
+## More learning materials
+
+To see these datasets in action, be sure to checkout the notebooks listed below
+that benchmark LLM evaluators on slightly adapted versions of the MT-Bench dataset.
+
+```{toctree}
+---
+maxdepth: 1
+---
+
+/examples/evaluation/mt_bench_single_grading.ipynb
+/examples/evaluation/mt_bench_human_judgement.ipynb
+```
