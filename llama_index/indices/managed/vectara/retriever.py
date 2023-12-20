@@ -53,6 +53,12 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
         filter: str = "",
+        mmr_k: int = 50,
+        mmr_diversity_bias: float = 0.3,
+        summary_enabled: bool = False,
+        summary_response_lang: str = "eng",
+        summary_num_results: int = 7,
+        summary_prompt_name: str = "vectara-summary-ext-v1.2.0",
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -66,18 +72,16 @@ class VectaraRetriever(BaseRetriever):
 
         if vectara_query_mode == ManagedIndexQueryMode.MMR:
             self._mmr = True
-            self._mmr_k = kwargs.get("mmr_k", 50)
-            self._mmr_diversity_bias = kwargs.get("mmr_diversity_bias", 0.3)
+            self._mmr_k = mmr_k
+            self._mmr_diversity_bias = mmr_diversity_bias
         else:
             self._mmr = False
 
-        if kwargs.get("summary_enabled", False):
+        if summary_enabled:
             self._summary_enabled = True
-            self._summary_response_lang = kwargs.get("summary_response_lang", "eng")
-            self._summary_num_results = kwargs.get("summary_num_results", 7)
-            self._summary_prompt_name = kwargs.get(
-                "summary_prompt_name", "vectara-summary-ext-v1.2.0"
-            )
+            self._summary_response_lang = summary_response_lang
+            self._summary_num_results = summary_num_results
+            self._summary_prompt_name = summary_prompt_name
         else:
             self._summary_enabled = False
         super().__init__(callback_manager)
