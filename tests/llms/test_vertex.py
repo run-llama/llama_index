@@ -110,7 +110,7 @@ async def test_vertex_gemini_vision_call() -> None:
     await _call_chat_and_assert(llm, history, "espresso")
 
 
-async def _call_chat_and_assert(llm, history, expected_lower_message):
+async def _call_chat_and_assert(llm, history, expected_lower_message) -> None:
     output = llm.chat(history)
     assert expected_lower_message in output.message.content.lower()
     streaming_output = list(llm.stream_chat(history))

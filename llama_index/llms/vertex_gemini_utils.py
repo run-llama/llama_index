@@ -42,6 +42,8 @@ def convert_chat_message_to_gemini_content(message: ChatMessage) -> Any:
         return Part.from_image(image)
 
     raw_content = message.content
+    if raw_content is None:
+        raw_content = ""
     if isinstance(raw_content, str):
         raw_content = [raw_content]
     parts = [_convert_gemini_part_to_prompt(part) for part in raw_content]
