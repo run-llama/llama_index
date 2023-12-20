@@ -25,4 +25,4 @@ more information + a detailed analysis.
 
 ## Learn more
 
-Our Putting It All Together section has [more on agents](/understanding/putting_it_all_together/agents.md)
+Our Putting It All Together section has [more on agents](/docs/understanding/putting_it_all_together/agents.md)
