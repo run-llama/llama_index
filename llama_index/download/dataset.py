@@ -22,11 +22,27 @@ LLAMA_DATASETS_LFS_URL = (
 LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL = (
     "https://github.com/run-llama/llama-datasets/tree/main"
 )
-LLAMA_RAG_DATASET_FILENAME = "rag_dataset.json"
 LLAMA_SOURCE_FILES_PATH = "source_files"
+
+DATASET_CLASS_FILENAME_REGISTRY = {
+    "LabelledRagDataset": "rag_dataset.json",
+    "LabeledRagDataset": "rag_dataset.json",
+    "LabelledPairwiseEvaluatorDataset": "pairwise_evaluator_dataset.json",
+    "LabeledPairwiseEvaluatorDataset": "pairwise_evaluator_dataset.json",
+    "LabelledEvaluatorDataset": "evaluator_dataset.json",
+    "LabeledEvaluatorDataset": "evaluator_dataset.json",
+}
 
 
 PATH_TYPE = Union[str, Path]
+
+
+def _resolve_dataset_file_name(class_name: str) -> str:
+    """Resolve filename based on dataset class."""
+    try:
+        return DATASET_CLASS_FILENAME_REGISTRY[class_name]
+    except KeyError as err:
+        raise ValueError("Invalid dataset filename.") from err
 
 
 def _get_source_files_list(source_tree_url: str, path: str) -> List[str]:
@@ -72,9 +88,19 @@ def get_dataset_info(
             raise ValueError("Loader class name not found in library")
 
         dataset_id = library[dataset_class]["id"]
-        source_files = _get_source_files_list(
-            str(remote_source_dir_path), f"/{dataset_id}/{source_files_path}"
+
+        # get data card
+        raw_card_content, _ = get_file_content(
+            str(remote_dir_path), f"/{dataset_id}/card.json"
         )
+        card = json.loads(raw_card_content)
+        dataset_class_name = card["className"]
+
+        source_files = []
+        if dataset_class_name == "LabelledRagDataset":
+            source_files = _get_source_files_list(
+                str(remote_source_dir_path), f"/{dataset_id}/{source_files_path}"
+            )
 
         # create cache dir if needed
         local_library_dir = os.path.dirname(local_library_path)
@@ -91,6 +117,7 @@ def get_dataset_info(
 
     return {
         "dataset_id": dataset_id,
+        "dataset_class_name": dataset_class_name,
         "source_files": source_files,
     }
 
@@ -100,6 +127,7 @@ def download_dataset_and_source_files(
     remote_lfs_dir_path: PATH_TYPE,
     source_files_dir_path: PATH_TYPE,
     dataset_id: str,
+    dataset_class_name: str,
     source_files: List[str],
     refresh_cache: bool = False,
     base_file_name: str = "rag_dataset.json",
@@ -117,39 +145,42 @@ def download_dataset_and_source_files(
 
     if refresh_cache or not os.path.exists(module_path):
         os.makedirs(module_path, exist_ok=True)
-        os.makedirs(f"{module_path}/{source_files_dir_path}", exist_ok=True)
 
-        rag_dataset_raw_content, _ = get_file_content(
+        base_file_name = _resolve_dataset_file_name(dataset_class_name)
+
+        dataset_raw_content, _ = get_file_content(
             str(remote_lfs_dir_path), f"/{dataset_id}/{base_file_name}"
         )
 
         with open(f"{module_path}/{base_file_name}", "w") as f:
-            f.write(rag_dataset_raw_content)
+            f.write(dataset_raw_content)
 
         # Get content of source files
-        if show_progress:
-            source_files_iterator = tqdm.tqdm(source_files)
-        else:
-            source_files_iterator = source_files
-        for source_file in source_files_iterator:
-            if ".pdf" in source_file:
-                source_file_raw_content_bytes, _ = get_file_content_bytes(
-                    str(remote_lfs_dir_path),
-                    f"/{dataset_id}/{source_files_dir_path}/{source_file}",
-                )
-                with open(
-                    f"{module_path}/{source_files_dir_path}/{source_file}", "wb"
-                ) as f:
-                    f.write(source_file_raw_content_bytes)
+        if dataset_class_name == "LabelledRagDataset":
+            os.makedirs(f"{module_path}/{source_files_dir_path}", exist_ok=True)
+            if show_progress:
+                source_files_iterator = tqdm.tqdm(source_files)
             else:
-                source_file_raw_content, _ = get_file_content(
-                    str(remote_lfs_dir_path),
-                    f"/{dataset_id}/{source_files_dir_path}/{source_file}",
-                )
-                with open(
-                    f"{module_path}/{source_files_dir_path}/{source_file}", "w"
-                ) as f:
-                    f.write(source_file_raw_content)
+                source_files_iterator = source_files
+            for source_file in source_files_iterator:
+                if ".pdf" in source_file:
+                    source_file_raw_content_bytes, _ = get_file_content_bytes(
+                        str(remote_lfs_dir_path),
+                        f"/{dataset_id}/{source_files_dir_path}/{source_file}",
+                    )
+                    with open(
+                        f"{module_path}/{source_files_dir_path}/{source_file}", "wb"
+                    ) as f:
+                        f.write(source_file_raw_content_bytes)
+                else:
+                    source_file_raw_content, _ = get_file_content(
+                        str(remote_lfs_dir_path),
+                        f"/{dataset_id}/{source_files_dir_path}/{source_file}",
+                    )
+                    with open(
+                        f"{module_path}/{source_files_dir_path}/{source_file}", "w"
+                    ) as f:
+                        f.write(source_file_raw_content)
 
 
 def download_llama_dataset(
@@ -161,8 +192,7 @@ def download_llama_dataset(
     custom_dir: Optional[str] = None,
     custom_path: Optional[str] = None,
     source_files_dirpath: str = LLAMA_SOURCE_FILES_PATH,
-    library_path: str = "library.json",
-    base_file_name: str = "rag_dataset.json",
+    library_path: str = "llama_datasets/library.json",
     disable_library_cache: bool = False,
     override_path: bool = False,
     show_progress: bool = False,
@@ -205,15 +235,18 @@ def download_llama_dataset(
     )
     dataset_id = dataset_info["dataset_id"]
     source_files = dataset_info["source_files"]
+    dataset_class_name = dataset_info["dataset_class_name"]
+
+    dataset_filename = _resolve_dataset_file_name(dataset_class_name)
 
     download_dataset_and_source_files(
         local_dir_path=dirpath,
         remote_lfs_dir_path=llama_datasets_lfs_url,
         source_files_dir_path=source_files_dirpath,
         dataset_id=dataset_id,
+        dataset_class_name=dataset_class_name,
         source_files=source_files,
         refresh_cache=refresh_cache,
-        base_file_name=base_file_name,
         override_path=override_path,
         show_progress=show_progress,
     )
@@ -224,6 +257,6 @@ def download_llama_dataset(
         module_path = f"{dirpath}/{dataset_id}"
 
     return (
-        f"{module_path}/{LLAMA_RAG_DATASET_FILENAME}",
+        f"{module_path}/{dataset_filename}",
         f"{module_path}/{LLAMA_SOURCE_FILES_PATH}",
     )
