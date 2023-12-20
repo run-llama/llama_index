@@ -34,7 +34,7 @@
 - Gemini Model Checks (#9563)
 - Update OpenAI fine-tuning with latest changes (#9564)
 - fix/Reintroduce `WHERE` filter to the Sparse Query for PgVectorStore (#9529)
-- Update Ollama API for ollama v0.1.16 (#9558)
+- Update Ollama API to ollama v0.1.16 (#9558)
 - ollama: strip invalid `formatted` option (#9555)
 - add a device in optimum push #9541 (#9554)
 - Title vs content difference for Gemini Embedding (#9547)
@@ -206,7 +206,7 @@
 ### Bug Fixes / Nits
 
 - Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)
-- Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
+- Sandboxed Pandas execution, remediate CVE-2023-39662 (#8890)
 - Restored `mypy` for Python 3.8 (#9031)
 - Loosened `dataclasses-json` version range,
   and removes unnecessary `jinja2` extra from `pandas` (#9042)
