@@ -126,7 +126,6 @@ class VectorIndexAutoRetriever(BaseRetriever):
             print(f"Using query str: {query_spec.query}")
             print(f"Using filters: {filter_dict}")
 
-        
         # define similarity_top_k
         # if query is specified, then use similarity_top_k
         # if query is blank, then use empty_query_top_k
@@ -134,13 +133,11 @@ class VectorIndexAutoRetriever(BaseRetriever):
             similarity_top_k = self._similarity_top_k
         else:
             similarity_top_k = self._empty_query_top_k
-        
+
         # if query_spec.top_k is specified, then use it
         # as long as below max_top_k and similarity_top_k
         if query_spec.top_k is not None:
-            similarity_top_k = min(
-                query_spec.top_k, self._max_top_k, similarity_top_k
-            )
+            similarity_top_k = min(query_spec.top_k, self._max_top_k, similarity_top_k)
 
         _logger.info(f"Using top_k: {similarity_top_k}")
 
