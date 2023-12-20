@@ -226,20 +226,16 @@ class Vllm(LLM):
         return completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
-    def complete(self, prompts: List[str], **kwargs: Any) -> List[CompletionResponse]:
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
         from vllm import SamplingParams
 
-        responses = []
         # build sampling parameters
         sampling_params = SamplingParams(**params)
-        outputs = self._client.generate(prompts, sampling_params)
-        for output in outputs:
-            responses.append(CompletionResponse(text=output.outputs[0].text))
-
-        return responses
+        outputs = self._client.generate([prompt], sampling_params)
+        return CompletionResponse(text=outputs[0].outputs[0].text)
 
     @llm_chat_callback()
     def stream_chat(
