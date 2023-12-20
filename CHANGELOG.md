@@ -1,5 +1,14 @@
 # ChangeLog
 
+## [0.9.18] - 2023-12-20
+
+### New Features
+- multi-doc auto-retrieval guide  (#9631)
+
+### Bug Fixes / Nits
+- fix(vllm): make Vllm's 'complete' method behave the same as other LLM class (#9634)
+- FIx Doc links and other documentation issue (#9632)
+
 ## [0.9.17] - 2023-12-19
 
 ### New Features
