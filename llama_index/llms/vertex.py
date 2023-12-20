@@ -18,6 +18,7 @@ from llama_index.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.llms.vertex_gemini_utils import is_gemini_model
 from llama_index.llms.vertex_utils import (
     CHAT_MODELS,
     CODE_CHAT_MODELS,
@@ -25,10 +26,10 @@ from llama_index.llms.vertex_utils import (
     TEXT_MODELS,
     _parse_chat_history,
     _parse_examples,
+    _parse_message,
     acompletion_with_retry,
     completion_with_retry,
     init_vertexai,
-    is_gemini_model,
 )
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
@@ -96,9 +97,9 @@ class Vertex(LLM):
 
             self._client = TextGenerationModel.from_pretrained(model)
         elif is_gemini_model(model):
-            from vertexai.preview.generative_models import GenerativeModel
+            from llama_index.llms.vertex_gemini_utils import create_gemini_client
 
-            self._client = GenerativeModel(model_name=model)
+            self._client = create_gemini_client(model)
             self._chat_client = self._client
             self._is_gemini = True
         else:
@@ -150,7 +151,7 @@ class Vertex(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        question = messages[-1].content
+        question = _parse_message(messages[-1], self._is_gemini)
         chat_history = _parse_chat_history(messages[:-1], self._is_gemini)
         chat_params = {**chat_history}
 
@@ -205,7 +206,7 @@ class Vertex(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        question = messages[-1].content
+        question = _parse_message(messages[-1], self._is_gemini)
         chat_history = _parse_chat_history(messages[:-1], self._is_gemini)
         chat_params = {**chat_history}
         kwargs = kwargs if kwargs else {}
@@ -277,7 +278,7 @@ class Vertex(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        question = messages[-1].content
+        question = _parse_message(messages[-1], self._is_gemini)
         chat_history = _parse_chat_history(messages[:-1], self._is_gemini)
         chat_params = {**chat_history}
         kwargs = kwargs if kwargs else {}

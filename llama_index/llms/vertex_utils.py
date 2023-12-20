@@ -1,9 +1,8 @@
 # utils script
-import base64
 
 # generation with retry
 import logging
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Optional
 
 from tenacity import (
     before_sleep_log,
@@ -13,16 +12,12 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.llms.types import MessageRole
+from llama_index.llms.types import ChatMessage, MessageRole
 
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
 TEXT_MODELS = ["text-bison", "text-bison-32k", "text-bison@001"]
 CODE_MODELS = ["code-bison", "code-bison-32k", "code-bison@001"]
 CODE_CHAT_MODELS = ["codechat-bison", "codechat-bison-32k", "codechat-bison@001"]
-
-
-def is_gemini_model(model: str) -> bool:
-    return model.startswith("gemini")
 
 
 logger = logging.getLogger(__name__)
@@ -50,7 +45,7 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
 
 def completion_with_retry(
     client: Any,
-    prompt: Optional[str],
+    prompt: Optional[Any],
     max_retries: int = 5,
     chat: bool = False,
     stream: bool = False,
@@ -146,6 +141,17 @@ def init_vertexai(
     )
 
 
+def _parse_message(message: ChatMessage, is_gemini: bool) -> Any:
+    if is_gemini:
+        from llama_index.llms.vertex_gemini_utils import (
+            convert_chat_message_to_gemini_content,
+        )
+
+        return convert_chat_message_to_gemini_content(message)
+    else:
+        return message.content
+
+
 def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
     """Parse a sequence of messages into history.
 
@@ -166,43 +172,14 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
         if i == 0 and message.role == MessageRole.SYSTEM:
             if is_gemini:
                 raise ValueError("Gemini model don't support system messages")
+            context = message.content
         elif message.role == MessageRole.ASSISTANT or message.role == MessageRole.USER:
             if is_gemini:
-                from vertexai.preview.generative_models import Content, Part
-
-                def _convert_gemini_part_to_prompt(part: Union[str, Dict]) -> Part:
-                    from vertexai.preview.generative_models import Image, Part
-
-                    if isinstance(part, str):
-                        return Part.from_text(part)
-
-                    if not isinstance(part, Dict):
-                        raise ValueError(
-                            f"Message's content is expected to be a dict, got {type(part)}!"
-                        )
-                    if part["type"] == "text":
-                        return Part.from_text(part["text"])
-                    elif part["type"] == "image_url":
-                        path = part["image_url"]["url"]
-                        if path.startswith("gs://"):
-                            raise ValueError("Only local image path is supported!")
-                        elif path.startswith("data:image/jpeg;base64,"):
-                            image = Image.from_bytes(base64.b64decode(path[23:]))
-                        else:
-                            image = Image.load_from_file(path)
-                    else:
-                        raise ValueError("Only text and image_url types are supported!")
-                    return Part.from_image(image)
-
-                raw_content = message.content
-                if isinstance(raw_content, str):
-                    raw_content = [raw_content]
-                parts = [_convert_gemini_part_to_prompt(part) for part in raw_content]
-                vertex_message = Content(
-                    role="user" if message.role == MessageRole.USER else "model",
-                    parts=parts,
+                from llama_index.llms.vertex_gemini_utils import (
+                    convert_chat_message_to_gemini_content,
                 )
-                vertex_messages.append(vertex_message)
+
+                vertex_messages.append(convert_chat_message_to_gemini_content(message))
             else:
                 vertex_message = ChatMessage(
                     content=message.content,
