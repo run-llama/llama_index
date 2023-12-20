@@ -101,7 +101,7 @@ class RagPredictionDataset(BaseLlamaPredictionDataset):
         return "RagPredictionDataset"
 
 
-class LabelledRagDataset(BaseLlamaDataset):
+class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
     """RagDataset class."""
 
     _example_type = LabelledRagDataExample

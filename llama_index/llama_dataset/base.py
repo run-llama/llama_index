@@ -3,7 +3,7 @@
 import json
 from abc import abstractmethod
 from enum import Enum
-from typing import Generator, List, Optional, Type, TypeVar, Union
+from typing import Generator, Generic, List, Optional, Type, TypeVar, Union
 
 import tqdm
 from openai import RateLimitError
@@ -111,7 +111,7 @@ class BaseLlamaPredictionDataset(BaseModel):
         return "BaseLlamaPredictionDataset"
 
 
-class BaseLlamaDataset(BaseModel):
+class BaseLlamaDataset(BaseModel, Generic[P]):
     _example_type: Type[BaseLlamaDataExample] = BaseLlamaDataExample  # type: ignore[misc]
     examples: List[BaseLlamaDataExample] = Field(
         default=[], description="Data examples of this dataset."

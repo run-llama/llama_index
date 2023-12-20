@@ -133,7 +133,7 @@ class EvaluatorPredictionDataset(BaseLlamaPredictionDataset):
         return "EvaluatorPredictionDataset"
 
 
-class LabelledEvaluatorDataset(BaseLlamaDataset):
+class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
     """LabelledEvalationDataset class."""
 
     _example_type = LabelledEvaluatorDataExample
@@ -309,7 +309,7 @@ class LabelledPairwiseEvaluatorDataExample(LabelledEvaluatorDataExample):
         return "LabelledPairwiseEvaluatorDataExample"
 
 
-class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset):
+class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
     """Labelled pairwise evaluation dataset. For evaluating the evaluator in
     performing pairwise evaluations.
 
