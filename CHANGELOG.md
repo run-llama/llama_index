@@ -1,5 +1,17 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+### Bug Fixes / Nits
+
+## [0.9.19] - 2023-12-20
+
+### New Features
+
+- new llama datasets `LabelledEvaluatorDataset` & `LabelledPairwiseEvaluatorDataset` (#9531)
+
 ## [0.9.18] - 2023-12-20
 
 ### New Features
