@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import List, Optional, cast
+from typing import List, Optional
 
 from pandas import DataFrame as PandasDataFrame
 
@@ -14,7 +14,6 @@ from llama_index.llama_dataset.base import (
     BaseLlamaExamplePrediction,
     BaseLlamaPredictionDataset,
     CreatedBy,
-    PredictorType,
 )
 
 
@@ -121,28 +120,26 @@ class LabelledRagDataset(BaseLlamaDataset):
 
     async def _apredict_example(
         self,
-        predictor: PredictorType,
+        predictor: BaseQueryEngine,
         example: LabelledRagDataExample,
         sleep_time_in_seconds: int,
     ) -> RagExamplePrediction:
         """Async predict RAG example with a query engine."""
         await asyncio.sleep(sleep_time_in_seconds)
-        query_engine = cast(BaseQueryEngine, predictor)
-        response = await query_engine.aquery(example.query)
+        response = await predictor.aquery(example.query)
         return RagExamplePrediction(
             response=str(response), contexts=[s.text for s in response.source_nodes]
         )
 
     def _predict_example(
         self,
-        predictor: PredictorType,
+        predictor: BaseQueryEngine,
         example: LabelledRagDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> RagExamplePrediction:
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
-        query_engine = cast(BaseQueryEngine, predictor)
-        response = query_engine.query(example.query)
+        response = predictor.query(example.query)
         return RagExamplePrediction(
             response=str(response), contexts=[s.text for s in response.source_nodes]
         )

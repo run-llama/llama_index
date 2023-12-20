@@ -3,7 +3,7 @@
 import json
 from abc import abstractmethod
 from enum import Enum
-from typing import Generator, List, Optional, Type, Union
+from typing import Generator, List, Optional, Type, TypeVar, Union
 
 import tqdm
 from openai import RateLimitError
@@ -15,6 +15,7 @@ from llama_index.core import BaseQueryEngine
 from llama_index.evaluation import BaseEvaluator
 
 PredictorType = Union[BaseQueryEngine, BaseEvaluator]
+P = TypeVar("P", bound=PredictorType)
 
 
 class CreatedByType(str, Enum):
@@ -168,7 +169,7 @@ class BaseLlamaDataset(BaseModel):
     @abstractmethod
     def _predict_example(
         self,
-        predictor: PredictorType,
+        predictor: P,
         example: BaseLlamaDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> BaseLlamaExamplePrediction:
@@ -186,7 +187,7 @@ class BaseLlamaDataset(BaseModel):
 
     def make_predictions_with(
         self,
-        predictor: PredictorType,
+        predictor: P,
         show_progress: bool = False,
         batch_size: int = 20,
         sleep_time_in_seconds: int = 0,
@@ -227,7 +228,7 @@ class BaseLlamaDataset(BaseModel):
     @abstractmethod
     async def _apredict_example(
         self,
-        predictor: PredictorType,
+        predictor: P,
         example: BaseLlamaDataExample,
         sleep_time_in_seconds: int,
     ) -> BaseLlamaExamplePrediction:
@@ -255,7 +256,7 @@ class BaseLlamaDataset(BaseModel):
 
     async def amake_predictions_with(
         self,
-        predictor: PredictorType,
+        predictor: P,
         show_progress: bool = False,
         batch_size: int = 20,
         sleep_time_in_seconds: int = 1,
