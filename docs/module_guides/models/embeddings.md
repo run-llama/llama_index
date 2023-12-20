@@ -36,7 +36,7 @@ You can find more usage details and available customization options below.
 
 ## Getting Started
 
-The most common usage for an embedding model will be setting it in the service context object, and then using it to construct an index and query. The input documents will be broken into nodes, and the emedding model will generate an embedding for each node.
+The most common usage for an embedding model will be setting it in the service context object, and then using it to construct an index and query. The input documents will be broken into nodes, and the  embedding model will generate an embedding for each node.
 
 By default, LlamaIndex will use `text-embedding-ada-002`, which is what the example below manually sets up for you.
 
