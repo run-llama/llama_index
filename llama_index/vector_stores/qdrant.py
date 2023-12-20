@@ -79,7 +79,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_doc_fn: Optional[SparseEncoderCallable] = None,
         sparse_query_fn: Optional[SparseEncoderCallable] = None,
         hybrid_fusion_fn: Optional[
-            Callable[[VectorStoreQueryResult], VectorStoreQueryResult]
+            Callable[
+                [VectorStoreQueryResult, VectorStoreQueryResult], VectorStoreQueryResult
+            ]
         ] = None,
         **kwargs: Any,
     ) -> None:
@@ -149,8 +151,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         for node_batch in iter_batch(nodes, self.batch_size):
             node_ids = []
             vectors: List[Any] = []
-            sparse_vectors = []
-            sparse_indices = []
+            sparse_vectors: List[List[float]] = []
+            sparse_indices: List[List[int]] = []
             payloads = []
 
             if self.enable_hybrid and self._sparse_doc_fn is not None:
@@ -470,7 +472,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ),
                 ],
             )
-            assert len(sparse_response) == 2  # sanity check
+
+            # sanity check
+            assert len(sparse_response) == 2
+            assert self._hybrid_fusion_fn is not None
 
             # flatten the response
             return self._hybrid_fusion_fn(
@@ -561,9 +566,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_reuslt: VectorStoreQueryResult,
     ) -> VectorStoreQueryResult:
         """Deduplicate hybrid results."""
-        ids = dense_result.ids + sparse_reuslt.ids
-        similarities = dense_result.similarities + sparse_reuslt.similarities
-        nodes = dense_result.nodes + sparse_reuslt.nodes
+        ids = [*(dense_result.ids or []), *(sparse_reuslt.ids or [])]
+        similarities = [
+            *(dense_result.similarities or []),
+            *(sparse_reuslt.similarities or []),
+        ]
+        nodes = [*(dense_result.nodes or []), *(sparse_reuslt.nodes or [])]
 
         dedup_ids = []
         dedup_similarities = []
