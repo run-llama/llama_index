@@ -29,6 +29,7 @@ from llama_index import ServiceContext
 
 service_context = ServiceContext.from_defaults(embed_model="local")
 ```
+
 This will use a well-performing and fast default from Hugging Face.
 
 You can find more usage details and available customization options below.
