@@ -55,6 +55,14 @@ query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do growing up?")
 ```
 
+If you already have documents in your corpus you can just access them directly by constructing the VectaraIndex as follows:
+
+```
+index = VectaraIndex()
+```
+
+And the index will connect to the existing corpus without loading any new documents.
+
 ```{toctree}
 ---
 caption: Examples
