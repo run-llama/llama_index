@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import List, Optional, cast
+from typing import List, Optional
 
 from pandas import DataFrame as PandasDataFrame
 
@@ -10,7 +10,6 @@ from llama_index.bridge.pydantic import Field
 from llama_index.evaluation import (
     BaseEvaluator,
     EvaluationResult,
-    PairwiseComparisonEvaluator,
 )
 from llama_index.evaluation.pairwise import EvaluationSource
 from llama_index.llama_dataset.base import (
@@ -19,7 +18,6 @@ from llama_index.llama_dataset.base import (
     BaseLlamaExamplePrediction,
     BaseLlamaPredictionDataset,
     CreatedBy,
-    PredictorType,
 )
 
 
@@ -163,15 +161,14 @@ class LabelledEvaluatorDataset(BaseLlamaDataset):
 
     async def _apredict_example(
         self,
-        predictor: PredictorType,
+        predictor: BaseEvaluator,
         example: LabelledEvaluatorDataExample,
         sleep_time_in_seconds: int,
     ) -> EvaluatorExamplePrediction:
         """Async predict RAG example with a query engine."""
         await asyncio.sleep(sleep_time_in_seconds)
-        evaluator = cast(BaseEvaluator, predictor)
         try:
-            eval_result: EvaluationResult = await evaluator.aevaluate(
+            eval_result: EvaluationResult = await predictor.aevaluate(
                 query=example.query,
                 response=example.answer,
                 contexts=example.contexts,
@@ -195,15 +192,14 @@ class LabelledEvaluatorDataset(BaseLlamaDataset):
 
     def _predict_example(
         self,
-        predictor: PredictorType,
+        predictor: BaseEvaluator,
         example: LabelledEvaluatorDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> EvaluatorExamplePrediction:
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
-        evaluator = cast(BaseEvaluator, predictor)
         try:
-            eval_result: EvaluationResult = evaluator.evaluate(
+            eval_result: EvaluationResult = predictor.evaluate(
                 query=example.query,
                 response=example.answer,
                 contexts=example.contexts,
@@ -348,15 +344,14 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset):
 
     async def _apredict_example(
         self,
-        predictor: PredictorType,
+        predictor: BaseEvaluator,
         example: LabelledPairwiseEvaluatorDataExample,
         sleep_time_in_seconds: int,
     ) -> PairwiseEvaluatorExamplePrediction:
         """Async predict evaluation example with an Evaluator."""
         await asyncio.sleep(sleep_time_in_seconds)
-        evaluator = cast(PairwiseComparisonEvaluator, predictor)
         try:
-            eval_result: EvaluationResult = await evaluator.aevaluate(
+            eval_result: EvaluationResult = await predictor.aevaluate(
                 query=example.query,
                 response=example.answer,
                 second_response=example.second_answer,
@@ -383,15 +378,14 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset):
 
     def _predict_example(
         self,
-        predictor: PredictorType,
+        predictor: BaseEvaluator,
         example: LabelledPairwiseEvaluatorDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> PairwiseEvaluatorExamplePrediction:
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
-        evaluator = cast(PairwiseComparisonEvaluator, predictor)
         try:
-            eval_result: EvaluationResult = evaluator.evaluate(
+            eval_result: EvaluationResult = predictor.evaluate(
                 query=example.query,
                 response=example.answer,
                 second_response=example.second_answer,
