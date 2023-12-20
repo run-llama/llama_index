@@ -5,7 +5,7 @@ LLM systems or tasks. In that spirit, the `LabelledEvaluatorDataset` exists to
 facilitate the evaluation of evaluators in a seamless and effortless manner.
 
 This dataset consists of examples that carries mainly the following attributes:
-`query`, `answer`, `ground_truth_answer`, and `reference_answer` along with some
+`query`, `answer`, `ground_truth_answer`, `reference_score`, and `reference_feedback` along with some
 other supplementary attributes. The user flow for producing evaluations with this
 dataset consists of making predictions over the dataset with a provided LLM
 evaluator, and then computing metrics that measure goodness of evaluations by
