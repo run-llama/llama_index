@@ -18,9 +18,10 @@ DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.
 
 You are given the following information:
-- a user query,
-- a reference answer, and
-- a generated answer.
+- a user query, and
+- a generated answer
+
+You may also be given a reference answer to use for reference in your evaluation.
 
 Your job is to judge the relevance and correctness of the generated answer.
 Output a single score that represents a holistic evaluation.
@@ -132,7 +133,7 @@ class CorrectnessEvaluator(BaseEvaluator):
             prompt=self._eval_template,
             query=query,
             generated_answer=response,
-            reference_answer=reference,
+            reference_answer=reference or "(NO REFERENCE ANSWER SUPPLIED)",
         )
 
         # Use the parser function
