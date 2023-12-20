@@ -285,7 +285,7 @@ class IngestionPipeline(BaseModel):
     def _handle_upserts(self, nodes: List[BaseNode]) -> List[BaseNode]:
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
-        
+
         deduped_nodes_to_run = {}
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
@@ -312,7 +312,7 @@ class IngestionPipeline(BaseModel):
         return list(deduped_nodes_to_run.values())
 
     def _handle_upserts_and_delete(self, nodes: List[BaseNode]) -> List[BaseNode]:
-        """Handle docstore upserts by checking hashes and ids, followed by deletion of missing documents in a docstore namespace"""
+        """Handle docstore upserts by checking hashes and ids, followed by deletion of missing documents in a docstore namespace."""
         assert self.docstore is not None
 
         existing_doc_ids_before = set(self.docstore.get_all_document_hashes().values())
@@ -339,7 +339,7 @@ class IngestionPipeline(BaseModel):
                 deduped_nodes_to_run[ref_doc_id] = node
             else:
                 continue  # document exists and is unchanged, so skip it
-        
+
         # Identify missing docs and delete them from docstore and vector store
         doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
         for ref_doc_id in doc_ids_to_delete:
@@ -347,9 +347,9 @@ class IngestionPipeline(BaseModel):
 
             if self.vector_store is not None:
                 self.vector_store.delete(ref_doc_id)
-        
+
         return list(deduped_nodes_to_run.values())
-    
+
     def run(
         self,
         show_progress: bool = False,
