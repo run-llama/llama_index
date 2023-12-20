@@ -61,7 +61,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _sparse_doc_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _sparse_query_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _hybrid_fusion_fn: Optional[
-        Callable[[VectorStoreQueryResult], VectorStoreQueryResult]
+        Callable[
+            [VectorStoreQueryResult, VectorStoreQueryResult], VectorStoreQueryResult
+        ]
     ] = PrivateAttr()
 
     def __init__(
@@ -146,12 +148,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         ids = []
         for node_batch in iter_batch(nodes, self.batch_size):
             node_ids = []
-            vectors = []
+            vectors: List[Any] = []
             sparse_vectors = []
             sparse_indices = []
             payloads = []
 
-            if self.enable_hybrid:
+            if self.enable_hybrid and self._sparse_doc_fn is not None:
                 sparse_indices, sparse_vectors = self._sparse_doc_fn(
                     [
                         node.get_content(metadata_mode=MetadataMode.EMBED)
@@ -431,7 +433,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 "Hybrid search is not enabled. Please build the query with "
                 "`enable_hybrid=True` in the constructor."
             )
-        elif query.mode == VectorStoreQueryMode.HYBRID and self.enable_hybrid:
+        elif (
+            query.mode == VectorStoreQueryMode.HYBRID
+            and self.enable_hybrid
+            and self._sparse_query_fn is not None
+            and query.query_str is not None
+        ):
             sparse_indices, sparse_embedding = self._sparse_query_fn(
                 [query.query_str],
             )
@@ -466,7 +473,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
             assert len(sparse_response) == 2  # sanity check
 
             # flatten the response
-            response = sparse_response[0] + sparse_response[1]
+            return self._hybrid_fusion_fn(
+                self.parse_to_query_result(sparse_response[0]),
+                self.parse_to_query_result(sparse_response[1]),
+            )
         else:
             response = self._client.search(
                 collection_name=self.collection_name,
@@ -475,9 +485,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 query_filter=query_filter,
             )
 
-        logger.debug(f"> Top {len(response)} nodes:")
-
-        return self.parse_to_query_result(response=response)
+            return self.parse_to_query_result(response)
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
@@ -507,8 +515,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         )
 
         response = [GrpcToRest.convert_scored_point(hit) for hit in res.result]
-
-        logger.debug(f"> Top {len(response)} nodes:")
 
         return self.parse_to_query_result(response=response)
 
@@ -547,20 +553,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
             similarities.append(point.score)
             ids.append(str(point.id))
 
-        result = VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
-        if self.enable_hybrid:
-            result = self._hybrid_fusion_fn(result)
-
-        return result
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
     def deduplicate_hybrid_result(
         self,
-        result: VectorStoreQueryResult,
+        dense_result: VectorStoreQueryResult,
+        sparse_reuslt: VectorStoreQueryResult,
     ) -> VectorStoreQueryResult:
         """Deduplicate hybrid results."""
-        ids = result.ids
-        similarities = result.similarities
-        nodes = result.nodes
+        ids = dense_result.ids + sparse_reuslt.ids
+        similarities = dense_result.similarities + sparse_reuslt.similarities
+        nodes = dense_result.nodes + sparse_reuslt.nodes
 
         dedup_ids = []
         dedup_similarities = []
