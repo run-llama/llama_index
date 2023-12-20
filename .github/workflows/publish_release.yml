@@ -28,7 +28,7 @@ jobs:
           version: ${{ env.POETRY_VERSION }}
       - name: Install deps
         shell: bash
-        run: poetry install --with dev
+        run: pip install -e .
       - name: Cache tiktoken and nltk files
         shell: bash
         run: python -c "from llama_index import get_tokenizer; get_tokenizer()"
