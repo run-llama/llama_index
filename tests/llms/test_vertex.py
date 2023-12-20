@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import pytest
 from llama_index.llms.types import ChatMessage, CompletionResponse
 from llama_index.llms.vertex import Vertex
@@ -110,7 +112,9 @@ async def test_vertex_gemini_vision_call() -> None:
     await _call_chat_and_assert(llm, history, "espresso")
 
 
-async def _call_chat_and_assert(llm, history, expected_lower_message) -> None:
+async def _call_chat_and_assert(
+    llm: Vertex, history: Sequence[ChatMessage], expected_lower_message: str
+) -> None:
     output = llm.chat(history)
     assert expected_lower_message in output.message.content.lower()
     streaming_output = list(llm.stream_chat(history))
