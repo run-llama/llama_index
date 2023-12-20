@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### New Features
+
+- Added `insert_batch_size` to limit number of embeddings held in memory when creating an index, defaults to 2048 (#9630)
+
 ## [0.9.17] - 2023-12-19
 
 ### New Features
