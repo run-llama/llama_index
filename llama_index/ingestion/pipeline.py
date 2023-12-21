@@ -286,35 +286,6 @@ class IngestionPipeline(BaseModel):
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
-        deduped_nodes_to_run = {}
-        for node in nodes:
-            ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
-
-            existing_hash = self.docstore.get_document_hash(ref_doc_id)
-            if not existing_hash:
-                # document doesn't exist, so add it
-                self.docstore.add_documents([node])
-                self.docstore.set_document_hash(ref_doc_id, node.hash)
-                deduped_nodes_to_run[ref_doc_id] = node
-            elif existing_hash and existing_hash != node.hash:
-                self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
-
-                if self.vector_store is not None:
-                    self.vector_store.delete(ref_doc_id)
-
-                self.docstore.add_documents([node])
-                self.docstore.set_document_hash(ref_doc_id, node.hash)
-
-                deduped_nodes_to_run[ref_doc_id] = node
-            else:
-                continue  # document exists and is unchanged, so skip it
-
-        return list(deduped_nodes_to_run.values())
-
-    def _handle_upserts_and_delete(self, nodes: List[BaseNode]) -> List[BaseNode]:
-        """Handle docstore upserts by checking hashes and ids, followed by deletion of missing documents in a docstore namespace."""
-        assert self.docstore is not None
-
         existing_doc_ids_before = set(self.docstore.get_all_document_hashes().values())
         doc_ids_from_nodes = set()
         deduped_nodes_to_run = {}
@@ -340,13 +311,14 @@ class IngestionPipeline(BaseModel):
             else:
                 continue  # document exists and is unchanged, so skip it
 
-        # Identify missing docs and delete them from docstore and vector store
-        doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
-        for ref_doc_id in doc_ids_to_delete:
-            self.docstore.delete_document(ref_doc_id)
+        if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
+            # Identify missing docs and delete them from docstore and vector store
+            doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
+            for ref_doc_id in doc_ids_to_delete:
+                self.docstore.delete_document(ref_doc_id)
 
-            if self.vector_store is not None:
-                self.vector_store.delete(ref_doc_id)
+                if self.vector_store is not None:
+                    self.vector_store.delete(ref_doc_id)
 
         return list(deduped_nodes_to_run.values())
 
@@ -363,12 +335,13 @@ class IngestionPipeline(BaseModel):
 
         # check if we need to dedup
         if self.docstore is not None and self.vector_store is not None:
-            if self.docstore_strategy == DocstoreStrategy.UPSERTS:
+            if self.docstore_strategy in (
+                DocstoreStrategy.UPSERTS,
+                DocstoreStrategy.UPSERTS_AND_DELETE,
+            ):
                 nodes_to_run = self._handle_upserts(input_nodes)
             elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
                 nodes_to_run = self._handle_duplicates(input_nodes)
-            elif self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
-                nodes_to_run = self._handle_upserts_and_delete(input_nodes)
             else:
                 raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
         elif self.docstore is not None and self.vector_store is None:
