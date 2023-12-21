@@ -4,12 +4,13 @@ An index that is built on top of an existing Qdrant collection.
 
 """
 import logging
-from typing import Any, Callable, List, Optional, Tuple, cast
+from typing import Any, List, Optional, Tuple, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.utils import iter_batch
 from llama_index.vector_stores.qdrant_utils import (
+    HybridFusionCallable,
     SparseEncoderCallable,
     default_sparse_encoder,
     relative_score_fusion,
@@ -63,11 +64,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _collection_initialized: bool = PrivateAttr()
     _sparse_doc_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _sparse_query_fn: Optional[SparseEncoderCallable] = PrivateAttr()
-    _hybrid_fusion_fn: Optional[
-        Callable[
-            [VectorStoreQueryResult, VectorStoreQueryResult], VectorStoreQueryResult
-        ]
-    ] = PrivateAttr()
+    _hybrid_fusion_fn: Optional[HybridFusionCallable] = PrivateAttr()
 
     def __init__(
         self,
@@ -82,11 +79,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         enable_hybrid: bool = False,
         sparse_doc_fn: Optional[SparseEncoderCallable] = None,
         sparse_query_fn: Optional[SparseEncoderCallable] = None,
-        hybrid_fusion_fn: Optional[
-            Callable[
-                [VectorStoreQueryResult, VectorStoreQueryResult], VectorStoreQueryResult
-            ]
-        ] = None,
+        hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""

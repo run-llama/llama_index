@@ -1,8 +1,22 @@
-from typing import Callable, List, Tuple
+from typing import Any, Callable, List, Protocol, Tuple, runtime_checkable
 
 from llama_index.vector_stores.types import VectorStoreQueryResult
 
 SparseEncoderCallable = Callable[[List[str]], Tuple[List[List[int]], List[List[float]]]]
+
+
+@runtime_checkable
+class HybridFusionCallable(Protocol):
+    """Hybrid fusion callable protocol."""
+
+    def __call__(
+        self,
+        dense_result: VectorStoreQueryResult,
+        sparse_result: VectorStoreQueryResult,
+        **kwargs: Any,
+    ) -> VectorStoreQueryResult:
+        """Hybrid fusion callable."""
+        ...
 
 
 def default_sparse_encoder(model_id: str) -> SparseEncoderCallable:
@@ -56,6 +70,12 @@ def relative_score_fusion(
     """
     Fuse dense and sparse results using relative score fusion.
     """
+    # sanity check
+    assert dense_result.nodes is not None
+    assert dense_result.similarities is not None
+    assert sparse_result.nodes is not None
+    assert sparse_result.similarities is not None
+
     # deconstruct results
     sparse_result_tuples = list(zip(sparse_result.similarities, sparse_result.nodes))
     sparse_result_tuples.sort(key=lambda x: x[0], reverse=True)
@@ -70,9 +90,6 @@ def relative_score_fusion(
             all_nodes_dict[node.node_id] = node
 
     # normalize sparse similarities from 0 to 1
-    import pdb
-
-    pdb.set_trace()
     sparse_similarities = [x[0] for x in sparse_result_tuples]
     max_sparse_sim = max(sparse_similarities)
     min_sparse_sim = min(sparse_similarities)
