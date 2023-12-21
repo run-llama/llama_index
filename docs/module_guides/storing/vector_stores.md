@@ -82,6 +82,7 @@ maxdepth: 1
 /examples/vector_stores/postgres.ipynb
 /examples/vector_stores/RedisIndexDemo.ipynb
 /examples/vector_stores/QdrantIndexDemo.ipynb
+/examples/vector_stores/qdrant_hybrid.ipynb
 /examples/vector_stores/RocksetIndexDemo.ipynb
 /examples/vector_stores/SimpleIndexDemo.ipynb
 /examples/vector_stores/SingleStoreDemo.ipynb
