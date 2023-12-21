@@ -112,14 +112,16 @@ Then construct the Zilliz Index and query it as follows.
 Note that if the environment variables `ZILLIZ_CLUSTER_ID` and `ZILLIZ_TOKEN` are in the environment already, you do not have to explicitly specifying them in your call and the `ZillizCloudPipelineIndex` class will read them from the environment. For example this should be equivalent to the above, if these variables are in the environment already:
 
 ```python
+import os
+
 from llama_index import ManagedIndex, SimpleDirectoryReade
 from llama_index.indices import ZillizCloudPipelineIndex
 
 # Load documents from url and build document index
 zcp_index = ZillizCloudPipelineIndex.from_document_url(
     url="https://publicdataset.zillizcloud.com/milvus_doc.md",
-    cluster_id=ZILLIZ_CLUSTER_ID,
-    token=ZILLIZ_TOKEN,
+    cluster_id=os.getenv("ZILLIZ_CLUSTER_ID"),
+    token=os.getenv("ZILLIZ_TOKEN"),
     metadata={"version": "2.3"},  # optional
 )
 
