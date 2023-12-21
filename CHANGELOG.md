@@ -6,6 +6,23 @@
 
 - Added `insert_batch_size` to limit number of embeddings held in memory when creating an index, defaults to 2048 (#9630)
 
+## [0.9.19] - 2023-12-20
+
+### New Features
+
+- new llama datasets `LabelledEvaluatorDataset` & `LabelledPairwiseEvaluatorDataset` (#9531)
+
+## [0.9.18] - 2023-12-20
+
+### New Features
+
+- multi-doc auto-retrieval guide (#9631)
+
+### Bug Fixes / Nits
+
+- fix(vllm): make Vllm's 'complete' method behave the same as other LLM class (#9634)
+- FIx Doc links and other documentation issue (#9632)
+
 ## [0.9.17] - 2023-12-19
 
 ### New Features
@@ -40,7 +57,7 @@
 - Gemini Model Checks (#9563)
 - Update OpenAI fine-tuning with latest changes (#9564)
 - fix/Reintroduce `WHERE` filter to the Sparse Query for PgVectorStore (#9529)
-- Update Ollama API for ollama v0.1.16 (#9558)
+- Update Ollama API to ollama v0.1.16 (#9558)
 - ollama: strip invalid `formatted` option (#9555)
 - add a device in optimum push #9541 (#9554)
 - Title vs content difference for Gemini Embedding (#9547)
@@ -212,7 +229,7 @@
 ### Bug Fixes / Nits
 
 - Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)
-- Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
+- Sandboxed Pandas execution, remediate CVE-2023-39662 (#8890)
 - Restored `mypy` for Python 3.8 (#9031)
 - Loosened `dataclasses-json` version range,
   and removes unnecessary `jinja2` extra from `pandas` (#9042)

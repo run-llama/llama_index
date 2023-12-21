@@ -34,7 +34,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
 
     Args:
         index (VectorStoreIndex): vector store index
-        vector_store_info (VectorStoreInfo): additional information information about
+        vector_store_info (VectorStoreInfo): additional information about
             vector store content and supported metadata filters. The natural language
             description is used by an LLM to automatically set vector store query
             parameters.
@@ -43,6 +43,10 @@ class VectorIndexAutoRetriever(BaseRetriever):
         service_context: service context containing reference to an LLM.
             Uses service context from index be default if None.
         similarity_top_k (int): number of top k results to return.
+        empty_query_top_k (Optional[int]): number of top k results to return
+            if the inferred query string is blank (uses metadata filters only).
+            Can be set to None, which would use the similarity_top_k instead.
+            By default, set to 10.
         max_top_k (int):
             the maximum top_k allowed. The top_k set by LLM or similarity_top_k will
             be clamped to this value.
@@ -58,8 +62,10 @@ class VectorIndexAutoRetriever(BaseRetriever):
         service_context: Optional[ServiceContext] = None,
         max_top_k: int = 10,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        empty_query_top_k: Optional[int] = 10,
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
         callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         self._index = index
@@ -79,8 +85,10 @@ class VectorIndexAutoRetriever(BaseRetriever):
         # additional config
         self._max_top_k = max_top_k
         self._similarity_top_k = similarity_top_k
+        self._empty_query_top_k = empty_query_top_k
         self._vector_store_query_mode = vector_store_query_mode
         self._kwargs = kwargs
+        self._verbose = verbose
         super().__init__(callback_manager)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
@@ -114,13 +122,22 @@ class VectorIndexAutoRetriever(BaseRetriever):
         _logger.info(f"Using query str: {query_spec.query}")
         filter_dict = {filter.key: filter.value for filter in query_spec.filters}
         _logger.info(f"Using filters: {filter_dict}")
+        if self._verbose:
+            print(f"Using query str: {query_spec.query}")
+            print(f"Using filters: {filter_dict}")
 
-        if query_spec.top_k is None:
+        # define similarity_top_k
+        # if query is specified, then use similarity_top_k
+        # if query is blank, then use empty_query_top_k
+        if query_spec.query or self._empty_query_top_k is None:
             similarity_top_k = self._similarity_top_k
         else:
-            similarity_top_k = min(
-                query_spec.top_k, self._max_top_k, self._similarity_top_k
-            )
+            similarity_top_k = self._empty_query_top_k
+
+        # if query_spec.top_k is specified, then use it
+        # as long as below max_top_k and similarity_top_k
+        if query_spec.top_k is not None:
+            similarity_top_k = min(query_spec.top_k, self._max_top_k, similarity_top_k)
 
         _logger.info(f"Using top_k: {similarity_top_k}")
 

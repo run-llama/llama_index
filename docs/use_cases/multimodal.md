@@ -98,7 +98,7 @@ maxdepth: 1
 ### Using Chroma for Multi-Modal retrieval with single vector store
 
 Chroma vector DB supports single vector store for indexing both images and texts.
-Check out out Chroma + LlamaIndex integration with single Multi-Modal Vector Store for both images/texts index and retrieval.
+Check out Chroma + LlamaIndex integration with single Multi-Modal Vector Store for both images/texts index and retrieval.
 
 ```{toctree}
 ---

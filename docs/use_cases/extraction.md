@@ -10,5 +10,5 @@ Once you have structured data you can send them to a database, or you can parse 
 
 Examples:
 
-- [Extracting names and locations from descriptions of people](/examples/output_parsing/df_program.ipynb)
-- [Extracting album data from music reviews](/examples/llm/llama_api.ipynb)
+- [Extracting names and locations from descriptions of people](/docs/examples/output_parsing/df_program.ipynb)
+- [Extracting album data from music reviews](/docs/examples/llm/llama_api.ipynb)
