@@ -93,14 +93,11 @@ class MetadataFilter(BaseModel):
     operator: FilterOperator = FilterOperator.EQ
 
 
-# # TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
-# # Keep class for now so that AutoRetriever can still work with old vector stores
-# class ExactMatchFilter(BaseModel):
-#     key: str
-#     value: Union[StrictInt, StrictFloat, StrictStr]
-
-# set ExactMatchFilter to MetadataFilter
-ExactMatchFilter = MetadataFilter
+# TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
+# Keep class for now so that AutoRetriever can still work with old vector stores
+class ExactMatchFilter(BaseModel):
+    key: str
+    value: Union[StrictInt, StrictFloat, StrictStr]
 
 
 class MetadataFilters(BaseModel):

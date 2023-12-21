@@ -4,7 +4,7 @@
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.vector_stores.types import (
-    MetadataFilter,
+    ExactMatchFilter,
     MetadataInfo,
     VectorStoreInfo,
     VectorStoreQuerySpec,
@@ -54,37 +54,9 @@ example_query = "What are songs by Taylor Swift or Katy Perry in the dance pop g
 example_output = VectorStoreQuerySpec(
     query="teenager love",
     filters=[
-        MetadataFilter(key="artist", value="Taylor Swift"),
-        MetadataFilter(key="artist", value="Katy Perry"),
-        MetadataFilter(key="genre", value="pop"),
-    ],
-)
-
-example_info_2 = VectorStoreInfo(
-    content_info="News articles",
-    metadata_info=[
-        MetadataInfo(name="author", type="str", description="Name of the article author"),
-        MetadataInfo(
-            name="category",
-            type="str",
-            description='The category (one of "sports", "politics", "entertainment")',
-        ),
-        MetadataInfo(
-            name="text",
-            type="str",
-            description="The text of the article",
-        )
-    ],
-)
-
-example_query_2 = "What are some recent sports articles about how the USA is doing in the Olympics?"
-
-example_output_2 = VectorStoreQuerySpec(
-    query="USA performance in Olympics",
-    filters=[
-        # MetadataFilter(key="artist", value="Taylor Swift"),
-        # MetadataFilter(key="artist", value="Katy Perry"),
-        # MetadataFilter(key="genre", value="pop"),
+        ExactMatchFilter(key="artist", value="Taylor Swift"),
+        ExactMatchFilter(key="artist", value="Katy Perry"),
+        ExactMatchFilter(key="genre", value="pop"),
     ],
 )
 
