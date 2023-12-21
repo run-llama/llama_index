@@ -6,7 +6,7 @@ Evaluation and benchmarking are crucial concepts in LLM development. To improve 
 
 LlamaIndex offers key modules to measure the quality of generated results. We also offer key modules to measure retrieval quality.
 
-- **Response Evaluation**: Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelnes?
+- **Response Evaluation**: Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelines?
 - **Retrieval Evaluation**: Are the retrieved sources relevant to the query?
 
 This section describes how the evaluation components within LlamaIndex work.
@@ -48,7 +48,7 @@ The core retrieval evaluation steps revolve around the following:
 
 We also integrate with community evaluation tools.
 
-- [DeepEval](../../../community/integrations/deepeval.md)
+- [DeepEval](/docs/community/integrations/deepeval.md)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
 
 ## Usage Pattern
