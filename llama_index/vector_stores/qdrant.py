@@ -55,7 +55,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
     url: Optional[str]
     api_key: Optional[str]
     batch_size: int
-    prefer_grpc: bool
     client_kwargs: dict = Field(default_factory=dict)
     enable_hybrid: bool
 
@@ -74,7 +73,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         url: Optional[str] = None,
         api_key: Optional[str] = None,
         batch_size: int = 100,
-        prefer_grpc: bool = False,
         client_kwargs: Optional[dict] = None,
         enable_hybrid: bool = False,
         sparse_doc_fn: Optional[SparseEncoderCallable] = None,
@@ -88,14 +86,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        if client is None and (
-            url is None or api_key is None or collection_name is None
+        if (
+            client is None
+            and aclient is None
+            and (url is None or api_key is None or collection_name is None)
         ):
             raise ValueError(
                 "Must provide either a QdrantClient instance or a url and api_key."
             )
 
-        if client is None:
+        if client is None and aclient is None:
             client_kwargs = client_kwargs or {}
             self._client = qdrant_client.QdrantClient(
                 url=url, api_key=api_key, **client_kwargs
@@ -109,13 +109,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     "Both client and aclient are provided. If using `:memory:` "
                     "mode, the data between clients is not synced."
                 )
-            elif client is None and aclient is not None:
-                raise ValueError("Must provide `client` in addition to `aclient`.")
 
             self._client = client
             self._aclient = aclient
 
-        self._collection_initialized = self._collection_exists(collection_name)
+        if self._client is not None:
+            self._collection_initialized = self._collection_exists(collection_name)
+        else:
+            #  need to do lazy init for async clients
+            self._collection_initialized = False
 
         # setup hybrid search if enabled
         if enable_hybrid:
@@ -123,7 +125,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 "naver/efficient-splade-VI-BT-large-doc"
             )
             self._sparse_query_fn = sparse_query_fn or default_sparse_encoder(
-                "naver/efficient-splade-VI-BT-large-doc"
+                "naver/efficient-splade-VI-BT-large-query"
             )
         self._hybrid_fusion_fn = hybrid_fusion_fn or relative_score_fusion
 
@@ -132,7 +134,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             url=url,
             api_key=api_key,
             batch_size=batch_size,
-            prefer_grpc=prefer_grpc,
             client_kwargs=client_kwargs or {},
             enable_hybrid=enable_hybrid,
         )
@@ -227,10 +228,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
             List of node IDs that were added to the index.
 
         Raises:
-            ValueError: If trying to using async methods without
-                            setting `prefer_grpc` to True.
+            ValueError: If trying to using async methods without aclient
         """
-        if len(nodes) > 0 and not self._collection_initialized:
+        collection_initialized = await self._acollection_exists(self.collection_name)
+
+        if len(nodes) > 0 and not collection_initialized:
             await self._acreate_collection(
                 collection_name=self.collection_name,
                 vector_size=len(nodes[0].get_embedding()),
@@ -361,6 +363,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
             return False
         return True
 
+    async def _acollection_exists(self, collection_name: str) -> bool:
+        """Asynchronous method to check if a collection exists."""
+        from grpc import RpcError
+        from qdrant_client.http.exceptions import UnexpectedResponse
+
+        try:
+            await self._aclient.get_collection(collection_name)
+        except (RpcError, UnexpectedResponse, ValueError):
+            return False
+        return True
+
     def query(
         self,
         query: VectorStoreQuery,
@@ -431,6 +444,24 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 alpha=query.alpha or 0.5,
                 top_k=query.similarity_top_k,
             )
+        elif self.enable_hybrid:
+            # search for dense vectors only
+            response = self._client.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedVector(
+                            name="text-dense",
+                            vector=query_embedding,
+                        ),
+                        limit=query.similarity_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
+
+            return self.parse_to_query_result(response[0])
         else:
             response = self._client.search(
                 collection_name=self.collection_name,
@@ -509,6 +540,24 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 alpha=query.alpha or 0.5,
                 top_k=query.similarity_top_k,
             )
+        elif self.enable_hybrid:
+            # search for dense vectors only
+            response = await self._aclient.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedVector(
+                            name="text-dense",
+                            vector=query_embedding,
+                        ),
+                        limit=query.similarity_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
+
+            return self.parse_to_query_result(response[0])
         else:
             response = await self._aclient.search(
                 collection_name=self.collection_name,
