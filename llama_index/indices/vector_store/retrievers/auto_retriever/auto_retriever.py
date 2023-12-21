@@ -105,7 +105,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
             "prompt": self._prompt,
         }
 
-    def _update_prompts(self, prompts: PromptDictType) -> PromptMixinType:
+    def _update_prompts(self, prompts: PromptDictType) -> None:
         """Get prompt modules."""
         if "prompt" in prompts:
             self._prompt = prompts["prompt"]
