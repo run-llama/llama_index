@@ -120,7 +120,7 @@ class DocstoreStrategy(str, Enum):
 
     UPSERTS = "upserts"
     DUPLICATES_ONLY = "duplicates_only"
-    UPSERTS_AND_DELETE = "upserts and delete"
+    UPSERTS_AND_DELETE = "upserts_and_delete"
 
 
 class IngestionPipeline(BaseModel):
