@@ -14,7 +14,7 @@ from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
     VectorStoreQueryPrompt,
 )
 from llama_index.output_parsers.base import OutputParserException, StructuredOutput
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import (
