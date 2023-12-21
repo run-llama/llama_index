@@ -127,7 +127,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
             self._sparse_query_fn = sparse_query_fn or default_sparse_encoder(
                 "naver/efficient-splade-VI-BT-large-query"
             )
-        self._hybrid_fusion_fn = hybrid_fusion_fn or relative_score_fusion
+        self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
+            HybridFusionCallable, relative_score_fusion
+        )
 
         super().__init__(
             collection_name=collection_name,

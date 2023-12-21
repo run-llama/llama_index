@@ -39,7 +39,9 @@ def default_sparse_encoder(model_id: str) -> SparseEncoderCallable:
         Computes vectors from logits and attention mask using ReLU, log, and max operations.
         """
         # TODO: compute sparse vectors in batches if max length is exceeded
-        tokens = tokenizer(texts, truncation=True, padding=True, return_tensors="pt")
+        tokens = tokenizer(
+            texts, truncation=True, padding=True, max_length=512, return_tensors="pt"
+        )
         if torch.cuda.is_available():
             tokens = tokens.to("cuda")
 
