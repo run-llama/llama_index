@@ -3,7 +3,7 @@
 
 import logging
 import uuid
-from typing import Callable, List, Optional
+from typing import List, Optional, Protocol, runtime_checkable
 
 from llama_index.schema import (
     BaseNode,
@@ -18,6 +18,12 @@ from llama_index.utils import truncate_text
 logger = logging.getLogger(__name__)
 
 
+@runtime_checkable
+class IdFuncCallable(Protocol):
+    def __call__(self, i: int, doc: BaseNode) -> str:
+        ...
+
+
 def default_id_func(i: int, doc: BaseNode) -> str:
     return str(uuid.uuid4())
 
@@ -26,7 +32,7 @@ def build_nodes_from_splits(
     text_splits: List[str],
     document: BaseNode,
     ref_doc: Optional[BaseNode] = None,
-    id_func: Optional[Callable[[int, BaseNode], str]] = None,
+    id_func: Optional[IdFuncCallable] = None,
 ) -> List[TextNode]:
     """Build nodes from splits."""
     ref_doc = ref_doc or document
