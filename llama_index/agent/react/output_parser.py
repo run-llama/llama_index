@@ -29,7 +29,7 @@ def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
     return thought, action, action_input
 
 
-def action_input_parser(json_str):
+def action_input_parser(json_str) -> dict:
     processed_string = re.sub(r"(?<!\w)\'|\'(?!\w)", '"', json_str)
     pattern = r'"(\w+)":\s*"([^"]*)"'
     matches = re.findall(pattern, processed_string)
