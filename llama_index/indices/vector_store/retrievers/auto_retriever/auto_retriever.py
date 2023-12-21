@@ -22,6 +22,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQuerySpec,
 )
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 
 _logger = logging.getLogger(__name__)
 
@@ -91,6 +92,17 @@ class VectorIndexAutoRetriever(BaseRetriever):
         self._verbose = verbose
         super().__init__(callback_manager)
 
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {
+            "prompt": self._prompt,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> PromptMixinType:
+        """Get prompt modules."""
+        if "prompt" in prompts:
+            self._prompt = prompts["prompt"]
+
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input
         info_str = self._vector_store_info.json(indent=4)
@@ -120,11 +132,11 @@ class VectorIndexAutoRetriever(BaseRetriever):
             )
 
         _logger.info(f"Using query str: {query_spec.query}")
-        filter_dict = {filter.key: filter.value for filter in query_spec.filters}
-        _logger.info(f"Using filters: {filter_dict}")
+        filter_list = [(filter.key, filter.operator.value, filter.value) for filter in query_spec.filters]
+        _logger.info(f"Using filters: {filter_list}")
         if self._verbose:
             print(f"Using query str: {query_spec.query}")
-            print(f"Using filters: {filter_dict}")
+            print(f"Using filters: {filter_list}")
 
         # define similarity_top_k
         # if query is specified, then use similarity_top_k

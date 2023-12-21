@@ -167,6 +167,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
         insert_kwargs (Optional[Dict]): insert kwargs during `upsert` call.
         add_sparse_vector (bool): whether to add sparse vector to index.
         tokenizer (Optional[Callable]): tokenizer to use to generate sparse
+        default_empty_query_vector (Optional[List[float]]): default empty query vector.
+            Defaults to None. If not None, then this vector will be used as the query
+            vector if the query is empty.
 
     """
 
@@ -185,6 +188,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
     _pinecone_index: Any = PrivateAttr()
     _tokenizer: Optional[Callable] = PrivateAttr()
+    _default_empty_query_vector: Optional[List[float]] = PrivateAttr()
 
     def __init__(
         self,
@@ -199,6 +203,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
+        default_empty_query_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -224,6 +229,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         if tokenizer is None and add_sparse_vector:
             tokenizer = get_default_tokenizer()
         self._tokenizer = tokenizer
+        self._default_empty_query_vector = default_empty_query_vector
 
         super().__init__(
             index_name=index_name,
@@ -250,6 +256,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
+        default_empty_query_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> "PineconeVectorStore":
         try:
@@ -272,6 +279,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             text_key=text_key,
             batch_size=batch_size,
             remove_text_from_metadata=remove_text_from_metadata,
+            default_empty_query_vector=default_empty_query_vector,
             **kwargs,
         )
 
@@ -374,6 +382,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
             query_embedding = cast(List[float], query.query_embedding)
             if query.alpha is not None:
                 query_embedding = [v * query.alpha for v in query_embedding]
+
+            if not query_embedding and self._default_empty_query_vector is not None:
+                query_embedding = self._default_empty_query_vector
 
         if query.filters is not None:
             if "filter" in kwargs:
