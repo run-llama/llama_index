@@ -150,7 +150,7 @@ class HuggingFaceLLM(CustomLLM):
         generate_kwargs: Optional[dict] = None,
         is_chat_model: Optional[bool] = False,
         callback_manager: Optional[CallbackManager] = None,
-        system_prompt: Optional[str] = None,
+        system_prompt: str = "",
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,

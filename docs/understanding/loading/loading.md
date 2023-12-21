@@ -155,7 +155,6 @@ index = VectorStoreIndex([node1, node2])
 maxdepth: 1
 hidden: true
 ---
-/module_guides/loading/loading.md
 /understanding/loading/llamahub.md
 /module_guides/loading/documents_and_nodes/root.md
 /module_guides/loading/node_parsers/root.md

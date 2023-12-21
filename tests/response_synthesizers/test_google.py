@@ -11,6 +11,7 @@ except ImportError:
 
 from llama_index.response_synthesizers.google.generativeai import (
     GoogleTextSynthesizer,
+    set_google_config,
 )
 from llama_index.schema import NodeWithScore, TextNode
 
@@ -20,12 +21,18 @@ SKIP_TEST_REASON = "Google GenerativeAI is not installed"
 if has_google:
     import llama_index.vector_stores.google.generativeai.genai_extension as genaix
 
-    genaix.set_defaults(
-        genaix.Config(
-            api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",
-            testing=True,
-        )
+    set_google_config(
+        api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",
+        testing=True,
     )
+
+
+@pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
+@patch("google.auth.credentials.Credentials")
+def test_set_google_config(mock_credentials: MagicMock) -> None:
+    set_google_config(auth_credentials=mock_credentials)
+    config = genaix.get_config()
+    assert config.auth_credentials == mock_credentials
 
 
 @pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)

@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Callable, Sequence
+from abc import ABC, abstractmethod
+from typing import Any, Callable, Optional, Sequence
 
 from tenacity import (
     before_sleep_log,
@@ -9,18 +10,17 @@ from tenacity import (
     wait_exponential,
 )
 
+from llama_index.llms.anthropic_utils import messages_to_anthropic_prompt
 from llama_index.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
+    prompt_to_messages,
 )
-from llama_index.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseGen,
-    MessageRole,
+from llama_index.llms.llama_utils import (
+    completion_to_prompt as completion_to_llama_prompt,
 )
+from llama_index.llms.llama_utils import (
+    messages_to_prompt as messages_to_llama_prompt,
+)
+from llama_index.llms.types import ChatMessage
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
@@ -61,38 +61,100 @@ STREAMING_MODELS = {
     "meta.llama2-13b-chat-v1",
 }
 
-# Each bedrock model specifies parameters with a slightly different name
-# most of these are passed optionally by the user in kwargs but max tokens
-# is a required argument.
-PROVIDER_SPECIFIC_PARAM_NAME = {
-    "amazon": {"max_tokens": "maxTokenCount"},
-    "ai21": {"max_tokens": "maxTokens"},
-    "anthropic": {"max_tokens": "max_tokens_to_sample"},
-    "cohere": {"max_tokens": "max_tokens"},
-    "meta": {"max_tokens": "max_gen_len"},
+
+class Provider(ABC):
+    @property
+    @abstractmethod
+    def max_tokens_key(self) -> str:
+        ...
+
+    @abstractmethod
+    def get_text_from_response(self, response: dict) -> str:
+        ...
+
+    def get_text_from_stream_response(self, response: dict) -> str:
+        return self.get_text_from_response(response)
+
+    def get_request_body(self, prompt: str, inference_parameters: dict) -> dict:
+        return {"prompt": prompt, **inference_parameters}
+
+    messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None
+    completion_to_prompt: Optional[Callable[[str], str]] = None
+
+
+class AmazonProvider(Provider):
+    max_tokens_key = "maxTokenCount"
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response["results"][0]["outputText"]
+
+    def get_text_from_stream_response(self, response: dict) -> str:
+        return response["outputText"]
+
+    def get_request_body(self, prompt: str, inference_parameters: dict) -> dict:
+        return {
+            "inputText": prompt,
+            "textGenerationConfig": {**inference_parameters},
+        }
+
+
+class Ai21Provider(Provider):
+    max_tokens_key = "maxTokens"
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response["completions"][0]["data"]["text"]
+
+
+def completion_to_anthopic_prompt(completion: str) -> str:
+    return messages_to_anthropic_prompt(prompt_to_messages(completion))
+
+
+class AnthropicProvider(Provider):
+    max_tokens_key = "max_tokens_to_sample"
+
+    def __init__(self) -> None:
+        self.messages_to_prompt = messages_to_anthropic_prompt
+        self.completion_to_prompt = completion_to_anthopic_prompt
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response["completion"]
+
+
+class CohereProvider(Provider):
+    max_tokens_key = "max_tokens"
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response["generations"][0]["text"]
+
+
+class MetaProvider(Provider):
+    max_tokens_key = "max_gen_len"
+
+    def __init__(self) -> None:
+        self.messages_to_prompt = messages_to_llama_prompt
+        self.completion_to_prompt = completion_to_llama_prompt
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response["generation"]
+
+
+PROVIDERS = {
+    "amazon": AmazonProvider(),
+    "ai21": Ai21Provider(),
+    "anthropic": AnthropicProvider(),
+    "cohere": CohereProvider(),
+    "meta": MetaProvider(),
 }
 
-# The response format for each provider is different
-PROVIDER_RESPONSE_LOADER = {
-    "amazon": lambda x: x["results"][0]["outputText"],
-    "ai21": lambda x: x["completions"][0]["data"]["text"],
-    "anthropic": lambda x: x["completion"],
-    "cohere": lambda x: x["generations"][0]["text"],
-    "meta": lambda x: x["generation"],
-}
 
-PROVIDER_STREAM_RESPONSE_LOADER = {
-    "amazon": lambda x: x["outputText"],
-    "anthropic": lambda x: x["completion"],
-    "meta": lambda x: x["generation"],
-}
+def get_provider(model: str) -> Provider:
+    provider_name = model.split(".")[0]
+    if provider_name not in PROVIDERS:
+        raise ValueError(f"Provider {provider_name} for model {model} is not supported")
+    return PROVIDERS[provider_name]
+
+
 logger = logging.getLogger(__name__)
-
-
-def bedrock_model_to_param_name(model: str, param_name: str) -> str:
-    provider = model.split(".")[0]
-    model_params = PROVIDER_SPECIFIC_PARAM_NAME[provider]
-    return model_params[param_name]
 
 
 def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], Any]:
@@ -137,80 +199,3 @@ def completion_with_retry(
         return client.invoke_model(modelId=model, body=request_body)
 
     return _completion_with_retry(**kwargs)
-
-
-def _message_to_bedrock_prompt(message: ChatMessage) -> str:
-    if message.role == MessageRole.USER:
-        prompt = f"{HUMAN_PREFIX} {message.content}"
-    elif message.role == MessageRole.ASSISTANT:
-        prompt = f"{ASSISTANT_PREFIX} {message.content}"
-    elif message.role == MessageRole.SYSTEM:
-        prompt = f"{HUMAN_PREFIX} <system>{message.content}</system>"
-    elif message.role == MessageRole.FUNCTION:
-        raise ValueError(f"Message role {MessageRole.FUNCTION} is not supported.")
-    else:
-        raise ValueError(f"Unknown message role: {message.role}")
-
-    return prompt
-
-
-def messages_to_bedrock_prompt(messages: Sequence[ChatMessage]) -> str:
-    if len(messages) == 0:
-        raise ValueError("Got empty list of messages.")
-
-    # NOTE: make sure the prompt ends with the assistant prefix
-    if messages[-1].role != MessageRole.ASSISTANT:
-        messages = [
-            *list(messages),
-            ChatMessage(role=MessageRole.ASSISTANT, content=""),
-        ]
-
-    str_list = [_message_to_bedrock_prompt(message) for message in messages]
-    return "".join(str_list)
-
-
-def get_request_body(provider: str, prompt: str, inference_paramters: dict) -> dict:
-    if provider == "amazon":
-        response_body = {
-            "inputText": prompt,
-            "textGenerationConfig": {**inference_paramters},
-        }
-    else:
-        response_body = {"prompt": prompt, **inference_paramters}
-    return response_body
-
-
-def get_text_from_response(provider: str, response: dict, stream: bool = False) -> str:
-    if stream:
-        return PROVIDER_STREAM_RESPONSE_LOADER[provider](response)
-    return PROVIDER_RESPONSE_LOADER[provider](response)
-
-
-def completion_to_chat_decorator(
-    func: Callable[..., CompletionResponse]
-) -> Callable[..., ChatResponse]:
-    """Convert a completion function to a chat function."""
-
-    def wrapper(messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        # normalize input
-        prompt = messages_to_bedrock_prompt(messages)
-        completion_response = func(prompt, **kwargs)
-        # normalize output
-        return completion_response_to_chat_response(completion_response)
-
-    return wrapper
-
-
-def stream_completion_to_chat_decorator(
-    func: Callable[..., CompletionResponseGen]
-) -> Callable[..., ChatResponseGen]:
-    """Convert a completion function to a chat function."""
-
-    def wrapper(messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
-        # normalize input
-        prompt = messages_to_bedrock_prompt(messages)
-        completion_response = func(prompt, **kwargs)
-        # normalize output
-        return stream_completion_response_to_chat_response(completion_response)
-
-    return wrapper

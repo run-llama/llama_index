@@ -10,24 +10,30 @@ repos:
       - id: check-merge-conflict
       - id: check-symlinks
       - id: check-toml
+        exclude: llama_index/_static
       - id: check-yaml
+        exclude: llama_index/_static
       - id: detect-private-key
       - id: end-of-file-fixer
+        exclude: llama_index/_static
       - id: mixed-line-ending
+        exclude: llama_index/_static
       - id: trailing-whitespace
+        exclude: llama_index/_static
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.1.5
 
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
+        exclude: llama_index/_static
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
       - id: black-jupyter
         name: black-src
         alias: black
-        exclude: docs/
+        exclude: ^(docs/|llama_index/_static)
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
@@ -51,11 +57,13 @@ repos:
     rev: v3.0.3
     hooks:
       - id: prettier
+        exclude: llama_index/_static
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
       - id: codespell
         additional_dependencies: [tomli]
+        exclude: llama_index/_static
   - repo: https://github.com/srstevenson/nb-clean
     rev: 3.1.0
     hooks:
@@ -65,4 +73,4 @@ repos:
     rev: v0.23.1
     hooks:
       - id: toml-sort-fix
-        exclude: poetry.lock
+        exclude: ^(poetry.lock|llama_index/_static)

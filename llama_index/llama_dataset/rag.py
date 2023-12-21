@@ -38,7 +38,7 @@ class RagExamplePrediction(BaseLlamaExamplePrediction):
     @property
     def class_name(self) -> str:
         """Data example class name."""
-        return "LlamaRagDataExample"
+        return "RagExamplePrediction"
 
 
 class LabelledRagDataExample(BaseLlamaDataExample):
@@ -76,7 +76,7 @@ class LabelledRagDataExample(BaseLlamaDataExample):
     @property
     def class_name(self) -> str:
         """Data example class name."""
-        return "LlamaRagDataExample"
+        return "LabelledRagDataExample"
 
 
 class RagPredictionDataset(BaseLlamaPredictionDataset):
@@ -95,8 +95,13 @@ class RagPredictionDataset(BaseLlamaPredictionDataset):
 
         return PandasDataFrame(data)
 
+    @property
+    def class_name(self) -> str:
+        """Class name."""
+        return "RagPredictionDataset"
 
-class LabelledRagDataset(BaseLlamaDataset):
+
+class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
     """RagDataset class."""
 
     _example_type = LabelledRagDataExample
@@ -115,26 +120,26 @@ class LabelledRagDataset(BaseLlamaDataset):
 
     async def _apredict_example(
         self,
-        query_engine: BaseQueryEngine,
+        predictor: BaseQueryEngine,
         example: LabelledRagDataExample,
         sleep_time_in_seconds: int,
     ) -> RagExamplePrediction:
         """Async predict RAG example with a query engine."""
         await asyncio.sleep(sleep_time_in_seconds)
-        response = await query_engine.aquery(example.query)
+        response = await predictor.aquery(example.query)
         return RagExamplePrediction(
             response=str(response), contexts=[s.text for s in response.source_nodes]
         )
 
     def _predict_example(
         self,
-        query_engine: BaseQueryEngine,
+        predictor: BaseQueryEngine,
         example: LabelledRagDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> RagExamplePrediction:
         """Predict RAG example with a query engine."""
         time.sleep(sleep_time_in_seconds)
-        response = query_engine.query(example.query)
+        response = predictor.query(example.query)
         return RagExamplePrediction(
             response=str(response), contexts=[s.text for s in response.source_nodes]
         )
@@ -145,7 +150,12 @@ class LabelledRagDataset(BaseLlamaDataset):
         """Construct prediction dataset."""
         return RagPredictionDataset(predictions=predictions)
 
+    @property
+    def class_name(self) -> str:
+        """Class name."""
+        return "LabelledRagDataset"
+
 
 # British English + American English
-LabeledRagDatasetExample = LabelledRagDataExample
+LabeledRagDataExample = LabelledRagDataExample
 LabeledRagDataset = LabelledRagDataset

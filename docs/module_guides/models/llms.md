@@ -61,7 +61,7 @@ set_global_tokenizer(
 
 ## LLM Compatibility Tracking
 
-While LLMs are powerful, not every LLM is easy to set up. Furthermore, even with proper setup, some LLMs have trouble performning tasks that require strict instruction following.
+While LLMs are powerful, not every LLM is easy to set up. Furthermore, even with proper setup, some LLMs have trouble performing tasks that require strict instruction following.
 
 LlamaIndex offers integrations with nearly every LLM, but it can be often unclear if the LLM will work well out of the box, or if further customization is needed.
 
@@ -69,7 +69,7 @@ The tables below attempt to validate the **initial** experience with various Lla
 
 Generally, paid APIs such as OpenAI or Anthropic are viewed as more reliable. However, local open-source models have been gaining popularity due to their customizability and approach to transparency.
 
-**Contributing:** Anyone is welcome to contribute new LLMs to the documentation. Simply copy an existing notebook, setup and test your LLM, and open a PR with your resutls.
+**Contributing:** Anyone is welcome to contribute new LLMs to the documentation. Simply copy an existing notebook, setup and test your LLM, and open a PR with your results.
 
 If you have ways to improve the setup for existing notebooks, contributions to change this are welcome!
 
@@ -102,6 +102,7 @@ Since open source LLMs require large amounts of resources, the quantization is r
 | [zephyr-7b-alpha](https://colab.research.google.com/drive/16Ygf2IyGNkb725ZqtRmFQjwWBuzFX_kl?usp=sharing) (huggingface)               | ✅                  | ✅                  | ✅                       | ✅       | ✅                | ⚠️          | Overall, `zyphyr-7b-alpha` is appears to be more reliable than other open-source models of this size. Although it still hallucinates a bit, especially as an agent.                 |
 | [zephyr-7b-beta](https://colab.research.google.com/drive/1UoPcoiA5EOBghxWKWduQhChliMHxla7U?usp=sharing) (huggingface)                | ✅                  | ✅                  | ✅                       | ✅       | 🛑                | ✅          | Compared to `zyphyr-7b-alpha`, `zyphyr-7b-beta` appears to perform well as an agent however it fails for Pydantic Programs                                                          |
 | [stablelm-zephyr-3b](https://colab.research.google.com/drive/1USBIOs4yUkjOcxTKBr7onjlzATE-974T?usp=sharing) (huggingface)            | ✅                  | ⚠️                  | ✅                       | 🛑       | ✅                | 🛑          | stablelm-zephyr-3b does surprisingly well, especially for structured outputs (surpassing much larger models). It struggles a bit with text-to-SQL and tool use.                     |
+| [starling-lm-7b-alpha](https://colab.research.google.com/drive/1Juk073EWt2utxHZY84q_NfVT9xFwppf8?usp=sharing) (huggingface)          | ✅                  | 🛑                  | ✅                       | ⚠️       | ✅                | ✅          | starling-lm-7b-alpha does surprisingly well on agent tasks. It struggles a bit with routing, and is inconsistent with text-to-SQL.                                                  |
 
 ## Modules
 
