@@ -102,3 +102,49 @@ maxdepth: 1
 ---
 /examples/managed/vectaraDemo.ipynb
 ```
+
+## Zilliz
+
+First, set up your [Zilliz Cloud](https://cloud.zilliz.com/login) account and use the Zilliz to create a cluster id, and add an API token for access.
+Then put the Zilliz cluster id, and API key in your environment.
+
+Then construct the Zilliz Index and query it as follows.
+Note that if the environment variables `ZILLIZ_CLUSTER_ID` and `ZILLIZ_TOKEN` are in the environment already, you do not have to explicitly specifying them in your call and the `ZillizCloudPipelineIndex` class will read them from the environment. For example this should be equivalent to the above, if these variables are in the environment already:
+
+```python
+from llama_index import ManagedIndex, SimpleDirectoryReade
+from llama_index.indices import ZillizCloudPipelineIndex
+
+# Load documents from url and build document index
+zcp_index = ZillizCloudPipelineIndex.from_document_url(
+    url="https://publicdataset.zillizcloud.com/milvus_doc.md",
+    cluster_id=ZILLIZ_CLUSTER_ID,
+    token=ZILLIZ_TOKEN,
+    metadata={"version": "2.3"},  # optional
+)
+
+# Insert more docs into index, eg. a Milvus v2.0 document
+zcp_index.insert_doc_url(
+    url="https://milvus.io/docs/v2.0.x/delete_data.md",
+    metadata={"version": "2.0"},
+)
+
+# Query index
+from llama_index.vector_stores.types import ExactMatchFilter, MetadataFilters
+
+query_engine_with_filters = zcp_index.as_query_engine(
+    search_top_k=3,
+    filters=MetadataFilters(
+        filters=[ExactMatchFilter(key="version", value="2.3")]
+    ),  # optional, here we will only retrieve info of Milvus 2.3
+    output_metadata=["version"],  # optional
+)
+```
+
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+/examples/managed/zcpDemo.ipynb
+```
