@@ -100,8 +100,8 @@ class MetadataFilter(BaseModel):
         """Create MetadataFilter from dictionary.
 
         Args:
+            filter_dict: Dict with key, value and operator.
 
-        
         """
         return MetadataFilter.parse_obj(filter_dict)
 
@@ -148,16 +148,18 @@ class MetadataFilters(BaseModel):
     ) -> "MetadataFilters":
         """Create MetadataFilters from dicts.
 
-        This takes in a list of individual MetadataFilter objects, along 
+        This takes in a list of individual MetadataFilter objects, along
         with the condition.
 
         Args:
             filter_dicts: List of dicts, each dict is a MetadataFilter.
             condition: FilterCondition to combine different filters.
-        
+
         """
         return cls(
-            filters=[MetadataFilter.from_dict(filter_dict) for filter_dict in filter_dicts],
+            filters=[
+                MetadataFilter.from_dict(filter_dict) for filter_dict in filter_dicts
+            ],
             condition=condition,
         )
 

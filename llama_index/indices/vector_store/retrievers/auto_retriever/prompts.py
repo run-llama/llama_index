@@ -4,11 +4,11 @@
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.vector_stores.types import (
+    FilterOperator,
     MetadataFilter,
     MetadataInfo,
     VectorStoreInfo,
     VectorStoreQuerySpec,
-    FilterOperator
 )
 
 # NOTE: these prompts are inspired from langchain's self-query prompt,
@@ -68,23 +68,23 @@ example_info_2 = VectorStoreInfo(
         MetadataInfo(
             name="book_title",
             type="str",
-            description='Book title',
+            description="Book title",
         ),
         MetadataInfo(
             name="year",
             type="int",
-            description='Year Published',
+            description="Year Published",
         ),
         MetadataInfo(
             name="pages",
             type="int",
-            description='Number of pages',
+            description="Number of pages",
         ),
         MetadataInfo(
             name="summary",
             type="str",
             description="A short summary of the book",
-        )
+        ),
     ],
 )
 
