@@ -4,7 +4,8 @@
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.vector_stores.types import (
-    ExactMatchFilter,
+    FilterOperator,
+    MetadataFilter,
     MetadataInfo,
     VectorStoreInfo,
     VectorStoreQuerySpec,
@@ -54,9 +55,46 @@ example_query = "What are songs by Taylor Swift or Katy Perry in the dance pop g
 example_output = VectorStoreQuerySpec(
     query="teenager love",
     filters=[
-        ExactMatchFilter(key="artist", value="Taylor Swift"),
-        ExactMatchFilter(key="artist", value="Katy Perry"),
-        ExactMatchFilter(key="genre", value="pop"),
+        MetadataFilter(key="artist", value="Taylor Swift"),
+        MetadataFilter(key="artist", value="Katy Perry"),
+        MetadataFilter(key="genre", value="pop"),
+    ],
+)
+
+example_info_2 = VectorStoreInfo(
+    content_info="Classic literature",
+    metadata_info=[
+        MetadataInfo(name="author", type="str", description="Author name"),
+        MetadataInfo(
+            name="book_title",
+            type="str",
+            description="Book title",
+        ),
+        MetadataInfo(
+            name="year",
+            type="int",
+            description="Year Published",
+        ),
+        MetadataInfo(
+            name="pages",
+            type="int",
+            description="Number of pages",
+        ),
+        MetadataInfo(
+            name="summary",
+            type="str",
+            description="A short summary of the book",
+        ),
+    ],
+)
+
+example_query_2 = "What are some books by Jane Austen published after 1813 that explore the theme of marriage for social standing?"
+
+example_output_2 = VectorStoreQuerySpec(
+    query="Books related to theme of marriage for social standing",
+    filters=[
+        MetadataFilter(key="year", value="1813", operator=FilterOperator.GT),
+        MetadataFilter(key="author", value="Jane Austen"),
     ],
 )
 
@@ -73,6 +111,21 @@ User Query:
 Structured Request:
 ```json
 {example_output.json()}
+
+
+<< Example 2. >>
+Data Source:
+```json
+{example_info_2.json(indent=4)}
+```
+
+User Query:
+{example_query_2}
+
+Structured Request:
+```json
+{example_output_2.json()}
+
 ```
 """.replace(
     "{", "{{"
@@ -82,7 +135,7 @@ Structured Request:
 
 
 SUFFIX = """
-<< Example 2. >>
+<< Example 3. >>
 Data Source:
 ```json
 {info_str}

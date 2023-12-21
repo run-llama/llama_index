@@ -14,6 +14,7 @@ from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
     VectorStoreQueryPrompt,
 )
 from llama_index.output_parsers.base import OutputParserException, StructuredOutput
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import (
@@ -52,6 +53,11 @@ class VectorIndexAutoRetriever(BaseRetriever):
             be clamped to this value.
         vector_store_query_mode (str): vector store query mode
             See reference for VectorStoreQueryMode for full list of supported modes.
+        default_empty_query_vector (Optional[List[float]]): default empty query vector.
+            Defaults to None. If not None, then this vector will be used as the query
+            vector if the query is empty.
+        callback_manager (Optional[CallbackManager]): callback manager
+        verbose (bool): verbose mode
     """
 
     def __init__(
@@ -64,6 +70,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         empty_query_top_k: Optional[int] = 10,
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
+        default_empty_query_vector: Optional[List[float]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -71,6 +78,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         self._index = index
         self._vector_store_info = vector_store_info
         self._service_context = service_context or self._index.service_context
+        self._default_empty_query_vector = default_empty_query_vector
 
         # prompt
         prompt_template_str = (
@@ -90,6 +98,27 @@ class VectorIndexAutoRetriever(BaseRetriever):
         self._kwargs = kwargs
         self._verbose = verbose
         super().__init__(callback_manager)
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {
+            "prompt": self._prompt,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Get prompt modules."""
+        if "prompt" in prompts:
+            self._prompt = prompts["prompt"]
+
+    def _get_query_bundle(self, query: str) -> QueryBundle:
+        """Get query bundle."""
+        if not query and self._default_empty_query_vector is not None:
+            return QueryBundle(
+                query_str="",
+                embedding=self._default_empty_query_vector,
+            )
+        else:
+            return QueryBundle(query_str=query)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input
@@ -119,12 +148,19 @@ class VectorIndexAutoRetriever(BaseRetriever):
                 top_k=None,
             )
 
+        # construct new query bundle from query_spec
+        # insert 0 vector if query is empty and default_empty_query_vector is not None
+        new_query_bundle = self._get_query_bundle(query_spec.query)
+
         _logger.info(f"Using query str: {query_spec.query}")
-        filter_dict = {filter.key: filter.value for filter in query_spec.filters}
-        _logger.info(f"Using filters: {filter_dict}")
+        filter_list = [
+            (filter.key, filter.operator.value, filter.value)
+            for filter in query_spec.filters
+        ]
+        _logger.info(f"Using filters: {filter_list}")
         if self._verbose:
             print(f"Using query str: {query_spec.query}")
-            print(f"Using filters: {filter_dict}")
+            print(f"Using filters: {filter_list}")
 
         # define similarity_top_k
         # if query is specified, then use similarity_top_k
@@ -148,4 +184,4 @@ class VectorIndexAutoRetriever(BaseRetriever):
             vector_store_query_mode=self._vector_store_query_mode,
             **self._kwargs,
         )
-        return retriever.retrieve(query_spec.query)
+        return retriever.retrieve(new_query_bundle)
