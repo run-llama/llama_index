@@ -105,16 +105,16 @@ maxdepth: 1
 
 ## Zilliz
 
-First, [sign up](https://cloud.zilliz.com/signup) or use existing Zilliz Cloud account to create a free Serverless Cluster. This is to get the cluster id and API key to grant `ZillizCloudPipelineIndex` access to Zilliz Cloud Pipelines service.
+First, [sign up](https://cloud.zilliz.com/signup) or use existing Zilliz Cloud account to create a free Serverless Cluster. This is to get the cluster id and API key to grant access to Zilliz Cloud Pipelines service.
 
 Then set the environment variables `ZILLIZ_CLUSTER_ID` and `ZILLIZ_TOKEN` by copying the value from the [Zilliz Cloud UI](https://raw.githubusercontent.com/milvus-io/bootcamp/2596ea9a4a1a089101a0b46e3cb012b8dfb2eb9a/images/zilliz_api_key_cluster_id.jpeg).
 
-Now you can construct the ZillizCloudPipelineIndex to ingest docs and query as follows:
+Now you can construct the `ZillizCloudPipelineIndex` to ingest docs and query index as follows:
 
 ```python
 import os
 
-from llama_index import ManagedIndex, SimpleDirectoryReade
+from llama_index import ManagedIndex
 from llama_index.indices import ZillizCloudPipelineIndex
 
 # Load documents from url and build document index
