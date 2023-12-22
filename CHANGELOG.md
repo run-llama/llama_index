@@ -12,11 +12,13 @@
 - Introduced upserts and delete in ingestion pipeline (#9643)
 - Add Zilliz Cloud Pipeline as a Managed Index (#9605)
 - Add support for Google Gemini models via VertexAI (#9624)
+- support allowing additional metadata filters on autoretriever (#9662)
 
 ### Bug Fixes / Nits
 
 - Fix pip install commands in LM Format Enforcer notebooks (#9648)
 - Fixing some more links and documentations (#9633)
+- some bedrock nits and fixes (#9646)
 
 ## [0.9.19] - 2023-12-20
 
