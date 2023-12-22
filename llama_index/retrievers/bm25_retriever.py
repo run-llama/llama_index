@@ -1,6 +1,8 @@
 import logging
 from typing import Callable, List, Optional, cast
 
+from nltk.stem import PorterStemmer
+
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core import BaseRetriever
@@ -13,7 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 def tokenize_remove_stopwords(text: str) -> List[str]:
-    return list(simple_extract_keywords(text))
+    stemmer = PorterStemmer()
+    words = list(simple_extract_keywords(text))
+    return [stemmer.stem(word) for word in words]
 
 
 class BM25Retriever(BaseRetriever):
