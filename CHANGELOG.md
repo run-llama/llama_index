@@ -14,6 +14,7 @@
 - Add support for Google Gemini models via VertexAI (#9624)
 
 ### Bug Fixes / Nits
+
 - Fix pip install commands in LM Format Enforcer notebooks (#9648)
 - Fixing some more links and documentations (#9633)
 
