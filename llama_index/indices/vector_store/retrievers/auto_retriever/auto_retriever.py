@@ -18,11 +18,11 @@ from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import (
+    FilterCondition,
     MetadataFilters,
     VectorStoreInfo,
     VectorStoreQueryMode,
     VectorStoreQuerySpec,
-    FilterCondition
 )
 
 _logger = logging.getLogger(__name__)
@@ -182,7 +182,9 @@ class VectorIndexAutoRetriever(BaseRetriever):
 
         retriever = VectorIndexRetriever(
             self._index,
-            filters=MetadataFilters(filters=[*query_spec.filters, *self._extra_filters.filters]),
+            filters=MetadataFilters(
+                filters=[*query_spec.filters, *self._extra_filters.filters]
+            ),
             similarity_top_k=similarity_top_k,
             vector_store_query_mode=self._vector_store_query_mode,
             **self._kwargs,
