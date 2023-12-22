@@ -13,6 +13,7 @@ from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
     DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL,
     VectorStoreQueryPrompt,
 )
+from llama_index.prompts.base import PromptTemplate
 from llama_index.output_parsers.base import OutputParserException, StructuredOutput
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import NodeWithScore, QueryBundle
@@ -79,16 +80,14 @@ class VectorIndexAutoRetriever(BaseRetriever):
         self._vector_store_info = vector_store_info
         self._service_context = service_context or self._index.service_context
         self._default_empty_query_vector = default_empty_query_vector
+        callback_manager = callback_manager or self._service_context.callback_manager
 
         # prompt
         prompt_template_str = (
             prompt_template_str or DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL
         )
-        output_parser = VectorStoreQueryOutputParser()
-        self._prompt = VectorStoreQueryPrompt(
-            template=prompt_template_str,
-            output_parser=output_parser,
-        )
+        self._output_parser = VectorStoreQueryOutputParser()
+        self._prompt = PromptTemplate(template=prompt_template_str)
 
         # additional config
         self._max_top_k = max_top_k
@@ -134,10 +133,9 @@ class VectorIndexAutoRetriever(BaseRetriever):
         )
 
         # parse output
-        assert self._prompt.output_parser is not None
         try:
             structured_output = cast(
-                StructuredOutput, self._prompt.output_parser.parse(output)
+                StructuredOutput, self._output_parser.parse(output)
             )
             query_spec = cast(VectorStoreQuerySpec, structured_output.parsed_output)
         except OutputParserException:
