@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Bug Fixes / Nits
+
+- Improve BM25Retriever performance (#9675)
+
 ## [0.9.20] - 2023-12-21
 
 ### New Features
