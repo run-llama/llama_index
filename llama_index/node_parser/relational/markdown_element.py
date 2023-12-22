@@ -10,7 +10,7 @@ from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.node_parser.interface import NodeParser
 from llama_index.response.schema import PydanticResponse
-from llama_index.schema import BaseNode, Document, IndexNode, TextNode
+from llama_index.schema import BaseNode, Document, IndexNode, MetadataMode, TextNode
 from llama_index.utils import get_tqdm_iterable
 
 
@@ -353,7 +353,8 @@ class MarkdownElementNodeParser(NodeParser):
     def get_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
         """Get nodes from node."""
         elements = extract_markdown_elements(
-            node.get_content(), table_filters=[filter_table]
+            node.get_content(metadata_mode=MetadataMode.NONE),
+            table_filters=[filter_table],
         )
         table_elements = get_table_elements(elements)
         # extract summaries over table elements
