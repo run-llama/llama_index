@@ -22,6 +22,7 @@ from llama_index.vector_stores.types import (
     VectorStoreInfo,
     VectorStoreQueryMode,
     VectorStoreQuerySpec,
+    FilterCondition
 )
 
 _logger = logging.getLogger(__name__)
@@ -73,6 +74,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
         default_empty_query_vector: Optional[List[float]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        extra_filters: Optional[MetadataFilters] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
@@ -93,6 +95,10 @@ class VectorIndexAutoRetriever(BaseRetriever):
         self._similarity_top_k = similarity_top_k
         self._empty_query_top_k = empty_query_top_k
         self._vector_store_query_mode = vector_store_query_mode
+        # if extra_filters is OR condition, we don't support that yet
+        if extra_filters is not None and extra_filters.condition == FilterCondition.OR:
+            raise ValueError("extra_filters cannot be OR condition")
+        self._extra_filters = extra_filters or MetadataFilters(filters=[])
         self._kwargs = kwargs
         self._verbose = verbose
         super().__init__(callback_manager)
@@ -176,7 +182,7 @@ class VectorIndexAutoRetriever(BaseRetriever):
 
         retriever = VectorIndexRetriever(
             self._index,
-            filters=MetadataFilters(filters=query_spec.filters),
+            filters=MetadataFilters(filters=[*query_spec.filters, *self._extra_filters.filters]),
             similarity_top_k=similarity_top_k,
             vector_store_query_mode=self._vector_store_query_mode,
             **self._kwargs,

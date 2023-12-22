@@ -141,6 +141,7 @@ class MetadataFilters(BaseModel):
             filters.append(filter)
         return cls(filters=filters)
 
+    @classmethod
     def from_dicts(
         cls,
         filter_dicts: List[Dict],
