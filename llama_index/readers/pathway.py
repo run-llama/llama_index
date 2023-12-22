@@ -30,8 +30,8 @@ class PathwayReader(BaseReader):
     def load_data(
         self,
         query_text: str,
-        k: Optional(int) = 4,
-        metadata_filter: Optional(str) = None,
+        k: Optional[int] = 4,
+        metadata_filter: Optional[str] = None,
     ) -> List[Document]:
         """Load data from Pathway.
 
