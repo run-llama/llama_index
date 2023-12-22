@@ -22,5 +22,5 @@ __all__ = [
     "PromptType",
     "ChatMessage",
     "MessageRole",
-    "display_prompt_dict"
+    "display_prompt_dict",
 ]

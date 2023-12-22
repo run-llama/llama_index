@@ -11,8 +11,8 @@ def display_prompt_dict(prompts_dict: PromptDictType) -> None:
         prompts_dict: prompt dict
 
     """
+    from IPython.display import Markdown, display
 
-    from IPython.display import display, Markdown
     for k, p in prompts_dict.items():
         text_md = f"**Prompt Key**: {k}<br>" f"**Text:** <br>"
         display(Markdown(text_md))
