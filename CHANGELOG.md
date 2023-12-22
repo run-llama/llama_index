@@ -1,10 +1,22 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.20] - 2023-12-21
 
 ### New Features
 
 - Added `insert_batch_size` to limit number of embeddings held in memory when creating an index, defaults to 2048 (#9630)
+- Improve auto-retrieval (#9647)
+- Configurable Node ID Generating Function (#9574)
+- Introduced action input parser (#9575)
+- qdrant sparse vector support (#9644)
+- Introduced upserts and delete in ingestion pipeline (#9643)
+- Add Zilliz Cloud Pipeline as a Managed Index (#9605)
+- Add support for Google Gemini models via VertexAI (#9624)
+
+### Bug Fixes / Nits
+
+- Fix pip install commands in LM Format Enforcer notebooks (#9648)
+- Fixing some more links and documentations (#9633)
 
 ## [0.9.19] - 2023-12-20
 
