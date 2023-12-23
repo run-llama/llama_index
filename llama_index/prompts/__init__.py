@@ -10,6 +10,7 @@ from llama_index.prompts.base import (
     PromptType,
     SelectorPromptTemplate,
 )
+from llama_index.prompts.display_utils import display_prompt_dict
 
 __all__ = [
     "Prompt",
@@ -21,4 +22,5 @@ __all__ = [
     "PromptType",
     "ChatMessage",
     "MessageRole",
+    "display_prompt_dict",
 ]

@@ -1,7 +1,6 @@
 """ReAct output parser."""
 
 
-import ast
 import json
 import re
 from typing import Tuple
@@ -16,7 +15,9 @@ from llama_index.types import BaseOutputParser
 
 
 def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
-    pattern = r"\s*Thought: (.*?)\nAction: ([a-zA-Z0-9_]+).*?\nAction Input: (\{.*?\})"
+    pattern = (
+        r"\s*Thought: (.*?)\nAction: ([a-zA-Z0-9_]+).*?\nAction Input: .*?(\{.*?\})"
+    )
 
     match = re.search(pattern, input_text, re.DOTALL)
     if not match:
@@ -26,6 +27,13 @@ def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
     action = match.group(2).strip()
     action_input = match.group(3).strip()
     return thought, action, action_input
+
+
+def action_input_parser(json_str: str) -> dict:
+    processed_string = re.sub(r"(?<!\w)\'|\'(?!\w)", '"', json_str)
+    pattern = r'"(\w+)":\s*"([^"]*)"'
+    matches = re.findall(pattern, processed_string)
+    return dict(matches)
 
 
 def extract_final_response(input_text: str) -> Tuple[str, str]:
@@ -84,7 +92,7 @@ class ReActOutputParser(BaseOutputParser):
             try:
                 action_input_dict = json.loads(json_str)
             except json.JSONDecodeError:
-                action_input_dict = ast.literal_eval(json_str)
+                action_input_dict = action_input_parser(json_str)
 
             return ActionReasoningStep(
                 thought=thought, action=action, action_input=action_input_dict
