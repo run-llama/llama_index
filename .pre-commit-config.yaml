@@ -64,6 +64,7 @@ repos:
       - id: codespell
         additional_dependencies: [tomli]
         exclude: llama_index/_static
+        args: ["--ignore-words-list", "nin"]
   - repo: https://github.com/srstevenson/nb-clean
     rev: 3.1.0
     hooks:
