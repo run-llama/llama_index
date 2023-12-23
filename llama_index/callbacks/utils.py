@@ -25,7 +25,6 @@ def trace_method(
     """
 
     def decorator(func: Callable) -> Callable:
-
         @functools.wraps(func)  # preserve signature, name, etc. of func
         def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
             try:
