@@ -93,7 +93,7 @@ Hybrid search is an advanced retrieval feature supported by many vector database
 ---
 maxdepth: 1
 ---
-/examples/vector_stores/qdrant_hybrid.ipynb
+Building Hybrid Search from Scratch </examples/vector_stores/qdrant_hybrid.ipynb>
 ```
 
 ### Building a Router from Scratch
