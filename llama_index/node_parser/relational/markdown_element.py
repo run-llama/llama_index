@@ -3,7 +3,6 @@ from typing import Any, Callable, List, Optional
 
 import pandas as pd
 
-from llama_index.callbacks.base import CallbackManager
 from llama_index.node_parser.relational.base_element import (
     BaseElementNodeParser,
     Element,
@@ -43,17 +42,6 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
     @classmethod
     def class_name(cls) -> str:
         return "MarkdownElementNodeParser"
-
-    @classmethod
-    def from_defaults(
-        cls,
-        callback_manager: Optional[CallbackManager] = None,
-    ) -> "MarkdownElementNodeParser":
-        callback_manager = callback_manager or CallbackManager([])
-
-        return cls(
-            callback_manager=callback_manager,
-        )
 
     def get_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
         """Get nodes from node."""
