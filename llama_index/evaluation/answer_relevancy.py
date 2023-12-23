@@ -14,8 +14,8 @@ DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Your task is to evaluate if the response is relevant to the query.\n"
     "The evaluation should be performed in a step-by-step manner by answering the following questions:\n"
     "1. Does the provided response match the subject matter of the user's query?\n"
-    "2. Does the provided response attempt to address the focus or perspective on the subject matter taken on by the user's query?\n"
-    "3. Does the provided response attempt to follow the instruction of the user's query?\n"
+    "2. Does the provided response attempt to address the focus or perspective "
+    "on the subject matter taken on by the user's query?\n"
     "Each question above is worth 1 point. Provide detailed feedback on response according to the criteria questions above  "
     "After your feedback provide a final result by strictly following this format: '[RESULT] followed by the integer number representing the total score assigned to the response'\n\n"
     "Query: \n {query}\n"
@@ -23,7 +23,7 @@ DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Feedback:"
 )
 
-_DEFAULT_SCORE_THRESHOLD = 3.0
+_DEFAULT_SCORE_THRESHOLD = 2.0
 
 
 def _default_parser_function(output_str: str) -> Tuple[float, str]:
@@ -129,11 +129,14 @@ class AnswerRelevancyEvaluator(BaseEvaluator):
             invalid_result = True
             invalid_reason = "Unable to parse the output string."
 
+        if score:
+            score /= self.score_threshold
+
         return EvaluationResult(
             query=query,
             response=response,
-            score=score / self.score_threshold or -1,
-            feedback=reasoning,
+            score=score,
+            feedback=eval_response,
             invalid_result=invalid_result,
             invalid_reason=invalid_reason,
         )
