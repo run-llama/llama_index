@@ -86,7 +86,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         try:
             parent_id = parent_id or global_stack_trace.get()[-1]
         except IndexError:
-            self.start_trace("default")
+            self.start_trace("llama-index")
             parent_id = global_stack_trace.get()[-1]
 
         self._trace_map[parent_id].append(event_id)
