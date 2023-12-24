@@ -53,7 +53,6 @@ class Ollama(CustomLLM):
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
             is_chat_model=True,  # Ollama supports chat API for all models
-            is_function_calling_model=True,  # Ollama supports json format outputs
         )
 
     @property
