@@ -1,6 +1,8 @@
 import json
 from typing import Any, Dict, Sequence
 
+import requests
+
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import llm_chat_callback, llm_completion_callback
@@ -68,14 +70,6 @@ class Ollama(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        try:
-            import requests
-        except ImportError:
-            raise ImportError(
-                "Could not import requests library."
-                "Please install requests with `pip install requests`"
-            )
-
         with requests.post(
             url=f"{self.base_url}/api/chat/",
             json={
@@ -115,14 +109,6 @@ class Ollama(CustomLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        try:
-            import requests
-        except ImportError:
-            raise ImportError(
-                "Could not import requests library."
-                "Please install requests with `pip install requests`"
-            )
-
         with requests.post(
             url=f"{self.base_url}/api/chat/",
             json={
@@ -169,14 +155,6 @@ class Ollama(CustomLLM):
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        try:
-            import requests
-        except ImportError:
-            raise ImportError(
-                "Could not import requests library."
-                "Please install requests with `pip install requests`"
-            )
-
         with requests.post(
             url=f"{self.base_url}/api/generate/",
             json={
@@ -195,14 +173,6 @@ class Ollama(CustomLLM):
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        try:
-            import requests
-        except ImportError:
-            raise ImportError(
-                "Could not import requests library."
-                "Please install requests with `pip install requests`"
-            )
-
         with requests.post(
             url=f"{self.base_url}/api/generate/",
             json={
