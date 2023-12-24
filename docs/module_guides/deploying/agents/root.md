@@ -31,6 +31,14 @@ You can learn more about our Tool abstractions in our [Tools section](/module_gu
 
 For full details, please check out our detailed [blog post](https://medium.com/llamaindex-blog/data-agents-eed797d7972f).
 
+### Lower-level API: Step-Wise Execution
+
+By default, our agents expose `query` and `chat` functions that will execute a user-query end-to-end.
+
+We also offer a **lower-level API** allowing you to perform step-wise execution of an agent. This gives you much more control in being able to create tasks, and analyze + act upon the input/output of each step within a task.
+
+Check out [our guide](/module_guides/deploying/agents/agent_runner.md).
+
 ## Usage Pattern
 
 Data agents can be used in the following manner (the example uses the OpenAI Function API)
@@ -60,7 +68,7 @@ usage_pattern.md
 
 ## Modules
 
-Learn more about our different agent types in our module guides below.
+Learn more about our different agent types and use cases in our module guides below.
 
 Also take a look at our [tools section](/module_guides/deploying/agents/tools/root.md)!
 
@@ -69,5 +77,13 @@ Also take a look at our [tools section](/module_guides/deploying/agents/tools/ro
 maxdepth: 2
 ---
 modules.md
+```
+
+```{toctree}
+---
+maxdepth: 2
+hidden: true
+---
 /module_guides/deploying/agents/tools/root.md
+/module_guides/deploying/agents/agent_runner.md
 ```

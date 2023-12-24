@@ -15,6 +15,12 @@ notebook that you can follow to create a `LabelledRagDataset` from scratch (or
 convert a similarly structured question-answering dataset into one) and perform
 other required steps to make your submission. Please refer to the "LlamaDataset Submission Template Notebook" linked below.
 
+## Contributing Other llama-datasets
+
+The general process for contributing any of our other llama-datasets such as the
+`LabelledEvaluatorDataset` is the same as for the `LabelledRagDataset` previously
+described. Submission templates for these other datasets are coming soon!
+
 ```{toctree}
 ---
 maxdepth: 1

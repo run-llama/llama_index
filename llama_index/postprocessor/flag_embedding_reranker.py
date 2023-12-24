@@ -44,6 +44,8 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
     ) -> List[NodeWithScore]:
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
+        if len(nodes) == 0:
+            return []
 
         query_and_nodes = [
             (

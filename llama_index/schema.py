@@ -74,7 +74,7 @@ class BaseComponent(BaseModel):
         for key, val in state["__dict__"].items():
             if key.endswith("_fn"):
                 keys_to_remove.append(key)
-            if "function <lambda>" in str(val):
+            if "<lambda>" in str(val):
                 keys_to_remove.append(key)
         for key in keys_to_remove:
             state["__dict__"].pop(key, None)

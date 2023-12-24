@@ -177,6 +177,15 @@ maxdepth: 1
 /examples/llm/openllm.ipynb
 ```
 
+## OpenRouter
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/openrouter.ipynb
+```
+
 ## PaLM
 
 ```{toctree}

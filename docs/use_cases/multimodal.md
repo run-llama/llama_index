@@ -28,7 +28,7 @@ Image to Image Retrieval </examples/multi_modal/image_to_image_retrieval.ipynb>
 
 ### Retrieval-Augmented Image Captioning
 
-Oftentimes understanding an image requires looking up information from a knowledge base. A flow here is retrieval-augmented image captioning - first caption the image with a multi-modal model, then refine the caption by retrieving from a text corpus.
+Oftentimes understanding an image requires looking up information from a knowledge base. A flow here is retrieval-augmented image captioning - first caption the image with a multi-modal model, then refine the caption by retrieving it from a text corpus.
 
 Check out our guides below:
 
@@ -61,7 +61,7 @@ GPT4-V: </examples/multi_modal/openai_multi_modal.ipynb>
 
 ### Pydantic Program for Generating Structured Output for Multi-Modal LLMs
 
-You can generate `structured` output with new OpenAI GPT4V via LlamaIndex. The user just needs to specify a Pydantic object to define the structure of output.
+You can generate a `structured` output with the new OpenAI GPT4V via LlamaIndex. The user just needs to specify a Pydantic object to define the structure of the output.
 
 Check out the guide below:
 
@@ -98,7 +98,7 @@ maxdepth: 1
 ### Using Chroma for Multi-Modal retrieval with single vector store
 
 Chroma vector DB supports single vector store for indexing both images and texts.
-Check out out Chroma + LlamaIndex integration with single Multi-Modal Vector Store for both images/texts index and retrieval.
+Check out Chroma + LlamaIndex integration with single Multi-Modal Vector Store for both images/texts index and retrieval.
 
 ```{toctree}
 ---
@@ -107,7 +107,7 @@ maxdepth: 1
 /examples/multi_modal/ChromaMultiModalDemo.ipynb
 ```
 
-### Multi-Modal RAG on PDF's with Tables using Microsoft `Table Transformer`
+### Multi-Modal RAG on PDFs with Tables using Microsoft `Table Transformer`
 
 One common challenge with RAG (Retrieval-Augmented Generation) involves handling PDFs that contain tables. Parsing tables in various formats can be quite complex.
 
@@ -120,7 +120,7 @@ The experiment is divided into the following parts and we compared those 4 optio
 1. Retrieving relevant images (PDF pages) and sending them to GPT4-V to respond to queries.
 2. Regarding every PDF page as an image, let GPT4-V do the image reasoning for each page. Build Text Vector Store index for the image reasonings. Query the answer against the `Image Reasoning Vector Store`.
 3. Using Table Transformer to crop the table information from the retrieved images and then sending these cropped images to GPT4-V for query responses.
-4. Applying OCR on cropped table images and send the data to GPT4/ GPT-3.5 to answer the query.
+4. Applying OCR on cropped table images and sending the data to GPT4/ GPT-3.5 to answer the query.
 
 ```{toctree}
 ---
