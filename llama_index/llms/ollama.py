@@ -99,7 +99,7 @@ class Ollama(CustomLLM):
             return ChatResponse(
                 message=ChatMessage(
                     content=message.get("content", ""),
-                    role=message.get("role", MessageRole.ASSISTANT.value),
+                    role=MessageRole(message.get("role")),
                     additional_kwargs={
                         k: v
                         for k, v in message.items()
@@ -148,13 +148,13 @@ class Ollama(CustomLLM):
                 if line:
                     # Parsing each line (JSON chunk) and extracting the details
                     chunk = json.loads(line)
-                    delta = chunk["message"].get("content", "")
-                    role = chunk["message"].get("role", MessageRole.ASSISTANT.value)
+                    message = chunk["message"]
+                    delta = message.get("content", "")
                     text += delta
                     yield ChatResponse(
                         message=ChatMessage(
                             message=text,
-                            role=role,
+                            role=MessageRole(message.get("role")),
                             additional_kwargs={
                                 k: v
                                 for k, v in chunk["message"].items()
