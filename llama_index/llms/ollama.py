@@ -1,6 +1,5 @@
 import asyncio
 import json
-
 from typing import Any, Dict, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field
@@ -167,7 +166,6 @@ class Ollama(CustomLLM):
                             raw=chunk,
                             additional_kwargs=get_addtional_kwargs(chunk, ("message",)),
                         )
-
 
     @llm_chat_callback()
     def stream_chat(
