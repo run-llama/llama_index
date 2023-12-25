@@ -69,6 +69,7 @@ class FilterOperator(str, Enum):
     GTE = ">="  # greater than or equal to (int, float)
     LTE = "<="  # less than or equal to (int, float)
     IN = "in"  # In array (string or number)
+    NIN = "nin"  # Not in array (string or number)
 
 
 class FilterCondition(str, Enum):
@@ -92,12 +93,28 @@ class MetadataFilter(BaseModel):
     value: Union[StrictInt, StrictFloat, StrictStr]
     operator: FilterOperator = FilterOperator.EQ
 
+    @classmethod
+    def from_dict(
+        cls,
+        filter_dict: Dict,
+    ) -> "MetadataFilter":
+        """Create MetadataFilter from dictionary.
 
-# TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
-# Keep class for now so that AutoRetriever can still work with old vector stores
-class ExactMatchFilter(BaseModel):
-    key: str
-    value: Union[StrictInt, StrictFloat, StrictStr]
+        Args:
+            filter_dict: Dict with key, value and operator.
+
+        """
+        return MetadataFilter.parse_obj(filter_dict)
+
+
+# # TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
+# # Keep class for now so that AutoRetriever can still work with old vector stores
+# class ExactMatchFilter(BaseModel):
+#     key: str
+#     value: Union[StrictInt, StrictFloat, StrictStr]
+
+# set ExactMatchFilter to MetadataFilter
+ExactMatchFilter = MetadataFilter
 
 
 class MetadataFilters(BaseModel):
@@ -125,6 +142,29 @@ class MetadataFilters(BaseModel):
             filters.append(filter)
         return cls(filters=filters)
 
+    @classmethod
+    def from_dicts(
+        cls,
+        filter_dicts: List[Dict],
+        condition: Optional[FilterCondition] = FilterCondition.AND,
+    ) -> "MetadataFilters":
+        """Create MetadataFilters from dicts.
+
+        This takes in a list of individual MetadataFilter objects, along
+        with the condition.
+
+        Args:
+            filter_dicts: List of dicts, each dict is a MetadataFilter.
+            condition: FilterCondition to combine different filters.
+
+        """
+        return cls(
+            filters=[
+                MetadataFilter.from_dict(filter_dict) for filter_dict in filter_dicts
+            ],
+            condition=condition,
+        )
+
     def legacy_filters(self) -> List[ExactMatchFilter]:
         """Convert MetadataFilters to legacy ExactMatchFilters."""
         filters = []
@@ -146,7 +186,7 @@ class VectorStoreQuerySpec(BaseModel):
     """
 
     query: str
-    filters: List[ExactMatchFilter]
+    filters: List[MetadataFilter]
     top_k: Optional[int] = None
 
 

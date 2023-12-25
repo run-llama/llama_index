@@ -26,7 +26,6 @@ from llama_index.chat_engine.types import (
 )
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 
@@ -110,8 +109,8 @@ class ParallelAgentRunner(BaseAgentRunner):
             extra_state=self.init_task_state_kwargs,
             **kwargs,
         )
-        # put input into memory
-        self.memory.put(ChatMessage(content=input, role=MessageRole.USER))
+        # # put input into memory
+        # self.memory.put(ChatMessage(content=input, role=MessageRole.USER))
 
         # add it to state
         # get initial step from task, and put it in the step queue
@@ -259,13 +258,21 @@ class ParallelAgentRunner(BaseAgentRunner):
         return cur_step_output
 
     def run_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step."""
         return self._run_step(task_id, step, mode=ChatResponseMode.WAIT, **kwargs)
 
     async def arun_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (async)."""
         return await self._arun_step(
@@ -273,13 +280,21 @@ class ParallelAgentRunner(BaseAgentRunner):
         )
 
     def stream_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (stream)."""
         return self._run_step(task_id, step, mode=ChatResponseMode.STREAM, **kwargs)
 
     async def astream_step(
-        self, task_id: str, step: Optional[TaskStep] = None, **kwargs: Any
+        self,
+        task_id: str,
+        input: Optional[str] = None,
+        step: Optional[TaskStep] = None,
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         return await self._arun_step(

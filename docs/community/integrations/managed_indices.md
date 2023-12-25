@@ -87,10 +87,66 @@ query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do growing up?")
 ```
 
+If you already have documents in your corpus you can just access them directly by constructing the VectaraIndex as follows:
+
+```
+index = VectaraIndex()
+```
+
+And the index will connect to the existing corpus without loading any new documents.
+
 ```{toctree}
 ---
 caption: Examples
 maxdepth: 1
 ---
 /examples/managed/vectaraDemo.ipynb
+```
+
+## Zilliz
+
+First, [sign up](https://cloud.zilliz.com/signup) or use existing Zilliz Cloud account to create a free Serverless Cluster. This is to get the cluster id and API key to grant access to Zilliz Cloud Pipelines service.
+
+Then set the environment variables `ZILLIZ_CLUSTER_ID` and `ZILLIZ_TOKEN` by copying the value from the [Zilliz Cloud UI](https://raw.githubusercontent.com/milvus-io/bootcamp/2596ea9a4a1a089101a0b46e3cb012b8dfb2eb9a/images/zilliz_api_key_cluster_id.jpeg).
+
+Now you can construct the `ZillizCloudPipelineIndex` to ingest docs and query index as follows:
+
+```python
+import os
+
+from llama_index import ManagedIndex
+from llama_index.indices import ZillizCloudPipelineIndex
+
+# Load documents from url and build document index
+zcp_index = ZillizCloudPipelineIndex.from_document_url(
+    url="https://publicdataset.zillizcloud.com/milvus_doc.md",
+    cluster_id=os.getenv("ZILLIZ_CLUSTER_ID"),
+    token=os.getenv("ZILLIZ_TOKEN"),
+    metadata={"version": "2.3"},  # optional
+)
+
+# Insert more docs into index, eg. a Milvus v2.0 document
+zcp_index.insert_doc_url(
+    url="https://milvus.io/docs/v2.0.x/delete_data.md",
+    metadata={"version": "2.0"},
+)
+
+# Query index
+from llama_index.vector_stores.types import ExactMatchFilter, MetadataFilters
+
+query_engine_with_filters = zcp_index.as_query_engine(
+    search_top_k=3,
+    filters=MetadataFilters(
+        filters=[ExactMatchFilter(key="version", value="2.3")]
+    ),  # optional, here we will only retrieve info of Milvus 2.3
+    output_metadata=["version"],  # optional
+)
+```
+
+```{toctree}
+---
+caption: Examples
+maxdepth: 1
+---
+/examples/managed/zcpDemo.ipynb
 ```

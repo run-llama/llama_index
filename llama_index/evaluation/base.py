@@ -31,6 +31,12 @@ class EvaluationResult(BaseModel):
             " presented answers or flipped order"
         ),
     )
+    invalid_result: bool = Field(
+        default=False, description="Whether the evaluation result is an invalid one."
+    )
+    invalid_reason: Optional[str] = Field(
+        default=None, description="Reason for invalid evaluation."
+    )
 
 
 class BaseEvaluator(PromptMixin):
