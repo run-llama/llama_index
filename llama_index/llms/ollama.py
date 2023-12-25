@@ -1,7 +1,6 @@
+import asyncio
 import json
-from typing import Any, Dict, Sequence
-
-import requests
+from typing import Any, Dict, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -10,12 +9,20 @@ from llama_index.llms.custom import CustomLLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
+    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
 )
+
+
+def get_addtional_kwargs(
+    response: Dict[str, Any], exclude: Tuple[str, ...]
+) -> Dict[str, Any]:
+    return {k: v for k, v in response.items() if k not in exclude}
 
 
 class Ollama(CustomLLM):
@@ -69,132 +76,168 @@ class Ollama(CustomLLM):
         }
 
     @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        with requests.post(
-            url=f"{self.base_url}/api/chat/",
-            json={
-                "model": self.model,
-                "messages": [
-                    {
-                        "role": message.role,
-                        "content": message.content,
-                        **message.additional_kwargs,
-                    }
-                    for message in messages
-                ],
-                "options": self._model_kwargs,
-                "stream": False,
-                **kwargs,
-            },
-        ) as response:
-            response.raise_for_status()
-            message = response.json()["message"]
-            return ChatResponse(
-                message=ChatMessage(
-                    content=message.get("content", ""),
-                    role=MessageRole(message.get("role")),
-                    additional_kwargs={
-                        k: v
-                        for k, v in message.items()
-                        if k != "content" and k != "role"
-                    },
-                ),
-                raw=response.json(),
-                additional_kwargs={
-                    k: v for k, v in response.json().items() if k != "message"
-                },
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        import httpx
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": message.role,
+                    "content": message.content,
+                    **message.additional_kwargs,
+                }
+                for message in messages
+            ],
+            "options": self._model_kwargs,
+            "stream": False,
+            **kwargs,
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url=f"{self.base_url}/api/chat/",
+                json=payload,
             )
+            raw = response.json()
+            message = raw["message"]
+            yield ChatResponse(
+                message=ChatMessage(
+                    content=message.get("content"),
+                    role=MessageRole(message.get("role")),
+                    additional_kwargs=get_addtional_kwargs(
+                        message, ("content", "role")
+                    ),
+                ),
+                raw=raw,
+                additional_kwargs=get_addtional_kwargs(raw, ("message",)),
+            )
+
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        return asyncio.run(self.achat(messages, **kwargs))
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        import httpx
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": message.role,
+                    "content": message.content,
+                    **message.additional_kwargs,
+                }
+                for message in messages
+            ],
+            "options": self._model_kwargs,
+            "stream": True,
+            **kwargs,
+        }
+
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                method="POST",
+                url=f"{self.base_url}/api/chat/",
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                text = ""
+                async for line in response.aiter_lines():
+                    if line:
+                        chunk = json.loads(line)
+                        message = chunk["message"]
+                        delta = message.get("content")
+                        text += delta
+                        yield ChatResponse(
+                            message=ChatMessage(
+                                content=text,
+                                role=MessageRole(message.get("role")),
+                                additional_kwargs=get_addtional_kwargs(
+                                    message, ("content", "role")
+                                ),
+                            ),
+                            delta=delta,
+                            raw=chunk,
+                            additional_kwargs=get_addtional_kwargs(chunk, ("message",)),
+                        )
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        with requests.post(
-            url=f"{self.base_url}/api/chat/",
-            json={
-                "model": self.model,
-                "messages": [
-                    {
-                        "role": message.role,
-                        "content": message.content,
-                        **message.additional_kwargs,
-                    }
-                    for message in messages
-                ],
-                "options": self._model_kwargs,
-                "stream": True,
-                **kwargs,
-            },
-            stream=True,
-        ) as response:
-            response.raise_for_status()
-            text = ""
-            for line in response.iter_lines(decode_unicode=True):
-                if line:
-                    # Parsing each line (JSON chunk) and extracting the details
-                    chunk = json.loads(line)
-                    message = chunk["message"]
-                    delta = message.get("content", "")
-                    text += delta
-                    yield ChatResponse(
-                        message=ChatMessage(
-                            message=text,
-                            role=MessageRole(message.get("role")),
-                            additional_kwargs={
-                                k: v
-                                for k, v in chunk["message"].items()
-                                if k != "content" and k != "role"
-                            },
-                        ),
-                        delta=delta,
-                        raw=chunk,
-                        additional_kwargs={
-                            k: v for k, v in chunk.items() if k != "message"
-                        },
-                    )
+        return asyncio.run(self.astream_chat(messages, **kwargs))
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        with requests.post(
-            url=f"{self.base_url}/api/generate/",
-            json={
-                self.prompt_key: prompt,
-                "model": self.model,
-                "options": self._model_kwargs,
-                "stream": False,
-                **kwargs,
-            },
-        ) as response:
-            response.raise_for_status()
-            return CompletionResponse(
-                text=response.json().get("response", ""),
-                raw=response.json(),
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        import httpx
+
+        payload = {
+            self.prompt_key: prompt,
+            "model": self.model,
+            "options": self._model_kwargs,
+            "stream": False,
+            **kwargs,
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url=f"{self.base_url}/api/generate/",
+                json=payload,
+            )
+            raw = response.json()
+            text = raw.get("response")
+            yield CompletionResponse(
+                text=text,
+                raw=raw,
+                additional_kwargs=get_addtional_kwargs(raw, ("response",)),
             )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        with requests.post(
-            url=f"{self.base_url}/api/generate/",
-            json={
-                self.prompt_key: prompt,
-                "model": self.model,
-                "options": self._model_kwargs,
-                "stream": True,
-                **kwargs,
-            },
-            stream=True,
-        ) as response:
-            response.raise_for_status()
-            text = ""
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        return asyncio.run(self.acomplete(prompt, **kwargs))
 
-            for line in response.iter_lines(decode_unicode=True):
-                if line:
-                    # Parsing each line (JSON chunk) and extracting the details
-                    chunk = json.loads(line)
-                    delta = chunk.get("response", "")
-                    text += delta
-                    yield CompletionResponse(
-                        delta=delta,
-                        text=text,
-                        raw=chunk,
-                    )
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        import httpx
+
+        payload = {
+            self.prompt_key: prompt,
+            "model": self.model,
+            "options": self._model_kwargs,
+            "stream": True,
+            **kwargs,
+        }
+
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                method="POST",
+                url=f"{self.base_url}/api/generate/",
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                text = ""
+                async for line in response.aiter_lines():
+                    if line:
+                        chunk = json.loads(line)
+                        delta = chunk.get("response")
+                        text += delta
+                        yield CompletionResponse(
+                            delta=delta,
+                            text=text,
+                            raw=chunk,
+                            additional_kwargs=get_addtional_kwargs(
+                                chunk, ("response",)
+                            ),
+                        )
+
+    @llm_completion_callback()
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        return asyncio.run(self.astream_complete(prompt, **kwargs))
