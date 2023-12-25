@@ -130,7 +130,13 @@ class PathwayVectorServer:
 
 
 class PathwayRetriever(BaseRetriever):
-    """Pathway retriever."""
+    """Pathway retriever.
+    Pathway is an open data processing framework.
+    It allows you to easily develop data transformation pipelines
+    that work with live data sources and changing data.
+
+    This is the client that implements Retriever API for PathwayVectorServer.
+    """
 
     def __init__(
         self,
