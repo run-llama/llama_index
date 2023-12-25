@@ -1,3 +1,5 @@
+"""Pathway reader."""
+
 from typing import List, Optional, Union
 
 from llama_index.readers.base import BaseReader
