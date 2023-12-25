@@ -39,8 +39,7 @@ class PathwayVectorServer:
             TransformComponent in the middle
 
         parser (Callable[[bytes], list[tuple[str, dict]]]): optional, callable that
-            parses file contents into a list of documents. If None, default uft-8 reader
-            will be used. Defaults to None.
+            parses file contents into a list of documents. If None, defaults to `uft-8` decoding of the file contents. Defaults to None.
     """
 
     def __init__(
@@ -138,7 +137,7 @@ class PathwayRetriever(BaseRetriever):
         port: Union[str, int],
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        """Initializing the Pathway reader client."""
+        """Initializing the Pathway retriever client."""
         import_err_msg = "`pathway` package not found, please run `pip install pathway`"
         try:
             from pathway.xpacks.llm.vector_store import VectorStoreClient
