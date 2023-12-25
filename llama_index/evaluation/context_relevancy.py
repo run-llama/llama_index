@@ -13,21 +13,20 @@ from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import Document
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
-    "Your task is to evaluate if the retrieved context is relevant to the query.\n"
+    "Your task is to evaluate if the retrieved context from the document sources are relevant to the query.\n"
     "The evaluation should be performed in a step-by-step manner by answering the following questions:\n"
-    "1. Does the provided context match the subject matter of the user's query?\n"
-    "2. Can the provided context be used to address the focus or perspective "
-    "on the subject matter taken on by the user's query?\n"
-    "Each question above is worth 1 point. Provide detailed feedback on the response "
+    "1. Does the retrieved context match the subject matter of the user's query?\n"
+    "2. Can the retrieved context be used exclusively to provide a full answer to the user's query?\n"
+    "Each question above is worth 2 points, where partial marks are allowed and encouraged. Provide detailed feedback on the response "
     "according to the criteria questions previously mentioned. "
     "After your feedback provide a final result by strictly following this format: "
-    "'[RESULT] followed by the integer number representing the total score assigned to the response'\n\n"
+    "'[RESULT] followed by the float number representing the total score assigned to the response'\n\n"
     "Query: \n {query_str}\n"
     "Context: \n {context_str}\n"
     "Feedback:"
 )
 
-_DEFAULT_SCORE_THRESHOLD = 2.0
+_DEFAULT_SCORE_THRESHOLD = 4.0
 
 DEFAULT_REFINE_TEMPLATE = PromptTemplate(
     "We want to understand if the following query and response is"
@@ -47,7 +46,7 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
 def _default_parser_function(output_str: str) -> Tuple[float, str]:
     # Pattern to match the feedback and response
     # This pattern looks for any text ending with '[RESULT]' followed by a number
-    pattern = r"([\s\S]+)(?:\[RESULT\]\s*)(\d)"
+    pattern = r"([\s\S]+)(?:\[RESULT\]\s*)([\d.]+)"
 
     # Using regex to find all matches
     result = re.search(pattern, output_str)
@@ -158,10 +157,13 @@ class ContextRelevancyEvaluator(BaseEvaluator):
             invalid_result = True
             invalid_reason = "Unable to parse the output string."
 
+        if score:
+            score /= self.score_threshold
+
         return EvaluationResult(
             query=query,
             contexts=contexts,
-            score=score / self.score_threshold or -1,
+            score=score,
             feedback=raw_response_txt,
             invalid_result=invalid_result,
             invalid_reason=invalid_reason,
