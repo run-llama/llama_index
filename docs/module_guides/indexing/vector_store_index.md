@@ -30,6 +30,12 @@ For more on how to load documents, see [Understanding Loading](/module_guides/lo
 
 By default, VectorStoreIndex stores everything in memory. See [Using Vector Stores](#using-vector-stores) below for more on how to use persistent vector stores.
 
+```{tip}
+By default, the `VectorStoreIndex` will generate and insert vectors in batches of 2048 nodes. If you are memory constrained (or have a surplus of memory), you can modify this by passing `insert_batch_size=2048` with your desired batch size.
+
+This is especially helpful when you are inserting into a remotely hosted vector database.
+```
+
 ### Using the ingestion pipeline to create nodes
 
 If you want more control over how your documents are indexed, we recommend using the ingestion pipeline. This allows you to customize the chunking, metadata, and embedding of the nodes.

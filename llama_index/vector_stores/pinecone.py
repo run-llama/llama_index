@@ -1,4 +1,5 @@
-"""Pinecone Vector store index.
+"""
+Pinecone Vector store index.
 
 An index that that is built on top of an existing vector store.
 
@@ -61,6 +62,8 @@ def _transform_pinecone_filter_operator(operator: str) -> str:
         return "$lte"
     elif operator == "in":
         return "$in"
+    elif operator == "nin":
+        return "$nin"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 
@@ -167,6 +170,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
         insert_kwargs (Optional[Dict]): insert kwargs during `upsert` call.
         add_sparse_vector (bool): whether to add sparse vector to index.
         tokenizer (Optional[Callable]): tokenizer to use to generate sparse
+        default_empty_query_vector (Optional[List[float]]): default empty query vector.
+            Defaults to None. If not None, then this vector will be used as the query
+            vector if the query is empty.
 
     """
 
@@ -199,6 +205,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
+        default_empty_query_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -250,6 +257,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
+        default_empty_query_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> "PineconeVectorStore":
         try:
@@ -272,6 +280,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             text_key=text_key,
             batch_size=batch_size,
             remove_text_from_metadata=remove_text_from_metadata,
+            default_empty_query_vector=default_empty_query_vector,
             **kwargs,
         )
 

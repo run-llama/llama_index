@@ -10,4 +10,4 @@ twine upload dist/*
 # twine upload -r testpypi dist/*
 
 # cleanup
-rm -rf build dist *.egg-info
+rm -rf build dist *.egg-info/

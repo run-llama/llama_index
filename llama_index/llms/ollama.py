@@ -1,17 +1,12 @@
 import json
-from typing import Any, Dict, Iterator, Sequence
+from typing import Any, Dict, Sequence
+
+import requests
 
 from llama_index.bridge.pydantic import Field
-from llama_index.constants import (
-    DEFAULT_CONTEXT_WINDOW,
-    DEFAULT_NUM_OUTPUTS,
-)
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import llm_chat_callback, llm_completion_callback
 from llama_index.llms.custom import CustomLLM
-from llama_index.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
-)
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -19,6 +14,7 @@ from llama_index.llms.types import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
 )
 
 
@@ -43,7 +39,8 @@ class Ollama(CustomLLM):
         default="prompt", description="The key to use for the prompt in API calls."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs for the Ollama API."
+        default_factory=dict,
+        description="Additional model parameters for the Ollama API.",
     )
 
     @classmethod
@@ -57,6 +54,7 @@ class Ollama(CustomLLM):
             context_window=self.context_window,
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
+            is_chat_model=True,  # Ollama supports chat API for all models
         )
 
     @property
@@ -70,87 +68,133 @@ class Ollama(CustomLLM):
             **self.additional_kwargs,
         }
 
-    def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        return {
-            **self._model_kwargs,
-            **kwargs,
-        }
-
-    def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
-        return {self.prompt_key: prompt, **self._model_kwargs, **kwargs}
-
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        prompt = self.messages_to_prompt(messages)
-        completion_response = self.complete(prompt, formatted=True, **kwargs)
-        return completion_response_to_chat_response(completion_response)
+        with requests.post(
+            url=f"{self.base_url}/api/chat/",
+            json={
+                "model": self.model,
+                "messages": [
+                    {
+                        "role": message.role,
+                        "content": message.content,
+                        **message.additional_kwargs,
+                    }
+                    for message in messages
+                ],
+                "options": self._model_kwargs,
+                "stream": False,
+                **kwargs,
+            },
+        ) as response:
+            response.raise_for_status()
+            message = response.json()["message"]
+            return ChatResponse(
+                message=ChatMessage(
+                    content=message.get("content", ""),
+                    role=MessageRole(message.get("role")),
+                    additional_kwargs={
+                        k: v
+                        for k, v in message.items()
+                        if k != "content" and k != "role"
+                    },
+                ),
+                raw=response.json(),
+                additional_kwargs={
+                    k: v for k, v in response.json().items() if k != "message"
+                },
+            )
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        prompt = self.messages_to_prompt(messages)
-        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
-        return stream_completion_response_to_chat_response(completion_response)
+        with requests.post(
+            url=f"{self.base_url}/api/chat/",
+            json={
+                "model": self.model,
+                "messages": [
+                    {
+                        "role": message.role,
+                        "content": message.content,
+                        **message.additional_kwargs,
+                    }
+                    for message in messages
+                ],
+                "options": self._model_kwargs,
+                "stream": True,
+                **kwargs,
+            },
+            stream=True,
+        ) as response:
+            response.raise_for_status()
+            text = ""
+            for line in response.iter_lines(decode_unicode=True):
+                if line:
+                    # Parsing each line (JSON chunk) and extracting the details
+                    chunk = json.loads(line)
+                    message = chunk["message"]
+                    delta = message.get("content", "")
+                    text += delta
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            message=text,
+                            role=MessageRole(message.get("role")),
+                            additional_kwargs={
+                                k: v
+                                for k, v in chunk["message"].items()
+                                if k != "content" and k != "role"
+                            },
+                        ),
+                        delta=delta,
+                        raw=chunk,
+                        additional_kwargs={
+                            k: v for k, v in chunk.items() if k != "message"
+                        },
+                    )
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        response_gen = self.stream_complete(prompt, **kwargs)
-        response_list = list(response_gen)
-        final_response = response_list[-1]
-        final_response.delta = None
-        return final_response
+        with requests.post(
+            url=f"{self.base_url}/api/generate/",
+            json={
+                self.prompt_key: prompt,
+                "model": self.model,
+                "options": self._model_kwargs,
+                "stream": False,
+                **kwargs,
+            },
+        ) as response:
+            response.raise_for_status()
+            return CompletionResponse(
+                text=response.json().get("response", ""),
+                raw=response.json(),
+            )
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        try:
-            import requests
-        except ImportError:
-            raise ImportError(
-                "Could not import requests library."
-                "Please install requests with `pip install requests`"
-            )
-        all_kwargs = self._get_all_kwargs(**kwargs)
-        del all_kwargs["formatted"]  # ollama throws 400 if it receives this option
-
-        if not kwargs.get("formatted", False):
-            prompt = self.completion_to_prompt(prompt)
-
-        ollama_request_json: Dict[str, Any] = {
-            "prompt": prompt,
-            "model": self.model,
-            "options": all_kwargs,
-        }
-        if all_kwargs.get("system"):
-            ollama_request_json["system"] = all_kwargs["system"]
-            del all_kwargs["system"]
-
-        if all_kwargs.get("formatted"):
-            ollama_request_json["format"] = "json" if all_kwargs["formatted"] else None
-        del all_kwargs["formatted"]
-
-        response = requests.post(
+        with requests.post(
             url=f"{self.base_url}/api/generate/",
-            headers={"Content-Type": "application/json"},
-            json=ollama_request_json,
+            json={
+                self.prompt_key: prompt,
+                "model": self.model,
+                "options": self._model_kwargs,
+                "stream": True,
+                **kwargs,
+            },
             stream=True,
-        )
-        response.encoding = "utf-8"
-        if response.status_code != 200:
-            optional_detail = response.json().get("error")
-            raise ValueError(
-                f"Ollama call failed with status code {response.status_code}."
-                f" Details: {optional_detail}"
-            )
-
-        def gen(response_iter: Iterator[Any]) -> CompletionResponseGen:
+        ) as response:
+            response.raise_for_status()
             text = ""
-            for stream_response in response_iter:
-                delta = json.loads(stream_response).get("response", "")
-                text += delta
-                yield CompletionResponse(
-                    delta=delta,
-                    text=text,
-                )
 
-        return gen(response.iter_lines(decode_unicode=True))
+            for line in response.iter_lines(decode_unicode=True):
+                if line:
+                    # Parsing each line (JSON chunk) and extracting the details
+                    chunk = json.loads(line)
+                    delta = chunk.get("response", "")
+                    text += delta
+                    yield CompletionResponse(
+                        delta=delta,
+                        text=text,
+                        raw=chunk,
+                    )
