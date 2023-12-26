@@ -1,6 +1,6 @@
 # Querying
 
-Querying is the most important part of your LLM application. To learn more about getting a final product that you can deploy, check out the [query engine](/module_guides/deploying/query_engine/root.md), [chat engine](/module_guides/deploying/chat_engines/root.md) and [agents](/module_guides/deploying/agents/root.md) sections.
+Querying is the most important part of your LLM application. To learn more about getting a final product that you can deploy, check out the [query engine](/docs/module_guides/deploying/query_engine/root.md), [chat engine](/docs/module_guides/deploying/chat_engines/root.md) and [agents](/docs/module_guides/deploying/agents/root.md) sections.
 
 ## Modules in this section
 
