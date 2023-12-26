@@ -132,37 +132,32 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
-        def gen() -> ChatResponseGen:
-            with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
-                with client.stream(
-                    method="POST",
-                    url=f"{self.base_url}/api/chat",
-                    json=payload,
-                ) as response:
-                    response.raise_for_status()
-                    text = ""
-                    for line in response.iter_lines():
-                        if line:
-                            chunk = json.loads(line)
-                            message = chunk["message"]
-                            delta = message.get("content")
-                            text += delta
-                            yield ChatResponse(
-                                message=ChatMessage(
-                                    content=text,
-                                    role=MessageRole(message.get("role")),
-                                    additional_kwargs=get_addtional_kwargs(
-                                        message, ("content", "role")
-                                    ),
-                                ),
-                                delta=delta,
-                                raw=chunk,
+        with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
+            with client.stream(
+                method="POST",
+                url=f"{self.base_url}/api/chat",
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                text = ""
+                for line in response.iter_lines():
+                    if line:
+                        chunk = json.loads(line)
+                        message = chunk["message"]
+                        delta = message.get("content")
+                        text += delta
+                        yield ChatResponse(
+                            message=ChatMessage(
+                                content=text,
+                                role=MessageRole(message.get("role")),
                                 additional_kwargs=get_addtional_kwargs(
-                                    chunk, ("message",)
+                                    message, ("content", "role")
                                 ),
-                            )
-
-        return gen()
+                            ),
+                            delta=delta,
+                            raw=chunk,
+                            additional_kwargs=get_addtional_kwargs(chunk, ("message",)),
+                        )
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
@@ -197,27 +192,24 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
-        def gen() -> CompletionResponseGen:
-            with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
-                with client.stream(
-                    method="POST",
-                    url=f"{self.base_url}/api/generate",
-                    json=payload,
-                ) as response:
-                    response.raise_for_status()
-                    text = ""
-                    for line in response.iter_lines():
-                        if line:
-                            chunk = json.loads(line)
-                            delta = chunk.get("response")
-                            text += delta
-                            yield CompletionResponse(
-                                delta=delta,
-                                text=text,
-                                raw=chunk,
-                                additional_kwargs=get_addtional_kwargs(
-                                    chunk, ("response",)
-                                ),
-                            )
-
-        return gen()
+        with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
+            with client.stream(
+                method="POST",
+                url=f"{self.base_url}/api/generate",
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                text = ""
+                for line in response.iter_lines():
+                    if line:
+                        chunk = json.loads(line)
+                        delta = chunk.get("response")
+                        text += delta
+                        yield CompletionResponse(
+                            delta=delta,
+                            text=text,
+                            raw=chunk,
+                            additional_kwargs=get_addtional_kwargs(
+                                chunk, ("response",)
+                            ),
+                        )
