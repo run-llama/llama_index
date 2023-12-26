@@ -1,6 +1,6 @@
 # Multi-modal
 
-LlamaIndex offers capabilities to not only build language-based applications, but also **multi-modal** applications - combining language and images.
+LlamaIndex offers capabilities to not only build language-based applications but also **multi-modal** applications - combining language and images.
 
 ## Types of Multi-modal Use Cases
 
@@ -86,7 +86,7 @@ maxdepth: 1
 
 ### Simple Evaluation of Multi-Modal RAG
 
-In this notebook guide, we'll demonstrate how to evaluate a Multi-Modal RAG system. As in the text-only case, we will consider the evaluation of Retrievers and Generators separately. As we alluded in our blog on the topic of Evaluating Multi-Modal RAGs, our approach here involves the application of adapted versions of the usual techniques for evaluating both Retriever and Generator (used for the text-only case). These adapted versions are part of the llama-index library (i.e., evaluation module), and this notebook will walk you through how you can apply them to your evaluation use-cases.
+In this notebook guide, we'll demonstrate how to evaluate a Multi-Modal RAG system. As in the text-only case, we will consider the evaluation of Retrievers and Generators separately. As we alluded to in our blog on the topic of Evaluating Multi-Modal RAGs, our approach here involves the application of adapted versions of the usual techniques for evaluating both Retriever and Generator (used for the text-only case). These adapted versions are part of the llama-index library (i.e., evaluation module), and this notebook will walk you through how you can apply them to your evaluation use-cases.
 
 ```{toctree}
 ---
@@ -97,8 +97,8 @@ maxdepth: 1
 
 ### Using Chroma for Multi-Modal retrieval with single vector store
 
-Chroma vector DB supports single vector store for indexing both images and texts.
-Check out Chroma + LlamaIndex integration with single Multi-Modal Vector Store for both images/texts index and retrieval.
+Chroma vector DB supports a single vector store for indexing both images and texts.
+Check out Chroma + LlamaIndex integration with a single Multi-Modal Vector Store for both images/texts index and retrieval.
 
 ```{toctree}
 ---
