@@ -99,6 +99,7 @@ class Ollama(CustomLLM):
                 url=f"{self.base_url}/api/chat",
                 json=payload,
             )
+            response.raise_for_status()
             raw = response.json()
             message = raw["message"]
             return ChatResponse(
@@ -174,6 +175,7 @@ class Ollama(CustomLLM):
                 url=f"{self.base_url}/api/generate",
                 json=payload,
             )
+            response.raise_for_status()
             raw = response.json()
             text = raw.get("response")
             return CompletionResponse(
