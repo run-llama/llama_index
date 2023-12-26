@@ -11,12 +11,14 @@ from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser im
 )
 from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
     DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL,
-    VectorStoreQueryPrompt,
 )
 from llama_index.output_parsers.base import OutputParserException, StructuredOutput
+from llama_index.prompts.base import PromptTemplate
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import (
+    FilterCondition,
     MetadataFilters,
     VectorStoreInfo,
     VectorStoreQueryMode,
@@ -52,6 +54,11 @@ class VectorIndexAutoRetriever(BaseRetriever):
             be clamped to this value.
         vector_store_query_mode (str): vector store query mode
             See reference for VectorStoreQueryMode for full list of supported modes.
+        default_empty_query_vector (Optional[List[float]]): default empty query vector.
+            Defaults to None. If not None, then this vector will be used as the query
+            vector if the query is empty.
+        callback_manager (Optional[CallbackManager]): callback manager
+        verbose (bool): verbose mode
     """
 
     def __init__(
@@ -64,32 +71,58 @@ class VectorIndexAutoRetriever(BaseRetriever):
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         empty_query_top_k: Optional[int] = 10,
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
+        default_empty_query_vector: Optional[List[float]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        extra_filters: Optional[MetadataFilters] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
         self._vector_store_info = vector_store_info
         self._service_context = service_context or self._index.service_context
+        self._default_empty_query_vector = default_empty_query_vector
+        callback_manager = callback_manager or self._service_context.callback_manager
 
         # prompt
         prompt_template_str = (
             prompt_template_str or DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL
         )
-        output_parser = VectorStoreQueryOutputParser()
-        self._prompt = VectorStoreQueryPrompt(
-            template=prompt_template_str,
-            output_parser=output_parser,
-        )
+        self._output_parser = VectorStoreQueryOutputParser()
+        self._prompt = PromptTemplate(template=prompt_template_str)
 
         # additional config
         self._max_top_k = max_top_k
         self._similarity_top_k = similarity_top_k
         self._empty_query_top_k = empty_query_top_k
         self._vector_store_query_mode = vector_store_query_mode
+        # if extra_filters is OR condition, we don't support that yet
+        if extra_filters is not None and extra_filters.condition == FilterCondition.OR:
+            raise ValueError("extra_filters cannot be OR condition")
+        self._extra_filters = extra_filters or MetadataFilters(filters=[])
         self._kwargs = kwargs
         self._verbose = verbose
         super().__init__(callback_manager)
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {
+            "prompt": self._prompt,
+        }
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Get prompt modules."""
+        if "prompt" in prompts:
+            self._prompt = prompts["prompt"]
+
+    def _get_query_bundle(self, query: str) -> QueryBundle:
+        """Get query bundle."""
+        if not query and self._default_empty_query_vector is not None:
+            return QueryBundle(
+                query_str="",
+                embedding=self._default_empty_query_vector,
+            )
+        else:
+            return QueryBundle(query_str=query)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # prepare input
@@ -105,10 +138,9 @@ class VectorIndexAutoRetriever(BaseRetriever):
         )
 
         # parse output
-        assert self._prompt.output_parser is not None
         try:
             structured_output = cast(
-                StructuredOutput, self._prompt.output_parser.parse(output)
+                StructuredOutput, self._output_parser.parse(output)
             )
             query_spec = cast(VectorStoreQuerySpec, structured_output.parsed_output)
         except OutputParserException:
@@ -119,12 +151,19 @@ class VectorIndexAutoRetriever(BaseRetriever):
                 top_k=None,
             )
 
+        # construct new query bundle from query_spec
+        # insert 0 vector if query is empty and default_empty_query_vector is not None
+        new_query_bundle = self._get_query_bundle(query_spec.query)
+
         _logger.info(f"Using query str: {query_spec.query}")
-        filter_dict = {filter.key: filter.value for filter in query_spec.filters}
-        _logger.info(f"Using filters: {filter_dict}")
+        filter_list = [
+            (filter.key, filter.operator.value, filter.value)
+            for filter in query_spec.filters
+        ]
+        _logger.info(f"Using filters: {filter_list}")
         if self._verbose:
             print(f"Using query str: {query_spec.query}")
-            print(f"Using filters: {filter_dict}")
+            print(f"Using filters: {filter_list}")
 
         # define similarity_top_k
         # if query is specified, then use similarity_top_k
@@ -143,9 +182,11 @@ class VectorIndexAutoRetriever(BaseRetriever):
 
         retriever = VectorIndexRetriever(
             self._index,
-            filters=MetadataFilters(filters=query_spec.filters),
+            filters=MetadataFilters(
+                filters=[*query_spec.filters, *self._extra_filters.filters]
+            ),
             similarity_top_k=similarity_top_k,
             vector_store_query_mode=self._vector_store_query_mode,
             **self._kwargs,
         )
-        return retriever.retrieve(query_spec.query)
+        return retriever.retrieve(new_query_bundle)
