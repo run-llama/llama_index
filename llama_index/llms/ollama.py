@@ -1,6 +1,8 @@
-import asyncio
 import json
 from typing import Any, Dict, Sequence, Tuple
+
+import httpx
+from httpx import Timeout
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -9,14 +11,14 @@ from llama_index.llms.custom import CustomLLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
-    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
-    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
 )
+
+DEFAULT_REQUEST_TIMEOUT = 30
 
 
 def get_addtional_kwargs(
@@ -76,11 +78,7 @@ class Ollama(CustomLLM):
         }
 
     @llm_chat_callback()
-    async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponse:
-        import httpx
-
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         payload = {
             "model": self.model,
             "messages": [
@@ -96,14 +94,14 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url=f"{self.base_url}/api/chat/",
+        with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
+            response = client.post(
+                url=f"{self.base_url}/api/chat",
                 json=payload,
             )
             raw = response.json()
             message = raw["message"]
-            yield ChatResponse(
+            return ChatResponse(
                 message=ChatMessage(
                     content=message.get("content"),
                     role=MessageRole(message.get("role")),
@@ -116,15 +114,9 @@ class Ollama(CustomLLM):
             )
 
     @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        return asyncio.run(self.achat(messages, **kwargs))
-
-    @llm_chat_callback()
-    async def astream_chat(
+    def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        import httpx
-
+    ) -> ChatResponseGen:
         payload = {
             "model": self.model,
             "messages": [
@@ -140,43 +132,40 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
-        async with httpx.AsyncClient() as client:
-            async with client.stream(
-                method="POST",
-                url=f"{self.base_url}/api/chat/",
-                json=payload,
-            ) as response:
-                response.raise_for_status()
-                text = ""
-                async for line in response.aiter_lines():
-                    if line:
-                        chunk = json.loads(line)
-                        message = chunk["message"]
-                        delta = message.get("content")
-                        text += delta
-                        yield ChatResponse(
-                            message=ChatMessage(
-                                content=text,
-                                role=MessageRole(message.get("role")),
-                                additional_kwargs=get_addtional_kwargs(
-                                    message, ("content", "role")
+        def gen() -> ChatResponseGen:
+            with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
+                with client.stream(
+                    method="POST",
+                    url=f"{self.base_url}/api/chat",
+                    json=payload,
+                ) as response:
+                    response.raise_for_status()
+                    text = ""
+                    for line in response.iter_lines():
+                        if line:
+                            chunk = json.loads(line)
+                            message = chunk["message"]
+                            delta = message.get("content")
+                            text += delta
+                            yield ChatResponse(
+                                message=ChatMessage(
+                                    content=text,
+                                    role=MessageRole(message.get("role")),
+                                    additional_kwargs=get_addtional_kwargs(
+                                        message, ("content", "role")
+                                    ),
                                 ),
-                            ),
-                            delta=delta,
-                            raw=chunk,
-                            additional_kwargs=get_addtional_kwargs(chunk, ("message",)),
-                        )
+                                delta=delta,
+                                raw=chunk,
+                                additional_kwargs=get_addtional_kwargs(
+                                    chunk, ("message",)
+                                ),
+                            )
 
-    @llm_chat_callback()
-    def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
-        return asyncio.run(self.astream_chat(messages, **kwargs))
+        return gen()
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        import httpx
-
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         payload = {
             self.prompt_key: prompt,
             "model": self.model,
@@ -185,29 +174,21 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url=f"{self.base_url}/api/generate/",
+        with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
+            response = client.post(
+                url=f"{self.base_url}/api/generate",
                 json=payload,
             )
             raw = response.json()
             text = raw.get("response")
-            yield CompletionResponse(
+            return CompletionResponse(
                 text=text,
                 raw=raw,
                 additional_kwargs=get_addtional_kwargs(raw, ("response",)),
             )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        return asyncio.run(self.acomplete(prompt, **kwargs))
-
-    @llm_completion_callback()
-    async def astream_complete(
-        self, prompt: str, **kwargs: Any
-    ) -> CompletionResponseAsyncGen:
-        import httpx
-
+    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         payload = {
             self.prompt_key: prompt,
             "model": self.model,
@@ -216,28 +197,27 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
-        async with httpx.AsyncClient() as client:
-            async with client.stream(
-                method="POST",
-                url=f"{self.base_url}/api/generate/",
-                json=payload,
-            ) as response:
-                response.raise_for_status()
-                text = ""
-                async for line in response.aiter_lines():
-                    if line:
-                        chunk = json.loads(line)
-                        delta = chunk.get("response")
-                        text += delta
-                        yield CompletionResponse(
-                            delta=delta,
-                            text=text,
-                            raw=chunk,
-                            additional_kwargs=get_addtional_kwargs(
-                                chunk, ("response",)
-                            ),
-                        )
+        def gen() -> CompletionResponseGen:
+            with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
+                with client.stream(
+                    method="POST",
+                    url=f"{self.base_url}/api/generate",
+                    json=payload,
+                ) as response:
+                    response.raise_for_status()
+                    text = ""
+                    for line in response.iter_lines():
+                        if line:
+                            chunk = json.loads(line)
+                            delta = chunk.get("response")
+                            text += delta
+                            yield CompletionResponse(
+                                delta=delta,
+                                text=text,
+                                raw=chunk,
+                                additional_kwargs=get_addtional_kwargs(
+                                    chunk, ("response",)
+                                ),
+                            )
 
-    @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        return asyncio.run(self.astream_complete(prompt, **kwargs))
+        return gen()
