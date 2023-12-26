@@ -18,7 +18,7 @@ from llama_index.llms.types import (
     MessageRole,
 )
 
-DEFAULT_REQUEST_TIMEOUT = 30
+DEFAULT_REQUEST_TIMEOUT = 30.0
 
 
 def get_addtional_kwargs(
@@ -43,6 +43,10 @@ class Ollama(CustomLLM):
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",
         gt=0,
+    )
+    request_timeout: float = Field(
+        default=DEFAULT_REQUEST_TIMEOUT,
+        description="The timeout for making http request to Ollama API server",
     )
     prompt_key: str = Field(
         default="prompt", description="The key to use for the prompt in API calls."
@@ -94,7 +98,7 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
-        with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
+        with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             response = client.post(
                 url=f"{self.base_url}/api/chat",
                 json=payload,
@@ -133,7 +137,7 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
-        with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
+        with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             with client.stream(
                 method="POST",
                 url=f"{self.base_url}/api/chat",
@@ -170,7 +174,7 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
-        with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
+        with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             response = client.post(
                 url=f"{self.base_url}/api/generate",
                 json=payload,
@@ -194,7 +198,7 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
-        with httpx.Client(timeout=Timeout(DEFAULT_REQUEST_TIMEOUT)) as client:
+        with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             with client.stream(
                 method="POST",
                 url=f"{self.base_url}/api/generate",
