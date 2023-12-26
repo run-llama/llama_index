@@ -26,7 +26,7 @@ Our docs are structured so you should be able to roughly progress simply by movi
 
 4. **Optimizing**
 
-   Already got a working LlamaIndex application and looking to further refine it? Our optimizing section will walk you through the [first things you should try](/optimizing/basic_strategies/basic_strategies.md) like your embedding model and chunk size through progressively more complex and subtle customizations all the way to [fine tuning](/optimizing/fine-tuning/fine-tuning.md) your model.
+   Already got a working LlamaIndex application and looking to further refine it? Our optimizing section will walk you through the [first things you should try](/docs//optimizing/basic_strategies/basic_strategies.md) like your embedding model and chunk size through progressively more complex and subtle customizations all the way to [fine tuning](/docs/optimizing/fine-tuning/fine-tuning.md) your model.
 
 5. **Module guides**
 
