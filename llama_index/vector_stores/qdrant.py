@@ -220,7 +220,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         return ids
 
-    async def async_add(self, nodes: List[BaseNode]) -> List[str]:
+    async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Asynchronous method to add nodes to Qdrant index.
 
         Args:
