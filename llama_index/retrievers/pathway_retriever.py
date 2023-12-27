@@ -1,7 +1,7 @@
 """Pathway Retriever."""
 
 import logging
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core import BaseRetriever
@@ -9,6 +9,7 @@ from llama_index.embeddings import BaseEmbedding
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.ingestion.pipeline import run_transformations
 from llama_index.schema import (
+    BaseNode,
     NodeWithScore,
     QueryBundle,
     TextNode,
@@ -18,11 +19,11 @@ from llama_index.schema import (
 logger = logging.getLogger(__name__)
 
 
-def node_transformer(x):
+def node_transformer(x: str) -> List[BaseNode]:
     return [TextNode(text=x)]
 
 
-def node_to_pathway(x):
+def node_to_pathway(x: BaseNode) -> List[Tuple[str, dict]]:
     return [(node.text, node.extra_info) for node in x]
 
 
@@ -44,9 +45,9 @@ class PathwayVectorServer:
 
     def __init__(
         self,
-        *docs,
-        transformations: List[TransformComponent],
-        parser: Optional[Callable[[bytes], list[tuple[str, dict]]]] = None,
+        *docs: Any,
+        transformations: List[Union[TransformComponent, Callable[[Any], Any]]],
+        parser: Optional[Callable[[bytes], List[Tuple[str, dict]]]] = None,
         **kwargs: Any,
     ) -> None:
         try:
@@ -66,16 +67,16 @@ class PathwayVectorServer:
                 f"found {type(transformations[-1])}."
             )
 
-        embedder = transformations.pop()
+        embedder: BaseEmbedding = transformations.pop()  # type: ignore
 
-        def embedding_callable(x):
+        def embedding_callable(x: str) -> List[float]:
             return embedder.get_text_embedding(x)
 
         transformations.insert(0, node_transformer)
         transformations.append(node_to_pathway)  # TextNode -> (str, dict)
 
-        def generic_transformer(x):
-            return run_transformations(x, transformations)
+        def generic_transformer(x: List[str]) -> List[Tuple[str, dict]]:
+            return run_transformations(x, transformations)  # type: ignore
 
         self.vector_store_server = vector_store.VectorStoreServer(
             *docs,
@@ -87,12 +88,12 @@ class PathwayVectorServer:
 
     def run_server(
         self,
-        host,
-        port,
-        threaded=False,
-        with_cache=True,
-        cache_backend=None,
-    ):
+        host: str,
+        port: str,
+        threaded: bool = False,
+        with_cache: bool = True,
+        cache_backend: Any = None,
+    ) -> Any:
         """
         Run the server and start answering queries.
 
