@@ -266,12 +266,16 @@ class PGVectorStore(BasePydanticVectorStore):
             from sqlalchemy import text
 
             # Check if the specified schema exists with "CREATE" statement
-            check_schema_statement = text(f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{self.schema_name}'")
+            check_schema_statement = text(
+                f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{self.schema_name}'"
+            )
             result = session.execute(check_schema_statement).fetchone()
 
             # If the schema does not exist, then create it
             if not result:
-                create_schema_statement = text(f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}")
+                create_schema_statement = text(
+                    f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}"
+                )
                 session.execute(create_schema_statement)
 
             session.commit()
