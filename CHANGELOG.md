@@ -13,6 +13,7 @@
 - Improve BM25Retriever performance (#9675)
 - Improved qdrant hybrid search error handling (#9707)
 - Fixed `None` handling in `ChromaVectorStore` (#9697)
+- Fixed postgres schema creation if not existing (#9712)
 
 ## [0.9.21] - 2023-12-23
 
