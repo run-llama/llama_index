@@ -160,7 +160,9 @@ class PathwayRetriever(BaseRetriever):
         return [
             NodeWithScore(
                 node=TextNode(text=ret["text"], extra_info=ret["metadata"]),
-                score=ret["dist"],
+                # Transform cosine distance into a similairty score
+                # (higher is more similar)
+                score=1 - ret["dist"],
             )
             for ret in rets
         ]
