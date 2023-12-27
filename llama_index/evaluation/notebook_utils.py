@@ -52,14 +52,23 @@ def get_eval_results_df(
     ss = []
     fs = []
     rs = []
+    cs = []
     for res in results_arr:
         qs.append(res.query)
         ss.append(res.score)
         fs.append(res.feedback)
         rs.append(res.response)
+        cs.append(res.contexts)
 
     deep_df = pd.DataFrame(
-        {"rag": names, "query": qs, "answer": rs, "scores": ss, "feedbacks": fs}
+        {
+            "rag": names,
+            "query": qs,
+            "answer": rs,
+            "contexts": cs,
+            "scores": ss,
+            "feedbacks": fs,
+        }
     )
     mean_df = pd.DataFrame(deep_df.groupby(["rag"])["scores"].mean()).T
     if metric:
