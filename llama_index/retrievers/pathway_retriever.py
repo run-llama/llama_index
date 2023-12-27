@@ -156,8 +156,7 @@ class PathwayRetriever(BaseRetriever):
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve."""
         rets = self.client(query=query_bundle.query_str, k=3)
-
-        return [
+        items = [
             NodeWithScore(
                 node=TextNode(text=ret["text"], extra_info=ret["metadata"]),
                 # Transform cosine distance into a similairty score
@@ -166,3 +165,4 @@ class PathwayRetriever(BaseRetriever):
             )
             for ret in rets
         ]
+        return sorted(items, key=lambda x: x.score or 0.0, reverse=True)
