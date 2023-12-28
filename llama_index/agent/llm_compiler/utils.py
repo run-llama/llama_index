@@ -150,8 +150,8 @@ def generate_context_for_replanner(
         ]
     )
     joiner_thought = f"Thought: {joiner_thought}"
-    context = "\n\n".join([previous_plan_and_observations, joiner_thought])
-    return context
+    # use f-string instead
+    return f"{previous_plan_and_observations}\n\n{joiner_thought}"
 
 
 def format_contexts(contexts: Sequence[str]) -> str:
