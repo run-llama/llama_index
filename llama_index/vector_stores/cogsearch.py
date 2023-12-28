@@ -657,10 +657,10 @@ class AzureQueryResultSearchHybrid(
     AzureQueryResultSearchDefault, AzureQueryResultSearchSparse
 ):
     def _create_query_vector(self) -> Optional[List[Any]]:
-        return super(AzureQueryResultSearchSparse, self)._create_query_vector()
+        return AzureQueryResultSearchDefault._create_query_vector(self)
 
     def _create_search_query(self) -> str:
-        return super(AzureQueryResultSearchDefault, self)._create_search_query()
+        return AzureQueryResultSearchSparse._create_search_query(self)
 
 
 class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
