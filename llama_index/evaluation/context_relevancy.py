@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import Any, Callable, Sequence, Tuple
+from typing import Any, Callable, Optional, Sequence, Tuple
 
 from llama_index import ServiceContext
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
@@ -43,7 +43,7 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
 )
 
 
-def _default_parser_function(output_str: str) -> Tuple[float, str]:
+def _default_parser_function(output_str: str) -> Tuple[Optional[float], Optional[str]]:
     # Pattern to match the feedback and response
     # This pattern looks for any text ending with '[RESULT]' followed by a number
     pattern = r"([\s\S]+)(?:\[RESULT\]\s*)([\d.]+)"
