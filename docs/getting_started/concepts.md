@@ -41,7 +41,7 @@ There are also some terms you'll encounter that refer to steps within each of th
 [**Nodes and Documents**](/module_guides/loading/documents_and_nodes/root.md): A `Document` is a container around any data source - for instance, a PDF, an API output, or retrieve data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. Nodes have metadata that relate them to the document they are in and to other nodes.
 
 [**Connectors**](/module_guides/loading/connector/root.md):
-A data connector (often called a `Reader`) ingests data from different data sources and data formats into `Document`s and `Nodes`.
+A data connector (often called a `Reader`) ingests data from different data sources and data formats into `Documents` and `Nodes`.
 
 ### Indexing Stage
 
