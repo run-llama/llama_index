@@ -81,14 +81,12 @@ PLANNER_EXAMPLE_PROMPT = (
 
 OUTPUT_PROMPT = (
     "Solve a question answering task with interleaving Observation, Thought, and Action steps. "
-    "Answer should always be a single item and MUST not be multiple choices.\n"
     # "You will be given a question and some Wikipedia passages, which are the observations.\n\n"
     "Thought step can reason about the observations in 1-2 sentences.\n"
     "Action can be only one type:"
     f" (1) {JOINER_FINISH}(answer): returns the answer and finishes the task. "
-    "    - Final answer MUST NOT contain any description, and must be short (e.g. Yes/No, numbers, entity names, etc.)\n"
-    "    - When you are asked for differences, you consider the absolute value of the difference.\n"
-    "    - If you are asked about a value (e.g. ratio, difference, average, ...), it has to be a number, not a description. "
+    "    - Answer can be the thought directly, or a single number, or a single string if that's best for the question.\n"
+    "    - Answer can be long or short, but it should be a single answer.\n"
     "For instance, when you are asked about the ratio of the height of Mount Everest and the height of Mount Kilimanjaro, you must "
     "return the ratio (e.g. 1.2), not the name of the mountain (e.g. Mount Everest to Mount Kilimanjaro).\n"
     "\n"

@@ -50,6 +50,7 @@ from llama_index.prompts.base import PromptTemplate
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text
+from llama_index.agent.react.formatter import get_react_tool_descriptions
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -78,7 +79,12 @@ def generate_llm_compiler_prompt(
 
     # tools
     for i, tool in enumerate(tools):
-        prefix += f"{i + 1}. {tool.metadata.description}\n"
+        tool_desc = (
+            f"Tool Name: {tool.metadata.name}\n"
+            f"Tool Description: {tool.metadata.description}\n"
+            f"Tool Args: {tool.metadata.fn_schema_str}\n"
+        )
+        prefix += f"{i + 1}. {tool_desc}\n"
 
     # join operation
     prefix += f"{i+2}. {JOIN_DESCRIPTION}\n\n"
@@ -86,9 +92,10 @@ def generate_llm_compiler_prompt(
     # Guidelines
     prefix += (
         "Guidelines:\n"
-        " - Each action described above contains input/output types and description.\n"
-        "    - You must strictly adhere to the input and output types for each action.\n"
+        " - Each action described above contains the tool name, description, and input schema.\n"
+        "    - You must strictly adhere to the input types for each action.\n"
         "    - The action descriptions contain the guidelines. You MUST strictly follow those guidelines when you use the actions.\n"
+        "    - Do NOT specify arguments in kwargs format. Use positional arguments only.\n"
         " - Each action in the plan should strictly be one of the above types. Follow the Python conventions for each action.\n"
         " - Each action MUST have a unique ID, which is strictly increasing.\n"
         " - Inputs for actions can either be constants or outputs from preceding actions. "
@@ -276,6 +283,9 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
             context_str=agent_scratchpad,
         )
         output = cast(JoinerOutput, output)
+        if self.verbose:
+            print_text(f"> Thought: {output.thought}\n", color="pink")
+            print_text(f"> Answer: {output.answer}\n", color="pink")
         if is_final:
             output.is_replan = False
         return output
