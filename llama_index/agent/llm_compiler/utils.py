@@ -1,0 +1,185 @@
+"""Utils for LLM Compiler."""
+import ast
+import re
+from typing import Any, Sequence, Union, Dict, List, Optional
+from llama_index.tools import BaseTool
+from llama_index.agent.llm_compiler.schema import LLMCompilerParseResult, LLMCompilerTask
+from llama_index.agent.types import TaskStep, Task
+from pydantic import BaseModel
+import uuid
+
+# $1 or ${1} -> 1
+ID_PATTERN = r"\$\{?(\d+)\}?"
+
+def default_dependency_rule(idx, args: str):
+    """Default dependency rule."""
+    matches = re.findall(ID_PATTERN, args)
+    numbers = [int(match) for match in matches]
+    return idx in numbers
+
+def _parse_llm_compiler_action_args(args: str) -> List[Any]:
+    """Parse arguments from a string."""
+    # This will convert the string into a python object
+    # e.g. '"Ronaldo number of kids"' -> ("Ronaldo number of kids", )
+    # '"I can answer the question now.", [3]' -> ("I can answer the question now.", [3])
+    if args == "":
+        return ()
+    try:
+        args = ast.literal_eval(args)
+    except:
+        args = args
+    if not isinstance(args, list) and not isinstance(args, tuple):
+        args = (args,)
+    return args
+
+
+def _find_tool(
+    tool_name: str, tools: Sequence[BaseTool]
+) -> BaseTool:
+    """Find a tool by name.
+
+    Args:
+        tool_name: Name of the tool to find.
+
+    Returns:
+        Tool or StructuredTool.
+    """
+    for tool in tools:
+        if tool.metadata.name == tool_name:
+            return tool
+    raise ValueError(f"Tool {tool_name} not found.")
+
+
+def _get_dependencies_from_graph(
+    idx: int, tool_name: str, args: Sequence[Any]
+) -> List[int]:
+    """Get dependencies from a graph."""
+    if tool_name == "join":
+        # depends on the previous step
+        dependencies = list(range(1, idx))
+    else:
+        # define dependencies based on the dependency rule in tool_definitions.py
+        dependencies = [i for i in range(1, idx) if default_dependency_rule(i, args)]
+
+    return dependencies
+
+
+def instantiate_new_step(
+    task: Task,
+    tools: Sequence[BaseTool],
+    idx: int,
+    tool_name: str,
+    args: str,
+    thought: str,
+) -> TaskStep:
+    dependencies = _get_dependencies_from_graph(idx, tool_name, args)
+    args_list = _parse_llm_compiler_action_args(args)
+    if tool_name == "join":
+        # # join does not have a tool
+        # tool_func = lambda x: None
+        # stringify_rule = None
+        tool: Optional[BaseTool] = None
+    else:
+        tool = _find_tool(tool_name, tools)
+        # tool_func = tool.func
+        # stringify_rule = tool.stringify_rule
+
+    # # return step
+    # return TaskStep(
+    #     task_id=task.task_id,
+    #     step_id=str(uuid.uuid4()),
+    #     input=None,
+    #     step_state={
+    #         "idx": idx,
+    #         "tool_name": tool_name,
+    #         "args": args,
+    #         "thought": thought,
+    #         "dependencies": dependencies,
+    #         "stringify_rule": stringify_rule,
+    #         "is_join": tool_name == "join",
+    #     }
+    # )
+
+
+
+    return LLMCompilerTask(
+        idx=idx,
+        name=tool_name,
+        tool=tool,
+        args=args_list,
+        dependencies=dependencies,
+        # stringify_rule=stringify_rule,
+        thought=thought,
+        is_join=tool_name == "join",
+    )
+
+
+def get_graph_dict(
+    parse_results: List[LLMCompilerParseResult],
+    tools: Sequence[BaseTool],
+) -> Dict[str, Any]:
+    """Get graph dict."""
+
+    graph_dict = {}
+
+    for parse_result in parse_results:
+        # idx = 1, function = "search", args = "Ronaldo number of kids"
+        # thought will be the preceding thought, if any, otherwise an empty string
+        # thought, idx, tool_name, args, _ = match
+        idx = int(idx)
+
+        task = instantiate_new_step(
+            tools=tools,
+            idx=idx,
+            tool_name=parse_result.tool_name,
+            args=parse_result.args,
+            thought=parse_result.thought,
+        )
+
+        graph_dict[idx] = task
+        if task.is_join:
+            break
+
+    return graph_dict
+
+
+def generate_context_for_replanner(
+    tasks: Dict[int, LLMCompilerTask], joiner_thought: str
+) -> str:
+    """Formatted like this:
+    ```
+    1. action 1
+    Observation: xxx
+    2. action 2
+    Observation: yyy
+    ...
+    Thought: joinner_thought
+    ```
+    """
+    previous_plan_and_observations = "\n".join(
+        [
+            task.get_thought_action_observation(
+                include_action=True, include_action_idx=True
+            )
+            for task in tasks.values()
+            if not task.is_join
+        ]
+    )
+    joiner_thought = f"Thought: {joiner_thought}"
+    context = "\n\n".join([previous_plan_and_observations, joiner_thought])
+    return context
+
+
+def format_contexts(self, contexts: Sequence[str]) -> str:
+    """Format contexts.
+
+    Taken from https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/llm_compiler.py
+
+    Contexts is a list of context.
+    Each context is formatted as the description of generate_context_for_replanner
+    """
+    formatted_contexts = ""
+    for context in contexts:
+        formatted_contexts += f"Previous Plan:\n\n{context}\n\n"
+    formatted_contexts += "Current Plan:\n\n"
+    return formatted_contexts
