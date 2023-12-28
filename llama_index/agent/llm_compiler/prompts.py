@@ -5,12 +5,85 @@ Taken from https://github.com/SqueezeAILab/LLMCompiler.
 """
 
 JOINER_FINISH = "finish"
+END_OF_PLAN = "<END_OF_PLAN>"
+
+
+# This is a mashup of different prompts in https://github.com/SqueezeAILab/LLMCompiler/blob/main/configs.
+PLANNER_EXAMPLE_PROMPT = (
+    "Question: If cheetah was 1.3 times slower, greyhound was 1.5 times faster, and falcon was 2.3 time slower then their maximum speeds, "
+    "what will be the ratio of the fastest animal to the slowest animal?\n"
+    '1. search("cheetah")\n'
+    '2. math("cheetah max speed in km/h if 1.3 times slower?", ["$1"]\n'
+    '3. search("greyhound")\n'
+    '4. math("greyhound max speed in km/h if 1.5 times faster?", ["$3"]\n'
+    '5. search("falcon")\n'
+    '6. math("falcon max speed in km/h if 2.3 times slower?", ["$5"]\n'
+    '7. math("max($2, $4, $6) / min($2, $4, $6)")\n'
+    "Thought: I can answer the question now.\n"
+    f"8. join(){END_OF_PLAN}\n"
+    "###\n"
+    "\n"
+    "Question: Find a movie similar to Mission Impossible, The Silence of the Lambs, American Beauty, Star Wars Episode IV - A New Hope\n"
+    "Options:\n"
+    "Austin Powers International Man of Mystery\n"
+    "Alesha Popvich and Tugarin the Dragon\n"
+    "In Cold Blood\n"
+    "Rosetta\n"
+    "Thought: I need to find all movies in the Question.\n"
+    '1. search("Mission Impossible")\n'
+    '2. search("The Silence of the Lambs")\n'
+    '3. search("American Beauty")\n'
+    '4. search("Star Wars Episode IV - A New Hope")\n'
+    "Thought: I need to find all movies in the Options.\n"
+    "5. search(Austin Powers International Man of Mystery)\n"
+    "6. search(Alesha Popvich and Tugarin the Dragon)\n"
+    "7. search(In Cold Blood)\n"
+    "8. search(Rosetta)\n"
+    "Thought: I can answer the question now.\n"
+    f"9. join(){END_OF_PLAN}\n"
+    "###\n"
+    "\n"
+     "Question: Which magazine was started first Arthur's Magazine or First for Women?\n"
+    '1. search("Arthur\'s Magazine")\n'
+    '2. search("First for Women (magazine)")\n'
+    "Thought: I can answer the question now.\n"
+    f"3. join(){END_OF_PLAN}\n"
+    "###\n"
+    "\n"
+    "Question: Were Pavel Urysohn and Leonid Levin known for the same type of work?\n"
+    '1. search("Pavel Urysohn")\n'
+    '2. search("Leonid Levin")\n'
+    "Thought: I can answer the question now.\n"
+    f"3. join(){END_OF_PLAN}\n"
+    "###\n"
+    "\n"
+    "Question: Determine the smaller value: the depth difference in meters between the Mariana Trench and the Puerto Rico Trench, "
+    "or the depth difference in meters between the South Sandwich Trench and the Sunda Trench.\n"
+    "1. search('Mariana Trench')\n"
+    "2. search('Puerto Rico Trench')\n"
+    "3. math('absolute depth difference between Mariana and Puerto Rico Trench in meters?', ['$1', '$2'])\n"
+    "4. search('South Sandwich Trench')\n"
+    "5. search('Sunda Trench')\n"
+    "6. math('absolute depth difference between South Sandwich and Sunda Trench in meters?', ['$4', '$5'])\n"
+    "7. math('min($3, $6)')\n"
+    "Thought: I can answer the question now.\n"
+    f"8. join(){END_OF_PLAN}\n"
+    "###\n"
+    "\n"
+    "Question: What is the raio of the height of Mount Everest and the height of Mount Kilimanjaro?\n"
+    "1. search('Mount Everest')\n"
+    "2. search('Mount Kilimanjaro')\n"
+    "3. math('height of Mount Everest / height of Mount Kilimanjaro', ['$1', '$2'])\n"
+    "Thought: I can answer the question now.\n"
+    f"4. join(){END_OF_PLAN}\n"
+    "###\n"
+)
 
 OUTPUT_PROMPT = (
     "Solve a question answering task with interleaving Observation, Thought, and Action steps. "
     "Answer should always be a single item and MUST not be multiple choices.\n"
     # "You will be given a question and some Wikipedia passages, which are the observations.\n\n"
-    "Thought step can reason about the observations in a few words. You MUST keep it short.\n"
+    "Thought step can reason about the observations in 1-2 sentences.\n"
     "Action can be only one type:"
     f" (1) {JOINER_FINISH}(answer): returns the answer and finishes the task. "
     "    - Final answer MUST NOT contain any description, and must be short (e.g. Yes/No, numbers, entity names, etc.)\n"

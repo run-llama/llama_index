@@ -10,6 +10,8 @@ from typing import Callable, Collection, Any, Optional
 from pydantic import BaseModel, Field
 import asyncio
 from llama_index.agent.llm_compiler.schema import LLMCompilerTask
+from llama_index.agent.llm_compiler.utils import parse_llm_compiler_action_args
+from llama_index.utils import print_text, unit_generator
 
 SCHEDULING_INTERVAL = 0.01  # seconds
 
@@ -18,10 +20,18 @@ def _replace_arg_mask_with_real_value(
     args, dependencies: List[int], tasks: Dict[str, LLMCompilerTask]
 ):
     if isinstance(args, (list, tuple)):
-        return type(args)(
-            _replace_arg_mask_with_real_value(item, dependencies, tasks)
-            for item in args
-        )
+        new_list = []
+        for item in args:
+            new_item = _replace_arg_mask_with_real_value(item, dependencies, tasks)
+            # if the original item was string but the new item is not, then treat it as expanded
+            # arguments. 
+            # hack to get around ast.literal_eval not being able to parse strings with template variables
+            # e.g. "$1, 2" -> ("$1, 2", )
+            if isinstance(item, str) and not isinstance(new_item, str):
+                new_list.extend(new_item)
+            else:
+                new_list.append(new_item)
+        return type(args)(new_list)
     elif isinstance(args, str):
         for dependency in sorted(dependencies, reverse=True):
             # consider both ${1} and $1 (in case planner makes a mistake)
@@ -31,6 +41,14 @@ def _replace_arg_mask_with_real_value(
                         args = args.replace(
                             arg_mask, str(tasks[dependency].observation)
                         )
+
+        # need to re-call parse_llm_compiler_action_args after replacement,
+        # this is because arg strings with template variables get formatted
+        # into lists (ast.literal_eval fails):
+        # e.g. "$1, 2" -> ("$1, 2", ) 
+        # so after replacement need to rerun this 
+        args = parse_llm_compiler_action_args(args)
+
         return args
     else:
         return args
@@ -42,14 +60,19 @@ class TaskFetchingUnit(BaseModel):
     Code taken from https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetching_unit.py.
     
     """
-    tasks: Dict[str, Task]
-    tasks_done: Dict[str, asyncio.Event]
-    remaining_tasks: Set[str]
+    tasks: Dict[int, LLMCompilerTask]
+    tasks_done: Dict[int, asyncio.Event]
+    remaining_tasks: Set[int]
+    verbose: bool = False
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @classmethod
     def from_tasks(
         cls,
-        tasks: Dict[str, Task],
+        tasks: Dict[int, LLMCompilerTask],
+        verbose: bool = False,
     ):
         """Create a TaskFetchingUnit from a list of tasks."""
         tasks_done = {task_idx: asyncio.Event() for task_idx in tasks}
@@ -58,6 +81,7 @@ class TaskFetchingUnit(BaseModel):
             tasks=tasks,
             tasks_done=tasks_done,
             remaining_tasks=remaining_tasks,
+            verbose=verbose,
     )
 
     def set_tasks(self, tasks: dict[str, Any]):
@@ -69,27 +93,29 @@ class TaskFetchingUnit(BaseModel):
         return all(self.tasks_done[d].is_set() for d in self.tasks_done)
 
     def _get_all_executable_tasks(self):
-        return [
+        executable_tasks = [
             task_name
             for task_name in self.remaining_tasks
             if all(
                 self.tasks_done[d].is_set() for d in self.tasks[task_name].dependencies
             )
         ]
+        return executable_tasks
 
-    def _preprocess_args(self, task: Task):
+    def _preprocess_args(self, task: LLMCompilerTask):
         """Replace dependency placeholders, i.e. ${1}, in task.args with the actual observation."""
-        args = []
-        for arg in task.args:
-            arg = _replace_arg_mask_with_real_value(arg, task.dependencies, self.tasks)
-            args.append(arg)
+        args = _replace_arg_mask_with_real_value(
+            task.args, task.dependencies, self.tasks
+        )
         task.args = args
 
-    async def _run_task(self, task: Task):
+    async def _run_task(self, task: LLMCompilerTask):
         self._preprocess_args(task)
         if not task.is_join:
             observation = await task()
             task.observation = observation
+        if self.verbose:
+            print_text(f"Ran task: {task.name}. Observation: {task.observation}\n", color="blue")
         self.tasks_done[task.idx].set()
 
     async def schedule(self):
@@ -99,13 +125,15 @@ class TaskFetchingUnit(BaseModel):
             # Find tasks with no dependencies or with all dependencies met
             executable_tasks = self._get_all_executable_tasks()
 
+            async_tasks = []
             for task_name in executable_tasks:
-                asyncio.create_task(self._run_task(self.tasks[task_name]))
+                async_tasks.append(self._run_task(self.tasks[task_name]))
                 self.remaining_tasks.remove(task_name)
+            await asyncio.gather(*async_tasks)
 
             await asyncio.sleep(SCHEDULING_INTERVAL)
 
-    async def aschedule(self, task_queue: asyncio.Queue[Optional[Task]], func):
+    async def aschedule(self, task_queue: asyncio.Queue[Optional[LLMCompilerTask]], func):
         """Asynchronously listen to task_queue and schedule tasks as they arrive."""
         no_more_tasks = False  # Flag to check if all tasks are received
 

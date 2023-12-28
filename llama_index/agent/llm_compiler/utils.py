@@ -2,7 +2,8 @@
 import ast
 import re
 from typing import Any, Sequence, Union, Dict, List, Optional
-from llama_index.tools import BaseTool
+from llama_index.tools.types import BaseTool, adapt_to_async_tool
+from llama_index.tools.function_tool import FunctionTool
 from llama_index.agent.llm_compiler.schema import LLMCompilerParseResult, LLMCompilerTask
 from llama_index.agent.types import TaskStep, Task
 from pydantic import BaseModel
@@ -17,7 +18,7 @@ def default_dependency_rule(idx, args: str):
     numbers = [int(match) for match in matches]
     return idx in numbers
 
-def _parse_llm_compiler_action_args(args: str) -> List[Any]:
+def parse_llm_compiler_action_args(args: str) -> List[Any]:
     """Parse arguments from a string."""
     # This will convert the string into a python object
     # e.g. '"Ronaldo number of kids"' -> ("Ronaldo number of kids", )
@@ -65,49 +66,30 @@ def _get_dependencies_from_graph(
 
 
 def instantiate_new_step(
-    task: Task,
     tools: Sequence[BaseTool],
     idx: int,
     tool_name: str,
     args: str,
     thought: str,
 ) -> TaskStep:
+    """Instantiate a new step."""
     dependencies = _get_dependencies_from_graph(idx, tool_name, args)
-    args_list = _parse_llm_compiler_action_args(args)
+    args_list = parse_llm_compiler_action_args(args)
     if tool_name == "join":
-        # # join does not have a tool
-        # tool_func = lambda x: None
-        # stringify_rule = None
-        tool: Optional[BaseTool] = None
+        # tool: Optional[BaseTool] = None
+        # assume that the only tool that returns None is join
+        tool = FunctionTool.from_defaults(fn=lambda x: None)
     else:
         tool = _find_tool(tool_name, tools)
-        # tool_func = tool.func
-        # stringify_rule = tool.stringify_rule
-
-    # # return step
-    # return TaskStep(
-    #     task_id=task.task_id,
-    #     step_id=str(uuid.uuid4()),
-    #     input=None,
-    #     step_state={
-    #         "idx": idx,
-    #         "tool_name": tool_name,
-    #         "args": args,
-    #         "thought": thought,
-    #         "dependencies": dependencies,
-    #         "stringify_rule": stringify_rule,
-    #         "is_join": tool_name == "join",
-    #     }
-    # )
-
 
 
     return LLMCompilerTask(
         idx=idx,
         name=tool_name,
-        tool=tool,
+        tool=adapt_to_async_tool(tool),
         args=args_list,
         dependencies=dependencies,
+        # TODO: look into adding a stringify rule
         # stringify_rule=stringify_rule,
         thought=thought,
         is_join=tool_name == "join",
@@ -117,7 +99,7 @@ def instantiate_new_step(
 def get_graph_dict(
     parse_results: List[LLMCompilerParseResult],
     tools: Sequence[BaseTool],
-) -> Dict[str, Any]:
+) -> Dict[int, Any]:
     """Get graph dict."""
 
     graph_dict = {}
@@ -126,7 +108,7 @@ def get_graph_dict(
         # idx = 1, function = "search", args = "Ronaldo number of kids"
         # thought will be the preceding thought, if any, otherwise an empty string
         # thought, idx, tool_name, args, _ = match
-        idx = int(idx)
+        idx = int(parse_result.idx)
 
         task = instantiate_new_step(
             tools=tools,
@@ -170,7 +152,7 @@ def generate_context_for_replanner(
     return context
 
 
-def format_contexts(self, contexts: Sequence[str]) -> str:
+def format_contexts(contexts: Sequence[str]) -> str:
     """Format contexts.
 
     Taken from https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/llm_compiler.py

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Callable, Collection, Any, Optional, List
-from llama_index.tools.types import BaseTool
+from llama_index.tools.types import BaseTool, AsyncBaseTool
 
 class LLMCompilerParseResult(BaseModel):
     """LLMCompiler parser result."""
@@ -37,7 +37,7 @@ class LLMCompilerTask(BaseModel):
     idx: int
     name: str
     # tool: Callable
-    tool: BaseTool
+    tool: AsyncBaseTool
     args: Collection[Any]
     dependencies: Collection[int]
     # TODO: look into this
@@ -46,8 +46,11 @@ class LLMCompilerTask(BaseModel):
     observation: Optional[str] = None
     is_join: bool = False
 
+    class Config:
+        arbitrary_types_allowed = True
+
     async def __call__(self) -> Any:
-        x = await self.tool(*self.args)
+        x = await self.tool.acall(*self.args)
         return x
 
     def get_thought_action_observation(

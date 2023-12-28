@@ -54,29 +54,9 @@ class LLMCompilerPlanParser(BaseOutputParser):
             )
 
         # get graph dict
-        graph_dict = get_graph_dict(results)
+        graph_dict = get_graph_dict(results, self.tools)
 
         return graph_dict
-
-        # for match in matches:
-        #     # idx = 1, function = "search", args = "Ronaldo number of kids"
-        #     # thought will be the preceding thought, if any, otherwise an empty string
-        #     thought, idx, tool_name, args, _ = match
-        #     idx = int(idx)
-
-        #     task = instantiate_task(
-        #         tools=self.tools,
-        #         idx=idx,
-        #         tool_name=tool_name,
-        #         args=args,
-        #         thought=thought,
-        #     )
-
-        #     graph_dict[idx] = task
-        #     if task.is_join:
-        #         break
-
-        # return graph_dict
 
 
 ### Helper functions
