@@ -71,10 +71,10 @@ class LLMCompilerJoinerParser(BaseOutputParser):
         """Parse."""
         thought, answer, is_replan = "", "", False  # default values
         raw_answers = text.split("\n")
-        for ans in raw_answers:
-            if ans.startswith("Action:"):
-                answer = ans[ans.find("(") + 1 : ans.find(")")]
-                is_replan = JOINER_REPLAN in ans
-            elif ans.startswith("Thought:"):
-                thought = ans.split("Thought:")[1].strip()
+        for answer in raw_answers:
+            if answer.startswith("Action:"):
+                answer = answer[answer.find("(") + 1 : answer.find(")")]
+                is_replan = JOINER_REPLAN in answer
+            elif answer.startswith("Thought:"):
+                thought = answer.split("Thought:")[1].strip()
         return JoinerOutput(thought=thought, answer=answer, is_replan=is_replan)
