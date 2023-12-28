@@ -2,27 +2,31 @@
 
 import asyncio
 import uuid
-from itertools import chain
-from threading import Thread
 from typing import (
     Any,
-    AsyncGenerator,
     Dict,
-    Generator,
     List,
     Optional,
     Sequence,
-    Tuple,
     cast,
 )
 
-from llama_index.agent.react.formatter import ReActChatFormatter
-from llama_index.agent.react.output_parser import ReActOutputParser
+from llama_index.agent.llm_compiler.output_parser import (
+    LLMCompilerJoinerParser,
+    LLMCompilerPlanParser,
+)
+from llama_index.agent.llm_compiler.prompts import OUTPUT_PROMPT, PLANNER_EXAMPLE_PROMPT
+from llama_index.agent.llm_compiler.schema import JoinerOutput
+from llama_index.agent.llm_compiler.task_fetching_unit import (
+    LLMCompilerTask,
+    TaskFetchingUnit,
+)
+from llama_index.agent.llm_compiler.utils import (
+    format_contexts,
+    generate_context_for_replanner,
+)
 from llama_index.agent.react.types import (
-    ActionReasoningStep,
     BaseReasoningStep,
-    ObservationReasoningStep,
-    ResponseReasoningStep,
 )
 from llama_index.agent.types import (
     BaseAgentWorker,
@@ -32,30 +36,20 @@ from llama_index.agent.types import (
 )
 from llama_index.callbacks import (
     CallbackManager,
-    CBEventType,
-    EventPayload,
     trace_method,
 )
+from llama_index.chat_engine.types import AgentChatResponse
 from llama_index.llms.base import ChatMessage
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.types import MessageRole, ChatResponse
+from llama_index.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
-from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
+from llama_index.program.llm_program import LLMTextCompletionProgram
+from llama_index.prompts.base import PromptTemplate
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
-from llama_index.utils import print_text, unit_generator
-from llama_index.prompts.base import PromptTemplate
-from llama_index.llms.types import ChatMessage
-from llama_index.agent.llm_compiler.output_parser import LLMCompilerPlanParser, LLMCompilerJoinerParser
-from llama_index.agent.llm_compiler.utils import get_graph_dict, generate_context_for_replanner, format_contexts
-from llama_index.agent.llm_compiler.task_fetching_unit import TaskFetchingUnit, LLMCompilerTask
-from llama_index.agent.llm_compiler.prompts import OUTPUT_PROMPT, PLANNER_EXAMPLE_PROMPT
-from llama_index.agent.llm_compiler.schema import JoinerOutput
-from llama_index.program.llm_program import LLMTextCompletionProgram
-from pydantic import BaseModel
-from llama_index.chat_engine.types import AgentChatResponse
+from llama_index.utils import print_text
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -69,6 +63,7 @@ JOIN_DESCRIPTION = (
 )
 
 END_OF_PLAN = "<END_OF_PLAN>"
+
 
 def generate_llm_compiler_prompt(
     tools: Sequence[BaseTool],
@@ -144,7 +139,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         max_replans: int = 3,
     ) -> None:
         self.callback_manager = callback_manager or llm.callback_manager
-        
+
         self.planner_example_prompt_str = (
             planner_example_prompt_str or PLANNER_EXAMPLE_PROMPT
         )
@@ -165,7 +160,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
 
         # joiner program
         self.joiner_prompt = joiner_prompt or PromptTemplate(OUTPUT_PROMPT)
-        self.joiner_program = LLMTextCompletionProgram.from_defaults(   
+        self.joiner_program = LLMTextCompletionProgram.from_defaults(
             output_parser=LLMCompilerJoinerParser(),
             prompt=self.joiner_prompt,
             llm=self.llm,
@@ -258,7 +253,6 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         llm_response = await self.llm.achat(messages)
         return llm_response
 
-
     async def ajoin(
         self,
         input: str,
@@ -288,12 +282,12 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         return output
 
     def _get_task_step_response(
-        self, 
-        llmc_tasks: Dict[str, LLMCompilerTask], 
+        self,
+        llmc_tasks: Dict[str, LLMCompilerTask],
         answer: str,
-        joiner_thought: str, 
-        step: TaskStep, 
-        is_replan: bool
+        joiner_thought: str,
+        step: TaskStep,
+        is_replan: bool,
     ) -> TaskStepOutput:
         """Get task step response."""
         if not is_replan:
@@ -306,12 +300,17 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
             )
             new_contexts = step.step_state["contexts"] + [context]
             # TODO: generate new steps
-            new_steps = [step.get_next_step(
-                step_id=str(uuid.uuid4()),
-                input=None,
-                step_state={
-                    "is_replan": is_replan, "contexts": new_contexts, "replans": step.step_state["replans"] + 1}
-            )]
+            new_steps = [
+                step.get_next_step(
+                    step_id=str(uuid.uuid4()),
+                    input=None,
+                    step_state={
+                        "is_replan": is_replan,
+                        "contexts": new_contexts,
+                        "replans": step.step_state["replans"] + 1,
+                    },
+                )
+            ]
 
         agent_answer = AgentChatResponse(response=answer, sources=[])
 
@@ -334,8 +333,8 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
                 f"> Step count: {step.step_state['replans']}"
             )
         is_final_iter = (
-            step.step_state["is_replan"] and 
-            step.step_state["replans"] >= self.max_replans
+            step.step_state["is_replan"]
+            and step.step_state["replans"] >= self.max_replans
         )
 
         if len(step.step_state["contexts"]) == 0:
@@ -343,7 +342,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         else:
             formatted_contexts = format_contexts(step.step_state["contexts"])
         llm_response = await self.arun_llm(
-            step.input, 
+            step.input,
             previous_context=formatted_contexts,
             is_replan=step.step_state["is_replan"],
         )
@@ -353,9 +352,10 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         # return task dict (will generate plan, parse into dictionary)
         task_dict = self.output_parser.parse(llm_response.message.content)
 
-
         # execute via task executor
-        task_fetching_unit = TaskFetchingUnit.from_tasks(task_dict, verbose=self.verbose)
+        task_fetching_unit = TaskFetchingUnit.from_tasks(
+            task_dict, verbose=self.verbose
+        )
         await task_fetching_unit.schedule()
 
         ## join tasks - get response
@@ -368,20 +368,17 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
 
         # get task step response (with new steps planned)
         return self._get_task_step_response(
-            llmc_tasks=tasks, 
-            answer=joiner_output.answer, 
-            joiner_thought=joiner_output.thought, 
-            step=step, 
-            is_replan=joiner_output.is_replan
+            llmc_tasks=tasks,
+            answer=joiner_output.answer,
+            joiner_thought=joiner_output.thought,
+            step=step,
+            is_replan=joiner_output.is_replan,
         )
-
 
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
-        return asyncio.run(
-            self.arun_step(step=step, task=task, **kwargs)
-        )
+        return asyncio.run(self.arun_step(step=step, task=task, **kwargs))
 
     @trace_method("run_step")
     async def arun_step(

@@ -1,17 +1,18 @@
 """Task fetching unit.
 
-Taken from 
+Taken from
 https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetching_unit.py
 
 """
 
-from typing import Dict, Any, List, Optional, Set
-from typing import Callable, Collection, Any, Optional
-from pydantic import BaseModel, Field
 import asyncio
+from typing import Any, Dict, List, Optional, Set
+
+from pydantic import BaseModel
+
 from llama_index.agent.llm_compiler.schema import LLMCompilerTask
 from llama_index.agent.llm_compiler.utils import parse_llm_compiler_action_args
-from llama_index.utils import print_text, unit_generator
+from llama_index.utils import print_text
 
 SCHEDULING_INTERVAL = 0.01  # seconds
 
@@ -24,7 +25,7 @@ def _replace_arg_mask_with_real_value(
         for item in args:
             new_item = _replace_arg_mask_with_real_value(item, dependencies, tasks)
             # if the original item was string but the new item is not, then treat it as expanded
-            # arguments. 
+            # arguments.
             # hack to get around ast.literal_eval not being able to parse strings with template variables
             # e.g. "$1, 2" -> ("$1, 2", )
             if isinstance(item, str) and not isinstance(new_item, str):
@@ -45,21 +46,23 @@ def _replace_arg_mask_with_real_value(
         # need to re-call parse_llm_compiler_action_args after replacement,
         # this is because arg strings with template variables get formatted
         # into lists (ast.literal_eval fails):
-        # e.g. "$1, 2" -> ("$1, 2", ) 
-        # so after replacement need to rerun this 
+        # e.g. "$1, 2" -> ("$1, 2", )
+        # so after replacement need to rerun this
         args = parse_llm_compiler_action_args(args)
 
         return args
     else:
         return args
 
+
 class TaskFetchingUnit(BaseModel):
     """Task fetching unit.
 
     Detailed in LLMCompiler Paper.
     Code taken from https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetching_unit.py.
-    
+
     """
+
     tasks: Dict[int, LLMCompilerTask]
     tasks_done: Dict[int, asyncio.Event]
     remaining_tasks: Set[int]
@@ -82,7 +85,7 @@ class TaskFetchingUnit(BaseModel):
             tasks_done=tasks_done,
             remaining_tasks=remaining_tasks,
             verbose=verbose,
-    )
+        )
 
     def set_tasks(self, tasks: dict[str, Any]):
         self.tasks.update(tasks)
@@ -115,7 +118,10 @@ class TaskFetchingUnit(BaseModel):
             observation = await task()
             task.observation = observation
         if self.verbose:
-            print_text(f"Ran task: {task.name}. Observation: {task.observation}\n", color="blue")
+            print_text(
+                f"Ran task: {task.name}. Observation: {task.observation}\n",
+                color="blue",
+            )
         self.tasks_done[task.idx].set()
 
     async def schedule(self):
@@ -133,7 +139,9 @@ class TaskFetchingUnit(BaseModel):
 
             await asyncio.sleep(SCHEDULING_INTERVAL)
 
-    async def aschedule(self, task_queue: asyncio.Queue[Optional[LLMCompilerTask]], func):
+    async def aschedule(
+        self, task_queue: asyncio.Queue[Optional[LLMCompilerTask]], func
+    ):
         """Asynchronously listen to task_queue and schedule tasks as they arrive."""
         no_more_tasks = False  # Flag to check if all tasks are received
 

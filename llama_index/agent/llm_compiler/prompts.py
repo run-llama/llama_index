@@ -43,7 +43,7 @@ PLANNER_EXAMPLE_PROMPT = (
     f"9. join(){END_OF_PLAN}\n"
     "###\n"
     "\n"
-     "Question: Which magazine was started first Arthur's Magazine or First for Women?\n"
+    "Question: Which magazine was started first Arthur's Magazine or First for Women?\n"
     '1. search("Arthur\'s Magazine")\n'
     '2. search("First for Women (magazine)")\n'
     "Thought: I can answer the question now.\n"

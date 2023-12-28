@@ -1,12 +1,11 @@
 """LLM Compiler Output Parser"""
 
-import ast
 import re
-from typing import Any, Sequence, Union, List, Dict, Any
-from llama_index.tools import BaseTool
-from pydantic import BaseModel
-from llama_index.agent.llm_compiler.schema import LLMCompilerParseResult, JoinerOutput
+from typing import Any, Dict, List, Sequence
+
+from llama_index.agent.llm_compiler.schema import JoinerOutput, LLMCompilerParseResult
 from llama_index.agent.llm_compiler.utils import get_graph_dict
+from llama_index.tools import BaseTool
 
 THOUGHT_PATTERN = r"Thought: ([^\n]*)"
 ACTION_PATTERN = r"\n*(\d+)\. (\w+)\((.*)\)(\s*#\w+\n)?"
@@ -67,7 +66,7 @@ class LLMCompilerJoinerParser(BaseOutputParser):
 
     Adapted from _parse_joiner_output in
     https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/llm_compiler.py
-    
+
     """
 
     def parse(self, text: str) -> JoinerOutput:
@@ -81,5 +80,3 @@ class LLMCompilerJoinerParser(BaseOutputParser):
             elif ans.startswith("Thought:"):
                 thought = ans.split("Thought:")[1].strip()
         return JoinerOutput(thought=thought, answer=answer, is_replan=is_replan)
-    
-

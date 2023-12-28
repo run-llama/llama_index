@@ -1,9 +1,13 @@
+from typing import Any, Collection, List, Optional
+
 from pydantic import BaseModel
-from typing import Callable, Collection, Any, Optional, List
-from llama_index.tools.types import BaseTool, AsyncBaseTool
+
+from llama_index.tools.types import AsyncBaseTool
+
 
 class LLMCompilerParseResult(BaseModel):
     """LLMCompiler parser result."""
+
     thought: str
     idx: int
     tool_name: str
@@ -18,7 +22,6 @@ class JoinerOutput(BaseModel):
     is_replan: bool = False
 
 
-
 def _default_stringify_rule_for_arguments(args: List[Any]):
     if len(args) == 1:
         return str(args[0])
@@ -29,9 +32,9 @@ def _default_stringify_rule_for_arguments(args: List[Any]):
 class LLMCompilerTask(BaseModel):
     """LLM Compiler Task.
 
-    Object taken from 
+    Object taken from
     https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetching_unit.py.
-    
+
     """
 
     idx: int
@@ -54,7 +57,10 @@ class LLMCompilerTask(BaseModel):
         return x
 
     def get_thought_action_observation(
-        self, include_action: bool = True, include_thought: bool = True, include_action_idx: bool = False
+        self,
+        include_action: bool = True,
+        include_thought: bool = True,
+        include_action_idx: bool = False,
     ) -> str:
         thought_action_observation = ""
         if self.thought and include_thought:
@@ -74,5 +80,3 @@ class LLMCompilerTask(BaseModel):
         if self.observation is not None:
             thought_action_observation += f"Observation: {self.observation}\n"
         return thought_action_observation
-
-

@@ -1,22 +1,26 @@
 """Utils for LLM Compiler."""
 import ast
 import re
-from typing import Any, Sequence, Union, Dict, List, Optional
-from llama_index.tools.types import BaseTool, adapt_to_async_tool
+from typing import Any, Dict, List, Sequence
+
+from llama_index.agent.llm_compiler.schema import (
+    LLMCompilerParseResult,
+    LLMCompilerTask,
+)
+from llama_index.agent.types import TaskStep
 from llama_index.tools.function_tool import FunctionTool
-from llama_index.agent.llm_compiler.schema import LLMCompilerParseResult, LLMCompilerTask
-from llama_index.agent.types import TaskStep, Task
-from pydantic import BaseModel
-import uuid
+from llama_index.tools.types import BaseTool, adapt_to_async_tool
 
 # $1 or ${1} -> 1
 ID_PATTERN = r"\$\{?(\d+)\}?"
+
 
 def default_dependency_rule(idx, args: str):
     """Default dependency rule."""
     matches = re.findall(ID_PATTERN, args)
     numbers = [int(match) for match in matches]
     return idx in numbers
+
 
 def parse_llm_compiler_action_args(args: str) -> List[Any]:
     """Parse arguments from a string."""
@@ -34,9 +38,7 @@ def parse_llm_compiler_action_args(args: str) -> List[Any]:
     return args
 
 
-def _find_tool(
-    tool_name: str, tools: Sequence[BaseTool]
-) -> BaseTool:
+def _find_tool(tool_name: str, tools: Sequence[BaseTool]) -> BaseTool:
     """Find a tool by name.
 
     Args:
@@ -82,7 +84,6 @@ def instantiate_new_step(
     else:
         tool = _find_tool(tool_name, tools)
 
-
     return LLMCompilerTask(
         idx=idx,
         name=tool_name,
@@ -101,7 +102,6 @@ def get_graph_dict(
     tools: Sequence[BaseTool],
 ) -> Dict[int, Any]:
     """Get graph dict."""
-
     graph_dict = {}
 
     for parse_result in parse_results:
