@@ -47,6 +47,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
         model_name: str = "colbert-ir/colbertv2.0",
+        index_name: str = "",
         show_progress: bool = False,
         nbits: int = 2,
         gpus: int = 0,
@@ -58,6 +59,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
     ) -> None:
         self.model_name = model_name
         self.index_path = "storage/colbert_index"
+        self.index_name = index_name
         self.nbits = nbits
         self.gpus = gpus
         self.ranks = ranks
@@ -75,6 +77,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
+            index_name=index_name,
             service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
@@ -100,7 +103,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
         """Generate a PLAID index from the ColBERT checkpoint via its hugging face
         model_name.
         """
-        from colbert import Indexer, IndexUpdater, Searcher
+        from colbert import Indexer, Searcher
         from colbert.infra import ColBERTConfig, Run, RunConfig
 
         index_struct = IndexDict()
@@ -121,12 +124,9 @@ class ColbertIndex(BaseIndex[IndexDict]):
                 kmeans_niters=self.kmeans_niters,
             )
             indexer = Indexer(checkpoint=self.model_name, config=config)
-            indexer.index("", collection=docs_list, overwrite=True)
+            indexer.index(name=self.index_name, collection=docs_list, overwrite=True)
             self.store = Searcher(
-                index="", collection=docs_list, checkpoint=self.model_name
-            )
-            self.updater = IndexUpdater(
-                config=config, searcher=self.store, checkpoint=self.model_name
+                index=self.index_name, collection=docs_list, checkpoint=self.model_name
             )
         return index_struct
 

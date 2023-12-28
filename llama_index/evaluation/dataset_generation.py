@@ -5,7 +5,7 @@ import asyncio
 import json
 import re
 import uuid
-from typing import Dict, List, Tuple
+from typing import Coroutine, Dict, List, Tuple
 
 from deprecated import deprecated
 
@@ -201,7 +201,7 @@ class DatasetGenerator(PromptMixin):
         generate_response: bool = False,
     ) -> QueryResponseDataset:
         """Node question generator."""
-        query_tasks = []
+        query_tasks: List[Coroutine] = []
         queries: Dict[str, str] = {}
         responses_dict: Dict[str, str] = {}
 
@@ -214,7 +214,7 @@ class DatasetGenerator(PromptMixin):
 
         summary_indices: List[SummaryIndex] = []
         for node in nodes:
-            if num is not None and len(queries) >= num:
+            if num is not None and len(query_tasks) >= num:
                 break
             index = SummaryIndex.from_documents(
                 [

@@ -2,7 +2,7 @@
 
 from typing import Any, cast
 
-from llama_index.agent.openai_agent import (
+from llama_index.agent.legacy.openai_agent import (
     OpenAIAgent,
 )
 from llama_index.objects.base import ObjectRetriever
