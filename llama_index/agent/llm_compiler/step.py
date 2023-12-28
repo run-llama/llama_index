@@ -55,7 +55,6 @@ from llama_index.prompts.base import PromptTemplate
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text
-from llama_index.agent.react.formatter import get_react_tool_descriptions
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
