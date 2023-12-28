@@ -1,4 +1,9 @@
-"""LLM Compiler."""
+"""LLM Compiler.
+
+A lot of this code was adapted from the source code of the LLM Compiler repo:
+https://github.com/SqueezeAILab/LLMCompiler
+
+"""
 
 import asyncio
 import uuid
