@@ -6,7 +6,7 @@ https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetc
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -18,10 +18,12 @@ SCHEDULING_INTERVAL = 0.01  # seconds
 
 
 def _replace_arg_mask_with_real_value(
-    args, dependencies: List[int], tasks: Dict[str, LLMCompilerTask]
-):
+    args: Union[List, Tuple, str],
+    dependencies: Collection[int],
+    tasks: Dict[int, LLMCompilerTask],
+) -> Union[List, Tuple]:
     if isinstance(args, (list, tuple)):
-        new_list = []
+        new_list: List[Any] = []
         for item in args:
             new_item = _replace_arg_mask_with_real_value(item, dependencies, tasks)
             # if the original item was string but the new item is not, then treat it as expanded
@@ -74,7 +76,7 @@ class TaskFetchingUnit(BaseModel):
         cls,
         tasks: Dict[int, LLMCompilerTask],
         verbose: bool = False,
-    ):
+    ) -> "TaskFetchingUnit":
         """Create a TaskFetchingUnit from a list of tasks."""
         tasks_done = {task_idx: asyncio.Event() for task_idx in tasks}
         remaining_tasks = set(tasks.keys())
@@ -85,31 +87,31 @@ class TaskFetchingUnit(BaseModel):
             verbose=verbose,
         )
 
-    def set_tasks(self, tasks: dict[str, Any]):
+    def set_tasks(self, tasks: Dict[int, Any]) -> None:
         self.tasks.update(tasks)
         self.tasks_done.update({task_idx: asyncio.Event() for task_idx in tasks})
         self.remaining_tasks.update(set(tasks.keys()))
 
-    def _all_tasks_done(self):
+    def _all_tasks_done(self) -> bool:
         return all(self.tasks_done[d].is_set() for d in self.tasks_done)
 
-    def _get_all_executable_tasks(self):
+    def _get_all_executable_tasks(self) -> List[int]:
         return [
-            task_name
-            for task_name in self.remaining_tasks
+            task_id
+            for task_id in self.remaining_tasks
             if all(
-                self.tasks_done[d].is_set() for d in self.tasks[task_name].dependencies
+                self.tasks_done[d].is_set() for d in self.tasks[task_id].dependencies
             )
         ]
 
-    def _preprocess_args(self, task: LLMCompilerTask):
+    def _preprocess_args(self, task: LLMCompilerTask) -> None:
         """Replace dependency placeholders, i.e. ${1}, in task.args with the actual observation."""
         args = _replace_arg_mask_with_real_value(
             task.args, task.dependencies, self.tasks
         )
         task.args = args
 
-    async def _run_task(self, task: LLMCompilerTask):
+    async def _run_task(self, task: LLMCompilerTask) -> None:
         self._preprocess_args(task)
         if not task.is_join:
             observation = await task()
@@ -121,7 +123,7 @@ class TaskFetchingUnit(BaseModel):
             )
         self.tasks_done[task.idx].set()
 
-    async def schedule(self):
+    async def schedule(self) -> None:
         """Run all tasks in self.tasks in parallel, respecting dependencies."""
         # run until all tasks are done
         while not self._all_tasks_done():
@@ -129,16 +131,16 @@ class TaskFetchingUnit(BaseModel):
             executable_tasks = self._get_all_executable_tasks()
 
             async_tasks = []
-            for task_name in executable_tasks:
-                async_tasks.append(self._run_task(self.tasks[task_name]))
-                self.remaining_tasks.remove(task_name)
+            for task_id in executable_tasks:
+                async_tasks.append(self._run_task(self.tasks[task_id]))
+                self.remaining_tasks.remove(task_id)
             await asyncio.gather(*async_tasks)
 
             await asyncio.sleep(SCHEDULING_INTERVAL)
 
     async def aschedule(
-        self, task_queue: asyncio.Queue[Optional[LLMCompilerTask]], func
-    ):
+        self, task_queue: asyncio.Queue[Optional[LLMCompilerTask]]
+    ) -> None:
         """Asynchronously listen to task_queue and schedule tasks as they arrive."""
         no_more_tasks = False  # Flag to check if all tasks are received
 
@@ -158,9 +160,9 @@ class TaskFetchingUnit(BaseModel):
             executable_tasks = self._get_all_executable_tasks()
 
             if executable_tasks:
-                for task_name in executable_tasks:
-                    asyncio.create_task(self._run_task(self.tasks[task_name]))
-                    self.remaining_tasks.remove(task_name)
+                for task_id in executable_tasks:
+                    asyncio.create_task(self._run_task(self.tasks[task_id]))
+                    self.remaining_tasks.remove(task_id)
             elif no_more_tasks and self._all_tasks_done():
                 # Exit the loop if no more tasks are expected and all tasks are done
                 break

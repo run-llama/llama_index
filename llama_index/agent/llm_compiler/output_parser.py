@@ -18,7 +18,8 @@ JOINER_REPLAN = "Replan"
 from llama_index.types import BaseOutputParser
 
 
-def default_dependency_rule(idx, args: str):
+def default_dependency_rule(idx: int, args: str) -> bool:
+    """Default dependency rule."""
     matches = re.findall(ID_PATTERN, args)
     numbers = [int(match) for match in matches]
     return idx in numbers
@@ -35,7 +36,7 @@ class LLMCompilerPlanParser(BaseOutputParser):
         """Init params."""
         self.tools = tools
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> Dict[int, Any]:
         # 1. search("Ronaldo number of kids") -> 1, "search", '"Ronaldo number of kids"'
         # pattern = r"(\d+)\. (\w+)\(([^)]+)\)"
         pattern = rf"(?:{THOUGHT_PATTERN}\n)?{ACTION_PATTERN}"

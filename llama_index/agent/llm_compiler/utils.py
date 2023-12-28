@@ -1,13 +1,12 @@
 """Utils for LLM Compiler."""
 import ast
 import re
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Sequence, Tuple, Union
 
 from llama_index.agent.llm_compiler.schema import (
     LLMCompilerParseResult,
     LLMCompilerTask,
 )
-from llama_index.agent.types import TaskStep
 from llama_index.tools.function_tool import FunctionTool
 from llama_index.tools.types import BaseTool, adapt_to_async_tool
 
@@ -15,14 +14,14 @@ from llama_index.tools.types import BaseTool, adapt_to_async_tool
 ID_PATTERN = r"\$\{?(\d+)\}?"
 
 
-def default_dependency_rule(idx, args: str):
+def default_dependency_rule(idx: int, args: str) -> bool:
     """Default dependency rule."""
     matches = re.findall(ID_PATTERN, args)
     numbers = [int(match) for match in matches]
     return idx in numbers
 
 
-def parse_llm_compiler_action_args(args: str) -> List[Any]:
+def parse_llm_compiler_action_args(args: str) -> Union[List, Tuple]:
     """Parse arguments from a string."""
     # This will convert the string into a python object
     # e.g. '"Ronaldo number of kids"' -> ("Ronaldo number of kids", )
@@ -30,12 +29,14 @@ def parse_llm_compiler_action_args(args: str) -> List[Any]:
     if args == "":
         return ()
     try:
-        args = ast.literal_eval(args)
+        eval_args: Union[List, Tuple, str] = ast.literal_eval(args)
     except Exception as e:
-        args = args
-    if not isinstance(args, list) and not isinstance(args, tuple):
-        args = (args,)
-    return args
+        eval_args = args
+    if not isinstance(eval_args, list) and not isinstance(eval_args, tuple):
+        new_args: Union[List, Tuple] = (eval_args,)
+    else:
+        new_args = eval_args
+    return new_args
 
 
 def _find_tool(tool_name: str, tools: Sequence[BaseTool]) -> BaseTool:
@@ -53,9 +54,7 @@ def _find_tool(tool_name: str, tools: Sequence[BaseTool]) -> BaseTool:
     raise ValueError(f"Tool {tool_name} not found.")
 
 
-def _get_dependencies_from_graph(
-    idx: int, tool_name: str, args: Sequence[Any]
-) -> List[int]:
+def _get_dependencies_from_graph(idx: int, tool_name: str, args: str) -> List[int]:
     """Get dependencies from a graph."""
     if tool_name == "join":
         # depends on the previous step
@@ -73,14 +72,14 @@ def instantiate_new_step(
     tool_name: str,
     args: str,
     thought: str,
-) -> TaskStep:
+) -> LLMCompilerTask:
     """Instantiate a new step."""
     dependencies = _get_dependencies_from_graph(idx, tool_name, args)
     args_list = parse_llm_compiler_action_args(args)
     if tool_name == "join":
         # tool: Optional[BaseTool] = None
         # assume that the only tool that returns None is join
-        tool = FunctionTool.from_defaults(fn=lambda x: None)
+        tool: BaseTool = FunctionTool.from_defaults(fn=lambda x: None)
     else:
         tool = _find_tool(tool_name, tools)
 

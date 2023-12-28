@@ -1,4 +1,4 @@
-from typing import Any, Collection, List, Optional
+from typing import Any, Collection, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -22,7 +22,7 @@ class JoinerOutput(BaseModel):
     is_replan: bool = False
 
 
-def _default_stringify_rule_for_arguments(args: List[Any]):
+def _default_stringify_rule_for_arguments(args: Union[List, Tuple]) -> str:
     if len(args) == 1:
         return str(args[0])
     else:
@@ -41,7 +41,7 @@ class LLMCompilerTask(BaseModel):
     name: str
     # tool: Callable
     tool: AsyncBaseTool
-    args: Collection[Any]
+    args: Union[List, Tuple]
     dependencies: Collection[int]
     # TODO: look into this
     # stringify_rule: Optional[Callable] = None

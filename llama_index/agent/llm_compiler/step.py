@@ -173,6 +173,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         self.joiner_prompt = joiner_prompt or PromptTemplate(OUTPUT_PROMPT)
         self.joiner_program = LLMTextCompletionProgram.from_defaults(
             output_parser=LLMCompilerJoinerParser(),
+            output_cls=JoinerOutput,
             prompt=self.joiner_prompt,
             llm=self.llm,
             verbose=verbose,
@@ -266,7 +267,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
     async def ajoin(
         self,
         input: str,
-        tasks: Dict[str, LLMCompilerTask],
+        tasks: Dict[int, LLMCompilerTask],
         is_final: bool = False,
     ) -> JoinerOutput:
         """Join answer using LLM/agent."""
@@ -296,7 +297,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
 
     def _get_task_step_response(
         self,
-        llmc_tasks: Dict[str, LLMCompilerTask],
+        llmc_tasks: Dict[int, LLMCompilerTask],
         answer: str,
         joiner_thought: str,
         step: TaskStep,
@@ -355,7 +356,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         else:
             formatted_contexts = format_contexts(step.step_state["contexts"])
         llm_response = await self.arun_llm(
-            step.input,
+            task.input,
             previous_context=formatted_contexts,
             is_replan=step.step_state["is_replan"],
         )
@@ -363,7 +364,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
             print_text(f"> Plan: {llm_response.message.content}\n", color="pink")
 
         # return task dict (will generate plan, parse into dictionary)
-        task_dict = self.output_parser.parse(llm_response.message.content)
+        task_dict = self.output_parser.parse(cast(str, llm_response.message.content))
 
         # execute via task executor
         task_fetching_unit = TaskFetchingUnit.from_tasks(
@@ -372,7 +373,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         await task_fetching_unit.schedule()
 
         ## join tasks - get response
-        tasks = cast(Dict[str, LLMCompilerTask], task_fetching_unit.tasks)
+        tasks = cast(Dict[int, LLMCompilerTask], task_fetching_unit.tasks)
         joiner_output = await self.ajoin(
             task.input,
             tasks,
