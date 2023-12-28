@@ -265,8 +265,19 @@ class PGVectorStore(BasePydanticVectorStore):
         with self._session() as session, session.begin():
             from sqlalchemy import text
 
-            statement = text(f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}")
-            session.execute(statement)
+            # Check if the specified schema exists with "CREATE" statement
+            check_schema_statement = text(
+                f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{self.schema_name}'"
+            )
+            result = session.execute(check_schema_statement).fetchone()
+
+            # If the schema does not exist, then create it
+            if not result:
+                create_schema_statement = text(
+                    f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}"
+                )
+                session.execute(create_schema_statement)
+
             session.commit()
 
     def _create_tables_if_not_exists(self) -> None:
@@ -313,7 +324,7 @@ class PGVectorStore(BasePydanticVectorStore):
             session.commit()
         return ids
 
-    async def async_add(self, nodes: List[BaseNode]) -> List[str]:
+    async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         self._initialize()
         ids = []
         async with self._async_session() as session, session.begin():
@@ -380,11 +391,15 @@ class PGVectorStore(BasePydanticVectorStore):
         limit: int = 10,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
-        from sqlalchemy import select
+        from sqlalchemy import select, text
 
         stmt = select(  # type: ignore
-            self._table_class, self._table_class.embedding.cosine_distance(embedding)
-        ).order_by(self._table_class.embedding.cosine_distance(embedding))
+            self._table_class.id,
+            self._table_class.node_id,
+            self._table_class.text,
+            self._table_class.metadata_,
+            self._table_class.embedding.cosine_distance(embedding).label("distance"),
+        ).order_by(text("distance asc"))
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 
@@ -416,9 +431,9 @@ class PGVectorStore(BasePydanticVectorStore):
                     node_id=item.node_id,
                     text=item.text,
                     metadata=item.metadata_,
-                    similarity=(1 - distance) if distance is not None else 0,
+                    similarity=(1 - item.distance) if item.distance is not None else 0,
                 )
-                for item, distance in res.all()
+                for item in res.all()
             ]
 
     async def _aquery_with_score(
@@ -447,9 +462,9 @@ class PGVectorStore(BasePydanticVectorStore):
                     node_id=item.node_id,
                     text=item.text,
                     metadata=item.metadata_,
-                    similarity=(1 - distance) if distance is not None else 0,
+                    similarity=(1 - item.distance) if item.distance is not None else 0,
                 )
-                for item, distance in res.all()
+                for item in res.all()
             ]
 
     def _build_sparse_query(
@@ -472,10 +487,17 @@ class PGVectorStore(BasePydanticVectorStore):
         ts_query = func.plainto_tsquery(
             type_coerce(self.text_search_config, REGCONFIG), query_str
         )
-        stmt = select(  # type: ignore
-            self._table_class,
-            func.ts_rank(self._table_class.text_search_tsv, ts_query).label("rank"),
-        ).order_by(text("rank desc"))
+        stmt = (
+            select(  # type: ignore
+                self._table_class.id,
+                self._table_class.node_id,
+                self._table_class.text,
+                self._table_class.metadata_,
+                func.ts_rank(self._table_class.text_search_tsv, ts_query).label("rank"),
+            )
+            .where(self._table_class.text_search_tsv.op("@@")(ts_query))
+            .order_by(text("rank desc"))
+        )
 
         # type: ignore
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
@@ -494,9 +516,9 @@ class PGVectorStore(BasePydanticVectorStore):
                     node_id=item.node_id,
                     text=item.text,
                     metadata=item.metadata_,
-                    similarity=rank,
+                    similarity=item.rank,
                 )
-                for item, rank in res.all()
+                for item in res.all()
             ]
 
     def _sparse_query_with_rank(
@@ -513,9 +535,9 @@ class PGVectorStore(BasePydanticVectorStore):
                     node_id=item.node_id,
                     text=item.text,
                     metadata=item.metadata_,
-                    similarity=rank,
+                    similarity=item.rank,
                 )
-                for item, rank in res.all()
+                for item in res.all()
             ]
 
     async def _async_hybrid_query(

@@ -3,6 +3,8 @@ from typing import Any, List, Sequence
 
 import pytest
 from llama_index.agent.react.base import ReActAgent
+from llama_index.agent.react.types import ObservationReasoningStep
+from llama_index.agent.types import Task
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.llms.mock import MockLLM
@@ -13,6 +15,7 @@ from llama_index.llms.types import (
     MessageRole,
 )
 from llama_index.tools.function_tool import FunctionTool
+from llama_index.tools.types import BaseTool
 
 
 @pytest.fixture()
@@ -209,12 +212,7 @@ def test_stream_chat_basic(
             content="2 is the final answer.",
             role=MessageRole.ASSISTANT,
         ),
-    ]  # thread = Thread(
-    #     target=lambda x: asyncio.run(
-    #         chat_stream_response.awrite_response_to_history(x)
-    #     ),
-    #     args=(self._memory,),
-    # )
+    ]
 
 
 @pytest.mark.asyncio()
@@ -257,3 +255,80 @@ async def test_astream_chat_basic(
             role=MessageRole.ASSISTANT,
         ),
     ]
+
+
+def _get_agent(tools: List[BaseTool]) -> ReActAgent:
+    mock_llm = MockChatLLM(
+        responses=[
+            ChatMessage(
+                content=MOCK_ACTION_RESPONSE,
+                role=MessageRole.ASSISTANT,
+            ),
+            ChatMessage(
+                content=MOCK_FINAL_RESPONSE,
+                role=MessageRole.ASSISTANT,
+            ),
+        ]
+    )
+    return ReActAgent.from_tools(
+        tools=tools,
+        llm=mock_llm,
+    )
+
+
+def _get_observations(task: Task) -> List[str]:
+    obs_steps = [
+        s
+        for s in task.extra_state["current_reasoning"]
+        if isinstance(s, ObservationReasoningStep)
+    ]
+    return [s.observation for s in obs_steps]
+
+
+def test_add_step(
+    add_tool: FunctionTool,
+) -> None:
+    # sync
+    agent = _get_agent([add_tool])
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    step_output = agent.run_step(task.task_id)
+    # add human input (not used but should be in memory)
+    step_output = agent.run_step(task.task_id, input="tmp")
+    observations = _get_observations(task)
+    assert "tmp" in observations
+
+    # stream_step
+    agent = _get_agent([add_tool])
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    step_output = agent.stream_step(task.task_id)
+    # add human input (not used but should be in memory)
+    step_output = agent.stream_step(task.task_id, input="tmp")
+    observations = _get_observations(task)
+    assert "tmp" in observations
+
+
+@pytest.mark.asyncio()
+async def test_async_add_step(
+    add_tool: FunctionTool,
+) -> None:
+    # async
+    agent = _get_agent([add_tool])
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    step_output = await agent.arun_step(task.task_id)
+    # add human input (not used but should be in memory)
+    step_output = await agent.arun_step(task.task_id, input="tmp")
+    observations = _get_observations(task)
+    assert "tmp" in observations
+
+    # async stream step
+    agent = _get_agent([add_tool])
+    task = agent.create_task("What is 1 + 1?")
+    # first step
+    step_output = await agent.astream_step(task.task_id)
+    # add human input (not used but should be in memory)
+    step_output = await agent.astream_step(task.task_id, input="tmp")
+    observations = _get_observations(task)
+    assert "tmp" in observations

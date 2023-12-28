@@ -17,7 +17,7 @@ QUERY_INSTRUCTION_FOR_RETRIEVAL = (
     "Represent this sentence for searching relevant passages:"
 )
 
-GRADIENT_MAX_BATCH_SIZE = 100
+GRADIENT_EMBED_BATCH_SIZE: int = 32_768
 
 
 class GradientEmbedding(BaseEmbedding):
@@ -32,9 +32,7 @@ class GradientEmbedding(BaseEmbedding):
         `pip install gradientai`.
     """
 
-    embed_batch_size: int = Field(
-        default=DEFAULT_EMBED_BATCH_SIZE, gt=0, lte=GRADIENT_MAX_BATCH_SIZE
-    )
+    embed_batch_size: int = Field(default=GRADIENT_EMBED_BATCH_SIZE, gt=0)
 
     _gradient: Any = PrivateAttr()
     _model: Any = PrivateAttr()
@@ -71,15 +69,8 @@ class GradientEmbedding(BaseEmbedding):
 
         Raises:
             ImportError: If the `gradientai` package is not available in the PYTHONPATH.
-            ValueError: If the model cannot be fetched from Gradient AI. or if the embed_batch_size
-                is not in the range (0, 100].
+            ValueError: If the model cannot be fetched from Gradient AI.
         """
-        if embed_batch_size > GRADIENT_MAX_BATCH_SIZE:
-            raise ValueError(
-                f"Embed batch size {embed_batch_size} is too large for Gradient,"
-                " must be <= {GRADIENT_MAX_BATCH_SIZE}."
-            )
-
         if embed_batch_size <= 0:
             raise ValueError(f"Embed batch size {embed_batch_size}  must be > 0.")
 
@@ -105,19 +96,42 @@ class GradientEmbedding(BaseEmbedding):
             embed_batch_size=embed_batch_size, model_name=gradient_model_slug, **kwargs
         )
 
-    async def _aget_query_embedding(self, query: str) -> Embedding:
-        # Gradient AI doesn't have the proper API for async yet, so we just use the sync version.
-        return self._get_query_embedding(query)
-
-    def _get_text_embedding(self, text: str) -> Embedding:
-        return self._get_text_embeddings([text])[0]
-
-    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+        """
+        Embed the input sequence of text asynchronously.
+        """
         inputs = [{"input": text} for text in texts]
 
-        result = self._model.generate_embeddings(inputs=inputs).embeddings
+        result = await self._model.aembed(inputs=inputs).embeddings
 
         return [e.embedding for e in result]
 
+    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+        """
+        Embed the input sequence of text.
+        """
+        inputs = [{"input": text} for text in texts]
+
+        result = self._model.embed(inputs=inputs).embeddings
+
+        return [e.embedding for e in result]
+
+    def _get_text_embedding(self, text: str) -> Embedding:
+        """Alias for _get_text_embeddings() with single text input."""
+        return self._get_text_embeddings([text])[0]
+
+    async def _aget_text_embedding(self, text: str) -> Embedding:
+        """Alias for _aget_text_embeddings() with single text input."""
+        embedding = await self._aget_text_embeddings([text])
+        return embedding[0]
+
+    async def _aget_query_embedding(self, query: str) -> Embedding:
+        embedding = await self._aget_text_embeddings(
+            [f"{QUERY_INSTRUCTION_FOR_RETRIEVAL} {query}"]
+        )
+        return embedding[0]
+
     def _get_query_embedding(self, query: str) -> Embedding:
-        return self._get_text_embedding(f"{QUERY_INSTRUCTION_FOR_RETRIEVAL} {query}")
+        return self._get_text_embeddings(
+            [f"{QUERY_INSTRUCTION_FOR_RETRIEVAL} {query}"]
+        )[0]

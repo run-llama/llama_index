@@ -1,8 +1,9 @@
 """Correctness evaluation."""
 import asyncio
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.evaluation.eval_utils import default_parser
 from llama_index.prompts import (
     BasePromptTemplate,
     ChatMessage,
@@ -17,9 +18,10 @@ DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.
 
 You are given the following information:
-- a user query,
-- a reference answer, and
-- a generated answer.
+- a user query, and
+- a generated answer
+
+You may also be given a reference answer to use for reference in your evaluation.
 
 Your job is to judge the relevance and correctness of the generated answer.
 Output a single score that represents a holistic evaluation.
@@ -86,6 +88,7 @@ class CorrectnessEvaluator(BaseEvaluator):
         service_context: Optional[ServiceContext] = None,
         eval_template: Optional[Union[BasePromptTemplate, str]] = None,
         score_threshold: float = 4.0,
+        parser_function: Callable[[str], Tuple[float, str]] = default_parser,
     ) -> None:
         self._service_context = service_context or ServiceContext.from_defaults()
 
@@ -96,6 +99,7 @@ class CorrectnessEvaluator(BaseEvaluator):
             self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
 
         self._score_threshold = score_threshold
+        self.parser_function = parser_function
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -122,26 +126,23 @@ class CorrectnessEvaluator(BaseEvaluator):
 
         await asyncio.sleep(sleep_time_in_seconds)
 
-        if query is None or response is None or reference is None:
-            print(query, response, reference, flush=True)
-            raise ValueError("query, response, and reference must be provided")
+        if query is None or response is None:
+            raise ValueError("query, and response must be provided")
 
         eval_response = await self._service_context.llm.apredict(
             prompt=self._eval_template,
             query=query,
             generated_answer=response,
-            reference_answer=reference,
+            reference_answer=reference or "(NO REFERENCE ANSWER SUPPLIED)",
         )
 
-        # Extract from response
-        score_str, reasoning_str = eval_response.split("\n", 1)
-        score = float(score_str)
-        reasoning = reasoning_str.lstrip("\n")
+        # Use the parser function
+        score, reasoning = self.parser_function(eval_response)
 
         return EvaluationResult(
             query=query,
             response=response,
-            passing=score >= self._score_threshold,
+            passing=score >= self._score_threshold if score is not None else None,
             score=score,
             feedback=reasoning,
         )

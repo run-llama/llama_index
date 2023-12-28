@@ -168,6 +168,8 @@ class AzureOpenAI(OpenAI):
 
         return {
             "api_key": self.api_key,
+            "max_retries": self.max_retries,
+            "timeout": self.timeout,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,

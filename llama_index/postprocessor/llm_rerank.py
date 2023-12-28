@@ -75,6 +75,9 @@ class LLMRerank(BaseNodePostprocessor):
     ) -> List[NodeWithScore]:
         if query_bundle is None:
             raise ValueError("Query bundle must be provided.")
+        if len(nodes) == 0:
+            return []
+
         initial_results: List[NodeWithScore] = []
         for idx in range(0, len(nodes), self.choice_batch_size):
             nodes_batch = [

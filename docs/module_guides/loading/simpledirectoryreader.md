@@ -40,6 +40,18 @@ By default, `SimpleDirectoryReader` will only read files in the top level of the
 SimpleDirectoryReader(input_dir="path/to/directory", recursive=True)
 ```
 
+### Iterating over files as they load
+
+You can also use the `iter_data()` method to iterate over and process files as they load
+
+```python
+reader = SimpleDirectoryReader(input_dir="path/to/directory", recursive=True)
+all_docs = []
+for docs in reader.iter_data():
+    # <do something with the documents per file>
+    all_docs.extend(docs)
+```
+
 ### Restricting the files loaded
 
 Instead of all files you can pass a list of file paths:

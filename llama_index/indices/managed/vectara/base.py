@@ -64,7 +64,10 @@ class VectaraIndex(BaseManagedIndex):
         )
 
         super().__init__(
-            show_progress=show_progress, index_struct=index_struct, **kwargs
+            show_progress=show_progress,
+            index_struct=index_struct,
+            service_context=ServiceContext.from_defaults(llm=None, llm_predictor=None),
+            **kwargs,
         )
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
             "VECTARA_CUSTOMER_ID"

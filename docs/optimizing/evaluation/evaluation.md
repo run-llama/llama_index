@@ -14,7 +14,7 @@ Closely tied to evaluation are the concepts of experimentation and experiment tr
 
 When developing your LLM application, it could help to first define an end-to-end evaluation workflow, and then once you've started collecting failure or corner cases and getting an intuition for what is or isn't going well, you may dive deeper into evaluating and improving specific components.
 
-The analogy with software testing is integration tests and unit tests. You should probably start writing unit tests once you start fiddling with individual components. Equally, your gold standard on whether things are working will together are integration tests. Both are equally important.
+The analogy with software testing is integration tests and unit tests. You should probably start writing unit tests once you start fiddling with individual components. Equally, your gold standard on whether things are working well together are integration tests. Both are equally important.
 
 ```{toctree}
 ---
