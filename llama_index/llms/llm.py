@@ -85,8 +85,14 @@ async def astream_chat_response_to_tokens(
     return gen()
 
 
+def default_completion_to_prompt(prompt: str) -> str:
+    return prompt
+
+
 class LLM(BaseLLM):
-    system_prompt: Optional[str] = Field(description="System prompt for LLM calls.")
+    system_prompt: Optional[str] = Field(
+        default=None, description="System prompt for LLM calls."
+    )
     messages_to_prompt: MessagesToPromptType = Field(
         description="Function to convert a list of messages to an LLM prompt.",
         default=generic_messages_to_prompt,
@@ -94,7 +100,7 @@ class LLM(BaseLLM):
     )
     completion_to_prompt: CompletionToPromptType = Field(
         description="Function to convert a completion to an LLM prompt.",
-        default=lambda x: x,
+        default=default_completion_to_prompt,
         exclude=True,
     )
     output_parser: Optional[BaseOutputParser] = Field(
@@ -121,7 +127,7 @@ class LLM(BaseLLM):
     def set_completion_to_prompt(
         cls, completion_to_prompt: Optional[CompletionToPromptType]
     ) -> CompletionToPromptType:
-        return completion_to_prompt or (lambda x: x)
+        return completion_to_prompt or default_completion_to_prompt
 
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any

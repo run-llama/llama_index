@@ -1,9 +1,8 @@
 from typing import Any, List, Literal, Optional
 
 import numpy as np
-from pydantic import Field
 
-from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.embeddings.base import BaseEmbedding
 
 

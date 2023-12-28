@@ -17,6 +17,7 @@ LLAMA_MODELS = {
 MISTRAL_MODELS = {
     "mistralai/Mistral-7B-Instruct-v0.1": 16384,
     "Open-Orca/Mistral-7B-OpenOrca": 8192,
+    "mistralai/Mixtral-8x7B-Instruct-v0.1": 32768,
 }
 
 ZEPHYR_MODELS = {

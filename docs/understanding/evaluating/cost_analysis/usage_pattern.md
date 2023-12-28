@@ -73,7 +73,7 @@ print(
 token_counter.reset_counts()
 ```
 
-6. Run a query, mesaure again
+6. Run a query, measure again
 
 ```python
 query_engine = index.as_query_engine()

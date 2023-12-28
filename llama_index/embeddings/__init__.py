@@ -15,6 +15,7 @@ from llama_index.embeddings.elasticsearch import (
     ElasticsearchEmbeddings,
 )
 from llama_index.embeddings.fastembed import FastEmbedEmbedding
+from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.embeddings.google import GoogleUnivSentEncoderEmbedding
 from llama_index.embeddings.google_palm import GooglePaLMEmbedding
 from llama_index.embeddings.gradient import GradientEmbedding
@@ -69,4 +70,5 @@ __all__ = [
     "HuggingFaceInferenceAPIEmbeddings",
     "VoyageEmbedding",
     "OllamaEmbedding",
+    "GeminiEmbedding",
 ]

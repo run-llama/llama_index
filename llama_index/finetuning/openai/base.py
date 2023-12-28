@@ -74,7 +74,7 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         # launch training
         while True:
             try:
-                job_output = self._client.fine_tunes.create(
+                job_output = self._client.fine_tuning.jobs.create(
                     training_file=output.id, model=self.base_model
                 )
                 self._start_job = job_output
@@ -97,7 +97,7 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
             raise ValueError("Must call finetune() first")
 
         # try getting id, make sure that run succeeded
-        job_id = self._start_job["id"]
+        job_id = self._start_job.id
         return self._client.fine_tuning.jobs.retrieve(job_id)
 
     def get_finetuned_model(self, **model_kwargs: Any) -> LLM:

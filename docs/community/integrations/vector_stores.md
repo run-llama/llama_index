@@ -45,7 +45,7 @@ Once constructed, the index can be used for querying.
 
 **Default Vector Store Index Construction/Querying**
 
-By default, `VectorStoreIndex` uses a in-memory `SimpleVectorStore`
+By default, `VectorStoreIndex` uses an in-memory `SimpleVectorStore`
 that's initialized as part of the default storage context.
 
 ```python
@@ -665,6 +665,7 @@ maxdepth: 1
 ../../examples/vector_stores/postgres.ipynb
 ../../examples/vector_stores/RedisIndexDemo.ipynb
 ../../examples/vector_stores/QdrantIndexDemo.ipynb
+../../examples/vector_stores/qdrant_hybrid.ipynb
 ../../examples/vector_stores/RocksetIndexDemo.ipynb
 ../../examples/vector_stores/SimpleIndexDemo.ipynb
 ../../examples/vector_stores/SingleStoreDemo.ipynb

@@ -4,7 +4,7 @@ An index that is built within Milvus.
 
 """
 import logging
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from llama_index.schema import BaseNode, TextNode
 from llama_index.vector_stores.types import (
@@ -67,6 +67,11 @@ class MilvusVectorStore(VectorStore):
             name. Defaults to False.
         text_key (str, optional): What key text is stored in in the passed collection.
             Used when bringing your own collection. Defaults to None.
+        index_config (dict, optional): The configuration used for building the
+            Milvus index. Defaults to None.
+        search_config (dict, optional): The configuration used for searching
+            the Milvus index. Note that this must be compatible with the index
+            type specified by `index_config`. Defaults to None.
 
     Raises:
         ImportError: Unable to import `pymilvus`.
@@ -92,6 +97,8 @@ class MilvusVectorStore(VectorStore):
         consistency_level: str = "Strong",
         overwrite: bool = False,
         text_key: Optional[str] = None,
+        index_config: Optional[dict] = None,
+        search_config: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -103,7 +110,7 @@ class MilvusVectorStore(VectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        from pymilvus import MilvusClient
+        from pymilvus import Collection, MilvusClient
 
         self.collection_name = collection_name
         self.dim = dim
@@ -112,6 +119,13 @@ class MilvusVectorStore(VectorStore):
         self.consistency_level = consistency_level
         self.overwrite = overwrite
         self.text_key = text_key
+        self.index_config: Dict[str, Any] = index_config.copy() if index_config else {}
+        # Note: The search configuration is set at construction to avoid having
+        # to change the API for usage of the vector store (i.e. to pass the
+        # search config along with the rest of the query).
+        self.search_config: Dict[str, Any] = (
+            search_config.copy() if search_config else {}
+        )
 
         # Select the similarity metric
         if similarity_metric.lower() in ("ip"):
@@ -143,6 +157,11 @@ class MilvusVectorStore(VectorStore):
                 max_length=65_535,
                 consistency_level=self.consistency_level,
             )
+
+        self.collection = Collection(
+            self.collection_name, using=self.milvusclient._using
+        )
+        self._create_index_if_required(force=True)
 
         logger.debug(f"Successfully created a new collection: {self.collection_name}")
 
@@ -177,7 +196,9 @@ class MilvusVectorStore(VectorStore):
             insert_list.append(entry)
 
         # Insert the data into milvus
-        self.milvusclient.insert(self.collection_name, insert_list)
+        self.collection.insert(insert_list)
+        self.collection.flush()
+        self._create_index_if_required()
         logger.debug(
             f"Successfully inserted embeddings into: {self.collection_name} "
             f"Num Inserted: {len(insert_list)}"
@@ -258,6 +279,7 @@ class MilvusVectorStore(VectorStore):
             filter=string_expr,
             limit=query.similarity_top_k,
             output_fields=output_fields,
+            search_params=self.search_config,
         )
 
         logger.debug(
@@ -273,7 +295,10 @@ class MilvusVectorStore(VectorStore):
         for hit in res[0]:
             if not self.text_key:
                 node = metadata_dict_to_node(
-                    {"_node_content": hit["entity"].get("_node_content", None)}
+                    {
+                        "_node_content": hit["entity"].get("_node_content", None),
+                        "_node_type": hit["entity"].get("_node_type", None),
+                    }
                 )
             else:
                 try:
@@ -291,3 +316,24 @@ class MilvusVectorStore(VectorStore):
             ids.append(hit["id"])
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def _create_index_if_required(self, force: bool = False) -> None:
+        # This helper method is introduced to allow the index to be created
+        # both in the constructor and in the `add` method. The `force` flag is
+        # provided to ensure that the index is created in the constructor even
+        # if self.overwrite is false. In the `add` method, the index is
+        # recreated only if self.overwrite is true.
+        if (self.collection.has_index() and self.overwrite) or force:
+            self.collection.release()
+            self.collection.drop_index()
+            base_params: Dict[str, Any] = self.index_config.copy()
+            index_type: str = base_params.pop("index_type", "FLAT")
+            index_params: Dict[str, Union[str, Dict[str, Any]]] = {
+                "params": base_params,
+                "metric_type": self.similarity_metric,
+                "index_type": index_type,
+            }
+            self.collection.create_index(
+                self.embedding_field, index_params=index_params
+            )
+            self.collection.load()
