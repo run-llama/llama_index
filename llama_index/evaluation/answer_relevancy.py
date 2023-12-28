@@ -68,7 +68,9 @@ class AnswerRelevancyEvaluator(BaseEvaluator):
         raise_error: bool = False,
         eval_template: str | BasePromptTemplate | None = None,
         score_threshold: float = _DEFAULT_SCORE_THRESHOLD,
-        parser_function: Callable[[str], Tuple[float, str]] = _default_parser_function,
+        parser_function: Callable[
+            [str], Tuple[Optional[float], Optional[str]]
+        ] = _default_parser_function,
     ) -> None:
         """Init params."""
         self._service_context = service_context or ServiceContext.from_defaults()
