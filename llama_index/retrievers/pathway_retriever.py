@@ -4,6 +4,7 @@ import logging
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from llama_index.callbacks.base import CallbackManager
+from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core import BaseRetriever
 from llama_index.embeddings import BaseEmbedding
 from llama_index.indices.query.schema import QueryBundle
@@ -142,6 +143,7 @@ class PathwayRetriever(BaseRetriever):
         self,
         host: str,
         port: Union[str, int],
+        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initializing the Pathway retriever client."""
@@ -151,11 +153,12 @@ class PathwayRetriever(BaseRetriever):
         except ImportError:
             raise ImportError(import_err_msg)
         self.client = VectorStoreClient(host, port)
+        self.similarity_top_k = similarity_top_k
         super().__init__(callback_manager)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve."""
-        rets = self.client(query=query_bundle.query_str, k=3)
+        rets = self.client(query=query_bundle.query_str, k=self.similarity_top_k)
         items = [
             NodeWithScore(
                 node=TextNode(text=ret["text"], extra_info=ret["metadata"]),
