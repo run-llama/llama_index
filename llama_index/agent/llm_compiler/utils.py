@@ -31,7 +31,7 @@ def parse_llm_compiler_action_args(args: str) -> List[Any]:
         return ()
     try:
         args = ast.literal_eval(args)
-    except:
+    except Exception as e:
         args = args
     if not isinstance(args, list) and not isinstance(args, tuple):
         args = (args,)
@@ -128,7 +128,9 @@ def get_graph_dict(
 def generate_context_for_replanner(
     tasks: Dict[int, LLMCompilerTask], joiner_thought: str
 ) -> str:
-    """Formatted like this:
+    """Generate context for replanning.
+
+    Formatted like this.
     ```
     1. action 1
     Observation: xxx

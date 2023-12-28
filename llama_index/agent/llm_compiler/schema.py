@@ -53,8 +53,7 @@ class LLMCompilerTask(BaseModel):
         arbitrary_types_allowed = True
 
     async def __call__(self) -> Any:
-        x = await self.tool.acall(*self.args)
-        return x
+        return await self.tool.acall(*self.args)
 
     def get_thought_action_observation(
         self,

@@ -250,8 +250,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
             ChatMessage(role=MessageRole.USER, content=human_prompt),
         ]
 
-        llm_response = await self.llm.achat(messages)
-        return llm_response
+        return await self.llm.achat(messages)
 
     async def ajoin(
         self,

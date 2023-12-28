@@ -48,9 +48,7 @@ def _replace_arg_mask_with_real_value(
         # into lists (ast.literal_eval fails):
         # e.g. "$1, 2" -> ("$1, 2", )
         # so after replacement need to rerun this
-        args = parse_llm_compiler_action_args(args)
-
-        return args
+        return parse_llm_compiler_action_args(args)
     else:
         return args
 
@@ -96,14 +94,13 @@ class TaskFetchingUnit(BaseModel):
         return all(self.tasks_done[d].is_set() for d in self.tasks_done)
 
     def _get_all_executable_tasks(self):
-        executable_tasks = [
+        return [
             task_name
             for task_name in self.remaining_tasks
             if all(
                 self.tasks_done[d].is_set() for d in self.tasks[task_name].dependencies
             )
         ]
-        return executable_tasks
 
     def _preprocess_args(self, task: LLMCompilerTask):
         """Replace dependency placeholders, i.e. ${1}, in task.args with the actual observation."""

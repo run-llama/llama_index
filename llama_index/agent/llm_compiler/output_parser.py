@@ -1,4 +1,4 @@
-"""LLM Compiler Output Parser"""
+"""LLM Compiler Output Parser."""
 
 import re
 from typing import Any, Dict, List, Sequence
@@ -53,9 +53,7 @@ class LLMCompilerPlanParser(BaseOutputParser):
             )
 
         # get graph dict
-        graph_dict = get_graph_dict(results, self.tools)
-
-        return graph_dict
+        return get_graph_dict(results, self.tools)
 
 
 ### Helper functions
@@ -70,7 +68,7 @@ class LLMCompilerJoinerParser(BaseOutputParser):
     """
 
     def parse(self, text: str) -> JoinerOutput:
-        """Parse"""
+        """Parse."""
         thought, answer, is_replan = "", "", False  # default values
         raw_answers = text.split("\n")
         for ans in raw_answers:
