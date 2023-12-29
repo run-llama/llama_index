@@ -1,14 +1,11 @@
 """Custom agent worker."""
 
-import asyncio
 import uuid
-from itertools import chain
-from threading import Thread
+from abc import abstractmethod
 from typing import (
     Any,
-    AsyncGenerator,
+    Callable,
     Dict,
-    Generator,
     List,
     Optional,
     Sequence,
@@ -16,46 +13,30 @@ from typing import (
     cast,
 )
 
-from llama_index.agent.react.formatter import ReActChatFormatter
-from llama_index.agent.react.output_parser import ReActOutputParser
-from llama_index.agent.react.types import (
-    ActionReasoningStep,
-    BaseReasoningStep,
-    ObservationReasoningStep,
-    ResponseReasoningStep,
-)
 from llama_index.agent.types import (
     BaseAgentWorker,
     Task,
     TaskStep,
     TaskStepOutput,
 )
+from llama_index.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.callbacks import (
     CallbackManager,
-    CBEventType,
-    EventPayload,
     trace_method,
 )
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
-    StreamingAgentChatResponse,
 )
-from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.types import MessageRole
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
-from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
-from llama_index.utils import print_text, unit_generator
-from llama_index.bridge.pydantic import BaseModel, Field
-from abc import abstractmethod
-
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
+
 
 class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
     """Custom simple agent worker.
@@ -73,8 +54,9 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         callback_manager (CallbackManager): Callback manager
         tool_retriever (Optional[ObjectRetriever[BaseTool]]): Tool retriever
         verbose (bool): Whether to print out reasoning steps
-    
+
     """
+
     tools: Sequence[BaseTool] = Field(..., description="Tools to use for reasoning")
     llm: LLM = Field(..., description="LLM to use")
     callback_manager: CallbackManager = Field(
@@ -83,9 +65,9 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
     tool_retriever: Optional[ObjectRetriever[BaseTool]] = Field(
         default=None, description="Tool retriever"
     )
-    verbose: bool = Field(
-        False, description="Whether to print out reasoning steps"
-    )
+    verbose: bool = Field(False, description="Whether to print out reasoning steps")
+
+    _get_tools: Callable[[str], Sequence[BaseTool]] = PrivateAttr()
 
     class Config:
         arbitrary_types_allowed = True
@@ -107,7 +89,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
             self._get_tools = lambda message: tool_retriever_c.retrieve(message)
         else:
             self._get_tools = lambda _: []
-        
+
         super().__init__(
             tools=tools,
             llm=llm,
@@ -141,7 +123,6 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
     @abstractmethod
     def _initialize_state(self, task: Task, **kwargs: Any) -> Dict[str, Any]:
         """Initialize state."""
-        pass
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
@@ -207,7 +188,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
 
         Returns:
             Tuple of (agent_response, is_done)
-        
+
         """
 
     async def _arun_step(
@@ -218,14 +199,13 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         """Run step (async).
 
         Can override this method if you want to run the step asynchronously.
-        
+
         Returns:
             Tuple of (agent_response, is_done)
 
         """
         raise NotImplementedError(
-            "This agent does not support async."
-            "Please implement _arun_step."
+            "This agent does not support async." "Please implement _arun_step."
         )
 
     @trace_method("run_step")
@@ -264,7 +244,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         """Finalize task, after all the steps are completed.
 
         State is all the step states.
-        
+
         """
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
