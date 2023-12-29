@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Optional
 
 from llama_index.download.module import (
     LLAMA_HUB_URL,
@@ -15,7 +15,7 @@ def download_llama_pack(
     llama_hub_url: str = LLAMA_HUB_URL,
     refresh_cache: bool = True,
     skip_load: bool = False,
-) -> Type[BaseLlamaPack]:
+) -> Optional[Type[BaseLlamaPack]]:
     """Download a single LlamaPack from Llama Hub.
 
     Args:
@@ -38,7 +38,10 @@ def download_llama_pack(
         override_path=True,
         skip_load=skip_load,
     )
+    track_download(llama_pack_class, MODULE_TYPE.LLAMAPACK)
+    if pack_cls is None:
+        return None
+
     if not issubclass(pack_cls, BaseLlamaPack):
         raise ValueError(f"Tool class {pack_cls} must be a subclass of BaseToolSpec.")
-    track_download(llama_pack_class, MODULE_TYPE.LLAMAPACK)
     return pack_cls
