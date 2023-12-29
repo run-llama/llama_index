@@ -1,10 +1,29 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.22] - 2023-12-26
+
+### New Features
+
+- Added `.iter_data()` method to `SimpleDirectoryReader` (#9658)
+- Added async support to `Ollama` LLM (#9689)
+- Expanding pinecone filter support for `in` and `not in` (#9683)
 
 ### Bug Fixes / Nits
 
 - Improve BM25Retriever performance (#9675)
+- Improved qdrant hybrid search error handling (#9707)
+- Fixed `None` handling in `ChromaVectorStore` (#9697)
+- Fixed postgres schema creation if not existing (#9712)
+
+## [0.9.21] - 2023-12-23
+
+### New Features
+
+- Added zilliz cloud as a managed index (#9605)
+
+### Bug Fixes / Nits
+
+- Bedrock client and LLM fixes (#9671, #9646)
 
 ## [0.9.20] - 2023-12-21
 

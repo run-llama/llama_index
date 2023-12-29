@@ -325,6 +325,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     async def async_add(
         self,
         nodes: List[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """
         Asynchronously add nodes to vector store.
