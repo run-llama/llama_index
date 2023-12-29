@@ -253,40 +253,21 @@ def download_llama_module(
 
     # loads the module into memory
     if override_path:
-        # base_path = str(dirpath)
-        # sys.path.append(base_path)
         path = f"{dirpath}/{base_file_name}"
-        module_path = _convert_path_to_module(path)
-        # module_path = Path(path).stem
         spec = util.spec_from_file_location(
-            module_path, location=path
+            "custom_module", location=path
         )
         if spec is None:
             raise ValueError(f"Could not find file: {path}.")
     else:
-        # base_path = f"{dirpath}/{module_id}"
-        # sys.path.append(base_path)
         path = f"{dirpath}/{module_id}/{base_file_name}"
-        module_path = _convert_path_to_module(path)
-        # module_path = Path(path).stem
         spec = util.spec_from_file_location(
-            module_path, location=path
+            "custom_module", location=path
         )
         if spec is None:
             raise ValueError(
                 f"Could not find file: {path}."
             )
-
-    # instead of using module_from_spec as below, try to import
-    # given that we added to sys.path using importlib
-
-    # module_import_path = Path(base_path).stem + "." + base_file_name[:-3]
-    # print(base_path)
-    # print(module_import_path)
-    # module = import_module(module_import_path)
-
-    # print(path)
-    # print(module_path)
 
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore
