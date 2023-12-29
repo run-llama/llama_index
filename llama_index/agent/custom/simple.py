@@ -87,6 +87,9 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         False, description="Whether to print out reasoning steps"
     )
 
+    class Config:
+        arbitrary_types_allowed = True
+
     def __init__(
         self,
         tools: Sequence[BaseTool],
