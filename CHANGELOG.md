@@ -7,6 +7,7 @@
 - make llm completion program more general (#9731)
 - Refactor MM Vector store and Index for empty collection (#9717)
 - Adding IF statement to check for Schema using "Select" (#9712)
+- allow skipping module loading in `download_module` and `download_llama_pack`  (#9734)
 
 ## [0.9.22] - 2023-12-26
 
