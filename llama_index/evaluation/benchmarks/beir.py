@@ -84,6 +84,7 @@ class BeirEvaluator:
             results = {}
             for key, query in tqdm.tqdm(queries.items()):
                 nodes_with_score = retriever.retrieve(query)
+                node_postprocessors = node_postprocessors or []
                 for node_postprocessor in node_postprocessors:
                     nodes_with_score = node_postprocessor.postprocess_nodes(
                         nodes_with_score, query_bundle=QueryBundle(query_str=query)
