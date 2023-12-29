@@ -1,5 +1,13 @@
 # ChangeLog
 
+## [0.9.23] - 2023-12-28
+
+### Bug Fixes / Nits
+- docs: fixes qdrant_hybrid.ipynb typos (#9729)
+- make llm completion program more general (#9731)
+- Refactor MM Vector store and Index for empty collection (#9717)
+- Adding IF statement to check for Schema using "Select" (#9712)
+
 ## [0.9.22] - 2023-12-26
 
 ### New Features
