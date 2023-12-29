@@ -10,7 +10,25 @@ LLMs offer a natural language interface between humans and data. Widely availabl
 
 However, while LLMs are trained on a great deal of data, they are not trained on **your** data, which may be private or specific to the problem you're trying to solve. It's behind APIs, in SQL databases, or trapped in PDFs and slide decks.
 
-LlamaIndex solves this problem by connecting to these data sources and adding your data to the data LLMs already have. This is often called Retrieval-Augmented Generation (RAG). RAG enables you to use LLMs to query your data, transform it, and generate new insights. You can ask questions about your data, create chatbots, build semi-autonomous agents, and more. To learn more, check out our Use Cases on the left.
+You may choose to **fine-tune** a LLM with your data, but:
+
+- Training a LLM is **expensive**.
+- Due to the cost to train, it's **hard to update** a LLM with latest information.
+- **Observability** is lacking. When you ask a LLM a question, it's not obvious how the LLM arrived at its answer.
+
+LlamaIndex takes a different approach called `Retrieval-Augmented Generation (RAG) <https://research.ibm.com/blog/retrieval-augmented-generation-RAG>`_. Instead of asking LLM to generate an answer immediately, LlamaIndex:
+
+1. retrieves information from your data sources first,
+2. adds it to your question as context, and
+3. asks the LLM to answer based on the enriched prompt.
+
+RAG overcomes all three weaknesses of the fine-tuning approach:
+
+- There's no training involved, so it's **cheap**.
+- Data is fetched only when you ask for them, so it's **always up to date**.
+- LlamaIndex can show you the retrieved documents, so it's **more trustworthy**.
+
+LlamaIndex imposes no restriction on how you use LLMs. You can still use LLMs as auto-complete, chatbots, semi-autonomous agents, and more (see Use Cases on the left). It only makes LLMs more relevant to you.
 
 🦙 How can LlamaIndex help?
 ***************************
