@@ -175,6 +175,18 @@ def download_module_and_reqs(
             )
 
 
+def _convert_path_to_module(path: str) -> str:
+    """Convert directory path to module path."""
+    # Remove the file extension if it exists
+    if path.endswith('.py'):
+        path = path[:-3]
+    elif path.endswith('.pyc'):
+        path = path[:-4]
+
+    # Replace slashes with dots
+    return path.replace('/', '.')
+
+
 def download_llama_module(
     module_class: str,
     llama_hub_url: str = LLAMA_HUB_URL,
@@ -238,18 +250,22 @@ def download_llama_module(
 
     # loads the module into memory
     if override_path:
+        path = f"{dirpath}/{base_file_name}"
+        module_path = _convert_path_to_module(path)
         spec = util.spec_from_file_location(
-            "custom_module", location=f"{dirpath}/{base_file_name}"
+            module_path, location=path
         )
         if spec is None:
-            raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
+            raise ValueError(f"Could not find file: {path}.")
     else:
+        path = f"{dirpath}/{module_id}/{base_file_name}"
+        module_path = _convert_path_to_module(path)
         spec = util.spec_from_file_location(
-            "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
+            module_path, location=path
         )
         if spec is None:
             raise ValueError(
-                f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
+                f"Could not find file: {path}."
             )
 
     module = util.module_from_spec(spec)
