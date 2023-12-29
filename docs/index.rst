@@ -38,6 +38,7 @@ LlamaIndex provides the following tools:
 - **Data connectors** ingest your existing data from their native source and format. These could be APIs, PDFs, SQL, and (much) more.
 - **Data indexes** structure your data in intermediate representations that are easy and performant for LLMs to consume.
 - **Engines** provide natural language access to your data. For example:
+
   - Query engines are powerful retrieval interfaces for knowledge-augmented output.
   - Chat engines are conversational interfaces for multi-message, "back and forth" interactions with your data.
 - **Data agents** are LLM-powered knowledge workers augmented by tools, from simple helper functions to API integrations and more.
