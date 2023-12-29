@@ -22,6 +22,7 @@ The reasoning loop depends on the type of agent. We have support for the followi
 
 - OpenAI Function agent (built on top of the OpenAI Function API)
 - a ReAct agent (which works across any chat/text completion endpoint).
+- a LLMCompiler Agent (available as a [LlamaPack](https://llamahub.ai/l/llama_packs-agents-llm_compiler?from=llama_packs), [source repo](https://github.com/SqueezeAILab/LLMCompiler))
 
 ### Tool Abstractions
 
