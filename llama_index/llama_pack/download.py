@@ -1,4 +1,4 @@
-from typing import Type, Optional
+from typing import Optional, Type
 
 from llama_index.download.module import (
     LLAMA_HUB_URL,

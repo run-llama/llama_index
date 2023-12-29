@@ -5,7 +5,7 @@ import os
 import subprocess
 import sys
 from enum import Enum
-from importlib import util, import_module
+from importlib import util
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -242,20 +242,14 @@ def download_llama_module(
     # loads the module into memory
     if override_path:
         path = f"{dirpath}/{base_file_name}"
-        spec = util.spec_from_file_location(
-            "custom_module", location=path
-        )
+        spec = util.spec_from_file_location("custom_module", location=path)
         if spec is None:
             raise ValueError(f"Could not find file: {path}.")
     else:
         path = f"{dirpath}/{module_id}/{base_file_name}"
-        spec = util.spec_from_file_location(
-            "custom_module", location=path
-        )
+        spec = util.spec_from_file_location("custom_module", location=path)
         if spec is None:
-            raise ValueError(
-                f"Could not find file: {path}."
-            )
+            raise ValueError(f"Could not find file: {path}.")
 
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore
