@@ -10,6 +10,9 @@ from llama_index.agent.react.base import ReActAgent
 from llama_index.agent.react.step import ReActAgentWorker
 from llama_index.agent.runner.base import AgentRunner
 from llama_index.agent.runner.parallel import ParallelAgentRunner
+from llama_index.agent.custom.simple import CustomSimpleAgentWorker
+from llama_index.chat_engine.types import AgentChatResponse
+from llama_index.agent.types import Task
 
 # for backwards compatibility
 RetrieverOpenAIAgent = FnRetrieverOpenAIAgent
@@ -25,6 +28,10 @@ __all__ = [
     "FnRetrieverOpenAIAgent",
     "RetrieverOpenAIAgent",  # for backwards compatibility
     "ContextRetrieverOpenAIAgent",
+    "CustomSimpleAgentWorker",
+    # schema-related
+    "AgentChatResponse",
+    "Task",
     # legacy
     "OldOpenAIAgent",
     "OldReActAgent",
