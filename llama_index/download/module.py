@@ -175,18 +175,6 @@ def download_module_and_reqs(
             )
 
 
-def _convert_path_to_module(path: str) -> str:
-    """Convert directory path to module path."""
-    # Remove the file extension if it exists
-    if path.endswith('.py'):
-        path = path[:-3]
-    elif path.endswith('.pyc'):
-        path = path[:-4]
-
-    # Replace slashes with dots
-    return path.replace('/', '.')
-
-
 def download_llama_module(
     module_class: str,
     llama_hub_url: str = LLAMA_HUB_URL,
