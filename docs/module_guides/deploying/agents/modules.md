@@ -47,11 +47,21 @@ maxdepth: 1
 ```{toctree}
 ---
 maxdepth: 1
----
+-g--
 LLMCompiler Agent Cookbook <https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_packs/agents/llm_compiler/llm_compiler.ipynb>
 ```
 
 (lower-level-agent-api)=
+
+## Custom Agents
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/agent/custom_agent.ipynb
+```
+
 
 ## Lower-Level Agent API
 
