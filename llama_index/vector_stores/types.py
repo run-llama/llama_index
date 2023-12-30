@@ -48,6 +48,7 @@ class VectorStoreQueryMode(str, Enum):
     SPARSE = "sparse"
     HYBRID = "hybrid"
     TEXT_SEARCH = "text_search"
+    SEMANTIC_HYBRID = "semantic_hybrid"
 
     # fit learners
     SVM = "svm"
