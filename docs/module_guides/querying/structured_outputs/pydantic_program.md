@@ -19,7 +19,6 @@ maxdepth: 1
 /examples/output_parsing/llm_program.ipynb
 ```
 
-
 ## LLM Function Calling Pydantic Programs
 
 ```{toctree}
