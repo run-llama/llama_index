@@ -123,8 +123,12 @@ If you wish to customize your agent, you can choose to subclass the `CustomSimpl
 ```python
 from llama_index.agent import CustomSimpleAgentWorker
 
+
 class MyAgentWorker(CustomSimpleAgentWorker):
+    """Custom agent worker."""
+
     # define class here
+    pass
 ```
 
 Check out our [Custom Agent Notebook Guide](/examples/agent/custom_agent.ipynb) for more details.
