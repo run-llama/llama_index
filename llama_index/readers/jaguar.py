@@ -41,7 +41,6 @@ class JaguarReader(BaseReader):
         try:
             from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
         except ImportError:
-            logger.error("E0001 error import JaguarHttpClient")
             raise ValueError(
                 "Could not import jaguardb-http-client python package. "
                 "Please install it with `pip install -U jaguardb-http-client`"
@@ -68,8 +67,6 @@ class JaguarReader(BaseReader):
         self._jaguar_api_key = jaguar_api_key
         self._token = self._jag.login(jaguar_api_key)
         if self._token == "":
-            logger.error("E0021 error login(): invalid jaguar_api_key")
-            logger.error(" or jaguardb or http gateway is not running")
             return False
         return True
 
@@ -119,7 +116,7 @@ class JaguarReader(BaseReader):
 
     def _load_similar_data(
         self,
-        embedding: Optional[List[float]] = None,
+        embedding: List[float],
         k: int = 10,
         metadata_fields: Optional[List[str]] = None,
         where: Optional[str] = None,
@@ -244,7 +241,6 @@ class JaguarReader(BaseReader):
             json result string
         """
         if self._token == "":
-            logger.error(f"E0005 error run({query})")
             return {}
 
         resp = self._jag.post(query, self._token, False)
