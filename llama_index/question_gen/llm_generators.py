@@ -59,10 +59,9 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
             output_parser = prompts["question_gen_prompt"].output_parser
             if output_parser is None:
                 output_parser = SubQuestionOutputParser()
-            new_prompt = PromptTemplate(
+            self._prompt = PromptTemplate(
                 prompts["question_gen_prompt"].template_str, output_parser=output_parser
             )
-            self._prompt = new_prompt
 
     def generate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle
