@@ -1,5 +1,20 @@
 # ChangeLog
 
+## [0.9.24] - 2023-12-30
+
+### New Features
+
+- Add reranker for BEIR evaluation (#9743)
+- Add Pathway integration. (#9719)
+- custom agents implementation + notebook (#9746)
+
+### Bug Fixes / Nits
+
+- fix beam search for vllm: add missing parameter (#9741)
+- Fix alpha for hrbrid search (#9742)
+- fix token counter (#9744)
+- BM25 tokenizer lowercase (#9745)
+
 ## [0.9.23] - 2023-12-28
 
 ### Bug Fixes / Nits
