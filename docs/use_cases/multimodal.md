@@ -61,6 +61,7 @@ GPT4-V: </examples/multi_modal/openai_multi_modal.ipynb>
 ```
 
 (multi-modal-pydantic-program)=
+
 ### Pydantic Program for Generating Structured Output for Multi-Modal LLMs
 
 You can generate a `structured` output with the new OpenAI GPT4V via LlamaIndex. The user just needs to specify a Pydantic object to define the structure of the output.

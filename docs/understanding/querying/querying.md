@@ -141,10 +141,8 @@ Right now, we support the following options:
   responses. Good for when you need to run the same query separately against each text
   chunk.
 
-
 ## Structured Outputs
 
 You may want to ensure your output is structured. See our [Query Engines + Pydantic Outputs](/module_guides/querying/structured_outputs/query_engine.md) to see how to extract a Pydantic object from a query engine class.
 
 Also make sure to check out our entire [Structured Outputs](/module_guides/querying/structured_outputs/structured_outputs.md) guide.
-
