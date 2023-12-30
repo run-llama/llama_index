@@ -18,7 +18,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
 
     def __init__(
         self,
-        output_parser: Optional[BaseOutputParser],
+        output_parser: BaseOutputParser,
         output_cls: Type[BaseModel],
         prompt: BasePromptTemplate,
         llm: LLM,
