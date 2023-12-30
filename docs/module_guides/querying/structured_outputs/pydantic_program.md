@@ -12,7 +12,13 @@ There's a few general types of Pydantic Programs:
 
 ## LLM Text Completion Pydantic Programs
 
-TODO: Coming soon!
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/output_parsing/llm_program.ipynb
+```
+
 
 ## LLM Function Calling Pydantic Programs
 
