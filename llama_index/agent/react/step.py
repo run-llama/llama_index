@@ -218,6 +218,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
+        # TODO: If the agent mistakenly specified a wrong name for the tool, how do we recover gracefully?
         tool = tools_dict[reasoning_step.action]
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
@@ -254,6 +255,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
+        # TODO: If the agent mistakenly specified a wrong name for the tool, how do we recover gracefully?
         tool = tools_dict[reasoning_step.action]
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,

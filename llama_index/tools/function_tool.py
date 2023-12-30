@@ -79,7 +79,15 @@ class FunctionTool(AsyncBaseTool):
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Call."""
-        tool_output = self._fn(*args, **kwargs)
+        try:
+            tool_output = self._fn(*args, **kwargs)
+        except Exception as e:
+            return ToolOutput(
+                content=f'Exception happened while using tool: "{e}"',
+                tool_name=self.metadata.name,
+                raw_input={"args": args, "kwargs": kwargs},
+                raw_output=e,
+            )
         return ToolOutput(
             content=str(tool_output),
             tool_name=self.metadata.name,
@@ -89,7 +97,15 @@ class FunctionTool(AsyncBaseTool):
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Call."""
-        tool_output = await self._async_fn(*args, **kwargs)
+        try:
+            tool_output = await self._async_fn(*args, **kwargs)
+        except Exception as e:
+            return ToolOutput(
+                content=f'Exception happened while using tool: "{e}"',
+                tool_name=self.metadata.name,
+                raw_input={"args": args, "kwargs": kwargs},
+                raw_output=e,
+            )
         return ToolOutput(
             content=str(tool_output),
             tool_name=self.metadata.name,
