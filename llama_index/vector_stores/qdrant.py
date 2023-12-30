@@ -443,6 +443,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             return self._hybrid_fusion_fn(
                 self.parse_to_query_result(sparse_response[0]),
                 self.parse_to_query_result(sparse_response[1]),
+                # NOTE: only for hybrid search (0 for sparse search, 1 for dense search)
                 alpha=query.alpha or 0.5,
                 top_k=query.similarity_top_k,
             )

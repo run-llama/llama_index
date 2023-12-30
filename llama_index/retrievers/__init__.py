@@ -31,6 +31,10 @@ from llama_index.indices.vector_store.retrievers import (
 from llama_index.retrievers.auto_merging_retriever import AutoMergingRetriever
 from llama_index.retrievers.bm25_retriever import BM25Retriever
 from llama_index.retrievers.fusion_retriever import QueryFusionRetriever
+from llama_index.retrievers.pathway_retriever import (
+    PathwayRetriever,
+    PathwayVectorServer,
+)
 from llama_index.retrievers.recursive_retriever import RecursiveRetriever
 from llama_index.retrievers.router_retriever import RouterRetriever
 from llama_index.retrievers.transform_retriever import TransformRetriever
@@ -58,6 +62,8 @@ __all__ = [
     "BM25Retriever",
     "VectaraRetriever",
     "YouRetriever",
+    "PathwayRetriever",
+    "PathwayVectorServer",
     "QueryFusionRetriever",
     # SQL
     "SQLRetriever",
