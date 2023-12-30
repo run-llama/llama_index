@@ -40,7 +40,7 @@ query_engine_tools = [
 agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
-You can learn more in our [Agents usage pattern](/module_guides/deploying/agents/usage_pattern.md) docs.
+You can learn more in our [Agent Module Guide](/module_guides/deploying/agents/root.md).
 
 ## Native OpenAIAgent
 

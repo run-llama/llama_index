@@ -13,6 +13,7 @@ maxdepth: 1
 ---
 /module_guides/querying/router/root.md
 /optimizing/advanced_retrieval/query_transformations.md
+Sub Question Query Engine (Intro) </examples/query_engine/sub_question_query_engine.ipynb>
 ```
 
 ## Data Agents
