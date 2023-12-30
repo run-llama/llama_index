@@ -11,13 +11,14 @@ Once you have structured data you can send them to a database, or you can parse 
 
 ## Core Guides
 
-Check out our Structured Output guide for a comprehensive overview of structured data extraction with LlamaIndex. Do it in a standalone fashion (Pydantic program) or as part of a RAG pipeline.
+Check out our Structured Output guide for a comprehensive overview of structured data extraction with LlamaIndex. Do it in a standalone fashion (Pydantic program) or as part of a RAG pipeline. We also have standalone output parsing modules that you can use yourself with an LLM / prompt.
 
 ```{toctree}
 ---
 maxdepth: 2
 ---
-/optimizing/advanced_retrieval/structured_outputs/structured_outputs.md
+/module_guides/querying/structured_outputs/structured_outputs.md
+/module_guides/querying/structured_outputs/output_parser.md
 ```
 
 We also have multi-modal structured data extraction. [Check it out](multi-modal-pydantic-program).
