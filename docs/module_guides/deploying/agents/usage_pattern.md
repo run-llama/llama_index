@@ -1,6 +1,7 @@
 # Usage Pattern
 
 ## Getting Started
+
 An agent is initialized from a set of Tools. Here's an example of instantiating a ReAct
 agent from a set of Tools.
 
@@ -101,7 +102,8 @@ outer_agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 
 The OpenAIAgent and ReActAgent are simple wrappers on top of an `AgentRunner` interacting with an `AgentWorker`.
 
-*All* agents can be defined this manner. For example for the OpenAIAgent:
+_All_ agents can be defined this manner. For example for the OpenAIAgent:
+
 ```python
 from llama_index.agent import AgentRunner, OpenAIAgentWorker
 
@@ -119,12 +121,13 @@ Check out the [lower-level agent guide](/module_guides/deploying/agents/agent_ru
 If you wish to customize your agent, you can choose to subclass the `CustomSimpleAgentWorker`, and plug it into an AgentRunner (see above).
 
 ```python
+from llama_index.agent import CustomSimpleAgentWorker
+
 class MyAgentWorker(CustomSimpleAgentWorker):
     # define class here
 ```
 
 Check out our [Custom Agent Notebook Guide](/examples/agent/custom_agent.ipynb) for more details.
-
 
 ## Advanced Concepts (for `OpenAIAgent`, in beta)
 

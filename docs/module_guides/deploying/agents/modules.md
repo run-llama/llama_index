@@ -62,7 +62,6 @@ maxdepth: 1
 /examples/agent/custom_agent.ipynb
 ```
 
-
 ## Lower-Level Agent API
 
 ```{toctree}
