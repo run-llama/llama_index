@@ -35,7 +35,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
     @classmethod
     def from_defaults(
         cls,
-        output_parser: BaseOutputParser,
+        output_parser: Optional[BaseOutputParser] = None,
         output_cls: Optional[Type[BaseModel]] = None,
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
@@ -56,6 +56,9 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
             if not isinstance(output_parser, PydanticOutputParser):
                 raise ValueError("Output parser must be PydanticOutputParser.")
             output_cls = output_parser.output_cls
+        else:
+            if output_parser is None:
+                output_parser = PydanticOutputParser(output_cls=output_cls)
 
         return cls(
             output_parser,
@@ -95,7 +98,12 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
 
             raw_output = response.text
 
-        return self._output_parser.parse(raw_output)
+        output = self._output_parser.parse(raw_output)
+        if not isinstance(output, self._output_cls):
+            raise ValueError(
+                f"Output parser returned {type(output)} but expected {self._output_cls}"
+            )
+        return output
 
     async def acall(
         self,
@@ -115,4 +123,9 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
 
             raw_output = response.text
 
-        return self._output_parser.parse(raw_output)
+        output = self._output_parser.parse(raw_output)
+        if not isinstance(output, self._output_cls):
+            raise ValueError(
+                f"Output parser returned {type(output)} but expected {self._output_cls}"
+            )
+        return output
