@@ -121,7 +121,10 @@ def legacy_metadata_dict_to_node(
     ref_doc_id = metadata.pop("ref_doc_id", None)
 
     # don't remove id's from metadata that llama-index doesn't know about
-    ref_doc_id = relationships.get(NodeRelationship.PARENT, ref_doc_id)
+    ref_doc_id_info = relationships.get(NodeRelationship.PARENT, None)
+    if ref_doc_id_info is not None:
+        ref_doc_id = ref_doc_id_info.node_id
+
     if id_ is not None and id_ != ref_doc_id:
         metadata["id"] = id_
     if document_id is not None and document_id != ref_doc_id:
