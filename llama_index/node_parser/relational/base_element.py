@@ -130,7 +130,7 @@ class BaseElementNodeParser(NodeParser):
         llm = self.llm or OpenAI()
         llm = cast(LLM, llm)
 
-        service_context = ServiceContext.from_defaults(llm=self.llm, embed_model=None)
+        service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
         for element in tqdm(elements):
             if element.type != "table":
                 continue
