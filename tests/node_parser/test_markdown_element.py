@@ -1,3 +1,4 @@
+from llama_index.llms import MockLLM
 from llama_index.node_parser.relational.markdown_element import (
     MarkdownElementNodeParser,
 )
@@ -29,7 +30,7 @@ def test_md_table_extraction() -> None:
         """
     )
 
-    node_parser = MarkdownElementNodeParser()
+    node_parser = MarkdownElementNodeParser(llm=MockLLM())
 
     nodes = node_parser.get_nodes_from_documents([test_data])
     print(f"Number of nodes: {len(nodes)}")
