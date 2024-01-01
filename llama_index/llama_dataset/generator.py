@@ -184,7 +184,9 @@ class RagDatasetGenerator(PromptMixin):
                     )
                     qr_task = qa_query_engine.aquery(query)
                     qr_tasks.append(qr_task)
-                answer_responses: List[RESPONSE_TYPE] = await run_jobs(qr_tasks, self._show_progress, self._workers)
+                answer_responses: List[RESPONSE_TYPE] = await run_jobs(
+                    qr_tasks, self._show_progress, self._workers
+                )
                 for question, answer_response in zip(
                     cleaned_questions, answer_responses
                 ):
