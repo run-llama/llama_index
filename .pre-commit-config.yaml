@@ -38,7 +38,14 @@ repos:
     rev: v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: ['types-requests', 'types-Deprecated', 'types-redis', 'types-yaml', 'types-setuptools']
+        additional_dependencies:
+          [
+            "types-requests",
+            "types-Deprecated",
+            "types-redis",
+            "types-setuptools",
+            "types-PyYAML",
+          ]
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
