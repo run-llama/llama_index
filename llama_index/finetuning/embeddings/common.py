@@ -84,7 +84,7 @@ def generate_qa_embedding_pairs(
         query = qa_generate_prompt_tmpl.format(
             context_str=text, num_questions_per_chunk=num_questions_per_chunk
         )
-        response = llm.complete(query)
+        response = llm.predict(query)
 
         result = str(response).strip().split("\n")
         questions = [
