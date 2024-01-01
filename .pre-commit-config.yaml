@@ -35,7 +35,7 @@ repos:
         alias: black
         exclude: ^(docs/|llama_index/_static)
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 1.8.0
+    rev: v1.8.0
     hooks:
       - id: mypy
   - repo: https://github.com/psf/black-pre-commit-mirror
