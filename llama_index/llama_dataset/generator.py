@@ -6,7 +6,7 @@ import re
 from typing import List
 
 from llama_index import Document, ServiceContext, SummaryIndex
-from llama_index.async_utils import run_jobs, DEFAULT_NUM_WORKERS
+from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.ingestion import run_transformations
 from llama_index.llama_dataset import (
     CreatedBy,
@@ -184,7 +184,9 @@ class RagDatasetGenerator(PromptMixin):
                     )
                     qr_task = qa_query_engine.aquery(query)
                     qr_tasks.append(qr_task)
-                answer_responses: List[RESPONSE_TYPE] = await run_jobs(qr_tasks, self._show_progress, self._workers)
+                answer_responses: List[RESPONSE_TYPE] = await run_jobs(
+                    qr_tasks, self._show_progress, self._workers
+                )
                 for question, answer_response in zip(
                     cleaned_questions, answer_responses
                 ):
