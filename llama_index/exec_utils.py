@@ -95,18 +95,18 @@ class DunderVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.has_access_to_private_entity = False
 
-    def visit_Name(self, node) -> None:
+    def visit_Name(self, node: ast.Name) -> None:
         if node.id.startswith("_"):
             self.has_access_to_private_entity = True
         self.generic_visit(node)
 
-    def visit_Attribute(self, node) -> None:
+    def visit_Attribute(self, node: ast.Attribute) -> None:
         if node.attr.startswith("_"):
             self.has_access_to_private_entity = True
         self.generic_visit(node)
 
 
-def _contains_protected_access(code) -> bool:
+def _contains_protected_access(code: str) -> bool:
     tree = ast.parse(code)
     dunder_visitor = DunderVisitor()
     dunder_visitor.visit(tree)
