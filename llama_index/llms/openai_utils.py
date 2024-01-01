@@ -50,6 +50,11 @@ GPT4_MODELS: Dict[str, int] = {
 AZURE_TURBO_MODELS: Dict[str, int] = {
     "gpt-35-turbo-16k": 16384,
     "gpt-35-turbo": 4096,
+    # 1106 model (JSON mode)
+    "gpt-35-turbo-1106": 16384,
+    # 0613 models (function calling):
+    "gpt-35-turbo-0613": 4096,
+    "gpt-35-turbo-16k-0613": 16384,
 }
 
 TURBO_MODELS: Dict[str, int] = {
