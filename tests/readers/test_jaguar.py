@@ -23,32 +23,37 @@ class TestJaguarReader:
     reader: JaguarReader
     pod: str
     store: str
+    mockClient: bool
 
     @classmethod
     def setup_class(cls) -> None:
         url = "http://127.0.0.1:8080/fwww/"
         cls.pod = "vdb"
         cls.store = "llamaindex_reader_store"
+        cls.mockClient = False
         vector_index = "v"
         vector_type = "cosine_fraction_float"
         vector_dimension = 3
-        cls.vectorstore = JaguarVectorStore(
-            cls.pod,
-            cls.store,
-            vector_index,
-            vector_type,
-            vector_dimension,
-            url,
-        )
+        try:
+            cls.vectorstore = JaguarVectorStore(
+                cls.pod,
+                cls.store,
+                vector_index,
+                vector_type,
+                vector_dimension,
+                url,
+            )
 
-        cls.reader = JaguarReader(
-            cls.pod,
-            cls.store,
-            vector_index,
-            vector_type,
-            vector_dimension,
-            url,
-        )
+            cls.reader = JaguarReader(
+                cls.pod,
+                cls.store,
+                vector_index,
+                vector_type,
+                vector_dimension,
+                url,
+            )
+        except ValueError:
+            cls.mockClient = True
 
     @classmethod
     def teardown_class(cls) -> None:
@@ -60,14 +65,23 @@ class TestJaguarReader:
         Environment variable JAGUAR_API_KEY or $HOME/.jagrc file must
         contain the jaguar api key
         """
-        rc = self.vectorstore.login()
-        assert rc is True
+        if self.mockClient:
+            return
+
+        rc1 = self.vectorstore.login()
+        assert rc1 is True
+
+        rc2 = self.reader.login()
+        assert rc2 is True
 
     def test_create(self) -> None:
         """Create a vector with vector index 'v' of vector_dimension.
 
         and 'v:text' to hold text and metadata fields author and category
         """
+        if self.mockClient:
+            return
+
         metadata_fields = "author char(32), category char(16)"
         self.vectorstore.create(metadata_fields, 1024)
 
@@ -79,6 +93,9 @@ class TestJaguarReader:
 
     def test_add_texts(self) -> None:
         """Add some text nodes through vectorstore."""
+        if self.mockClient:
+            return
+
         self.vectorstore.clear()
 
         node1 = TextNode(
@@ -111,7 +128,8 @@ class TestJaguarReader:
         This test case uses similarity search.
         Here k is 1.
         """
-        self.reader.login()
+        if self.mockClient:
+            return
 
         embed = [0.4, 0.2, 0.8]
         fields = ["author", "category"]
@@ -124,12 +142,18 @@ class TestJaguarReader:
 
     def test_query_data_limit(self) -> None:
         """Test query date of 2 records."""
+        if self.mockClient:
+            return
+
         fields = ["author", "category"]
         docs = self.reader.load_data(k=2, metadata_fields=fields)
         assert len(docs) == 2
 
     def test_query_data_filter(self) -> None:
         """Test query date with filter(where condition)."""
+        if self.mockClient:
+            return
+
         fields = ["author", "category"]
         where = "author='Eve' or author='Charles'"
         docs = self.reader.load_data(k=1, metadata_fields=fields, where=where)
@@ -141,11 +165,17 @@ class TestJaguarReader:
 
     def test_clear(self) -> None:
         """Test cleanup of data in the store."""
+        if self.mockClient:
+            return
+
         self.vectorstore.clear()
         assert self.vectorstore.count() == 0
 
     def test_drop(self) -> None:
         """Destroy the vector store."""
+        if self.mockClient:
+            return
+
         self.vectorstore.drop()
 
     def test_logout(self) -> None:
@@ -153,5 +183,8 @@ class TestJaguarReader:
 
         and clean up resources used by the client
         """
+        if self.mockClient:
+            return
+
         self.vectorstore.logout()
         self.reader.logout()

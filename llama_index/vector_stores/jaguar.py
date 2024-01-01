@@ -14,9 +14,9 @@
 import datetime
 import json
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Union, cast
 
-from llama_index.schema import BaseNode, TextNode
+from llama_index.schema import BaseNode, Document, TextNode
 from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
@@ -132,13 +132,33 @@ class JaguarVectorStore(VectorStore):
         self.run(q)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes."""
+        """Query index for top k most similar nodes.
+
+        Args:
+            query: VectorStoreQuery object
+            kwargs:  may contain 'where', 'metadata_fields', 'args', 'fetch_k'
+        """
         embedding = query.query_embedding
         k = query.similarity_top_k
         (nodes, ids, simscores) = self.similarity_search_with_score(
-            embedding, k=k, **kwargs
+            embedding, k=k, form="node", **kwargs
         )
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=simscores)
+
+    def load_documents(
+        self, embedding: List[float], k: int, **kwargs: Any
+    ) -> List[Document]:
+        """Query index to load top k most similar documents.
+
+        Args:
+            embedding: a list of floats
+            k: topK number
+            kwargs:  may contain 'where', 'metadata_fields', 'args', 'fetch_k'
+        """
+        return cast(
+            List[Document],
+            self.similarity_search_with_score(embedding, k=k, form="doc", **kwargs),
+        )
 
     def create(
         self,
@@ -250,13 +270,16 @@ class JaguarVectorStore(VectorStore):
         self,
         embedding: Optional[List[float]],
         k: int = 3,
+        form: str = "node",
         **kwargs: Any,
-    ) -> Tuple[List[TextNode], List[str], List[float]]:
+    ) -> Union[Tuple[List[TextNode], List[str], List[float]], List[Document]]:
         """Return nodes most similar to query embedding, along with ids and scores.
 
         Args:
             embedding: embedding of text to look up.
             k: Number of nodes to return. Defaults to 3.
+            form: if "node", return Tuple[List[TextNode], List[str], List[float]]
+                  if "doc", return List[Document]
             kwargs: may have where, metadata_fields, args, fetch_k
         Returns:
             Tuple(list of nodes, list of ids, list of similaity scores)
@@ -307,6 +330,7 @@ class JaguarVectorStore(VectorStore):
         nodes = []
         ids = []
         simscores = []
+        docs = []
         for js in jarr:
             score = js["score"]
             text = js["text"]
@@ -319,16 +343,27 @@ class JaguarVectorStore(VectorStore):
                     mv = js[m]
                     md[m] = mv
 
-            node = TextNode(
-                id_=zid,
-                text=text,
-                metadata=md,
-            )
-            nodes.append(node)
-            ids.append(zid)
-            simscores.append(float(score))
+            if form == "node":
+                node = TextNode(
+                    id_=zid,
+                    text=text,
+                    metadata=md,
+                )
+                nodes.append(node)
+                ids.append(zid)
+                simscores.append(float(score))
+            else:
+                doc = Document(
+                    id_=zid,
+                    text=text,
+                    metadata=md,
+                )
+                docs.append(doc)
 
-        return (nodes, ids, simscores)
+        if form == "node":
+            return (nodes, ids, simscores)
+        else:
+            return docs
 
     def is_anomalous(
         self,

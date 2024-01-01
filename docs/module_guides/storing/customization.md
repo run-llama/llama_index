@@ -91,6 +91,7 @@ The vector stores that support this practice are:
 - EpsillaVectorStore
 - DocArrayHnswVectorStore
 - DocArrayInMemoryVectorStore
+- JaguarVectorStore
 - LanceDBVectorStore
 - MetalVectorStore
 - MilvusVectorStore
