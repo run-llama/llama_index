@@ -160,7 +160,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> Union[Model, List[Model]]:
-        description = self._description_eval(kwargs)
+        description = self._description_eval(**kwargs)
 
         openai_fn_spec = to_openai_tool(self._output_cls, description=description)
 
@@ -191,7 +191,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         *args: Any,
         **kwargs: Any,
     ) -> Union[Model, List[Model]]:
-        description = self._description_eval(kwargs)
+        description = self._description_eval(**kwargs)
 
         openai_fn_spec = to_openai_tool(self._output_cls, description=description)
 
@@ -221,7 +221,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         """Streams a list of objects."""
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
-        description = self._description_eval(kwargs)
+        description = self._description_eval(**kwargs)
 
         list_output_cls = create_list_model(self._output_cls)
         openai_fn_spec = to_openai_tool(list_output_cls, description=description)
@@ -262,7 +262,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
                     print(f"Extracted object: {obj.json()}")
                 yield obj
 
-    def _description_eval(self, kwargs):
+    def _description_eval(self, **kwargs: Any) -> Optional[str]:
         description = kwargs.get("description", None)
 
         ## __doc__ checks if docstring is provided in the Pydantic Model
