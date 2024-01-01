@@ -91,30 +91,26 @@ def _get_restricted_globals(__globals: Union[dict, None]) -> Any:
     return restricted_globals
 
 
-class DunderCallVisitor(ast.NodeVisitor):
-    """
-    Check if the code contains calls to private or dunder methods.
-    """
+class DunderVisitor(ast.NodeVisitor):
+    def __init__(self) -> None:
+        self.has_access_to_private_entity = False
 
-    result = False
+    def visit_Name(self, node):
+        if node.id.startswith("_"):
+            self.has_access_to_private_entity = True
+        self.generic_visit(node)
 
-    def visit_Call(self, node):
-        if isinstance(node.func, ast.Name) and node.func.id.startswith("_"):
-            self.result = True
+    def visit_Attribute(self, node):
+        if node.attr.startswith("_"):
+            self.has_access_to_private_entity = True
+        self.generic_visit(node)
 
 
-def _contains_dunder_calls(code: str) -> bool:
-    """
-    Check if the code contains calls to private or dunder methods.
-    """
-    try:
-        tree = ast.parse(code)
-    except SyntaxError as e:
-        RuntimeError(f"Syntax error in the code: {e}")
-        return False
-    dunder_call_visitor = DunderCallVisitor()
-    dunder_call_visitor.visit(tree)
-    return dunder_call_visitor.result
+def _contains_protected_access(code):
+    tree = ast.parse(code)
+    dunder_visitor = DunderVisitor()
+    dunder_visitor.visit(tree)
+    return dunder_visitor.has_access_to_private_entity
 
 
 def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
@@ -126,7 +122,7 @@ def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
         raise RuntimeError("Direct execution of CodeType is forbidden!")
     if isinstance(__source, bytes):
         __source = __source.decode()
-    if _contains_dunder_calls(__source):
+    if _contains_protected_access(__source):
         raise RuntimeError(
             "Execution of code containing references to private or dunder methods is forbidden!"
         )
