@@ -6,7 +6,7 @@ import re
 from typing import List
 
 from llama_index import Document, ServiceContext, SummaryIndex
-from llama_index.async_utils import run_jobs, DEFAULT_NUM_WORKERS
+from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.ingestion import run_transformations
 from llama_index.llama_dataset import (
     CreatedBy,
