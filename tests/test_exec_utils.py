@@ -1,7 +1,7 @@
 from llama_index.exec_utils import _contains_protected_access
 
 
-def test_contains_protected_access():
+def test_contains_protected_access() -> None:
     assert not _contains_protected_access(
         "def _a(b): pass"
     ), "definition of dunder function"
