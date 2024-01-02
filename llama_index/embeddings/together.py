@@ -52,7 +52,7 @@ class TogetherEmbedding(BaseEmbedding):
 
         session = requests.Session()
         response = session.post(
-            self.api_base,
+            self.api_base.strip("/") + "/embeddings",
             headers=headers,
             json={"input": text, "model": model_api_string},
         )
@@ -81,7 +81,7 @@ class TogetherEmbedding(BaseEmbedding):
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                self.api_base,
+                self.api_base.strip("/") + "/embeddings",
                 headers=headers,
                 json={"input": text, "model": model_api_string},
             )

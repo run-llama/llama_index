@@ -242,6 +242,15 @@ maxdepth: 1
 /examples/llm/rungpt.ipynb
 ```
 
+## Together.ai
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/together.ipynb
+```
+
 ## Vertex
 
 ```{toctree}
