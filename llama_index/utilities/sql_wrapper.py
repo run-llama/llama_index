@@ -47,7 +47,7 @@ class SQLDatabase:
         sample_rows_in_table_info: int = 3,
         indexes_in_table_info: bool = True,
         custom_table_info: Optional[dict] = None,
-        view_support: bool = False,
+        view_support: bool = True,
         max_string_length: int = 300,
     ):
         """Create engine from database URI."""
