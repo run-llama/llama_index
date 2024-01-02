@@ -27,13 +27,13 @@ class Pooling(str, Enum):
     @overload
     # TODO: Remove this `type: ignore` after the false positive problem
     #  is addressed in mypy: https://github.com/python/mypy/issues/15683 .
-    def cls_pooling(cls, array: torch.Tensor) -> torch.Tensor:  # type: ignore
+    def cls_pooling(cls, array: "torch.Tensor") -> "torch.Tensor":  # type: ignore
         ...
 
     @classmethod
     def cls_pooling(
-        cls, array: Union[torch.Tensor, np.ndarray]
-    ) -> Union[torch.Tensor, np.ndarray]:
+        cls, array: "Union[np.ndarray, torch.Tensor]"
+    ) -> "Union[np.ndarray, torch.Tensor]":
         if len(array.shape) == 3:
             return array[:, 0]
         if len(array.shape) == 2:
