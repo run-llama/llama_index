@@ -288,15 +288,18 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
 
     Convert pydantic class to OpenAI function.
     """
-    return to_openai_tool(pydantic_class)
+    return to_openai_tool(pydantic_class, description=None)
 
 
-def to_openai_tool(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
+def to_openai_tool(
+    pydantic_class: Type[BaseModel], description: Optional[str] = None
+) -> Dict[str, Any]:
     """Convert pydantic class to OpenAI tool."""
     schema = pydantic_class.schema()
+    schema_description = schema.get("description", None) or description
     function = {
         "name": schema["title"],
-        "description": schema["description"],
+        "description": schema_description,
         "parameters": pydantic_class.schema(),
     }
     return {"type": "function", "function": function}
