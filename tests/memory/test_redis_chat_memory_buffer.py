@@ -6,6 +6,11 @@ from llama_index.llms import ChatMessage, MessageRole
 from llama_index.memory.redis_chat_memory_buffer import RedisChatMemoryBuffer
 from llama_index.utils import get_tokenizer
 
+try:
+    from redis import Redis
+except ImportError:
+    Redis = None
+
 tokenizer = get_tokenizer()
 
 USER_CHAT_MESSAGE = ChatMessage(role=MessageRole.USER, content="first message")
@@ -31,6 +36,7 @@ def generate_random_id() -> str:
 redis_url = "redis://localhost:6379/12"
 
 
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
 def test_put_get() -> None:
     # Given one message in the memory without limit
     memory = RedisChatMemoryBuffer.from_defaults(
@@ -47,6 +53,7 @@ def test_put_get() -> None:
     assert history[0].content == USER_CHAT_MESSAGE.content
 
 
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
 def test_get_when_initial_tokens_less_than_limit_returns_history() -> None:
     # Given some initial tokens much smaller than token_limit and message tokens
     initial_tokens = 5
@@ -67,6 +74,7 @@ def test_get_when_initial_tokens_less_than_limit_returns_history() -> None:
     assert history[0] == USER_CHAT_MESSAGE
 
 
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
 def test_get_when_initial_tokens_exceed_limit_raises_value_error() -> None:
     # Given some initial tokens exceeding token_limit
     initial_tokens = 50
@@ -84,6 +92,7 @@ def test_get_when_initial_tokens_exceed_limit_raises_value_error() -> None:
     assert str(error.value) == "Initial token count exceeds token limit"
 
 
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
 def test_get_when_initial_tokens_same_as_limit_removes_message() -> None:
     # Given some initial tokens equal to the token_limit
     initial_tokens = 5
@@ -103,6 +112,7 @@ def test_get_when_initial_tokens_same_as_limit_removes_message() -> None:
     assert len(history) == 0
 
 
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
 def test_get_when_space_for_assistant_message_removes_assistant_message_at_start_of_history() -> (
     None
 ):
@@ -125,6 +135,7 @@ def test_get_when_space_for_assistant_message_removes_assistant_message_at_start
     assert len(history) == 0
 
 
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
 def test_get_when_space_for_second_message_and_answer_removes_only_first_message_and_answer() -> (
     None
 ):
@@ -156,6 +167,7 @@ def test_get_when_space_for_second_message_and_answer_removes_only_first_message
     assert history[1] == SECOND_ASSISTANT_CHAT_MESSAGE
 
 
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
 def test_get_when_space_for_all_but_first_message_removes_first_message_and_answer() -> (
     None
 ):
@@ -190,6 +202,7 @@ def test_get_when_space_for_all_but_first_message_removes_first_message_and_answ
     assert history[1] == SECOND_ASSISTANT_CHAT_MESSAGE
 
 
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
 def test_set() -> None:
     memory = RedisChatMemoryBuffer.from_defaults(
         session_id=generate_random_id(),
@@ -205,6 +218,7 @@ def test_set() -> None:
     assert len(memory.get()) == 1
 
 
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
 def test_max_tokens() -> None:
     memory = RedisChatMemoryBuffer.from_defaults(
         session_id=generate_random_id(),
