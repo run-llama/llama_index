@@ -30,7 +30,6 @@ def md_to_df(md_str: str) -> pd.DataFrame:
     if len(md_str) == 0:
         return None
 
-    print(md_str)
     # Use pandas to read the CSV string into a DataFrame
     return pd.read_csv(StringIO(md_str))
 
