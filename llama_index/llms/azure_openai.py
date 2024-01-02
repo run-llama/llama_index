@@ -54,7 +54,6 @@ class AzureOpenAI(OpenAI):
     _azure_ad_token: Any = PrivateAttr()
     _client: SyncAzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
-    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -98,10 +97,6 @@ class AzureOpenAI(OpenAI):
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
         )
 
-        # Use the custom httpx client if provided.
-        # Otherwise the value will be None.
-        self._http_client = http_client
-
         super().__init__(
             engine=engine,
             model=model,
@@ -117,6 +112,7 @@ class AzureOpenAI(OpenAI):
             use_azure_ad=use_azure_ad,
             api_version=api_version,
             callback_manager=callback_manager,
+            http_client=http_client,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
@@ -168,6 +164,8 @@ class AzureOpenAI(OpenAI):
 
         return {
             "api_key": self.api_key,
+            "max_retries": self.max_retries,
+            "timeout": self.timeout,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,

@@ -1,5 +1,5 @@
+import ast
 import copy
-import re
 from types import CodeType, ModuleType
 from typing import Any, Dict, Mapping, Sequence, Union
 
@@ -91,17 +91,38 @@ def _get_restricted_globals(__globals: Union[dict, None]) -> Any:
     return restricted_globals
 
 
-def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
-    pattern = r"_{1,2}\w+_{0,2}"
+class DunderVisitor(ast.NodeVisitor):
+    def __init__(self) -> None:
+        self.has_access_to_private_entity = False
 
+    def visit_Name(self, node: ast.Name) -> None:
+        if node.id.startswith("_"):
+            self.has_access_to_private_entity = True
+        self.generic_visit(node)
+
+    def visit_Attribute(self, node: ast.Attribute) -> None:
+        if node.attr.startswith("_"):
+            self.has_access_to_private_entity = True
+        self.generic_visit(node)
+
+
+def _contains_protected_access(code: str) -> bool:
+    tree = ast.parse(code)
+    dunder_visitor = DunderVisitor()
+    dunder_visitor.visit(tree)
+    return dunder_visitor.has_access_to_private_entity
+
+
+def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
+    """
+    Verify that the source is safe to execute. For now, this means that it
+    does not contain any references to private or dunder methods.
+    """
     if isinstance(__source, CodeType):
         raise RuntimeError("Direct execution of CodeType is forbidden!")
     if isinstance(__source, bytes):
         __source = __source.decode()
-
-    matches = re.findall(pattern, __source)
-
-    if matches:
+    if _contains_protected_access(__source):
         raise RuntimeError(
             "Execution of code containing references to private or dunder methods is forbidden!"
         )

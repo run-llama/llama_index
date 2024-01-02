@@ -283,6 +283,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -293,6 +294,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         # do some basic prompt validation
         _validate_prompt(self._response_synthesis_prompt)
         self._synthesize_response = synthesize_response
+        self._verbose = verbose
         super().__init__(self._service_context.callback_manager, **kwargs)
 
     def _get_prompts(self) -> Dict[str, Any]:
@@ -333,6 +335,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 service_context=self._service_context,
                 callback_manager=self._service_context.callback_manager,
                 text_qa_template=partial_synthesis_prompt,
+                verbose=self._verbose,
             )
             response = response_synthesizer.synthesize(
                 query=query_bundle.query_str,
@@ -389,6 +392,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         sql_only: bool = False,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -401,11 +405,13 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             context_str_prefix=context_str_prefix,
             service_context=service_context,
             sql_only=sql_only,
+            verbose=verbose,
         )
         super().__init__(
             synthesize_response=synthesize_response,
             response_synthesis_prompt=response_synthesis_prompt,
             service_context=service_context,
+            verbose=verbose,
             **kwargs,
         )
 

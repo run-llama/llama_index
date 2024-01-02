@@ -1,4 +1,5 @@
 import asyncio
+import functools
 from typing import Any, Callable, cast
 
 from llama_index.callbacks.base import CallbackManager
@@ -22,6 +23,7 @@ def trace_method(
     """
 
     def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)  # preserve signature, name, etc. of func
         def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
             try:
                 callback_manager = getattr(self, callback_manager_attr)
@@ -36,6 +38,7 @@ def trace_method(
             with callback_manager.as_trace(trace_id):
                 return func(self, *args, **kwargs)
 
+        @functools.wraps(func)  # preserve signature, name, etc. of func
         async def async_wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
             try:
                 callback_manager = getattr(self, callback_manager_attr)

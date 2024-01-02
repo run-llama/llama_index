@@ -12,7 +12,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.llms.types import MessageRole
+from llama_index.llms.types import ChatMessage, MessageRole
 
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
 TEXT_MODELS = ["text-bison", "text-bison-32k", "text-bison@001"]
@@ -45,10 +45,11 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
 
 def completion_with_retry(
     client: Any,
-    prompt: Optional[str],
+    prompt: Optional[Any],
     max_retries: int = 5,
     chat: bool = False,
     stream: bool = False,
+    is_gemini: bool = False,
     params: Any = {},
     **kwargs: Any,
 ) -> Any:
@@ -57,7 +58,15 @@ def completion_with_retry(
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
-        if chat:
+        if is_gemini:
+            history = params["message_history"] if "message_history" in params else []
+
+            generation = client.start_chat(history=history)
+            generation_config = dict(kwargs)
+            return generation.send_message(
+                prompt, stream=stream, generation_config=generation_config
+            )
+        elif chat:
             generation = client.start_chat(**params)
             if stream:
                 return generation.send_message_streaming(prompt, **kwargs)
@@ -77,6 +86,7 @@ async def acompletion_with_retry(
     prompt: Optional[str],
     max_retries: int = 5,
     chat: bool = False,
+    is_gemini: bool = False,
     params: Any = {},
     **kwargs: Any,
 ) -> Any:
@@ -85,7 +95,15 @@ async def acompletion_with_retry(
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        if chat:
+        if is_gemini:
+            history = params["message_history"] if "message_history" in params else []
+
+            generation = client.start_chat(history=history)
+            generation_config = dict(kwargs)
+            return await generation.send_message_async(
+                prompt, generation_config=generation_config
+            )
+        elif chat:
             generation = client.start_chat(**params)
             return await generation.send_message_async(prompt, **kwargs)
         else:
@@ -123,7 +141,18 @@ def init_vertexai(
     )
 
 
-def _parse_chat_history(history: Any) -> Any:
+def _parse_message(message: ChatMessage, is_gemini: bool) -> Any:
+    if is_gemini:
+        from llama_index.llms.vertex_gemini_utils import (
+            convert_chat_message_to_gemini_content,
+        )
+
+        return convert_chat_message_to_gemini_content(message)
+    else:
+        return message.content
+
+
+def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
     """Parse a sequence of messages into history.
 
     Args:
@@ -141,13 +170,22 @@ def _parse_chat_history(history: Any) -> Any:
     vertex_messages, context = [], None
     for i, message in enumerate(history):
         if i == 0 and message.role == MessageRole.SYSTEM:
+            if is_gemini:
+                raise ValueError("Gemini model don't support system messages")
             context = message.content
-        elif message.role == MessageRole.ASSISTANT:
-            vertex_message = ChatMessage(content=message.content, author="bot")
-            vertex_messages.append(vertex_message)
-        elif message.role == MessageRole.USER:
-            vertex_message = ChatMessage(content=message.content, author="user")
-            vertex_messages.append(vertex_message)
+        elif message.role == MessageRole.ASSISTANT or message.role == MessageRole.USER:
+            if is_gemini:
+                from llama_index.llms.vertex_gemini_utils import (
+                    convert_chat_message_to_gemini_content,
+                )
+
+                vertex_messages.append(convert_chat_message_to_gemini_content(message))
+            else:
+                vertex_message = ChatMessage(
+                    content=message.content,
+                    author="bot" if message.role == MessageRole.ASSISTANT else "user",
+                )
+                vertex_messages.append(vertex_message)
         else:
             raise ValueError(
                 f"Unexpected message with type {type(message)} at the position {i}."

@@ -8,12 +8,12 @@ check-hidden = true
 ignore-words-list = "astroid,gallary,momento,narl,ot,rouge"
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
-skip = "./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+skip = "./llama_index/_static,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
-exclude = ["build", "examples", "notebooks", "venv"]
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
 
@@ -27,6 +27,7 @@ classifiers = [
 description = "Interface between LLMs and your data"
 documentation = "https://docs.llamaindex.ai/en/stable/"
 homepage = "https://llamaindex.ai"
+include = ["llama_index/_static"]
 keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
 license = "MIT"
 maintainers = [
@@ -41,7 +42,7 @@ name = "llama-index"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.9.16post1"
+version = "0.9.24"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -62,6 +63,7 @@ tiktoken = ">=0.3.3"
 typing-extensions = ">=4.5.0"
 typing-inspect = ">=0.8.0"
 requests = ">=2.31.0"  # Pin to avoid CVE-2023-32681 in requests 2.3 to 2.30
+gradientai = {optional = true, version = ">=1.4.0"}
 asyncpg = {optional = true, version = "^0.28.0"}
 pgvector = {optional = true, version = "^0.1.0"}
 psycopg-binary = {optional = true, version = "^3.1.12"}
@@ -77,6 +79,9 @@ spacy = {optional = true, version = "^3.7.1"}
 aiohttp = "^3.8.6"
 
 [tool.poetry.extras]
+gradientai = [
+    "gradientai",
+]
 langchain = [
     "langchain",
 ]
@@ -147,6 +152,7 @@ llamaindex-cli = 'llama_index.command_line.command_line:main'
 
 [tool.ruff]
 exclude = [
+    "_static",
     "examples",
     "notebooks",
 ]

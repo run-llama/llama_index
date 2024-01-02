@@ -42,7 +42,25 @@ maxdepth: 1
 /examples/agent/react_agent_with_query_engine.ipynb
 ```
 
+## Additional Agents (available on LlamaHub)
+
+```{toctree}
+---
+maxdepth: 1
+---
+LLMCompiler Agent Cookbook <https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_packs/agents/llm_compiler/llm_compiler.ipynb>
+```
+
 (lower-level-agent-api)=
+
+## Custom Agents
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/agent/custom_agent.ipynb
+```
 
 ## Lower-Level Agent API
 
@@ -52,4 +70,5 @@ maxdepth: 1
 ---
 /examples/agent/agent_runner/agent_runner.ipynb
 /examples/agent/agent_runner/agent_runner_rag.ipynb
+/examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
 ```

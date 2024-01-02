@@ -264,8 +264,19 @@ class PGVectorStore(BasePydanticVectorStore):
         with self._session() as session, session.begin():
             from sqlalchemy import text
 
-            statement = text(f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}")
-            session.execute(statement)
+            # Check if the specified schema exists with "CREATE" statement
+            check_schema_statement = text(
+                f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{self.schema_name}'"
+            )
+            result = session.execute(check_schema_statement).fetchone()
+
+            # If the schema does not exist, then create it
+            if not result:
+                create_schema_statement = text(
+                    f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}"
+                )
+                session.execute(create_schema_statement)
+
             session.commit()
 
     def _create_tables_if_not_exists(self) -> None:
@@ -312,7 +323,7 @@ class PGVectorStore(BasePydanticVectorStore):
             session.commit()
         return ids
 
-    async def async_add(self, nodes: List[BaseNode]) -> List[str]:
+    async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         self._initialize()
         ids = []
         async with self._async_session() as session, session.begin():

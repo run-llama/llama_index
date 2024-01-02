@@ -6,7 +6,7 @@ Evaluation and benchmarking are crucial concepts in LLM development. To improve 
 
 LlamaIndex offers key modules to measure the quality of generated results. We also offer key modules to measure retrieval quality.
 
-- **Response Evaluation**: Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelnes?
+- **Response Evaluation**: Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelines?
 - **Retrieval Evaluation**: Are the retrieved sources relevant to the query?
 
 This section describes how the evaluation components within LlamaIndex work.
@@ -26,7 +26,8 @@ These evaluation modules are in the following forms:
 - **Correctness**: Whether the generated answer matches that of the reference answer given the query (requires labels).
 - **Semantic Similarity** Whether the predicted answer is semantically similar to the reference answer (requires labels).
 - **Faithfulness**: Evaluates if the answer is faithful to the retrieved contexts (in other words, whether if there's hallucination).
-- **Context Relevancy**: Whether retrieved context and answer are relevant to the query.
+- **Context Relevancy**: Whether retrieved context is relevant to the query.
+- **Answer Relevancy**: Whether the generated answer is relevant to the query.
 - **Guideline Adherence**: Whether the predicted answer adheres to specific guidelines.
 
 #### Question Generation
@@ -48,7 +49,7 @@ The core retrieval evaluation steps revolve around the following:
 
 We also integrate with community evaluation tools.
 
-- [DeepEval](../../../community/integrations/deepeval.md)
+- [DeepEval](/docs/community/integrations/deepeval.md)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
 
 ## Usage Pattern

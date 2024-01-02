@@ -243,7 +243,9 @@ class Bedrock(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        raise NotImplementedError
+        """Chat asynchronously."""
+        # TODO: do synchronous chat for now
+        return self.chat(messages, **kwargs)
 
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         raise NotImplementedError
