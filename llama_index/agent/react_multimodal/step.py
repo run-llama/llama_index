@@ -435,6 +435,9 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
+        # TMP: REMOVE
+        task.extra_state["input_chat"] = input_chat
+
         # send prompt
         chat_response = self._multi_modal_llm.chat(input_chat)
         # given react prompt outputs, call tools or return response
