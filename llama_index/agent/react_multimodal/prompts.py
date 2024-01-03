@@ -23,7 +23,7 @@ use both the input text and images as context to decide which tool to use.
 You have access to the following tools:
 {tool_desc}
 
-## Input 
+## Input
 The user will specify a task (in text) and a set of images. Treat
 the images as additional context for the task.
 

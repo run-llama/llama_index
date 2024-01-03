@@ -1,14 +1,9 @@
 """ReAct multimodal agent."""
 
-import asyncio
 import uuid
-from itertools import chain
-from threading import Thread
 from typing import (
     Any,
-    AsyncGenerator,
     Dict,
-    Generator,
     List,
     Optional,
     Sequence,
@@ -16,8 +11,6 @@ from typing import (
     cast,
 )
 
-# from llama_index.agent.react_multimodal.formatter import MultimodalReActChatFormatter
-from llama_index.agent.react_multimodal.prompts import REACT_MM_CHAT_SYSTEM_HEADER
 from llama_index.agent.react.formatter import ReActChatFormatter
 from llama_index.agent.react.output_parser import ReActOutputParser
 from llama_index.agent.react.types import (
@@ -26,6 +19,9 @@ from llama_index.agent.react.types import (
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
+
+# from llama_index.agent.react_multimodal.formatter import MultimodalReActChatFormatter
+from llama_index.agent.react_multimodal.prompts import REACT_MM_CHAT_SYSTEM_HEADER
 from llama_index.agent.types import (
     BaseAgentWorker,
     Task,
@@ -41,20 +37,20 @@ from llama_index.callbacks import (
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
-    StreamingAgentChatResponse,
 )
 from llama_index.llms.base import ChatMessage, ChatResponse
-from llama_index.llms.openai import OpenAI
 from llama_index.llms.types import MessageRole
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
+from llama_index.multi_modal_llms.base import MultiModalLLM
+from llama_index.multi_modal_llms.openai import OpenAIMultiModal
+from llama_index.multi_modal_llms.openai_utils import (
+    generate_openai_multi_modal_chat_message,
+)
 from llama_index.objects.base import ObjectRetriever
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
-from llama_index.utils import print_text, unit_generator
-from llama_index.multi_modal_llms.base import MultiModalLLM
-from llama_index.multi_modal_llms.openai import OpenAIMultiModal
-from llama_index.multi_modal_llms.openai_utils import generate_openai_multi_modal_chat_message
+from llama_index.utils import print_text
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -66,9 +62,9 @@ def add_user_step_to_reasoning(
     verbose: bool = False,
 ) -> None:
     """Add user step to reasoning.
-    
+
     Adds both text input and image input to reasoning.
-    
+
     """
     # TODO: support gemini as well. Currently just supports OpenAI
 
@@ -76,7 +72,7 @@ def add_user_step_to_reasoning(
     # so step_state contains the original image_docs from the task
     # (it doesn't change)
     image_docs = step.step_state["image_docs"]
-    image_kwargs = step.step_state.get('image_kwargs', {})
+    image_kwargs = step.step_state.get("image_kwargs", {})
 
     if "is_first" in step.step_state and step.step_state["is_first"]:
         mm_message = generate_openai_multi_modal_chat_message(
@@ -90,7 +86,7 @@ def add_user_step_to_reasoning(
         step.step_state["is_first"] = False
     else:
         # NOTE: this is where the user specifies an intermediate step in the middle
-        # TODO: don't support specifying image_docs here for now 
+        # TODO: don't support specifying image_docs here for now
         reasoning_step = ObservationReasoningStep(observation=step.input)
         current_reasoning.append(reasoning_step)
         if verbose:
@@ -434,9 +430,6 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
             chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
-
-        # TMP: REMOVE
-        task.extra_state["input_chat"] = input_chat
 
         # send prompt
         chat_response = self._multi_modal_llm.chat(input_chat)

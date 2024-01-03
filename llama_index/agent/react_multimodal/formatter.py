@@ -1,14 +1,9 @@
 # Multimodal ReAct agent formatter
 
-from abc import abstractmethod
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
-from llama_index.agent.react_multimodal.prompts import REACT_MM_CHAT_SYSTEM_HEADER
-from llama_index.agent.react.types import BaseReasoningStep, ObservationReasoningStep
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.tools import BaseTool
-from llama_index.agent.react.formatter import BaseAgentChatFormatter
+
 
 def get_react_tool_descriptions(tools: Sequence[BaseTool]) -> List[str]:
     """Tool."""
@@ -42,7 +37,7 @@ def get_react_tool_descriptions(tools: Sequence[BaseTool]) -> List[str]:
 
 # class MultimodalReActChatFormatter(BaseAgentChatFormatter):
 #     """Multimodal ReAct chat formatter."""
-#     # NOTE: currently is the same 
+#     # NOTE: currently is the same
 
 #     system_header: str = REACT_MM_CHAT_SYSTEM_HEADER
 
