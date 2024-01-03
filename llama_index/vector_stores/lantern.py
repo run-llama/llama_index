@@ -377,7 +377,7 @@ class LanternVectorStore(BasePydanticVectorStore):
         stmt = select(  # type: ignore
             self._table_class,
             func.cos_dist(self._table_class.embedding, embedding),
-        ).order_by(self._table_class.embedding.op("<->")(embedding))
+        ).order_by(self._table_class.embedding.op("<=>")(embedding))
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 
