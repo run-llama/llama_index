@@ -213,10 +213,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         points, ids = self._build_points(nodes)
 
-        self._client.upsert(
-            collection_name=self.collection_name,
-            points=points,
-        )
+        # batch upsert the points into Qdrant collection to avoid large payloads
+        for points_batch in iter_batch(points, self.batch_size):
+            self._client.upsert(
+                collection_name=self.collection_name,
+                points=points_batch,
+            )
 
         return ids
 
@@ -242,10 +244,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         points, ids = self._build_points(nodes)
 
-        await self._aclient.upsert(
-            collection_name=self.collection_name,
-            points=points,
-        )
+        # batch upsert the points into Qdrant collection to avoid large payloads
+        for points_batch in iter_batch(points, self.batch_size):
+            await self._client.upsert(
+                collection_name=self.collection_name,
+                points=points_batch,
+            )
 
         return ids
 
