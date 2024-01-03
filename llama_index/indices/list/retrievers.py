@@ -1,5 +1,6 @@
 """Retrievers for SummaryIndex."""
 import logging
+from operator import attrgetter
 from typing import Any, Callable, List, Optional, Tuple
 
 from llama_index.callbacks.base import CallbackManager
@@ -244,7 +245,7 @@ class SummaryIndexKeyWordsRetriever(BaseRetriever):
             )
             if score:
                 results.append(NodeWithScore(node=node, score=score))
-        return sorted(results, key=lambda x: x.score, reverse=True)
+        return sorted(results, key=attrgetter("score"), reverse=True)
 
 
 # for backwards compatibility
