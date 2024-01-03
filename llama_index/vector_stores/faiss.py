@@ -44,7 +44,6 @@ class FaissVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = False
-    faiss_index: Any
 
     _faiss_index = PrivateAttr()
 
@@ -65,7 +64,7 @@ class FaissVectorStore(BasePydanticVectorStore):
 
         self._faiss_index = cast(faiss.Index, faiss_index)
 
-        super().__init__(faiss_index=faiss_index)
+        super().__init__()
 
     @classmethod
     def from_persist_dir(
