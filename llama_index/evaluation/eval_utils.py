@@ -6,7 +6,7 @@ NOTE: These are beta functions, might change.
 
 import asyncio
 from collections import defaultdict
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -62,7 +62,7 @@ def get_results_df(
     return pd.DataFrame(metric_dict)
 
 
-def default_parser(eval_response: str) -> Tuple[float, str]:
+def default_parser(eval_response: str) -> Tuple[Optional[float], Optional[str]]:
     """
     Default parser function for evaluation response.
 

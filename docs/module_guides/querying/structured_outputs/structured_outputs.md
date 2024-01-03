@@ -29,6 +29,7 @@ With function calling APIs, the output is inherently in a structured format, and
 ---
 maxdepth: 1
 ---
-/optimizing/advanced_retrieval/structured_outputs/pydantic_program.md
-/optimizing/advanced_retrieval/structured_outputs/query_engine.md
+/module_guides/querying/structured_outputs/pydantic_program.md
+/module_guides/querying/structured_outputs/query_engine.md
+/module_guides/querying/structured_outputs/output_parser.md
 ```

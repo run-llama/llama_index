@@ -8,7 +8,7 @@ from openai import AsyncOpenAI, OpenAI
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
-from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.llms.openai_utils import (
     create_retry_decorator,
     resolve_openai_credentials,
@@ -256,7 +256,7 @@ class OpenAIEmbedding(BaseEmbedding):
         self,
         mode: str = OpenAIEmbeddingMode.TEXT_SEARCH_MODE,
         model: str = OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002,
-        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        embed_batch_size: int = 100,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,

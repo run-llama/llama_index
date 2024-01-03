@@ -1,10 +1,12 @@
 """Evaluation modules."""
 
+from llama_index.evaluation.answer_relevancy import AnswerRelevancyEvaluator
 from llama_index.evaluation.base import (
     BaseEvaluator,
     EvaluationResult,
 )
 from llama_index.evaluation.batch_runner import BatchEvalRunner
+from llama_index.evaluation.context_relevancy import ContextRelevancyEvaluator
 from llama_index.evaluation.correctness import CorrectnessEvaluator
 from llama_index.evaluation.dataset_generation import (
     DatasetGenerator,
@@ -43,6 +45,8 @@ LabelledQADataset = EmbeddingQAFinetuneDataset
 
 __all__ = [
     "BaseEvaluator",
+    "AnswerRelevancyEvaluator",
+    "ContextRelevancyEvaluator",
     "EvaluationResult",
     "FaithfulnessEvaluator",
     "RelevancyEvaluator",

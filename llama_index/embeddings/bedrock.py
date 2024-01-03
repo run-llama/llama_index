@@ -201,7 +201,7 @@ class BedrockEmbedding(BaseEmbedding):
 
     def _get_embedding(self, payload: str, type: Literal["text", "query"]) -> Embedding:
         if self._client is None:
-            self.set_credentials(self.model_name)
+            self.set_credentials()
 
         if self._client is None:
             raise ValueError("Client not set")
