@@ -7,6 +7,7 @@
 - Added concurrancy limits for dataset generation (#9779)
 - New `deepeval` one-click observability handler (#9801)
 - Added jaguar vector store (#9754)
+- Add beta multimodal ReAct agent (#9807)
 
 ### Bug Fixes / Nits
 
