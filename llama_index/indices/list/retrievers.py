@@ -201,6 +201,52 @@ class SummaryIndexLLMRetriever(BaseRetriever):
         return results
 
 
+class SummaryIndexKeyWordsRetriever(BaseRetriever):
+    """Keywords based retriever for SummaryIndex.
+
+    Args:
+        index (SummaryIndex): The index to retrieve from.
+        sep (str): separator to be used to split the input into keywords.
+
+    """
+
+    def __init__(
+        self,
+        index: SummaryIndex,
+        sep: str = ",",
+        metadata_mode: MetadataMode = MetadataMode.NONE,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
+    ) -> None:
+        self._index = index
+        self._sep = sep
+        self._metadata_mode = metadata_mode
+        super().__init__(callback_manager)
+
+    def _retrieve(
+        self,
+        query_bundle: QueryBundle,
+    ) -> List[NodeWithScore]:
+        """Retrieve nodes containing at least one of the keywords.
+
+        The scoring of nodes is determined by the total count
+        of words present in the content of each node.
+
+        """
+        keywords_list = query_bundle.query_str.split(self._sep)
+        node_ids = self._index.index_struct.nodes
+        nodes = self._index.docstore.get_nodes(node_ids)
+        results = []
+        for node in nodes:
+            node_txt = node.get_content(metadata_mode=self._metadata_mode)
+            score = sum(
+                [node_txt.lower().count(word.lower()) for word in keywords_list]
+            )
+            if score:
+                results.append(NodeWithScore(node=node, score=score))
+        return sorted(results, key=lambda x: x.score, reverse=True)
+
+
 # for backwards compatibility
 ListIndexEmbeddingRetriever = SummaryIndexEmbeddingRetriever
 ListIndexLLMRetriever = SummaryIndexLLMRetriever

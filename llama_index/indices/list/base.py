@@ -21,6 +21,7 @@ class ListRetrieverMode(str, Enum):
     DEFAULT = "default"
     EMBEDDING = "embedding"
     LLM = "llm"
+    KEYWORD = "keyword"
 
 
 class SummaryIndex(BaseIndex[IndexList]):
@@ -68,6 +69,7 @@ class SummaryIndex(BaseIndex[IndexList]):
     ) -> BaseRetriever:
         from llama_index.indices.list.retrievers import (
             SummaryIndexEmbeddingRetriever,
+            SummaryIndexKeyWordsRetriever,
             SummaryIndexLLMRetriever,
             SummaryIndexRetriever,
         )
@@ -78,6 +80,8 @@ class SummaryIndex(BaseIndex[IndexList]):
             return SummaryIndexEmbeddingRetriever(self, **kwargs)
         elif retriever_mode == ListRetrieverMode.LLM:
             return SummaryIndexLLMRetriever(self, **kwargs)
+        elif retriever_mode == ListRetrieverMode.KEYWORD:
+            return SummaryIndexKeyWordsRetriever(self, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
