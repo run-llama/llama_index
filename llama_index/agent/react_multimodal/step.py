@@ -64,6 +64,9 @@ def add_user_step_to_reasoning(
     Adds both text input and image input to reasoning.
 
     """
+    # raise error if step.input is None
+    if step.input is None:
+        raise ValueError("Step input is None.")
     # TODO: support gemini as well. Currently just supports OpenAI
 
     # TODO: currently assume that you can't generate images in the loop,
@@ -392,6 +395,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         """Run step."""
         if step.input is not None:
             add_user_step_to_reasoning(
+                step,
                 task.extra_state["new_memory"],
                 task.extra_state["current_reasoning"],
                 verbose=self._verbose,
