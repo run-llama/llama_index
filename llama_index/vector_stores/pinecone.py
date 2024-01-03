@@ -10,6 +10,9 @@ from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
+from packaging import version
+from pkg_resources import get_distribution
+
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
@@ -210,21 +213,28 @@ class PineconeVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Initialize params."""
         try:
-            import pinecone
+            # import pinecone
+            pinecone = __import__("pinecone")
         except ImportError:
             raise ImportError(import_err_msg)
 
         if pinecone_index is not None:
-            self._pinecone_index = cast(pinecone.Index, pinecone_index)
-        else:
-            if index_name is None or environment is None:
-                raise ValueError(
-                    "Must specify index_name and environment "
-                    "if not directly passing in client."
-                )
+            if hasattr(pinecone, "version") and pinecone.version >= "3.0.0":
+                if index_name is None:
+                    raise ValueError(
+                        "Must specify index_name if not directly passing in client."
+                    )
+                pinecone_instance = pinecone.Pinecone(api_key=api_key)
+                self._pinecone_index = pinecone_instance.Index(index_name)
+            else:
+                if index_name is None or environment is None:
+                    raise ValueError(
+                        "Must specify index_name and environment "
+                        "if not directly passing in client."
+                    )
 
-            pinecone.init(api_key=api_key, environment=environment)
-            self._pinecone_index = pinecone.Index(index_name)
+                pinecone.init(api_key=api_key, environment=environment)
+                self._pinecone_index = pinecone.Index(index_name)
 
         insert_kwargs = insert_kwargs or {}
 
@@ -265,8 +275,14 @@ class PineconeVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        pinecone.init(api_key=api_key, environment=environment)
-        pinecone_index = pinecone.Index(index_name)
+        pinecone_client_version = get_distribution("pinecone-client").version
+
+        if version.parse(pinecone_client_version) >= version.parse("3.0.0"):
+            pinecone_instance = pinecone.Pinecone(api_key=api_key)
+            pinecone_index = pinecone_instance.Index(index_name)
+        else:
+            pinecone.init(api_key=api_key, environment=environment)
+            pinecone_index = pinecone.Index(index_name)
 
         return cls(
             pinecone_index=pinecone_index,
