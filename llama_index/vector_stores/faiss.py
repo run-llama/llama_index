@@ -12,12 +12,13 @@ import fsspec
 import numpy as np
 from fsspec.implementations.local import LocalFileSystem
 
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode
 from llama_index.vector_stores.simple import DEFAULT_VECTOR_STORE, NAMESPACE_SEP
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -29,7 +30,7 @@ DEFAULT_PERSIST_PATH = os.path.join(
 )
 
 
-class FaissVectorStore(VectorStore):
+class FaissVectorStore(BasePydanticVectorStore):
     """Faiss Vector Store.
 
     Embeddings are stored within a Faiss index.
@@ -43,6 +44,9 @@ class FaissVectorStore(VectorStore):
     """
 
     stores_text: bool = False
+    faiss_index: Any
+
+    _faiss_index = PrivateAttr()
 
     def __init__(
         self,
@@ -60,6 +64,8 @@ class FaissVectorStore(VectorStore):
             raise ImportError(import_err_msg)
 
         self._faiss_index = cast(faiss.Index, faiss_index)
+
+        super().__init__(faiss_index=faiss_index)
 
     @classmethod
     def from_persist_dir(
