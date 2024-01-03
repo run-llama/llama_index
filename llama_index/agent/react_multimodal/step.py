@@ -19,8 +19,6 @@ from llama_index.agent.react.types import (
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
-
-# from llama_index.agent.react_multimodal.formatter import MultimodalReActChatFormatter
 from llama_index.agent.react_multimodal.prompts import REACT_MM_CHAT_SYSTEM_HEADER
 from llama_index.agent.types import (
     BaseAgentWorker,
@@ -94,7 +92,11 @@ def add_user_step_to_reasoning(
 
 
 class MultimodalReActAgentWorker(BaseAgentWorker):
-    """Multimodal ReAct Agent worker."""
+    """Multimodal ReAct Agent worker.
+
+    **NOTE**: This is a BETA feature.
+
+    """
 
     def __init__(
         self,
@@ -340,72 +342,6 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
             is_last=is_done,
             next_steps=new_steps,
         )
-
-    # def _infer_stream_chunk_is_final(self, chunk: ChatResponse) -> bool:
-    #     """Infers if a chunk from a live stream is the start of the final
-    #     reasoning step. (i.e., and should eventually become
-    #     ResponseReasoningStep — not part of this function's logic tho.).
-
-    #     Args:
-    #         chunk (ChatResponse): the current chunk stream to check
-
-    #     Returns:
-    #         bool: Boolean on whether the chunk is the start of the final response
-    #     """
-    #     latest_content = chunk.message.content
-    #     if latest_content:
-    #         if not latest_content.startswith(
-    #             "Thought"
-    #         ):  # doesn't follow thought-action format
-    #             return True
-    #         else:
-    #             if "Answer: " in latest_content:
-    #                 return True
-    #     return False
-
-    # def _add_back_chunk_to_stream(
-    #     self, chunk: ChatResponse, chat_stream: Generator[ChatResponse, None, None]
-    # ) -> Generator[ChatResponse, None, None]:
-    #     """Helper method for adding back initial chunk stream of final response
-    #     back to the rest of the chat_stream.
-
-    #     Args:
-    #         chunk (ChatResponse): the chunk to add back to the beginning of the
-    #                                 chat_stream.
-
-    #     Return:
-    #         Generator[ChatResponse, None, None]: the updated chat_stream
-    #     """
-    #     updated_stream = chain.from_iterable(  # need to add back partial response chunk
-    #         [
-    #             unit_generator(chunk),
-    #             chat_stream,
-    #         ]
-    #     )
-    #     # use cast to avoid mypy issue with chain and Generator
-    #     updated_stream_c: Generator[ChatResponse, None, None] = cast(
-    #         Generator[ChatResponse, None, None], updated_stream
-    #     )
-    #     return updated_stream_c
-
-    # async def _async_add_back_chunk_to_stream(
-    #     self, chunk: ChatResponse, chat_stream: AsyncGenerator[ChatResponse, None]
-    # ) -> AsyncGenerator[ChatResponse, None]:
-    #     """Helper method for adding back initial chunk stream of final response
-    #     back to the rest of the chat_stream.
-
-    #     NOTE: this itself is not an async function.
-
-    #     Args:
-    #         chunk (ChatResponse): the chunk to add back to the beginning of the
-    #                                 chat_stream.
-
-    #     Return:
-    #         AsyncGenerator[ChatResponse, None]: the updated async chat_stream
-    #     """
-    #     yield chunk
-    #     async for item in chat_stream:
-    #         yield item
 
     def _run_step(
         self,
