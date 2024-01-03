@@ -1,17 +1,19 @@
-from typing import Any, Optional
+from typing import Any, Callable, Optional, Sequence
 
 from typing_extensions import override
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
-from llama_index.llms import (
+from llama_index.llms.base import llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.types import (
+    ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
-    CustomLLM,
     LLMMetadata,
 )
-from llama_index.llms.base import llm_completion_callback
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class _BaseGradientLLM(CustomLLM):
@@ -49,6 +51,11 @@ class _BaseGradientLLM(CustomLLM):
         workspace_id: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         is_chat_model: bool = False,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -58,6 +65,11 @@ class _BaseGradientLLM(CustomLLM):
             workspace_id=workspace_id,
             callback_manager=callback_manager,
             is_chat_model=is_chat_model,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
             **kwargs,
         )
         try:
@@ -85,6 +97,17 @@ class _BaseGradientLLM(CustomLLM):
                 **kwargs,
             ).generated_output
         )
+
+    @llm_completion_callback()
+    @override
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        grdt_reponse = await self._model.acomplete(
+            query=prompt,
+            max_generated_token_count=self.max_tokens,
+            **kwargs,
+        )
+
+        return CompletionResponse(text=grdt_reponse.generated_output)
 
     @override
     def stream_complete(

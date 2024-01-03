@@ -40,6 +40,61 @@ def clean_params(params: List[BaseNode]) -> List[Dict[str, Any]]:
     return clean_params
 
 
+def _get_search_index_query(hybrid: bool) -> str:
+    if not hybrid:
+        return (
+            "CALL db.index.vector.queryNodes($index, $k, $embedding) YIELD node, score "
+        )
+    return (
+        "CALL { "
+        "CALL db.index.vector.queryNodes($index, $k, $embedding) "
+        "YIELD node, score "
+        "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
+        "UNWIND nodes AS n "
+        # We use 0 as min
+        "RETURN n.node AS node, (n.score / max) AS score UNION "
+        "CALL db.index.fulltext.queryNodes($keyword_index, $query, {limit: $k}) "
+        "YIELD node, score "
+        "WITH collect({node:node, score:score}) AS nodes, max(score) AS max "
+        "UNWIND nodes AS n "
+        # We use 0 as min
+        "RETURN n.node AS node, (n.score / max) AS score "
+        "} "
+        # dedup
+        "WITH node, max(score) AS score ORDER BY score DESC LIMIT $k "
+    )
+
+
+def remove_lucene_chars(text: Optional[str]) -> Optional[str]:
+    """Remove Lucene special characters."""
+    if not text:
+        return None
+    special_chars = [
+        "+",
+        "-",
+        "&",
+        "|",
+        "!",
+        "(",
+        ")",
+        "{",
+        "}",
+        "[",
+        "]",
+        "^",
+        '"',
+        "~",
+        "*",
+        "?",
+        ":",
+        "\\",
+    ]
+    for char in special_chars:
+        if char in text:
+            text = text.replace(char, " ")
+    return text.strip()
+
+
 class Neo4jVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata = True
@@ -52,10 +107,12 @@ class Neo4jVectorStore(VectorStore):
         embedding_dimension: int,
         database: str = "neo4j",
         index_name: str = "vector",
+        keyword_index_name: str = "keyword",
         node_label: str = "Chunk",
         embedding_node_property: str = "embedding",
         text_node_property: str = "text",
         distance_strategy: str = "cosine",
+        hybrid_search: bool = False,
         retrieval_query: str = "",
         **kwargs: Any,
     ) -> None:
@@ -102,6 +159,8 @@ class Neo4jVectorStore(VectorStore):
 
         self.distance_strategy = distance_strategy
         self.index_name = index_name
+        self.keyword_index_name = keyword_index_name
+        self.hybrid_search = hybrid_search
         self.node_label = node_label
         self.embedding_node_property = embedding_node_property
         self.text_node_property = text_node_property
@@ -111,6 +170,16 @@ class Neo4jVectorStore(VectorStore):
         index_already_exists = self.retrieve_existing_index()
         if not index_already_exists:
             self.create_new_index()
+        if hybrid_search:
+            fts_node_label = self.retrieve_existing_fts_index()
+            # If the FTS index doesn't exist yet
+            if not fts_node_label:
+                self.create_new_keyword_index()
+            else:  # Validate that FTS and Vector index use the same information
+                if not fts_node_label == self.node_label:
+                    raise ValueError(
+                        "Vector and keyword index don't index the same node label"
+                    )
 
     def _verify_version(self) -> None:
         """
@@ -196,6 +265,49 @@ class Neo4jVectorStore(VectorStore):
         except IndexError:
             return False
 
+    def retrieve_existing_fts_index(self) -> Optional[str]:
+        """Check if the fulltext index exists in the Neo4j database.
+
+        This method queries the Neo4j database for existing fts indexes
+        with the specified name.
+
+        Returns:
+            (Tuple): keyword index information
+        """
+        index_information = self.database_query(
+            "SHOW INDEXES YIELD name, type, labelsOrTypes, properties, options "
+            "WHERE type = 'FULLTEXT' AND (name = $keyword_index_name "
+            "OR (labelsOrTypes = [$node_label] AND "
+            "properties = $text_node_property)) "
+            "RETURN name, labelsOrTypes, properties, options ",
+            params={
+                "keyword_index_name": self.keyword_index_name,
+                "node_label": self.node_label,
+                "text_node_property": self.text_node_property,
+            },
+        )
+        # sort by index_name
+        index_information = sort_by_index_name(index_information, self.index_name)
+        try:
+            self.keyword_index_name = index_information[0]["name"]
+            self.text_node_property = index_information[0]["properties"][0]
+            return index_information[0]["labelsOrTypes"][0]
+        except IndexError:
+            return None
+
+    def create_new_keyword_index(self, text_node_properties: List[str] = []) -> None:
+        """
+        This method constructs a Cypher query and executes it
+        to create a new full text index in Neo4j.
+        """
+        node_props = text_node_properties or [self.text_node_property]
+        fts_index_query = (
+            f"CREATE FULLTEXT INDEX {self.keyword_index_name} "
+            f"FOR (n:`{self.node_label}`) ON EACH "
+            f"[{', '.join(['n.`' + el + '`' for el in node_props])}]"
+        )
+        self.database_query(fts_index_query)
+
     def database_query(
         self, query: str, params: Optional[dict] = None
     ) -> List[Dict[str, Any]]:
@@ -250,16 +362,14 @@ class Neo4jVectorStore(VectorStore):
         )
 
         retrieval_query = self.retrieval_query or default_retrieval
-
-        read_query = (
-            "CALL db.index.vector.queryNodes($index, $k, $embedding) "
-            "YIELD node, score "
-        ) + retrieval_query
+        read_query = _get_search_index_query(self.hybrid_search) + retrieval_query
 
         parameters = {
             "index": self.index_name,
             "k": query.similarity_top_k,
             "embedding": query.query_embedding,
+            "keyword_index": self.keyword_index_name,
+            "query": remove_lucene_chars(query.query_str),
         }
 
         results = self.database_query(read_query, params=parameters)

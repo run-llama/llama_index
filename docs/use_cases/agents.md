@@ -12,17 +12,33 @@ Research developments in LLMs (e.g. [ChatGPT Plugins](https://openai.com/blog/ch
 
 ## Agents + LlamaIndex
 
-LlamaIndex provides some amazing tools to manage and interact with your data within your LLM application. And it can be a core tool that you use while building an agent-based app.
+LlamaIndex provides some amazing tools to manage and interact with your data within your LLM application. And it is a core tool that you use while building an agent-based app.
 
-- On one hand, some components within LlamaIndex are "agent-like" - these make automated decisions to help a particular use case over your data.
+- On one hand, many components within LlamaIndex are "agentic" - these make automated decisions to help a particular use case over your data. This ranges from simple reasoning (routing) to reasoning loops with memory (ReAct).
 - On the other hand, LlamaIndex can be used as a core Tool within another agent framework.
 
-In general, LlamaIndex components offer more explicit, constrained behavior for more specific use cases. Agent frameworks such as ReAct (implemented in LangChain) offer agents that are more unconstrained +
-capable of general reasoning.
+## Resources
 
-There are tradeoffs for using both - less-capable LLMs typically do better with more constraints. Take a look at [our blog post on this](https://medium.com/llamaindex-blog/dumber-llm-agents-need-more-constraints-and-better-tools-17a524c59e12) for
-a more information + a detailed analysis.
+If you've built a RAG pipeline already and want to extend it with agentic behavior, check out the below resources
 
-## Learn more
+```{toctree}
+---
+maxdepth: 1
+---
+Agents (Putting your RAG Pipeline Together) </understanding/putting_it_all_together/agents.md>
+Agentic Strategies (Optimizing your RAG Pipeline) </optimizing/agentic_strategies/agentic_strategies.md>
+```
 
-Our Putting It All Together section has [more on agents](/understanding/putting_it_all_together/agents.md)
+If you want to check out our standalone documentation hubs on agents and tools, check out the following module guides:
+
+```{toctree}
+---
+maxdepth: 1
+---
+/module_guides/deploying/agents/root.md
+/module_guides/deploying/agents/tools/root.md
+```
+
+## LlamaHub
+
+We offer a collection of 40+ agent tools for use with your agent in [LlamaHub](https://llamahub.ai/) 🦙.

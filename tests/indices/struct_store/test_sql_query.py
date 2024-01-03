@@ -45,8 +45,9 @@ def test_sql_index_query(
     )
 
     # query the index with SQL
+    sql_to_test = "SELECT user_id, foo FROM test_table"
     sql_query_engine = SQLStructStoreQueryEngine(index, **query_kwargs)
-    response = sql_query_engine.query("SELECT user_id, foo FROM test_table")
+    response = sql_query_engine.query(sql_to_test)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     # query the index with natural language
@@ -61,6 +62,21 @@ def test_sql_index_query(
     with pytest.raises(NotImplementedError, match="invalid SQL") as exc_info:
         sql_query_engine.query("LLM didn't provide SQL at all")
     assert isinstance(exc_info.value.__cause__, OperationalError)
+
+    ## sql_only=True tests
+    # query the index with SQL
+    sql_query_engine = SQLStructStoreQueryEngine(index, sql_only=True, **query_kwargs)
+    response = sql_query_engine.query(sql_to_test)
+    assert str(response) == sql_to_test
+
+    # query the index with natural language
+    nl_query_engine = NLStructStoreQueryEngine(index, sql_only=True, **query_kwargs)
+    response = nl_query_engine.query("test_table:user_id,foo")
+    assert str(response) == sql_to_test
+
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database, sql_only=True)
+    response = nl_table_engine.query("test_table:user_id,foo")
+    assert str(response) == sql_to_test
 
 
 def test_sql_index_async_query(
@@ -92,9 +108,10 @@ def test_sql_index_async_query(
         **index_kwargs
     )
 
+    sql_to_test = "SELECT user_id, foo FROM test_table"
     # query the index with SQL
     sql_query_engine = SQLStructStoreQueryEngine(index, **query_kwargs)
-    task = sql_query_engine.aquery("SELECT user_id, foo FROM test_table")
+    task = sql_query_engine.aquery(sql_to_test)
     response = asyncio.run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
@@ -108,6 +125,24 @@ def test_sql_index_async_query(
     task = nl_table_engine.aquery("test_table:user_id,foo")
     response = asyncio.run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
+
+    ## sql_only = True  ###
+    # query the index with SQL
+    sql_query_engine = SQLStructStoreQueryEngine(index, sql_only=True, **query_kwargs)
+    task = sql_query_engine.aquery(sql_to_test)
+    response = asyncio.run(task)
+    assert str(response) == sql_to_test
+
+    # query the index with natural language
+    nl_query_engine = NLStructStoreQueryEngine(index, sql_only=True, **query_kwargs)
+    task = nl_query_engine.aquery("test_table:user_id,foo")
+    response = asyncio.run(task)
+    assert str(response) == sql_to_test
+
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database, sql_only=True)
+    task = nl_table_engine.aquery("test_table:user_id,foo")
+    response = asyncio.run(task)
+    assert str(response) == sql_to_test
 
 
 def test_default_output_parser() -> None:

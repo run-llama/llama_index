@@ -66,14 +66,12 @@ Here's a corresponding example code snippet over a composed graph.
 
 ```python
 # Setting: a summary index composed over multiple vector indices
-# llm_predictor_chatgpt corresponds to the ChatGPT LLM interface
+# llm_chatgpt corresponds to the ChatGPT LLM interface
 from llama_index.indices.query.query_transform.base import (
     DecomposeQueryTransform,
 )
 
-decompose_transform = DecomposeQueryTransform(
-    llm_predictor_chatgpt, verbose=True
-)
+decompose_transform = DecomposeQueryTransform(llm_chatgpt, verbose=True)
 
 # initialize indexes and graph
 ...
@@ -103,7 +101,7 @@ Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/m
 Multi-step query transformations are a generalization on top of existing single-step query transformation approaches.
 
 Given an initial, complex query, the query is transformed and executed against an index. The response is retrieved from the query.
-Given the response (along with prior responses) and the query, followup questions may be asked against the index as well. This technique allows a query to be run against a single knowledge source until that query has satisfied all questions.
+Given the response (along with prior responses) and the query, follow-up questions may be asked against the index as well. This technique allows a query to be run against a single knowledge source until that query has satisfied all questions.
 
 An example image is shown below.
 
@@ -117,9 +115,7 @@ from llama_index.indices.query.query_transform.base import (
 )
 
 # gpt-4
-step_decompose_transform = StepDecomposeQueryTransform(
-    llm_predictor, verbose=True
-)
+step_decompose_transform = StepDecomposeQueryTransform(llm, verbose=True)
 
 query_engine = index.as_query_engine()
 query_engine = MultiStepQueryEngine(

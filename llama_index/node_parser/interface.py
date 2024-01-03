@@ -4,7 +4,11 @@ from typing import Any, List, Sequence
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
-from llama_index.node_parser.node_utils import build_nodes_from_splits
+from llama_index.node_parser.node_utils import (
+    IdFuncCallable,
+    build_nodes_from_splits,
+    default_id_func,
+)
 from llama_index.schema import (
     BaseNode,
     Document,
@@ -26,6 +30,10 @@ class NodeParser(TransformComponent, ABC):
     )
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
+    )
+    id_func: IdFuncCallable = Field(
+        default=default_id_func,
+        description="Function to generate node IDs.",
     )
 
     class Config:
@@ -118,7 +126,9 @@ class TextSplitter(NodeParser):
         for node in nodes_with_progress:
             splits = self.split_text(node.get_content())
 
-            all_nodes.extend(build_nodes_from_splits(splits, node))
+            all_nodes.extend(
+                build_nodes_from_splits(splits, node, id_func=self.id_func)
+            )
 
         return all_nodes
 
@@ -164,6 +174,8 @@ class MetadataAwareTextSplitter(TextSplitter):
                 node.get_content(metadata_mode=MetadataMode.NONE),
                 metadata_str=metadata_str,
             )
-            all_nodes.extend(build_nodes_from_splits(splits, node))
+            all_nodes.extend(
+                build_nodes_from_splits(splits, node, id_func=self.id_func)
+            )
 
         return all_nodes

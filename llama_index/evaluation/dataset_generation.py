@@ -5,14 +5,13 @@ import asyncio
 import json
 import re
 import uuid
-from typing import Dict, List, Tuple
+from typing import Coroutine, Dict, List, Tuple
 
 from deprecated import deprecated
 
 from llama_index import Document, ServiceContext, SummaryIndex
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.ingestion import run_transformations
-from llama_index.llms.openai import OpenAI
 from llama_index.postprocessor.node import KeywordNodePostprocessor
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -28,12 +27,6 @@ Given the context information and not prior knowledge.
 generate only questions based on the below query.
 {query_str}
 """
-
-
-def _get_default_service_context() -> ServiceContext:
-    """Get default service context."""
-    llm = OpenAI(temperature=0, model="gpt-3.5-turbo")
-    return ServiceContext.from_defaults(llm=llm, chunk_size_limit=3000)
 
 
 @deprecated(
@@ -133,7 +126,9 @@ class DatasetGenerator(PromptMixin):
     ) -> None:
         """Init params."""
         if service_context is None:
-            service_context = _get_default_service_context()
+            service_context = service_context or ServiceContext.from_defaults(
+                chunk_size_limit=3000
+            )
         self.service_context = service_context
         self.text_question_template = text_question_template or PromptTemplate(
             DEFAULT_QUESTION_GENERATION_PROMPT
@@ -166,7 +161,9 @@ class DatasetGenerator(PromptMixin):
     ) -> DatasetGenerator:
         """Generate dataset from documents."""
         if service_context is None:
-            service_context = _get_default_service_context()
+            service_context = service_context or ServiceContext.from_defaults(
+                chunk_size_limit=3000
+            )
 
         nodes = run_transformations(
             documents, service_context.transformations, show_progress=show_progress
@@ -201,7 +198,7 @@ class DatasetGenerator(PromptMixin):
         generate_response: bool = False,
     ) -> QueryResponseDataset:
         """Node question generator."""
-        query_tasks = []
+        query_tasks: List[Coroutine] = []
         queries: Dict[str, str] = {}
         responses_dict: Dict[str, str] = {}
 
@@ -214,7 +211,7 @@ class DatasetGenerator(PromptMixin):
 
         summary_indices: List[SummaryIndex] = []
         for node in nodes:
-            if num is not None and len(queries) >= num:
+            if num is not None and len(query_tasks) >= num:
                 break
             index = SummaryIndex.from_documents(
                 [

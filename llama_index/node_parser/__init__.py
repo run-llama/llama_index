@@ -14,6 +14,9 @@ from llama_index.node_parser.relational.hierarchical import (
     get_leaf_nodes,
     get_root_nodes,
 )
+from llama_index.node_parser.relational.markdown_element import (
+    MarkdownElementNodeParser,
+)
 from llama_index.node_parser.relational.unstructured_element import (
     UnstructuredElementNodeParser,
 )
@@ -38,6 +41,7 @@ __all__ = [
     "NodeParser",
     "HierarchicalNodeParser",
     "TextSplitter",
+    "MarkdownElementNodeParser",
     "MetadataAwareTextSplitter",
     "LangchainNodeParser",
     "UnstructuredElementNodeParser",

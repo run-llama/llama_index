@@ -1,13 +1,14 @@
 import json
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 import httpx
 import requests
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    LLM,
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -16,9 +17,8 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
 )
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class Perplexity(LLM):
@@ -60,6 +60,11 @@ class Perplexity(LLM):
         max_retries: int = 10,
         context_window: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -79,6 +84,11 @@ class Perplexity(LLM):
             api_base=api_base,
             headers=headers,
             context_window=context_window,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
             **kwargs,
         )
 

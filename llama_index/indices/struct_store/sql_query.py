@@ -1,7 +1,7 @@
 """Default query for SQLStructStoreIndex."""
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from sqlalchemy import Table
 
@@ -72,6 +72,7 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
         self,
         index: SQLStructStoreIndex,
         sql_context_container: Optional[SQLContextContainerBuilder] = None,
+        sql_only: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -79,18 +80,31 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
         self._sql_context_container = (
             sql_context_container or index.sql_context_container
         )
+        self._sql_only = sql_only
         super().__init__(index.service_context.callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt modules."""
         return {}
 
+    def _run_with_sql_only_check(
+        self, sql_query_str: str
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Don't run sql if sql_only is true, else continue with normal path."""
+        if self._sql_only:
+            metadata: Dict[str, Any] = {}
+            raw_response_str = sql_query_str
+        else:
+            raw_response_str, metadata = self._sql_database.run_sql(sql_query_str)
+
+        return raw_response_str, metadata
+
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         # NOTE: override query method in order to fetch the right results.
         # NOTE: since the query_str is a SQL query, it doesn't make sense
         # to use ResponseBuilder anywhere.
-        response_str, metadata = self._sql_database.run_sql(query_bundle.query_str)
+        response_str, metadata = self._run_with_sql_only_check(query_bundle.query_str)
         return Response(response=response_str, metadata=metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
@@ -118,6 +132,8 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
             context query. Defaults to {}.
         synthesize_response (bool): Whether to synthesize a response from the
             query results. Defaults to True.
+        sql_only (bool) : Whether to get only sql and not the sql query result.
+            Default to False.
         response_synthesis_prompt (Optional[BasePromptTemplate]): A
             Response Synthesis BasePromptTemplate to use for the query. Defaults to
             DEFAULT_RESPONSE_SYNTHESIS_PROMPT.
@@ -130,6 +146,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
+        sql_only: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -145,6 +162,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         )
         self._context_query_kwargs = context_query_kwargs or {}
         self._synthesize_response = synthesize_response
+        self._sql_only = sql_only
         super().__init__(index.service_context.callback_manager)
 
     @property
@@ -187,12 +205,22 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
         return tables_desc_str
 
+    def _run_with_sql_only_check(self, sql_query_str: str) -> Tuple[str, Dict]:
+        """Don't run sql if sql_only is true, else continue with normal path."""
+        if self._sql_only:
+            metadata: Dict[str, Any] = {}
+            raw_response_str = sql_query_str
+        else:
+            raw_response_str, metadata = self._sql_database.run_sql(sql_query_str)
+
+        return raw_response_str, metadata
+
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str = self._service_context.llm_predictor.predict(
+        response_str = self._service_context.llm.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -203,11 +231,12 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        raw_response_str, metadata = self._sql_database.run_sql(sql_query_str)
+        raw_response_str, metadata = self._run_with_sql_only_check(sql_query_str)
+
         metadata["sql_query"] = sql_query_str
 
         if self._synthesize_response:
-            response_str = self._service_context.llm_predictor.predict(
+            response_str = self._service_context.llm.predict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 sql_query=sql_query_str,
@@ -223,7 +252,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str = await self._service_context.llm_predictor.apredict(
+        response_str = await self._service_context.llm.apredict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -234,7 +263,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
 
-        response_str, metadata = self._sql_database.run_sql(sql_query_str)
+        response_str, metadata = self._run_with_sql_only_check(sql_query_str)
         metadata["sql_query"] = sql_query_str
         return Response(response=response_str, metadata=metadata)
 
@@ -257,6 +286,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -267,6 +297,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         # do some basic prompt validation
         _validate_prompt(self._response_synthesis_prompt)
         self._synthesize_response = synthesize_response
+        self._verbose = verbose
         super().__init__(self._service_context.callback_manager, **kwargs)
 
     def _get_prompts(self) -> Dict[str, Any]:
@@ -307,6 +338,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 service_context=self._service_context,
                 callback_manager=self._service_context.callback_manager,
                 text_qa_template=partial_synthesis_prompt,
+                verbose=self._verbose,
             )
             response = response_synthesizer.synthesize(
                 query=query_bundle.query_str,
@@ -362,6 +394,8 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
+        sql_only: bool = False,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -373,11 +407,14 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             tables=tables,
             context_str_prefix=context_str_prefix,
             service_context=service_context,
+            sql_only=sql_only,
+            verbose=verbose,
         )
         super().__init__(
             synthesize_response=synthesize_response,
             response_synthesis_prompt=response_synthesis_prompt,
             service_context=service_context,
+            verbose=verbose,
             **kwargs,
         )
 
@@ -407,6 +444,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
+        sql_only: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -419,6 +457,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             sql_parser_mode=SQLParserMode.PGVECTOR,
             context_str_prefix=context_str_prefix,
             service_context=service_context,
+            sql_only=sql_only,
         )
         super().__init__(
             synthesize_response=synthesize_response,
@@ -446,6 +485,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
+        sql_only: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -456,6 +496,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             table_retriever=table_retriever,
             context_str_prefix=context_str_prefix,
             service_context=service_context,
+            sql_only=sql_only,
         )
         super().__init__(
             synthesize_response=synthesize_response,

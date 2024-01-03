@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence, cast
 
-from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.output_parsers.base import StructuredOutput
 from llama_index.output_parsers.selection import Answer, SelectionOutputParser
 from llama_index.prompts.mixin import PromptDictType
@@ -47,16 +47,16 @@ class LLMSingleSelector(BaseSelector):
     LLM-based selector that chooses one out of many options.
 
     Args:
-        llm_predictor (BaseLLMPredictor): An LLM predictor.
+        LLM (LLM): An LLM.
         prompt (SingleSelectPrompt): A LLM prompt for selecting one out of many options.
     """
 
     def __init__(
         self,
-        llm_predictor: BaseLLMPredictor,
+        llm: LLMPredictorType,
         prompt: SingleSelectPrompt,
     ) -> None:
-        self._llm_predictor = llm_predictor
+        self._llm = llm
         self._prompt = prompt
 
         if self._prompt.output_parser is None:
@@ -80,7 +80,7 @@ class LLMSingleSelector(BaseSelector):
             output_parser=output_parser,
             prompt_type=PromptType.SINGLE_SELECT,
         )
-        return cls(service_context.llm_predictor, prompt)
+        return cls(service_context.llm, prompt)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -98,7 +98,7 @@ class LLMSingleSelector(BaseSelector):
         choices_text = _build_choices_text(choices)
 
         # predict
-        prediction = self._llm_predictor.predict(
+        prediction = self._llm.predict(
             prompt=self._prompt,
             num_choices=len(choices),
             context_list=choices_text,
@@ -117,7 +117,7 @@ class LLMSingleSelector(BaseSelector):
         choices_text = _build_choices_text(choices)
 
         # predict
-        prediction = await self._llm_predictor.apredict(
+        prediction = await self._llm.apredict(
             prompt=self._prompt,
             num_choices=len(choices),
             context_list=choices_text,
@@ -136,18 +136,18 @@ class LLMMultiSelector(BaseSelector):
     LLM-based selector that chooses multiple out of many options.
 
     Args:
-        llm_predictor (LLMPredictor): An LLM predictor.
+        llm (LLM): An LLM.
         prompt (SingleSelectPrompt): A LLM prompt for selecting multiple out of many
             options.
     """
 
     def __init__(
         self,
-        llm_predictor: BaseLLMPredictor,
+        llm: LLMPredictorType,
         prompt: MultiSelectPrompt,
         max_outputs: Optional[int] = None,
     ) -> None:
-        self._llm_predictor = llm_predictor
+        self._llm = llm
         self._prompt = prompt
         self._max_outputs = max_outputs
 
@@ -175,7 +175,7 @@ class LLMMultiSelector(BaseSelector):
             output_parser=output_parser,
             prompt_type=PromptType.MULTI_SELECT,
         )
-        return cls(service_context.llm_predictor, prompt, max_outputs)
+        return cls(service_context.llm, prompt, max_outputs)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -193,7 +193,7 @@ class LLMMultiSelector(BaseSelector):
         context_list = _build_choices_text(choices)
         max_outputs = self._max_outputs or len(choices)
 
-        prediction = self._llm_predictor.predict(
+        prediction = self._llm.predict(
             prompt=self._prompt,
             num_choices=len(choices),
             max_outputs=max_outputs,
@@ -212,7 +212,7 @@ class LLMMultiSelector(BaseSelector):
         context_list = _build_choices_text(choices)
         max_outputs = self._max_outputs or len(choices)
 
-        prediction = await self._llm_predictor.apredict(
+        prediction = await self._llm.apredict(
             prompt=self._prompt,
             num_choices=len(choices),
             max_outputs=max_outputs,

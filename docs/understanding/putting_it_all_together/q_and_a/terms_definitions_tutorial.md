@@ -87,7 +87,6 @@ We can add the following functions to both initialize our LLM, as well as use it
 from llama_index import (
     Document,
     SummaryIndex,
-    LLMPredictor,
     ServiceContext,
     load_index_from_storage,
 )
@@ -358,7 +357,7 @@ from llama_index.prompts import (
     ChatPromptTemplate,
 )
 from llama_index.prompts.utils import is_chat_model
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.llms import ChatMessage, MessageRole
 
 # Text QA templates
 DEFAULT_TEXT_QA_PROMPT_TMPL = (

@@ -82,7 +82,13 @@ class CallbackManager(BaseCallbackHandler, ABC):
         """Run handlers when an event starts and return id of event."""
         event_id = event_id or str(uuid.uuid4())
 
-        parent_id = parent_id or global_stack_trace.get()[-1]
+        # if no trace is running, start a default trace
+        try:
+            parent_id = parent_id or global_stack_trace.get()[-1]
+        except IndexError:
+            self.start_trace("llama-index")
+            parent_id = global_stack_trace.get()[-1]
+
         self._trace_map[parent_id].append(event_id)
         for handler in self.handlers:
             if event_type not in handler.event_starts_to_ignore:
