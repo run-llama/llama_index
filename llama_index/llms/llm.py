@@ -1,5 +1,5 @@
 from collections import ChainMap
-from typing import Any, List, Optional, Protocol, Sequence, runtime_checkable
+from typing import Any, Callable, List, Optional, Protocol, Sequence, runtime_checkable
 
 from llama_index.bridge.pydantic import BaseModel, Field, validator
 from llama_index.callbacks import CBEventType, EventPayload
@@ -93,14 +93,14 @@ class LLM(BaseLLM):
     system_prompt: Optional[str] = Field(
         default=None, description="System prompt for LLM calls."
     )
-    messages_to_prompt: MessagesToPromptType = Field(
+    messages_to_prompt: Callable = Field(
         description="Function to convert a list of messages to an LLM prompt.",
-        default=generic_messages_to_prompt,
+        default=None,
         exclude=True,
     )
-    completion_to_prompt: CompletionToPromptType = Field(
+    completion_to_prompt: Callable = Field(
         description="Function to convert a completion to an LLM prompt.",
-        default=default_completion_to_prompt,
+        default=None,
         exclude=True,
     )
     output_parser: Optional[BaseOutputParser] = Field(

@@ -1,11 +1,10 @@
 """Node parser interface."""
 from abc import ABC, abstractmethod
-from typing import Any, List, Sequence
+from typing import Any, Callable, List, Sequence
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.node_parser.node_utils import (
-    IdFuncCallable,
     build_nodes_from_splits,
     default_id_func,
 )
@@ -31,7 +30,7 @@ class NodeParser(TransformComponent, ABC):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
-    id_func: IdFuncCallable = Field(
+    id_func: Callable = Field(
         default=default_id_func,
         description="Function to generate node IDs.",
     )
