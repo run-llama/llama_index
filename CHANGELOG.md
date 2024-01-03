@@ -1,5 +1,22 @@
 # ChangeLog
 
+## [0.9.25] - 2024-01-03
+
+### New Features
+
+- Added concurrancy limits for dataset generation (#9779)
+- New `deepeval` one-click observability handler (#9801)
+- Added jaguar vector store (#9754)
+
+### Bug Fixes / Nits
+
+- Changed default batch size for OpenAI embeddings to 100 (#9805)
+- Use batch size properly for qdrant upserts (#9814)
+- `_verify_source_safety` uses AST, not regexes, for proper safety checks (#9789)
+- use provided LLM in element node parsers (#9776)
+- updated legacy vectordb loading function to be more robust (#9773)
+- Use provided http client in AzureOpenAI (#9772)
+
 ## [0.9.24] - 2023-12-30
 
 ### New Features
