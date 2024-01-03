@@ -9,6 +9,7 @@
 
 ### Bug Fixes / Nits
 
+- Changed default batch size for OpenAI embeddings to 100 (#9805)
 - Use batch size properly for qdrant upserts (#9814)
 - `_verify_source_safety` uses AST, not regexes, for proper safety checks (#9789)
 - use provided LLM in element node parsers (#9776)
