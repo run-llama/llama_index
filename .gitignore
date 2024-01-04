@@ -142,6 +142,9 @@ dmypy.json
 modules/
 *.swp
 
+# VsCode
+.vscode
+
 # pipenv
 Pipfile
 Pipfile.lock
