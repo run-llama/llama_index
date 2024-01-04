@@ -1,20 +1,25 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import httpx
-from openai import AsyncAzureOpenAI
-from openai import AzureOpenAI as SyncAzureOpenAI
+from openai.lib.azure import AsyncAzureOpenAI
+from openai.lib.azure import AzureOpenAI as SyncAzureOpenAI
 
-from llama_index.bridge.pydantic import Field, PrivateAttr, root_validator
+from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+    DEFAULT_TEMPERATURE,
+)
 from llama_index.llms.generic_utils import get_from_param_or_env
-from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import (
     refresh_openai_azuread_token,
     resolve_from_aliases,
 )
+from llama_index.multi_modal_llms import MultiModalLLMMetadata, OpenAIMultiModal
 
 
-class AzureOpenAI(OpenAI):
+class AzureOpenAIMultiModal(OpenAIMultiModal):
     """
     Azure OpenAI.
 
@@ -50,31 +55,35 @@ class AzureOpenAI(OpenAI):
     )
 
     _azure_ad_token: Any = PrivateAttr()
-    _client: SyncAzureOpenAI = PrivateAttr()
-    _aclient: AsyncAzureOpenAI = PrivateAttr()
-    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
-        model: str = "gpt-35-turbo",
+        model: str = "gpt-4-vision-preview",
         engine: Optional[str] = None,
-        temperature: float = 0.1,
-        max_tokens: Optional[int] = None,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_new_tokens: Optional[int] = 300,
+        num_input_files: int = 100,
         additional_kwargs: Optional[Dict[str, Any]] = None,
+        context_window: Optional[int] = DEFAULT_CONTEXT_WINDOW,
+        prompt_key: str = "text",
+        image_key: str = "image_url",
         max_retries: int = 3,
-        timeout: float = 60.0,
+        image_detail: str = "low",
         api_key: Optional[str] = None,
+        api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         # azure specific
         azure_endpoint: Optional[str] = None,
         azure_deployment: Optional[str] = None,
         use_azure_ad: bool = False,
-        callback_manager: Optional[CallbackManager] = None,
         # aliases for engine
         deployment_name: Optional[str] = None,
         deployment_id: Optional[str] = None,
         deployment: Optional[str] = None,
-        # custom httpx client
+        messages_to_prompt: Optional[Callable] = None,
+        completion_to_prompt: Optional[Callable] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
@@ -88,52 +97,49 @@ class AzureOpenAI(OpenAI):
         azure_endpoint = get_from_param_or_env(
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
         )
-
-        # Use the custom httpx client if provided.
-        # Otherwise the value will be None.
-        self._http_client = http_client
-
         super().__init__(
             engine=engine,
             model=model,
             temperature=temperature,
-            max_tokens=max_tokens,
+            max_new_tokens=max_new_tokens,
+            num_input_files=num_input_files,
             additional_kwargs=additional_kwargs,
+            context_window=context_window,
+            prompt_key=prompt_key,
+            image_key=image_key,
             max_retries=max_retries,
-            timeout=timeout,
+            image_detail=image_detail,
             api_key=api_key,
+            api_base=api_base,
+            api_version=api_version,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            callback_manager=callback_manager,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
             use_azure_ad=use_azure_ad,
-            api_version=api_version,
-            callback_manager=callback_manager,
+            default_headers=default_headers,
+            http_client=http_client,
             **kwargs,
         )
 
-    @root_validator(pre=True)
-    def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate necessary credentials are set."""
-        if (
-            values["api_base"] == "https://api.openai.com/v1"
-            and values["azure_endpoint"] is None
-        ):
-            raise ValueError(
-                "You must set OPENAI_API_BASE to your Azure endpoint. "
-                "It should look like https://YOUR_RESOURCE_NAME.openai.azure.com/"
-            )
-        if values["api_version"] is None:
-            raise ValueError("You must set OPENAI_API_VERSION for Azure OpenAI.")
-
-        return values
-
     def _get_clients(self, **kwargs: Any) -> Tuple[SyncAzureOpenAI, AsyncAzureOpenAI]:
-        client = SyncAzureOpenAI(
-            **self._get_credential_kwargs(),
-        )
-        aclient = AsyncAzureOpenAI(
-            **self._get_credential_kwargs(),
-        )
+        client = SyncAzureOpenAI(**self._get_credential_kwargs())
+        aclient = AsyncAzureOpenAI(**self._get_credential_kwargs())
         return client, aclient
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "azure_openai_multi_modal_llm"
+
+    @property
+    def metadata(self) -> MultiModalLLMMetadata:
+        """Multi Modal LLM metadata."""
+        return MultiModalLLMMetadata(
+            context_window=self.context_window,
+            num_output=DEFAULT_NUM_OUTPUTS,
+            model_name=self.engine,
+        )
 
     def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         if self.use_azure_ad:
@@ -142,6 +148,7 @@ class AzureOpenAI(OpenAI):
 
         return {
             "api_key": self.api_key,
+            "max_retries": self.max_retries,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,
@@ -154,7 +161,3 @@ class AzureOpenAI(OpenAI):
         model_kwargs = super()._get_model_kwargs(**kwargs)
         model_kwargs["model"] = self.engine
         return model_kwargs
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "azure_openai_llm"

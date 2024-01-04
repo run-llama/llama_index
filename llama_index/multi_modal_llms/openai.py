@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 
+import httpx
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
@@ -55,15 +56,20 @@ class OpenAIMultiModal(MultiModalLLM):
         default=10, description="Maximum number of retries.", gte=0
     )
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
-    api_base: str = Field(description="The base URL for OpenAI API.")
+    api_base: str = Field(default=None, description="The base URL for OpenAI API.")
+    api_version: str = Field(description="The API version for OpenAI API.")
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
+    )
+    default_headers: Dict[str, str] = Field(
+        default=None, description="The default headers for API requests."
     )
 
     _messages_to_prompt: Callable = PrivateAttr()
     _completion_to_prompt: Callable = PrivateAttr()
     _client: SyncOpenAI = PrivateAttr()
     _aclient: AsyncOpenAI = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -78,10 +84,13 @@ class OpenAIMultiModal(MultiModalLLM):
         max_retries: int = 10,
         image_detail: str = "low",
         api_key: Optional[str] = None,
-        api_base: Optional[str] = "https://api.openai.com/v1",
+        api_base: Optional[str] = None,
+        api_version: Optional[str] = None,
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
+        default_headers: Optional[Dict[str, str]] = None,
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
@@ -102,8 +111,12 @@ class OpenAIMultiModal(MultiModalLLM):
             max_retries=max_retries,
             api_key=api_key,
             api_base=api_base,
+            api_version=api_version,
             callback_manager=callback_manager,
+            default_headers=default_headers,
+            **kwargs,
         )
+        self._http_client = http_client
         self._client, self._aclient = self._get_clients(**kwargs)
 
     def _get_clients(self, **kwargs: Any) -> Tuple[SyncOpenAI, AsyncOpenAI]:
@@ -129,6 +142,8 @@ class OpenAIMultiModal(MultiModalLLM):
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "http_client": self._http_client,
             **kwargs,
         }
 
@@ -157,7 +172,7 @@ class OpenAIMultiModal(MultiModalLLM):
             # If max_tokens is None, don't include in the payload:
             # https://platform.openai.com/docs/api-reference/chat
             # https://platform.openai.com/docs/api-reference/completions
-            base_kwargs["max_tokens"] = str(self.max_new_tokens)
+            base_kwargs["max_tokens"] = self.max_new_tokens
         return {**base_kwargs, **self.additional_kwargs}
 
     def _get_response_token_counts(self, raw_response: Any) -> dict:
