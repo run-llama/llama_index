@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Sequence
 
-from llama_index.bridge.pydantic import Field
+from llama_index.bridge.pydantic import Field, validator
 from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.node_parser.node_utils import (
     build_nodes_from_splits,
@@ -31,12 +31,19 @@ class NodeParser(TransformComponent, ABC):
         default_factory=CallbackManager, exclude=True
     )
     id_func: Callable = Field(
-        default=default_id_func,
+        default=None,
         description="Function to generate node IDs.",
+        exclude=True,
     )
 
     class Config:
         arbitrary_types_allowed = True
+
+    @validator("id_func", pre=True)
+    def _validate_id_func(cls, v: Any) -> Any:
+        if v is None:
+            return default_id_func
+        return v
 
     @abstractmethod
     def _parse_nodes(
