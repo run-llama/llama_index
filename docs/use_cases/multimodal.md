@@ -41,7 +41,7 @@ maxdepth: 1
 
 ### LLaVa-13, Fuyu-8B and MiniGPT-4 Multi-Modal LLM Models Comparison for Image Reasoning
 
-These notebooks show how to use different Multi-Modal LLM models for image understanding/reasoning. The various model inferences are supported by Replicate or OpenAI GPT4-V API. We compared several popular Multi-Modal LLMs:
+These sections show comparisons between different multi-modal models for different use cases.
 
 - GPT4-V (OpenAI API)
 - LLava-13B (Replicate)
