@@ -148,5 +148,6 @@ def parse_pydantic_from_guidance_program(
     except Exception as e:
         raise OutputParserException(
             "Failed to parse pydantic object from guidance program"
+            ". Probabily the LLM failed to produce data with right json schema"
         ) from e
     return sub_questions
