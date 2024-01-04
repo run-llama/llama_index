@@ -49,6 +49,13 @@ def test_firestore_docstore(
     # test deleting documents
     ds.delete_document(documents[0].get_doc_id())
     assert len(ds.docs) == 1
+    ds.delete_document(documents[1].get_doc_id())
+    assert len(ds.docs) == 0
+
+    # test bulk insert
+    ds.add_documents(documents, batch_insert=True)
+    assert len(ds.docs) == 2
+    assert all(isinstance(doc, BaseNode) for doc in ds.docs.values())
 
 
 @pytest.mark.skipif(firestore is None, reason="firestore not installed")
