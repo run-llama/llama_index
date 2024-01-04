@@ -20,6 +20,7 @@ from llama_index.llms.mistral import MistralAI
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.monsterapi import MonsterLLM
 from llama_index.llms.nvidia_tensorrt import LocalTensorRTLLM
+from llama_index.llms.nvidia_triton import NvidiaTriton
 from llama_index.llms.ollama import Ollama
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_like import OpenAILike
@@ -80,6 +81,7 @@ __all__ = [
     "MessageRole",
     "MockLLM",
     "MonsterLLM",
+    "NvidiaTriton",
     "MistralAI",
     "Ollama",
     "OpenAI",
