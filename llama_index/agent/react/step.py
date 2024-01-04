@@ -74,7 +74,7 @@ def add_user_step_to_reasoning(
 
 
 class ReActAgentWorker(BaseAgentWorker):
-    """OpenAI Agent agent worker."""
+    """OpenAI Agent worker."""
 
     def __init__(
         self,

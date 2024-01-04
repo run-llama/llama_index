@@ -48,6 +48,7 @@ class VectorStoreQueryMode(str, Enum):
     SPARSE = "sparse"
     HYBRID = "hybrid"
     TEXT_SEARCH = "text_search"
+    SEMANTIC_HYBRID = "semantic_hybrid"
 
     # fit learners
     SVM = "svm"
@@ -325,6 +326,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     async def async_add(
         self,
         nodes: List[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """
         Asynchronously add nodes to vector store.

@@ -44,16 +44,3 @@ DeepMemory (Activeloop) </examples/retrievers/deep_memory.ipynb>
 /examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
 /examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
 ```
-
-## Structured Outputs
-
-You may want to ensure your output is structured. See our comprehensive guides below to see how to do that.
-
-```{toctree}
----
-maxdepth: 1
----
-/optimizing/advanced_retrieval/structured_outputs/structured_outputs.md
-/optimizing/advanced_retrieval/structured_outputs/pydantic_program.md
-/optimizing/advanced_retrieval/structured_outputs/query_engine.md
-```

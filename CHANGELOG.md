@@ -1,10 +1,72 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.25] - 2024-01-03
+
+### New Features
+
+- Added concurrancy limits for dataset generation (#9779)
+- New `deepeval` one-click observability handler (#9801)
+- Added jaguar vector store (#9754)
+- Add beta multimodal ReAct agent (#9807)
+
+### Bug Fixes / Nits
+
+- Changed default batch size for OpenAI embeddings to 100 (#9805)
+- Use batch size properly for qdrant upserts (#9814)
+- `_verify_source_safety` uses AST, not regexes, for proper safety checks (#9789)
+- use provided LLM in element node parsers (#9776)
+- updated legacy vectordb loading function to be more robust (#9773)
+- Use provided http client in AzureOpenAI (#9772)
+
+## [0.9.24] - 2023-12-30
+
+### New Features
+
+- Add reranker for BEIR evaluation (#9743)
+- Add Pathway integration. (#9719)
+- custom agents implementation + notebook (#9746)
+
+### Bug Fixes / Nits
+
+- fix beam search for vllm: add missing parameter (#9741)
+- Fix alpha for hrbrid search (#9742)
+- fix token counter (#9744)
+- BM25 tokenizer lowercase (#9745)
+
+## [0.9.23] - 2023-12-28
+
+### Bug Fixes / Nits
+
+- docs: fixes qdrant_hybrid.ipynb typos (#9729)
+- make llm completion program more general (#9731)
+- Refactor MM Vector store and Index for empty collection (#9717)
+- Adding IF statement to check for Schema using "Select" (#9712)
+- allow skipping module loading in `download_module` and `download_llama_pack` (#9734)
+
+## [0.9.22] - 2023-12-26
+
+### New Features
+
+- Added `.iter_data()` method to `SimpleDirectoryReader` (#9658)
+- Added async support to `Ollama` LLM (#9689)
+- Expanding pinecone filter support for `in` and `not in` (#9683)
 
 ### Bug Fixes / Nits
 
 - Improve BM25Retriever performance (#9675)
+- Improved qdrant hybrid search error handling (#9707)
+- Fixed `None` handling in `ChromaVectorStore` (#9697)
+- Fixed postgres schema creation if not existing (#9712)
+
+## [0.9.21] - 2023-12-23
+
+### New Features
+
+- Added zilliz cloud as a managed index (#9605)
+
+### Bug Fixes / Nits
+
+- Bedrock client and LLM fixes (#9671, #9646)
 
 ## [0.9.20] - 2023-12-21
 

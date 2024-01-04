@@ -8,7 +8,28 @@ This can be especially useful when you have unstructured source material like ch
 
 Once you have structured data you can send them to a database, or you can parse structured outputs in code to automate workflows.
 
-Examples:
+## Core Guides
 
-- [Extracting names and locations from descriptions of people](/docs/examples/output_parsing/df_program.ipynb)
-- [Extracting album data from music reviews](/docs/examples/llm/llama_api.ipynb)
+Check out our Structured Output guide for a comprehensive overview of structured data extraction with LlamaIndex. Do it in a standalone fashion (Pydantic program) or as part of a RAG pipeline. We also have standalone output parsing modules that you can use yourself with an LLM / prompt.
+
+```{toctree}
+---
+maxdepth: 2
+---
+/module_guides/querying/structured_outputs/structured_outputs.md
+/module_guides/querying/structured_outputs/output_parser.md
+```
+
+We also have multi-modal structured data extraction. [Check it out](multi-modal-pydantic-program).
+
+## Misc Examples
+
+Some additional miscellaneous examples highlighting use cases:
+
+```{toctree}
+---
+maxdepth: 1
+---
+Extracting names and locations from descriptions of people </examples/output_parsing/df_program.ipynb>
+Extracting album data from music reviews </examples/llm/llama_api.ipynb>
+```
