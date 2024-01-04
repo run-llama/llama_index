@@ -213,14 +213,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         points, ids = self._build_points(nodes)
 
-        self._client.upsert(
-            collection_name=self.collection_name,
-            points=points,
-        )
+        # batch upsert the points into Qdrant collection to avoid large payloads
+        for points_batch in iter_batch(points, self.batch_size):
+            self._client.upsert(
+                collection_name=self.collection_name,
+                points=points_batch,
+            )
 
         return ids
 
-    async def async_add(self, nodes: List[BaseNode]) -> List[str]:
+    async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Asynchronous method to add nodes to Qdrant index.
 
         Args:
@@ -242,10 +244,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         points, ids = self._build_points(nodes)
 
-        await self._aclient.upsert(
-            collection_name=self.collection_name,
-            points=points,
-        )
+        # batch upsert the points into Qdrant collection to avoid large payloads
+        for points_batch in iter_batch(points, self.batch_size):
+            await self._client.upsert(
+                collection_name=self.collection_name,
+                points=points_batch,
+            )
 
         return ids
 
@@ -443,6 +447,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             return self._hybrid_fusion_fn(
                 self.parse_to_query_result(sparse_response[0]),
                 self.parse_to_query_result(sparse_response[1]),
+                # NOTE: only for hybrid search (0 for sparse search, 1 for dense search)
                 alpha=query.alpha or 0.5,
                 top_k=query.similarity_top_k,
             )

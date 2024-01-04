@@ -27,6 +27,7 @@ We are actively adding more integrations and improving feature coverage for each
 | DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
 | Elasticsearch            | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | FAISS                    | in-memory           |                    |               |        |                 |       |
+| Jaguar                   | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 | LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Lantern                  | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Metal                    | cloud               | ✓                  |               | ✓      | ✓               |       |
@@ -67,6 +68,7 @@ maxdepth: 1
 /examples/vector_stores/DocArrayHnswIndexDemo.ipynb
 /examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 /examples/vector_stores/EpsillaIndexDemo.ipynb
+/examples/vector_stores/JaguarIndexDemo.ipynb
 /examples/vector_stores/LanceDBIndexDemo.ipynb
 /examples/vector_stores/MetalIndexDemo.ipynb
 /examples/vector_stores/MilvusIndexDemo.ipynb

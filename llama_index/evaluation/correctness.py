@@ -88,7 +88,9 @@ class CorrectnessEvaluator(BaseEvaluator):
         service_context: Optional[ServiceContext] = None,
         eval_template: Optional[Union[BasePromptTemplate, str]] = None,
         score_threshold: float = 4.0,
-        parser_function: Callable[[str], Tuple[float, str]] = default_parser,
+        parser_function: Callable[
+            [str], Tuple[Optional[float], Optional[str]]
+        ] = default_parser,
     ) -> None:
         self._service_context = service_context or ServiceContext.from_defaults()
 

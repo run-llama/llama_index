@@ -25,7 +25,6 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
 
     _client: AzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
-    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -55,10 +54,6 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             deployment_name,
         )
 
-        # Use the custom httpx client if provided.
-        # Otherwise the value will be None.
-        self._http_client = http_client
-
         super().__init__(
             mode=mode,
             model=model,
@@ -71,6 +66,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             max_retries=max_retries,
             reuse_client=reuse_client,
             callback_manager=callback_manager,
+            http_client=http_client,
             **kwargs,
         )
 
