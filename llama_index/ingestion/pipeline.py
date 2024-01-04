@@ -342,18 +342,21 @@ class IngestionPipeline(BaseModel):
         for data_source in pipeline.data_sources:
             component_dict = cast(dict, data_source.component)
             source_component_type = data_source.source_type
-            source_component = deserialize_source_component(
-                component_dict, source_component_type
-            )
 
             if data_source.source_type == ConfigurableDataSourceNames.READER:
+                source_component = deserialize_source_component(
+                    component_dict, source_component_type
+                )
                 readers.append(source_component)
-            elif (
-                data_source.source_type == ConfigurableDataSourceNames.DOCUMENT
-                and isinstance(source_component, BaseNode)
-                and source_component.get_content()
-            ):
-                documents.append(source_component)
+            elif data_source.source_type == ConfigurableDataSourceNames.DOCUMENT:
+                source_component = deserialize_source_component(
+                    component_dict, source_component_type
+                )
+                if (
+                    isinstance(source_component, BaseNode)
+                    and source_component.get_content()
+                ):
+                    documents.append(source_component)
 
         return cls(
             name=name,
