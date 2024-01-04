@@ -19,6 +19,7 @@ from llama_index.llms.localai import LOCALAI_DEFAULTS, LocalAI
 from llama_index.llms.mistral import MistralAI
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.monsterapi import MonsterLLM
+from llama_index.llms.nvidia_tensorrt import LocalTensorRTLLM
 from llama_index.llms.ollama import Ollama
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_like import OpenAILike
@@ -29,7 +30,6 @@ from llama_index.llms.perplexity import Perplexity
 from llama_index.llms.portkey import Portkey
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
-from llama_index.llms.tensorrt import LocalTensorRTLLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
