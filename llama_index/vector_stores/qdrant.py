@@ -246,7 +246,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         # batch upsert the points into Qdrant collection to avoid large payloads
         for points_batch in iter_batch(points, self.batch_size):
-            await self._client.upsert(
+            await self._aclient.upsert(
                 collection_name=self.collection_name,
                 points=points_batch,
             )
