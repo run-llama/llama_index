@@ -1,16 +1,15 @@
 from typing import TYPE_CHECKING, Any, Optional, Type, cast
+from functools import partial
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.guidance_utils import (
     parse_pydantic_from_guidance_program,
-    pydantic_to_guidance_output_template_markdown,
 )
 
 if TYPE_CHECKING:
-    from guidance.llms import LLM as GuidanceLLM
-
+    from guidance.models import Model as GuidanceLLM
 
 class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
     """
@@ -27,20 +26,30 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         verbose: bool = False,
     ):
         try:
-            from guidance import Program
-            from guidance.llms import OpenAI
+            from guidance.models import OpenAI
         except ImportError as e:
             raise ImportError(
                 "guidance package not found." "please run `pip install guidance`"
             ) from e
 
-        llm = guidance_llm or OpenAI("text-davinci-003")
-        output_str = pydantic_to_guidance_output_template_markdown(output_cls)
-        full_str = prompt_template_str + "\n" + output_str
+        if not guidance_llm:
+            llm = guidance_llm
+        else:
+            llm = OpenAI("text-davinci-003")
+        
+        full_str = prompt_template_str + "\n"
         self._full_str = full_str
-        self._guidance_program = Program(full_str, llm=llm, silent=not verbose)
+        self._guidance_program = partial(self.program, llm=llm, silent=not verbose)
         self._output_cls = output_cls
         self._verbose = verbose
+
+    def program(self, llm: "GuidanceLLM", silent: bool, tools_str: str, query_str: str, **kwargs) -> "GuidanceLLM":
+        """a wrapper to execute the program with new guidance version"""
+        from guidance import gen
+
+        given_query = self._full_str.replace("{{tools_str}}", tools_str).replace("{{query_str}}", query_str) 
+
+        return llm + given_query + gen(stop='.')
 
     @classmethod
     def from_defaults(
@@ -76,7 +85,8 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         **kwargs: Any,
     ) -> BaseModel:
         executed_program = self._guidance_program(**kwargs)
+        response = str(executed_program)
 
         return parse_pydantic_from_guidance_program(
-            program=executed_program, cls=self._output_cls
+            response=response, cls=self._output_cls
         )

@@ -16,7 +16,7 @@ from llama_index.schema import QueryBundle
 from llama_index.tools.types import ToolMetadata
 
 if TYPE_CHECKING:
-    from guidance.llms import LLM as GuidanceLLM
+    from guidance.models import Model as GuidanceLLM
 
 DEFAULT_GUIDANCE_SUB_QUESTION_PROMPT_TMPL = convert_to_handlebars(
     DEFAULT_SUB_QUESTION_PROMPT_TMPL
