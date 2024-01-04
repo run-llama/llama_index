@@ -12,8 +12,8 @@ from llama_index.indices.query.query_transform.prompts import (
     ImageOutputQueryTransformPrompt,
     StepDecomposeQueryTransformPrompt,
 )
-from llama_index.llm_predictor import LLMPredictor
-from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llm_predictor.base import LLMPredictorType
+from llama_index.llms.utils import resolve_llm
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
@@ -98,14 +98,14 @@ class HyDEQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm: Optional[LLMPredictorType] = None,
         hyde_prompt: Optional[BasePromptTemplate] = None,
         include_original: bool = True,
     ) -> None:
         """Initialize HyDEQueryTransform.
 
         Args:
-            llm_predictor (Optional[LLMPredictor]): LLM for generating
+            llm_predictor (Optional[LLM]): LLM for generating
                 hypothetical documents
             hyde_prompt (Optional[BasePromptTemplate]): Custom prompt for HyDE
             include_original (bool): Whether to include original query
@@ -113,7 +113,7 @@ class HyDEQueryTransform(BaseQueryTransform):
         """
         super().__init__()
 
-        self._llm_predictor = llm_predictor or LLMPredictor()
+        self._llm = llm or resolve_llm("default")
         self._hyde_prompt = hyde_prompt or DEFAULT_HYDE_PROMPT
         self._include_original = include_original
 
@@ -130,9 +130,7 @@ class HyDEQueryTransform(BaseQueryTransform):
         """Run query transform."""
         # TODO: support generating multiple hypothetical docs
         query_str = query_bundle.query_str
-        hypothetical_doc = self._llm_predictor.predict(
-            self._hyde_prompt, context_str=query_str
-        )
+        hypothetical_doc = self._llm.predict(self._hyde_prompt, context_str=query_str)
         embedding_strs = [hypothetical_doc]
         if self._include_original:
             embedding_strs.extend(query_bundle.embedding_strs)
@@ -149,20 +147,20 @@ class DecomposeQueryTransform(BaseQueryTransform):
     Performs a single step transformation.
 
     Args:
-        llm_predictor (Optional[LLMPredictor]): LLM for generating
+        llm_predictor (Optional[LLM]): LLM for generating
             hypothetical documents
 
     """
 
     def __init__(
         self,
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm: Optional[LLMPredictorType] = None,
         decompose_query_prompt: Optional[DecomposeQueryTransformPrompt] = None,
         verbose: bool = False,
     ) -> None:
         """Init params."""
         super().__init__()
-        self._llm_predictor = llm_predictor or LLMPredictor()
+        self._llm = llm or resolve_llm("default")
         self._decompose_query_prompt = (
             decompose_query_prompt or DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT
         )
@@ -185,7 +183,7 @@ class DecomposeQueryTransform(BaseQueryTransform):
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
         query_str = query_bundle.query_str
-        new_query_str = self._llm_predictor.predict(
+        new_query_str = self._llm.predict(
             self._decompose_query_prompt,
             query_str=query_str,
             context_str=index_summary,
@@ -251,20 +249,20 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
     NOTE: doesn't work yet.
 
     Args:
-        llm_predictor (Optional[LLMPredictor]): LLM for generating
+        llm_predictor (Optional[LLM]): LLM for generating
             hypothetical documents
 
     """
 
     def __init__(
         self,
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm: Optional[LLMPredictorType] = None,
         step_decompose_query_prompt: Optional[StepDecomposeQueryTransformPrompt] = None,
         verbose: bool = False,
     ) -> None:
         """Init params."""
         super().__init__()
-        self._llm_predictor = llm_predictor or LLMPredictor()
+        self._llm = llm or resolve_llm("default")
         self._step_decompose_query_prompt = (
             step_decompose_query_prompt or DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT
         )
@@ -291,7 +289,7 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
         # given the text from the index, we can use the query bundle to generate
         # a new query bundle
         query_str = query_bundle.query_str
-        new_query_str = self._llm_predictor.predict(
+        new_query_str = self._llm.predict(
             self._step_decompose_query_prompt,
             prev_reasoning=fmt_prev_reasoning,
             query_str=query_str,

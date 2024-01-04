@@ -165,6 +165,7 @@ class DocstoreStrategy(str, Enum):
 
     UPSERTS = "upserts"
     DUPLICATES_ONLY = "duplicates_only"
+    UPSERTS_AND_DELETE = "upserts_and_delete"
 
 
 class IngestionPipeline(BaseModel):
@@ -341,18 +342,21 @@ class IngestionPipeline(BaseModel):
         for data_source in pipeline.data_sources:
             component_dict = cast(dict, data_source.component)
             source_component_type = data_source.source_type
-            source_component = deserialize_source_component(
-                component_dict, source_component_type
-            )
 
             if data_source.source_type == ConfigurableDataSourceNames.READER:
+                source_component = deserialize_source_component(
+                    component_dict, source_component_type
+                )
                 readers.append(source_component)
-            elif (
-                data_source.source_type == ConfigurableDataSourceNames.DOCUMENT
-                and isinstance(source_component, BaseNode)
-                and source_component.get_content()
-            ):
-                documents.append(source_component)
+            elif data_source.source_type == ConfigurableDataSourceNames.DOCUMENT:
+                source_component = deserialize_source_component(
+                    component_dict, source_component_type
+                )
+                if (
+                    isinstance(source_component, BaseNode)
+                    and source_component.get_content()
+                ):
+                    documents.append(source_component)
 
         return cls(
             name=name,
@@ -583,10 +587,12 @@ class IngestionPipeline(BaseModel):
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
+        existing_doc_ids_before = set(self.docstore.get_all_document_hashes().values())
+        doc_ids_from_nodes = set()
         deduped_nodes_to_run = {}
         for node in nodes:
             ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
-
+            doc_ids_from_nodes.add(ref_doc_id)
             existing_hash = self.docstore.get_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
@@ -606,6 +612,15 @@ class IngestionPipeline(BaseModel):
             else:
                 continue  # document exists and is unchanged, so skip it
 
+        if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
+            # Identify missing docs and delete them from docstore and vector store
+            doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
+            for ref_doc_id in doc_ids_to_delete:
+                self.docstore.delete_document(ref_doc_id)
+
+                if self.vector_store is not None:
+                    self.vector_store.delete(ref_doc_id)
+
         return list(deduped_nodes_to_run.values())
 
     def run(
@@ -621,7 +636,10 @@ class IngestionPipeline(BaseModel):
 
         # check if we need to dedup
         if self.docstore is not None and self.vector_store is not None:
-            if self.docstore_strategy == DocstoreStrategy.UPSERTS:
+            if self.docstore_strategy in (
+                DocstoreStrategy.UPSERTS,
+                DocstoreStrategy.UPSERTS_AND_DELETE,
+            ):
                 nodes_to_run = self._handle_upserts(input_nodes)
             elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
                 nodes_to_run = self._handle_duplicates(input_nodes)
@@ -634,7 +652,14 @@ class IngestionPipeline(BaseModel):
                     "Switching to duplicates_only strategy."
                 )
                 self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
+            elif self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
+                print(
+                    "Docstore strategy set to upserts and delete, but no vector store. "
+                    "Switching to duplicates_only strategy."
+                )
+                self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
             nodes_to_run = self._handle_duplicates(input_nodes)
+
         else:
             nodes_to_run = input_nodes
 

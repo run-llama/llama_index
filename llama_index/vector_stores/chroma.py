@@ -234,8 +234,9 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 metadata_dict = node_to_metadata_dict(
                     node, remove_text=True, flat_metadata=self.flat_metadata
                 )
-                if "context" in metadata_dict and metadata_dict["context"] is None:
-                    metadata_dict["context"] = ""
+                for key in metadata_dict:
+                    if metadata_dict[key] is None:
+                        metadata_dict[key] = ""
                 metadatas.append(metadata_dict)
                 ids.append(node.node_id)
                 documents.append(node.get_content(metadata_mode=MetadataMode.NONE))

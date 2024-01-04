@@ -9,7 +9,7 @@ import os
 import subprocess
 import tempfile
 from collections import defaultdict
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -164,3 +164,19 @@ def upload_eval_dataset(
     assert len(eval_questions) == len(questions)
     print(f"Uploaded {len(questions)} questions to dataset {dataset_name}")
     return eval_dataset.id
+
+
+def default_parser(eval_response: str) -> Tuple[Optional[float], Optional[str]]:
+    """
+    Default parser function for evaluation response.
+
+    Args:
+        eval_response (str): The response string from the evaluation.
+
+    Returns:
+        Tuple[float, str]: A tuple containing the score as a float and the reasoning as a string.
+    """
+    score_str, reasoning_str = eval_response.split("\n", 1)
+    score = float(score_str)
+    reasoning = reasoning_str.lstrip("\n")
+    return score, reasoning

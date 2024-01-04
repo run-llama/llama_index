@@ -1,10 +1,26 @@
 import json
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
-    LLM,
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.bedrock_utils import (
+    BEDROCK_FOUNDATION_LLMS,
+    CHAT_ONLY_MODELS,
+    STREAMING_MODELS,
+    Provider,
+    completion_with_retry,
+    get_provider,
+)
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -13,19 +29,8 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
 )
-from llama_index.llms.bedrock_utils import (
-    BEDROCK_FOUNDATION_LLMS,
-    STREAMING_MODELS,
-    bedrock_model_to_param_name,
-    completion_to_chat_decorator,
-    completion_with_retry,
-    get_request_body,
-    get_text_from_response,
-    stream_completion_to_chat_decorator,
-)
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class Bedrock(LLM):
@@ -54,6 +59,7 @@ class Bedrock(LLM):
 
     _client: Any = PrivateAttr()
     _aclient: Any = PrivateAttr()
+    _provider: Provider = PrivateAttr()
 
     def __init__(
         self,
@@ -70,6 +76,11 @@ class Bedrock(LLM):
         max_retries: Optional[int] = 10,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         if context_size is None and model not in BEDROCK_FOUNDATION_LLMS:
             raise ValueError(
@@ -114,6 +125,11 @@ class Bedrock(LLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
         context_size = context_size or BEDROCK_FOUNDATION_LLMS[model]
+        self._provider = get_provider(model)
+        messages_to_prompt = messages_to_prompt or self._provider.messages_to_prompt
+        completion_to_prompt = (
+            completion_to_prompt or self._provider.completion_to_prompt
+        )
         super().__init__(
             model=model,
             temperature=temperature,
@@ -124,6 +140,11 @@ class Bedrock(LLM):
             max_retries=max_retries,
             additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod
@@ -136,16 +157,16 @@ class Bedrock(LLM):
         return LLMMetadata(
             context_window=self.context_size,
             num_output=self.max_tokens,
-            is_chat_model=True,
+            is_chat_model=self.model in CHAT_ONLY_MODELS,
             model_name=self.model,
         )
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
-        max_tokens_key = bedrock_model_to_param_name(
-            model=self.model, param_name="max_tokens"
-        )
-        base_kwargs = {"temperature": self.temperature, max_tokens_key: self.max_tokens}
+        base_kwargs = {
+            "temperature": self.temperature,
+            self._provider.max_tokens_key: self.max_tokens,
+        }
         return {
             **base_kwargs,
             **self.additional_kwargs,
@@ -159,9 +180,11 @@ class Bedrock(LLM):
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        is_formatted = kwargs.pop("formatted", False)
+        if not is_formatted:
+            prompt = self.completion_to_prompt(prompt)
         all_kwargs = self._get_all_kwargs(**kwargs)
-        provider = self.model.split(".")[0]
-        request_body = get_request_body(provider, prompt, all_kwargs)
+        request_body = self._provider.get_request_body(prompt, all_kwargs)
         request_body_str = json.dumps(request_body)
         response = completion_with_retry(
             client=self._client,
@@ -172,16 +195,18 @@ class Bedrock(LLM):
         )["body"].read()
         response = json.loads(response)
         return CompletionResponse(
-            text=get_text_from_response(provider, response), raw=response
+            text=self._provider.get_text_from_response(response), raw=response
         )
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         if self.model in BEDROCK_FOUNDATION_LLMS and self.model not in STREAMING_MODELS:
             raise ValueError(f"Model {self.model} does not support streaming")
+        is_formatted = kwargs.pop("formatted", False)
+        if not is_formatted:
+            prompt = self.completion_to_prompt(prompt)
         all_kwargs = self._get_all_kwargs(**kwargs)
-        provider = self.model.split(".")[0]
-        request_body = get_request_body(provider, prompt, all_kwargs)
+        request_body = self._provider.get_request_body(prompt, all_kwargs)
         request_body_str = json.dumps(request_body)
         response = completion_with_retry(
             client=self._client,
@@ -196,7 +221,7 @@ class Bedrock(LLM):
             content = ""
             for r in response:
                 r = json.loads(r["chunk"]["bytes"])
-                content_delta = get_text_from_response(provider, r, stream=True)
+                content_delta = self._provider.get_text_from_stream_response(r)
                 content += content_delta
                 yield CompletionResponse(text=content, delta=content_delta, raw=r)
 
@@ -204,19 +229,23 @@ class Bedrock(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        chat_fn = completion_to_chat_decorator(self.complete)
-        return chat_fn(messages, **kwargs)
+        prompt = self.messages_to_prompt(messages)
+        completion_response = self.complete(prompt, formatted=True, **kwargs)
+        return completion_response_to_chat_response(completion_response)
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        stream_chat_fn = stream_completion_to_chat_decorator(self.stream_complete)
-        return stream_chat_fn(messages, **kwargs)
+        prompt = self.messages_to_prompt(messages)
+        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
+        return stream_completion_response_to_chat_response(completion_response)
 
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        raise NotImplementedError
+        """Chat asynchronously."""
+        # TODO: do synchronous chat for now
+        return self.chat(messages, **kwargs)
 
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         raise NotImplementedError

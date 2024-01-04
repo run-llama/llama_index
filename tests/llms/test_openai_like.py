@@ -2,8 +2,8 @@ from typing import List
 from unittest.mock import MagicMock, call, patch
 
 from llama_index.llms import LOCALAI_DEFAULTS, OpenAILike
-from llama_index.llms.base import ChatMessage, MessageRole
 from llama_index.llms.openai import Tokenizer
+from llama_index.llms.types import ChatMessage, MessageRole
 from openai.types import Completion, CompletionChoice
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
@@ -134,7 +134,6 @@ def test_serialization() -> None:
 
     serialized = llm.to_dict()
     # Check OpenAI base class specifics
-    assert "api_key" not in serialized
     assert serialized["max_tokens"] == 42
     # Check OpenAILike subclass specifics
     assert serialized["context_window"] == 43

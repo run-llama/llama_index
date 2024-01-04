@@ -87,6 +87,7 @@ def elasticsearch_connection() -> Union[dict, Generator[dict, None, None]]:
         if index_name.startswith("test_"):
             es.indices.delete(index=index_name)
     es.indices.refresh(index="_all")
+    return {}
 
 
 @pytest.fixture(scope="session")

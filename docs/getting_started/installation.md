@@ -38,3 +38,11 @@ Git clone this repository: `git clone https://github.com/jerryjliu/llama_index.g
 - `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
 - `poetry install` - this will install the core package requirements
 - (Optional) `poetry install --with dev,docs` - this will install all dependencies needed for most local development
+
+## Optional Dependencies
+
+By default LlamaIndex installs a core set of dependencies; we also provide a convenient way to install commonly-required optional dependencies. These are currently in three sets:
+
+- `pip install llama-index[local_models]` installs tools useful for private LLMs, local inference, and HuggingFace models
+- `pip install llama-index[postgres]` is useful if you are working with Postgres, PGVector or Supabase
+- `pip install llama-index[query_tools]` gives you tools for hybrid search, structured outputs, and node post-processing

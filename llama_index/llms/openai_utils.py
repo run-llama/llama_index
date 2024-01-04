@@ -20,8 +20,8 @@ from tenacity import (
 from tenacity.stop import stop_base
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import ChatMessage
 from llama_index.llms.generic_utils import get_from_param_or_env
+from llama_index.llms.types import ChatMessage
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -50,6 +50,11 @@ GPT4_MODELS: Dict[str, int] = {
 AZURE_TURBO_MODELS: Dict[str, int] = {
     "gpt-35-turbo-16k": 16384,
     "gpt-35-turbo": 4096,
+    # 1106 model (JSON mode)
+    "gpt-35-turbo-1106": 16384,
+    # 0613 models (function calling):
+    "gpt-35-turbo-0613": 4096,
+    "gpt-35-turbo-16k-0613": 16384,
 }
 
 TURBO_MODELS: Dict[str, int] = {
@@ -288,15 +293,18 @@ def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
 
     Convert pydantic class to OpenAI function.
     """
-    return to_openai_tool(pydantic_class)
+    return to_openai_tool(pydantic_class, description=None)
 
 
-def to_openai_tool(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
+def to_openai_tool(
+    pydantic_class: Type[BaseModel], description: Optional[str] = None
+) -> Dict[str, Any]:
     """Convert pydantic class to OpenAI tool."""
     schema = pydantic_class.schema()
+    schema_description = schema.get("description", None) or description
     function = {
         "name": schema["title"],
-        "description": schema["description"],
+        "description": schema_description,
         "parameters": pydantic_class.schema(),
     }
     return {"type": "function", "function": function}

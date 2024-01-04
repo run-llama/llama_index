@@ -1,6 +1,6 @@
 from typing import List, Optional, Sequence, cast
 
-from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.output_parsers.base import StructuredOutput
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
@@ -20,10 +20,10 @@ from llama_index.types import BaseOutputParser
 class LLMQuestionGenerator(BaseQuestionGenerator):
     def __init__(
         self,
-        llm_predictor: BaseLLMPredictor,
+        llm: LLMPredictorType,
         prompt: BasePromptTemplate,
     ) -> None:
-        self._llm_predictor = llm_predictor
+        self._llm = llm
         self._prompt = prompt
 
         if self._prompt.output_parser is None:
@@ -47,7 +47,7 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
             output_parser=output_parser,
             prompt_type=PromptType.SUB_QUESTION,
         )
-        return cls(service_context.llm_predictor, prompt)
+        return cls(service_context.llm, prompt)
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -56,14 +56,19 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "question_gen_prompt" in prompts:
-            self._prompt = prompts["question_gen_prompt"]
+            output_parser = prompts["question_gen_prompt"].output_parser
+            if output_parser is None:
+                output_parser = SubQuestionOutputParser()
+            self._prompt = PromptTemplate(
+                prompts["question_gen_prompt"].template_str, output_parser=output_parser
+            )
 
     def generate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle
     ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
-        prediction = self._llm_predictor.predict(
+        prediction = self._llm.predict(
             prompt=self._prompt,
             tools_str=tools_str,
             query_str=query_str,
@@ -79,7 +84,7 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
     ) -> List[SubQuestion]:
         tools_str = build_tools_text(tools)
         query_str = query.query_str
-        prediction = await self._llm_predictor.apredict(
+        prediction = await self._llm.apredict(
             prompt=self._prompt,
             tools_str=tools_str,
             query_str=query_str,

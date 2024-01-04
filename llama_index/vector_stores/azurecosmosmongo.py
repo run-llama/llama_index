@@ -178,7 +178,7 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
         params: Dict[str, Any] = {
             "vector": query.query_embedding,
             "path": self._embedding_key,
-            "k": query.similarity_top_k * 10,
+            "k": query.similarity_top_k,
         }
 
         if query.filters is not None:

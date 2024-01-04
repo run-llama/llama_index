@@ -3,8 +3,16 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    LLM,
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -13,17 +21,9 @@ from llama_index.llms.base import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
-)
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.llms.vllm_utils import get_response, post_http_request
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class Vllm(LLM):
@@ -100,14 +100,6 @@ class Vllm(LLM):
         description="The data type for the model weights and activations.",
     )
 
-    messages_to_prompt: Callable = Field(
-        description="The function to convert messages to a prompt.", exclude=True
-    )
-
-    completion_to_prompt: Callable = Field(
-        description="The function to convert a completion to a prompt.", exclude=True
-    )
-
     download_dir: Optional[str] = Field(
         default=None,
         description="Directory to download and load the weights. (Default to the default cache dir of huggingface)",
@@ -143,9 +135,12 @@ class Vllm(LLM):
         download_dir: Optional[str] = None,
         vllm_kwargs: Dict[str, Any] = {},
         api_url: Optional[str] = "",
-        messages_to_prompt: Optional[Callable] = None,
-        completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         try:
             from vllm import LLM as VLLModel
@@ -166,8 +161,6 @@ class Vllm(LLM):
         else:
             self._client = None
         callback_manager = callback_manager or CallbackManager([])
-        messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        completion_to_prompt = completion_to_prompt or (lambda x: x)
         super().__init__(
             model=model,
             temperature=temperature,
@@ -184,10 +177,13 @@ class Vllm(LLM):
             logprobs=logprobs,
             dtype=dtype,
             download_dir=download_dir,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
             vllm_kwargs=vllm_kwargs,
             api_url=api_url,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod
@@ -207,6 +203,7 @@ class Vllm(LLM):
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "use_beam_search": self.use_beam_search,
+            "best_of": self.best_of,
             "ignore_eos": self.ignore_eos,
             "stop": self.stop,
             "logprobs": self.logprobs,
@@ -230,20 +227,16 @@ class Vllm(LLM):
         return completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
-    def complete(self, prompts: List[str], **kwargs: Any) -> List[CompletionResponse]:
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
         from vllm import SamplingParams
 
-        responses = []
         # build sampling parameters
         sampling_params = SamplingParams(**params)
-        outputs = self._client.generate(prompts, sampling_params)
-        for output in outputs:
-            responses.append(CompletionResponse(text=output.outputs[0].text))
-
-        return responses
+        outputs = self._client.generate([prompt], sampling_params)
+        return CompletionResponse(text=outputs[0].outputs[0].text)
 
     @llm_chat_callback()
     def stream_chat(
@@ -304,6 +297,7 @@ class VllmServer(Vllm):
         completion_to_prompt: Optional[Callable] = None,
         vllm_kwargs: Dict[str, Any] = {},
         callback_manager: Optional[CallbackManager] = None,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         self._client = None
         messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
@@ -331,6 +325,8 @@ class VllmServer(Vllm):
             completion_to_prompt=completion_to_prompt,
             vllm_kwargs=vllm_kwargs,
             api_url=api_url,
+            callback_manager=callback_manager,
+            output_parser=output_parser,
         )
 
     @classmethod

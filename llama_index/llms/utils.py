@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, Optional, Union
 if TYPE_CHECKING:
     from langchain.base_language import BaseLanguageModel
 
-from llama_index.llms.base import LLM
 from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.llms.llama_utils import completion_to_prompt, messages_to_prompt
+from llama_index.llms.llm import LLM
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import validate_openai_api_key

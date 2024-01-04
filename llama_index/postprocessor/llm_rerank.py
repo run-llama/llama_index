@@ -75,6 +75,9 @@ class LLMRerank(BaseNodePostprocessor):
     ) -> List[NodeWithScore]:
         if query_bundle is None:
             raise ValueError("Query bundle must be provided.")
+        if len(nodes) == 0:
+            return []
+
         initial_results: List[NodeWithScore] = []
         for idx in range(0, len(nodes), self.choice_batch_size):
             nodes_batch = [
@@ -84,7 +87,7 @@ class LLMRerank(BaseNodePostprocessor):
             query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(nodes_batch)
             # call each batch independently
-            raw_response = self.service_context.llm_predictor.predict(
+            raw_response = self.service_context.llm.predict(
                 self.choice_select_prompt,
                 context_str=fmt_batch_str,
                 query_str=query_str,

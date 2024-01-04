@@ -1,10 +1,13 @@
 """Node parser interface."""
 from abc import ABC, abstractmethod
-from typing import Any, List, Sequence
+from typing import Any, Callable, List, Sequence
 
-from llama_index.bridge.pydantic import Field
+from llama_index.bridge.pydantic import Field, validator
 from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
-from llama_index.node_parser.node_utils import build_nodes_from_splits
+from llama_index.node_parser.node_utils import (
+    build_nodes_from_splits,
+    default_id_func,
+)
 from llama_index.schema import (
     BaseNode,
     Document,
@@ -27,9 +30,20 @@ class NodeParser(TransformComponent, ABC):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
+    id_func: Callable = Field(
+        default=None,
+        description="Function to generate node IDs.",
+        exclude=True,
+    )
 
     class Config:
         arbitrary_types_allowed = True
+
+    @validator("id_func", pre=True)
+    def _validate_id_func(cls, v: Any) -> Any:
+        if v is None:
+            return default_id_func
+        return v
 
     @abstractmethod
     def _parse_nodes(
@@ -118,7 +132,9 @@ class TextSplitter(NodeParser):
         for node in nodes_with_progress:
             splits = self.split_text(node.get_content())
 
-            all_nodes.extend(build_nodes_from_splits(splits, node))
+            all_nodes.extend(
+                build_nodes_from_splits(splits, node, id_func=self.id_func)
+            )
 
         return all_nodes
 
@@ -164,6 +180,8 @@ class MetadataAwareTextSplitter(TextSplitter):
                 node.get_content(metadata_mode=MetadataMode.NONE),
                 metadata_str=metadata_str,
             )
-            all_nodes.extend(build_nodes_from_splits(splits, node))
+            all_nodes.extend(
+                build_nodes_from_splits(splits, node, id_func=self.id_func)
+            )
 
         return all_nodes

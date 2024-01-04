@@ -8,12 +8,16 @@ from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 IMPORT_OPENSEARCH_PY_ERROR = (
     "Could not import OpenSearch. Please install it with `pip install opensearch-py`."
+)
+INVALID_HYBRID_QUERY_ERROR = (
+    "Please specify the lexical_query and search_pipeline for hybrid search."
 )
 MATCH_ALL_QUERY = {"match_all": {}}  # type: Dict
 
@@ -50,6 +54,7 @@ def _get_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
     try:
         opensearch = _import_opensearch()
         client = opensearch(opensearch_url, **kwargs)
+
     except ValueError as e:
         raise ValueError(
             f"OpenSearch client string provided is not in proper format. "
@@ -112,6 +117,77 @@ def _default_approximate_search_query(
     return {
         "size": k,
         "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
+    }
+
+
+def _parse_filters(filters: Optional[MetadataFilters]) -> Any:
+    pre_filter = []
+    if filters is not None:
+        for f in filters.legacy_filters():
+            pre_filter.append({f.key: json.loads(str(f.value))})
+
+    return pre_filter
+
+
+def _knn_search_query(
+    embedding_field: str,
+    query_embedding: List[float],
+    k: int,
+    filters: Optional[MetadataFilters] = None,
+) -> Dict:
+    """Do knn search.
+
+    If there are no filters do approx-knn search.
+    If there are (pre)-filters, do an exhaustive exact knn search using 'painless
+        scripting'.
+
+    Note that approximate knn search does not support pre-filtering.
+
+    Args:
+        query_embedding: Vector embedding to query.
+        k: Maximum number of results.
+        filters: Optional filters to apply before the search.
+            Supports filter-context queries documented at
+            https://opensearch.org/docs/latest/query-dsl/query-filter-context/
+
+    Returns:
+        Up to k docs closest to query_embedding
+    """
+    if filters is None:
+        search_query = _default_approximate_search_query(
+            query_embedding, k, vector_field=embedding_field
+        )
+    else:
+        pre_filter = _parse_filters(filters)
+        # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
+        search_query = _default_painless_scripting_query(
+            query_embedding,
+            k,
+            space_type="l2Squared",
+            pre_filter={"bool": {"filter": pre_filter}},
+            vector_field=embedding_field,
+        )
+
+    return search_query
+
+
+def _hybrid_search_query(
+    text_field: str,
+    query_str: str,
+    embedding_field: str,
+    query_embedding: List[float],
+    k: int,
+    filters: Optional[MetadataFilters] = None,
+) -> Dict:
+    knn_query = _knn_search_query(embedding_field, query_embedding, k, filters)["query"]
+    lexical_query = {"must": {"match": {text_field: {"query": query_str}}}}
+
+    parsed_filters = _parse_filters(filters)
+    if len(parsed_filters) > 0:
+        lexical_query["filter"] = parsed_filters
+    return {
+        "size": k,
+        "query": {"hybrid": {"queries": [{"bool": lexical_query}, knn_query]}},
     }
 
 
@@ -187,6 +263,7 @@ class OpensearchVectorClient:
         text_field: str = "content",
         method: Optional[dict] = None,
         max_chunk_bytes: int = 1 * 1024 * 1024,
+        search_pipeline: Optional[str] = None,
         **kwargs: Any,
     ):
         """Init params."""
@@ -206,6 +283,8 @@ class OpensearchVectorClient:
         self._index = index
         self._text_field = text_field
         self._max_chunk_bytes = max_chunk_bytes
+
+        self._search_pipeline = search_pipeline
         # initialize mapping
         idx_conf = {
             "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
@@ -260,48 +339,35 @@ class OpensearchVectorClient:
         """
         self._os_client.delete(index=self._index, id=doc_id)
 
-    def knn(
+    def query(
         self,
+        query_mode: VectorStoreQueryMode,
+        query_str: Optional[str],
         query_embedding: List[float],
         k: int,
         filters: Optional[MetadataFilters] = None,
     ) -> VectorStoreQueryResult:
-        """Do knn search.
-
-        If there are no filters do approx-knn search.
-        If there are (pre)-filters, do an exhaustive exact knn search using 'painless
-            scripting'.
-
-        Note that approximate knn search does not support pre-filtering.
-
-        Args:
-            query_embedding: Vector embedding to query.
-            k: Maximum number of results.
-            filters: Optional filters to apply before the search.
-                Supports filter-context queries documented at
-                https://opensearch.org/docs/latest/query-dsl/query-filter-context/
-
-        Returns:
-            Up to k docs closest to query_embedding
-        """
-        if filters is None:
-            search_query = _default_approximate_search_query(
-                query_embedding, k, vector_field=self._embedding_field
-            )
-        else:
-            pre_filter = []
-            for f in filters.legacy_filters():
-                pre_filter.append({f.key: json.loads(str(f.value))})
-            # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
-            search_query = _default_painless_scripting_query(
+        if query_mode == VectorStoreQueryMode.HYBRID:
+            if query_str is None or self._search_pipeline is None:
+                raise ValueError(INVALID_HYBRID_QUERY_ERROR)
+            search_query = _hybrid_search_query(
+                self._text_field,
+                query_str,
+                self._embedding_field,
                 query_embedding,
                 k,
-                space_type="l2Squared",
-                pre_filter={"bool": {"filter": pre_filter}},
-                vector_field=self._embedding_field,
+                filters=filters,
             )
+            params = {"search_pipeline": self._search_pipeline}
+        else:
+            search_query = _knn_search_query(
+                self._embedding_field, query_embedding, k, filters=filters
+            )
+            params = None
 
-        res = self._os_client.search(index=self._index, body=search_query)
+        res = self._os_client.search(
+            index=self._index, body=search_query, params=params
+        )
         nodes = []
         ids = []
         scores = []
@@ -317,7 +383,7 @@ class OpensearchVectorClient:
             except Exception:
                 # TODO: Legacy support for old nodes
                 node_info = source.get("node_info")
-                relationships = source.get("relationships")
+                relationships = source.get("relationships") or {}
                 start_char_idx = None
                 end_char_idx = None
                 if isinstance(node_info, dict):
@@ -331,6 +397,7 @@ class OpensearchVectorClient:
                     start_char_idx=start_char_idx,
                     end_char_idx=end_char_idx,
                     relationships=relationships,
+                    extra_info=source,
                 )
             ids.append(node_id)
             nodes.append(node)
@@ -388,10 +455,15 @@ class OpensearchVectorStore(VectorStore):
         """Query index for top k most similar nodes.
 
         Args:
-            query_embedding (List[float]): query embedding
+            query (VectorStoreQuery): Store query object.
 
         """
         query_embedding = cast(List[float], query.query_embedding)
-        return self._client.knn(
-            query_embedding, query.similarity_top_k, filters=query.filters
+
+        return self._client.query(
+            query.mode,
+            query.query_str,
+            query_embedding,
+            query.similarity_top_k,
+            filters=query.filters,
         )

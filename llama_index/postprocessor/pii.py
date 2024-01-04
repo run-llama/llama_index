@@ -65,7 +65,7 @@ class PIINodePostprocessor(BaseNodePostprocessor):
             "Return the mapping in JSON."
         )
 
-        response = self.service_context.llm_predictor.predict(
+        response = self.service_context.llm.predict(
             pii_prompt, context_str=text, query_str=task_str
         )
         splits = response.split("Output Mapping:")

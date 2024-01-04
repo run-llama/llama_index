@@ -29,8 +29,6 @@ def rake_extract_keywords(
     """Extract keywords with RAKE."""
     try:
         import nltk
-
-        nltk.download("punkt")
     except ImportError:
         raise ImportError("Please install nltk: `pip install nltk`")
     try:
@@ -38,7 +36,10 @@ def rake_extract_keywords(
     except ImportError:
         raise ImportError("Please install rake_nltk: `pip install rake_nltk`")
 
-    r = Rake()
+    r = Rake(
+        sentence_tokenizer=nltk.tokenize.sent_tokenize,
+        word_tokenizer=nltk.tokenize.wordpunct_tokenize,
+    )
     r.extract_keywords_from_text(text_chunk)
     keywords = r.get_ranked_phrases()[:max_keywords]
     if expand_with_subtokens:

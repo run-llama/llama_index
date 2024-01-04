@@ -124,7 +124,7 @@ class KGTableRetriever(BaseRetriever):
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        response = self._service_context.llm_predictor.predict(
+        response = self._service_context.llm.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,
@@ -524,7 +524,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         if handle_fn is not None:
             enitities_fn = handle_fn(query_str)
         if handle_llm_prompt_template is not None:
-            response = self._service_context.llm_predictor.predict(
+            response = self._service_context.llm.predict(
                 handle_llm_prompt_template,
                 max_keywords=max_items,
                 question=query_str,
@@ -574,7 +574,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         if handle_fn is not None:
             enitities_fn = handle_fn(query_str)
         if handle_llm_prompt_template is not None:
-            response = await self._service_context.llm_predictor.apredict(
+            response = await self._service_context.llm.apredict(
                 handle_llm_prompt_template,
                 max_keywords=max_items,
                 question=query_str,

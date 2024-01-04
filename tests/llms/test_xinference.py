@@ -1,7 +1,7 @@
 from typing import Any, Dict, Generator, Iterator, List, Mapping, Sequence, Tuple, Union
 
 import pytest
-from llama_index.llms.base import (
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     CompletionResponse,

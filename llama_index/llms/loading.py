@@ -1,12 +1,13 @@
 from typing import Dict, Type
 
-from llama_index.llms.base import LLM
+from llama_index.llm_predictor import LLMPredictor
 from llama_index.llms.bedrock import Bedrock
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.llms.llama_cpp import LlamaCPP
+from llama_index.llms.llm import LLM
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.palm import PaLM
@@ -40,6 +41,13 @@ def load_llm(data: dict) -> LLM:
     llm_name = data.get("class_name", None)
     if llm_name is None:
         raise ValueError("LLM loading requires a class_name")
+
+    # backwards compatibility to handle deprecated LLMPredictor
+    if llm_name == LLMPredictor.class_name():
+        from llama_index.llm_predictor.loading import load_predictor
+
+        predictor = load_predictor(data)
+        return predictor.llm
 
     if llm_name not in RECOGNIZED_LLMS:
         raise ValueError(f"Invalid LLM name: {llm_name}")

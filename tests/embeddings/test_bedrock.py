@@ -72,4 +72,4 @@ class TestBedrockEmbedding(TestCase):
         self.bedrock_stubber.deactivate()
 
         self.bedrock_stubber.assert_no_pending_responses()
-        self.assertEqual(embedding, mock_response["embeddings"])
+        self.assertEqual(embedding, mock_response["embeddings"][0])
