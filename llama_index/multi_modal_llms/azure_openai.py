@@ -62,12 +62,10 @@ class AzureOpenAIMultiModal(OpenAIMultiModal):
         engine: Optional[str] = None,
         temperature: float = DEFAULT_TEMPERATURE,
         max_new_tokens: Optional[int] = 300,
-        num_input_files: int = 100,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: Optional[int] = DEFAULT_CONTEXT_WINDOW,
-        prompt_key: str = "text",
-        image_key: str = "image_url",
         max_retries: int = 3,
+        timeout: float = 60.0,
         image_detail: str = "low",
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
@@ -102,12 +100,10 @@ class AzureOpenAIMultiModal(OpenAIMultiModal):
             model=model,
             temperature=temperature,
             max_new_tokens=max_new_tokens,
-            num_input_files=num_input_files,
             additional_kwargs=additional_kwargs,
             context_window=context_window,
-            prompt_key=prompt_key,
-            image_key=image_key,
             max_retries=max_retries,
+            timeout=timeout,
             image_detail=image_detail,
             api_key=api_key,
             api_base=api_base,
@@ -136,8 +132,7 @@ class AzureOpenAIMultiModal(OpenAIMultiModal):
     def metadata(self) -> MultiModalLLMMetadata:
         """Multi Modal LLM metadata."""
         return MultiModalLLMMetadata(
-            context_window=self.context_window,
-            num_output=DEFAULT_NUM_OUTPUTS,
+            num_output=self.max_new_tokens or DEFAULT_NUM_OUTPUTS,
             model_name=self.engine,
         )
 
@@ -147,14 +142,14 @@ class AzureOpenAIMultiModal(OpenAIMultiModal):
             self.api_key = self._azure_ad_token.token
 
         return {
-            "api_key": self.api_key,
+            "api_key": self.api_key or None,
             "max_retries": self.max_retries,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
             "http_client": self._http_client,
-            **kwargs,
+            "timeout": self.timeout,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
