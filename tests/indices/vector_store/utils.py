@@ -61,17 +61,11 @@ class MockPineconeIndex:
 
 
 def get_pinecone_storage_context() -> StorageContext:
-    # NOTE: mock pinecone import
+    # Mocking pinecone module import
     sys.modules["pinecone"] = MagicMock()
-
-    # Can override for newer versions; just need str for pinecone.version comparison in PineconeVectorStore class:
-    sys.modules["pinecone"].version = "2.4.0"  # type: ignore[attr-defined]
-
     return StorageContext.from_defaults(
         vector_store=PineconeVectorStore(
             pinecone_index=MockPineconeIndex(),
-            environment="some env",
-            index_name="some index name",
             tokenizer=mock_tokenizer,
         )
     )
