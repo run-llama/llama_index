@@ -7,18 +7,20 @@ Source: https://github.com/go-skynet/LocalAI
 
 import warnings
 from types import MappingProxyType
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.openai_utils import is_function_calling_model
+from llama_index.llms.types import ChatMessage, LLMMetadata
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 # Use these as kwargs for OpenAILike to connect to LocalAIs
 DEFAULT_LOCALAI_PORT = 8080
-LOCALAI_DEFAULTS: Mapping[str, Any] = MappingProxyType(
+# TODO: move to MappingProxyType[str, Any] once Python 3.9+
+LOCALAI_DEFAULTS: Dict[str, Any] = MappingProxyType(  # type: ignore[assignment]
     {
         "api_key": "localai_fake",
         "api_type": "localai_fake",
@@ -47,9 +49,23 @@ class LocalAI(OpenAI):
         self,
         api_key: Optional[str] = LOCALAI_DEFAULTS["api_key"],
         api_base: Optional[str] = LOCALAI_DEFAULTS["api_base"],
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(api_key=api_key, api_base=api_base, **kwargs)
+        super().__init__(
+            api_key=api_key,
+            api_base=api_base,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+            **kwargs,
+        )
         warnings.warn(
             (
                 f"{type(self).__name__} subclass is deprecated in favor of"

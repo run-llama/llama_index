@@ -11,7 +11,7 @@ def test_decompose_query_transform(mock_service_context: ServiceContext) -> None
     """Test decompose query transform."""
     query_transform = DecomposeQueryTransform(
         decompose_query_prompt=MOCK_DECOMPOSE_PROMPT,
-        llm_predictor=mock_service_context.llm_predictor,
+        llm=mock_service_context.llm,
     )
 
     query_str = "What is?"

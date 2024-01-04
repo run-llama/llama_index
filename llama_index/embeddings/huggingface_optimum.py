@@ -4,6 +4,7 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.embeddings.huggingface_utils import format_query, format_text
+from llama_index.utils import infer_torch_device
 
 
 class OptimumEmbedding(BaseEmbedding):
@@ -23,6 +24,7 @@ class OptimumEmbedding(BaseEmbedding):
 
     _model: Any = PrivateAttr()
     _tokenizer: Any = PrivateAttr()
+    _device: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -36,6 +38,7 @@ class OptimumEmbedding(BaseEmbedding):
         tokenizer: Optional[Any] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
+        device: Optional[str] = None,
     ):
         try:
             from optimum.onnxruntime import ORTModelForFeatureExtraction
@@ -49,6 +52,7 @@ class OptimumEmbedding(BaseEmbedding):
 
         self._model = model or ORTModelForFeatureExtraction.from_pretrained(folder_name)
         self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
+        self._device = device or infer_torch_device()
 
         if max_length is None:
             try:
@@ -139,7 +143,7 @@ class OptimumEmbedding(BaseEmbedding):
             embeddings = self._cls_pooling(model_output)
         else:
             embeddings = self._mean_pooling(
-                model_output, encoded_input["attention_mask"]
+                model_output, encoded_input["attention_mask"].to(self._device)
             )
 
         if self.normalize:

@@ -149,7 +149,7 @@ class GPTTreeIndexBuilder:
         ) as event:
             if self._use_async:
                 tasks = [
-                    self._service_context.llm_predictor.apredict(
+                    self._service_context.llm.apredict(
                         self.summary_prompt, context_str=text_chunk
                     )
                     for text_chunk in text_chunks
@@ -167,7 +167,7 @@ class GPTTreeIndexBuilder:
                     desc="Generating summaries",
                 )
                 summaries = [
-                    self._service_context.llm_predictor.predict(
+                    self._service_context.llm.predict(
                         self.summary_prompt, context_str=text_chunk
                     )
                     for text_chunk in text_chunks_progress
@@ -217,7 +217,7 @@ class GPTTreeIndexBuilder:
                 desc="Generating summaries",
             )
             tasks = [
-                self._service_context.llm_predictor.apredict(
+                self._service_context.llm.apredict(
                     self.summary_prompt, context_str=text_chunk
                 )
                 for text_chunk in text_chunks_progress

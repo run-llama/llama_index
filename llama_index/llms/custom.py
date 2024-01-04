@@ -1,13 +1,6 @@
 from typing import Any, Sequence
 
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -15,13 +8,22 @@ from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
     stream_completion_to_chat_decorator,
 )
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+)
 
 
 class CustomLLM(LLM):
     """Simple abstract base class for custom LLMs.
 
-    Subclasses must implement the `__init__`, `complete`,
-        `stream_complete`, and `metadata` methods.
+    Subclasses must implement the `__init__`, `_complete`,
+        `_stream_complete`, and `metadata` methods.
     """
 
     @llm_chat_callback()

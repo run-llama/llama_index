@@ -10,13 +10,14 @@ import numpy as np
 from llama_index.bridge.pydantic import Field, validator
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.constants import (
+    DEFAULT_EMBED_BATCH_SIZE,
+)
 from llama_index.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.utils import get_tqdm_iterable
 
 # TODO: change to numpy array
 Embedding = List[float]
-
-DEFAULT_EMBED_BATCH_SIZE = 10
 
 
 class SimilarityMode(str, Enum):

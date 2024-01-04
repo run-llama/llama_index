@@ -13,9 +13,9 @@ from llama_index.chat_engine.types import (
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.llms.generic_utils import messages_to_history_str
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.base import PromptTemplate
@@ -60,7 +60,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         self,
         retriever: BaseRetriever,
         llm: LLM,
-        llm_predictor: LLMPredictor,
         memory: BaseMemory,
         context_prompt: Optional[str] = None,
         condense_prompt: Optional[str] = None,
@@ -72,7 +71,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     ):
         self._retriever = retriever
         self._llm = llm
-        self._llm_predictor = llm_predictor
         self._memory = memory
         self._context_prompt_template = (
             context_prompt or DEFAULT_CONTEXT_PROMPT_TEMPLATE
@@ -106,10 +104,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
         service_context = service_context or ServiceContext.from_defaults()
-        if not isinstance(service_context.llm_predictor, LLMPredictor):
-            raise ValueError("llm_predictor must be a LLMPredictor instance")
-        llm_predictor = service_context.llm_predictor
-        llm = llm_predictor.llm
+        llm = service_context.llm
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(
             chat_history=chat_history, token_limit=llm.metadata.context_window - 256
@@ -118,7 +113,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         return cls(
             retriever=retriever,
             llm=llm,
-            llm_predictor=llm_predictor,
             memory=memory,
             context_prompt=context_prompt,
             condense_prompt=condense_prompt,
@@ -139,7 +133,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        return self._llm_predictor.predict(
+        return self._llm.predict(
             self._condense_prompt_template,
             question=latest_message,
             chat_history=chat_history_str,
@@ -155,7 +149,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        return await self._llm_predictor.apredict(
+        return await self._llm.apredict(
             self._condense_prompt_template,
             question=latest_message,
             chat_history=chat_history_str,

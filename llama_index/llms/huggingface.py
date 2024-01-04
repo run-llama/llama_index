@@ -8,16 +8,7 @@ from llama_index.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
 )
-from llama_index.llms import ChatResponseAsyncGen, CompletionResponseAsyncGen
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -29,7 +20,19 @@ from llama_index.llms.generic_utils import (
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.prompts.base import PromptTemplate
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_HUGGINGFACE_MODEL = "StabilityAI/stablelm-tuned-alpha-3b"
 if TYPE_CHECKING:
@@ -73,8 +76,8 @@ class HuggingFaceLLM(CustomLLM):
             "The model card on HuggingFace should specify if this is needed."
         ),
     )
-    query_wrapper_prompt: str = Field(
-        default="{query_str}",
+    query_wrapper_prompt: PromptTemplate = Field(
+        default=PromptTemplate("{query_str}"),
         description=(
             "The query wrapper prompt, containing the query placeholder. "
             "The model card on HuggingFace should specify if this is needed. "
@@ -116,17 +119,24 @@ class HuggingFaceLLM(CustomLLM):
         default_factory=dict,
         description="The kwargs to pass to the model during generation.",
     )
+    is_chat_model: bool = Field(
+        default=False,
+        description=(
+            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            + " Be sure to verify that you either pass an appropriate tokenizer "
+            "that can convert prompts to properly formatted chat messages or a "
+            "`messages_to_prompt` that does so."
+        ),
+    )
 
     _model: Any = PrivateAttr()
     _tokenizer: Any = PrivateAttr()
     _stopping_criteria: Any = PrivateAttr()
-    _messages_to_prompt: Callable = PrivateAttr()
 
     def __init__(
         self,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
-        system_prompt: str = "",
         query_wrapper_prompt: Union[str, PromptTemplate] = "{query_str}",
         tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
         model_name: str = DEFAULT_HUGGINGFACE_MODEL,
@@ -138,8 +148,13 @@ class HuggingFaceLLM(CustomLLM):
         tokenizer_outputs_to_remove: Optional[list] = None,
         model_kwargs: Optional[dict] = None,
         generate_kwargs: Optional[dict] = None,
-        messages_to_prompt: Optional[Callable] = None,
+        is_chat_model: Optional[bool] = False,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: str = "",
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         """Initialize params."""
         try:
@@ -205,17 +220,14 @@ class HuggingFaceLLM(CustomLLM):
 
         self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
-        if isinstance(query_wrapper_prompt, PromptTemplate):
-            query_wrapper_prompt = query_wrapper_prompt.template
+        if isinstance(query_wrapper_prompt, str):
+            query_wrapper_prompt = PromptTemplate(query_wrapper_prompt)
 
-        self._messages_to_prompt = (
-            messages_to_prompt or self._tokenizer_messages_to_prompt
-        )
+        messages_to_prompt = messages_to_prompt or self._tokenizer_messages_to_prompt
 
         super().__init__(
             context_window=context_window,
             max_new_tokens=max_new_tokens,
-            system_prompt=system_prompt,
             query_wrapper_prompt=query_wrapper_prompt,
             tokenizer_name=tokenizer_name,
             model_name=model_name,
@@ -225,7 +237,13 @@ class HuggingFaceLLM(CustomLLM):
             tokenizer_outputs_to_remove=tokenizer_outputs_to_remove or [],
             model_kwargs=model_kwargs or {},
             generate_kwargs=generate_kwargs or {},
+            is_chat_model=is_chat_model,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod
@@ -239,12 +257,16 @@ class HuggingFaceLLM(CustomLLM):
             context_window=self.context_window,
             num_output=self.max_new_tokens,
             model_name=self.model_name,
+            is_chat_model=self.is_chat_model,
         )
 
     def _tokenizer_messages_to_prompt(self, messages: Sequence[ChatMessage]) -> str:
         """Use the tokenizer to convert messages to prompt. Fallback to generic."""
         if hasattr(self._tokenizer, "apply_chat_template"):
-            messages_dict = [message.dict() for message in messages]
+            messages_dict = [
+                {"role": message.role.value, "content": message.content}
+                for message in messages
+            ]
             tokens = self._tokenizer.apply_chat_template(messages_dict)
             return self._tokenizer.decode(tokens)
 
@@ -330,7 +352,7 @@ class HuggingFaceLLM(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        prompt = self._messages_to_prompt(messages)
+        prompt = self.messages_to_prompt(messages)
         completion_response = self.complete(prompt, formatted=True, **kwargs)
         return completion_response_to_chat_response(completion_response)
 
@@ -338,7 +360,7 @@ class HuggingFaceLLM(CustomLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        prompt = self._messages_to_prompt(messages)
+        prompt = self.messages_to_prompt(messages)
         completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
 
@@ -371,7 +393,7 @@ def chat_messages_to_conversational_kwargs(
     return kwargs
 
 
-class HuggingFaceInferenceAPI(LLM):
+class HuggingFaceInferenceAPI(CustomLLM):
     """
     Wrapper on the Hugging Face's Inference API.
 
@@ -575,7 +597,10 @@ class HuggingFaceInferenceAPI(LLM):
         raise NotImplementedError
 
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        raise NotImplementedError
+        response = await self._async_client.text_generation(
+            prompt, **{**{"max_new_tokens": self.num_output}, **kwargs}
+        )
+        return CompletionResponse(text=response)
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any

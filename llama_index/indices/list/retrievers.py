@@ -178,7 +178,7 @@ class SummaryIndexLLMRetriever(BaseRetriever):
             query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(nodes_batch)
             # call each batch independently
-            raw_response = self._service_context.llm_predictor.predict(
+            raw_response = self._service_context.llm.predict(
                 self._choice_select_prompt,
                 context_str=fmt_batch_str,
                 query_str=query_str,

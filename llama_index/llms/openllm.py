@@ -13,16 +13,7 @@ from typing import (
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms import ChatResponseAsyncGen
 from llama_index.llms.base import (
-    LLM,
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -32,6 +23,18 @@ from llama_index.llms.generic_utils import (
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+)
+from llama_index.types import PydanticProgramMode
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +61,6 @@ class OpenLLM(LLM):
     prompt_template: Optional[str] = Field(
         description="Optional prompt template to pass for this LLM."
     )
-    system_message: Optional[str] = Field(
-        description="Optional system message to pass for this LLM."
-    )
     backend: Optional[Literal["vllm", "pt"]] = Field(
         description="Optional backend to pass for this LLM. By default, it will use vLLM if vLLM is available in local system. Otherwise, it will fallback to PyTorch."
     )
@@ -85,22 +85,22 @@ class OpenLLM(LLM):
     else:
         _llm: Any = PrivateAttr()
 
-    _messages_to_prompt: Callable[[Sequence[ChatMessage]], Any] = PrivateAttr()
-
     def __init__(
         self,
         model_id: str,
         model_version: Optional[str] = None,
         model_tag: Optional[str] = None,
         prompt_template: Optional[str] = None,
-        system_message: Optional[str] = None,
         backend: Optional[Literal["vllm", "pt"]] = None,
         *args: Any,
         quantize: Optional[Literal["awq", "gptq", "int8", "int4", "squeezellm"]] = None,
         serialization: Literal["safetensors", "legacy"] = "safetensors",
         trust_remote_code: bool = False,
         callback_manager: Optional[CallbackManager] = None,
-        messages_to_prompt: Optional[Callable[..., Any]] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         **attrs: Any,
     ):
         try:
@@ -114,7 +114,7 @@ class OpenLLM(LLM):
             model_version=model_version,
             model_tag=model_tag,
             prompt_template=prompt_template,
-            system_message=system_message,
+            system_message=system_prompt,
             backend=backend,
             quantize=quantize,
             serialisation=serialization,
@@ -124,7 +124,7 @@ class OpenLLM(LLM):
         )
         if messages_to_prompt is None:
             messages_to_prompt = self._tokenizer_messages_to_prompt
-        self._messages_to_prompt = messages_to_prompt
+
         # NOTE: We need to do this here to ensure model is saved and revision is set correctly.
         assert self._llm.bentomodel
 
@@ -133,12 +133,15 @@ class OpenLLM(LLM):
             model_version=self._llm.revision,
             model_tag=str(self._llm.tag),
             prompt_template=prompt_template,
-            system_message=system_message,
             backend=self._llm.__llm_backend__,
             quantize=self._llm.quantise,
             serialization=self._llm._serialisation,
             trust_remote_code=self._llm.trust_remote_code,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
         )
 
     @classmethod
@@ -207,7 +210,7 @@ class OpenLLM(LLM):
         messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponse:
-        response = await self.acomplete(self._messages_to_prompt(messages), **kwargs)
+        response = await self.acomplete(self.messages_to_prompt(messages), **kwargs)
         return completion_response_to_chat_response(response)
 
     @llm_completion_callback()
@@ -236,7 +239,7 @@ class OpenLLM(LLM):
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         async for response_chunk in self.astream_complete(
-            self._messages_to_prompt(messages), **kwargs
+            self.messages_to_prompt(messages), **kwargs
         ):
             yield completion_response_to_chat_response(response_chunk)
 

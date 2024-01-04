@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, List
 
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anthropic_utils import CLAUDE_MODELS
-from llama_index.llms.base import LLMMetadata
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import (
     AZURE_TURBO_MODELS,
@@ -17,6 +16,7 @@ from llama_index.llms.openai_utils import (
     GPT4_MODELS,
     TURBO_MODELS,
 )
+from llama_index.llms.types import LLMMetadata
 
 if TYPE_CHECKING:
     from portkey import (

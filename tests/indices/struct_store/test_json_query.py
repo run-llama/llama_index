@@ -2,11 +2,14 @@
 
 import asyncio
 import json
-from typing import Any, Dict, Generator, cast
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any, Dict, cast
+from unittest.mock import patch
 
 import pytest
 from llama_index.indices.struct_store.json_query import JSONQueryEngine, JSONType
+from llama_index.llm_predictor import LLMPredictor
+from llama_index.llms.mock import MockLLM
+from llama_index.prompts.base import BasePromptTemplate
 from llama_index.response.schema import Response
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
@@ -21,23 +24,35 @@ TEST_PARAMS = [
 TEST_LLM_OUTPUT = "test_llm_output"
 
 
-@pytest.fixture()
-def mock_json_service_ctx(
-    mock_service_context: ServiceContext,
-) -> Generator[ServiceContext, None, None]:
-    with patch.object(mock_service_context, "llm_predictor") as mock_llm_predictor:
-        mock_llm_predictor.apredict = AsyncMock(return_value=TEST_LLM_OUTPUT)
-        mock_llm_predictor.predict = MagicMock(return_value=TEST_LLM_OUTPUT)
-        yield mock_service_context
+def mock_predict(self: Any, prompt: BasePromptTemplate, **prompt_args: Any) -> str:
+    return TEST_LLM_OUTPUT
+
+
+async def amock_predict(
+    self: Any, prompt: BasePromptTemplate, **prompt_args: Any
+) -> str:
+    return TEST_LLM_OUTPUT
 
 
 @pytest.mark.parametrize(("synthesize_response", "call_apredict"), TEST_PARAMS)
+@patch.object(
+    MockLLM,
+    "predict",
+    mock_predict,
+)
+@patch.object(
+    MockLLM,
+    "apredict",
+    amock_predict,
+)
 def test_json_query_engine(
     synthesize_response: bool,
     call_apredict: bool,
-    mock_json_service_ctx: ServiceContext,
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test GPTNLJSONQueryEngine."""
+    mock_service_context.llm_predictor = LLMPredictor(MockLLM())
+
     # Test on some sample data
     json_val = cast(JSONType, {})
     json_schema = cast(JSONType, {})
@@ -53,7 +68,7 @@ def test_json_query_engine(
     query_engine = JSONQueryEngine(
         json_value=json_val,
         json_schema=json_schema,
-        service_context=mock_json_service_ctx,
+        service_context=mock_service_context,
         output_processor=test_output_processor,
         verbose=True,
         synthesize_response=synthesize_response,

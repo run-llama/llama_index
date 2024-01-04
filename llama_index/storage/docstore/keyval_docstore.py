@@ -237,3 +237,12 @@ class KVDocumentStore(BaseDocumentStore):
             return metadata.get("doc_hash", None)
         else:
             return None
+
+    def get_all_document_hashes(self) -> Dict[str, str]:
+        """Get the stored hash for all documents."""
+        hashes = {}
+        for doc_id in self._kvstore.get_all(collection=self._metadata_collection):
+            hash = self.get_document_hash(doc_id)
+            if hash is not None:
+                hashes[hash] = doc_id
+        return hashes

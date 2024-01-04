@@ -3,7 +3,7 @@
 from typing import Any, List, Type
 
 from llama_index.bridge.pydantic import BaseModel, Field, create_model
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.prompts.base import PromptTemplate
 from llama_index.types import BasePydanticProgram, PydanticProgramMode

@@ -11,7 +11,7 @@ from llama_index.indices.base import BaseIndex
 from llama_index.indices.list.base import ListRetrieverMode, SummaryIndex
 from llama_index.indices.tree.base import TreeIndex, TreeRetrieverMode
 from llama_index.indices.vector_store import VectorStoreIndex
-from llama_index.llm_predictor import LLMPredictor
+from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.schema import Document
 from llama_index.utils import get_color_mapping, print_text
 

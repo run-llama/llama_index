@@ -35,7 +35,7 @@ class BaseFinetuningHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> str:
         """Run when an event starts and return id of event."""
-        from llama_index.llms.base import ChatMessage, MessageRole
+        from llama_index.llms.types import ChatMessage, MessageRole
 
         if event_type == CBEventType.LLM:
             cur_messages = []
@@ -68,7 +68,7 @@ class BaseFinetuningHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run when an event ends."""
-        from llama_index.llms.base import ChatMessage, MessageRole
+        from llama_index.llms.types import ChatMessage, MessageRole
 
         if (
             event_type == CBEventType.LLM

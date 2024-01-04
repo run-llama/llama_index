@@ -37,13 +37,13 @@ class Generation(BaseSynthesizer):
         del text_chunks
 
         if not self._streaming:
-            return await self._service_context.llm_predictor.apredict(
+            return await self._service_context.llm.apredict(
                 self._input_prompt,
                 query_str=query_str,
                 **response_kwargs,
             )
         else:
-            return self._service_context.llm_predictor.stream(
+            return self._service_context.llm.stream(
                 self._input_prompt,
                 query_str=query_str,
                 **response_kwargs,
@@ -59,13 +59,13 @@ class Generation(BaseSynthesizer):
         del text_chunks
 
         if not self._streaming:
-            return self._service_context.llm_predictor.predict(
+            return self._service_context.llm.predict(
                 self._input_prompt,
                 query_str=query_str,
                 **response_kwargs,
             )
         else:
-            return self._service_context.llm_predictor.stream(
+            return self._service_context.llm.stream(
                 self._input_prompt,
                 query_str=query_str,
                 **response_kwargs,

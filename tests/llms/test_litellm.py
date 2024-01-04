@@ -6,8 +6,8 @@ except ImportError:
     litellm = None  # type: ignore
 
 import pytest
-from llama_index.llms.base import ChatMessage
 from llama_index.llms.litellm import LiteLLM
+from llama_index.llms.types import ChatMessage
 from pytest import MonkeyPatch
 
 from tests.conftest import CachedOpenAIApiKeys

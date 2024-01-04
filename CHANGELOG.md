@@ -1,20 +1,243 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.25] - 2024-01-03
+
+### New Features
+
+- Added concurrancy limits for dataset generation (#9779)
+- New `deepeval` one-click observability handler (#9801)
+- Added jaguar vector store (#9754)
+- Add beta multimodal ReAct agent (#9807)
+
+### Bug Fixes / Nits
+
+- Changed default batch size for OpenAI embeddings to 100 (#9805)
+- Use batch size properly for qdrant upserts (#9814)
+- `_verify_source_safety` uses AST, not regexes, for proper safety checks (#9789)
+- use provided LLM in element node parsers (#9776)
+- updated legacy vectordb loading function to be more robust (#9773)
+- Use provided http client in AzureOpenAI (#9772)
+
+## [0.9.24] - 2023-12-30
+
+### New Features
+
+- Add reranker for BEIR evaluation (#9743)
+- Add Pathway integration. (#9719)
+- custom agents implementation + notebook (#9746)
+
+### Bug Fixes / Nits
+
+- fix beam search for vllm: add missing parameter (#9741)
+- Fix alpha for hrbrid search (#9742)
+- fix token counter (#9744)
+- BM25 tokenizer lowercase (#9745)
+
+## [0.9.23] - 2023-12-28
+
+### Bug Fixes / Nits
+
+- docs: fixes qdrant_hybrid.ipynb typos (#9729)
+- make llm completion program more general (#9731)
+- Refactor MM Vector store and Index for empty collection (#9717)
+- Adding IF statement to check for Schema using "Select" (#9712)
+- allow skipping module loading in `download_module` and `download_llama_pack` (#9734)
+
+## [0.9.22] - 2023-12-26
+
+### New Features
+
+- Added `.iter_data()` method to `SimpleDirectoryReader` (#9658)
+- Added async support to `Ollama` LLM (#9689)
+- Expanding pinecone filter support for `in` and `not in` (#9683)
+
+### Bug Fixes / Nits
+
+- Improve BM25Retriever performance (#9675)
+- Improved qdrant hybrid search error handling (#9707)
+- Fixed `None` handling in `ChromaVectorStore` (#9697)
+- Fixed postgres schema creation if not existing (#9712)
+
+## [0.9.21] - 2023-12-23
+
+### New Features
+
+- Added zilliz cloud as a managed index (#9605)
+
+### Bug Fixes / Nits
+
+- Bedrock client and LLM fixes (#9671, #9646)
+
+## [0.9.20] - 2023-12-21
+
+### New Features
+
+- Added `insert_batch_size` to limit number of embeddings held in memory when creating an index, defaults to 2048 (#9630)
+- Improve auto-retrieval (#9647)
+- Configurable Node ID Generating Function (#9574)
+- Introduced action input parser (#9575)
+- qdrant sparse vector support (#9644)
+- Introduced upserts and delete in ingestion pipeline (#9643)
+- Add Zilliz Cloud Pipeline as a Managed Index (#9605)
+- Add support for Google Gemini models via VertexAI (#9624)
+- support allowing additional metadata filters on autoretriever (#9662)
+
+### Bug Fixes / Nits
+
+- Fix pip install commands in LM Format Enforcer notebooks (#9648)
+- Fixing some more links and documentations (#9633)
+- some bedrock nits and fixes (#9646)
+
+## [0.9.19] - 2023-12-20
+
+### New Features
+
+- new llama datasets `LabelledEvaluatorDataset` & `LabelledPairwiseEvaluatorDataset` (#9531)
+
+## [0.9.18] - 2023-12-20
+
+### New Features
+
+- multi-doc auto-retrieval guide (#9631)
+
+### Bug Fixes / Nits
+
+- fix(vllm): make Vllm's 'complete' method behave the same as other LLM class (#9634)
+- FIx Doc links and other documentation issue (#9632)
+
+## [0.9.17] - 2023-12-19
+
+### New Features
+
+- [example] adding user feedback (#9601)
+- FEATURE: Cohere ReRank Relevancy Metric for Retrieval Eval (#9495)
+
+### Bug Fixes / Nits
+
+- Fix Gemini Chat Mode (#9599)
+- Fixed `types-protobuf` from being a primary dependency (#9595)
+- Adding an optional auth token to the TextEmbeddingInference class (#9606)
+- fix: out of index get latest tool call (#9608)
+- fix(azure_openai.py): add missing return to subclass override (#9598)
+- fix mix up b/w 'formatted' and 'format' params for ollama api call (#9594)
+
+## [0.9.16] - 2023-12-18
+
+### New Features
+
+- agent refactor: step-wise execution (#9584)
+- Add OpenRouter, with Mixtral demo (#9464)
+- Add hybrid search to neo4j vector store (#9530)
+- Add support for auth service accounts for Google Semantic Retriever (#9545)
+
+### Bug Fixes / Nits
+
+- Fixed missing `default=None` for `LLM.system_prompt` (#9504)
+- Fix #9580 : Incorporate metadata properly (#9582)
+- Integrations: Gradient[Embeddings,LLM] - sdk-upgrade (#9528)
+- Add mixtral 8x7b model to anyscale available models (#9573)
+- Gemini Model Checks (#9563)
+- Update OpenAI fine-tuning with latest changes (#9564)
+- fix/Reintroduce `WHERE` filter to the Sparse Query for PgVectorStore (#9529)
+- Update Ollama API to ollama v0.1.16 (#9558)
+- ollama: strip invalid `formatted` option (#9555)
+- add a device in optimum push #9541 (#9554)
+- Title vs content difference for Gemini Embedding (#9547)
+- fix pydantic fields to float (#9542)
+
+## [0.9.15] - 2023-12-13
+
+### New Features
+
+- Added full support for Google Gemini text+vision models (#9452)
+- Added new Google Semantic Retriever (#9440)
+- added `from_existing()` method + async support to OpenAI assistants (#9367)
+
+### Bug Fixes / Nits
+
+- Fixed huggingface LLM system prompt and messages to prompt (#9463)
+- Fixed ollama additional kwargs usage (#9455)
+
+## [0.9.14] - 2023-12-11
+
+### New Features
+
+- Add MistralAI LLM (#9444)
+- Add MistralAI Embeddings (#9441)
+- Add `Ollama` Embedding class (#9341)
+- Add `FlagEmbeddingReranker` for reranking (#9285)
+- feat: PgVectorStore support advanced metadata filtering (#9377)
+- Added `sql_only` parameter to SQL query engines to avoid executing SQL (#9422)
+
+### Bug Fixes / Nits
+
+- Feat/PgVector Support custom hnsw.ef_search and ivfflat.probes (#9420)
+- fix F1 score definition, update copyright year (#9424)
+- Change more than one image input for Replicate Multi-modal models from error to warning (#9360)
+- Removed GPT-Licensed `aiostream` dependency (#9403)
+- Fix result of BedrockEmbedding with Cohere model (#9396)
+- Only capture valid tool names in react agent (#9412)
+- Fixed `top_k` being multiplied by 10 in azure cosmos (#9438)
+- Fixed hybrid search for OpenSearch (#9430)
+
+### Breaking Changes
+
+- Updated the base `LLM` interface to match `LLMPredictor` (#9388)
+- Deprecated `LLMPredictor` (#9388)
+
+## [0.9.13] - 2023-12-06
+
+### New Features
+
+- Added batch prediction support for `LabelledRagDataset` (#9332)
+
+### Bug Fixes / Nits
+
+- Fixed save and load for faiss vector store (#9330)
+
+## [0.9.12] - 2023-12-05
+
+### New Features
+
+- Added an option `reuse_client` to openai/azure to help with async timeouts. Set to `False` to see improvements (#9301)
+- Added support for `vLLM` llm (#9257)
+- Add support for python 3.12 (#9304)
+- Support for `claude-2.1` model name (#9275)
+
+### Bug Fixes / Nits
+
+- Fix embedding format for bedrock cohere embeddings (#9265)
+- Use `delete_kwargs` for filtering in weaviate vector store (#9300)
+- Fixed automatic qdrant client construction (#9267)
+
+## [0.9.11] - 2023-12-03
+
+### New Features
+
+- Make `reference_contexts` optional in `LabelledRagDataset` (#9266)
+- Re-organize `download` module (#9253)
+- Added document management to ingestion pipeline (#9135)
+- Add docs for `LabelledRagDataset` (#9228)
+- Add submission template notebook and other doc updates for `LabelledRagDataset` (#9273)
+
+### Bug Fixes / Nits
+
+- Convert numpy to list for `InstructorEmbedding` (#9255)
+
+## [0.9.10] - 2023-11-30
 
 ### New Features
 
 - Advanced Metadata filter for vector stores (#9216)
 - Amazon Bedrock Embeddings New models (#9222)
 - Added PromptLayer callback integration (#9190)
+- Reuse file ids for `OpenAIAssistant` (#9125)
 
 ### Breaking Changes / Deprecations
 
 - Deprecate ExactMatchFilter (#9216)
 
-### Bug Fixes / Nits
-
-## [0.9.9] - 2023-11-20
+## [0.9.9] - 2023-11-29
 
 ### New Features
 
@@ -25,7 +248,7 @@
 ### Breaking Changes / Deprecations
 
 - Added `LocalAI` demo and began deprecation cycle (#9151)
-- Deprecate `QueryResponseDataset` and `DatasetGenerator` of `evaluaton` module (#9165)
+- Deprecate `QueryResponseDataset` and `DatasetGenerator` of `evaluation` module (#9165)
 
 ### Bug Fixes / Nits
 
@@ -88,7 +311,7 @@
 ### Bug Fixes / Nits
 
 - Fixed bug in formatting chat prompt templates when estimating chunk sizes (#9025)
-- Sandboxed Pandas execution, remidiate CVE-2023-39662 (#8890)
+- Sandboxed Pandas execution, remediate CVE-2023-39662 (#8890)
 - Restored `mypy` for Python 3.8 (#9031)
 - Loosened `dataclasses-json` version range,
   and removes unnecessary `jinja2` extra from `pandas` (#9042)

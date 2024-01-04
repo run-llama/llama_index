@@ -27,7 +27,7 @@ class BaseIndex(Generic[IS], ABC):
         nodes (List[Node]): List of nodes to index
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         service_context (ServiceContext): Service context container (contains
-            components like LLMPredictor, PromptHelper, etc.).
+            components like LLM, Embeddings, etc.).
 
     """
 

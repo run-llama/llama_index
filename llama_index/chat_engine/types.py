@@ -7,7 +7,7 @@ from enum import Enum
 from threading import Event
 from typing import AsyncGenerator, Generator, List, Optional, Union
 
-from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
+from llama_index.llms.types import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
 from llama_index.memory import BaseMemory
 from llama_index.response.schema import Response, StreamingResponse
 from llama_index.schema import NodeWithScore

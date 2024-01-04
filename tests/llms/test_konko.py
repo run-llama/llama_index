@@ -1,8 +1,8 @@
 from typing import Any, Generator
 
 import pytest
-from llama_index.llms.base import ChatMessage
 from llama_index.llms.konko import Konko
+from llama_index.llms.types import ChatMessage
 from pytest import MonkeyPatch
 
 try:

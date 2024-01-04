@@ -1,9 +1,13 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.llms.base import (
-    LLM,
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.llm import LLM
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -13,9 +17,8 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
-    llm_chat_callback,
-    llm_completion_callback,
 )
+from llama_index.llms.vertex_gemini_utils import is_gemini_model
 from llama_index.llms.vertex_utils import (
     CHAT_MODELS,
     CODE_CHAT_MODELS,
@@ -23,10 +26,12 @@ from llama_index.llms.vertex_utils import (
     TEXT_MODELS,
     _parse_chat_history,
     _parse_examples,
+    _parse_message,
     acompletion_with_retry,
     completion_with_retry,
     init_vertexai,
 )
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class Vertex(LLM):
@@ -44,15 +49,16 @@ class Vertex(LLM):
     iscode: bool = Field(
         default=False, description="Flag to determine if current model is a Code Model"
     )
+    _is_gemini: bool = PrivateAttr()
     _client: Any = PrivateAttr()
-    _chatclient: Any = PrivateAttr()
+    _chat_client: Any = PrivateAttr()
 
     def __init__(
         self,
         model: str = "text-bison",
         project: Optional[str] = None,
         location: Optional[str] = None,
-        credential: Optional[str] = None,
+        credentials: Optional[Any] = None,
         examples: Optional[Sequence[ChatMessage]] = None,
         temperature: float = 0.1,
         max_tokens: int = 512,
@@ -60,20 +66,26 @@ class Vertex(LLM):
         iscode: bool = False,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        init_vertexai(project=project, location=location, credentials=credential)
+        init_vertexai(project=project, location=location, credentials=credentials)
 
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
+        self._is_gemini = False
         if model in CHAT_MODELS:
             from vertexai.language_models import ChatModel
 
-            self._chatclient = ChatModel.from_pretrained(model)
+            self._chat_client = ChatModel.from_pretrained(model)
         elif model in CODE_CHAT_MODELS:
             from vertexai.language_models import CodeChatModel
 
-            self._chatclient = CodeChatModel.from_pretrained(model)
+            self._chat_client = CodeChatModel.from_pretrained(model)
             iscode = True
         elif model in CODE_MODELS:
             from vertexai.language_models import CodeGenerationModel
@@ -84,8 +96,14 @@ class Vertex(LLM):
             from vertexai.language_models import TextGenerationModel
 
             self._client = TextGenerationModel.from_pretrained(model)
+        elif is_gemini_model(model):
+            from llama_index.llms.vertex_gemini_utils import create_gemini_client
+
+            self._client = create_gemini_client(model)
+            self._chat_client = self._client
+            self._is_gemini = True
         else:
-            raise (ValueError("Model Not Found Please Check the model name"))
+            raise (ValueError(f"Model {model} not found, please verify the model name"))
 
         super().__init__(
             temperature=temperature,
@@ -96,6 +114,11 @@ class Vertex(LLM):
             examples=examples,
             iscode=iscode,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod
@@ -128,8 +151,8 @@ class Vertex(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        question = messages[-1].content
-        chat_history = _parse_chat_history(messages[:-1])
+        question = _parse_message(messages[-1], self._is_gemini)
+        chat_history = _parse_chat_history(messages[:-1], self._is_gemini)
         chat_params = {**chat_history}
 
         kwargs = kwargs if kwargs else {}
@@ -148,13 +171,14 @@ class Vertex(LLM):
             )
 
         generation = completion_with_retry(
-            client=self._chatclient,
+            client=self._chat_client,
             prompt=question,
             chat=True,
             stream=False,
+            is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
-            **params
+            **params,
         )
 
         return ChatResponse(
@@ -170,7 +194,11 @@ class Vertex(LLM):
             raise (ValueError("candidate_count is not supported by the codey model's"))
 
         completion = completion_with_retry(
-            self._client, prompt, max_retries=self.max_retries, **params
+            self._client,
+            prompt,
+            max_retries=self.max_retries,
+            is_gemini=self._is_gemini,
+            **params,
         )
         return CompletionResponse(text=completion.text, raw=completion.__dict__)
 
@@ -178,8 +206,8 @@ class Vertex(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        question = messages[-1].content
-        chat_history = _parse_chat_history(messages[:-1])
+        question = _parse_message(messages[-1], self._is_gemini)
+        chat_history = _parse_chat_history(messages[:-1], self._is_gemini)
         chat_params = {**chat_history}
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
@@ -195,23 +223,21 @@ class Vertex(LLM):
             )
 
         response = completion_with_retry(
-            client=self._chatclient,
+            client=self._chat_client,
             prompt=question,
             chat=True,
             stream=True,
+            is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
-            **params
+            **params,
         )
 
         def gen() -> ChatResponseGen:
             content = ""
             role = MessageRole.ASSISTANT
             for r in response:
-                if "text" in r.__dict__:
-                    content_delta = r.text
-                else:
-                    content_delta = ""
+                content_delta = r.text
                 content += content_delta
                 yield ChatResponse(
                     message=ChatMessage(role=role, content=content),
@@ -232,8 +258,9 @@ class Vertex(LLM):
             client=self._client,
             prompt=prompt,
             stream=True,
+            is_gemini=self._is_gemini,
             max_retries=self.max_retries,
-            **params
+            **params,
         )
 
         def gen() -> CompletionResponseGen:
@@ -251,8 +278,8 @@ class Vertex(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        question = messages[-1].content
-        chat_history = _parse_chat_history(messages[:-1])
+        question = _parse_message(messages[-1], self._is_gemini)
+        chat_history = _parse_chat_history(messages[:-1], self._is_gemini)
         chat_params = {**chat_history}
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
@@ -267,12 +294,13 @@ class Vertex(LLM):
                 )
             )
         generation = await acompletion_with_retry(
-            client=self._chatclient,
+            client=self._chat_client,
             prompt=question,
             chat=True,
+            is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
-            **params
+            **params,
         )
         ##this is due to a bug in vertex AI we have to await twice
         if self.iscode:
@@ -289,7 +317,11 @@ class Vertex(LLM):
         if self.iscode and "candidate_count" in params:
             raise (ValueError("candidate_count is not supported by the codey model's"))
         completion = await acompletion_with_retry(
-            client=self._client, prompt=prompt, max_retries=self.max_retries, **params
+            client=self._client,
+            prompt=prompt,
+            max_retries=self.max_retries,
+            is_gemini=self._is_gemini,
+            **params,
         )
         return CompletionResponse(text=completion.text)
 

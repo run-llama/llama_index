@@ -515,49 +515,66 @@ class CognitiveSearchVectorStore(VectorStore):
         return odata_expr
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query vector store."""
-        from azure.search.documents.models import Vector
+        odata_filter = None
+        if query.filters is not None:
+            odata_filter = self._create_odata_filter(query.filters)
+        azure_query_result_search: AzureQueryResultSearchBase = (
+            AzureQueryResultSearchDefault(
+                query, self._field_mapping, odata_filter, self._search_client
+            )
+        )
+        if query.mode == VectorStoreQueryMode.SPARSE:
+            azure_query_result_search = AzureQueryResultSearchSparse(
+                query, self._field_mapping, odata_filter, self._search_client
+            )
+        elif query.mode == VectorStoreQueryMode.HYBRID:
+            azure_query_result_search = AzureQueryResultSearchHybrid(
+                query, self._field_mapping, odata_filter, self._search_client
+            )
+        elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
+            azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
+                query, self._field_mapping, odata_filter, self._search_client
+            )
+        return azure_query_result_search.search()
 
-        select_fields = [
+
+class AzureQueryResultSearchBase:
+    def __init__(
+        self,
+        query: VectorStoreQuery,
+        field_mapping: Dict[str, str],
+        odata_filter: Optional[str],
+        search_client: Any,
+    ) -> None:
+        self._query = query
+        self._field_mapping = field_mapping
+        self._odata_filter = odata_filter
+        self._search_client = search_client
+
+    @property
+    def _select_fields(self) -> List[str]:
+        return [
             self._field_mapping["id"],
             self._field_mapping["chunk"],
             self._field_mapping["metadata"],
             self._field_mapping["doc_id"],
         ]
 
-        search_query = "*"
-        vectors = None
+    def _create_search_query(self) -> str:
+        return "*"
 
-        if query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID):
-            if query.query_str is None:
-                raise ValueError("Query missing query string")
+    def _create_query_vector(self) -> Optional[List[Any]]:
+        return None
 
-            search_query = query.query_str
-
-            logger.info(f"Hybrid search with search text: {search_query}")
-
-        if query.mode in (VectorStoreQueryMode.DEFAULT, VectorStoreQueryMode.HYBRID):
-            if not query.query_embedding:
-                raise ValueError("Query missing embedding")
-
-            vector = Vector(
-                value=query.query_embedding,
-                k=query.similarity_top_k,
-                fields=self._field_mapping["embedding"],
-            )
-            vectors = [vector]
-            logger.info("Vector search with supplied embedding")
-
-        odata_filter = None
-        if query.filters is not None:
-            odata_filter = self._create_odata_filter(query.filters)
-
+    def _create_query_result(
+        self, search_query: str, vectors: Optional[List[Any]]
+    ) -> VectorStoreQueryResult:
         results = self._search_client.search(
             search_text=search_query,
             vectors=vectors,
-            top=query.similarity_top_k,
-            select=select_fields,
-            filter=odata_filter,
+            top=self._query.similarity_top_k,
+            select=self._select_fields,
+            filter=self._odata_filter,
         )
 
         id_result = []
@@ -567,6 +584,124 @@ class CognitiveSearchVectorStore(VectorStore):
             node_id = result[self._field_mapping["id"]]
             metadata = json.loads(result[self._field_mapping["metadata"]])
             score = result["@search.score"]
+            chunk = result[self._field_mapping["chunk"]]
+
+            try:
+                node = metadata_dict_to_node(metadata)
+                node.set_content(chunk)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata
+                )
+
+                node = TextNode(
+                    text=chunk,
+                    id_=node_id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
+            logger.debug(f"Retrieved node id {node_id} with node data of {node}")
+
+            id_result.append(node_id)
+            node_result.append(node)
+            score_result.append(score)
+
+        logger.debug(
+            f"Search query '{search_query}' returned {len(id_result)} results."
+        )
+
+        return VectorStoreQueryResult(
+            nodes=node_result, similarities=score_result, ids=id_result
+        )
+
+    def search(self) -> VectorStoreQueryResult:
+        search_query = self._create_search_query()
+        vectors = self._create_query_vector()
+        return self._create_query_result(search_query, vectors)
+
+
+class AzureQueryResultSearchDefault(AzureQueryResultSearchBase):
+    def _create_query_vector(self) -> Optional[List[Any]]:
+        """Query vector store."""
+        from azure.search.documents.models import Vector
+
+        if not self._query.query_embedding:
+            raise ValueError("Query missing embedding")
+
+        vector = Vector(
+            value=self._query.query_embedding,
+            k=self._query.similarity_top_k,
+            fields=self._field_mapping["embedding"],
+        )
+        vectors = [vector]
+        logger.info("Vector search with supplied embedding")
+        return vectors
+
+
+class AzureQueryResultSearchSparse(AzureQueryResultSearchBase):
+    def _create_search_query(self) -> str:
+        if self._query.query_str is None:
+            raise ValueError("Query missing query string")
+
+        search_query = self._query.query_str
+
+        logger.info(f"Hybrid search with search text: {search_query}")
+        return search_query
+
+
+class AzureQueryResultSearchHybrid(
+    AzureQueryResultSearchDefault, AzureQueryResultSearchSparse
+):
+    def _create_query_vector(self) -> Optional[List[Any]]:
+        return AzureQueryResultSearchDefault._create_query_vector(self)
+
+    def _create_search_query(self) -> str:
+        return AzureQueryResultSearchSparse._create_search_query(self)
+
+
+class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
+    def _create_query_vector(self) -> Optional[List[Any]]:
+        """Query vector store."""
+        from azure.search.documents.models import Vector
+
+        if not self._query.query_embedding:
+            raise ValueError("Query missing embedding")
+        # k is set to 50 to align with the number of accept document in azure semantic reranking model.
+        # https://learn.microsoft.com/en-us/azure/search/semantic-search-overview
+        vector = Vector(
+            value=self._query.query_embedding,
+            k=50,
+            fields=self._field_mapping["embedding"],
+        )
+        vectors = [vector]
+        logger.info("Vector search with supplied embedding")
+        return vectors
+
+    def _create_query_result(
+        self, search_query: str, vectors: Optional[List[Any]]
+    ) -> VectorStoreQueryResult:
+        results = self._search_client.search(
+            search_text=search_query,
+            vectors=vectors,
+            top=self._query.similarity_top_k,
+            select=self._select_fields,
+            filter=self._odata_filter,
+            query_type="semantic",
+            semantic_configuration_name="default",
+        )
+
+        id_result = []
+        node_result = []
+        score_result = []
+        for result in results:
+            node_id = result[self._field_mapping["id"]]
+            metadata = json.loads(result[self._field_mapping["metadata"]])
+            # use reranker_score instead of score
+            score = result["@search.reranker_score"]
             chunk = result[self._field_mapping["chunk"]]
 
             try:
