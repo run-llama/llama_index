@@ -149,6 +149,15 @@ maxdepth: 1
 /examples/llm/monsterapi.ipynb
 ```
 
+## Nivida Triton
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/nvidia_triton.ipynb
+```
+
 ## Ollama
 
 ```{toctree}
