@@ -5,6 +5,7 @@ from llama_index.bridge.pydantic import Field, PrivateAttr, BaseModel, validator
 from llama_index.callbacks import CallbackManager
 from llama_index.schema import BaseComponent
 from llama_index.pipeline.schema import QueryComponent
+import uuid
 
 
 class InputTup(BaseModel):
@@ -83,12 +84,34 @@ class QueryPipeline(BaseModel):
     ):
         callback_manager = callback_manager or CallbackManager([])
         
-        
-
         super().__init__(
             callback_manager=callback_manager,
             **kwargs,
         )
+
+        if chain is not None:
+            # generate implicit link between each item, add 
+            self._add_chain(chain)
+
+    def add_chain(self, chain: Sequence[QueryComponent]) -> None:
+        """Add a chain of modules to the pipeline.
+
+        This is a special form of pipeline that is purely sequential/linear.
+        This allows a more concise way of specifying a pipeline.
+        
+        """
+        # first add all modules
+        module_keys = []
+        for module in chain:
+            module_key = str(uuid.uuid4())
+            self.add(module_key, module)
+
+        # then add all links
+        for i in range(len(chain) - 1):
+            self.add_link(
+                src=module_keys[i], 
+                dest=module_keys[i + 1]
+            )
 
     def add_modules(self, module_dict: Dict[str, QueryComponent]) -> None:
         """Add modules to the pipeline."""
