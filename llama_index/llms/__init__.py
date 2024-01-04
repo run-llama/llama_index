@@ -29,6 +29,7 @@ from llama_index.llms.perplexity import Perplexity
 from llama_index.llms.portkey import Portkey
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
+from llama_index.llms.tensorrt import LocalTensorRTLLM
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -75,6 +76,7 @@ __all__ = [
     "LlamaCPP",
     "LocalAI",
     "LOCALAI_DEFAULTS",
+    "LocalTensorRTLLM",
     "MessageRole",
     "MockLLM",
     "MonsterLLM",
