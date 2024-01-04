@@ -219,6 +219,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
             raise ImportError(import_err_msg)
 
         if pinecone_index is not None:
+            self._pinecone_index = cast(pinecone.Index, pinecone_index)  # type: ignore[name-defined]
+        else:
             if hasattr(pinecone, "version") and pinecone.version >= "3.0.0":
                 if index_name is None:
                     raise ValueError(
