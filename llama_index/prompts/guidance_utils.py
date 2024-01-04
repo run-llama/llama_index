@@ -1,9 +1,8 @@
-from typing import TYPE_CHECKING, Optional, Type, TypeVar
-
-from llama_index.output_parsers.base import OutputParserException
-from llama_index.output_parsers.utils import parse_json_markdown
+from typing import Optional, Type, TypeVar
 
 from llama_index.bridge.pydantic import BaseModel
+from llama_index.output_parsers.base import OutputParserException
+from llama_index.output_parsers.utils import parse_json_markdown
 
 
 def convert_to_handlebars(text: str) -> str:
@@ -148,6 +147,6 @@ def parse_pydantic_from_guidance_program(
     except Exception as e:
         raise OutputParserException(
             "Failed to parse pydantic object from guidance program"
-            ". Probabily the LLM failed to produce data with right json schema"
+            ". Probably the LLM failed to produce data with right json schema"
         ) from e
     return sub_questions

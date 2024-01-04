@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING, Any, Optional, Type, cast
 from functools import partial
+from typing import TYPE_CHECKING, Any, Optional, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
@@ -10,6 +10,7 @@ from llama_index.prompts.guidance_utils import (
 
 if TYPE_CHECKING:
     from guidance.models import Model as GuidanceLLM
+
 
 class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
     """
@@ -36,20 +37,29 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
             llm = guidance_llm
         else:
             llm = OpenAI("text-davinci-003")
-        
+
         full_str = prompt_template_str + "\n"
         self._full_str = full_str
         self._guidance_program = partial(self.program, llm=llm, silent=not verbose)
         self._output_cls = output_cls
         self._verbose = verbose
 
-    def program(self, llm: "GuidanceLLM", silent: bool, tools_str: str, query_str: str, **kwargs) -> "GuidanceLLM":
-        """a wrapper to execute the program with new guidance version"""
+    def program(
+        self,
+        llm: "GuidanceLLM",
+        silent: bool,
+        tools_str: str,
+        query_str: str,
+        **kwargs: dict,
+    ) -> "GuidanceLLM":
+        """A wrapper to execute the program with new guidance version."""
         from guidance import gen
 
-        given_query = self._full_str.replace("{{tools_str}}", tools_str).replace("{{query_str}}", query_str) 
+        given_query = self._full_str.replace("{{tools_str}}", tools_str).replace(
+            "{{query_str}}", query_str
+        )
 
-        return llm + given_query + gen(stop='.')
+        return llm + given_query + gen(stop=".")
 
     @classmethod
     def from_defaults(
