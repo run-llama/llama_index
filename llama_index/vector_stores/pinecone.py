@@ -224,8 +224,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             self._pinecone_index = cast(pinecone.Index, pinecone_index)  # type: ignore[name-defined]
         else:
             # Pinecone client version >= 3.0.0 has breaking changes to initialization signature
-            pinecone_client_version = get_distribution("pinecone-client").version[:-5]
-            if version.parse(pinecone_client_version) >= version.parse("3.0.0"):
+            if hasattr(pinecone, "version") and pinecone.version >= "3.0.0":
                 if index_name is None:
                     raise ValueError(
                         "Must specify index_name if not directly passing in client."
