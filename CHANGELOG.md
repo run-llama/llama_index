@@ -1073,7 +1073,7 @@
 ### Breaking Changes
 
 - Update milvus vector store to support filters and dynamic schemas (#7286)
-  - See the [updated notebook](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
+  - See the [updated notebook](https://docs.llamaindex.ai/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
 - Added NLTK to core dependencies to support the default sentence splitter (#7606)
 
 ## [0.8.22] - 2023-09-07
