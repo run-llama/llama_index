@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type, cast
+from typing import Any, Dict, Optional, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.llm import LLM
@@ -82,19 +82,21 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
 
     def __call__(
         self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
+        llm_kwargs = llm_kwargs or {}
         if self._llm.metadata.is_chat_model:
             messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
-            response = self._llm.chat(messages)
+            response = self._llm.chat(messages, **llm_kwargs)
 
             raw_output = response.message.content or ""
         else:
             formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
 
-            response = self._llm.complete(formatted_prompt)
+            response = self._llm.complete(formatted_prompt, **llm_kwargs)
 
             raw_output = response.text
 
@@ -107,19 +109,21 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
 
     async def acall(
         self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
+        llm_kwargs = llm_kwargs or {}
         if self._llm.metadata.is_chat_model:
             messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
-            response = await self._llm.achat(messages)
+            response = await self._llm.achat(messages, **llm_kwargs)
 
             raw_output = response.message.content or ""
         else:
             formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
 
-            response = await self._llm.acomplete(formatted_prompt)
+            response = await self._llm.acomplete(formatted_prompt, **llm_kwargs)
 
             raw_output = response.text
 

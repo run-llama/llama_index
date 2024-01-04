@@ -157,9 +157,11 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
     def __call__(
         self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Union[Model, List[Model]]:
+        llm_kwargs = llm_kwargs or {}
         description = self._description_eval(**kwargs)
 
         openai_fn_spec = to_openai_tool(self._output_cls, description=description)
@@ -170,6 +172,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             messages=messages,
             tools=[openai_fn_spec],
             tool_choice=self._tool_choice,
+            **llm_kwargs,
         )
         message = chat_response.message
         if "tool_calls" not in message.additional_kwargs:
@@ -188,9 +191,11 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
     async def acall(
         self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Union[Model, List[Model]]:
+        llm_kwargs = llm_kwargs or {}
         description = self._description_eval(**kwargs)
 
         openai_fn_spec = to_openai_tool(self._output_cls, description=description)
@@ -201,6 +206,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             messages=messages,
             tools=[openai_fn_spec],
             tool_choice=self._tool_choice,
+            **llm_kwargs,
         )
         message = chat_response.message
         if "tool_calls" not in message.additional_kwargs:
@@ -217,8 +223,14 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             verbose=self._verbose,
         )
 
-    def stream_list(self, *args: Any, **kwargs: Any) -> Generator[Model, None, None]:
+    def stream_list(
+        self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Generator[Model, None, None]:
         """Streams a list of objects."""
+        llm_kwargs = llm_kwargs or {}
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
         description = self._description_eval(**kwargs)
@@ -230,6 +242,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             messages=messages,
             tools=[openai_fn_spec],
             tool_choice=_default_tool_choice(list_output_cls),
+            **llm_kwargs,
         )
         # extract function call arguments
         # obj_start_idx finds start position (before a new "{" in JSON)
