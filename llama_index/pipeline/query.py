@@ -67,40 +67,18 @@ class QueryPipeline(BaseModel):
     edge_dict: Dict[str, List[Link]] = Field(
         default_factory=dict, description="The edges in the pipeline."
     )
-    # automatically generated
-    reverse_edge_dict: Dict[str, List[Link]] = Field(
-        default_factory=dict, description="The reverse edges in the pipeline."
-    )
 
-    root_keys: List[str] = Field(
-        default_factory=list, description="The keys of the root modules."
-    )
+    # root_keys: List[str] = Field(
+    #     default_factory=list, description="The keys of the root modules."
+    # )
 
     class Config:
         arbitrary_types_allowed = True
 
-    @validator("edge_dict", pre=True, always=True)
-    def create_reverse_edge_dict(cls, v, values):
-        """Create reverse edge dict.
-
-        Reverse edge dict is automatically generated from edge dict.
-        
-        """
-        reverse_edge_dict = {}
-        for k, links in v.items():
-            for link in links:
-                if link.dest not in reverse_edge_dict:
-                    reverse_edge_dict[link.dest] = []
-                reverse_edge_dict[link.dest].append(link)
-        # assign to reverse_edge_dict property
-        values["reverse_edge_dict"] = reverse_edge_dict
-
-        return v
-
     def __init__(
         self,
         callback_manager: Optional[CallbackManager] = None,
-        chain: Optional[Sequence[BaseComponent]] = None,
+        chain: Optional[Sequence[QueryComponent]] = None,
         **kwargs: Any,
     ):
         callback_manager = callback_manager or CallbackManager([])
@@ -112,22 +90,40 @@ class QueryPipeline(BaseModel):
             **kwargs,
         )
 
-    def add_modules(self, module_dict: Dict[str, BaseComponent]) -> None:
+    def add_modules(self, module_dict: Dict[str, QueryComponent]) -> None:
         """Add modules to the pipeline."""
-        pass
+        for module_key, module in module_dict.items():
+            self.add(module_key, module)
 
-    def add(self, module: BaseComponent) -> None:
+    def add(self, module_key: str, module: QueryComponent) -> None:
         """Add a module to the pipeline."""
-        pass
+        # if already exists, raise error
+        if module_key in self.module_dict:
+            raise ValueError(f"Module {module_key} already exists in pipeline.")
+        self.module_dict[module_key] = module
 
     def add_link(
-            self, src: str, 
-            dest: str, 
-            src_key: 
-            Optional[str] = None, 
-            dest_key: Optional[str] = None) -> None:
+        self, 
+        src: str, 
+        dest: str, 
+        src_key: Optional[str] = None, 
+        dest_key: Optional[str] = None
+    ) -> None:
         """Add a link between two modules."""
-        pass
+        self.edge_dict[src].append(
+            Link(src=src, dest=dest, src_key=src_key, dest_key=dest_key)
+        )
+
+    def _get_root_keys(self) -> List[str]:
+        """Get root keys."""
+        # first add all to root keys, then remove
+        root_keys: Set[str] = set(self.module_dict.keys())
+        # get all modules without upstream dependencies
+        for module_key in self.module_dict.keys():
+            for link in self.edge_dict[module_key]:
+                if link.dest in root_keys:
+                    root_keys.remove(link.dest)
+        return root_keys
 
     
     def run(self, *args: Any, **kwargs: Any) -> Any:
@@ -141,9 +137,10 @@ class QueryPipeline(BaseModel):
         # currently assume kwargs, add handling for args later
         ## run pipeline
         ## assume there is only one root - for multiple roots, need to specify `run_multi`
-        if len(self.root_keys) != 1:
+        root_keys = self._get_root_keys()
+        if len(root_keys) != 1:
             raise ValueError("Only one root is supported.")
-        root_module = self.module_dict[self.root_keys[0]]
+        root_module = self.module_dict[root_keys[0]]
 
         # for each module in queue, run it, and then check if its edges have all their dependencies satisfied
         # if so, add to queue
