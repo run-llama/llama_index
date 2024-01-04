@@ -213,7 +213,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Initialize params."""
         try:
-            # import pinecone
+            # Dynamic import of pinecone module, needed to simulate different versions of client in tests
             pinecone = __import__("pinecone")
         except ImportError:
             raise ImportError(import_err_msg)
