@@ -281,7 +281,7 @@ def llm_completion_callback() -> Callable:
     return wrap
 
 
-class BaseLLM(BaseComponent, QueryComponent):
+class BaseLLM(QueryComponent):
     """LLM interface."""
 
     callback_manager: CallbackManager = Field(

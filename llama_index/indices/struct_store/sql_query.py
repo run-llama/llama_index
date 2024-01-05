@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from sqlalchemy import Table
 
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )

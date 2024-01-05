@@ -4,10 +4,9 @@ from typing import List, Optional, Dict, Any
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.query.schema import QueryBundle, QueryType
-from llama_index.indices.service_context import ServiceContext
+from llama_index.service_context import ServiceContext
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, QueryBundle, QueryType
 from llama_index.bridge.pydantic import Field
 
 

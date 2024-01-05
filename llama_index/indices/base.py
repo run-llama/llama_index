@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, cast
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.ingestion import run_transformations
 from llama_index.llms.openai import OpenAI

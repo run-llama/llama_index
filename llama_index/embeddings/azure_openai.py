@@ -5,7 +5,7 @@ from openai import AsyncAzureOpenAI, AzureOpenAI
 
 from llama_index.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.callbacks.base import CallbackManager
-from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.constants import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.embeddings.openai import (
     OpenAIEmbedding,
     OpenAIEmbeddingMode,

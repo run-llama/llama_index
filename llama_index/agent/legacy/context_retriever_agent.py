@@ -11,7 +11,7 @@ from llama_index.callbacks import CallbackManager
 from llama_index.chat_engine.types import (
     AgentChatResponse,
 )
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model

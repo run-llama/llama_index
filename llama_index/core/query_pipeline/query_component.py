@@ -80,9 +80,10 @@ class QueryComponent(BaseComponent):
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
 
-    @abstractmethod
     def _validate_component_outputs(self, output: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component outputs during run_component."""
+        # override if needed
+        pass
 
     def validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs."""

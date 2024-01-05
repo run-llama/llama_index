@@ -7,7 +7,7 @@ from typing import List, Optional
 import requests
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 

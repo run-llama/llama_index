@@ -9,7 +9,7 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
     ToolOutput,
 )
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.llms.llm import LLM
 from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer

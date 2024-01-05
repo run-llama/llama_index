@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.evaluation import BaseEvaluator
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.prompts.mixin import PromptMixinType
