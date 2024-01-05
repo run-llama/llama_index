@@ -5,6 +5,8 @@ from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.llm import LLM
 from llama_index.llms.types import ChatMessage
 
+DEFAULT_CHAT_STORE_KEY = "chat_history"
+
 
 class BaseMemory(BaseModel):
     """Base class for all memory types.
