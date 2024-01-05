@@ -1,10 +1,11 @@
 import builtins
 import unittest
-from typing import Any, Callable
+from typing import Any, Callable, Type
 from unittest.mock import patch
 
+import pytest
 from llama_index.vector_stores.pinecone import (
-    PineconeVectorStore,  # Replace with the actual import
+    PineconeVectorStore,
 )
 
 
@@ -32,7 +33,23 @@ class MockPineconeServerless:
                 pass
 
 
-# Define the mock import function
+class MockUnVersionedPineconeRelease:
+    @staticmethod
+    def init(api_key: str, environment: str) -> None:
+        pass
+
+    class Index:
+        def __init__(self, index_name: str) -> None:
+            pass
+
+
+def get_version_attr_from_mock_classes(mock_class: Type[Any]) -> None:
+    if not hasattr(mock_class, "__version__"):
+        raise AttributeError(
+            "The version of pinecone you are using does not contain necessary __version__ attribute."
+        )
+
+
 def mock_import(name: str, *args: Any, **kwargs: Any) -> Callable:
     if name == "pinecone":
         return MockPineconePods if pods_version else MockPineconeServerless  # type: ignore[name-defined]
@@ -51,6 +68,7 @@ class TestPineconeVectorStore(unittest.TestCase):
         global pods_version
         pods_version = True  # type: ignore[name-defined]
         with patch("builtins.__import__", side_effect=mock_import):
+            get_version_attr_from_mock_classes(MockPineconePods)
             store = PineconeVectorStore(
                 api_key="dummy_key", index_name="dummy_index", environment="dummy_env"
             )
@@ -59,7 +77,12 @@ class TestPineconeVectorStore(unittest.TestCase):
         global pods_version
         pods_version = False  # type: ignore[name-defined]
         with patch("builtins.__import__", side_effect=mock_import):
+            get_version_attr_from_mock_classes(MockPineconeServerless)
             store = PineconeVectorStore(api_key="dummy_key", index_name="dummy_index")
 
-
-# TODO: write test to ensure "__version__" attribute
+    def test_unversioned_pinecone_client(self) -> None:
+        with pytest.raises(
+            AttributeError,
+            match="The version of pinecone you are using does not contain necessary __version__ attribute.",
+        ):
+            get_version_attr_from_mock_classes(MockUnVersionedPineconeRelease)
