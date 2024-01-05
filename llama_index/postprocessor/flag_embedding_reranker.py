@@ -66,6 +66,7 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
         ) as event:
             scores = self._model.compute_score(query_and_nodes)
 
+            # a single node passed into compute_score returns a float
             if isinstance(scores, float):
                 scores = [scores]
             
