@@ -27,7 +27,7 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         verbose: bool = False,
     ):
         try:
-            from guidance.models import OpenAI
+            from guidance.models import OpenAIChat
         except ImportError as e:
             raise ImportError(
                 "guidance package not found." "please run `pip install guidance`"
@@ -36,7 +36,7 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         if not guidance_llm:
             llm = guidance_llm
         else:
-            llm = OpenAI("text-davinci-003")
+            llm = OpenAIChat("gpt-3.5-turbo")
 
         full_str = prompt_template_str + "\n"
         self._full_str = full_str
@@ -53,13 +53,18 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         **kwargs: dict,
     ) -> "GuidanceLLM":
         """A wrapper to execute the program with new guidance version."""
-        from guidance import gen
+        from guidance import assistant, gen, user
 
         given_query = self._full_str.replace("{{tools_str}}", tools_str).replace(
             "{{query_str}}", query_str
         )
+        with user():
+            llm = llm + given_query
 
-        return llm + given_query + gen(stop=".")
+        with assistant():
+            llm = llm + gen(stop=".")
+
+        return llm  # noqa: RET504
 
     @classmethod
     def from_defaults(
