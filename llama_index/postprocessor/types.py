@@ -59,7 +59,7 @@ class BaseNodePostprocessor(QueryComponent, ABC):
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
-        # make sure input is a list of nodes
+        # make sure `nodes` is a list of nodes
         if "nodes" not in input:
             raise ValueError("Input must have key 'nodes'")
         nodes = input["nodes"]
@@ -68,6 +68,10 @@ class BaseNodePostprocessor(QueryComponent, ABC):
         for node in nodes:
             if not isinstance(node, NodeWithScore):
                 raise ValueError("Input nodes must be a list of NodeWithScore")
+
+        # make sure `query_str` is stringable
+        input["query_str"] = validate_and_convert_stringable(input["query_str"])
+
         return input
 
     def _run_component(self, **kwargs: Any) -> Any:
@@ -78,7 +82,7 @@ class BaseNodePostprocessor(QueryComponent, ABC):
 
     def input_keys(self) -> InputKeys:
         """Input keys."""
-        return InputKeys.from_keys({"nodes"})
+        return InputKeys.from_keys({"nodes"}, optional_keys={"query_str"})
 
     def output_keys(self) -> OutputKeys:
         """Output keys."""
