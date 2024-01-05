@@ -164,7 +164,9 @@ def apply_regex(input_string: str) -> str:
     """
     Removes any characters in a package's __version__ name after and including the third period.
 
-    >>> apply_regex("3.0.0.dev6")
+    Example:
+    >>> version = apply_regex("3.0.0.dev6")
+    >>> print(version)
     >>> "3.0.0"
 
     Args:
