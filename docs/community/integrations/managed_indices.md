@@ -105,11 +105,10 @@ maxdepth: 1
 
 ## Zilliz
 
-First, set up your [Zilliz Cloud](https://cloud.zilliz.com/login) account and use the Zilliz to create a cluster id, and add an API token for access.
-Then put the Zilliz cluster id, and API key in your environment.
+First, set up your [Zilliz Cloud](https://cloud.zilliz.com/signup?utm_source=twitter&utm_medium=social%20&utm_campaign=2023-12-22_social_pipeline-llamaindex_twitter) account and create a free serverless cluster.
+Then copy the Cluster ID and API Key from your account.
 
-Then construct the Zilliz Index and query it as follows.
-Note that if the environment variables `ZILLIZ_CLUSTER_ID` and `ZILLIZ_TOKEN` are in the environment already, you do not have to explicitly specifying them in your call and the `ZillizCloudPipelineIndex` class will read them from the environment. For example this should be equivalent to the above, if these variables are in the environment already:
+Now you can construct `ZillizCloudPipelineIndex` to index docs and query as follows:
 
 ```python
 import os
@@ -120,8 +119,8 @@ from llama_index.indices import ZillizCloudPipelineIndex
 # Load documents from url and build document index
 zcp_index = ZillizCloudPipelineIndex.from_document_url(
     url="https://publicdataset.zillizcloud.com/milvus_doc.md",
-    cluster_id=os.getenv("ZILLIZ_CLUSTER_ID"),
-    token=os.getenv("ZILLIZ_TOKEN"),
+    cluster_id="<YOUR_ZILLIZ_CLUSTER_ID>",
+    token="<YOUR_ZILLIZ_API_KEY>",
     metadata={"version": "2.3"},  # optional
 )
 
@@ -141,6 +140,12 @@ query_engine_with_filters = zcp_index.as_query_engine(
     ),  # optional, here we will only retrieve info of Milvus 2.3
     output_metadata=["version"],  # optional
 )
+
+question = "Can users delete entities by complex boolean expressions?"
+# Retrieving
+retrieval_result = query_engine_with_filters.retrieve(question)
+# Querying
+answer = query_engine_with_filters.query(question)
 ```
 
 ```{toctree}
