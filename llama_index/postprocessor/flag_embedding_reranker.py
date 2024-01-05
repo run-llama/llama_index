@@ -66,6 +66,9 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
         ) as event:
             scores = self._model.compute_score(query_and_nodes)
 
+            if isinstance(scores, float):
+                scores = [scores]
+            
             assert len(scores) == len(nodes)
 
             for node, score in zip(nodes, scores):
