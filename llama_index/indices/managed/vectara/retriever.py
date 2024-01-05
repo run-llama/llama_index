@@ -11,11 +11,10 @@ from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core import BaseRetriever
 from llama_index.indices.managed.types import ManagedIndexQueryMode
 from llama_index.indices.managed.vectara.base import VectaraIndex
-from llama_index.schema import NodeWithScore, QueryBundle, TextNode
-
 from llama_index.indices.vector_store.retrievers.auto_retriever.auto_retriever import (
     VectorIndexAutoRetriever,
 )
+from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.vector_stores.types import (
     FilterCondition,
     MetadataFilters,
@@ -252,8 +251,8 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
         vector_store_info: VectorStoreInfo,
         **kwargs: Any,
     ) -> None:
-        super().__init__(index, vector_store_info, **kwargs)
-        self._index = index
+        super().__init__(index, vector_store_info, **kwargs)  # type: ignore
+        self._index = index  # type: ignore
         self._kwargs = kwargs
         self._verbose = self._kwargs.get("verbose", False)
         self._explicit_filter = self._kwargs.pop("filter", "")
@@ -299,7 +298,7 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
 
         return (
             VectaraRetriever(
-                index=self._index,
+                index=self._index,  # type: ignore
                 filter=filter_str,
                 **self._kwargs,
             ),
