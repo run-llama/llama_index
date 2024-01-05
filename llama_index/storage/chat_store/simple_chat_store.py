@@ -27,17 +27,34 @@ class SimpleChatStore(BaseChatStore):
         """Get messages for a key."""
         return self.store.get(key, [])
 
-    def add_message(self, key: str, message: ChatMessage) -> None:
+    def add_message(
+        self, key: str, message: ChatMessage, idx: Optional[int] = None
+    ) -> None:
         """Add a message for a key."""
-        self.store.setdefault(key, []).append(message)
+        if idx is None:
+            self.store.setdefault(key, []).append(message)
+        else:
+            self.store.setdefault(key, []).insert(idx, message)
 
-    def delete_messages(self, key: str) -> None:
+    def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """Delete messages for a key."""
-        self.store.pop(key, None)
+        if key not in self.store:
+            return None
+        return self.store.pop(key)
 
-    def undo_last_message(self, key: str) -> Optional[ChatMessage]:
-        """Undo last message for a key."""
-        return self.store.get(key, []).pop()
+    def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
+        """Delete specific message for a key."""
+        if key not in self.store:
+            return None
+        if idx >= len(self.store[key]):
+            return None
+        return self.store[key].pop(idx)
+
+    def delete_last_message(self, key: str) -> Optional[ChatMessage]:
+        """Delete last message for a key."""
+        if key not in self.store:
+            return None
+        return self.store[key].pop()
 
     def get_keys(self) -> List[str]:
         """Get all keys."""

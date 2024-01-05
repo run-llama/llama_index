@@ -144,7 +144,7 @@ class ChatMemoryBuffer(BaseMemory):
 
     def reset(self) -> None:
         """Reset chat history."""
-        return self.chat_store.delete_messages(self.chat_store_key)
+        self.chat_store.delete_messages(self.chat_store_key)
 
     def _token_count_for_message_count(self, message_count: int) -> int:
         if message_count <= 0:

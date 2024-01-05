@@ -28,13 +28,18 @@ class BaseChatStore(BaseComponent):
         ...
 
     @abstractmethod
-    def delete_messages(self, key: str) -> None:
+    def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """Delete messages for a key."""
         ...
 
     @abstractmethod
-    def undo_last_message(self, key: str) -> Optional[ChatMessage]:
-        """Undo last message for a key."""
+    def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
+        """Delete specific message for a key."""
+        ...
+
+    @abstractmethod
+    def delete_last_message(self, key: str) -> Optional[ChatMessage]:
+        """Delete last message for a key."""
         ...
 
     @abstractmethod
