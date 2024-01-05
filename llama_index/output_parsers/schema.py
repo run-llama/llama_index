@@ -24,11 +24,13 @@ class QueryOutputParser(BaseOutputParser, QueryComponent):
         output = self.parse(kwargs["input"])
         return {"output": output}
 
+    @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
         # TODO: support only complete for now
         return InputKeys.from_keys({"input"})
 
+    @property
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"output"})

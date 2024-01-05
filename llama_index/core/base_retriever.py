@@ -16,13 +16,13 @@ from llama_index.core.query_pipeline.query_component import QueryComponent, vali
 class BaseRetriever(QueryComponent, PromptMixin):
     """Base retriever."""
 
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
+    # callback_manager: CallbackManager = Field(
+    #     default_factory=CallbackManager, exclude=True
+    # )
 
     def __init__(self, callback_manager: Optional[CallbackManager] = None) -> None:
         callback_manager = callback_manager or CallbackManager()
-        super().__init__(callback_manager=callback_manager)
+        # super().__init__(callback_manager=callback_manager)
 
     def _check_callback_manager(self) -> None:
         """Check callback manager."""
@@ -126,6 +126,7 @@ class BaseRetriever(QueryComponent, PromptMixin):
         output = self.retrieve(kwargs["input"])
         return {"output": output}
 
+    @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
         return InputKeys.from_keys({"input"})

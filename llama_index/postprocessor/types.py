@@ -9,7 +9,7 @@ from llama_index.schema import BaseComponent, NodeWithScore, QueryBundle
 from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 
 
-class BaseNodePostprocessor(QueryComponent, ABC):
+class BaseNodePostprocessor(QueryComponent, BaseComponent, ABC):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
@@ -80,10 +80,12 @@ class BaseNodePostprocessor(QueryComponent, ABC):
         output = self.postprocess_nodes(kwargs["nodes"])
         return {"nodes": output}
 
+    @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
         return InputKeys.from_keys({"nodes"}, optional_keys={"query_str"})
 
+    @property
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"nodes"})

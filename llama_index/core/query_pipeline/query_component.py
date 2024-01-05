@@ -2,7 +2,7 @@
 
 from llama_index.schema import BaseComponent
 from llama_index.bridge.pydantic import Field, PrivateAttr, BaseModel, validator
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import Any, Dict, Set, Optional, Union
 # TODO: fix circular dependency risk
 from llama_index.core.llms.types import CompletionResponse, ChatResponse
@@ -45,6 +45,14 @@ class InputKeys(BaseModel):
                 f"Input keys {input_keys} contain keys not in required or optional keys {self.required_keys.union(self.optional_keys)}"
             )
 
+    def __len__(self) -> int:
+        """Length of input keys."""
+        return len(self.required_keys) + len(self.optional_keys)
+
+    def all(self) -> Set[str]:
+        """Get all input keys."""
+        return self.required_keys.union(self.optional_keys)
+
 
 class OutputKeys(BaseModel):
     """Output keys."""
@@ -66,15 +74,17 @@ class OutputKeys(BaseModel):
                 f"Input keys {input_keys} do not match required keys {self.required_keys}"
             )
 
-class QueryComponent(BaseComponent):
+class QueryComponent(ABC):
     """Query component.
 
     Represents a component that can be run in a `QueryPipeline`.
     
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    # TODO: make this a subclass of BaseComponent (e.g. use Pydantic)
+
+    # class Config:
+    #     arbitrary_types_allowed = True
 
     @abstractmethod
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
@@ -83,24 +93,18 @@ class QueryComponent(BaseComponent):
     def _validate_component_outputs(self, output: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component outputs during run_component."""
         # override if needed
-        pass
+        return output
 
     def validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs."""
         # make sure set of input keys == self.input_keys
-        if set(input.keys()) != set(self.input_keys):
-            raise ValueError(
-                f"Input keys do not match. Expected {self.input_keys}, got {set(input.keys())}"
-            )
+        self.input_keys.validate(set(input.keys()))
         return self._validate_component_inputs(input)
 
     def validate_component_outputs(self, output: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component outputs."""
         # make sure set of output keys == self.output_keys
-        if set(output.keys()) != set(self.output_keys):
-            raise ValueError(
-                f"Output keys do not match. Expected {self.output_keys}, got {set(output.keys())}"
-            )
+        self.output_keys.validate(set(output.keys()))
         return self._validate_component_outputs(output)
 
     def run_component(self, **kwargs: Any) -> Dict[str, Any]:

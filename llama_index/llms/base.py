@@ -281,7 +281,7 @@ def llm_completion_callback() -> Callable:
     return wrap
 
 
-class BaseLLM(QueryComponent):
+class BaseLLM(QueryComponent, BaseComponent):
     """LLM interface."""
 
     callback_manager: CallbackManager = Field(
@@ -354,14 +354,18 @@ class BaseLLM(QueryComponent):
         """Run component."""
         # TODO: support only complete for now
         # non-trivial to figure how to support chat/complete/etc.
-        response = self.complete(kwargs["prompt"], **kwargs)
+        prompt = kwargs["prompt"]
+        # ignore all other kwargs for now
+        response = self.complete(prompt)
         return {"output": response}
 
+    @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
         # TODO: support only complete for now
         return InputKeys.from_keys({"prompt"})
 
+    @property
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"output"})
