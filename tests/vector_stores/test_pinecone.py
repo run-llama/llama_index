@@ -9,7 +9,7 @@ from llama_index.vector_stores.pinecone import (
 
 
 class MockPineconePods:
-    version = "2.9.9"
+    __version__ = "2.2.4"
 
     @staticmethod
     def init(api_key: str, environment: str) -> None:
@@ -21,7 +21,7 @@ class MockPineconePods:
 
 
 class MockPineconeServerless:
-    version = "3.0.0"
+    __version__ = "3.0.0"
 
     class Pinecone:
         def __init__(self, api_key: str) -> None:
@@ -60,3 +60,6 @@ class TestPineconeVectorStore(unittest.TestCase):
         pods_version = False  # type: ignore[name-defined]
         with patch("builtins.__import__", side_effect=mock_import):
             store = PineconeVectorStore(api_key="dummy_key", index_name="dummy_index")
+
+
+# TODO: write test to ensure "__version__" attribute
