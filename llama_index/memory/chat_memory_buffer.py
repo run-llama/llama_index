@@ -24,16 +24,10 @@ class ChatMemoryBuffer(BaseMemory):
     chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
     chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
 
-    def __getstate__(self) -> Dict[str, Any]:
-        state = self.dict()
-        # Remove the unpicklable entry
-        state.pop("tokenizer_fn", None)
-        return state
-
-    def __setstate__(self, state: Dict[str, Any]) -> None:
-        super().__init__(
-            token_limit=state["token_limit"], chat_store=state["chat_store"]
-        )
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "ChatMemoryBuffer"
 
     @root_validator(pre=True)
     def validate_memory(cls, values: dict) -> dict:
@@ -86,25 +80,25 @@ class ChatMemoryBuffer(BaseMemory):
         dict_obj = json.loads(json_str)
         return cls.from_dict(dict_obj)
 
-    def to_dict(self) -> dict:
+    def to_dict(self, **kwargs: Any) -> dict:
         """Convert memory to dict."""
         return self.dict()
 
     @classmethod
-    def from_dict(cls, json_dict: dict) -> "ChatMemoryBuffer":
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> "ChatMemoryBuffer":
         from llama_index.storage.chat_store.loading import load_chat_store
 
         # NOTE: this handles backwards compatibility with the old chat history
-        if "chat_history" in json_dict:
-            chat_history = json_dict.pop("chat_history")
+        if "chat_history" in data:
+            chat_history = data.pop("chat_history")
             chat_store = SimpleChatStore(store={DEFAULT_CHAT_STORE_KEY: chat_history})
-            json_dict["chat_store"] = chat_store
-        elif "chat_store" in json_dict:
-            chat_store = json_dict.pop("chat_store")
+            data["chat_store"] = chat_store
+        elif "chat_store" in data:
+            chat_store = data.pop("chat_store")
             chat_store = load_chat_store(chat_store)
-            json_dict["chat_store"] = chat_store
+            data["chat_store"] = chat_store
 
-        return cls(**json_dict)
+        return cls(**data)
 
     def get(self, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
