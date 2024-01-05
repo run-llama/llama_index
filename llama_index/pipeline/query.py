@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Sequence, Dict, Set
 from llama_index.bridge.pydantic import Field, PrivateAttr, BaseModel, validator
 from llama_index.callbacks import CallbackManager
 from llama_index.schema import BaseComponent
-from llama_index.pipeline.schema import QueryComponent
+from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 import uuid
 
 
@@ -55,14 +55,18 @@ def add_output_to_module_inputs(
     else:
         module_inputs[link.dest_key] = output
 
-class QueryPipeline(BaseModel):
-    """A query pipeline that can allow arbitrary chaining of different modules."""
+class QueryPipeline(BaseModel, QueryComponent):
+    """A query pipeline that can allow arbitrary chaining of different modules.
+
+    A pipeline itself is a query component, and can be used as a module in another pipeline.
+    
+    """
 
     callback_manager = Field(
         default_factory=CallbackManager, exclude=True
     )
 
-    module_dict: Dict[str, Any] = Field(
+    module_dict: Dict[str, QueryComponent] = Field(
         default_factory=dict, description="The modules in the pipeline."
     )
     edge_dict: Dict[str, List[Link]] = Field(
@@ -148,6 +152,14 @@ class QueryPipeline(BaseModel):
                     root_keys.remove(link.dest)
         return root_keys
 
+    def _get_leaf_keys(self) -> List[str]:
+        """Get leaf keys."""
+        # get all modules without downstream dependencies
+        leaf_keys = []
+        for module_key in self.module_dict.keys():
+            if module_key not in self.edge_dict or len(self.edge_dict[module_key]) == 0:
+                leaf_keys.append(module_key)
+        return leaf_keys
     
     def run(self, *args: Any, **kwargs: Any) -> Any:
         """Run the pipeline.
@@ -217,9 +229,27 @@ class QueryPipeline(BaseModel):
     def run_multi(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         """Run the pipeline for multiple roots."""
         raise NotImplementedError("Not implemented yet.")
-        
 
-    
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
+        """Run component."""
+        return self.run(**kwargs)
+
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        # get input key of first module
+        root_keys = self._get_root_keys()
+        if len(root_keys) != 1:
+            raise ValueError("Only one root is supported.")
+        root_module = self.module_dict[root_keys[0]]
+        return root_module.input_keys
+
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        # get output key of last module
     
     
     

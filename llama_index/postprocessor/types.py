@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.schema import BaseComponent, NodeWithScore, QueryBundle
 
+from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 
-class BaseNodePostprocessor(BaseComponent, ABC):
+
+class BaseNodePostprocessor(QueryComponent, ABC):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
@@ -54,3 +56,30 @@ class BaseNodePostprocessor(BaseComponent, ABC):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        # make sure input is a list of nodes
+        if "nodes" not in input:
+            raise ValueError("Input must have key 'nodes'")
+        nodes = input["nodes"]
+        if not isinstance(nodes, list):
+            raise ValueError("Input nodes must be a list")
+        for node in nodes:
+            if not isinstance(node, NodeWithScore):
+                raise ValueError("Input nodes must be a list of NodeWithScore")
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # include LLM? 
+        output = self.postprocess_nodes(kwargs["nodes"])
+        return {"nodes": output}
+
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        return InputKeys.from_keys({"nodes"})
+
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"nodes"})

@@ -1,6 +1,6 @@
 """Base retriever."""
 from abc import abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -8,13 +8,22 @@ from llama_index.indices.query.schema import QueryBundle, QueryType
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import NodeWithScore
+from llama_index.bridge.pydantic import Field
 
 
-class BaseRetriever(PromptMixin):
+from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
+
+
+class BaseRetriever(QueryComponent, PromptMixin):
     """Base retriever."""
 
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager, exclude=True
+    )
+
     def __init__(self, callback_manager: Optional[CallbackManager] = None) -> None:
-        self.callback_manager = callback_manager or CallbackManager()
+        callback_manager = callback_manager or CallbackManager()
+        super().__init__(callback_manager=callback_manager)
 
     def _check_callback_manager(self) -> None:
         """Check callback manager."""
@@ -105,3 +114,23 @@ class BaseRetriever(PromptMixin):
         elif hasattr(self, "_index") and hasattr(self._index, "service_context"):
             return self._index.service_context
         return None
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        # make sure input is a string
+        input["input"] = validate_and_convert_stringable(input["input"])
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # include LLM? 
+        output = self.retrieve(kwargs["input"])
+        return {"output": output}
+
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        return InputKeys.from_keys({"input"})
+
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"output"})
