@@ -45,7 +45,7 @@ class Playground:
             retriever_modes: A list of retriever_modes that specify which nodes are
                 chosen from the index when a query is made. A full list of
                 retriever_modes available to each index can be found here:
-                https://gpt-index.readthedocs.io/en/latest/reference/query.html
+                https://docs.llamaindex.ai/en/stable/module_guides/querying/retriever/retriever_modes.html
         """
         self._validate_indices(indices)
         self._indices = indices
