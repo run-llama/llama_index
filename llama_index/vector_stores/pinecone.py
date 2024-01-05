@@ -6,6 +6,7 @@ An index that that is built on top of an existing vector store.
 """
 
 import logging
+import re
 from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
@@ -159,6 +160,26 @@ import_err_msg = (
 )
 
 
+def apply_regex(input_string: str) -> str:
+    """
+    Removes any characters in a package's __version__ name after and including the third period.
+
+    >>> apply_regex("3.0.0.dev6")
+    >>> "3.0.0"
+
+    Args:
+        input_string (str): String you want to apply regex to.
+    """
+    pattern = r"^([^.]+?\.[^.]+(?:\.\d+)?)(?:\..+)?$"
+    match = re.search(pattern, input_string)
+    if match:
+        return match.group(1)
+    else:
+        raise ValueError(
+            f"No valid pattern found in the input string: '{input_string}'"
+        )
+
+
 class PineconeVectorStore(BasePydanticVectorStore):
     """Pinecone Vector Store.
 
@@ -224,7 +245,10 @@ class PineconeVectorStore(BasePydanticVectorStore):
             self._pinecone_index = cast(pinecone.Index, pinecone_index)  # type: ignore[name-defined]
         else:
             # Pinecone client version >= 3.0.0 has breaking changes to initialization signature
-            if hasattr(pinecone, "version") and pinecone.version >= "3.0.0":
+            if (
+                hasattr(pinecone, "__version__")
+                and apply_regex(pinecone.__version__) >= "3.0.0"
+            ):
                 if index_name is None:
                     raise ValueError(
                         "Must specify index_name if not directly passing in client."
