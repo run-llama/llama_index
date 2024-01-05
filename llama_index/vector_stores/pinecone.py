@@ -1,4 +1,5 @@
-"""Pinecone Vector store index.
+"""
+Pinecone Vector store index.
 
 An index that that is built on top of an existing vector store.
 
@@ -61,6 +62,8 @@ def _transform_pinecone_filter_operator(operator: str) -> str:
         return "$lte"
     elif operator == "in":
         return "$in"
+    elif operator == "nin":
+        return "$nin"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 

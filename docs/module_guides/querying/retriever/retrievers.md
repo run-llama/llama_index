@@ -94,4 +94,5 @@ maxdepth: 1
 /examples/retrievers/you_retriever.ipynb
 /examples/index_structs/struct_indices/SQLIndexDemo.ipynb
 DeepMemory (Activeloop) </examples/retrievers/deep_memory.ipynb>
+/examples/retrievers/pathway_retriever.ipynb
 ```

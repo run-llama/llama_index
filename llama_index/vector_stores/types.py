@@ -48,6 +48,7 @@ class VectorStoreQueryMode(str, Enum):
     SPARSE = "sparse"
     HYBRID = "hybrid"
     TEXT_SEARCH = "text_search"
+    SEMANTIC_HYBRID = "semantic_hybrid"
 
     # fit learners
     SVM = "svm"
@@ -69,6 +70,7 @@ class FilterOperator(str, Enum):
     GTE = ">="  # greater than or equal to (int, float)
     LTE = "<="  # less than or equal to (int, float)
     IN = "in"  # In array (string or number)
+    NIN = "nin"  # Not in array (string or number)
 
 
 class FilterCondition(str, Enum):
@@ -141,6 +143,7 @@ class MetadataFilters(BaseModel):
             filters.append(filter)
         return cls(filters=filters)
 
+    @classmethod
     def from_dicts(
         cls,
         filter_dicts: List[Dict],
@@ -323,6 +326,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     async def async_add(
         self,
         nodes: List[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """
         Asynchronously add nodes to vector store.

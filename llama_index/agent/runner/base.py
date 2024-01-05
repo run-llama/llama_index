@@ -227,10 +227,19 @@ class AgentRunner(BaseAgentRunner):
 
     def create_task(self, input: str, **kwargs: Any) -> Task:
         """Create task."""
+        if not self.init_task_state_kwargs:
+            extra_state = kwargs.pop("extra_state", {})
+        else:
+            if "extra_state" in kwargs:
+                raise ValueError(
+                    "Cannot specify both `extra_state` and `init_task_state_kwargs`"
+                )
+            else:
+                extra_state = self.init_task_state_kwargs
         task = Task(
             input=input,
             memory=self.memory,
-            extra_state=self.init_task_state_kwargs,
+            extra_state=extra_state,
             **kwargs,
         )
         # # put input into memory

@@ -34,6 +34,20 @@ repos:
         name: black-src
         alias: black
         exclude: ^(docs/|llama_index/_static)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.0.1
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          [
+            "types-requests",
+            "types-Deprecated",
+            "types-redis",
+            "types-setuptools",
+            "types-PyYAML",
+            "types-protobuf",
+          ]
+        exclude: ^(docs/|llama_index/_static)
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
@@ -64,6 +78,7 @@ repos:
       - id: codespell
         additional_dependencies: [tomli]
         exclude: llama_index/_static
+        args: ["--ignore-words-list", "nin"]
   - repo: https://github.com/srstevenson/nb-clean
     rev: 3.1.0
     hooks:

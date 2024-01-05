@@ -56,7 +56,12 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "question_gen_prompt" in prompts:
-            self._prompt = prompts["question_gen_prompt"]
+            output_parser = prompts["question_gen_prompt"].output_parser
+            if output_parser is None:
+                output_parser = SubQuestionOutputParser()
+            self._prompt = PromptTemplate(
+                prompts["question_gen_prompt"].template_str, output_parser=output_parser
+            )
 
     def generate(
         self, tools: Sequence[ToolMetadata], query: QueryBundle

@@ -8,6 +8,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.vector_stores.epsilla import EpsillaVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
+from llama_index.vector_stores.jaguar import JaguarVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.myscale import MyScaleVectorStore
@@ -41,6 +42,7 @@ class VectorStoreType(str, Enum):
     ROCKSET = "rockset"
     BAGEL = "bagel"
     EPSILLA = "epsilla"
+    JAGUAR = "jaguar"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -62,6 +64,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.ROCKSET: RocksetVectorStore,
     VectorStoreType.BAGEL: BagelVectorStore,
     VectorStoreType.EPSILLA: EpsillaVectorStore,
+    VectorStoreType.JAGUAR: JaguarVectorStore,
 }
 
 VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE: Dict[Type[VectorStore], VectorStoreType] = {

@@ -203,6 +203,7 @@ class Vllm(LLM):
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
             "use_beam_search": self.use_beam_search,
+            "best_of": self.best_of,
             "ignore_eos": self.ignore_eos,
             "stop": self.stop,
             "logprobs": self.logprobs,

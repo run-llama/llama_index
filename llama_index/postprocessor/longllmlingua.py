@@ -39,8 +39,8 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
         self,
         model_name: str = "NousResearch/Llama-2-7b-hf",
         device_map: str = "cuda",
-        use_auth_token: bool = False,
-        open_api_config: Optional[dict] = None,
+        model_config: Optional[dict] = {},
+        open_api_config: Optional[dict] = {},
         metadata_mode: MetadataMode = MetadataMode.ALL,
         instruction_str: str = DEFAULT_INSTRUCTION_STR,
         target_token: int = 300,
@@ -56,7 +56,7 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
         self._llm_lingua = PromptCompressor(
             model_name=model_name,
             device_map=device_map,
-            use_auth_token=use_auth_token,
+            model_config=model_config,
             open_api_config=open_api_config,
         )
         super().__init__(

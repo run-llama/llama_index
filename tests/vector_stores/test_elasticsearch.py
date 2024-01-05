@@ -87,6 +87,7 @@ def elasticsearch_connection() -> Union[dict, Generator[dict, None, None]]:
         if index_name.startswith("test_"):
             es.indices.delete(index=index_name)
     es.indices.refresh(index="_all")
+    return {}
 
 
 @pytest.fixture(scope="session")
@@ -463,7 +464,7 @@ def test_check_user_agent(
     user_agent = es_client_instance.transport.requests[0]["headers"][  # type: ignore
         "user-agent"
     ]
-    pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+$"
+    pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+(\.post\d+)?$"
     match = re.match(pattern, user_agent)
 
     assert (

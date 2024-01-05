@@ -113,7 +113,7 @@ Now you can construct `ZillizCloudPipelineIndex` to index docs and query as foll
 ```python
 import os
 
-from llama_index import ManagedIndex, SimpleDirectoryReade
+from llama_index import ManagedIndex
 from llama_index.indices import ZillizCloudPipelineIndex
 
 # Load documents from url and build document index
@@ -124,21 +124,23 @@ zcp_index = ZillizCloudPipelineIndex.from_document_url(
     metadata={"version": "2.3"},  # optional
 )
 
-# Insert more docs into index, eg. a Milvus v2.0 document
+# Insert more docs into index, eg. a Milvus v2.2 document
 zcp_index.insert_doc_url(
-    url="https://milvus.io/docs/v2.0.x/delete_data.md",
-    metadata={"version": "2.0"},
+    url="https://publicdataset.zillizcloud.com/milvus_doc_22.md",
+    metadata={"version": "2.2"},
 )
 
 # Query index
 from llama_index.vector_stores.types import ExactMatchFilter, MetadataFilters
 
-query_engine_with_filters = zcp_index.as_query_engine(
+query_engine_milvus23 = zcp_index.as_query_engine(
     search_top_k=3,
     filters=MetadataFilters(
-        filters=[ExactMatchFilter(key="version", value="2.3")]
-    ),  # optional, here we will only retrieve info of Milvus 2.3
-    output_metadata=["version"],  # optional
+        filters=[
+            ExactMatchFilter(key="version", value="2.3")
+        ]  # version == "2.3"
+    ),
+    output_metadata=["version"],
 )
 
 question = "Can users delete entities by complex boolean expressions?"

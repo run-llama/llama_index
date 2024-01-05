@@ -1,9 +1,12 @@
 """Code splitter."""
-from typing import Any, List
+from typing import Any, Callable, List, Optional
 
-from llama_index.bridge.pydantic import Field
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.node_parser.interface import TextSplitter
+from llama_index.node_parser.node_utils import default_id_func
+from llama_index.schema import Document
 
 DEFAULT_CHUNK_LINES = 40
 DEFAULT_LINES_OVERLAP = 15
@@ -35,6 +38,58 @@ class CodeSplitter(TextSplitter):
         description="Maximum number of characters per chunk.",
         gt=0,
     )
+    _parser: Any = PrivateAttr()
+
+    def __init__(
+        self,
+        language: str,
+        chunk_lines: int = DEFAULT_CHUNK_LINES,
+        chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
+        max_chars: int = DEFAULT_MAX_CHARS,
+        parser: Any = None,
+        callback_manager: Optional[CallbackManager] = None,
+        include_metadata: bool = True,
+        include_prev_next_rel: bool = True,
+        id_func: Optional[Callable[[int, Document], str]] = None,
+    ) -> None:
+        """Initialize a CodeSplitter."""
+        from tree_sitter import Parser
+
+        if parser is None:
+            try:
+                import tree_sitter_languages
+
+                parser = tree_sitter_languages.get_parser(language)
+            except ImportError:
+                raise ImportError(
+                    "Please install tree_sitter_languages to use CodeSplitter."
+                    "Or pass in a parser object."
+                )
+            except Exception:
+                print(
+                    f"Could not get parser for language {self.language}. Check "
+                    "https://github.com/grantjenks/py-tree-sitter-languages#license "
+                    "for a list of valid languages."
+                )
+                raise
+        if not isinstance(parser, Parser):
+            raise ValueError("Parser must be a tree-sitter Parser object.")
+
+        self._parser = parser
+
+        callback_manager = callback_manager or CallbackManager([])
+        id_func = id_func or default_id_func
+
+        super().__init__(
+            language=language,
+            chunk_lines=chunk_lines,
+            chunk_lines_overlap=chunk_lines_overlap,
+            max_chars=max_chars,
+            callback_manager=callback_manager,
+            include_metadata=include_metadata,
+            include_prev_next_rel=include_prev_next_rel,
+            id_func=id_func,
+        )
 
     @classmethod
     def from_defaults(
@@ -43,12 +98,16 @@ class CodeSplitter(TextSplitter):
         chunk_lines: int = DEFAULT_CHUNK_LINES,
         chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
         max_chars: int = DEFAULT_MAX_CHARS,
+        callback_manager: Optional[CallbackManager] = None,
+        parser: Any = None,
     ) -> "CodeSplitter":
+        """Create a CodeSplitter with default values."""
         return cls(
             language=language,
             chunk_lines=chunk_lines,
             chunk_lines_overlap=chunk_lines_overlap,
             max_chars=max_chars,
+            parser=parser,
         )
 
     @classmethod
@@ -83,24 +142,7 @@ class CodeSplitter(TextSplitter):
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-            try:
-                import tree_sitter_languages
-            except ImportError:
-                raise ImportError(
-                    "Please install tree_sitter_languages to use CodeSplitter."
-                )
-
-            try:
-                parser = tree_sitter_languages.get_parser(self.language)
-            except Exception:
-                print(
-                    f"Could not get parser for language {self.language}. Check "
-                    "https://github.com/grantjenks/py-tree-sitter-languages#license "
-                    "for a list of valid languages."
-                )
-                raise
-
-            tree = parser.parse(bytes(text, "utf-8"))
+            tree = self._parser.parse(bytes(text, "utf-8"))
 
             if (
                 not tree.root_node.children

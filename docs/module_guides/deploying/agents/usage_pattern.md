@@ -1,6 +1,6 @@
 # Usage Pattern
 
-## Get Started
+## Getting Started
 
 An agent is initialized from a set of Tools. Here's an example of instantiating a ReAct
 agent from a set of Tools.
@@ -34,7 +34,9 @@ Example usage:
 agent.chat("What is 2123 * 215123")
 ```
 
-## Query Engine Tools
+## Defining Tools
+
+### Query Engine Tools
 
 It is easy to wrap query engines as tools for an agent as well. Simply do the following:
 
@@ -69,7 +71,7 @@ query_engine_tools = [
 agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
-## Use other agents as Tools
+### Use other agents as Tools
 
 A nifty feature of our agents is that since they inherit from `BaseQueryEngine`, you can easily define other agents as tools
 through our `QueryEngineTool`.
@@ -95,6 +97,41 @@ query_engine_tools = [
 
 outer_agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
+
+## Lower-Level API
+
+The OpenAIAgent and ReActAgent are simple wrappers on top of an `AgentRunner` interacting with an `AgentWorker`.
+
+_All_ agents can be defined this manner. For example for the OpenAIAgent:
+
+```python
+from llama_index.agent import AgentRunner, OpenAIAgentWorker
+
+# construct OpenAIAgent from tools
+openai_step_engine = OpenAIAgentWorker.from_tools(tools, llm=llm, verbose=True)
+agent = AgentRunner(openai_step_engine)
+```
+
+This is also the preferred format for custom agents.
+
+Check out the [lower-level agent guide](/module_guides/deploying/agents/agent_runner.md) for more details.
+
+## Customizing your Agent
+
+If you wish to customize your agent, you can choose to subclass the `CustomSimpleAgentWorker`, and plug it into an AgentRunner (see above).
+
+```python
+from llama_index.agent import CustomSimpleAgentWorker
+
+
+class MyAgentWorker(CustomSimpleAgentWorker):
+    """Custom agent worker."""
+
+    # define class here
+    pass
+```
+
+Check out our [Custom Agent Notebook Guide](/examples/agent/custom_agent.ipynb) for more details.
 
 ## Advanced Concepts (for `OpenAIAgent`, in beta)
 

@@ -1,17 +1,13 @@
 import json
-from typing import Any, Dict, Iterator, Sequence
+from typing import Any, Dict, Sequence, Tuple
+
+import httpx
+from httpx import Timeout
 
 from llama_index.bridge.pydantic import Field
-from llama_index.constants import (
-    DEFAULT_CONTEXT_WINDOW,
-    DEFAULT_NUM_OUTPUTS,
-)
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.llms.base import llm_chat_callback, llm_completion_callback
 from llama_index.llms.custom import CustomLLM
-from llama_index.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
-)
 from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -19,7 +15,16 @@ from llama_index.llms.types import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
 )
+
+DEFAULT_REQUEST_TIMEOUT = 30.0
+
+
+def get_addtional_kwargs(
+    response: Dict[str, Any], exclude: Tuple[str, ...]
+) -> Dict[str, Any]:
+    return {k: v for k, v in response.items() if k not in exclude}
 
 
 class Ollama(CustomLLM):
@@ -39,11 +44,16 @@ class Ollama(CustomLLM):
         description="The maximum number of context tokens for the model.",
         gt=0,
     )
+    request_timeout: float = Field(
+        default=DEFAULT_REQUEST_TIMEOUT,
+        description="The timeout for making http request to Ollama API server",
+    )
     prompt_key: str = Field(
         default="prompt", description="The key to use for the prompt in API calls."
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs for the Ollama API."
+        default_factory=dict,
+        description="Additional model parameters for the Ollama API.",
     )
 
     @classmethod
@@ -57,6 +67,7 @@ class Ollama(CustomLLM):
             context_window=self.context_window,
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
+            is_chat_model=True,  # Ollama supports chat API for all models
         )
 
     @property
@@ -70,79 +81,141 @@ class Ollama(CustomLLM):
             **self.additional_kwargs,
         }
 
-    def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        return {
-            **self._model_kwargs,
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": message.role,
+                    "content": message.content,
+                    **message.additional_kwargs,
+                }
+                for message in messages
+            ],
+            "options": self._model_kwargs,
+            "stream": False,
             **kwargs,
         }
 
-    def _get_input_dict(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
-        return {self.prompt_key: prompt, **self._model_kwargs, **kwargs}
-
-    @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        prompt = self.messages_to_prompt(messages)
-        completion_response = self.complete(prompt, prompt_formatted=True, **kwargs)
-        return completion_response_to_chat_response(completion_response)
+        with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
+            response = client.post(
+                url=f"{self.base_url}/api/chat",
+                json=payload,
+            )
+            response.raise_for_status()
+            raw = response.json()
+            message = raw["message"]
+            return ChatResponse(
+                message=ChatMessage(
+                    content=message.get("content"),
+                    role=MessageRole(message.get("role")),
+                    additional_kwargs=get_addtional_kwargs(
+                        message, ("content", "role")
+                    ),
+                ),
+                raw=raw,
+                additional_kwargs=get_addtional_kwargs(raw, ("message",)),
+            )
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        prompt = self.messages_to_prompt(messages)
-        completion_response = self.stream_complete(
-            prompt, prompt_formatted=True, **kwargs
-        )
-        return stream_completion_response_to_chat_response(completion_response)
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": message.role,
+                    "content": message.content,
+                    **message.additional_kwargs,
+                }
+                for message in messages
+            ],
+            "options": self._model_kwargs,
+            "stream": True,
+            **kwargs,
+        }
+
+        with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
+            with client.stream(
+                method="POST",
+                url=f"{self.base_url}/api/chat",
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                text = ""
+                for line in response.iter_lines():
+                    if line:
+                        chunk = json.loads(line)
+                        message = chunk["message"]
+                        delta = message.get("content")
+                        text += delta
+                        yield ChatResponse(
+                            message=ChatMessage(
+                                content=text,
+                                role=MessageRole(message.get("role")),
+                                additional_kwargs=get_addtional_kwargs(
+                                    message, ("content", "role")
+                                ),
+                            ),
+                            delta=delta,
+                            raw=chunk,
+                            additional_kwargs=get_addtional_kwargs(chunk, ("message",)),
+                        )
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        response_gen = self.stream_complete(prompt, **kwargs)
-        response_list = list(response_gen)
-        final_response = response_list[-1]
-        final_response.delta = None
-        return final_response
+        payload = {
+            self.prompt_key: prompt,
+            "model": self.model,
+            "options": self._model_kwargs,
+            "stream": False,
+            **kwargs,
+        }
+
+        with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
+            response = client.post(
+                url=f"{self.base_url}/api/generate",
+                json=payload,
+            )
+            response.raise_for_status()
+            raw = response.json()
+            text = raw.get("response")
+            return CompletionResponse(
+                text=text,
+                raw=raw,
+                additional_kwargs=get_addtional_kwargs(raw, ("response",)),
+            )
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        try:
-            import requests
-        except ImportError:
-            raise ImportError(
-                "Could not import requests library."
-                "Please install requests with `pip install requests`"
-            )
-        all_kwargs = self._get_all_kwargs(**kwargs)
+        payload = {
+            self.prompt_key: prompt,
+            "model": self.model,
+            "options": self._model_kwargs,
+            "stream": True,
+            **kwargs,
+        }
 
-        if not kwargs.pop("prompt_formatted", False):
-            prompt = self.completion_to_prompt(prompt)
-
-        response = requests.post(
-            url=f"{self.base_url}/api/generate/",
-            headers={"Content-Type": "application/json"},
-            json={
-                "prompt": prompt,
-                "model": self.model,
-                **all_kwargs,
-            },
-            stream=True,
-        )
-        response.encoding = "utf-8"
-        if response.status_code != 200:
-            optional_detail = response.json().get("error")
-            raise ValueError(
-                f"Ollama call failed with status code {response.status_code}."
-                f" Details: {optional_detail}"
-            )
-
-        def gen(response_iter: Iterator[Any]) -> CompletionResponseGen:
-            text = ""
-            for stream_response in response_iter:
-                delta = json.loads(stream_response).get("response", "")
-                text += delta
-                yield CompletionResponse(
-                    delta=delta,
-                    text=text,
-                )
-
-        return gen(response.iter_lines(decode_unicode=True))
+        with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
+            with client.stream(
+                method="POST",
+                url=f"{self.base_url}/api/generate",
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                text = ""
+                for line in response.iter_lines():
+                    if line:
+                        chunk = json.loads(line)
+                        delta = chunk.get("response")
+                        text += delta
+                        yield CompletionResponse(
+                            delta=delta,
+                            text=text,
+                            raw=chunk,
+                            additional_kwargs=get_addtional_kwargs(
+                                chunk, ("response",)
+                            ),
+                        )
