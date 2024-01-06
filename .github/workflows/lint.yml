@@ -31,7 +31,7 @@ jobs:
           version: ${{ env.POETRY_VERSION }}
       - name: Install pre-commit
         shell: bash
-        run: poetry install pre-commit
+        run: poetry run pip install pre-commit
       - name: Run linter
         shell: bash
         run: poetry run make lint
