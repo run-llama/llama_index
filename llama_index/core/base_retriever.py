@@ -10,19 +10,11 @@ from llama_index.schema import NodeWithScore, QueryBundle, QueryType
 from llama_index.bridge.pydantic import Field
 
 
-from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
-
-
-class BaseRetriever(QueryComponent, PromptMixin):
+class BaseRetriever(PromptMixin):
     """Base retriever."""
-
-    # callback_manager: CallbackManager = Field(
-    #     default_factory=CallbackManager, exclude=True
-    # )
 
     def __init__(self, callback_manager: Optional[CallbackManager] = None) -> None:
         callback_manager = callback_manager or CallbackManager()
-        # super().__init__(callback_manager=callback_manager)
 
     def _check_callback_manager(self) -> None:
         """Check callback manager."""
@@ -113,25 +105,3 @@ class BaseRetriever(QueryComponent, PromptMixin):
         elif hasattr(self, "_index") and hasattr(self._index, "service_context"):
             return self._index.service_context
         return None
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        # make sure input is a string
-        input["input"] = validate_and_convert_stringable(input["input"])
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # include LLM? 
-        output = self.retrieve(kwargs["input"])
-        return {"output": output}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        return InputKeys.from_keys({"input"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"output"})

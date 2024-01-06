@@ -9,22 +9,16 @@ from llama_index.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType
 
-from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 from llama_index.bridge.pydantic import Field
 
 logger = logging.getLogger(__name__)
 
 
-class BaseQueryEngine(QueryComponent, PromptMixin):
+class BaseQueryEngine(PromptMixin):
     """Base query engine."""
-
-    # callback_manager: CallbackManager = Field(
-    #     default_factory=CallbackManager, exclude=True
-    # )
 
     def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
         self.callback_manager = callback_manager or CallbackManager([])
-        # super().__init__(callback_manager=callback_manager)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -77,25 +71,3 @@ class BaseQueryEngine(QueryComponent, PromptMixin):
     @abstractmethod
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         pass
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        # make sure input is a string
-        input["input"] = validate_and_convert_stringable(input["input"])
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # include LLM? 
-        output = self.retrieve(kwargs["input"])
-        return {"output": output}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        return InputKeys.from_keys({"input"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"output"})

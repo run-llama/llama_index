@@ -24,10 +24,6 @@ from llama_index.llms.types import (
     LLMMetadata,
 )
 from llama_index.schema import BaseComponent
-from llama_index.core.query_pipeline.query_component import (
-    QueryComponent, InputKeys, OutputKeys, StringableInput,
-    validate_and_convert_stringable
-)
 
 
 def llm_chat_callback() -> Callable:
@@ -281,7 +277,7 @@ def llm_completion_callback() -> Callable:
     return wrap
 
 
-class BaseLLM(QueryComponent, BaseComponent):
+class BaseLLM(BaseComponent):
     """LLM interface."""
 
     callback_manager: CallbackManager = Field(
@@ -342,30 +338,3 @@ class BaseLLM(QueryComponent, BaseComponent):
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for LLM."""
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        if "prompt" not in input:
-            raise ValueError("Prompt must be in input dict.")
-        input["prompt"] = validate_and_convert_stringable(input["prompt"])
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # TODO: support only complete for now
-        # non-trivial to figure how to support chat/complete/etc.
-        prompt = kwargs["prompt"]
-        # ignore all other kwargs for now
-        response = self.complete(prompt)
-        return {"output": response}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        # TODO: support only complete for now
-        return InputKeys.from_keys({"prompt"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"output"})

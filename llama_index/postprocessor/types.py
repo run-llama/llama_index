@@ -6,10 +6,8 @@ from llama_index.callbacks import CallbackManager
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.schema import BaseComponent, NodeWithScore, QueryBundle
 
-from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 
-
-class BaseNodePostprocessor(QueryComponent, BaseComponent, ABC):
+class BaseNodePostprocessor(BaseComponent, ABC):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
@@ -56,39 +54,3 @@ class BaseNodePostprocessor(QueryComponent, BaseComponent, ABC):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        # make sure `nodes` is a list of nodes
-        if "nodes" not in input:
-            raise ValueError("Input must have key 'nodes'")
-        nodes = input["nodes"]
-        if not isinstance(nodes, list):
-            raise ValueError("Input nodes must be a list")
-        for node in nodes:
-            if not isinstance(node, NodeWithScore):
-                raise ValueError("Input nodes must be a list of NodeWithScore")
-
-        # if query_str exists, make sure `query_str` is stringable
-        if "query_str" in input:
-            input["query_str"] = validate_and_convert_stringable(input["query_str"])
-
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # include LLM? 
-        output = self.postprocess_nodes(
-            kwargs["nodes"], query_str=kwargs.get("query_str", None)
-        )
-        return {"nodes": output}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        return InputKeys.from_keys({"nodes"}, optional_keys={"query_str"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"nodes"})

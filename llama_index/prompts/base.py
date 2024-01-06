@@ -24,10 +24,9 @@ from llama_index.llms.types import ChatMessage
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
 from llama_index.types import BaseOutputParser
-from llama_index.core.query_pipeline.query_component import QueryComponent, InputKeys, OutputKeys, validate_and_convert_stringable
 
 
-class BasePromptTemplate(QueryComponent, BaseModel, ABC):
+class BasePromptTemplate(BaseModel, ABC):
     metadata: Dict[str, Any]
     template_vars: List[str]
     kwargs: Dict[str, str]
@@ -107,29 +106,6 @@ class BasePromptTemplate(QueryComponent, BaseModel, ABC):
     @abstractmethod
     def get_template(self, llm: Optional[BaseLLM] = None) -> str:
         ...
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        keys = list(input.keys())
-        for k in keys:
-            input[k] = validate_and_convert_stringable(input[k])
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # include LLM? 
-        output = self.format(**kwargs)
-        return {"prompt": output}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        return InputKeys.from_keys(set(self.template_vars))
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"prompt"})
 
 
 class PromptTemplate(BasePromptTemplate):
