@@ -15,10 +15,10 @@ if TYPE_CHECKING:
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.core.llms.types import ChatMessage
 from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
-    ChainableMixin,
     validate_and_convert_stringable,
 )
 from llama_index.llms.base import BaseLLM
@@ -504,8 +504,10 @@ Prompt = PromptTemplate
 class PromptComponent(QueryComponent):
     """Prompt component."""
 
-    def __init__(self, prompt: BasePromptTemplate) -> None:
-        self.prompt = prompt
+    prompt: BasePromptTemplate = Field(..., description="Prompt")
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -529,4 +531,3 @@ class PromptComponent(QueryComponent):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"prompt"})
-

@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Set, Union
 
 from llama_index.bridge.pydantic import BaseModel, Field
-
 from llama_index.core.llms.types import ChatResponse, CompletionResponse
 from llama_index.core.response.schema import Response
 from llama_index.schema import QueryBundle
@@ -76,7 +75,6 @@ class OutputKeys(BaseModel):
             )
 
 
-
 class ChainableMixin(ABC):
     """Chainable mixin.
 
@@ -85,22 +83,30 @@ class ChainableMixin(ABC):
 
     If plugged in directly into a `QueryPipeline`, the `ChainableMixin` will be
     converted into a `QueryComponent` with default parameters.
-    
+
     """
-    
+
     @abstractmethod
     def as_query_component(self, **kwargs: Any) -> "QueryComponent":
         """Get query component."""
 
 
-class QueryComponent(ABC):
+class QueryComponent(BaseModel):
     """Query component.
 
     Represents a component that can be run in a `QueryPipeline`.
 
     """
 
+    partial_dict: Dict[str, Any] = Field(
+        default_factory=dict, description="Partial arguments to run_component"
+    )
+
     # TODO: make this a subclass of BaseComponent (e.g. use Pydantic)
+
+    def partial(self, **kwargs: Any) -> None:
+        """Update with partial arguments."""
+        self.partial_dict.update(kwargs)
 
     @abstractmethod
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
@@ -125,12 +131,14 @@ class QueryComponent(ABC):
 
     def run_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""
+        kwargs.update(self._partial)
         kwargs = self.validate_component_inputs(kwargs)
         component_outputs = self._run_component(**kwargs)
         return self.validate_component_outputs(component_outputs)
 
     async def arun_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""
+        kwargs.update(self._partial)
         kwargs = self.validate_component_inputs(kwargs)
         component_outputs = await self._arun_component(**kwargs)
         return self.validate_component_outputs(component_outputs)

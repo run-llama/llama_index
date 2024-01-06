@@ -2,13 +2,14 @@
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
+from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
-    ChainableMixin,
     validate_and_convert_stringable,
 )
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
@@ -125,8 +126,10 @@ class BaseRetriever(ChainableMixin, PromptMixin):
 class RetrieverComponent(QueryComponent):
     """Retriever component."""
 
-    def __init__(self, retriever: BaseRetriever) -> None:
-        self.retriever = retriever
+    retriever: BaseRetriever = Field(..., description="Retriever")
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -149,6 +152,3 @@ class RetrieverComponent(QueryComponent):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"output"})
-
-
-    

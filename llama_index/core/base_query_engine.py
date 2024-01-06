@@ -4,12 +4,13 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence
 
+from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
-    ChainableMixin,
     validate_and_convert_stringable,
 )
 from llama_index.core.response.schema import RESPONSE_TYPE
@@ -85,8 +86,11 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
 
 class QueryEngineComponent(QueryComponent):
     """Query engine component."""
-    def __init__(self, query_engine: BaseQueryEngine) -> None:
-        self.query_engine = query_engine
+
+    query_engine: BaseQueryEngine = Field(..., description="Query engine")
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -109,6 +113,3 @@ class QueryEngineComponent(QueryComponent):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"output"})
-
-
-    

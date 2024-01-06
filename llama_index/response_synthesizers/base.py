@@ -14,10 +14,10 @@ from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
-    ChainableMixin,
     validate_and_convert_stringable,
 )
 from llama_index.core.response.schema import (
@@ -243,4 +243,3 @@ class SynthesizerComponent(QueryComponent):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"output"})
-

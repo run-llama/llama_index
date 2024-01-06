@@ -6,8 +6,8 @@ from typing import (
     AsyncGenerator,
     Callable,
     Dict,
-    List,
     Generator,
+    List,
     Sequence,
     cast,
 )
@@ -24,14 +24,14 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.llms.generic_utils import prompt_to_messages, messages_to_prompt
 from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
     InputKeys,
     OutputKeys,
-    ChainableMixin,
     QueryComponent,
     validate_and_convert_stringable,
 )
+from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
 from llama_index.schema import BaseComponent
 
 
@@ -348,10 +348,7 @@ class BaseLLM(ChainableMixin, BaseComponent):
     ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for LLM."""
 
-    def as_query_component(
-        self, 
-        **kwargs: Any
-    ) -> QueryComponent:
+    def as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return query component."""
         if self.metadata.is_chat_model:
             return LLMChatComponent(self)
@@ -361,10 +358,11 @@ class BaseLLM(ChainableMixin, BaseComponent):
 
 class LLMCompleteComponent(QueryComponent):
     """LLM completion component."""
-    
-    def __init__(self, llm: BaseLLM):
-        """Init params."""
-        self.llm = llm
+
+    llm: BaseLLM = Field(..., description="LLM")
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -400,10 +398,11 @@ class LLMCompleteComponent(QueryComponent):
 
 class LLMChatComponent(QueryComponent):
     """LLM chat component."""
-    
-    def __init__(self, llm: BaseLLM):
-        """Init params."""
-        self.llm = llm
+
+    llm: BaseLLM = Field(..., description="LLM")
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""

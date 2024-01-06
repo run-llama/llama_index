@@ -4,7 +4,7 @@ import uuid
 from functools import cmp_to_key
 from typing import Any, Dict, List, Optional, Sequence, Set
 
-from llama_index.bridge.pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks import CallbackManager
 from llama_index.core.query_pipeline.query_component import (
     InputKeys,
@@ -89,23 +89,23 @@ class QueryPipeline(QueryComponent):
 
     """
 
-    # callback_manager: CallbackManager = Field(
-    #     default_factory=lambda: CallbackManager([]), exclude=True
-    # )
+    callback_manager: CallbackManager = Field(
+        default_factory=lambda: CallbackManager([]), exclude=True
+    )
 
-    # module_dict: Dict[str, QueryComponent] = Field(
-    #     default_factory=dict, description="The modules in the pipeline."
-    # )
-    # edge_dict: Dict[str, List[Link]] = Field(
-    #     default_factory=dict, description="The edges in the pipeline."
-    # )
+    module_dict: Dict[str, QueryComponent] = Field(
+        default_factory=dict, description="The modules in the pipeline."
+    )
+    edge_dict: Dict[str, List[Link]] = Field(
+        default_factory=dict, description="The edges in the pipeline."
+    )
 
     # root_keys: List[str] = Field(
     #     default_factory=list, description="The keys of the root modules."
     # )
 
-    # class Config:
-    #     arbitrary_types_allowed = True
+    class Config:
+        arbitrary_types_allowed = True
 
     def __init__(
         self,
@@ -113,14 +113,14 @@ class QueryPipeline(QueryComponent):
         chain: Optional[Sequence[QueryComponent]] = None,
         **kwargs: Any,
     ):
-        self.callback_manager = callback_manager or CallbackManager([])
-        self.module_dict: Dict[str, QueryComponent] = {}
-        self.edge_dict: Dict[str, List[Link]] = {}
+        # self.callback_manager = callback_manager or CallbackManager([])
+        # self.module_dict: Dict[str, QueryComponent] = {}
+        # self.edge_dict: Dict[str, List[Link]] = {}
         # self.root_keys: List[str] = []
-        # super().__init__(
-        #     callback_manager=callback_manager,
-        #     **kwargs,
-        # )
+        super().__init__(
+            callback_manager=callback_manager,
+            **kwargs,
+        )
 
         if chain is not None:
             # generate implicit link between each item, add
