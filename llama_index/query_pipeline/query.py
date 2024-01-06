@@ -79,7 +79,7 @@ def add_output_to_module_inputs(
 
     # now attach output to relevant input key for module
     if link.dest_key is None:
-        free_keys = module.input_keys.all() - set(module.partial_dict.keys())
+        free_keys = module.free_input_keys
         # ensure that there is only one remaining key given partials
         if len(free_keys) != 1:
             raise ValueError(
@@ -269,7 +269,6 @@ class QueryPipeline(QueryComponent):
             return list(result_output.values())[0]
         else:
             return result_output
-        raise NotImplementedError("Not implemented yet.")
 
     def run_multi(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         """Run the pipeline for multiple roots.
@@ -311,7 +310,6 @@ class QueryPipeline(QueryComponent):
                 input_tup.input,
             )
 
-            print(f"Running module {module_key} with input {input}")
             output_dict = module.run_component(**input)
 
             # if there's no more edges, add result to output
@@ -328,7 +326,7 @@ class QueryPipeline(QueryComponent):
                         edge_module,
                         all_module_inputs[link.dest],
                     )
-                    if len(all_module_inputs[link.dest]) == len(edge_module.input_keys):
+                    if len(all_module_inputs[link.dest]) == len(edge_module.free_input_keys):
                         queue.append(
                             InputTup(
                                 module_key=link.dest,
