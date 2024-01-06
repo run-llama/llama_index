@@ -258,7 +258,7 @@ class QueryPipeline(QueryComponent):
         root_key = root_keys[0]
 
         # call run_multi with one root key
-        result_outputs = self.run_multi(**{root_key: kwargs})
+        result_outputs = self.run_multi({root_key: kwargs})
 
         if len(result_outputs) != 1:
             raise ValueError("Only one output is supported.")
@@ -270,7 +270,7 @@ class QueryPipeline(QueryComponent):
         else:
             return result_output
 
-    def run_multi(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+    def run_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Run the pipeline for multiple roots.
 
         kwargs is in the form of module_dict -> input_dict
@@ -280,18 +280,18 @@ class QueryPipeline(QueryComponent):
 
         root_keys = self._get_root_keys()
         # if root keys don't match up with kwargs keys, raise error 
-        if set(root_keys) != set(kwargs.keys()):
+        if set(root_keys) != set(module_input_dict.keys()):
             raise ValueError(
-                "Expected root keys do not match up with kwargs keys.\n"
+                "Expected root keys do not match up with input keys.\n"
                 f"Expected root keys: {root_keys}\n"
-                f"Kwargs keys: {kwargs.keys()}\n"
+                f"Input keys: {module_input_dict.keys()}\n"
             )
 
         queue: List[InputTup] = []
         for root_key in root_keys:
             root_module = self.module_dict[root_key]
             queue.append(
-                InputTup(module_key=root_key, module=root_module, input=kwargs[root_key])
+                InputTup(module_key=root_key, module=root_module, input=module_input_dict[root_key])
             )
 
         # module_deps_inputs is a dict to collect inputs for a module
