@@ -3,8 +3,8 @@ from typing import Any, AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.types import ChatMessage
 from openai.types.chat.chat_completion import (
     ChatCompletion,
     ChatCompletionMessage,

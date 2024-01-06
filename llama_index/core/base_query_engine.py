@@ -5,8 +5,8 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
+from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.prompts.mixin import PromptDictType, PromptMixin
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType
 
 from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
@@ -17,10 +17,6 @@ logger = logging.getLogger(__name__)
 
 class BaseQueryEngine(QueryComponent, PromptMixin):
     """Base query engine."""
-
-    # callback_manager: CallbackManager = Field(
-    #     default_factory=CallbackManager, exclude=True
-    # )
 
     def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
         self.callback_manager = callback_manager or CallbackManager([])

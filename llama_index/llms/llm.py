@@ -3,17 +3,17 @@ from typing import Any, List, Optional, Protocol, Sequence, runtime_checkable
 
 from llama_index.bridge.pydantic import BaseModel, Field, validator
 from llama_index.callbacks import CBEventType, EventPayload
-from llama_index.llms.base import BaseLLM
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
+)
+from llama_index.llms.base import BaseLLM
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.types import (

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         ConditionalPromptSelector as LangchainSelector,
     )
 from llama_index.bridge.pydantic import BaseModel
+from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.base import BaseLLM
 from llama_index.llms.generic_utils import (
     messages_to_prompt as default_messages_to_prompt,
@@ -20,7 +21,6 @@ from llama_index.llms.generic_utils import (
 from llama_index.llms.generic_utils import (
     prompt_to_messages,
 )
-from llama_index.llms.types import ChatMessage
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
 from llama_index.types import BaseOutputParser
