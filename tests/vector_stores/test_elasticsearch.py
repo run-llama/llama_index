@@ -17,8 +17,8 @@ from llama_index.vector_stores.types import (
 
 ##
 # Start Elasticsearch locally
-# cd tests/vector_stores/docker-compose
-# docker-compose -f elasticsearch.yml up
+# cd tests
+# docker-compose up
 #
 # Run tests
 # cd tests/vector_stores
