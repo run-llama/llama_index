@@ -92,7 +92,7 @@ class OpenAILike(OpenAI):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
-        return super().complete(prompt, formatted=formatted, **kwargs)
+        return super().complete(prompt, **kwargs)
 
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -101,7 +101,7 @@ class OpenAILike(OpenAI):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
-        return super().stream_complete(prompt, formatted=formatted, **kwargs)
+        return super().stream_complete(prompt, **kwargs)
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat with the model."""
