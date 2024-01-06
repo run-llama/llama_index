@@ -2,8 +2,8 @@
 
 
 from llama_index.agent.types import TaskStep
+from llama_index.core.llms.types import MessageRole
 from llama_index.llms.base import ChatMessage
-from llama_index.llms.types import MessageRole
 from llama_index.memory import BaseMemory
 
 

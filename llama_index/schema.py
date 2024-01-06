@@ -760,5 +760,9 @@ class QueryBundle(DataClassJsonMixin):
             return []
         return [self.image_path]
 
+    def __str__(self) -> str:
+        """Convert to string representation."""
+        return self.query_str
+
 
 QueryType = Union[str, QueryBundle]

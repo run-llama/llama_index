@@ -5,7 +5,7 @@ import logging
 from typing import List, Optional, Sequence
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.selectors.types import BaseSelector

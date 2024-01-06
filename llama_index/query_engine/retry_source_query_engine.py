@@ -2,12 +2,12 @@ import logging
 from typing import Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.evaluation import BaseEvaluator
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import Document, QueryBundle
 from llama_index.service_context import ServiceContext
 

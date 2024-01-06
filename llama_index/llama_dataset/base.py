@@ -11,7 +11,7 @@ from pandas import DataFrame as PandasDataFrame
 
 from llama_index.async_utils import asyncio_module
 from llama_index.bridge.pydantic import BaseModel, Field, PrivateAttr
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.evaluation import BaseEvaluator
 
 PredictorType = Union[BaseQueryEngine, BaseEvaluator]

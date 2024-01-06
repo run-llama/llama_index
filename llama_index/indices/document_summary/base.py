@@ -10,11 +10,11 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union, cast
 
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.response.schema import Response
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.utils import embed_nodes
-from llama_index.response.schema import Response
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
     ResponseMode,

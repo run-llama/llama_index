@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from typing import Any, List, Optional
 
+from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import ChatMessage
 from llama_index.schema import BaseComponent
 
 DEFAULT_CHAT_STORE_KEY = "chat_history"

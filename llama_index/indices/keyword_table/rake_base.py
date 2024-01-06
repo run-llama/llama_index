@@ -6,7 +6,7 @@ Similar to KeywordTableIndex, but uses RAKE instead of GPT.
 
 from typing import Any, Set, Union
 
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.base import (
     BaseKeywordTableIndex,
     KeywordTableRetrieverMode,

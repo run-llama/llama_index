@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 
 if TYPE_CHECKING:
     from llama_index.langchain_helpers.agents.tools import LlamaIndexTool
