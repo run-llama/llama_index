@@ -69,7 +69,7 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
             # a single node passed into compute_score returns a float
             if isinstance(scores, float):
                 scores = [scores]
-            
+
             assert len(scores) == len(nodes)
 
             for node, score in zip(nodes, scores):
