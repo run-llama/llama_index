@@ -8,9 +8,9 @@ from llama_index.callbacks import trace_method
 from llama_index.chat_engine.types import BaseChatEngine, StreamingAgentChatResponse
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.llms.types import ChatMessage
+from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.memory.types import BaseMemory
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import QueryBundle
 
 

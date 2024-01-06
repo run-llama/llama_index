@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 from llama_index.async_utils import asyncio_module
 from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.response.schema import RESPONSE_TYPE, Response
+from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 
 
 async def eval_response_worker(

@@ -36,8 +36,8 @@ from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
 )
-from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.core.llms.types import MessageRole
+from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.multi_modal_llms.base import MultiModalLLM

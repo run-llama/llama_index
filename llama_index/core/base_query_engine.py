@@ -5,8 +5,8 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.core.response.schema import RESPONSE_TYPE
+from llama_index.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType
 
 logger = logging.getLogger(__name__)

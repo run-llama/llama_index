@@ -5,10 +5,10 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.mixin import PromptMixinType
-from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
     ResponseMode,

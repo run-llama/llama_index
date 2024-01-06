@@ -5,14 +5,14 @@ from typing_extensions import override
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import llm_completion_callback
-from llama_index.llms.custom import CustomLLM
 from llama_index.core.llms.types import (
     ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.llms.base import llm_completion_callback
+from llama_index.llms.custom import CustomLLM
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 

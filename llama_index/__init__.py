@@ -11,6 +11,9 @@ from typing import Callable, Optional
 
 # import global eval handler
 from llama_index.callbacks.global_handlers import set_global_handler
+
+# response
+from llama_index.core.response.schema import Response
 from llama_index.data_structs.struct_type import IndexStructType
 
 # embeddings
@@ -62,9 +65,6 @@ from llama_index.prompts import (
     SelectorPromptTemplate,
 )
 from llama_index.readers import SimpleDirectoryReader, download_loader
-
-# response
-from llama_index.core.response.schema import Response
 
 # Response Synthesizer
 from llama_index.response_synthesizers.factory import get_response_synthesizer
