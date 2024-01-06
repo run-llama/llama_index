@@ -11,7 +11,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
-from llama_index.bridge.pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
@@ -200,7 +200,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
         return response
 
-    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """As query component."""
         return SynthesizerComponent(synthesizer=self)
 
@@ -208,8 +208,10 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 class SynthesizerComponent(QueryComponent):
     """Synthesizer component."""
 
-    def __init__(self, synthesizer: BaseSynthesizer) -> None:
-        self.synthesizer = synthesizer
+    synthesizer: BaseSynthesizer = Field(..., description="Synthesizer")
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""

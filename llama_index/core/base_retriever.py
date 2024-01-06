@@ -118,9 +118,9 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             return self._index.service_context
         return None
 
-    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return a query component."""
-        return RetrieverComponent(self)
+        return RetrieverComponent(retriever=self)
 
 
 class RetrieverComponent(QueryComponent):

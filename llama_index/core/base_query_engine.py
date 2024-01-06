@@ -79,9 +79,9 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         pass
 
-    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return a query component."""
-        return QueryEngineComponent(self)
+        return QueryEngineComponent(query_engine=self)
 
 
 class QueryEngineComponent(QueryComponent):

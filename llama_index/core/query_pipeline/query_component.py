@@ -87,8 +87,14 @@ class ChainableMixin(ABC):
     """
 
     @abstractmethod
-    def as_query_component(self, **kwargs: Any) -> "QueryComponent":
+    def _as_query_component(self, **kwargs: Any) -> "QueryComponent":
         """Get query component."""
+
+    def as_query_component(self, partial: Optional[Dict[str, Any]] = None, **kwargs: Any) -> "QueryComponent":
+        """Get query component."""
+        component = self._as_query_component(**kwargs)
+        component.partial(**(partial or {}))
+        return component
 
 
 class QueryComponent(BaseModel):
@@ -131,14 +137,14 @@ class QueryComponent(BaseModel):
 
     def run_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""
-        kwargs.update(self._partial)
+        kwargs.update(self.partial_dict)
         kwargs = self.validate_component_inputs(kwargs)
         component_outputs = self._run_component(**kwargs)
         return self.validate_component_outputs(component_outputs)
 
     async def arun_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""
-        kwargs.update(self._partial)
+        kwargs.update(self.partial_dict)
         kwargs = self.validate_component_inputs(kwargs)
         component_outputs = await self._arun_component(**kwargs)
         return self.validate_component_outputs(component_outputs)

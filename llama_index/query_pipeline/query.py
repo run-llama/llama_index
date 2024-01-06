@@ -2,7 +2,7 @@
 
 import uuid
 from functools import cmp_to_key
-from typing import Any, Dict, List, Optional, Sequence, Set
+from typing import Any, Dict, List, Optional, Sequence, Set, Union, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks import CallbackManager
@@ -10,7 +10,12 @@ from llama_index.core.query_pipeline.query_component import (
     InputKeys,
     OutputKeys,
     QueryComponent,
+    ChainableMixin
 )
+
+# accept both QueryComponent and ChainableMixin as inputs to query pipeline
+# ChainableMixin modules will be converted to components via `as_query_component`
+QUERY_COMPONENT_TYPE = Union[QueryComponent, ChainableMixin]
 
 
 class InputTup(BaseModel):
@@ -110,7 +115,7 @@ class QueryPipeline(QueryComponent):
     def __init__(
         self,
         callback_manager: Optional[CallbackManager] = None,
-        chain: Optional[Sequence[QueryComponent]] = None,
+        chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
         **kwargs: Any,
     ):
         # self.callback_manager = callback_manager or CallbackManager([])
@@ -118,7 +123,7 @@ class QueryPipeline(QueryComponent):
         # self.edge_dict: Dict[str, List[Link]] = {}
         # self.root_keys: List[str] = []
         super().__init__(
-            callback_manager=callback_manager,
+            callback_manager=callback_manager or CallbackManager([]),
             **kwargs,
         )
 
@@ -126,7 +131,7 @@ class QueryPipeline(QueryComponent):
             # generate implicit link between each item, add
             self.add_chain(chain)
 
-    def add_chain(self, chain: Sequence[QueryComponent]) -> None:
+    def add_chain(self, chain: Sequence[QUERY_COMPONENT_TYPE]) -> None:
         """Add a chain of modules to the pipeline.
 
         This is a special form of pipeline that is purely sequential/linear.
@@ -144,17 +149,23 @@ class QueryPipeline(QueryComponent):
         for i in range(len(chain) - 1):
             self.add_link(src=module_keys[i], dest=module_keys[i + 1])
 
-    def add_modules(self, module_dict: Dict[str, QueryComponent]) -> None:
+    def add_modules(self, module_dict: Dict[str, QUERY_COMPONENT_TYPE]) -> None:
         """Add modules to the pipeline."""
         for module_key, module in module_dict.items():
             self.add(module_key, module)
 
-    def add(self, module_key: str, module: QueryComponent) -> None:
+    def add(self, module_key: str, module: QUERY_COMPONENT_TYPE) -> None:
         """Add a module to the pipeline."""
         # if already exists, raise error
         if module_key in self.module_dict:
             raise ValueError(f"Module {module_key} already exists in pipeline.")
-        self.module_dict[module_key] = module
+
+        if isinstance(module, ChainableMixin):
+            module = module.as_query_component()
+        else:
+            pass
+
+        self.module_dict[module_key] = cast(QueryComponent, module)
 
     def add_link(
         self,

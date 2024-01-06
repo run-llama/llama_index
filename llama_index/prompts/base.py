@@ -114,7 +114,7 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):
     def get_template(self, llm: Optional[BaseLLM] = None) -> str:
         ...
 
-    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """As query component."""
         return PromptComponent(prompt=self)
 

@@ -348,12 +348,12 @@ class BaseLLM(ChainableMixin, BaseComponent):
     ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for LLM."""
 
-    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return query component."""
         if self.metadata.is_chat_model:
-            return LLMChatComponent(self)
+            return LLMChatComponent(llm=self)
         else:
-            return LLMCompleteComponent(self)
+            return LLMCompleteComponent(llm=self)
 
 
 class LLMCompleteComponent(QueryComponent):

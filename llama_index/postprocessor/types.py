@@ -62,7 +62,7 @@ class BaseNodePostprocessor(ChainableMixin, BaseComponent, ABC):
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
-    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """As query component."""
         return PostprocessorComponent(postprocessor=self)
 
