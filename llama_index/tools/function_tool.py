@@ -1,5 +1,5 @@
-from functools import partial
 import asyncio
+from functools import partial
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type
 
