@@ -131,7 +131,7 @@ class OpenAILike(OpenAI):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
-        return await super().acomplete(prompt, formatted=formatted, **kwargs)
+        return await super().acomplete(prompt, **kwargs)
 
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -140,7 +140,7 @@ class OpenAILike(OpenAI):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
-        return await super().astream_complete(prompt, formatted=formatted, **kwargs)
+        return await super().astream_complete(prompt, **kwargs)
 
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
