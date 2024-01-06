@@ -131,6 +131,7 @@ class BaseRetriever(QueryComponent, PromptMixin):
         """Input keys."""
         return InputKeys.from_keys({"input"})
 
+    @property
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"output"})

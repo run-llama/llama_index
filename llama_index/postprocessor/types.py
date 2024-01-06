@@ -69,15 +69,18 @@ class BaseNodePostprocessor(QueryComponent, BaseComponent, ABC):
             if not isinstance(node, NodeWithScore):
                 raise ValueError("Input nodes must be a list of NodeWithScore")
 
-        # make sure `query_str` is stringable
-        input["query_str"] = validate_and_convert_stringable(input["query_str"])
+        # if query_str exists, make sure `query_str` is stringable
+        if "query_str" in input:
+            input["query_str"] = validate_and_convert_stringable(input["query_str"])
 
         return input
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
         # include LLM? 
-        output = self.postprocess_nodes(kwargs["nodes"])
+        output = self.postprocess_nodes(
+            kwargs["nodes"], query_str=kwargs.get("query_str", None)
+        )
         return {"nodes": output}
 
     @property
