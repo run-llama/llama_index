@@ -1,16 +1,17 @@
 import json
 import logging
 import sys
-from typing import Any, Callable, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, List, Optional
 from urllib.parse import urlparse
-
-from redis import Redis, RedisCluster
 
 from llama_index.bridge.pydantic import Field, root_validator
 from llama_index.llms.llm import LLM
 from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.memory.types import BaseMemory
 from llama_index.utils import get_tokenizer
+
+if TYPE_CHECKING:
+    from redis import Redis, RedisCluster
 
 DEFUALT_TOKEN_LIMIT_RATIO = 0.75
 DEFAULT_TOKEN_LIMIT = 3000
