@@ -89,7 +89,7 @@ def astream_completion_response_to_chat_response(
 ) -> ChatResponseAsyncGen:
     """Convert an async stream completion to an async stream chat response."""
 
-    async def gen() -> ChatResponseGen:
+    async def gen() -> ChatResponseAsyncGen:
         async for response in completion_response_gen:
             yield ChatResponse(
                 message=ChatMessage(

@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
@@ -103,7 +103,7 @@ class OpenAILike(OpenAI):
 
         return super().stream_complete(prompt, formatted=formatted, **kwargs)
 
-    def chat(self, messages: List[ChatMessage], **kwargs: Any) -> ChatResponse:
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat with the model."""
         if not self.metadata.is_chat_model:
             prompt = self.messages_to_prompt(messages)
@@ -142,7 +142,9 @@ class OpenAILike(OpenAI):
 
         return await super().astream_complete(prompt, formatted=formatted, **kwargs)
 
-    async def achat(self, messages: List[ChatMessage], **kwargs: Any) -> ChatResponse:
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
         """Chat with the model."""
         if not self.metadata.is_chat_model:
             prompt = self.messages_to_prompt(messages)
