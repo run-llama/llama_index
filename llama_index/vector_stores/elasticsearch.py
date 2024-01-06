@@ -7,10 +7,11 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union, cast
 import nest_asyncio
 import numpy as np
 
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
+    BasePydanticVectorStore,
     MetadataFilters,
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -135,7 +136,7 @@ def _to_llama_similarities(scores: List[float]) -> List[float]:
     return np.exp(scores_to_norm - np.max(scores_to_norm)).tolist()
 
 
-class ElasticsearchStore(VectorStore):
+class ElasticsearchStore(BasePydanticVectorStore):
     """Elasticsearch vector store.
 
     Args:
@@ -160,6 +161,19 @@ class ElasticsearchStore(VectorStore):
     """
 
     stores_text: bool = True
+    index_name: str
+    es_client: Optional[Any]
+    es_url: Optional[str]
+    es_cloud_id: Optional[str]
+    es_api_key: Optional[str]
+    es_user: Optional[str]
+    es_password: Optional[str]
+    text_field: str = "content"
+    vector_field: str = "embedding"
+    batch_size: int = 200
+    distance_strategy: Optional[DISTANCE_STRATEGIES] = "COSINE"
+
+    _client = PrivateAttr()
 
     def __init__(
         self,
@@ -176,11 +190,6 @@ class ElasticsearchStore(VectorStore):
         distance_strategy: Optional[DISTANCE_STRATEGIES] = "COSINE",
     ) -> None:
         nest_asyncio.apply()
-        self.index_name = index_name
-        self.text_field = text_field
-        self.vector_field = vector_field
-        self.batch_size = batch_size
-        self.distance_strategy = distance_strategy
 
         if es_client is not None:
             self._client = es_client.options(
@@ -199,6 +208,19 @@ class ElasticsearchStore(VectorStore):
                 """Either provide a pre-existing AsyncElasticsearch or valid \
                 credentials for creating a new connection."""
             )
+        super().__init__(
+            index_name=index_name,
+            es_client=es_client,
+            es_url=es_url,
+            es_cloud_id=es_cloud_id,
+            es_api_key=es_api_key,
+            es_user=es_user,
+            es_password=es_password,
+            text_field=text_field,
+            vector_field=vector_field,
+            batch_size=batch_size,
+            distance_strategy=distance_strategy,
+        )
 
     @property
     def client(self) -> Any:

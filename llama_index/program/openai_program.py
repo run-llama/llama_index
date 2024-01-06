@@ -157,10 +157,14 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
     def __call__(
         self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Union[Model, List[Model]]:
-        openai_fn_spec = to_openai_tool(self._output_cls)
+        llm_kwargs = llm_kwargs or {}
+        description = self._description_eval(**kwargs)
+
+        openai_fn_spec = to_openai_tool(self._output_cls, description=description)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
@@ -168,6 +172,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             messages=messages,
             tools=[openai_fn_spec],
             tool_choice=self._tool_choice,
+            **llm_kwargs,
         )
         message = chat_response.message
         if "tool_calls" not in message.additional_kwargs:
@@ -186,10 +191,14 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
     async def acall(
         self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Union[Model, List[Model]]:
-        openai_fn_spec = to_openai_tool(self._output_cls)
+        llm_kwargs = llm_kwargs or {}
+        description = self._description_eval(**kwargs)
+
+        openai_fn_spec = to_openai_tool(self._output_cls, description=description)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
@@ -197,6 +206,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             messages=messages,
             tools=[openai_fn_spec],
             tool_choice=self._tool_choice,
+            **llm_kwargs,
         )
         message = chat_response.message
         if "tool_calls" not in message.additional_kwargs:
@@ -213,17 +223,26 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             verbose=self._verbose,
         )
 
-    def stream_list(self, *args: Any, **kwargs: Any) -> Generator[Model, None, None]:
+    def stream_list(
+        self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Generator[Model, None, None]:
         """Streams a list of objects."""
+        llm_kwargs = llm_kwargs or {}
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
+        description = self._description_eval(**kwargs)
+
         list_output_cls = create_list_model(self._output_cls)
-        openai_fn_spec = to_openai_tool(list_output_cls)
+        openai_fn_spec = to_openai_tool(list_output_cls, description=description)
 
         chat_response_gen = self._llm.stream_chat(
             messages=messages,
             tools=[openai_fn_spec],
             tool_choice=_default_tool_choice(list_output_cls),
+            **llm_kwargs,
         )
         # extract function call arguments
         # obj_start_idx finds start position (before a new "{" in JSON)
@@ -255,3 +274,20 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
                 if self._verbose:
                     print(f"Extracted object: {obj.json()}")
                 yield obj
+
+    def _description_eval(self, **kwargs: Any) -> Optional[str]:
+        description = kwargs.get("description", None)
+
+        ## __doc__ checks if docstring is provided in the Pydantic Model
+        if not (self._output_cls.__doc__ or description):
+            raise ValueError(
+                "Must provide description for your Pydantic Model. Either provide a docstring or add `description=<your_description>` to the method. Required to convert Pydantic Model to OpenAI Function."
+            )
+
+        ## If both docstring and description are provided, raise error
+        if self._output_cls.__doc__ and description:
+            raise ValueError(
+                "Must provide either a docstring or a description, not both."
+            )
+
+        return description

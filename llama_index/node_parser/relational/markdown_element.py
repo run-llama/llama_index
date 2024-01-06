@@ -12,16 +12,19 @@ from llama_index.schema import BaseNode, TextNode
 
 def md_to_df(md_str: str) -> pd.DataFrame:
     """Convert Markdown to dataframe."""
+    # Replace " by \" in md_str
+    md_str = md_str.replace('"', '\\"')
+
     # Replace markdown pipe tables with commas
-    md_str = md_str.replace("|", ",")
+    md_str = md_str.replace("|", '","')
 
     # Remove the second line (table header separator)
     lines = md_str.split("\n")
     md_str = "\n".join(lines[:1] + lines[2:])
 
-    # Remove the first and last character (the pipes)
+    # Remove the first and last second char of the line (the pipes, transformed to ",")
     lines = md_str.split("\n")
-    md_str = "\n".join([line[1:-1] for line in lines])
+    md_str = "\n".join([line[2:-2] for line in lines])
 
     # Check if the table is empty
     if len(md_str) == 0:
@@ -144,6 +147,13 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                     should_keep = all(tf(element) for tf in table_filters)
                 else:
                     should_keep = True  # default to keeping all tables
+
+                # verify that the table (markdown) have the same number of columns on each rows
+                table_lines = element.element.split("\n")
+                table_columns = [len(line.split("|")) for line in table_lines]
+                if len(set(table_columns)) > 1:
+                    should_keep = False
+
                 # if the element is a table, convert it to a dataframe
                 if should_keep:
                     table = md_to_df(element.element)
