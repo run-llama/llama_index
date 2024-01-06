@@ -62,7 +62,10 @@ class KVDocumentStore(BaseDocumentStore):
         return {key: json_to_doc(json) for key, json in json_dict.items()}
 
     def add_documents(
-        self, nodes: Sequence[BaseNode], allow_update: bool = True
+        self,
+        nodes: Sequence[BaseNode],
+        allow_update: bool = True,
+        store_text: bool = True,
     ) -> None:
         """Add a document to the store.
 
@@ -79,8 +82,10 @@ class KVDocumentStore(BaseDocumentStore):
                     "Set allow_update to True to overwrite."
                 )
             node_key = node.node_id
-            data = doc_to_json(node)
-            self._kvstore.put(node_key, data, collection=self._node_collection)
+
+            if store_text:
+                data = doc_to_json(node)
+                self._kvstore.put(node_key, data, collection=self._node_collection)
 
             # update doc_collection if needed
             metadata = {"doc_hash": node.hash}
