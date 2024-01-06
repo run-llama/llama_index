@@ -64,7 +64,7 @@ def is_ancestor(
 def add_output_to_module_inputs(
     link: Link,
     output_dict: Dict[str, Any],
-    module_input_keys: InputKeys,
+    module: QueryComponent,
     module_inputs: Dict[str, Any],
 ) -> None:
     """Add input to module deps inputs."""
@@ -79,10 +79,15 @@ def add_output_to_module_inputs(
 
     # now attach output to relevant input key for module
     if link.dest_key is None:
-        # ensure that module_input_keys only has one key
-        if len(module_input_keys) != 1:
-            raise ValueError("Module input keys must have exactly one key.")
-        module_inputs[list(module_input_keys.all())[0]] = output
+        free_keys = module.input_keys.all() - set(module.partial_dict.keys())
+        # ensure that there is only one remaining key given partials
+        if len(free_keys) != 1:
+            raise ValueError(
+                "Module input keys must have exactly one key if "
+                "dest_key is not specified. Remaining keys: "
+                f"in module: {free_keys}"
+            )
+        module_inputs[list(free_keys)[0]] = output
     else:
         module_inputs[link.dest_key] = output
 
@@ -251,13 +256,44 @@ class QueryPipeline(QueryComponent):
         if len(root_keys) != 1:
             raise ValueError("Only one root is supported.")
         root_key = root_keys[0]
-        root_module = self.module_dict[root_key]
 
-        # for each module in queue, run it, and then check if its edges have all their dependencies satisfied
-        # if so, add to queue
-        queue: List[InputTup] = [
-            InputTup(module_key=root_key, module=root_module, input=kwargs)
-        ]
+        # call run_multi with one root key
+        result_outputs = self.run_multi(**{root_key: kwargs})
+
+        if len(result_outputs) != 1:
+            raise ValueError("Only one output is supported.")
+
+        result_output = list(result_outputs.values())[0]
+        # if it's a dict with one key, return the value
+        if isinstance(result_output, dict) and len(result_output) == 1:
+            return list(result_output.values())[0]
+        else:
+            return result_output
+        raise NotImplementedError("Not implemented yet.")
+
+    def run_multi(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        """Run the pipeline for multiple roots.
+
+        kwargs is in the form of module_dict -> input_dict
+        input_dict is in the form of input_key -> input
+        
+        """
+
+        root_keys = self._get_root_keys()
+        # if root keys don't match up with kwargs keys, raise error 
+        if set(root_keys) != set(kwargs.keys()):
+            raise ValueError(
+                "Expected root keys do not match up with kwargs keys.\n"
+                f"Expected root keys: {root_keys}\n"
+                f"Kwargs keys: {kwargs.keys()}\n"
+            )
+
+        queue: List[InputTup] = []
+        for root_key in root_keys:
+            root_module = self.module_dict[root_key]
+            queue.append(
+                InputTup(module_key=root_key, module=root_module, input=kwargs[root_key])
+            )
 
         # module_deps_inputs is a dict to collect inputs for a module
         # mapping of module_key -> dict of input_key -> input
@@ -266,7 +302,7 @@ class QueryPipeline(QueryComponent):
         all_module_inputs: Dict[str, Dict[str, Any]] = {
             module_key: {} for module_key in self.module_dict.keys()
         }
-        result_outputs: List[Any] = []
+        result_outputs: Dict[str, Any] = {}
         while len(queue) > 0:
             input_tup = queue.pop(0)
             module_key, module, input = (
@@ -280,7 +316,7 @@ class QueryPipeline(QueryComponent):
 
             # if there's no more edges, add result to output
             if module_key not in self.edge_dict:
-                result_outputs.append(output_dict)
+                result_outputs[module_key] = output_dict
             else:
                 for link in self.edge_dict[module_key]:
                     edge_module = self.module_dict[link.dest]
@@ -289,7 +325,7 @@ class QueryPipeline(QueryComponent):
                     add_output_to_module_inputs(
                         link,
                         output_dict,
-                        edge_module.input_keys,
+                        edge_module,
                         all_module_inputs[link.dest],
                     )
                     if len(all_module_inputs[link.dest]) == len(edge_module.input_keys):
@@ -305,19 +341,8 @@ class QueryPipeline(QueryComponent):
             # see docstring as for why
             queue = self._ancestral_sort(queue)
 
-        if len(result_outputs) != 1:
-            raise ValueError("Only one output is supported.")
+        return result_outputs
 
-        result_output = result_outputs[0]
-        # if it's a dict with one key, return the value
-        if isinstance(result_output, dict) and len(result_output) == 1:
-            return list(result_output.values())[0]
-        else:
-            return result_output
-
-    def run_multi(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
-        """Run the pipeline for multiple roots."""
-        raise NotImplementedError("Not implemented yet.")
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
