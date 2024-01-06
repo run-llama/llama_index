@@ -9,8 +9,6 @@ from llama_index.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType
 
-from llama_index.bridge.pydantic import Field
-
 logger = logging.getLogger(__name__)
 
 

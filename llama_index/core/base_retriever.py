@@ -1,13 +1,12 @@
 """Base retriever."""
 from abc import abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.service_context import ServiceContext
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType
-from llama_index.bridge.pydantic import Field
+from llama_index.service_context import ServiceContext
 
 
 class BaseRetriever(PromptMixin):

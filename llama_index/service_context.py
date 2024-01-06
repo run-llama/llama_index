@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Any, cast
+from typing import Any, List, Optional, cast
 
 import llama_index
 from llama_index.bridge.pydantic import BaseModel
@@ -131,11 +131,9 @@ class ServiceContext:
             chunk_size_limit (Optional[int]): renamed to chunk_size
 
         """
-
         from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 
         embed_model = cast(EmbedType, embed_model)
-
 
         if chunk_size_limit is not None and chunk_size is None:
             logger.warning(
