@@ -162,3 +162,32 @@ int main() {
     assert chunks[0].startswith("#include <iostream>")
     assert chunks[1].startswith("int main()")
     assert chunks[2].startswith("{\n    std::cout")
+
+
+def test__py_custom_parser_code_splitter() -> None:
+    """Test case for code splitting using custom parser generated from tree_sitter_languages."""
+    if "CI" in os.environ:
+        return
+
+    from tree_sitter_languages import get_parser
+
+    parser = get_parser("python")
+
+    code_splitter = CodeSplitter(
+        language="custom",
+        chunk_lines=4,
+        chunk_lines_overlap=1,
+        max_chars=30,
+        parser=parser,
+    )
+
+    text = """\
+def foo():
+    print("bar")
+
+def baz():
+    print("bbq")"""
+
+    chunks = code_splitter.split_text(text)
+    assert chunks[0].startswith("def foo():")
+    assert chunks[1].startswith("def baz():")
