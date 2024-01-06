@@ -5,8 +5,8 @@ from typing import Callable, List, Optional, Tuple
 import pandas as pd
 
 from llama_index import SimpleDirectoryReader
+from llama_index.core.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.embeddings import OpenAIEmbedding, resolve_embed_model
-from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
 
 def generate_strings(num_strings: int = 100, string_length: int = 10) -> List[str]:
