@@ -21,3 +21,8 @@ class TogetherLLM(OpenAILike):
             is_chat_model=is_chat_model,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "TogetherLLM"
