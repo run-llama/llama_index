@@ -262,11 +262,9 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
     ) -> Tuple[BaseRetriever, QueryBundle]:
         query_bundle = QueryBundle(query_str=spec.query)
 
-        _logger.info(f"Using query str: {spec.query}")
         filter_list = [
             (filter.key, filter.operator.value, filter.value) for filter in spec.filters
         ]
-        _logger.info(f"Using implicit filters: {filter_list}")
         if self._verbose:
             print(f"Using query str: {spec.query}")
             print(f"Using implicit filters: {filter_list}")
