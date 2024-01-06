@@ -23,11 +23,13 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.schema import BaseComponent
 from llama_index.core.query_pipeline.query_component import (
-    QueryComponent, InputKeys, OutputKeys, StringableInput,
-    validate_and_convert_stringable
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
 )
+from llama_index.schema import BaseComponent
 
 
 def llm_chat_callback() -> Callable:

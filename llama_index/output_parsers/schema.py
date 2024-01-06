@@ -1,11 +1,15 @@
 """Output parser."""
+from typing import Any, Dict
+
+from llama_index.core.query_pipeline.query_component import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+)
 from llama_index.types import BaseOutputParser
 
-from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
-from typing import Dict, Any
-
-
 # TODO: can this just be the base class
+
 
 class QueryOutputParser(BaseOutputParser, QueryComponent):
     """Query output parser."""

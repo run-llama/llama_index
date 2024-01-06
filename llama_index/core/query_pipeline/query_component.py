@@ -1,16 +1,18 @@
 """Pipeline schema."""
 
-from llama_index.schema import BaseComponent
-from llama_index.bridge.pydantic import Field, PrivateAttr, BaseModel, validator
-from abc import abstractmethod, ABC
-from typing import Any, Dict, Set, Optional, Union
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional, Set, Union
+
+from llama_index.bridge.pydantic import BaseModel, Field
+
 # TODO: fix circular dependency risk
-from llama_index.core.llms.types import CompletionResponse, ChatResponse
-from llama_index.schema import QueryBundle
+from llama_index.core.llms.types import ChatResponse, CompletionResponse
 from llama_index.core.response.schema import Response
+from llama_index.schema import QueryBundle
 
 ## Define common types used throughout these components
 StringableInput = Union[CompletionResponse, ChatResponse, str, QueryBundle, Response]
+
 
 def validate_and_convert_stringable(input: Any) -> str:
     """Validate and convert stringable input."""
@@ -21,14 +23,13 @@ def validate_and_convert_stringable(input: Any) -> str:
 
 class InputKeys(BaseModel):
     """Input keys."""
+
     required_keys: Set[str] = Field(default_factory=set)
     optional_keys: Set[str] = Field(default_factory=set)
 
     @classmethod
     def from_keys(
-        cls, 
-        required_keys: Set[str], 
-        optional_keys: Optional[Set[str]] = None
+        cls, required_keys: Set[str], optional_keys: Optional[Set[str]] = None
     ) -> "InputKeys":
         """Create InputKeys from tuple."""
         return cls(required_keys=required_keys, optional_keys=optional_keys or set())
@@ -56,12 +57,13 @@ class InputKeys(BaseModel):
 
 class OutputKeys(BaseModel):
     """Output keys."""
+
     required_keys: Set[str] = Field(default_factory=set)
 
     @classmethod
     def from_keys(
-        cls, 
-        required_keys: Set[str], 
+        cls,
+        required_keys: Set[str],
     ) -> "InputKeys":
         """Create InputKeys from tuple."""
         return cls(required_keys=required_keys)
@@ -74,11 +76,12 @@ class OutputKeys(BaseModel):
                 f"Input keys {input_keys} do not match required keys {self.required_keys}"
             )
 
+
 class QueryComponent(ABC):
     """Query component.
 
     Represents a component that can be run in a `QueryPipeline`.
-    
+
     """
 
     # TODO: make this a subclass of BaseComponent (e.g. use Pydantic)
@@ -135,4 +138,4 @@ class QueryComponent(ABC):
     @property
     @abstractmethod
     def output_keys(self) -> OutputKeys:
-        """Output keys.""" 
+        """Output keys."""

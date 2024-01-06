@@ -1,15 +1,18 @@
 """Base retriever."""
 from abc import abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.core.query_pipeline.query_component import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType
 from llama_index.service_context import ServiceContext
-
-
-from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 
 
 class BaseRetriever(QueryComponent, PromptMixin):
@@ -121,7 +124,7 @@ class BaseRetriever(QueryComponent, PromptMixin):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM? 
+        # include LLM?
         output = self.retrieve(kwargs["input"])
         return {"output": output}
 

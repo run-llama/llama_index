@@ -1,12 +1,16 @@
 """Query Pipeline."""
 
-from typing import Any, List, Optional, Sequence, Dict, Set
-from llama_index.bridge.pydantic import Field, PrivateAttr, BaseModel, validator
-from llama_index.callbacks import CallbackManager
-from llama_index.schema import BaseComponent
-from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
-from functools import cmp_to_key
 import uuid
+from functools import cmp_to_key
+from typing import Any, Dict, List, Optional, Sequence, Set
+
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.callbacks import CallbackManager
+from llama_index.core.query_pipeline.query_component import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+)
 
 
 class InputTup(BaseModel):
@@ -18,7 +22,6 @@ class InputTup(BaseModel):
     module_key: str
     module: QueryComponent
     input: Dict[str, Any]
-    
 
 
 class Link(BaseModel):
@@ -40,9 +43,7 @@ class Link(BaseModel):
 
 
 def is_ancestor(
-    module_key: str, 
-    child_module_key: str, 
-    edge_dict: Dict[str, List[Link]]
+    module_key: str, child_module_key: str, edge_dict: Dict[str, List[Link]]
 ) -> bool:
     """Check if module is ancestor of another module."""
     if module_key == child_module_key:
@@ -56,13 +57,12 @@ def is_ancestor(
 
 
 def add_output_to_module_inputs(
-    link: Link, 
-    output_dict: Dict[str, Any], 
-    module_input_keys: InputKeys, 
-    module_inputs: Dict[str, Any]
+    link: Link,
+    output_dict: Dict[str, Any],
+    module_input_keys: InputKeys,
+    module_inputs: Dict[str, Any],
 ) -> None:
     """Add input to module deps inputs."""
-    
     # get relevant output from link
     if link.src_key is None:
         # ensure that output_dict only has one key
@@ -81,11 +81,12 @@ def add_output_to_module_inputs(
     else:
         module_inputs[link.dest_key] = output
 
+
 class QueryPipeline(QueryComponent):
     """A query pipeline that can allow arbitrary chaining of different modules.
 
     A pipeline itself is a query component, and can be used as a module in another pipeline.
-    
+
     """
 
     # callback_manager: CallbackManager = Field(
@@ -122,7 +123,7 @@ class QueryPipeline(QueryComponent):
         # )
 
         if chain is not None:
-            # generate implicit link between each item, add 
+            # generate implicit link between each item, add
             self.add_chain(chain)
 
     def add_chain(self, chain: Sequence[QueryComponent]) -> None:
@@ -130,7 +131,7 @@ class QueryPipeline(QueryComponent):
 
         This is a special form of pipeline that is purely sequential/linear.
         This allows a more concise way of specifying a pipeline.
-        
+
         """
         # first add all modules
         module_keys = []
@@ -141,10 +142,7 @@ class QueryPipeline(QueryComponent):
 
         # then add all links
         for i in range(len(chain) - 1):
-            self.add_link(
-                src=module_keys[i], 
-                dest=module_keys[i + 1]
-            )
+            self.add_link(src=module_keys[i], dest=module_keys[i + 1])
 
     def add_modules(self, module_dict: Dict[str, QueryComponent]) -> None:
         """Add modules to the pipeline."""
@@ -159,11 +157,11 @@ class QueryPipeline(QueryComponent):
         self.module_dict[module_key] = module
 
     def add_link(
-        self, 
-        src: str, 
-        dest: str, 
-        src_key: Optional[str] = None, 
-        dest_key: Optional[str] = None
+        self,
+        src: str,
+        dest: str,
+        src_key: Optional[str] = None,
+        dest_key: Optional[str] = None,
     ) -> None:
         """Add a link between two modules."""
         if src not in self.module_dict:
@@ -198,7 +196,7 @@ class QueryPipeline(QueryComponent):
         """Sort queue by ancestral order of the modules.
 
         Why do we want to do this? Especially if modules are only inserted to the queue
-        if they have all their required dependencies satisfied? 
+        if they have all their required dependencies satisfied?
 
         Because each module has optional dependencies as well, and it's not really clear whether
         or not that optional dependency will be satisfied (or left blank).
@@ -207,29 +205,33 @@ class QueryPipeline(QueryComponent):
         furthest upstream is run first, and then the modules further downstream are run later.
         That way you can be sure that any optional dependencies that should be satisfied
         will be satisifed by the time that module is run.
-        
+
         """
-        
+
         # define comparator function
         def _cmp(input_tup1: InputTup, input_tup2: InputTup) -> int:
             """Compare based on whether is_ancestor is true."""
-            if is_ancestor(input_tup1.module_key, input_tup2.module_key, self.edge_dict):
+            if is_ancestor(
+                input_tup1.module_key, input_tup2.module_key, self.edge_dict
+            ):
                 return -1
-            elif is_ancestor(input_tup2.module_key, input_tup1.module_key, self.edge_dict):
+            elif is_ancestor(
+                input_tup2.module_key, input_tup1.module_key, self.edge_dict
+            ):
                 return 1
             else:
                 # they're not ancestors of each other (e.g. on parallel branches), so return 0
                 return 0
 
         return sorted(queue, key=cmp_to_key(_cmp))
-    
+
     def run(self, *args: Any, **kwargs: Any) -> Any:
         """Run the pipeline.
 
         Assume that there is a single root module and a single output module.
 
         For multi-input and multi-outputs, please see `run_multi`.
-        
+
         """
         # currently assume kwargs, add handling for args later
         ## run pipeline
@@ -242,9 +244,11 @@ class QueryPipeline(QueryComponent):
 
         # for each module in queue, run it, and then check if its edges have all their dependencies satisfied
         # if so, add to queue
-        queue: List[InputTup] = [InputTup(module_key=root_key, module=root_module, input=kwargs)]
+        queue: List[InputTup] = [
+            InputTup(module_key=root_key, module=root_module, input=kwargs)
+        ]
 
-        # module_deps_inputs is a dict to collect inputs for a module 
+        # module_deps_inputs is a dict to collect inputs for a module
         # mapping of module_key -> dict of input_key -> input
         # initialize with blank dict for every module key
         # the input dict of each module key will be populated as the upstream modules are run
@@ -254,11 +258,15 @@ class QueryPipeline(QueryComponent):
         result_outputs: List[Any] = []
         while len(queue) > 0:
             input_tup = queue.pop(0)
-            module_key, module, input = input_tup.module_key, input_tup.module, input_tup.input
+            module_key, module, input = (
+                input_tup.module_key,
+                input_tup.module,
+                input_tup.input,
+            )
 
             print(f"Running module {module_key} with input {input}")
             output_dict = module.run_component(**input)
-            
+
             # if there's no more edges, add result to output
             if module_key not in self.edge_dict:
                 result_outputs.append(output_dict)
@@ -268,7 +276,10 @@ class QueryPipeline(QueryComponent):
 
                     # add input to module_deps_inputs
                     add_output_to_module_inputs(
-                        link, output_dict, edge_module.input_keys, all_module_inputs[link.dest]
+                        link,
+                        output_dict,
+                        edge_module.input_keys,
+                        all_module_inputs[link.dest],
                     )
                     if len(all_module_inputs[link.dest]) == len(edge_module.input_keys):
                         queue.append(
@@ -292,7 +303,6 @@ class QueryPipeline(QueryComponent):
             return list(result_output.values())[0]
         else:
             return result_output
-        
 
     def run_multi(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         """Run the pipeline for multiple roots."""
@@ -323,6 +333,3 @@ class QueryPipeline(QueryComponent):
             raise ValueError("Only one leaf is supported.")
         leaf_module = self.module_dict[leaf_keys[0]]
         return leaf_module.output_keys
-    
-    
-    

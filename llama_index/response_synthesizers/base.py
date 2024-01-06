@@ -13,6 +13,12 @@ from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.core.query_pipeline.query_component import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.core.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
@@ -23,7 +29,6 @@ from llama_index.prompts.mixin import PromptMixin
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.types import RESPONSE_TEXT_TYPE
-from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +205,7 @@ class BaseSynthesizer(QueryComponent, PromptMixin):
         if "query_str" not in input:
             raise ValueError("Input must have key 'query_str'")
         input["query_str"] = validate_and_convert_stringable(input["query_str"])
-        
+
         if "nodes" not in input:
             raise ValueError("Input must have key 'nodes'")
         nodes = input["nodes"]
@@ -213,7 +218,7 @@ class BaseSynthesizer(QueryComponent, PromptMixin):
 
     def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""
-        # include LLM? 
+        # include LLM?
         output = self.synthesize(kwargs["query_str"], kwargs["nodes"])
         return {"output": output}
 

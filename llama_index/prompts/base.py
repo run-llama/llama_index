@@ -14,6 +14,12 @@ if TYPE_CHECKING:
     )
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.core.llms.types import ChatMessage
+from llama_index.core.query_pipeline.query_component import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.llms.base import BaseLLM
 from llama_index.llms.generic_utils import (
     messages_to_prompt as default_messages_to_prompt,
@@ -24,7 +30,6 @@ from llama_index.llms.generic_utils import (
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
 from llama_index.types import BaseOutputParser
-from llama_index.core.query_pipeline.query_component import QueryComponent, InputKeys, OutputKeys, validate_and_convert_stringable
 
 
 class BasePromptTemplate(QueryComponent, BaseModel, ABC):
@@ -117,7 +122,7 @@ class BasePromptTemplate(QueryComponent, BaseModel, ABC):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM? 
+        # include LLM?
         output = self.format(**kwargs)
         return {"prompt": output}
 

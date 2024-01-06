@@ -1,12 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
+from llama_index.core.query_pipeline.query_component import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.schema import BaseComponent, NodeWithScore, QueryBundle
-
-from llama_index.core.query_pipeline.query_component import QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 
 
 class BaseNodePostprocessor(QueryComponent, BaseComponent, ABC):
@@ -77,7 +81,7 @@ class BaseNodePostprocessor(QueryComponent, BaseComponent, ABC):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM? 
+        # include LLM?
         output = self.postprocess_nodes(
             kwargs["nodes"], query_str=kwargs.get("query_str", None)
         )
