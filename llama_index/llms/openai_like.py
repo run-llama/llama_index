@@ -3,7 +3,7 @@ from typing import Optional, Union
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.llms.openai import OpenAI, Tokenizer
-from llama_index.llms.types import LLMMetadata
+from llama_index.core.llms.types import LLMMetadata
 
 
 class OpenAILike(OpenAI):

@@ -8,7 +8,7 @@ from llama_index.llms.openai_utils import (
     to_openai_message_dicts,
     to_openai_tool,
 )
-from llama_index.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms.types import ChatMessage, MessageRole
 from openai.types.chat.chat_completion_assistant_message_param import (
     FunctionCall as FunctionCallParam,
 )

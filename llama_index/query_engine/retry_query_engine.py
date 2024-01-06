@@ -9,7 +9,7 @@ from llama_index.indices.query.query_transform.feedback_transform import (
     FeedbackQueryTransformation,
 )
 from llama_index.prompts.mixin import PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import QueryBundle
 
 logger = logging.getLogger(__name__)

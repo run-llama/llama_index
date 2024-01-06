@@ -15,7 +15,7 @@ from llama_index.llms.cohere_utils import (
     messages_to_cohere_history,
 )
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

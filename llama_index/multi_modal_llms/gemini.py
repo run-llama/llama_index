@@ -12,7 +12,7 @@ from llama_index.llms.gemini_utils import (
     chat_message_to_gemini,
     completion_from_gemini_response,
 )
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

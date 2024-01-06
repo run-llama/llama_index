@@ -11,7 +11,7 @@ from llama_index.graph_stores.registry import (
 )
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.service_context import ServiceContext

@@ -17,7 +17,7 @@ from llama_index.llms.llm import (
     stream_chat_response_to_tokens,
     stream_completion_response_to_tokens,
 )
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     LLMMetadata,
     MessageRole,

@@ -6,7 +6,7 @@ from llama_index.llms.base import (
     ChatResponse,
     CompletionResponse,
 )
-from llama_index.llms.types import MessageRole
+from llama_index.core.llms.types import MessageRole
 
 if typing.TYPE_CHECKING:
     import google.ai.generativelanguage as glm

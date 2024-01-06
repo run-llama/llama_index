@@ -12,7 +12,7 @@ from llama_index.llms.openai_utils import (
     refresh_openai_azuread_token,
     resolve_from_aliases,
 )
-from llama_index.llms.types import ChatMessage
+from llama_index.core.llms.types import ChatMessage
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 

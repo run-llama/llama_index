@@ -9,7 +9,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.node_parser.interface import NodeParser
-from llama_index.response.schema import PydanticResponse
+from llama_index.core.response.schema import PydanticResponse
 from llama_index.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.utils import get_tqdm_iterable
 

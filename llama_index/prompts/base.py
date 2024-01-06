@@ -20,7 +20,7 @@ from llama_index.llms.generic_utils import (
 from llama_index.llms.generic_utils import (
     prompt_to_messages,
 )
-from llama_index.llms.types import ChatMessage
+from llama_index.core.llms.types import ChatMessage
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.prompts.utils import get_template_vars
 from llama_index.types import BaseOutputParser

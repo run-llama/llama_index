@@ -18,7 +18,7 @@ from llama_index.llms.portkey_utils import (
     get_llm,
     is_chat_model,
 )
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,

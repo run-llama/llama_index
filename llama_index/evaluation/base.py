@@ -5,7 +5,7 @@ from typing import Any, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.prompts.mixin import PromptMixin, PromptMixinType
-from llama_index.response.schema import Response
+from llama_index.core.response.schema import Response
 
 
 class EvaluationResult(BaseModel):

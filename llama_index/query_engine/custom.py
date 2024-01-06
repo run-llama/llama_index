@@ -7,7 +7,7 @@ from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.prompts.mixin import PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import QueryBundle, QueryType
 
 STR_OR_RESPONSE_TYPE = Union[RESPONSE_TYPE, str]

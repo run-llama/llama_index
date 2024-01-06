@@ -64,7 +64,7 @@ from llama_index.prompts import (
 from llama_index.readers import SimpleDirectoryReader, download_loader
 
 # response
-from llama_index.response.schema import Response
+from llama_index.core.response.schema import Response
 
 # Response Synthesizer
 from llama_index.response_synthesizers.factory import get_response_synthesizer

@@ -8,7 +8,7 @@ from llama_index.llms.generic_utils import (
     stream_completion_to_chat_decorator,
 )
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

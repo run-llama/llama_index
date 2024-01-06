@@ -9,7 +9,7 @@ from llama_index.llms.generic_utils import (
     completion_to_chat_decorator,
     get_from_param_or_env,
 )
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,

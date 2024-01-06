@@ -8,7 +8,7 @@ from llama_index.constants import (
 )
 from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.openai_like import OpenAILike
-from llama_index.llms.types import LLMMetadata
+from llama_index.core.llms.types import LLMMetadata
 
 DEFAULT_API_BASE = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "gryphe/mythomax-l2-13b"

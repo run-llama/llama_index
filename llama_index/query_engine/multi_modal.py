@@ -11,7 +11,7 @@ from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.mixin import PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import ImageNode, NodeWithScore
 
 

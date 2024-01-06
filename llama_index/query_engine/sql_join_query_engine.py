@@ -14,7 +14,7 @@ from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.llms.utils import resolve_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import QueryBundle
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector

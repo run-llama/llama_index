@@ -18,7 +18,7 @@ from llama_index.llms.gemini_utils import (
     completion_from_gemini_response,
     merge_neighboring_same_role_messages,
 )
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,

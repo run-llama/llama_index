@@ -19,7 +19,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT_MULTIPLE,
     DEFAULT_TEXT_QA_PROMPT,
 )
-from llama_index.response.schema import Response
+from llama_index.core.response.schema import Response
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
 from llama_index.utils import print_text, truncate_text

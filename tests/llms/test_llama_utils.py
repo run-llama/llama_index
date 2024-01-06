@@ -12,7 +12,7 @@ from llama_index.llms.llama_utils import (
     completion_to_prompt,
     messages_to_prompt,
 )
-from llama_index.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms.types import ChatMessage, MessageRole
 
 
 @pytest.fixture()

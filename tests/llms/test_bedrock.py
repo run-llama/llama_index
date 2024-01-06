@@ -6,7 +6,7 @@ import pytest
 from botocore.response import StreamingBody
 from botocore.stub import Stubber
 from llama_index.llms import Bedrock
-from llama_index.llms.types import ChatMessage
+from llama_index.core.llms.types import ChatMessage
 from pytest import MonkeyPatch
 
 

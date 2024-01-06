@@ -12,7 +12,7 @@ from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
 from llama_index.prompts.mixin import PromptMixinType
-from llama_index.response.schema import (
+from llama_index.core.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
     Response,

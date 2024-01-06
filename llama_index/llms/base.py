@@ -12,7 +12,7 @@ from typing import (
 
 from llama_index.bridge.pydantic import Field, validator
 from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

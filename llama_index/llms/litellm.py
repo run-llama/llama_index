@@ -24,7 +24,7 @@ from llama_index.llms.litellm_utils import (
     validate_litellm_api_key,
 )
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
-from llama_index.llms.types import CompletionResponse
+from llama_index.core.llms.types import CompletionResponse
 
 
 class GradientModel(MagicMock):

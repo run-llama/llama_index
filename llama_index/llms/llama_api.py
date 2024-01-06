@@ -10,7 +10,7 @@ from llama_index.llms.openai_utils import (
     from_openai_message_dict,
     to_openai_message_dicts,
 )
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,

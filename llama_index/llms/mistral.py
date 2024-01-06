@@ -20,7 +20,7 @@ from llama_index.llms.mistralai_utils import (
 )
 
 # from mistralai.models.chat_completion import ChatMessage
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

@@ -7,7 +7,7 @@ import openai
 import pytest
 from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.llms.mock import MockLLM
-from llama_index.llms.types import LLMMetadata
+from llama_index.core.llms.types import LLMMetadata
 from llama_index.node_parser.text import SentenceSplitter, TokenTextSplitter
 from llama_index.service_context import ServiceContext
 

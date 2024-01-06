@@ -18,7 +18,7 @@ from llama_index.query_engine.flare.output_parser import (
     IsDoneOutputParser,
     QueryTaskOutputParser,
 )
-from llama_index.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.utils import print_text

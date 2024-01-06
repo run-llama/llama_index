@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from llama_index.llms.rungpt import RunGptLLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     MessageRole,
 )
