@@ -8,6 +8,7 @@ from llama_index.core.query_pipeline.query_component import (
     InputKeys,
     OutputKeys,
     QueryComponent,
+    ChainableMixin,
     validate_and_convert_stringable,
 )
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
@@ -15,7 +16,7 @@ from llama_index.schema import NodeWithScore, QueryBundle, QueryType
 from llama_index.service_context import ServiceContext
 
 
-class BaseRetriever(QueryComponent, PromptMixin):
+class BaseRetriever(ChainableMixin, PromptMixin):
     """Base retriever."""
 
     # callback_manager: CallbackManager = Field(
@@ -116,6 +117,17 @@ class BaseRetriever(QueryComponent, PromptMixin):
             return self._index.service_context
         return None
 
+    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """Return a query component."""
+        return RetrieverComponent(self)
+
+
+class RetrieverComponent(QueryComponent):
+    """Retriever component."""
+
+    def __init__(self, retriever: BaseRetriever) -> None:
+        self.retriever = retriever
+
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         # make sure input is a string
@@ -125,7 +137,7 @@ class BaseRetriever(QueryComponent, PromptMixin):
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
         # include LLM?
-        output = self.retrieve(kwargs["input"])
+        output = self.retriever.retrieve(kwargs["input"])
         return {"output": output}
 
     @property
@@ -137,3 +149,6 @@ class BaseRetriever(QueryComponent, PromptMixin):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"output"})
+
+
+    

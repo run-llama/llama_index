@@ -17,6 +17,7 @@ from llama_index.core.query_pipeline.query_component import (
     InputKeys,
     OutputKeys,
     QueryComponent,
+    ChainableMixin,
     validate_and_convert_stringable,
 )
 from llama_index.core.response.schema import (
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 QueryTextType = Union[str, QueryBundle]
 
 
-class BaseSynthesizer(QueryComponent, PromptMixin):
+class BaseSynthesizer(ChainableMixin, PromptMixin):
     """Response builder class."""
 
     def __init__(
@@ -199,6 +200,17 @@ class BaseSynthesizer(QueryComponent, PromptMixin):
 
         return response
 
+    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """As query component."""
+        return SynthesizerComponent(synthesizer=self)
+
+
+class SynthesizerComponent(QueryComponent):
+    """Synthesizer component."""
+
+    def __init__(self, synthesizer: BaseSynthesizer) -> None:
+        self.synthesizer = synthesizer
+
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         # make sure both query_str and nodes are there
@@ -219,7 +231,7 @@ class BaseSynthesizer(QueryComponent, PromptMixin):
     def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""
         # include LLM?
-        output = self.synthesize(kwargs["query_str"], kwargs["nodes"])
+        output = self.synthesizer.synthesize(kwargs["query_str"], kwargs["nodes"])
         return {"output": output}
 
     @property
@@ -231,3 +243,4 @@ class BaseSynthesizer(QueryComponent, PromptMixin):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"output"})
+

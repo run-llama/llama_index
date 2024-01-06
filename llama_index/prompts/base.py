@@ -18,6 +18,7 @@ from llama_index.core.query_pipeline.query_component import (
     InputKeys,
     OutputKeys,
     QueryComponent,
+    ChainableMixin,
     validate_and_convert_stringable,
 )
 from llama_index.llms.base import BaseLLM
@@ -32,7 +33,7 @@ from llama_index.prompts.utils import get_template_vars
 from llama_index.types import BaseOutputParser
 
 
-class BasePromptTemplate(QueryComponent, BaseModel, ABC):
+class BasePromptTemplate(ChainableMixin, BaseModel, ABC):
     metadata: Dict[str, Any]
     template_vars: List[str]
     kwargs: Dict[str, str]
@@ -113,28 +114,9 @@ class BasePromptTemplate(QueryComponent, BaseModel, ABC):
     def get_template(self, llm: Optional[BaseLLM] = None) -> str:
         ...
 
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        keys = list(input.keys())
-        for k in keys:
-            input[k] = validate_and_convert_stringable(input[k])
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # include LLM?
-        output = self.format(**kwargs)
-        return {"prompt": output}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        return InputKeys.from_keys(set(self.template_vars))
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"prompt"})
+    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """As query component."""
+        return PromptComponent(prompt=self)
 
 
 class PromptTemplate(BasePromptTemplate):
@@ -517,3 +499,34 @@ class LangchainPromptTemplate(BasePromptTemplate):
 
 # NOTE: only for backwards compatibility
 Prompt = PromptTemplate
+
+
+class PromptComponent(QueryComponent):
+    """Prompt component."""
+
+    def __init__(self, prompt: BasePromptTemplate) -> None:
+        self.prompt = prompt
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        keys = list(input.keys())
+        for k in keys:
+            input[k] = validate_and_convert_stringable(input[k])
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # include LLM?
+        output = self.prompt.format(**kwargs)
+        return {"prompt": output}
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        return InputKeys.from_keys(set(self.prompt.template_vars))
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"prompt"})
+

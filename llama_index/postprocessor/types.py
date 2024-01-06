@@ -7,13 +7,14 @@ from llama_index.core.query_pipeline.query_component import (
     InputKeys,
     OutputKeys,
     QueryComponent,
+    ChainableMixin,
     validate_and_convert_stringable,
 )
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.schema import BaseComponent, NodeWithScore, QueryBundle
 
 
-class BaseNodePostprocessor(QueryComponent, BaseComponent, ABC):
+class BaseNodePostprocessor(ChainableMixin, BaseComponent, ABC):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
@@ -61,6 +62,16 @@ class BaseNodePostprocessor(QueryComponent, BaseComponent, ABC):
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
+    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """As query component."""
+        return PostprocessorComponent(postprocessor=self)
+
+
+class PostprocessorComponent(QueryComponent):
+    """Postprocessor component."""
+    def __init__(self, postprocessor: BaseNodePostprocessor) -> None:
+        self.postprocessor = postprocessor
+
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         # make sure `nodes` is a list of nodes
@@ -82,7 +93,7 @@ class BaseNodePostprocessor(QueryComponent, BaseComponent, ABC):
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
         # include LLM?
-        output = self.postprocess_nodes(
+        output = self.postprocessor.postprocess_nodes(
             kwargs["nodes"], query_str=kwargs.get("query_str", None)
         )
         return {"nodes": output}
@@ -96,3 +107,4 @@ class BaseNodePostprocessor(QueryComponent, BaseComponent, ABC):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"nodes"})
+

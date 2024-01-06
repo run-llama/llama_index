@@ -2,7 +2,7 @@
 
 import dataclasses
 from abc import abstractmethod
-from typing import Dict, Optional, cast
+from typing import Dict, Optional, cast, Any
 
 from llama_index.core.response.schema import Response
 from llama_index.indices.query.query_transform.prompts import (
@@ -13,16 +13,23 @@ from llama_index.indices.query.query_transform.prompts import (
     ImageOutputQueryTransformPrompt,
     StepDecomposeQueryTransformPrompt,
 )
+from llama_index.core.query_pipeline.query_component import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    ChainableMixin,
+    validate_and_convert_stringable,
+)
 from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.llms.utils import resolve_llm
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.schema import QueryBundle, QueryType
+from llama_index.schema import QueryBundle, QueryType, NodeWithScore
 from llama_index.utils import print_text
 
 
-class BaseQueryTransform(PromptMixin):
+class BaseQueryTransform(ChainableMixin, PromptMixin):
     """Base class for query transform.
 
     A query transform augments a raw query string with associated transformations
@@ -65,6 +72,10 @@ class BaseQueryTransform(PromptMixin):
     ) -> QueryBundle:
         """Run query processor."""
         return self.run(query_bundle_or_str, metadata=metadata)
+
+    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """As query component."""
+        return QueryTransformComponent(self)
 
 
 class IdentityQueryTransform(BaseQueryTransform):
@@ -302,3 +313,38 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
             query_str=new_query_str,
             custom_embedding_strs=query_bundle.custom_embedding_strs,
         )
+
+
+class QueryTransformComponent(QueryComponent):
+    """Query transform component."""
+    def __init__(self, query_transform: BaseQueryTransform) -> None:
+        self._query_transform = query_transform
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        if "query_str" not in input:
+            raise ValueError("Input must have key 'query_str'")
+        input["query_str"] = validate_and_convert_stringable(input["query_str"])
+
+        input["metadata"] = input.get("metadata", {})
+
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # include LLM?
+        output = self._query_transform.run(
+            kwargs["query_str"],
+            metadata=kwargs["metadata"],
+        )
+        return {"query_str": output.query_str}
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        return InputKeys.from_keys({"query_str"}, optional_keys={"metadata"})
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"query_str"})

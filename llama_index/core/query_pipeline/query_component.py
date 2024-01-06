@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional, Set, Union
 
 from llama_index.bridge.pydantic import BaseModel, Field
 
-# TODO: fix circular dependency risk
 from llama_index.core.llms.types import ChatResponse, CompletionResponse
 from llama_index.core.response.schema import Response
 from llama_index.schema import QueryBundle
@@ -77,6 +76,23 @@ class OutputKeys(BaseModel):
             )
 
 
+
+class ChainableMixin(ABC):
+    """Chainable mixin.
+
+    A module that can produce a `QueryComponent` from a set of inputs through
+    `as_query_component`.
+
+    If plugged in directly into a `QueryPipeline`, the `ChainableMixin` will be
+    converted into a `QueryComponent` with default parameters.
+    
+    """
+    
+    @abstractmethod
+    def as_query_component(self, **kwargs: Any) -> "QueryComponent":
+        """Get query component."""
+
+
 class QueryComponent(ABC):
     """Query component.
 
@@ -85,9 +101,6 @@ class QueryComponent(ABC):
     """
 
     # TODO: make this a subclass of BaseComponent (e.g. use Pydantic)
-
-    # class Config:
-    #     arbitrary_types_allowed = True
 
     @abstractmethod
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
