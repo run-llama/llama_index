@@ -1,11 +1,13 @@
 """Query Pipeline."""
 
+import json
 import uuid
 from functools import cmp_to_key
 from typing import Any, Dict, List, Optional, Sequence, Set, Union, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks import CallbackManager
+from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
     InputKeys,
@@ -282,17 +284,28 @@ class QueryPipeline(QueryComponent):
         # first set callback manager
         callback_manager = callback_manager or self.callback_manager
         self.set_callback_manager(callback_manager)
-        return self._run(*args, return_values_direct=return_values_direct, **kwargs)
+        with self.callback_manager.as_trace("query"):
+            with self.callback_manager.event(
+                CBEventType.QUERY, payload={EventPayload.QUERY_STR: json.dumps(kwargs)}
+            ) as query_event:
+                return self._run(
+                    *args, return_values_direct=return_values_direct, **kwargs
+                )
 
     def run_multi(
-        self, 
+        self,
         module_input_dict: Dict[str, Any],
         callback_manager: Optional[CallbackManager] = None,
     ) -> Dict[str, Any]:
         """Run the pipeline for multiple roots."""
         callback_manager = callback_manager or self.callback_manager
         self.set_callback_manager(callback_manager)
-        return self._run_multi(module_input_dict)
+        with self.callback_manager.as_trace("query"):
+            with self.callback_manager.event(
+                CBEventType.QUERY,
+                payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
+            ) as query_event:
+                return self._run_multi(module_input_dict)
 
     def _run(self, *args: Any, return_values_direct: bool = True, **kwargs: Any) -> Any:
         """Run the pipeline.
@@ -302,13 +315,26 @@ class QueryPipeline(QueryComponent):
         For multi-input and multi-outputs, please see `run_multi`.
 
         """
-        # currently assume kwargs, add handling for args later
         ## run pipeline
         ## assume there is only one root - for multiple roots, need to specify `run_multi`
         root_keys = self._get_root_keys()
         if len(root_keys) != 1:
             raise ValueError("Only one root is supported.")
         root_key = root_keys[0]
+
+        root_module = self.module_dict[root_key]
+        if len(args) > 0:
+            # if args is specified, validate. only one arg is allowed, and there can only be one free
+            # input key in the module
+            if len(args) > 1:
+                raise ValueError("Only one arg is allowed.")
+            if len(kwargs) > 0:
+                raise ValueError("No kwargs allowed if args is specified.")
+            if len(root_module.free_input_keys) != 1:
+                raise ValueError("Only one free input key is allowed.")
+            # set kwargs
+            kwargs[list(root_module.free_input_keys)[0]] = args[0]
+
         # call run_multi with one root key
         result_outputs = self._run_multi({root_key: kwargs})
 

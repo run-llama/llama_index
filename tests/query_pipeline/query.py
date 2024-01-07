@@ -19,7 +19,6 @@ class QueryComponent1(QueryComponent):
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""
-        pass
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -53,7 +52,6 @@ class QueryComponent2(QueryComponent):
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""
-        pass
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -87,7 +85,6 @@ class QueryComponent3(QueryComponent):
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""
-        pass
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -117,6 +114,15 @@ def test_query_pipeline_chain():
     output = p.run(input1=1, input2=2)
     # since there's one output, output is just the value
     assert output == 3
+
+
+def test_query_pipeline_single_arg_inp():
+    """Test query pipeline with single arg input (no kwargs)."""
+    # should work if input is a single arg
+    p = QueryPipeline(chain=[QueryComponent3(), QueryComponent3()])
+    # since there's one output, output is just the value
+    output = p.run(3)
+    assert output == 12
 
 
 def test_query_pipeline_partial():
