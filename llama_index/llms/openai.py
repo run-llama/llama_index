@@ -198,7 +198,7 @@ class OpenAI(LLM):
         elif model_name.startswith("ft:"):
             model_name = model_name.split(":")[1]
         return model_name
-    
+
     def _is_azure_client(self) -> bool:
         return isinstance(self._get_client(), AzureOpenAI)
 
