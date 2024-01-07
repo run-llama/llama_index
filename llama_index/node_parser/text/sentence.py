@@ -1,6 +1,6 @@
 """Sentence splitter."""
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Generator, List, Optional, Tuple
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
@@ -200,18 +200,81 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         if self._token_size(text) <= chunk_size:
             return [_Split(text, is_sentence=True)]
 
-        text_splits_by_fns, is_sentence = self._get_splits_by_fns(text)
+        new = True
+        if new:
+            split_fns = self._split_fns + self._sub_sentence_split_fns
+            text_splits = []
 
-        text_splits = []
-        for text_split_by_fns in text_splits_by_fns:
-            if self._token_size(text_split_by_fns) <= chunk_size:
-                text_splits.append(_Split(text_split_by_fns, is_sentence=is_sentence))
-            else:
-                recursive_text_splits = self._split(
-                    text_split_by_fns, chunk_size=chunk_size
-                )
-                text_splits.extend(recursive_text_splits)
-        return text_splits
+            # use generators
+            blocks = [text]
+            for split_fn in split_fns:
+                for text_block in blocks:
+                    blocks_for_next_split_fn = []
+                    block_generator = self._get_splits_by_fn(
+                        text_block, split_fn=split_fn
+                    )
+                    if block_generator is None:
+                        # next split_fn
+                        blocks_for_next_split_fn.append(text_block)
+                        continue
+
+                    while True:
+                        try:
+                            this_block = next(block_generator)
+                        except StopIteration:
+                            break
+                        if self._token_size(this_block) <= chunk_size:
+                            text_splits.append(_Split(this_block, is_sentence=True))
+                        else:
+                            blocks_for_next_split_fn.append(this_block)
+                            # check if can split further with current split_fn
+                            # next_splits = self._get_splits_by_fn(
+                            #     this_block, split_fn=split_fn
+                            # )
+
+                            # if next_splits is None:
+                            #     # continue on to next split_fn
+                            #     blocks_for_next_split_fn.append(this_block)
+                            #     continue
+
+                            # block_generator = chain(
+                            #     next_splits,
+                            #     block_generator,
+                            # )
+                blocks = blocks_for_next_split_fn
+            return text_splits
+            # blocks_to_process, is_sentence = self._get_splits_by_fns(text)
+            # acc = []
+            # while len(blocks_to_process) > 0:
+            #     parent_block = blocks_to_process.pop()
+            #     if self._token_size(parent_block) <= chunk_size:
+            #         acc.append(_Split(parent_block, is_sentence=True))
+            #     else:
+            #         child_blocks, is_sentence = self._get_splits_by_fns(parent_block)
+            #         first_child_block = child_blocks[0]
+            #         if self._token_size(first_child_block) <= chunk_size:
+            #             blocks_to_process.extend(child_blocks[1:])
+            #             acc.append(_Split(first_child_block, is_sentence=is_sentence))
+            #         else:
+            #             blocks_to_process.extend(
+            #                 child_blocks.append(first_child_block)[1:]
+            #             )
+            # return acc
+        else:
+            text_splits_by_fns, is_sentence = self._get_splits_by_fns(text)
+
+            text_splits = []
+            for text_split_by_fns in text_splits_by_fns:
+                if self._token_size(text_split_by_fns) <= chunk_size:
+                    text_splits.append(
+                        _Split(text_split_by_fns, is_sentence=is_sentence)
+                    )
+                else:
+                    recursive_text_splits = self._split(
+                        text_split_by_fns, chunk_size=chunk_size
+                    )
+                    text_splits.extend(recursive_text_splits)
+            return text_splits
 
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
         """Merge splits into chunks."""
@@ -306,3 +369,11 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 break
 
         return splits, False
+
+    def _get_splits_by_fn(
+        self, text: str, split_fn: Callable[[str], List[str]]
+    ) -> Optional[Generator[str, None, None]]:
+        splits = split_fn(text)
+        if len(splits) > 1:
+            return (s for s in splits)
+        return None
