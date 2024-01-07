@@ -2,6 +2,7 @@
 
 from string import Formatter
 from typing import TYPE_CHECKING, Any, Optional
+
 from llama_index.output_parsers.base import ChainableOutputParser
 
 if TYPE_CHECKING:

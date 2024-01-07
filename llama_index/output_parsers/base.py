@@ -5,11 +5,11 @@ from typing import Any, Dict, Optional
 
 from llama_index.bridge.pydantic import Field
 from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
-    ChainableMixin,
-    validate_and_convert_stringable
+    validate_and_convert_stringable,
 )
 from llama_index.types import BaseOutputParser
 
@@ -56,7 +56,6 @@ class OutputParserComponent(QueryComponent):
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""
-        pass
 
     @property
     def input_keys(self) -> Any:
