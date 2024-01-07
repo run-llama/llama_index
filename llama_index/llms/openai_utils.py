@@ -214,7 +214,7 @@ def to_openai_message_dict(
 ) -> ChatCompletionMessageParam:
     """Convert generic message to OpenAI message dict."""
     message_dict = {
-        "role": message.role,
+        "role": message.role.value,
         "content": message.content,
     }
 
