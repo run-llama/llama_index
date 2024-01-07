@@ -41,14 +41,8 @@ class Link(BaseModel):
     dest_key: Optional[str] = None
 
 
-# class ModuleDepsInputs(BaseModel):
-#     """Module Inputs from Upstream Dependencies."""
-#     module_key: str
-#     input_dict: Dict[str, Any]
-
-
 def is_ancestor(
-    module_key: str, child_module_key: str, edge_dict: Dict[str, List[Link]]
+    module_key: str, child_module_key: str, edge_dict: Dict[str, List[Link]],
 ) -> bool:
     """Check if module is ancestor of another module."""
     if module_key == child_module_key:
@@ -56,6 +50,8 @@ def is_ancestor(
     if module_key not in edge_dict:
         return False
     for link in edge_dict[module_key]:
+        if link.dest == child_module_key:
+            return True
         if is_ancestor(link.dest, child_module_key, edge_dict):
             return True
     return False
@@ -227,6 +223,10 @@ class QueryPipeline(QueryComponent):
         # define comparator function
         def _cmp(input_tup1: InputTup, input_tup2: InputTup) -> int:
             """Compare based on whether is_ancestor is true."""
+            # if keys are the same (which shouldn't happen, then raise error)
+            if input_tup1.module_key == input_tup2.module_key:
+                raise ValueError(f"Comparator function called on same module: {input_tup1.module_key}")
+
             if is_ancestor(
                 input_tup1.module_key, input_tup2.module_key, self.edge_dict
             ):
@@ -241,7 +241,12 @@ class QueryPipeline(QueryComponent):
 
         return sorted(queue, key=cmp_to_key(_cmp))
 
-    def run(self, *args: Any, **kwargs: Any) -> Any:
+    def run(
+        self, 
+        *args: Any, 
+        return_values_direct: bool = True, 
+        **kwargs: Any
+    ) -> Any:
         """Run the pipeline.
 
         Assume that there is a single root module and a single output module.
@@ -256,7 +261,6 @@ class QueryPipeline(QueryComponent):
         if len(root_keys) != 1:
             raise ValueError("Only one root is supported.")
         root_key = root_keys[0]
-
         # call run_multi with one root key
         result_outputs = self.run_multi({root_key: kwargs})
 
@@ -264,8 +268,10 @@ class QueryPipeline(QueryComponent):
             raise ValueError("Only one output is supported.")
 
         result_output = list(result_outputs.values())[0]
+        # return_values_direct: if True, return the value directly
+        # without the key
         # if it's a dict with one key, return the value
-        if isinstance(result_output, dict) and len(result_output) == 1:
+        if isinstance(result_output, dict) and len(result_output) == 1 and return_values_direct:
             return list(result_output.values())[0]
         else:
             return result_output
@@ -310,6 +316,7 @@ class QueryPipeline(QueryComponent):
                 input_tup.input,
             )
 
+            print(f"running input: {input}")
             output_dict = module.run_component(**input)
 
             # if there's no more edges, add result to output
@@ -348,8 +355,9 @@ class QueryPipeline(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""
-        return self.run(**kwargs)
+        return self.run(return_values_direct=False, **kwargs)
 
+    @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
         # get input key of first module
@@ -359,6 +367,7 @@ class QueryPipeline(QueryComponent):
         root_module = self.module_dict[root_keys[0]]
         return root_module.input_keys
 
+    @property
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         # get output key of last module

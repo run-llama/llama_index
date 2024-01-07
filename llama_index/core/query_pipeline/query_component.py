@@ -137,6 +137,7 @@ class QueryComponent(BaseModel):
     def validate_component_outputs(self, output: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component outputs."""
         # make sure set of output keys == self.output_keys
+        print(f"output: {output}")
         self.output_keys.validate(set(output.keys()))
         return self._validate_component_outputs(output)
 
