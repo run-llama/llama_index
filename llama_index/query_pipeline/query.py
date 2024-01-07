@@ -2,10 +2,11 @@
 
 import json
 import uuid
-from functools import cmp_to_key
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from llama_index.bridge.pydantic import BaseModel, Field
+import networkx
+
+from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.query_pipeline.query_component import (
@@ -21,65 +22,25 @@ from llama_index.utils import print_text
 QUERY_COMPONENT_TYPE = Union[QueryComponent, ChainableMixin]
 
 
-class InputTup(BaseModel):
-    """Input Tuple."""
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    module_key: str
-    module: QueryComponent
-    input: Dict[str, Any]
-
-
-class Link(BaseModel):
-    """Link between two modules."""
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    src: str
-    dest: str
-    src_key: Optional[str] = None
-    dest_key: Optional[str] = None
-
-
-def is_ancestor(
-    module_key: str,
-    child_module_key: str,
-    edge_dict: Dict[str, List[Link]],
-) -> bool:
-    """Check if module is ancestor of another module."""
-    if module_key == child_module_key:
-        raise ValueError("Module cannot be ancestor of itself.")
-    if module_key not in edge_dict:
-        return False
-    for link in edge_dict[module_key]:
-        if link.dest == child_module_key:
-            return True
-        if is_ancestor(link.dest, child_module_key, edge_dict):
-            return True
-    return False
-
-
 def add_output_to_module_inputs(
-    link: Link,
+    src_key: str,
+    dest_key: str,
     output_dict: Dict[str, Any],
     module: QueryComponent,
     module_inputs: Dict[str, Any],
 ) -> None:
     """Add input to module deps inputs."""
     # get relevant output from link
-    if link.src_key is None:
+    if src_key is None:
         # ensure that output_dict only has one key
         if len(output_dict) != 1:
             raise ValueError("Output dict must have exactly one key.")
         output = next(iter(output_dict.values()))
     else:
-        output = output_dict[link.src_key]
+        output = output_dict[src_key]
 
     # now attach output to relevant input key for module
-    if link.dest_key is None:
+    if dest_key is None:
         free_keys = module.free_input_keys
         # ensure that there is only one remaining key given partials
         if len(free_keys) != 1:
@@ -90,7 +51,7 @@ def add_output_to_module_inputs(
             )
         module_inputs[next(iter(free_keys))] = output
     else:
-        module_inputs[link.dest_key] = output
+        module_inputs[dest_key] = output
 
 
 def print_debug_input(
@@ -126,16 +87,12 @@ class QueryPipeline(QueryComponent):
     module_dict: Dict[str, QueryComponent] = Field(
         default_factory=dict, description="The modules in the pipeline."
     )
-    edge_dict: Dict[str, List[Link]] = Field(
-        default_factory=dict, description="The edges in the pipeline."
+    dag: networkx.MultiDiGraph = Field(
+        default_factory=networkx.MultiDiGraph, description="The DAG of the pipeline."
     )
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
     )
-
-    # root_keys: List[str] = Field(
-    #     default_factory=list, description="The keys of the root modules."
-    # )
 
     class Config:
         arbitrary_types_allowed = True
@@ -190,6 +147,7 @@ class QueryPipeline(QueryComponent):
             pass
 
         self.module_dict[module_key] = cast(QueryComponent, module)
+        self.dag.add_node(module_key)
 
     def add_link(
         self,
@@ -201,70 +159,16 @@ class QueryPipeline(QueryComponent):
         """Add a link between two modules."""
         if src not in self.module_dict:
             raise ValueError(f"Module {src} does not exist in pipeline.")
-        if src not in self.edge_dict:
-            self.edge_dict[src] = []
-        self.edge_dict[src].append(
-            Link(src=src, dest=dest, src_key=src_key, dest_key=dest_key)
-        )
+        self.dag.add_edge(src, dest, src_key=src_key, dest_key=dest_key)
 
     def _get_root_keys(self) -> List[str]:
         """Get root keys."""
-        # first add all to root keys, then remove
-        root_keys: Set[str] = set(self.module_dict.keys())
-        # get all modules without upstream dependencies
-        for module_key in self.edge_dict:
-            for link in self.edge_dict[module_key]:
-                if link.dest in root_keys:
-                    root_keys.remove(link.dest)
-        return list(root_keys)
+        return [v for v, d in self.dag.in_degree() if d == 0]
 
     def _get_leaf_keys(self) -> List[str]:
         """Get leaf keys."""
         # get all modules without downstream dependencies
-        leaf_keys = []
-        for module_key in self.module_dict:
-            if module_key not in self.edge_dict or len(self.edge_dict[module_key]) == 0:
-                leaf_keys.append(module_key)
-        return list(leaf_keys)
-
-    def _ancestral_sort(self, queue: List[InputTup]) -> List[InputTup]:
-        """Sort queue by ancestral order of the modules.
-
-        Why do we want to do this? Especially if modules are only inserted to the queue
-        if they have all their required dependencies satisfied?
-
-        Because each module has optional dependencies as well, and it's not really clear whether
-        or not that optional dependency will be satisfied (or left blank).
-
-        The way to get around this is to sort the queue by ancestral order, so that the module
-        furthest upstream is run first, and then the modules further downstream are run later.
-        That way you can be sure that any optional dependencies that should be satisfied
-        will be satisifed by the time that module is run.
-
-        """
-
-        # define comparator function
-        def _cmp(input_tup1: InputTup, input_tup2: InputTup) -> int:
-            """Compare based on whether is_ancestor is true."""
-            # if keys are the same (which shouldn't happen, then raise error)
-            if input_tup1.module_key == input_tup2.module_key:
-                raise ValueError(
-                    f"Comparator function called on same module: {input_tup1.module_key}"
-                )
-
-            if is_ancestor(
-                input_tup1.module_key, input_tup2.module_key, self.edge_dict
-            ):
-                return -1
-            elif is_ancestor(
-                input_tup2.module_key, input_tup1.module_key, self.edge_dict
-            ):
-                return 1
-            else:
-                # they're not ancestors of each other (e.g. on parallel branches), so return 0
-                return 0
-
-        return sorted(queue, key=cmp_to_key(_cmp))
+        return [v for v, d in self.dag.out_degree() if d == 0]
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -425,12 +329,7 @@ class QueryPipeline(QueryComponent):
         result_outputs = await self._arun_multi({root_key: kwargs})
         return self._get_single_result_output(result_outputs, return_values_direct)
 
-    def _initialize_queue(self, module_input_dict: Dict[str, Any]) -> List[InputTup]:
-        """Initialize queue.
-
-        Initialize queue with root nodes.
-
-        """
+    def _validate_inputs(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
         root_keys = self._get_root_keys()
         # if root keys don't match up with kwargs keys, raise error
         if set(root_keys) != set(module_input_dict.keys()):
@@ -440,54 +339,29 @@ class QueryPipeline(QueryComponent):
                 f"Input keys: {module_input_dict.keys()}\n"
             )
 
-        queue: List[InputTup] = []
-        for root_key in root_keys:
-            root_module = self.module_dict[root_key]
-            queue.append(
-                InputTup(
-                    module_key=root_key,
-                    module=root_module,
-                    input=module_input_dict[root_key],
-                )
-            )
-        return queue
-
     def _process_component_output(
         self,
         output_dict: Dict[str, Any],
-        input_tup: InputTup,
+        module_key: str,
         all_module_inputs: Dict[str, Dict[str, Any]],
-        queue: List[InputTup],
         result_outputs: Dict[str, Any],
     ) -> None:
         """Process component output."""
         # if there's no more edges, add result to output
-        if input_tup.module_key not in self.edge_dict:
-            result_outputs[input_tup.module_key] = output_dict
+        if module_key in self._get_leaf_keys():
+            result_outputs[module_key] = output_dict
         else:
-            for link in self.edge_dict[input_tup.module_key]:
-                edge_module = self.module_dict[link.dest]
+            for _, dest, attr in self.dag.edges(module_key, data=True):
+                edge_module = self.module_dict[dest]
 
                 # add input to module_deps_inputs
                 add_output_to_module_inputs(
-                    link,
+                    attr.get("src_key"),
+                    attr.get("dest_key"),
                     output_dict,
                     edge_module,
-                    all_module_inputs[link.dest],
+                    all_module_inputs[dest],
                 )
-                if len(all_module_inputs[link.dest]) == len(
-                    edge_module.free_input_keys
-                ):
-                    queue.append(
-                        InputTup(
-                            module_key=link.dest,
-                            module=edge_module,
-                            input=all_module_inputs[link.dest],
-                        )
-                    )
-        # sort queue by ancestral order of the modules
-        # see docstring as for why
-        queue = self._ancestral_sort(queue)
 
     def _run_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Run the pipeline for multiple roots.
@@ -496,7 +370,8 @@ class QueryPipeline(QueryComponent):
         input_dict is in the form of input_key -> input
 
         """
-        queue = self._initialize_queue(module_input_dict)
+        self._validate_inputs(module_input_dict)
+        queue = list(networkx.topological_sort(self.dag))
 
         # module_deps_inputs is a dict to collect inputs for a module
         # mapping of module_key -> dict of input_key -> input
@@ -506,15 +381,23 @@ class QueryPipeline(QueryComponent):
             module_key: {} for module_key in self.module_dict
         }
         result_outputs: Dict[str, Any] = {}
+
+        # add root inputs to all_module_inputs
+        for module_key, module_input in module_input_dict.items():
+            all_module_inputs[module_key] = module_input
+
         while len(queue) > 0:
-            input_tup = queue.pop(0)
+            module_key = queue.pop(0)
+            module = self.module_dict[module_key]
+            module_input = all_module_inputs[module_key]
+
             if self.verbose:
-                print_debug_input(input_tup.module_key, input_tup.input)
-            output_dict = input_tup.module.run_component(**input_tup.input)
+                print_debug_input(module_key, module_input)
+            output_dict = module.run_component(**module_input)
 
             # get new nodes and is_leaf
             self._process_component_output(
-                output_dict, input_tup, all_module_inputs, queue, result_outputs
+                output_dict, module_key, all_module_inputs, result_outputs
             )
 
         return result_outputs
@@ -526,7 +409,8 @@ class QueryPipeline(QueryComponent):
         input_dict is in the form of input_key -> input
 
         """
-        queue = self._initialize_queue(module_input_dict)
+        self._validate_inputs(module_input_dict)
+        queue = list(networkx.topological_sort(self.dag))
 
         # module_deps_inputs is a dict to collect inputs for a module
         # mapping of module_key -> dict of input_key -> input
@@ -536,15 +420,23 @@ class QueryPipeline(QueryComponent):
             module_key: {} for module_key in self.module_dict
         }
         result_outputs: Dict[str, Any] = {}
+
+        # add root inputs to all_module_inputs
+        for module_key, module_input in module_input_dict.items():
+            all_module_inputs[module_key] = module_input
+
         while len(queue) > 0:
-            input_tup = queue.pop(0)
+            module_key = queue.pop(0)
+            module = self.module_dict[module_key]
+            module_input = all_module_inputs[module_key]
+
             if self.verbose:
-                print_debug_input(input_tup.module_key, input_tup.input)
-            output_dict = await input_tup.module.arun_component(**input_tup.input)
+                print_debug_input(module_key, module_input)
+            output_dict = await module.arun_component(**module_input)
 
             # get new nodes and is_leaf
             self._process_component_output(
-                output_dict, input_tup, all_module_inputs, queue, result_outputs
+                output_dict, module_key, all_module_inputs, result_outputs
             )
 
         return result_outputs
