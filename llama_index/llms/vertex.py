@@ -187,7 +187,9 @@ class Vertex(LLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
         if self.iscode and "candidate_count" in params:
@@ -248,7 +250,9 @@ class Vertex(LLM):
         return gen()
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
         if "candidate_count" in params:
@@ -311,7 +315,9 @@ class Vertex(LLM):
         )
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
         if self.iscode and "candidate_count" in params:

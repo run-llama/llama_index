@@ -281,7 +281,9 @@ class LLM(BaseLLM):
             stream_tokens = await astream_chat_response_to_tokens(chat_response)
         else:
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
-            stream_response = await self.astream_complete(formatted_prompt, formatted=True)
+            stream_response = await self.astream_complete(
+                formatted_prompt, formatted=True
+            )
             stream_tokens = await astream_completion_response_to_tokens(stream_response)
 
         if prompt.output_parser is not None or self.output_parser is not None:

@@ -159,7 +159,9 @@ class Perplexity(LLM):
         return CompletionResponse(text=data["choices"][0]["text"], raw=data)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._is_chat_model():
             raise ValueError("The complete method is not supported for chat models.")
         return self._complete(prompt, **kwargs)
@@ -199,7 +201,9 @@ class Perplexity(LLM):
         return CompletionResponse(text=data["choices"][0]["text"], raw=data)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._is_chat_model():
             raise ValueError("The complete method is not supported for chat models.")
         return await self._acomplete(prompt, **kwargs)
@@ -258,7 +262,9 @@ class Perplexity(LLM):
         return gen()
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         if self._is_chat_model():
             raise ValueError("The complete method is not supported for chat models.")
         stream_complete_fn = self._stream_complete

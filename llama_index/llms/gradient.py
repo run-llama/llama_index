@@ -89,7 +89,9 @@ class _BaseGradientLLM(CustomLLM):
 
     @llm_completion_callback()
     @override
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         return CompletionResponse(
             text=self._model.complete(
                 query=prompt,
@@ -100,7 +102,9 @@ class _BaseGradientLLM(CustomLLM):
 
     @llm_completion_callback()
     @override
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         grdt_reponse = await self._model.acomplete(
             query=prompt,
             max_generated_token_count=self.max_tokens,
@@ -113,7 +117,7 @@ class _BaseGradientLLM(CustomLLM):
     def stream_complete(
         self,
         prompt: str,
-        formatted: bool = False, 
+        formatted: bool = False,
         **kwargs: Any,
     ) -> CompletionResponseGen:
         raise NotImplementedError

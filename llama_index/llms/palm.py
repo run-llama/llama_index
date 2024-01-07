@@ -101,7 +101,9 @@ class PaLM(CustomLLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         """Predict the answer to a query.
 
         Args:
@@ -121,7 +123,9 @@ class PaLM(CustomLLM):
         return CompletionResponse(text=completion.result, raw=completion.candidates[0])
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         """Stream the answer to a query.
 
         NOTE: this is a beta feature. Will try to build or use

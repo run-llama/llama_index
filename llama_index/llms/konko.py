@@ -277,7 +277,9 @@ class Konko(LLM):
         return gen()
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._is_chat_model:
             complete_fn = chat_to_completion_decorator(self._chat)
         else:
@@ -285,7 +287,9 @@ class Konko(LLM):
         return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         if self._is_chat_model:
             stream_complete_fn = stream_chat_to_completion_decorator(self._stream_chat)
         else:
@@ -413,7 +417,9 @@ class Konko(LLM):
         return await astream_chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._is_chat_model:
             acomplete_fn = achat_to_completion_decorator(self._achat)
         else:

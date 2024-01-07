@@ -45,7 +45,9 @@ class MockLLM(CustomLLM):
         return " ".join(["text" for _ in range(length)])
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         response_text = (
             self._generate_text(self.max_tokens) if self.max_tokens else prompt
         )
@@ -55,7 +57,9 @@ class MockLLM(CustomLLM):
         )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         def gen_prompt() -> CompletionResponseGen:
             for ch in prompt:
                 yield CompletionResponse(

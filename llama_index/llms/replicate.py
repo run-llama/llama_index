@@ -96,7 +96,9 @@ class Replicate(CustomLLM):
         return stream_completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         response_gen = self.stream_complete(prompt, formatted=formatted, **kwargs)
         response_list = list(response_gen)
         final_response = response_list[-1]
@@ -104,7 +106,9 @@ class Replicate(CustomLLM):
         return final_response
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         try:
             import replicate
         except ImportError:

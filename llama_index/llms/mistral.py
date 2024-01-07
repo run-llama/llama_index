@@ -195,7 +195,9 @@ class MistralAI(LLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         complete_fn = chat_to_completion_decorator(self.chat)
         return complete_fn(prompt, **kwargs)
 
@@ -231,7 +233,9 @@ class MistralAI(LLM):
         return gen()
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
         return stream_complete_fn(prompt, **kwargs)
 
@@ -256,7 +260,9 @@ class MistralAI(LLM):
         )
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         acomplete_fn = achat_to_completion_decorator(self.achat)
         return await acomplete_fn(prompt, **kwargs)
 

@@ -138,11 +138,15 @@ class Gemini(CustomLLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         result = self._model.generate_content(prompt, **kwargs)
         return completion_from_gemini_response(result)
 
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         it = self._model.generate_content(prompt, stream=True, **kwargs)
         yield from map(completion_from_gemini_response, it)
 

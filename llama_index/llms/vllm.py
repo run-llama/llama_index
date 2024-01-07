@@ -227,7 +227,9 @@ class Vllm(LLM):
         return completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
@@ -245,7 +247,9 @@ class Vllm(LLM):
         raise (ValueError("Not Implemented"))
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise (ValueError("Not Implemented"))
 
     @llm_chat_callback()
@@ -256,7 +260,9 @@ class Vllm(LLM):
         return self.chat(messages, **kwargs)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         raise (ValueError("Not Implemented"))
 
     @llm_chat_callback()
@@ -334,7 +340,9 @@ class VllmServer(Vllm):
         return "VllmServer"
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> List[CompletionResponse]:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> List[CompletionResponse]:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
@@ -349,7 +357,9 @@ class VllmServer(Vllm):
         return CompletionResponse(text=output[0])
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
@@ -372,7 +382,9 @@ class VllmServer(Vllm):
         return gen()
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
         return self.complete(prompt, **kwargs)
 

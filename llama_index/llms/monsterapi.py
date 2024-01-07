@@ -120,7 +120,9 @@ class MonsterLLM(CustomLLM):
         return self.complete(prompt, formatted=True, **kwargs)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
@@ -137,5 +139,7 @@ class MonsterLLM(CustomLLM):
         return CompletionResponse(text=result["text"])
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError

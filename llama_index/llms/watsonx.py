@@ -149,7 +149,9 @@ class WatsonX(LLM):
         return {**self._model_kwargs, **kwargs}
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         response = self._model.generate_text(prompt=prompt, params=all_kwargs)
@@ -157,7 +159,9 @@ class WatsonX(LLM):
         return CompletionResponse(text=response)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         stream_response = self._model.generate_text_stream(
@@ -191,7 +195,9 @@ class WatsonX(LLM):
     # Async Functions
     # IBM Watson Machine Learning Package currently does not have Support for Async calls
 
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         raise NotImplementedError
 
     async def astream_chat(

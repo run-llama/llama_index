@@ -97,9 +97,7 @@ class LangChainLLM(LLM):
     ) -> ChatResponseGen:
         if not self.metadata.is_chat_model:
             prompt = self.messages_to_prompt(messages)
-            stream_completion = self.stream_complete(
-                prompt, formatted=True, **kwargs
-            )
+            stream_completion = self.stream_complete(prompt, formatted=True, **kwargs)
             return stream_completion_response_to_chat_response(stream_completion)
 
         from llama_index.langchain_helpers.streaming import (
@@ -174,9 +172,11 @@ class LangChainLLM(LLM):
         return self.chat(messages, **kwargs)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         # TODO: Implement async complete
-        return self.complete(prompt, **kwargs)
+        return self.complete(prompt, formatted=formatted, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
@@ -197,7 +197,7 @@ class LangChainLLM(LLM):
         # TODO: Implement async stream_complete
 
         async def gen() -> CompletionResponseAsyncGen:
-            for response in self.stream_complete(prompt, **kwargs):
+            for response in self.stream_complete(prompt, formatted=formatted, **kwargs):
                 yield response
 
         return gen()

@@ -273,7 +273,9 @@ class HuggingFaceLLM(CustomLLM):
         return generic_messages_to_prompt(messages)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         """Completion endpoint."""
         full_prompt = prompt
         if not formatted:
@@ -302,7 +304,9 @@ class HuggingFaceLLM(CustomLLM):
         return CompletionResponse(text=completion, raw={"model_output": tokens})
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         """Streaming completion endpoint."""
         from transformers import TextIteratorStreamer
 
@@ -574,7 +578,9 @@ class HuggingFaceInferenceAPI(CustomLLM):
             )
         )
 
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         return CompletionResponse(
             text=self._sync_client.text_generation(
                 prompt, **{**{"max_new_tokens": self.num_output}, **kwargs}
@@ -586,7 +592,9 @@ class HuggingFaceInferenceAPI(CustomLLM):
     ) -> ChatResponseGen:
         raise NotImplementedError
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError
 
     async def achat(
@@ -594,7 +602,9 @@ class HuggingFaceInferenceAPI(CustomLLM):
     ) -> ChatResponse:
         raise NotImplementedError
 
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         response = await self._async_client.text_generation(
             prompt, **{**{"max_new_tokens": self.num_output}, **kwargs}
         )
