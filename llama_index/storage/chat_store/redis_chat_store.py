@@ -1,12 +1,15 @@
 import json
 import logging
 import sys
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 from urllib.parse import urlparse
 
 from llama_index.bridge.pydantic import Field
 from llama_index.llms import ChatMessage
 from llama_index.storage.chat_store.base import BaseChatStore
+
+if TYPE_CHECKING:
+    from redis import Redis
 
 
 # Convert a ChatMessage to a json object for Redis
@@ -22,29 +25,24 @@ def _dict_to_message(d: dict) -> ChatMessage:
 class RedisChatStore(BaseChatStore):
     """Redis chat store."""
 
-    try:
-        from redis import Redis
-    except ImportError:
-        print("WARNING: Unable to import redis")
+    redis_client: Redis = Field(description="Redis client.")
+    ttl: Optional[int] = Field(default=None, description="Time to live in seconds.")
 
-    redis_client: Any = Field(default_factory=None)
-    ttl: Optional[int] = Field(default=None)
+    def __init__(
+        self,
+        redis_url: str = "redis://localhost:6379",
+        redis_client: Optional[Redis] = None,
+        ttl: Optional[int] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize."""
+        redis_client = redis_client or self._get_client(redis_url, **kwargs)
+        super().__init__(redis_client=redis_client, ttl=ttl)
 
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
         return "RedisChatStore"
-
-    def __init__(
-        self,
-        redis_url: str = "redis://localhost:6379",
-        ttl: Optional[int] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize."""
-        super().__init__()
-        self.redis_client = self._get_client(redis_url, **kwargs)
-        self.ttl = ttl
 
     def set_messages(self, key: str, messages: List[ChatMessage]) -> None:
         """Set messages for a key."""
@@ -115,7 +113,7 @@ class RedisChatStore(BaseChatStore):
         self.set_messages(key, current_list)
         return self.get_messages(key)
 
-    def _redis_cluster_client(self, redis_url: str, **kwargs: Any) -> Any:
+    def _redis_cluster_client(self, redis_url: str, **kwargs: Any) -> "Redis":
         try:
             from redis.cluster import RedisCluster
         except ImportError:
@@ -124,7 +122,7 @@ class RedisChatStore(BaseChatStore):
                 "Please install it with `pip install redis>=4.1.0`."
             )
 
-        return RedisCluster.from_url(redis_url, **kwargs)
+        return RedisCluster.from_url(redis_url, **kwargs)  # type: ignore
 
     def _check_for_cluster(self, redis_client: Redis) -> bool:
         try:
@@ -141,7 +139,7 @@ class RedisChatStore(BaseChatStore):
         except redis.exceptions.RedisError:
             return False
 
-    def _redis_sentinel_client(self, redis_url: str, **kwargs: Any) -> Any:
+    def _redis_sentinel_client(self, redis_url: str, **kwargs: Any) -> "Redis":
         """
         Helper method to parse an (un-official) redis+sentinel url
         and create a Sentinel connection to fetch the final redis client
@@ -210,7 +208,7 @@ class RedisChatStore(BaseChatStore):
 
         return sentinel_client.master_for(service_name)
 
-    def _get_client(self, redis_url: str, **kwargs: Any) -> Any:
+    def _get_client(self, redis_url: str, **kwargs: Any) -> "Redis":
         """
         Get a redis client from the connection url given. This helper accepts
         urls for Redis server (TCP with/without TLS or UnixSocket) as well as
@@ -256,7 +254,7 @@ class RedisChatStore(BaseChatStore):
                 "Please install it with `pip install redis>=4.1.0`."
             )
 
-        redis_client: Any
+        redis_client: "Redis"
         # check if normal redis:// or redis+sentinel:// url
         if redis_url.startswith("redis+sentinel"):
             redis_client = self._redis_sentinel_client(redis_url, **kwargs)
