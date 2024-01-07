@@ -371,6 +371,7 @@ class QueryPipeline(QueryComponent):
         return root_key, kwargs
 
     def _get_single_result_output(
+        self,
         result_outputs: Dict[str, Any],
         return_values_direct: bool,
     ) -> Any:

@@ -2,6 +2,7 @@
 
 from typing import Any, Dict
 
+import pytest
 from llama_index.core.query_pipeline.query_component import (
     InputKeys,
     OutputKeys,
@@ -31,6 +32,10 @@ class QueryComponent1(QueryComponent):
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
         return {"output": kwargs["input1"] + kwargs["input2"]}
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        return self._run_component(**kwargs)
 
     @property
     def input_keys(self) -> InputKeys:
@@ -65,6 +70,10 @@ class QueryComponent2(QueryComponent):
         """Run component."""
         return {"output": f"{kwargs['input1']}:{kwargs['input2']}"}
 
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        return self._run_component(**kwargs)
+
     @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
@@ -95,6 +104,10 @@ class QueryComponent3(QueryComponent):
     def _run_component(self, **kwargs: Any) -> Dict:
         """Run component."""
         return {"output": kwargs["input"] + kwargs["input"]}
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        return self._run_component(**kwargs)
 
     @property
     def input_keys(self) -> InputKeys:
@@ -173,6 +186,42 @@ def test_query_pipeline_multi():
     p.add_link("qc1_0", "qc2", dest_key="input1")
     p.add_link("qc1_1", "qc2", dest_key="input2")
     output = p.run_multi(
+        {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
+    )
+    assert output == {"qc2": {"output": "3:7"}}
+
+@pytest.mark.asyncio()
+async def test_query_pipeline_async():
+    """Test query pipeline in async fashion."""
+    
+    # run some synchronous tests above
+
+    # should work if input is a single arg
+    p = QueryPipeline(chain=[QueryComponent3(), QueryComponent3()])
+    # since there's one output, output is just the value
+    output = await p.arun(3)
+    assert output == 12
+
+    # test qc1 with qc2 with one partial with full syntax
+    qc1 = QueryComponent1()
+    qc2 = QueryComponent2()
+    p = QueryPipeline()
+    p.add_modules({"qc1": qc1, "qc2": qc2})
+    qc2.partial(input2="foo")
+    p.add_link("qc1", "qc2", dest_key="input1")
+    output = await p.arun(input1=2, input2=2)
+    assert output == "4:foo"
+
+    # try run run_multi
+    # link both qc1_0 and qc1_1 to qc2
+    qc1_0 = QueryComponent1()
+    qc1_1 = QueryComponent1()
+    qc2 = QueryComponent2()
+    p = QueryPipeline()
+    p.add_modules({"qc1_0": qc1_0, "qc1_1": qc1_1, "qc2": qc2})
+    p.add_link("qc1_0", "qc2", dest_key="input1")
+    p.add_link("qc1_1", "qc2", dest_key="input2")
+    output = await p.arun_multi(
         {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
     )
     assert output == {"qc2": {"output": "3:7"}}
