@@ -245,8 +245,14 @@ class SynthesizerComponent(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""
-        # include LLM?
         output = self.synthesizer.synthesize(kwargs["query_str"], kwargs["nodes"])
+        return {"output": output}
+
+    async def _arun_component(self, **kwargs: Any) -> Dict[str, Any]:
+        """Run component."""
+        output = await self.synthesizer.asynthesize(
+            kwargs["query_str"], kwargs["nodes"]
+        )
         return {"output": output}
 
     @property

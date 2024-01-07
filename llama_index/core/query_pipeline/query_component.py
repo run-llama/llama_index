@@ -166,9 +166,9 @@ class QueryComponent(BaseModel):
     def _run_component(self, **kwargs: Any) -> Dict:
         """Run component."""
 
+    @abstractmethod
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component (async)."""
-        raise NotImplementedError("This component does not support async run.")
 
     @property
     @abstractmethod
@@ -200,6 +200,10 @@ class CustomQueryComponent(QueryComponent):
         # NOTE: user can override this method to validate inputs
         # but we do this by default for convenience
         return input
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component (async)."""
+        raise NotImplementedError("This component does not support async run.")
 
     @property
     def _input_keys(self) -> Set[str]:

@@ -347,6 +347,11 @@ class QueryTransformComponent(QueryComponent):
         )
         return {"query_str": output.query_str}
 
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # TODO: true async not implemented yet
+        return self._run_component(**kwargs)
+
     @property
     def input_keys(self) -> InputKeys:
         """Input keys."""

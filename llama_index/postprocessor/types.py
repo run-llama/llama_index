@@ -105,6 +105,11 @@ class PostprocessorComponent(QueryComponent):
         )
         return {"nodes": output}
 
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component (async)."""
+        # NOTE: no native async for postprocessor
+        return self._run_component(**kwargs)
+
     @property
     def input_keys(self) -> InputKeys:
         """Input keys."""

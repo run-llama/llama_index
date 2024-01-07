@@ -49,6 +49,11 @@ class OutputParserComponent(QueryComponent):
         output = self.output_parser.parse(kwargs["input"])
         return {"output": output}
 
+    async def _arun_component(self, **kwargs: Any) -> Dict[str, Any]:
+        """Run component."""
+        # NOTE: no native async for output parser
+        return self._run_component(**kwargs)
+
     def _validate_component_inputs(self, input: Any) -> Any:
         """Validate component inputs during run_component."""
         input["input"] = validate_and_convert_stringable(input["input"])

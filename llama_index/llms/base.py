@@ -388,6 +388,15 @@ class LLMCompleteComponent(QueryComponent):
         response = self.llm.complete(prompt)
         return {"output": response}
 
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # TODO: support only complete for now
+        # non-trivial to figure how to support chat/complete/etc.
+        prompt = kwargs["prompt"]
+        # ignore all other kwargs for now
+        response = await self.llm.acomplete(prompt)
+        return {"output": response}
+
     @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
@@ -432,6 +441,14 @@ class LLMChatComponent(QueryComponent):
         # non-trivial to figure how to support chat/complete/etc.
         messages = kwargs["messages"]
         response = self.llm.chat(messages)
+        return {"output": response}
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # TODO: support only complete for now
+        # non-trivial to figure how to support chat/complete/etc.
+        messages = kwargs["messages"]
+        response = await self.llm.achat(messages)
         return {"output": response}
 
     @property

@@ -3,7 +3,7 @@
 import json
 import uuid
 from functools import cmp_to_key
-from typing import Any, Dict, List, Optional, Sequence, Set, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks import CallbackManager
@@ -307,12 +307,46 @@ class QueryPipeline(QueryComponent):
             ) as query_event:
                 return self._run_multi(module_input_dict)
 
-    def _run(self, *args: Any, return_values_direct: bool = True, **kwargs: Any) -> Any:
-        """Run the pipeline.
+    async def arun(
+        self,
+        *args: Any,
+        return_values_direct: bool = True,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run the pipeline."""
+        # first set callback manager
+        callback_manager = callback_manager or self.callback_manager
+        self.set_callback_manager(callback_manager)
+        with self.callback_manager.as_trace("query"):
+            with self.callback_manager.event(
+                CBEventType.QUERY, payload={EventPayload.QUERY_STR: json.dumps(kwargs)}
+            ) as query_event:
+                return await self._arun(
+                    *args, return_values_direct=return_values_direct, **kwargs
+                )
 
-        Assume that there is a single root module and a single output module.
+    async def arun_multi(
+        self,
+        module_input_dict: Dict[str, Any],
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> Dict[str, Any]:
+        """Run the pipeline for multiple roots."""
+        callback_manager = callback_manager or self.callback_manager
+        self.set_callback_manager(callback_manager)
+        with self.callback_manager.as_trace("query"):
+            with self.callback_manager.event(
+                CBEventType.QUERY,
+                payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
+            ) as query_event:
+                return await self._arun_multi(module_input_dict)
 
-        For multi-input and multi-outputs, please see `run_multi`.
+    def _get_root_key_and_kwargs(
+        self, *args: Any, **kwargs: Any
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Get root key and kwargs.
+
+        This is for `_run`.
 
         """
         ## run pipeline
@@ -334,10 +368,18 @@ class QueryPipeline(QueryComponent):
                 raise ValueError("Only one free input key is allowed.")
             # set kwargs
             kwargs[list(root_module.free_input_keys)[0]] = args[0]
+        return root_key, kwargs
 
-        # call run_multi with one root key
-        result_outputs = self._run_multi({root_key: kwargs})
+    def _get_single_result_output(
+        result_outputs: Dict[str, Any],
+        return_values_direct: bool,
+    ) -> Any:
+        """Get result output from a single module.
 
+        If output dict is a single key, return the value directly
+        if return_values_direct is True.
+
+        """
         if len(result_outputs) != 1:
             raise ValueError("Only one output is supported.")
 
@@ -354,11 +396,38 @@ class QueryPipeline(QueryComponent):
         else:
             return result_output
 
-    def _run_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
-        """Run the pipeline for multiple roots.
+    def _run(self, *args: Any, return_values_direct: bool = True, **kwargs: Any) -> Any:
+        """Run the pipeline.
 
-        kwargs is in the form of module_dict -> input_dict
-        input_dict is in the form of input_key -> input
+        Assume that there is a single root module and a single output module.
+
+        For multi-input and multi-outputs, please see `run_multi`.
+
+        """
+        root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
+        # call run_multi with one root key
+        result_outputs = self._run_multi({root_key: kwargs})
+        return self._get_single_result_output(result_outputs, return_values_direct)
+
+    async def _arun(
+        self, *args: Any, return_values_direct: bool = True, **kwargs: Any
+    ) -> Any:
+        """Run the pipeline.
+
+        Assume that there is a single root module and a single output module.
+
+        For multi-input and multi-outputs, please see `run_multi`.
+
+        """
+        root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
+        # call run_multi with one root key
+        result_outputs = await self._arun_multi({root_key: kwargs})
+        return self._get_single_result_output(result_outputs, return_values_direct)
+
+    def _initialize_queue(self, module_input_dict: Dict[str, Any]) -> List[InputTup]:
+        """Initialize queue.
+
+        Initialize queue with root nodes.
 
         """
         root_keys = self._get_root_keys()
@@ -380,6 +449,53 @@ class QueryPipeline(QueryComponent):
                     input=module_input_dict[root_key],
                 )
             )
+        return queue
+
+    def _process_component_output(
+        self,
+        output_dict: Dict[str, Any],
+        input_tup: InputTup,
+        all_module_inputs: Dict[str, Dict[str, Any]],
+        queue: List[InputTup],
+        result_outputs: Dict[str, Any],
+    ) -> None:
+        """Process component output."""
+        # if there's no more edges, add result to output
+        if input_tup.module_key not in self.edge_dict:
+            result_outputs[input_tup.module_key] = output_dict
+        else:
+            for link in self.edge_dict[input_tup.module_key]:
+                edge_module = self.module_dict[link.dest]
+
+                # add input to module_deps_inputs
+                add_output_to_module_inputs(
+                    link,
+                    output_dict,
+                    edge_module,
+                    all_module_inputs[link.dest],
+                )
+                if len(all_module_inputs[link.dest]) == len(
+                    edge_module.free_input_keys
+                ):
+                    queue.append(
+                        InputTup(
+                            module_key=link.dest,
+                            module=edge_module,
+                            input=all_module_inputs[link.dest],
+                        )
+                    )
+        # sort queue by ancestral order of the modules
+        # see docstring as for why
+        queue = self._ancestral_sort(queue)
+
+    def _run_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Run the pipeline for multiple roots.
+
+        kwargs is in the form of module_dict -> input_dict
+        input_dict is in the form of input_key -> input
+
+        """
+        queue = self._initialize_queue(module_input_dict)
 
         # module_deps_inputs is a dict to collect inputs for a module
         # mapping of module_key -> dict of input_key -> input
@@ -391,44 +507,44 @@ class QueryPipeline(QueryComponent):
         result_outputs: Dict[str, Any] = {}
         while len(queue) > 0:
             input_tup = queue.pop(0)
-            module_key, module, input = (
-                input_tup.module_key,
-                input_tup.module,
-                input_tup.input,
+            if self.verbose:
+                print_debug_input(input_tup.module_key, input_tup.input)
+            output_dict = input_tup.module.run_component(**input_tup.input)
+
+            # get new nodes and is_leaf
+            self._process_component_output(
+                output_dict, input_tup, all_module_inputs, queue, result_outputs
             )
 
+        return result_outputs
+
+    async def _arun_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Run the pipeline for multiple roots.
+
+        kwargs is in the form of module_dict -> input_dict
+        input_dict is in the form of input_key -> input
+
+        """
+        queue = self._initialize_queue(module_input_dict)
+
+        # module_deps_inputs is a dict to collect inputs for a module
+        # mapping of module_key -> dict of input_key -> input
+        # initialize with blank dict for every module key
+        # the input dict of each module key will be populated as the upstream modules are run
+        all_module_inputs: Dict[str, Dict[str, Any]] = {
+            module_key: {} for module_key in self.module_dict.keys()
+        }
+        result_outputs: Dict[str, Any] = {}
+        while len(queue) > 0:
+            input_tup = queue.pop(0)
             if self.verbose:
-                print_debug_input(module_key, input)
-            output_dict = module.run_component(**input)
+                print_debug_input(input_tup.module_key, input_tup.input)
+            output_dict = await input_tup.module.arun_component(**input_tup.input)
 
-            # if there's no more edges, add result to output
-            if module_key not in self.edge_dict:
-                result_outputs[module_key] = output_dict
-            else:
-                for link in self.edge_dict[module_key]:
-                    edge_module = self.module_dict[link.dest]
-
-                    # add input to module_deps_inputs
-                    add_output_to_module_inputs(
-                        link,
-                        output_dict,
-                        edge_module,
-                        all_module_inputs[link.dest],
-                    )
-                    if len(all_module_inputs[link.dest]) == len(
-                        edge_module.free_input_keys
-                    ):
-                        queue.append(
-                            InputTup(
-                                module_key=link.dest,
-                                module=edge_module,
-                                input=all_module_inputs[link.dest],
-                            )
-                        )
-
-            # sort queue by ancestral order of the modules
-            # see docstring as for why
-            queue = self._ancestral_sort(queue)
+            # get new nodes and is_leaf
+            self._process_component_output(
+                output_dict, input_tup, all_module_inputs, queue, result_outputs
+            )
 
         return result_outputs
 
@@ -439,6 +555,10 @@ class QueryPipeline(QueryComponent):
     def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""
         return self.run(return_values_direct=False, **kwargs)
+
+    async def _arun_component(self, **kwargs: Any) -> Dict[str, Any]:
+        """Run component."""
+        return await self.arun(return_values_direct=False, **kwargs)
 
     @property
     def input_keys(self) -> InputKeys:

@@ -147,6 +147,12 @@ class RetrieverComponent(QueryComponent):
         output = self.retriever.retrieve(kwargs["input"])
         return {"output": output}
 
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # include LLM?
+        output = await self.retriever.aretrieve(kwargs["input"])
+        return {"output": output}
+
     @property
     def input_keys(self) -> InputKeys:
         """Input keys."""

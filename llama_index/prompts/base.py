@@ -525,6 +525,11 @@ class PromptComponent(QueryComponent):
         output = self.prompt.format(**kwargs)
         return {"prompt": output}
 
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # NOTE: no native async for prompt
+        return self._run_component(**kwargs)
+
     @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
