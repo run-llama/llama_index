@@ -7,6 +7,7 @@ from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms.types import ChatResponse, CompletionResponse
 from llama_index.core.response.schema import Response
 from llama_index.schema import QueryBundle
+from llama_index.callbacks.base import CallbackManager
 
 ## Define common types used throughout these components
 StringableInput = Union[CompletionResponse, ChatResponse, str, QueryBundle, Response]
@@ -178,3 +179,55 @@ class QueryComponent(BaseModel):
     @abstractmethod
     def output_keys(self) -> OutputKeys:
         """Output keys."""
+
+
+class CustomQueryComponent(QueryComponent):
+    """Custom query component."""
+
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager, description="Callback manager"
+    )
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: Any) -> None:
+        """Set callback manager."""
+        self.callback_manager = callback_manager
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        # NOTE: user can override this method to validate inputs
+        # but we do this by default for convenience
+        return input
+
+    @property
+    def _input_keys(self) -> Set[str]:
+        """Input keys dict."""
+        raise NotImplementedError("Not implemented yet. Please override this method.")
+
+    @property
+    def _optional_input_keys(self) -> Set[str]:
+        """Optional input keys dict."""
+        return set()
+
+    @property
+    def _output_keys(self) -> Set[str]:
+        """Output keys dict."""
+        raise NotImplementedError("Not implemented yet. Please override this method.")
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        # NOTE: user can override this too, but we have them implement an 
+        # abstract method to make sure they do it
+        
+        return InputKeys.from_keys(required_keys=self._input_keys, optional_keys=self._optional_input_keys)
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        # NOTE: user can override this too, but we have them implement an 
+        # abstract method to make sure they do it
+        return OutputKeys.from_keys(self._output_keys)
+    
