@@ -31,7 +31,7 @@ class ChainableOutputParser(BaseOutputParser, ChainableMixin):
 
     # TODO: consolidate with base at some point if possible.
 
-    def _as_query_component(self) -> QueryComponent:
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Get query component."""
         return OutputParserComponent(output_parser=self)
 

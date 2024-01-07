@@ -120,7 +120,7 @@ class QueryComponent3(QueryComponent):
         return OutputKeys.from_keys({"output"})
 
 
-def test_query_pipeline_chain():
+def test_query_pipeline_chain() -> None:
     """Test query pipeline."""
     # test qc1 by itself with chain syntax
     p = QueryPipeline(chain=[QueryComponent1()])
@@ -129,7 +129,7 @@ def test_query_pipeline_chain():
     assert output == 3
 
 
-def test_query_pipeline_single_arg_inp():
+def test_query_pipeline_single_arg_inp() -> None:
     """Test query pipeline with single arg input (no kwargs)."""
     # should work if input is a single arg
     p = QueryPipeline(chain=[QueryComponent3(), QueryComponent3()])
@@ -138,7 +138,7 @@ def test_query_pipeline_single_arg_inp():
     assert output == 12
 
 
-def test_query_pipeline_partial():
+def test_query_pipeline_partial() -> None:
     """Test query pipeline."""
     # test qc1 with qc2 with one partial, with chain syntax
     qc1 = QueryComponent1()
@@ -159,7 +159,7 @@ def test_query_pipeline_partial():
     assert output == "4:foo"
 
 
-def test_query_pipeline_sub():
+def test_query_pipeline_sub() -> None:
     """Test query pipeline."""
     # test qc2 with subpipelines of qc3 w/ full syntax
     qc2 = QueryComponent2()
@@ -174,7 +174,7 @@ def test_query_pipeline_sub():
     assert output == "8:8"
 
 
-def test_query_pipeline_multi():
+def test_query_pipeline_multi() -> None:
     """Test query pipeline."""
     # try run run_multi
     # link both qc1_0 and qc1_1 to qc2
@@ -190,10 +190,10 @@ def test_query_pipeline_multi():
     )
     assert output == {"qc2": {"output": "3:7"}}
 
+
 @pytest.mark.asyncio()
-async def test_query_pipeline_async():
+async def test_query_pipeline_async() -> None:
     """Test query pipeline in async fashion."""
-    
     # run some synchronous tests above
 
     # should work if input is a single arg

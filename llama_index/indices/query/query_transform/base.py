@@ -74,7 +74,7 @@ class BaseQueryTransform(ChainableMixin, PromptMixin):
         """Run query processor."""
         return self.run(query_bundle_or_str, metadata=metadata)
 
-    def as_query_component(self, **kwargs: Any) -> QueryComponent:
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """As query component."""
         return QueryTransformComponent(query_transform=self)
 

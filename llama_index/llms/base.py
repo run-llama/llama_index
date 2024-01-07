@@ -10,6 +10,7 @@ from typing import (
     List,
     Sequence,
     cast,
+    get_args,
 )
 
 from llama_index.bridge.pydantic import Field, validator
@@ -373,7 +374,7 @@ class LLMCompleteComponent(QueryComponent):
         if "prompt" not in input:
             raise ValueError("Prompt must be in input dict.")
         # do special check to see if prompt is a list of chat messages
-        if isinstance(input["prompt"], List[ChatMessage]):
+        if isinstance(input["prompt"], get_args(List[ChatMessage])):
             input["prompt"] = messages_to_prompt(input["prompt"])
 
         input["prompt"] = validate_and_convert_stringable(input["prompt"])

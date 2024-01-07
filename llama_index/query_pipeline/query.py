@@ -74,7 +74,7 @@ def add_output_to_module_inputs(
         # ensure that output_dict only has one key
         if len(output_dict) != 1:
             raise ValueError("Output dict must have exactly one key.")
-        output = list(output_dict.values())[0]
+        output = next(iter(output_dict.values()))
     else:
         output = output_dict[link.src_key]
 
@@ -88,7 +88,7 @@ def add_output_to_module_inputs(
                 "dest_key is not specified. Remaining keys: "
                 f"in module: {free_keys}"
             )
-        module_inputs[list(free_keys)[0]] = output
+        module_inputs[next(iter(free_keys))] = output
     else:
         module_inputs[link.dest_key] = output
 
@@ -212,7 +212,7 @@ class QueryPipeline(QueryComponent):
         # first add all to root keys, then remove
         root_keys: Set[str] = set(self.module_dict.keys())
         # get all modules without upstream dependencies
-        for module_key in self.edge_dict.keys():
+        for module_key in self.edge_dict:
             for link in self.edge_dict[module_key]:
                 if link.dest in root_keys:
                     root_keys.remove(link.dest)
@@ -222,7 +222,7 @@ class QueryPipeline(QueryComponent):
         """Get leaf keys."""
         # get all modules without downstream dependencies
         leaf_keys = []
-        for module_key in self.module_dict.keys():
+        for module_key in self.module_dict:
             if module_key not in self.edge_dict or len(self.edge_dict[module_key]) == 0:
                 leaf_keys.append(module_key)
         return list(leaf_keys)
@@ -367,7 +367,7 @@ class QueryPipeline(QueryComponent):
             if len(root_module.free_input_keys) != 1:
                 raise ValueError("Only one free input key is allowed.")
             # set kwargs
-            kwargs[list(root_module.free_input_keys)[0]] = args[0]
+            kwargs[next(iter(root_module.free_input_keys))] = args[0]
         return root_key, kwargs
 
     def _get_single_result_output(
@@ -384,7 +384,7 @@ class QueryPipeline(QueryComponent):
         if len(result_outputs) != 1:
             raise ValueError("Only one output is supported.")
 
-        result_output = list(result_outputs.values())[0]
+        result_output = next(iter(result_outputs.values()))
         # return_values_direct: if True, return the value directly
         # without the key
         # if it's a dict with one key, return the value
@@ -393,7 +393,7 @@ class QueryPipeline(QueryComponent):
             and len(result_output) == 1
             and return_values_direct
         ):
-            return list(result_output.values())[0]
+            return next(iter(result_output.values()))
         else:
             return result_output
 
@@ -503,7 +503,7 @@ class QueryPipeline(QueryComponent):
         # initialize with blank dict for every module key
         # the input dict of each module key will be populated as the upstream modules are run
         all_module_inputs: Dict[str, Dict[str, Any]] = {
-            module_key: {} for module_key in self.module_dict.keys()
+            module_key: {} for module_key in self.module_dict
         }
         result_outputs: Dict[str, Any] = {}
         while len(queue) > 0:
@@ -533,7 +533,7 @@ class QueryPipeline(QueryComponent):
         # initialize with blank dict for every module key
         # the input dict of each module key will be populated as the upstream modules are run
         all_module_inputs: Dict[str, Dict[str, Any]] = {
-            module_key: {} for module_key in self.module_dict.keys()
+            module_key: {} for module_key in self.module_dict
         }
         result_outputs: Dict[str, Any] = {}
         while len(queue) > 0:
