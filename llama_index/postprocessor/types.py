@@ -99,7 +99,6 @@ class PostprocessorComponent(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM?
         output = self.postprocessor.postprocess_nodes(
             kwargs["nodes"], query_str=kwargs.get("query_str", None)
         )

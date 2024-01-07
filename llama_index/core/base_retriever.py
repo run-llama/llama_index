@@ -143,13 +143,11 @@ class RetrieverComponent(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM?
         output = self.retriever.retrieve(kwargs["input"])
         return {"output": output}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM?
         output = await self.retriever.aretrieve(kwargs["input"])
         return {"output": output}
 
