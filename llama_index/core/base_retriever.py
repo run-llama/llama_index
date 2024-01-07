@@ -20,13 +20,8 @@ from llama_index.service_context import ServiceContext
 class BaseRetriever(ChainableMixin, PromptMixin):
     """Base retriever."""
 
-    # callback_manager: CallbackManager = Field(
-    #     default_factory=CallbackManager, exclude=True
-    # )
-
     def __init__(self, callback_manager: Optional[CallbackManager] = None) -> None:
-        callback_manager = callback_manager or CallbackManager()
-        # super().__init__(callback_manager=callback_manager)
+        self.callback_manager = callback_manager or CallbackManager()
 
     def _check_callback_manager(self) -> None:
         """Check callback manager."""

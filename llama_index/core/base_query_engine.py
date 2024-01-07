@@ -25,7 +25,6 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
 
     def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
         self.callback_manager = callback_manager or CallbackManager([])
-        # super().__init__(callback_manager=callback_manager)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
