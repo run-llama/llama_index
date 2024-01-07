@@ -3,7 +3,17 @@
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from llama_index.bridge.pydantic import Field
 
@@ -537,7 +547,9 @@ class PromptComponent(QueryComponent):
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
         if self.format_messages:
-            output = self.prompt.format_messages(llm=self.llm, **kwargs)
+            output: Union[str, List[ChatMessage]] = self.prompt.format_messages(
+                llm=self.llm, **kwargs
+            )
         else:
             output = self.prompt.format(llm=self.llm, **kwargs)
         return {"prompt": output}

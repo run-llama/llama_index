@@ -415,7 +415,7 @@ class LLMChatComponent(QueryComponent):
             raise ValueError("Messages must be in input dict.")
 
         # if `messages` is a string, convert to a list of chat message
-        if isinstance(input["messages"], StringableInput):
+        if isinstance(input["messages"], get_args(StringableInput)):
             input["messages"] = prompt_to_messages(str(input["messages"]))
 
         for message in input["messages"]:
