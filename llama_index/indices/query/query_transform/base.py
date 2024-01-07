@@ -2,8 +2,16 @@
 
 import dataclasses
 from abc import abstractmethod
-from typing import Any, Dict, Optional, cast, Any
+from typing import Any, Dict, Optional, cast
 
+from llama_index.bridge.pydantic import Field
+from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.core.response.schema import Response
 from llama_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
@@ -13,21 +21,13 @@ from llama_index.indices.query.query_transform.prompts import (
     ImageOutputQueryTransformPrompt,
     StepDecomposeQueryTransformPrompt,
 )
-from llama_index.core.query_pipeline.query_component import (
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    ChainableMixin,
-    validate_and_convert_stringable,
-)
 from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.llms.utils import resolve_llm
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.schema import QueryBundle, QueryType, NodeWithScore
+from llama_index.schema import QueryBundle, QueryType
 from llama_index.utils import print_text
-from llama_index.bridge.pydantic import BaseModel, Field
 
 
 class BaseQueryTransform(ChainableMixin, PromptMixin):

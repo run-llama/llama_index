@@ -90,7 +90,9 @@ class ChainableMixin(ABC):
     def _as_query_component(self, **kwargs: Any) -> "QueryComponent":
         """Get query component."""
 
-    def as_query_component(self, partial: Optional[Dict[str, Any]] = None, **kwargs: Any) -> "QueryComponent":
+    def as_query_component(
+        self, partial: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> "QueryComponent":
         """Get query component."""
         component = self._as_query_component(**kwargs)
         component.partial(**(partial or {}))

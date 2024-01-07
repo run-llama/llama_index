@@ -7,10 +7,10 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Union, cast
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks import CallbackManager
 from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
-    ChainableMixin
 )
 
 # accept both QueryComponent and ChainableMixin as inputs to query pipeline
@@ -42,7 +42,9 @@ class Link(BaseModel):
 
 
 def is_ancestor(
-    module_key: str, child_module_key: str, edge_dict: Dict[str, List[Link]],
+    module_key: str,
+    child_module_key: str,
+    edge_dict: Dict[str, List[Link]],
 ) -> bool:
     """Check if module is ancestor of another module."""
     if module_key == child_module_key:
@@ -225,7 +227,9 @@ class QueryPipeline(QueryComponent):
             """Compare based on whether is_ancestor is true."""
             # if keys are the same (which shouldn't happen, then raise error)
             if input_tup1.module_key == input_tup2.module_key:
-                raise ValueError(f"Comparator function called on same module: {input_tup1.module_key}")
+                raise ValueError(
+                    f"Comparator function called on same module: {input_tup1.module_key}"
+                )
 
             if is_ancestor(
                 input_tup1.module_key, input_tup2.module_key, self.edge_dict
@@ -241,12 +245,7 @@ class QueryPipeline(QueryComponent):
 
         return sorted(queue, key=cmp_to_key(_cmp))
 
-    def run(
-        self, 
-        *args: Any, 
-        return_values_direct: bool = True, 
-        **kwargs: Any
-    ) -> Any:
+    def run(self, *args: Any, return_values_direct: bool = True, **kwargs: Any) -> Any:
         """Run the pipeline.
 
         Assume that there is a single root module and a single output module.
@@ -271,7 +270,11 @@ class QueryPipeline(QueryComponent):
         # return_values_direct: if True, return the value directly
         # without the key
         # if it's a dict with one key, return the value
-        if isinstance(result_output, dict) and len(result_output) == 1 and return_values_direct:
+        if (
+            isinstance(result_output, dict)
+            and len(result_output) == 1
+            and return_values_direct
+        ):
             return list(result_output.values())[0]
         else:
             return result_output
@@ -281,11 +284,10 @@ class QueryPipeline(QueryComponent):
 
         kwargs is in the form of module_dict -> input_dict
         input_dict is in the form of input_key -> input
-        
-        """
 
+        """
         root_keys = self._get_root_keys()
-        # if root keys don't match up with kwargs keys, raise error 
+        # if root keys don't match up with kwargs keys, raise error
         if set(root_keys) != set(module_input_dict.keys()):
             raise ValueError(
                 "Expected root keys do not match up with input keys.\n"
@@ -297,7 +299,11 @@ class QueryPipeline(QueryComponent):
         for root_key in root_keys:
             root_module = self.module_dict[root_key]
             queue.append(
-                InputTup(module_key=root_key, module=root_module, input=module_input_dict[root_key])
+                InputTup(
+                    module_key=root_key,
+                    module=root_module,
+                    input=module_input_dict[root_key],
+                )
             )
 
         # module_deps_inputs is a dict to collect inputs for a module
@@ -333,7 +339,9 @@ class QueryPipeline(QueryComponent):
                         edge_module,
                         all_module_inputs[link.dest],
                     )
-                    if len(all_module_inputs[link.dest]) == len(edge_module.free_input_keys):
+                    if len(all_module_inputs[link.dest]) == len(
+                        edge_module.free_input_keys
+                    ):
                         queue.append(
                             InputTup(
                                 module_key=link.dest,
@@ -347,7 +355,6 @@ class QueryPipeline(QueryComponent):
             queue = self._ancestral_sort(queue)
 
         return result_outputs
-
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
