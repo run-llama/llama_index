@@ -114,9 +114,11 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):
     def get_template(self, llm: Optional[BaseLLM] = None) -> str:
         ...
 
-    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
+    def _as_query_component(
+        self, llm: Optional[BaseLLM] = None, **kwargs: Any
+    ) -> QueryComponent:
         """As query component."""
-        return PromptComponent(prompt=self)
+        return PromptComponent(prompt=self, format_messages=False, llm=llm)
 
 
 class PromptTemplate(BasePromptTemplate):
@@ -283,6 +285,12 @@ class ChatPromptTemplate(BasePromptTemplate):
 
     def get_template(self, llm: Optional[BaseLLM] = None) -> str:
         return default_messages_to_prompt(self.message_templates)
+
+    def _as_query_component(
+        self, llm: Optional[BaseLLM] = None, **kwargs: Any
+    ) -> QueryComponent:
+        """As query component."""
+        return PromptComponent(prompt=self, format_messages=True, llm=llm)
 
 
 class SelectorPromptTemplate(BasePromptTemplate):
@@ -505,6 +513,13 @@ class PromptComponent(QueryComponent):
     """Prompt component."""
 
     prompt: BasePromptTemplate = Field(..., description="Prompt")
+    llm: Optional[BaseLLM] = Field(
+        default=None, description="LLM to use for formatting prompt."
+    )
+    format_messages: bool = Field(
+        default=False,
+        description="Whether to format the prompt into a list of chat messages.",
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -521,8 +536,10 @@ class PromptComponent(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM?
-        output = self.prompt.format(**kwargs)
+        if self.format_messages:
+            output = self.prompt.format_messages(llm=self.llm, **kwargs)
+        else:
+            output = self.prompt.format(llm=self.llm, **kwargs)
         return {"prompt": output}
 
     async def _arun_component(self, **kwargs: Any) -> Any:

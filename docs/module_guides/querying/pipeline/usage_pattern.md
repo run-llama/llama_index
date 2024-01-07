@@ -2,8 +2,6 @@
 
 The usage pattern guide covers setup + usage of the `QueryPipeline` more in-depth.
 
-Take a look at our [module usage guide](TODO) for more details on the supported components!
-
 ## Setting up a Pipeline
 
 Here we walk through a few different ways of setting up a query pipeline.

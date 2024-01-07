@@ -19,8 +19,6 @@ Our query pipelines also propagate callbacks throughout all sub-modules, and the
 
 Here are two simple ways to setup a query pipeline - through a simplified syntax of setting up a sequential chain to setting up a full compute DAG.
 
-TODO
-
 ```python
 from llama_index.query_pipeline.query import QueryPipeline
 
@@ -36,15 +34,13 @@ p.add_link("prompt_tmpl", "llm")
 p.run(input)
 ```
 
-More information can be found in our usage pattern guides below. Our module usage guide (TODO: link) also covers a set of
-supported modules.
+More information can be found in our usage pattern guides below.
 
 ```{toctree}
 ---
 maxdepth: 2
 ---
 usage_pattern.md
-module_usage.md
 ```
 
 ## Module Guides
