@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from sqlalchemy import Table
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
@@ -190,6 +190,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         handle_sql_errors: bool = True,
         sql_only: bool = False,
         callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -205,6 +206,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         self._sql_parser = self._load_sql_parser(sql_parser_mode, self._service_context)
         self._handle_sql_errors = handle_sql_errors
         self._sql_only = sql_only
+        self._verbose = verbose
         super().__init__(callback_manager)
 
     def _get_prompts(self) -> Dict[str, Any]:
@@ -268,6 +270,8 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             query_bundle = str_or_query_bundle
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
+        if self._verbose:
+            print(f"> Table desc str: {table_desc_str}")
 
         response_str = self._service_context.llm.predict(
             self._text_to_sql_prompt,
@@ -281,6 +285,8 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         )
         # assume that it's a valid SQL query
         logger.debug(f"> Predicted SQL query: {sql_query_str}")
+        if self._verbose:
+            print(f"> Predicted SQL query: {sql_query_str}")
 
         if self._sql_only:
             sql_only_node = TextNode(text=f"{sql_query_str}")

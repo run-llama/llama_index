@@ -8,6 +8,17 @@ from llama_index.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
 )
+from llama_index.core.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
@@ -19,17 +30,6 @@ from llama_index.llms.generic_utils import (
 )
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
-)
-from llama_index.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
 )
 from llama_index.prompts.base import PromptTemplate
 from llama_index.types import BaseOutputParser, PydanticProgramMode

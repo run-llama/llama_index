@@ -2,12 +2,7 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -18,6 +13,11 @@ from llama_index.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.llms.base import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.llm import LLM
 from llama_index.llms.vertex_gemini_utils import is_gemini_model
 from llama_index.llms.vertex_utils import (
     CHAT_MODELS,

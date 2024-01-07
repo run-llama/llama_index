@@ -1,6 +1,6 @@
 """Prompts for ChatGPT."""
 
-from llama_index.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.prompts.base import ChatPromptTemplate
 
 # text qa prompt

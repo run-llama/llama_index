@@ -6,13 +6,13 @@ from openai import AzureOpenAI as SyncAzureOpenAI
 
 from llama_index.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.callbacks import CallbackManager
+from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import (
     refresh_openai_azuread_token,
     resolve_from_aliases,
 )
-from llama_index.llms.types import ChatMessage
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
@@ -54,7 +54,6 @@ class AzureOpenAI(OpenAI):
     _azure_ad_token: Any = PrivateAttr()
     _client: SyncAzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
-    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -98,10 +97,6 @@ class AzureOpenAI(OpenAI):
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
         )
 
-        # Use the custom httpx client if provided.
-        # Otherwise the value will be None.
-        self._http_client = http_client
-
         super().__init__(
             engine=engine,
             model=model,
@@ -117,6 +112,7 @@ class AzureOpenAI(OpenAI):
             use_azure_ad=use_azure_ad,
             api_version=api_version,
             callback_manager=callback_manager,
+            http_client=http_client,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,

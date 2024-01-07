@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union
 
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 
 # from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.data_structs.data_structs import IndexGraph

@@ -41,10 +41,10 @@ from llama_index.chat_engine.types import (
     AgentChatResponse,
     StreamingAgentChatResponse,
 )
+from llama_index.core.llms.types import MessageRole
 from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.types import MessageRole
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
@@ -74,7 +74,7 @@ def add_user_step_to_reasoning(
 
 
 class ReActAgentWorker(BaseAgentWorker):
-    """OpenAI Agent agent worker."""
+    """OpenAI Agent worker."""
 
     def __init__(
         self,

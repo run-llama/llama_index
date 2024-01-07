@@ -336,17 +336,17 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         entries = parsed_result[self.index_name]
 
         similarities = []
-        nodes = []
-        node_idxs = []
+        nodes: List[BaseNode] = []
+        node_ids = []
 
         for i, entry in enumerate(entries):
             if i < query.similarity_top_k:
                 similarities.append(get_node_similarity(entry, similarity_key))
                 nodes.append(to_node(entry, text_key=self.text_key))
-                node_idxs.append(str(i))
+                node_ids.append(nodes[-1].node_id)
             else:
                 break
 
         return VectorStoreQueryResult(
-            nodes=nodes, ids=node_idxs, similarities=similarities
+            nodes=nodes, ids=node_ids, similarities=similarities
         )

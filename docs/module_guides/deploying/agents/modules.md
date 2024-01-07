@@ -53,6 +53,15 @@ LLMCompiler Agent Cookbook <https://github.com/run-llama/llama-hub/blob/main/lla
 
 (lower-level-agent-api)=
 
+## Custom Agents
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/agent/custom_agent.ipynb
+```
+
 ## Lower-Level Agent API
 
 ```{toctree}

@@ -4,6 +4,7 @@ import dataclasses
 from abc import abstractmethod
 from typing import Dict, Optional, cast
 
+from llama_index.core.response.schema import Response
 from llama_index.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,
@@ -17,7 +18,6 @@ from llama_index.llms.utils import resolve_llm
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.response.schema import Response
 from llama_index.schema import QueryBundle, QueryType
 from llama_index.utils import print_text
 

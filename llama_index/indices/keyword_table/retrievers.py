@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.indices.keyword_table.utils import (
     extract_keywords_given_response,

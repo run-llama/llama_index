@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.embeddings.base import (
+from llama_index.core.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
     Embedding,

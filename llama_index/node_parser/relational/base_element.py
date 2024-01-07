@@ -6,10 +6,10 @@ from tqdm import tqdm
 
 from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.callbacks.base import CallbackManager
+from llama_index.core.response.schema import PydanticResponse
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.node_parser.interface import NodeParser
-from llama_index.response.schema import PydanticResponse
 from llama_index.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.utils import get_tqdm_iterable
 
@@ -130,7 +130,7 @@ class BaseElementNodeParser(NodeParser):
         llm = self.llm or OpenAI()
         llm = cast(LLM, llm)
 
-        service_context = ServiceContext.from_defaults(llm=self.llm, embed_model=None)
+        service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
         for element in tqdm(elements):
             if element.type != "table":
                 continue

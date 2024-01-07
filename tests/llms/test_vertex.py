@@ -1,7 +1,7 @@
 from typing import Sequence
 
 import pytest
-from llama_index.llms.types import ChatMessage, CompletionResponse
+from llama_index.core.llms.types import ChatMessage, CompletionResponse
 from llama_index.llms.vertex import Vertex
 from llama_index.llms.vertex_utils import init_vertexai
 

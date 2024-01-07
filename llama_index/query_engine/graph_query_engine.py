@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.indices.composability.graph import ComposableGraph
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import IndexNode, NodeWithScore, QueryBundle, TextNode
 
 

@@ -71,7 +71,7 @@ It is responsible for splitting text (via text splitters) and explicitly modelli
 
 - [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/simple.py)
 
-See [the API reference](https://gpt-index.readthedocs.io/en/latest/api_reference/index.html) for full details.
+See [the API reference](https://docs.llamaindex.ai/en/latest/api_reference/index.html) for full details.
 
 **Ideas**:
 
@@ -100,7 +100,7 @@ Under the hood, LlamaIndex also supports a swappable **storage layer** that allo
 We have an underlying key-value abstraction backing the document/index stores.
 Currently we support in-memory and MongoDB storage for these stores. Open to contributions!
 
-See [Storage guide](https://gpt-index.readthedocs.io/en/latest/how_to/storage.html) for details.
+See [Storage guide](https://docs.llamaindex.ai/en/stable/module_guides/storing/kv_stores.html) for details.
 
 ---
 
@@ -111,7 +111,7 @@ A managed index is used to represent an index that's managed via an API, exposin
 Currently we support the [VectaraIndex](https://github.com/run-llama/llama_index/tree/ca09272af000307762d301c99da46ddc70d3bfd2/llama_index/indices/managed/vectara).
 Open to contributions!
 
-See [Managed Index docs](https://gpt-index.readthedocs.io/en/stable/community/integrations/managed_indices.html) for details.
+See [Managed Index docs](https://docs.llamaindex.ai/en/stable/community/integrations/managed_indices.html) for details.
 
 ---
 
@@ -137,7 +137,7 @@ These serve as the main data store and retrieval engine for our vector index.
 
 - See a vector database out there that we don't support yet? Make a PR!
 
-See [reference](https://gpt-index.readthedocs.io/en/latest/reference/indices/vector_stores/stores.html) for full details.
+See [reference](https://docs.llamaindex.ai/en/stable/api_reference/indices/vector_store.html) for full details.
 
 ---
 
@@ -199,7 +199,7 @@ This can interpreted as a pre-processing stage, before the core index query logi
 - [Hypothetical Document Embeddings](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L77)
 - [Query Decompose](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L124)
 
-See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/query/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
+See [guide](https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
 
 ---
 
@@ -243,7 +243,7 @@ A output parser enables us to extract structured output from the plain text outp
 - [Guardrails Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/guardrails.py)
 - [Langchain Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/langchain.py)
 
-See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/output_parsing.html) for more information.
+See [guide](https://docs.llamaindex.ai/en/stable/module_guides/querying/structured_outputs/output_parser.html) for more information.
 
 ---
 
@@ -261,7 +261,7 @@ Please feel free to open an issue and/or assign an issue to yourself.
 
 If you have applied LlamaIndex to a unique use-case (e.g. interesting dataset, customized index structure, complex query), we would love your contribution in the form of:
 
-1. a guide: e.g. [guide to LlamIndex + Structured Data](https://gpt-index.readthedocs.io/en/latest/guides/tutorials/sql_guide.html)
+1. a guide: e.g. [guide to LlamIndex + Structured Data](https://docs.llamaindex.ai/en/stable/understanding/putting_it_all_together/structured_data.html)
 2. an example notebook: e.g. [Composable Indices Demo](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/ComposableIndices-Prior.ipynb)
 
 ### 4. 🧪 Add Experimental Features

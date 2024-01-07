@@ -1,7 +1,7 @@
 from typing import Any
 
 import pytest
-from llama_index.llms.types import ChatMessage
+from llama_index.core.llms.types import ChatMessage
 from pytest import MonkeyPatch
 
 try:

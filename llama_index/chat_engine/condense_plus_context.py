@@ -10,12 +10,12 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
     ToolOutput,
 )
+from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.base import PromptTemplate
