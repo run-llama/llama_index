@@ -1,6 +1,7 @@
 """General utils functions."""
 
 import asyncio
+import logging
 import os
 import random
 import sys
@@ -27,6 +28,8 @@ from typing import (
     Union,
     runtime_checkable,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class GlobalsHelper:
@@ -59,12 +62,22 @@ class GlobalsHelper:
         try:
             nltk.data.find("corpora/stopwords", paths=[self._nltk_data_dir])
         except LookupError:
-            nltk.download("stopwords", download_dir=self._nltk_data_dir)
+            stopwords_dl_success = nltk.download(
+                "stopwords", download_dir=self._nltk_data_dir
+            )
+            if not stopwords_dl_success:
+                logger.warning(
+                    f"Failed to download nltk package `stopwords` to nltk cache dir: {self._nltk_data_dir}. If running offline, make sure that the nltk cache dir is populated with the `stopwords` package."
+                )
 
         try:
             nltk.data.find("tokenizers/punkt", paths=[self._nltk_data_dir])
         except LookupError:
-            nltk.download("punkt", download_dir=self._nltk_data_dir)
+            punkt_dl_success = nltk.download("punkt", download_dir=self._nltk_data_dir)
+            if not punkt_dl_success:
+                logger.warning(
+                    f"Failed to download nltk package `punkt` to nltk cache dir: {self._nltk_data_dir}. If running offline, make sure that the nltk cache dir is populated with the `punkt` package."
+                )
 
     @property
     def stopwords(self) -> List[str]:
@@ -126,7 +139,13 @@ def get_tokenizer() -> Callable[[str], List]:
                 "_static/tiktoken_cache",
             )
 
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        try:
+            enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        except Exception as e:
+            # TODO: Raise error that encoding download failed, and that local model can be used?
+            print(e)
+            logger.error("Failed to download default tiktoken encoder")
+
         tokenizer = partial(enc.encode, allowed_special="all")
         set_global_tokenizer(tokenizer)
 
