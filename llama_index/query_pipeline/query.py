@@ -239,7 +239,7 @@ class QueryPipeline(QueryComponent):
         The way to get around this is to sort the queue by ancestral order, so that the module
         furthest upstream is run first, and then the modules further downstream are run later.
         That way you can be sure that any optional dependencies that should be satisfied
-        will be satisifed by the time that module is run.
+        will be satisfied by the time that module is run.
 
         """
 
