@@ -101,6 +101,7 @@ caption: Examples
 maxdepth: 1
 ---
 /examples/managed/vectaraDemo.ipynb
+/examples/retrievers/vectara_auto_retriever.ipynb
 ```
 
 ## Zilliz
