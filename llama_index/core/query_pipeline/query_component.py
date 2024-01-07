@@ -4,10 +4,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Set, Union
 
 from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.callbacks.base import CallbackManager
 from llama_index.core.llms.types import ChatResponse, CompletionResponse
 from llama_index.core.response.schema import Response
 from llama_index.schema import QueryBundle
-from llama_index.callbacks.base import CallbackManager
 
 ## Define common types used throughout these components
 StringableInput = Union[CompletionResponse, ChatResponse, str, QueryBundle, Response]
@@ -219,15 +219,16 @@ class CustomQueryComponent(QueryComponent):
     @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
-        # NOTE: user can override this too, but we have them implement an 
+        # NOTE: user can override this too, but we have them implement an
         # abstract method to make sure they do it
-        
-        return InputKeys.from_keys(required_keys=self._input_keys, optional_keys=self._optional_input_keys)
+
+        return InputKeys.from_keys(
+            required_keys=self._input_keys, optional_keys=self._optional_input_keys
+        )
 
     @property
     def output_keys(self) -> OutputKeys:
         """Output keys."""
-        # NOTE: user can override this too, but we have them implement an 
+        # NOTE: user can override this too, but we have them implement an
         # abstract method to make sure they do it
         return OutputKeys.from_keys(self._output_keys)
-    

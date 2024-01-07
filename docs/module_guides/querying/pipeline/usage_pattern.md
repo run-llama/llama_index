@@ -2,7 +2,7 @@
 
 The usage pattern guide covers setup + usage of the `QueryPipeline` more in-depth.
 
-Take a look at our [module usage guide](TODO) for more details on the supported components! 
+Take a look at our [module usage guide](TODO) for more details on the supported components!
 
 ## Setting up a Pipeline
 
@@ -13,6 +13,7 @@ Here we walk through a few different ways of setting up a query pipeline.
 Some simple pipelines are purely linear in nature - the output of the previous module directly goes into the input of the next module.
 
 Some examples:
+
 - prompt -> LLM -> output parsing
 - prompt -> LLM -> prompt -> LLM
 - retriever -> response synthesizer
@@ -28,9 +29,7 @@ prompt_tmpl = PromptTemplate(prompt_str)
 llm = OpenAI(model="gpt-3.5-turbo")
 
 p = QueryPipeline(chain=[prompt_tmpl, llm], verbose=True)
-
 ```
-
 
 ### Defining a DAG
 
@@ -71,7 +70,6 @@ p.add_link("retriever", "reranker", dest_key="nodes")
 p.add_link("llm", "reranker", dest_key="query_str")
 p.add_link("reranker", "summarizer", dest_key="nodes")
 p.add_link("llm", "summarizer", dest_key="query_str")
-
 ```
 
 ## Running the Pipeline
@@ -103,25 +101,24 @@ print(output_dict)
 # output dict is {"summarizer": {"output": response}}
 ```
 
-
 ## Defining a Custom Query Component
 
 You can easily define a custom component. Simply subclass a `QueryComponent`, implement validation/run functions + some helpers, and plug it in.
 
-
 ```python
-
 from llama_index.query_pipeline import CustomQueryComponent
 from typing import Dict, Any
 
 
 class MyComponent(CustomQueryComponent):
     """My component."""
-    
+
     # Pydantic class, put any attributes here
     ...
 
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_component_inputs(
+        self, input: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         # NOTE: this is OPTIONAL but we show you here how to do validation as an example
         return input
@@ -141,7 +138,6 @@ class MyComponent(CustomQueryComponent):
         # run logic
         ...
         return {"output_key": result}
-
 ```
 
 For more details check out our [in-depth query transformations guide](/examples/pipeline/query_pipeline.ipynb).
@@ -150,14 +146,14 @@ For more details check out our [in-depth query transformations guide](/examples/
 
 By linking modules within a `QueryPipeline`, the output of one module goes into the input of the next module.
 
-Generally you must make sure that for a link to work, the expected output and input types *roughly* line up.
+Generally you must make sure that for a link to work, the expected output and input types _roughly_ line up.
 
 We say roughly because we do some magic on existing modules to make sure that "stringable" outputs can be passed into
 inputs that can be queried as a "string". Certain output types are treated as Stringable - `CompletionResponse`, `ChatResponse`, `Response`, `QueryBundle`, etc. Retrievers/query engines will automatically convert `string` inputs to `QueryBundle` objects.
 
 This lets you do certain workflows that would otherwise require boilerplate string conversion if you were writing this yourself, for instance,
+
 - LLM -> prompt, LLM -> retriever, LLM -> query engine
 - query engine -> prompt, query engine -> retriever
 
 If you are defining a custom component, you should use `_validate_component_inputs` to ensure that the inputs are the right type, and throw an error if they're not.
-
