@@ -12,6 +12,7 @@ from llama_index.core.query_pipeline.query_component import (
     OutputKeys,
     QueryComponent,
 )
+from llama_index.utils import print_text
 
 # accept both QueryComponent and ChainableMixin as inputs to query pipeline
 # ChainableMixin modules will be converted to components via `as_query_component`
@@ -90,6 +91,25 @@ def add_output_to_module_inputs(
         module_inputs[link.dest_key] = output
 
 
+def print_debug_input(
+    module_key: str,
+    input: Dict[str, Any],
+    val_str_len: int = 200,
+) -> None:
+    """Print debug input."""
+    output = f"> Running module {module_key} with input: \n"
+    for key, value in input.items():
+        # stringify and truncate output
+        val_str = (
+            str(value)[:val_str_len] + "..."
+            if len(str(value)) > val_str_len
+            else str(value)
+        )
+        output += f"{key}: {val_str}\n"
+
+    print_text(output + "\n", color="llama_lavender")
+
+
 class QueryPipeline(QueryComponent):
     """A query pipeline that can allow arbitrary chaining of different modules.
 
@@ -107,6 +127,9 @@ class QueryPipeline(QueryComponent):
     edge_dict: Dict[str, List[Link]] = Field(
         default_factory=dict, description="The edges in the pipeline."
     )
+    verbose: bool = Field(
+        default=False, description="Whether to print intermediate steps."
+    )
 
     # root_keys: List[str] = Field(
     #     default_factory=list, description="The keys of the root modules."
@@ -121,10 +144,6 @@ class QueryPipeline(QueryComponent):
         chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
         **kwargs: Any,
     ):
-        # self.callback_manager = callback_manager or CallbackManager([])
-        # self.module_dict: Dict[str, QueryComponent] = {}
-        # self.edge_dict: Dict[str, List[Link]] = {}
-        # self.root_keys: List[str] = []
         super().__init__(
             callback_manager=callback_manager or CallbackManager([]),
             **kwargs,
@@ -245,7 +264,37 @@ class QueryPipeline(QueryComponent):
 
         return sorted(queue, key=cmp_to_key(_cmp))
 
-    def run(self, *args: Any, return_values_direct: bool = True, **kwargs: Any) -> Any:
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        # go through every module in module dict and set callback manager
+        self.callback_manager = callback_manager
+        for module in self.module_dict.values():
+            module.set_callback_manager(callback_manager)
+
+    def run(
+        self,
+        *args: Any,
+        return_values_direct: bool = True,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run the pipeline."""
+        # first set callback manager
+        callback_manager = callback_manager or self.callback_manager
+        self.set_callback_manager(callback_manager)
+        return self._run(*args, return_values_direct=return_values_direct, **kwargs)
+
+    def run_multi(
+        self, 
+        module_input_dict: Dict[str, Any],
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> Dict[str, Any]:
+        """Run the pipeline for multiple roots."""
+        callback_manager = callback_manager or self.callback_manager
+        self.set_callback_manager(callback_manager)
+        return self._run_multi(module_input_dict)
+
+    def _run(self, *args: Any, return_values_direct: bool = True, **kwargs: Any) -> Any:
         """Run the pipeline.
 
         Assume that there is a single root module and a single output module.
@@ -261,7 +310,7 @@ class QueryPipeline(QueryComponent):
             raise ValueError("Only one root is supported.")
         root_key = root_keys[0]
         # call run_multi with one root key
-        result_outputs = self.run_multi({root_key: kwargs})
+        result_outputs = self._run_multi({root_key: kwargs})
 
         if len(result_outputs) != 1:
             raise ValueError("Only one output is supported.")
@@ -279,7 +328,7 @@ class QueryPipeline(QueryComponent):
         else:
             return result_output
 
-    def run_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Run the pipeline for multiple roots.
 
         kwargs is in the form of module_dict -> input_dict
@@ -322,7 +371,8 @@ class QueryPipeline(QueryComponent):
                 input_tup.input,
             )
 
-            print(f"running input: {input}")
+            if self.verbose:
+                print_debug_input(module_key, input)
             output_dict = module.run_component(**input)
 
             # if there's no more edges, add result to output

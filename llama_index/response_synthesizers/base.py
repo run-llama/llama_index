@@ -12,6 +12,7 @@ from abc import abstractmethod
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
@@ -59,6 +60,14 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
     @property
     def service_context(self) -> ServiceContext:
         return self._service_context
+
+    @property
+    def callback_manager(self) -> CallbackManager:
+        return self._callback_manager
+
+    @callback_manager.setter
+    def callback_manager(self, callback_manager: CallbackManager) -> None:
+        self._callback_manager = callback_manager
 
     @abstractmethod
     def get_response(
@@ -212,6 +221,10 @@ class SynthesizerComponent(QueryComponent):
 
     class Config:
         arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        self.synthesizer.callback_manager = callback_manager
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""

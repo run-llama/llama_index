@@ -116,6 +116,11 @@ class QueryComponent(BaseModel):
         """Update with partial arguments."""
         self.partial_dict.update(kwargs)
 
+    @abstractmethod
+    def set_callback_manager(self, callback_manager: Any) -> None:
+        """Set callback manager."""
+        # TODO: refactor so that callback_manager is always passed in during runtime.
+
     @property
     def free_input_keys(self) -> Set[str]:
         """Get free input keys."""
@@ -139,7 +144,6 @@ class QueryComponent(BaseModel):
     def validate_component_outputs(self, output: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component outputs."""
         # make sure set of output keys == self.output_keys
-        print(f"output: {output}")
         self.output_keys.validate(set(output.keys()))
         return self._validate_component_outputs(output)
 

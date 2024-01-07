@@ -364,6 +364,10 @@ class LLMCompleteComponent(QueryComponent):
     class Config:
         arbitrary_types_allowed = True
 
+    def set_callback_manager(self, callback_manager: Any) -> None:
+        """Set callback manager."""
+        self.llm.callback_manager = callback_manager
+
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         if "prompt" not in input:
@@ -403,6 +407,10 @@ class LLMChatComponent(QueryComponent):
 
     class Config:
         arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: Any) -> None:
+        """Set callback manager."""
+        self.llm.callback_manager = callback_manager
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""

@@ -509,6 +509,9 @@ class PromptComponent(QueryComponent):
     class Config:
         arbitrary_types_allowed = True
 
+    def set_callback_manager(self, callback_manager: Any) -> None:
+        """Set callback manager."""
+
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         keys = list(input.keys())

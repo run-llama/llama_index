@@ -1,16 +1,25 @@
 """Query pipeline."""
 
+from typing import Any, Dict
+
+from llama_index.core.query_pipeline.query_component import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+)
 from llama_index.query_pipeline.query import QueryPipeline
-from llama_index.core.query_pipeline.query_component import QueryComponent, InputKeys, OutputKeys
-from typing import Dict, Any
 
 
 class QueryComponent1(QueryComponent):
     """Query component 1.
 
     Adds two numbers together.
-    
+
     """
+
+    def set_callback_manager(self, callback_manager: Any) -> None:
+        """Set callback manager."""
+        pass
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -39,8 +48,12 @@ class QueryComponent2(QueryComponent):
     """Query component 1.
 
     Joins two strings together with ':'
-    
+
     """
+
+    def set_callback_manager(self, callback_manager: Any) -> None:
+        """Set callback manager."""
+        pass
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -69,18 +82,23 @@ class QueryComponent3(QueryComponent):
     """Query component 3.
 
     Takes one input and doubles it.
-    
+
     """
+
+    def set_callback_manager(self, callback_manager: Any) -> None:
+        """Set callback manager."""
+        pass
+
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         if "input" not in input:
             raise ValueError("input not in input")
         return input
-    
+
     def _run_component(self, **kwargs: Any) -> Dict:
         """Run component."""
-        return {"output": kwargs["input"]  + kwargs["input"]}
-    
+        return {"output": kwargs["input"] + kwargs["input"]}
+
     @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
@@ -100,6 +118,7 @@ def test_query_pipeline_chain():
     # since there's one output, output is just the value
     assert output == 3
 
+
 def test_query_pipeline_partial():
     """Test query pipeline."""
     # test qc1 with qc2 with one partial, with chain syntax
@@ -114,14 +133,12 @@ def test_query_pipeline_partial():
     qc1 = QueryComponent1()
     qc2 = QueryComponent2()
     p = QueryPipeline()
-    p.add_modules({
-        "qc1": qc1,
-        "qc2": qc2
-    })
+    p.add_modules({"qc1": qc1, "qc2": qc2})
     qc2.partial(input2="foo")
     p.add_link("qc1", "qc2", dest_key="input1")
     output = p.run(input1=2, input2=2)
     assert output == "4:foo"
+
 
 def test_query_pipeline_sub():
     """Test query pipeline."""
@@ -130,10 +147,7 @@ def test_query_pipeline_sub():
     qc3 = QueryComponent3()
     p1 = QueryPipeline(chain=[qc3, qc3])
     p = QueryPipeline()
-    p.add_modules({
-        "qc2": qc2,
-        "p1": p1
-    })
+    p.add_modules({"qc2": qc2, "p1": p1})
     # link output of p1 to input1 and input2 of qc2
     p.add_link("p1", "qc2", dest_key="input1")
     p.add_link("p1", "qc2", dest_key="input2")
@@ -149,21 +163,10 @@ def test_query_pipeline_multi():
     qc1_1 = QueryComponent1()
     qc2 = QueryComponent2()
     p = QueryPipeline()
-    p.add_modules({
-        "qc1_0": qc1_0,
-        "qc1_1": qc1_1,
-        "qc2": qc2
-    })
+    p.add_modules({"qc1_0": qc1_0, "qc1_1": qc1_1, "qc2": qc2})
     p.add_link("qc1_0", "qc2", dest_key="input1")
     p.add_link("qc1_1", "qc2", dest_key="input2")
-    output = p.run_multi({"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}})
+    output = p.run_multi(
+        {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
+    )
     assert output == {"qc2": {"output": "3:7"}}
-    
-
-
-    
-    
-    
-    
-
-    
