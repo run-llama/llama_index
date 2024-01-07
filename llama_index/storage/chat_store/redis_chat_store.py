@@ -25,12 +25,9 @@ class RedisChatStore(BaseChatStore):
     try:
         from redis import Redis
     except ImportError:
-        raise ImportError(
-            "Could not import redis python package. "
-            "Please install it with `pip install redis>=4.1.0`."
-        )
+        print("WARNING: Unable to import redis")
 
-    redis_client: Any = Field(default_factory=Redis)
+    redis_client: Any = Field(default_factory=None)
     ttl: Optional[int] = Field(default=None)
 
     @classmethod
