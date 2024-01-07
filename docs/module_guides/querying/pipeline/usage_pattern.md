@@ -19,9 +19,89 @@ Some examples:
 
 These workflows can easily be expressed in the `QueryPipeline` through a simplified `chain` syntax.
 
+```python
+from llama_index.query_pipeline.query import QueryPipeline
+
+# try chaining basic prompts
+prompt_str = "Please generate related movies to {movie_name}"
+prompt_tmpl = PromptTemplate(prompt_str)
+llm = OpenAI(model="gpt-3.5-turbo")
+
+p = QueryPipeline(chain=[prompt_tmpl, llm], verbose=True)
+
+```
+
+
 ### Defining a DAG
 
+Many pipelines will require you to setup a DAG (for instance, if you want to implement all the steps in a standard RAG pipeline).
 
+Here we offer a lower-level API to add modules along with their keys, and define links between previous module outputs to next
+module inputs.
+
+```python
+from llama_index.postprocessor import CohereRerank
+from llama_index.response_synthesizers import TreeSummarize
+from llama_index import ServiceContext
+
+# define modules
+prompt_str = "Please generate a question about Paul Graham's life regarding the following topic {topic}"
+prompt_tmpl = PromptTemplate(prompt_str)
+llm = OpenAI(model="gpt-3.5-turbo")
+retriever = index.as_retriever(similarity_top_k=3)
+reranker = CohereRerank()
+summarizer = TreeSummarize(
+    service_context=ServiceContext.from_defaults(llm=llm)
+)
+
+# define query pipeline
+p = QueryPipeline(verbose=True)
+p.add_modules(
+    {
+        "llm": llm,
+        "prompt_tmpl": prompt_tmpl,
+        "retriever": retriever,
+        "summarizer": summarizer,
+        "reranker": reranker,
+    }
+)
+p.add_link("prompt_tmpl", "llm")
+p.add_link("llm", "retriever")
+p.add_link("retriever", "reranker", dest_key="nodes")
+p.add_link("llm", "reranker", dest_key="query_str")
+p.add_link("reranker", "summarizer", dest_key="nodes")
+p.add_link("llm", "summarizer", dest_key="query_str")
+
+```
+
+## Running the Pipeline
+
+### Single-Input/Single-Output
+
+The input is the kwargs of the first component.
+
+If the output of the last component is a single object (and not a dictionary of objects), then we return that directly.
+
+Taking the pipeline in the previous example, the output will be a `Response` object since the last step is the `TreeSummarize` response synthesis module.
+
+```python
+output = p.run(topic="YC")
+# output type is Response
+type(output)
+```
+
+### Multi-Input/Multi-Output
+
+If your DAG has multiple root nodes / and-or output nodes, you can try `run_multi`. Pass in an input dictionary containing module key -> input dict. Output is dictionary of module key -> output dict.
+
+If we ran the prev example,
+
+```python
+output_dict = p.run_multi({"llm": {"topic": "YC"}})
+print(output_dict)
+
+# output dict is {"summarizer": {"output": response}}
+```
 
 
 ## Defining a Custom Query Component
