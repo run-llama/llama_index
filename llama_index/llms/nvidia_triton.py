@@ -190,7 +190,7 @@ class NvidiaTriton(LLM):
     ) -> ChatResponseGen:
         raise NotImplementedError
 
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         from tritonclient.utils import InferenceServerException
 
         client = self._get_client()
@@ -220,7 +220,7 @@ class NvidiaTriton(LLM):
             text=response,
         )
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
         raise NotImplementedError
 
     async def achat(
@@ -228,7 +228,7 @@ class NvidiaTriton(LLM):
     ) -> ChatResponse:
         raise NotImplementedError
 
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         raise NotImplementedError
 
     async def astream_chat(
@@ -237,6 +237,6 @@ class NvidiaTriton(LLM):
         raise NotImplementedError
 
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError

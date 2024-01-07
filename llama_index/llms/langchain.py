@@ -73,7 +73,7 @@ class LangChainLLM(LLM):
 
         if not self.metadata.is_chat_model:
             prompt = self.messages_to_prompt(messages)
-            completion_response = self.complete(prompt, is_formatted=True, **kwargs)
+            completion_response = self.complete(prompt, formatted=True, **kwargs)
             return completion_response_to_chat_response(completion_response)
 
         lc_messages = to_lc_messages(messages)
@@ -83,9 +83,9 @@ class LangChainLLM(LLM):
 
     @llm_completion_callback()
     def complete(
-        self, prompt: str, is_formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        if not is_formatted:
+        if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
         output_str = self._llm.predict(prompt, **kwargs)
@@ -98,7 +98,7 @@ class LangChainLLM(LLM):
         if not self.metadata.is_chat_model:
             prompt = self.messages_to_prompt(messages)
             stream_completion = self.stream_complete(
-                prompt, is_formatted=True, **kwargs
+                prompt, formatted=True, **kwargs
             )
             return stream_completion_response_to_chat_response(stream_completion)
 
@@ -134,9 +134,9 @@ class LangChainLLM(LLM):
 
     @llm_completion_callback()
     def stream_complete(
-        self, prompt: str, is_formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        if not is_formatted:
+        if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
         from llama_index.langchain_helpers.streaming import (
@@ -174,7 +174,7 @@ class LangChainLLM(LLM):
         return self.chat(messages, **kwargs)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         # TODO: Implement async complete
         return self.complete(prompt, **kwargs)
 
@@ -192,7 +192,7 @@ class LangChainLLM(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         # TODO: Implement async stream_complete
 

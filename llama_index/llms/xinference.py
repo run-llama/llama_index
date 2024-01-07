@@ -216,7 +216,7 @@ class Xinference(CustomLLM):
         return gen()
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         assert self._generator is not None
         response_text = self._generator.chat(
             prompt=prompt,
@@ -233,7 +233,7 @@ class Xinference(CustomLLM):
         )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
         assert self._generator is not None
         response_iter = self._generator.chat(
             prompt=prompt,

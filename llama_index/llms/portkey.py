@@ -152,7 +152,7 @@ class Portkey(CustomLLM):
         return self
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint for LLM."""
         if self._is_chat_model:
             complete_fn = chat_to_completion_decorator(self._chat)
@@ -169,7 +169,7 @@ class Portkey(CustomLLM):
         return chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
         """Completion endpoint for LLM."""
         if self._is_chat_model:
             complete_fn = stream_chat_to_completion_decorator(self._stream_chat)

@@ -221,7 +221,7 @@ class LLM(BaseLLM):
             output = chat_response.message.content or ""
         else:
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
-            response = self.complete(formatted_prompt)
+            response = self.complete(formatted_prompt, formatted=True)
             output = response.text
 
         return self._parse_output(output)
@@ -240,7 +240,7 @@ class LLM(BaseLLM):
             stream_tokens = stream_chat_response_to_tokens(chat_response)
         else:
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
-            stream_response = self.stream_complete(formatted_prompt)
+            stream_response = self.stream_complete(formatted_prompt, formatted=True)
             stream_tokens = stream_completion_response_to_tokens(stream_response)
 
         if prompt.output_parser is not None or self.output_parser is not None:
@@ -262,7 +262,7 @@ class LLM(BaseLLM):
             output = chat_response.message.content or ""
         else:
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
-            response = await self.acomplete(formatted_prompt)
+            response = await self.acomplete(formatted_prompt, formatted=True)
             output = response.text
 
         return self._parse_output(output)
@@ -281,7 +281,7 @@ class LLM(BaseLLM):
             stream_tokens = await astream_chat_response_to_tokens(chat_response)
         else:
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
-            stream_response = await self.astream_complete(formatted_prompt)
+            stream_response = await self.astream_complete(formatted_prompt, formatted=True)
             stream_tokens = await astream_completion_response_to_tokens(stream_response)
 
         if prompt.output_parser is not None or self.output_parser is not None:

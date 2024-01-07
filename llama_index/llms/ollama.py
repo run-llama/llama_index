@@ -165,7 +165,7 @@ class Ollama(CustomLLM):
                         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         payload = {
             self.prompt_key: prompt,
             "model": self.model,
@@ -189,7 +189,7 @@ class Ollama(CustomLLM):
             )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
         payload = {
             self.prompt_key: prompt,
             "model": self.model,

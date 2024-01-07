@@ -273,11 +273,10 @@ class HuggingFaceLLM(CustomLLM):
         return generic_messages_to_prompt(messages)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         """Completion endpoint."""
         full_prompt = prompt
-        is_formatted = kwargs.pop("formatted", False)
-        if not is_formatted:
+        if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
             if self.system_prompt:
@@ -303,13 +302,12 @@ class HuggingFaceLLM(CustomLLM):
         return CompletionResponse(text=completion, raw={"model_output": tokens})
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
         """Streaming completion endpoint."""
         from transformers import TextIteratorStreamer
 
         full_prompt = prompt
-        is_formatted = kwargs.pop("formatted", False)
-        if not is_formatted:
+        if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
             if self.system_prompt:
@@ -576,7 +574,7 @@ class HuggingFaceInferenceAPI(CustomLLM):
             )
         )
 
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         return CompletionResponse(
             text=self._sync_client.text_generation(
                 prompt, **{**{"max_new_tokens": self.num_output}, **kwargs}
@@ -596,7 +594,7 @@ class HuggingFaceInferenceAPI(CustomLLM):
     ) -> ChatResponse:
         raise NotImplementedError
 
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         response = await self._async_client.text_generation(
             prompt, **{**{"max_new_tokens": self.num_output}, **kwargs}
         )
@@ -608,6 +606,6 @@ class HuggingFaceInferenceAPI(CustomLLM):
         raise NotImplementedError
 
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError

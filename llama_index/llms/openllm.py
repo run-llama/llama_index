@@ -167,7 +167,7 @@ class OpenLLM(LLM):
         return generic_messages_to_prompt(messages)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         return asyncio.run(self.acomplete(prompt, **kwargs))
 
     @llm_chat_callback()
@@ -183,7 +183,7 @@ class OpenLLM(LLM):
         return loop
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
         generator = self.astream_complete(prompt, **kwargs)
         # Yield items from the queue synchronously
         while True:
@@ -214,7 +214,7 @@ class OpenLLM(LLM):
         return completion_response_to_chat_response(response)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         response = await self._llm.generate(prompt, **kwargs)
         return CompletionResponse(
             text=response.outputs[0].text,
@@ -245,7 +245,7 @@ class OpenLLM(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         config = self._llm.config.model_construct_env(**kwargs)
         if config["n"] > 1:
@@ -372,7 +372,7 @@ class OpenLLMAPI(LLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         response = self._sync_client.generate(prompt, **kwargs)
         return CompletionResponse(
             text=response.outputs[0].text,
@@ -391,7 +391,7 @@ class OpenLLMAPI(LLM):
         )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseGen:
         for response_chunk in self._sync_client.generate_stream(prompt, **kwargs):
             yield CompletionResponse(
                 text=response_chunk.text,
@@ -416,7 +416,7 @@ class OpenLLMAPI(LLM):
             yield completion_response_to_chat_response(response_chunk)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         response = await self._async_client.generate(prompt, **kwargs)
         return CompletionResponse(
             text=response.outputs[0].text,
@@ -436,7 +436,7 @@ class OpenLLMAPI(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         async for response_chunk in self._async_client.generate_stream(
             prompt, **kwargs

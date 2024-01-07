@@ -60,12 +60,12 @@ class CustomLLM(LLM):
         return gen()
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         return self.complete(prompt, **kwargs)
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         async def gen() -> CompletionResponseAsyncGen:
             for message in self.stream_complete(prompt, **kwargs):
