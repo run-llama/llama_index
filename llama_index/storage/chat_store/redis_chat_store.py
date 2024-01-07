@@ -25,13 +25,13 @@ def _dict_to_message(d: dict) -> ChatMessage:
 class RedisChatStore(BaseChatStore):
     """Redis chat store."""
 
-    redis_client: Redis = Field(description="Redis client.")
+    redis_client: Any = Field(description="Redis client.")
     ttl: Optional[int] = Field(default=None, description="Time to live in seconds.")
 
     def __init__(
         self,
         redis_url: str = "redis://localhost:6379",
-        redis_client: Optional[Redis] = None,
+        redis_client: Optional[Any] = None,
         ttl: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
@@ -124,7 +124,7 @@ class RedisChatStore(BaseChatStore):
 
         return RedisCluster.from_url(redis_url, **kwargs)  # type: ignore
 
-    def _check_for_cluster(self, redis_client: Redis) -> bool:
+    def _check_for_cluster(self, redis_client: "Redis") -> bool:
         try:
             import redis
         except ImportError:
