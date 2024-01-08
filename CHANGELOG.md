@@ -3,14 +3,16 @@
 ## [0.9.27] - 2024-01-08
 
 ### New Features
+
 - add query pipeline (#9908)
 - Feature: Azure Multi Modal (fixes: #9471) (#9843)
 - add postgres docker (#9906)
 - Vectara auto_retriever (#9865)
-- Redis Chat Store support  (#9880)
-- move more classes to core  (#9871)
+- Redis Chat Store support (#9880)
+- move more classes to core (#9871)
 
 ### Bug Fixes / Nits / Smaller Features
+
 - Propagate `tool_choice` flag to downstream APIs (#9901)
 - filter out negative indexes from faiss query (#9907)
 - added NE filter for qdrant payloads (#9897)
