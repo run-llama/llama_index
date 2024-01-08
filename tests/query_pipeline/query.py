@@ -5,6 +5,7 @@ from typing import Any, Dict
 import pytest
 from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
+    InputComponent,
     InputKeys,
     OutputKeys,
     QueryComponent,
@@ -145,6 +146,27 @@ def test_query_pipeline_single_arg_inp() -> None:
     # since there's one output, output is just the value
     output = p.run(3)
     assert output == 12
+
+
+def test_query_pipeline_input_component() -> None:
+    """Test query pipeline input component."""
+    # test connecting different inputs to different components
+    qc1 = QueryComponent1()
+    qc2 = QueryComponent2()
+    inp = InputComponent()
+    p = QueryPipeline()
+
+    p.add_modules({"qc1": qc1, "qc2": qc2, "inp": inp})
+    # add inp.inp1 to both qc1.input1 and qc2.input2
+    p.add_link("inp", "qc1", src_key="inp1", dest_key="input1")
+    p.add_link("inp", "qc2", src_key="inp1", dest_key="input2")
+    # add inp.inp2 to qc1.input2
+    p.add_link("inp", "qc1", src_key="inp2", dest_key="input2")
+    # add qc1 to qc2.input1
+    p.add_link("qc1", "qc2", dest_key="input1")
+
+    output = p.run(inp1=1, inp2=2)
+    assert output == "3:1"
 
 
 def test_query_pipeline_partial() -> None:
