@@ -71,6 +71,7 @@ class FilterOperator(str, Enum):
     LTE = "<="  # less than or equal to (int, float)
     IN = "in"  # In array (string or number)
     NIN = "nin"  # Not in array (string or number)
+    TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
 
 
 class FilterCondition(str, Enum):

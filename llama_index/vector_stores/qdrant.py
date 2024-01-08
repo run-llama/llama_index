@@ -620,6 +620,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             FieldCondition,
             Filter,
             MatchAny,
+            MatchText,
             MatchValue,
             Range,
         )
@@ -695,6 +696,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     FieldCondition(
                         key=subfilter.key,
                         range=Range(lte=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == "text_match":
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchText(text=subfilter.value),
                     )
                 )
 
