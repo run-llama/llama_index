@@ -13,7 +13,7 @@ from typing import (
 
 import httpx
 import tiktoken
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AzureOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
@@ -199,6 +199,9 @@ class OpenAI(LLM):
             model_name = model_name.split(":")[1]
         return model_name
 
+    def _is_azure_client(self) -> bool:
+        return isinstance(self._get_client(), AzureOpenAI)
+
     @classmethod
     def class_name(cls) -> str:
         return "openai_llm"
@@ -366,7 +369,10 @@ class OpenAI(LLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    delta = ChoiceDelta()
+                    if self._is_azure_client():
+                        continue
+                    else:
+                        delta = ChoiceDelta()
 
                 # check if this chunk is the start of a function call
                 if delta.tool_calls:
@@ -565,7 +571,10 @@ class OpenAI(LLM):
                         continue
                     delta = response.choices[0].delta
                 else:
-                    delta = ChoiceDelta()
+                    if self._is_azure_client():
+                        continue
+                    else:
+                        delta = ChoiceDelta()
                 first_chat_chunk = False
 
                 # check if this chunk is the start of a function call
