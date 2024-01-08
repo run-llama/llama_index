@@ -39,7 +39,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | pgvecto.rs               | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
-| Qdrant                   | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓     |
+| Qdrant                   | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Redis                    | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Simple                   | in-memory           | ✓                  |               | ✓      |                 |       |
 | SingleStore              | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
