@@ -104,7 +104,9 @@ class AI21(CustomLLM):
         }
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         import ai21
@@ -118,7 +120,9 @@ class AI21(CustomLLM):
         )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError(
             "AI21 does not currently support streaming completion."
         )

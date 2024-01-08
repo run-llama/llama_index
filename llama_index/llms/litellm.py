@@ -158,7 +158,9 @@ class LiteLLM(LLM):
         return stream_chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         # litellm assumes all llms are chat llms
         if self._is_chat_model:
             complete_fn = chat_to_completion_decorator(self._chat)
@@ -168,7 +170,9 @@ class LiteLLM(LLM):
         return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         if self._is_chat_model:
             stream_complete_fn = stream_chat_to_completion_decorator(self._stream_chat)
         else:
@@ -352,7 +356,9 @@ class LiteLLM(LLM):
         return await astream_chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._is_chat_model:
             acomplete_fn = achat_to_completion_decorator(self._achat)
         else:
@@ -361,7 +367,7 @@ class LiteLLM(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         if self._is_chat_model:
             astream_complete_fn = astream_chat_to_completion_decorator(

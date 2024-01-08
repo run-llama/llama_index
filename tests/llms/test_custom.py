@@ -19,7 +19,9 @@ class TestLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         return LLMMetadata()
 
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         return CompletionResponse(
             text="test output",
             additional_kwargs={
@@ -27,7 +29,9 @@ class TestLLM(CustomLLM):
             },
         )
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         def gen() -> CompletionResponseGen:
             text = "test output"
             text_so_far = ""
