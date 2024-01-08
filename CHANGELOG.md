@@ -1,5 +1,27 @@
 # ChangeLog
 
+## [0.9.27] - 2024-01-08
+
+### New Features
+- add query pipeline (#9908)
+- Feature: Azure Multi Modal (fixes: #9471) (#9843)
+- add postgres docker (#9906)
+- Vectara auto_retriever (#9865)
+- Redis Chat Store support  (#9880)
+- move more classes to core  (#9871)
+
+### Bug Fixes / Nits / Smaller Features
+- Propagate `tool_choice` flag to downstream APIs (#9901)
+- filter out negative indexes from faiss query (#9907)
+- added NE filter for qdrant payloads (#9897)
+- Fix incorrect id assignment in MyScale query result (#9900)
+- Qdrant Text Match Filter (#9895)
+- Fusion top k for hybrid search (#9894)
+- Fix (#9867) sync_to_async to avoid blocking during asynchronous calls (#9869)
+- A single node passed into compute_scores returns as a float (#9866)
+- Remove extra linting steps (#9878)
+- add vectara links (#9886)
+
 ## [0.9.26] - 2024-01-05
 
 ### New Features
