@@ -99,6 +99,27 @@ print(output_dict)
 # output dict is {"summarizer": {"output": response}}
 ```
 
+### Defining partials
+
+If you wish to prefill certain inputs for a module, you can do so with `partial`! Then the DAG would just hook into the unfilled inputs.
+
+You may need to convert a module via `as_query_component`.
+
+Here's an example:
+
+```python
+summarizer = TreeSummarize(
+    service_context=ServiceContext.from_defaults(llm=llm)
+)
+summarizer_c = summarizer.as_query_component(partial={"nodes": nodes})
+# can define a chain because llm output goes into query_str, nodes is pre-filled
+p = QueryPipeline(chain=[prompt_tmpl, llm, summarizer_c])
+# run pipeline
+p.run(topic="YC")
+```
+
+(query-pipeline-custom-component)=
+
 ## Defining a Custom Query Component
 
 You can easily define a custom component. Simply subclass a `QueryComponent`, implement validation/run functions + some helpers, and plug it in.

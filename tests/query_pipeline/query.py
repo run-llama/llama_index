@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 import pytest
 from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
@@ -120,6 +121,14 @@ class QueryComponent3(QueryComponent):
         return OutputKeys.from_keys({"output"})
 
 
+class Chainable2(ChainableMixin):
+    """Chainable mixin."""
+
+    def _as_query_component(self, **kwargs: Any) -> "QueryComponent":
+        """Get query component."""
+        return QueryComponent2()
+
+
 def test_query_pipeline_chain() -> None:
     """Test query pipeline."""
     # test qc1 by itself with chain syntax
@@ -157,6 +166,14 @@ def test_query_pipeline_partial() -> None:
     p.add_link("qc1", "qc2", dest_key="input1")
     output = p.run(input1=2, input2=2)
     assert output == "4:foo"
+
+    # test partial with ChainableMixin
+    c2_0 = Chainable2().as_query_component(partial={"input2": "hello"})
+    c2_1 = Chainable2().as_query_component(partial={"input2": "world"})
+    # you can now define a chain because input2 has been defined
+    p = QueryPipeline(chain=[c2_0, c2_1])
+    output = p.run(input1=1)
+    assert output == "1:hello:world"
 
 
 def test_query_pipeline_sub() -> None:

@@ -41,6 +41,7 @@ More information can be found in our usage pattern guides below.
 maxdepth: 2
 ---
 usage_pattern.md
+module_usage.md
 ```
 
 ## Module Guides
