@@ -329,7 +329,7 @@ class QueryPipeline(QueryComponent):
         result_outputs = await self._arun_multi({root_key: kwargs})
         return self._get_single_result_output(result_outputs, return_values_direct)
 
-    def _validate_inputs(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_inputs(self, module_input_dict: Dict[str, Any]) -> None:
         root_keys = self._get_root_keys()
         # if root keys don't match up with kwargs keys, raise error
         if set(root_keys) != set(module_input_dict.keys()):
