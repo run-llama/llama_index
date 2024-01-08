@@ -1,8 +1,12 @@
+import copyreg
+import multiprocessing
 import re
 from enum import Enum
+from functools import partial, reduce
 from hashlib import sha256
+from itertools import repeat
 from pathlib import Path
-from typing import Any, List, Optional, Sequence
+from typing import Any, Callable, Generator, List, Optional, Sequence, Tuple, Union
 
 from fsspec import AbstractFileSystem
 
@@ -337,6 +341,24 @@ class IngestionPipeline(BaseModel):
 
         return nodes_to_run
 
+    @staticmethod
+    def _node_batcher(
+        num_batches: int, nodes: Union[List[BaseNode], List[Document]]
+    ) -> Generator[Union[List[BaseNode], List[Document]], Any, Any]:
+        """Yield successive n-sized chunks from lst."""
+        batch_size = int(len(nodes) / num_batches)
+        for i in range(0, len(nodes), batch_size):
+            yield nodes[i : i + batch_size]
+
+    @staticmethod
+    def _node_batcher(
+        num_batches: int, nodes: Union[List[BaseNode], List[Document]]
+    ) -> Generator[Union[List[BaseNode], List[Document]], Any, Any]:
+        """Yield successive n-sized chunks from lst."""
+        batch_size = int(len(nodes) / num_batches)
+        for i in range(0, len(nodes), batch_size):
+            yield nodes[i : i + batch_size]
+
     def run(
         self,
         show_progress: bool = False,
@@ -345,8 +367,25 @@ class IngestionPipeline(BaseModel):
         cache_collection: Optional[str] = None,
         in_place: bool = True,
         store_doc_text: bool = True,
+        num_workers: Optional[int] = None,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
+        """
+        Args:
+            show_progress (bool, optional): _description_. Defaults to False.
+            documents (Optional[List[Document]], optional): _description_. Defaults to None.
+            nodes (Optional[List[BaseNode]], optional): _description_. Defaults to None.
+            cache_collection (Optional[str], optional): _description_. Defaults to None.
+            in_place (bool, optional): _description_. Defaults to True.
+            num_workers (Optional[int], optional): The number of parallel processes to use.
+                If set to None, then sequential compute is used. Defaults to None.
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            Sequence[BaseNode]: _description_
+        """
         input_nodes = self._prepare_inputs(documents, nodes)
 
         # check if we need to dedup
@@ -384,15 +423,51 @@ class IngestionPipeline(BaseModel):
         else:
             nodes_to_run = input_nodes
 
-        nodes = run_transformations(
-            nodes_to_run,
-            self.transformations,
-            show_progress=show_progress,
-            cache=self.cache if not self.disable_cache else None,
-            cache_collection=cache_collection,
-            in_place=in_place,
-            **kwargs,
-        )
+        if num_workers and num_workers > 1:
+            import tiktoken
+
+            with multiprocessing.Pool(num_workers) as p:
+
+                def pickle_Encoding(
+                    enc: tiktoken.core.Encoding,
+                ) -> Tuple[Callable, Tuple]:
+                    return (
+                        partial(
+                            tiktoken.core.Encoding,
+                            enc.name,
+                            pat_str=enc._pat_str,
+                            mergeable_ranks=enc._mergeable_ranks,
+                            special_tokens=enc._special_tokens,
+                        ),
+                        (),
+                    )
+
+                copyreg.pickle(tiktoken.core.Encoding, pickle_Encoding)
+
+                node_batches = self._node_batcher(
+                    num_batches=num_workers, nodes=nodes_to_run
+                )
+                nodes_parallel = p.starmap(
+                    run_transformations,
+                    zip(
+                        node_batches,
+                        repeat(self.transformations),
+                        repeat(in_place),
+                        repeat(self.cache if not self.disable_cache else None),
+                        repeat(cache_collection),
+                    ),
+                )
+                nodes = reduce(lambda x, y: x + y, nodes_parallel)
+        else:
+            nodes = run_transformations(
+                nodes_to_run,
+                self.transformations,
+                show_progress=show_progress,
+                cache=self.cache if not self.disable_cache else None,
+                cache_collection=cache_collection,
+                in_place=in_place,
+                **kwargs,
+            )
 
         if self.vector_store is not None:
             self.vector_store.add([n for n in nodes if n.embedding is not None])
