@@ -1,0 +1,12 @@
+How to Test Chatbot Locally
+1. git clone git@github.com:Neural-Claim-System/llama_index.git
+2. cd llama_index
+3. virtualenv venv
+4. source venv/bin/activate
+5. pip install -r docs/requirements.txt
+6. python flask_app.py (This should start the Flask server running locally on your machine
+7. Go to your browser: http://localhost:5601/query?text=How%20much%20does%20NCS%20cost%20to%20use
+8. You should see the request received on the flask server logs, and also see the response from the AI displayed on the browser window.
+9. You can continue chatting by entering subsequent queries.
+
+This is a simple test, obviously - It can be enhanced on the UI side by building out a more elegant page
