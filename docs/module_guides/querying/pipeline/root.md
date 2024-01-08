@@ -31,7 +31,7 @@ p.add_modules({"prompt_tmpl": prompt_tmpl, "llm": llm})
 p.add_link("prompt_tmpl", "llm")
 
 # run pipeline
-p.run(input)
+p.run(prompt_key1="<input1>", ...)
 ```
 
 More information can be found in our usage pattern guides below.

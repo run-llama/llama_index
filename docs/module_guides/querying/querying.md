@@ -6,6 +6,14 @@ Querying is the most important part of your LLM application. To learn more about
 
 You can create query pipelines/chains with ease with our declarative `QueryPipeline` interface. Check out our [query pipeline guide](/module_guides/querying/pipeline/root.md) for more details.
 
+```{toctree}
+---
+maxdepth: 1
+hidden: True
+---
+/module_guides/querying/pipeline/root.md
+```
+
 Otherwise check out how to use our query modules as standalone components 👇.
 
 ## Query Modules
