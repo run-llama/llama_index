@@ -363,8 +363,11 @@ class LLMCompleteComponent(QueryComponent):
         # do special check to see if prompt is a list of chat messages
         if isinstance(input["prompt"], get_args(List[ChatMessage])):
             input["prompt"] = self.llm.messages_to_prompt(input["prompt"])
+            input["prompt"] = validate_and_convert_stringable(input["prompt"])
+        else:
+            input["prompt"] = validate_and_convert_stringable(input["prompt"])
+            input["prompt"] = self.llm.completion_to_prompt(input["prompt"])
 
-        input["prompt"] = validate_and_convert_stringable(input["prompt"])
         return input
 
     def _run_component(self, **kwargs: Any) -> Any:
@@ -373,7 +376,7 @@ class LLMCompleteComponent(QueryComponent):
         # non-trivial to figure how to support chat/complete/etc.
         prompt = kwargs["prompt"]
         # ignore all other kwargs for now
-        response = self.llm.complete(prompt)
+        response = self.llm.complete(prompt, formatted=True)
         return {"output": response}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
@@ -382,7 +385,7 @@ class LLMCompleteComponent(QueryComponent):
         # non-trivial to figure how to support chat/complete/etc.
         prompt = kwargs["prompt"]
         # ignore all other kwargs for now
-        response = await self.llm.acomplete(prompt)
+        response = await self.llm.acomplete(prompt, formatted=True)
         return {"output": response}
 
     @property
