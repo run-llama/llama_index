@@ -1,0 +1,87 @@
+General Information
+Welcome to Neural Claim System, (NCS). NCS is a global leading, AI/Machine Learning platform which categorizes glass damage. This patented process allows insurance carriers and glass vendors the ability to submit a series of photos through the platform which will disposition the damage and determine what type of work needs to be performed. After dispositioning the damage, the NCS platform will select the proper parts needed and indicate if ADAS calibration is required. In the U.S., dispositioning of the damage is performed based on ROLAGS standards.
+
+Our AI uses ROLAGS, an ANSI standard develeoped by the industry, to validate windshield damage. It can identify Cracks, Stars, Combos, Batwing, Halfmoon/Bullseye and Pit type of Damages.
+
+Annotates damage location
+Identifies type of break(s)
+Measures size of break(s)
+Labels number of break(s)
+
+Claim Processing
+- Accurate loss reporting
+- 24/7 claim execution
+- Validates and dispositions claim in minutes instead of hours or days
+- Global glass claim handling
+
+Data Access
+- Access to claim information
+- Interactive real time reporting
+- Tiered access for insurance carriers and vehicle owners
+
+Glass Features
+We've integrated build sheet data so you can:
+- Identify key safety features
+- Achieve accurate part selection
+- Validate ADAS calibration requirements
+
+FAQ's
+
+1. Login Process
+a. Apple/Google sign-in
+ Selecting Google sign-in will allow you to use your Google account to sign into the app. If you don’t know your credentials for your Google login you tap on the “Don’t have an account? Sign up” button on the log in screen which will allow you to enter in your email address and create a password.
+b. Why is inspection required?
+ When filing a claim with your insurance company, they have the right to require proof of loss from the insured. The NCS app was developed to easily allow you to submit the required photos for your proof of loss documentation.
+
+2. Capturing Vehicle Photos
+a. Why do I need to review the photo before moving on?
+ It is important to verify that you capture the required photo for the step. It is also a chance to verify the photo is clear to ensure the appropriate result can be made on your claim.
+b. How do I retake the photo? 
+ Select “Retake” to be given an opportunity to take the photo again.
+
+3. Capturing Windshield Photo
+a. Why do I need to take a photo of the full windshield?
+ The full photo of the windshield will allow you to indicate where the damage is located on the glass.
+b. How do I take the windshield photo?
+ Stand in front of your vehicle, making sure the entire windshield is in the frame then select “Capture Windshield Image”.
+
+4. Marking Damages
+a. What is the indicator used for?
+ The indicator identifies the location of the damage on the windshield.
+b. How many indicators are necessary?
+ Since the amount of indicators on the photos determine how many damage photos you take, it is best to place one indicator per area of damage. (one indicator per chip and one indicator per crack).
+c. Where do I tap on the screen?
+ Tap on the photo of the windshield where the approximate location of the damage is, then click “Confirm and Continue”. If you create an indicator accidentally, you can undo by selecting “Clear” at the top right of the screen.
+
+5. Capturing Damage Photos
+a. Why am I required to use currency?
+ Currency is required as a measurement device since it has standard dimensions.
+b. Where do I place the currency?
+ You will place the currency next to each area of damage. If you are using a bill, try to place it straight on the windshield and not have it folded. ake sure the currency is is not blocking the actual damage.
+c. How close do I need to get for the photo?
+ Once you have the currency next to the damage, take the photo from about 10 inches away making sure you get the damage and currency in the frame.
+d. What is the importance of photo clarity?
+ A clear photo of the damage will allow our AI to determine the size and type of damage on your glass to ensure the accuracy of results. As far as possible, ensure that there are no reflections and environmental objects in the picture.
+
+6. Capturing Windshield Logo
+a. Where do I find the windshield logo?
+ The logo is located in one of three places. Bottom left corner of windshield, bottom right corner of windshield, or bottom center of windshield.
+b. Why is the logo photo required?
+ The logo shows the brand, type, and date of manufacturing.
+c. How do I get a clear photo of the logo?
+ Placing a piece of paper behind the logo on the inside of the glass will allow you to take a clearer photo of the logo.
+
+7. Capturing Back of Car
+a. Where do I stand for the photo?
+ Stand facing the rear of your vehicle.  Make sure that the full rear of the vehicle is in the frame.
+
+8. Capturing Vin Barcode
+a. Where is the VIN barcode/QR code?
+ The vin barcode/QR code is located on a sticker on the inside of the driver side door frame or on the inside edge of the door.
+b. What happens after countdown ends?
+ If you have trouble scanning barcode or QR code, when the countdown ends, a “Capture VIN” button will appear allowing you to capture the VIN information manually.
+c. What do I do if my vehicle doesn’t have a barcode/QR code?
+ If your vehicle is not equipped with a barcode/QR code on the sticker, wait for the countdown to end. A “Capture VIN” button will appear allowing you to capture the VIN information manually. 
+
+NCS costs 34$ a month on a subscription basis. It can be used through a Progressive Web App or through Desktop. NCS is owned by Jim Larson, Todd Ackerman and Doug Nelson. Main advantages of NCS over competitors include ease of use, automated claim processing and low costs.
+
