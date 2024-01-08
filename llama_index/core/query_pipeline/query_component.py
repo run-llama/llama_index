@@ -140,9 +140,9 @@ class QueryComponent(BaseModel):
         # TODO: refactor so that callback_manager is always passed in during runtime.
 
     @property
-    def free_input_keys(self) -> Set[str]:
+    def free_req_input_keys(self) -> Set[str]:
         """Get free input keys."""
-        return self.input_keys.all().difference(self.partial_dict.keys())
+        return self.input_keys.required_keys.difference(self.partial_dict.keys())
 
     @abstractmethod
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
