@@ -18,3 +18,18 @@ services:
         ]
       interval: 10s
       retries: 60
+
+  postgres:
+    build:
+      context: ./dockerfiles
+      dockerfile: Postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mark90
+      PGPASSWORD: mark90
+    expose:
+      - "5432"
+    ports:
+      - 5432:5432
+    volumes:
+      - ./initialization/postgres/:/docker-entrypoint-initdb.d

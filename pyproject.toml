@@ -77,6 +77,8 @@ rank-bm25 = {optional = true, version = "^0.2.2"}
 scikit-learn = {optional = true, version = "*"}
 spacy = {optional = true, version = "^3.7.1"}
 aiohttp = "^3.8.6"
+psycopg2 = {optional = true, version = "^2.9.9"}
+pytest-xdist = {optional = true, version = "^3.5.0"}
 
 [tool.poetry.extras]
 gradientai = [
@@ -94,6 +96,7 @@ postgres = [
     "asyncpg",
     "pgvector",
     "psycopg-binary",
+    "psycopg2",
 ]
 query_tools = [
     "guidance",
@@ -119,6 +122,7 @@ pytest = "7.2.1"
 pytest-asyncio = "0.21.0"
 pytest-dotenv = "0.5.2"
 pytest-mock = "3.11.1"
+pytest-xdist = "^3.5.0"
 rake-nltk = "1.0.6"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
@@ -150,6 +154,9 @@ sphinxcontrib-gtagjs = "^0.2.1"
 
 [tool.poetry.scripts]
 llamaindex-cli = 'llama_index.command_line.command_line:main'
+
+[tool.pytest.ini_options]
+addopts = "-n 1 --maxprocesses=1"
 
 [tool.ruff]
 exclude = [
