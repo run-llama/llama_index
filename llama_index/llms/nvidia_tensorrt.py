@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Sequence
 
 import numpy as np
-from transformers import LlamaTokenizer
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -75,8 +74,11 @@ class LocalTensorRTLLM(CustomLLM):
     ) -> None:
         try:
             import torch
+            from transformers import LlamaTokenizer
         except ImportError:
-            raise ImportError("nvidia_tensorrt requires `pip install torch`.")
+            raise ImportError(
+                "nvidia_tensorrt requires `pip install torch` and `pip install transformers`."
+            )
 
         try:
             import tensorrt_llm
