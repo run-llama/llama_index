@@ -449,8 +449,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 self.parse_to_query_result(sparse_response[1]),
                 # NOTE: only for hybrid search (0 for sparse search, 1 for dense search)
                 alpha=query.alpha or 0.5,
-                # NOTE: use fusion_top_k if provided, otherwise use similarity_top_k
-                top_k=query.fusion_top_k or query.similarity_top_k,
+                # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
+                top_k=query.hybrid_top_k or query.similarity_top_k,
             )
         elif self.enable_hybrid:
             # search for dense vectors only
@@ -546,8 +546,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 self.parse_to_query_result(sparse_response[0]),
                 self.parse_to_query_result(sparse_response[1]),
                 alpha=query.alpha or 0.5,
-                # NOTE: use fusion_top_k if provided, otherwise use similarity_top_k
-                top_k=query.fusion_top_k or query.similarity_top_k,
+                # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
+                top_k=query.hybrid_top_k or query.similarity_top_k,
             )
         elif self.enable_hybrid:
             # search for dense vectors only

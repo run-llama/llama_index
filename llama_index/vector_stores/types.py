@@ -238,7 +238,7 @@ class VectorStoreQuery:
     # NOTE: currently only used by postgres hybrid search
     sparse_top_k: Optional[int] = None
     # NOTE: return top k results from hybrid search. similarity_top_k is used for dense search top k
-    fusion_top_k: Optional[int] = None
+    hybrid_top_k: Optional[int] = None
 
 
 @runtime_checkable
