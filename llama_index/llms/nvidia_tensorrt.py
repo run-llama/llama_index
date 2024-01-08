@@ -7,9 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Sequence
 
 import numpy as np
-import tensorrt_llm
 import torch
-from tensorrt_llm.runtime import ModelConfig, SamplingConfig
 from transformers import LlamaTokenizer
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -76,6 +74,16 @@ class LocalTensorRTLLM(CustomLLM):
         model_kwargs: Optional[Dict[str, Any]] = None,
         verbose: bool = False,
     ) -> None:
+        try:
+            import tensorrt_llm
+            from tensorrt_llm.runtime import ModelConfig, SamplingConfig
+        except ImportError:
+            print(
+                "Unable to import `tensorrt_llm` module. Please ensure you have\
+                  `tensorrt_llm` installed in your environment. You can run\
+                  `pip3 install tensorrt_llm -U --extra-index-url https://pypi.nvidia.com` to install."
+            )
+
         model_kwargs = model_kwargs or {}
         model_kwargs.update({"n_ctx": context_window, "verbose": verbose})
         self._max_new_tokens = max_new_tokens
@@ -149,7 +157,7 @@ class LocalTensorRTLLM(CustomLLM):
                     temperature=temperature,
                 )
 
-                serialize_path = engine_dir_path / engine_name
+                serialize_path = engine_dir_path / (engine_name if engine_name else "")
                 with open(serialize_path, "rb") as f:
                     engine_buffer = f.read()
                 decoder = tensorrt_llm.runtime.GenerationSession(
@@ -220,7 +228,7 @@ class LocalTensorRTLLM(CustomLLM):
         output_ids = self._model.decode(input_ids, input_lengths, self._sampling_config)
         torch.cuda.synchronize()
 
-        elapsed_time = None
+        elapsed_time = -1.0
         if self._verbose:
             end_time = time.time()
             elapsed_time = end_time - start_time
@@ -246,8 +254,8 @@ class LocalTensorRTLLM(CustomLLM):
         )
 
     def parse_input(
-        self, input_text: str, tokenizer, end_id: int, remove_input_padding: bool
-    ):
+        self, input_text: str, tokenizer: Any, end_id: int, remove_input_padding: bool
+    ) -> Any:
         input_tokens = []
 
         input_tokens.append(tokenizer.encode(input_text, add_special_tokens=False))
@@ -267,7 +275,7 @@ class LocalTensorRTLLM(CustomLLM):
 
         return input_ids, input_lengths
 
-    def remove_extra_eos_ids(self, outputs):
+    def remove_extra_eos_ids(self, outputs: Any) -> Any:
         outputs.reverse()
         while outputs and outputs[0] == 2:
             outputs.pop(0)
@@ -275,7 +283,13 @@ class LocalTensorRTLLM(CustomLLM):
         outputs.append(2)
         return outputs
 
-    def get_output(self, output_ids, input_lengths, max_output_len, tokenizer):
+    def get_output(
+        self,
+        output_ids: Any,
+        input_lengths: Any,
+        max_output_len: int,
+        tokenizer: Any,
+    ) -> Any:
         num_beams = output_ids.size(1)
         output_text = ""
         outputs = None
@@ -289,7 +303,7 @@ class LocalTensorRTLLM(CustomLLM):
 
         return output_text, outputs
 
-    def generate_completion_dict(self, text_str):
+    def generate_completion_dict(self, text_str: str) -> Dict:
         """
         Generate a dictionary for text completion details.
 
@@ -321,4 +335,6 @@ class LocalTensorRTLLM(CustomLLM):
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        pass
+        raise NotImplementedError(
+            "Nvidia TensorRT-LLM does not currently support streaming completion."
+        )
