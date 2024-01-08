@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Sequence
 
 import numpy as np
-import torch
 from transformers import LlamaTokenizer
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -74,6 +73,11 @@ class LocalTensorRTLLM(CustomLLM):
         model_kwargs: Optional[Dict[str, Any]] = None,
         verbose: bool = False,
     ) -> None:
+        try:
+            import torch
+        except ImportError:
+            raise ImportError("nvidia_tensorrt requires `pip install torch`.")
+
         try:
             import tensorrt_llm
             from tensorrt_llm.runtime import ModelConfig, SamplingConfig
@@ -207,6 +211,11 @@ class LocalTensorRTLLM(CustomLLM):
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        try:
+            import torch
+        except ImportError:
+            raise ImportError("nvidia_tensorrt requires `pip install torch`.")
+
         self.generate_kwargs.update({"stream": False})
 
         is_formatted = kwargs.pop("formatted", False)
@@ -256,6 +265,11 @@ class LocalTensorRTLLM(CustomLLM):
     def parse_input(
         self, input_text: str, tokenizer: Any, end_id: int, remove_input_padding: bool
     ) -> Any:
+        try:
+            import torch
+        except ImportError:
+            raise ImportError("nvidia_tensorrt requires `pip install torch`.")
+
         input_tokens = []
 
         input_tokens.append(tokenizer.encode(input_text, add_special_tokens=False))
