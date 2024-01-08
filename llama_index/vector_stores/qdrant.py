@@ -1,4 +1,5 @@
-"""Qdrant vector store index.
+"""
+Qdrant vector store index.
 
 An index that is built on top of an existing Qdrant collection.
 
@@ -34,7 +35,8 @@ import_err_msg = (
 
 
 class QdrantVectorStore(BasePydanticVectorStore):
-    """Qdrant Vector Store.
+    """
+    Qdrant Vector Store.
 
     In this vector store, embeddings and docs are stored within a
     Qdrant collection.
@@ -199,7 +201,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return points, ids
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -223,7 +226,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return ids
 
     async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
-        """Asynchronous method to add nodes to Qdrant index.
+        """
+        Asynchronous method to add nodes to Qdrant index.
 
         Args:
             nodes: List[BaseNode]: List of nodes with embeddings.
@@ -385,7 +389,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
@@ -483,7 +488,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        """Asynchronous method to query index for top k most similar nodes.
+        """
+        Asynchronous method to query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
@@ -578,7 +584,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             return self.parse_to_query_result(response)
 
     def parse_to_query_result(self, response: List[Any]) -> VectorStoreQueryResult:
-        """Convert vector store response to VectorStoreQueryResult.
+        """
+        Convert vector store response to VectorStoreQueryResult.
 
         Args:
             response: List[Any]: List of results returned from the vector store.
@@ -622,6 +629,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             FieldCondition,
             Filter,
             MatchAny,
+            MatchExcept,
             MatchText,
             MatchValue,
             Range,
@@ -705,6 +713,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     FieldCondition(
                         key=subfilter.key,
                         match=MatchText(text=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == "!=":
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchExcept(**{"except": [subfilter.value]}),
                     )
                 )
 
