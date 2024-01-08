@@ -62,22 +62,12 @@ class GlobalsHelper:
         try:
             nltk.data.find("corpora/stopwords", paths=[self._nltk_data_dir])
         except LookupError:
-            stopwords_dl_success = nltk.download(
-                "stopwords", download_dir=self._nltk_data_dir
-            )
-            if not stopwords_dl_success:
-                logger.warning(
-                    f"Failed to download nltk package `stopwords` to nltk cache dir: {self._nltk_data_dir}. If running offline, make sure that the nltk cache dir is populated with the `stopwords` package."
-                )
+            nltk.download("stopwords", download_dir=self._nltk_data_dir)
 
         try:
             nltk.data.find("tokenizers/punkt", paths=[self._nltk_data_dir])
         except LookupError:
-            punkt_dl_success = nltk.download("punkt", download_dir=self._nltk_data_dir)
-            if not punkt_dl_success:
-                logger.warning(
-                    f"Failed to download nltk package `punkt` to nltk cache dir: {self._nltk_data_dir}. If running offline, make sure that the nltk cache dir is populated with the `punkt` package."
-                )
+            nltk.download("punkt", download_dir=self._nltk_data_dir)
 
     @property
     def stopwords(self) -> List[str]:
