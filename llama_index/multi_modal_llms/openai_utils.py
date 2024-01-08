@@ -38,7 +38,16 @@ def generate_openai_multi_modal_chat_message(
     completion_content = [{"type": "text", "text": prompt}]
     for image_document in image_documents:
         image_content: Dict[str, Any] = {}
-        if image_document.image_url and image_document.image_url != "":
+        mimetype = image_document.image_mimetype or "image/jpeg"
+        if image_document.image and image_document.image != "":
+            image_content = {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{mimetype};base64,{image_document.image}",
+                    "detail": image_detail,
+                },
+            }
+        elif image_document.image_url and image_document.image_url != "":
             image_content = {
                 "type": "image_url",
                 "image_url": image_document.image_url,
@@ -48,7 +57,7 @@ def generate_openai_multi_modal_chat_message(
             image_content = {
                 "type": "image_url",
                 "image_url": {
-                    "url": f"data:image/jpeg;base64,{base64_image}",
+                    "url": f"data:{mimetype};base64,{base64_image}",
                     "detail": image_detail,
                 },
             }

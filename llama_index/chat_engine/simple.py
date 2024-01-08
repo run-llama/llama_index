@@ -8,8 +8,8 @@ from llama_index.chat_engine.types import (
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
+from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import ChatMessage
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.service_context import ServiceContext
 

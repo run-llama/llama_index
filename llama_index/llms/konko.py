@@ -3,6 +3,16 @@ from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
+from llama_index.core.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 from llama_index.llms.base import llm_chat_callback, llm_completion_callback
 from llama_index.llms.generic_utils import (
     achat_to_completion_decorator,
@@ -24,16 +34,6 @@ from llama_index.llms.konko_utils import (
     to_openai_message_dicts,
 )
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-)
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_KONKO_MODEL = "meta-llama/Llama-2-13b-chat-hf"
@@ -277,7 +277,9 @@ class Konko(LLM):
         return gen()
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._is_chat_model:
             complete_fn = chat_to_completion_decorator(self._chat)
         else:
@@ -285,7 +287,9 @@ class Konko(LLM):
         return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         if self._is_chat_model:
             stream_complete_fn = stream_chat_to_completion_decorator(self._stream_chat)
         else:
@@ -413,7 +417,9 @@ class Konko(LLM):
         return await astream_chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._is_chat_model:
             acomplete_fn = achat_to_completion_decorator(self._achat)
         else:
@@ -422,7 +428,7 @@ class Konko(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         if self._is_chat_model:
             astream_complete_fn = astream_chat_to_completion_decorator(

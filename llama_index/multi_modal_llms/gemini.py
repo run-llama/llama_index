@@ -6,13 +6,7 @@ from typing import Any, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
-from llama_index.llms.gemini_utils import (
-    ROLES_FROM_GEMINI,
-    chat_from_gemini_response,
-    chat_message_to_gemini,
-    completion_from_gemini_response,
-)
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -20,6 +14,12 @@ from llama_index.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
+)
+from llama_index.llms.gemini_utils import (
+    ROLES_FROM_GEMINI,
+    chat_from_gemini_response,
+    chat_message_to_gemini,
+    completion_from_gemini_response,
 )
 from llama_index.multi_modal_llms import (
     MultiModalLLM,

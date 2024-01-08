@@ -4,15 +4,25 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence
 
+from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
+from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
+from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.prompts.mixin import PromptDictType, PromptMixin
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType
 
 logger = logging.getLogger(__name__)
 
 
-class BaseQueryEngine(PromptMixin):
+class BaseQueryEngine(ChainableMixin, PromptMixin):
+    """Base query engine."""
+
     def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
         self.callback_manager = callback_manager or CallbackManager([])
 
@@ -67,3 +77,46 @@ class BaseQueryEngine(PromptMixin):
     @abstractmethod
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         pass
+
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """Return a query component."""
+        return QueryEngineComponent(query_engine=self)
+
+
+class QueryEngineComponent(QueryComponent):
+    """Query engine component."""
+
+    query_engine: BaseQueryEngine = Field(..., description="Query engine")
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        self.query_engine.callback_manager = callback_manager
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        # make sure input is a string
+        input["input"] = validate_and_convert_stringable(input["input"])
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        output = self.query_engine.query(kwargs["input"])
+        return {"output": output}
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        output = await self.query_engine.aquery(kwargs["input"])
+        return {"output": output}
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        return InputKeys.from_keys({"input"})
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"output"})

@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from llama_index.async_utils import asyncio_module
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.evaluation.base import EvaluationResult
 
 

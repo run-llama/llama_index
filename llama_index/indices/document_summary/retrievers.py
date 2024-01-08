@@ -8,7 +8,7 @@ import logging
 from typing import Any, Callable, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.indices.utils import (
     default_format_node_batch_fn,

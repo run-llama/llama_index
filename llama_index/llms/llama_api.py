@@ -3,20 +3,20 @@ from typing import Any, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.generic_utils import chat_to_completion_decorator
-from llama_index.llms.openai_utils import (
-    from_openai_message_dict,
-    to_openai_message_dicts,
-)
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+)
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.generic_utils import chat_to_completion_decorator
+from llama_index.llms.openai_utils import (
+    from_openai_message_dict,
+    to_openai_message_dicts,
 )
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
@@ -109,12 +109,16 @@ class LlamaAPI(CustomLLM):
         return ChatResponse(message=message, raw=response)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         complete_fn = chat_to_completion_decorator(self.chat)
         return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError("stream_complete is not supported for LlamaAPI")
 
     @llm_chat_callback()

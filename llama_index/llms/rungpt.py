@@ -4,9 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -17,6 +15,8 @@ from llama_index.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.llm import LLM
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_RUNGPT_MODEL = "rungpt"
@@ -102,7 +102,9 @@ class RunGptLLM(LLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         try:
             import requests
         except ImportError:
@@ -123,7 +125,9 @@ class RunGptLLM(LLM):
         )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         try:
             import requests
         except ImportError:
@@ -240,12 +244,14 @@ class RunGptLLM(LLM):
         return gen()
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         return self.complete(prompt, **kwargs)
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         async def gen() -> CompletionResponseAsyncGen:
             for message in self.stream_complete(prompt, **kwargs):

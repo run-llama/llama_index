@@ -71,6 +71,7 @@ class FilterOperator(str, Enum):
     LTE = "<="  # less than or equal to (int, float)
     IN = "in"  # In array (string or number)
     NIN = "nin"  # Not in array (string or number)
+    TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
 
 
 class FilterCondition(str, Enum):
@@ -237,6 +238,8 @@ class VectorStoreQuery:
 
     # NOTE: currently only used by postgres hybrid search
     sparse_top_k: Optional[int] = None
+    # NOTE: return top k results from hybrid search. similarity_top_k is used for dense search top k
+    hybrid_top_k: Optional[int] = None
 
 
 @runtime_checkable

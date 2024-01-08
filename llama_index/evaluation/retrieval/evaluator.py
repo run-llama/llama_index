@@ -3,7 +3,7 @@
 from typing import Any, List, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.evaluation.retrieval.base import (
     BaseRetrievalEvaluator,
     RetrievalEvalMode,

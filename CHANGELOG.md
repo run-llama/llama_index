@@ -1,5 +1,47 @@
 # ChangeLog
 
+## [0.9.27] - 2024-01-08
+
+### New Features
+
+- add query pipeline (#9908)
+- Feature: Azure Multi Modal (fixes: #9471) (#9843)
+- add postgres docker (#9906)
+- Vectara auto_retriever (#9865)
+- Redis Chat Store support (#9880)
+- move more classes to core (#9871)
+
+### Bug Fixes / Nits / Smaller Features
+
+- Propagate `tool_choice` flag to downstream APIs (#9901)
+- filter out negative indexes from faiss query (#9907)
+- added NE filter for qdrant payloads (#9897)
+- Fix incorrect id assignment in MyScale query result (#9900)
+- Qdrant Text Match Filter (#9895)
+- Fusion top k for hybrid search (#9894)
+- Fix (#9867) sync_to_async to avoid blocking during asynchronous calls (#9869)
+- A single node passed into compute_scores returns as a float (#9866)
+- Remove extra linting steps (#9878)
+- add vectara links (#9886)
+
+## [0.9.26] - 2024-01-05
+
+### New Features
+
+- Added a `BaseChatStore` and `SimpleChatStore` abstraction for dedicated chat memory storage (#9863)
+- Enable custom `tree_sitter` parser to be passed into `CodeSplitter` (#9845)
+- Created a `BaseAutoRetriever` base class, to allow other retrievers to extend to auto modes (#9846)
+- Added support for Nvidia Triton LLM (#9488)
+- Added `DeepEval` one-click observability (#9801)
+
+### Bug Fixes / Nits
+
+- Updated the guidance integration to work with the latest version (#9830)
+- Made text storage optional for doctores/ingestion pipeline (#9847)
+- Added missing `sphinx-automodapi` dependency for docs (#9852)
+- Return actual node ids in weaviate query results (#9854)
+- Added prompt formatting to LangChainLLM (#9844)
+
 ## [0.9.25] - 2024-01-03
 
 ### New Features
@@ -1073,7 +1115,7 @@
 ### Breaking Changes
 
 - Update milvus vector store to support filters and dynamic schemas (#7286)
-  - See the [updated notebook](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
+  - See the [updated notebook](https://docs.llamaindex.ai/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
 - Added NLTK to core dependencies to support the default sentence splitter (#7606)
 
 ## [0.8.22] - 2023-09-07

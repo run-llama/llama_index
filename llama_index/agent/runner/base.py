@@ -437,7 +437,9 @@ class AgentRunner(BaseAgentRunner):
         result_output = None
         while True:
             # pass step queue in as argument, assume step executor is stateless
-            cur_step_output = self._run_step(task.task_id, mode=mode)
+            cur_step_output = self._run_step(
+                task.task_id, mode=mode, tool_choice=tool_choice
+            )
 
             if cur_step_output.is_last:
                 result_output = cur_step_output
@@ -460,7 +462,9 @@ class AgentRunner(BaseAgentRunner):
         result_output = None
         while True:
             # pass step queue in as argument, assume step executor is stateless
-            cur_step_output = await self._arun_step(task.task_id, mode=mode)
+            cur_step_output = await self._arun_step(
+                task.task_id, mode=mode, tool_choice=tool_choice
+            )
 
             if cur_step_output.is_last:
                 result_output = cur_step_output

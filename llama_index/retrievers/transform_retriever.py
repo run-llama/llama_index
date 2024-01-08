@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.schema import NodeWithScore, QueryBundle

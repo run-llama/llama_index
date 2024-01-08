@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.response.schema import Response
+from llama_index.core.response.schema import Response
 from llama_index.schema import Document
 
 try:
