@@ -21,8 +21,8 @@ services:
 
   postgres:
     build:
-      context: ./dockerfiles
-      dockerfile: Postgres
+      context: ./initialization/postgres
+      dockerfile: Dockerfile
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mark90

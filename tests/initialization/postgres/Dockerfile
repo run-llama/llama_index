@@ -1,5 +1,4 @@
 FROM postgres:latest
 
-# buildに必要な依存関係を入れる
 RUN apt update && \
     apt install -y git make gcc postgresql-16-pgvector
