@@ -27,12 +27,7 @@ from llama_index.core.llms.types import (
 )
 from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    validate_and_convert_stringable,
 )
-from llama_index.llms.generic_utils import messages_to_prompt, prompt_to_messages
 from llama_index.schema import BaseComponent
 
 
@@ -313,7 +308,9 @@ class BaseLLM(ChainableMixin, BaseComponent):
         """Chat endpoint for LLM."""
 
     @abstractmethod
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         """Completion endpoint for LLM."""
 
     @abstractmethod
@@ -323,7 +320,9 @@ class BaseLLM(ChainableMixin, BaseComponent):
         """Streaming chat endpoint for LLM."""
 
     @abstractmethod
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         """Streaming completion endpoint for LLM."""
 
     # ===== Async Endpoints =====
@@ -334,7 +333,9 @@ class BaseLLM(ChainableMixin, BaseComponent):
         """Async chat endpoint for LLM."""
 
     @abstractmethod
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         """Async completion endpoint for LLM."""
 
     @abstractmethod
@@ -345,7 +346,7 @@ class BaseLLM(ChainableMixin, BaseComponent):
 
     @abstractmethod
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for LLM."""
 

@@ -41,7 +41,7 @@ def add_output_to_module_inputs(
 
     # now attach output to relevant input key for module
     if dest_key is None:
-        free_keys = module.free_input_keys
+        free_keys = module.free_req_input_keys
         # ensure that there is only one remaining key given partials
         if len(free_keys) != 1:
             raise ValueError(
@@ -268,10 +268,10 @@ class QueryPipeline(QueryComponent):
                 raise ValueError("Only one arg is allowed.")
             if len(kwargs) > 0:
                 raise ValueError("No kwargs allowed if args is specified.")
-            if len(root_module.free_input_keys) != 1:
+            if len(root_module.free_req_input_keys) != 1:
                 raise ValueError("Only one free input key is allowed.")
             # set kwargs
-            kwargs[next(iter(root_module.free_input_keys))] = args[0]
+            kwargs[next(iter(root_module.free_req_input_keys))] = args[0]
         return root_key, kwargs
 
     def _get_single_result_output(
