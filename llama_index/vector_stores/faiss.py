@@ -189,6 +189,16 @@ class FaissVectorStore(BasePydanticVectorStore):
             return VectorStoreQueryResult(similarities=[], ids=[])
 
         # returned dimension is 1 x k
-        node_idxs = [str(i) for i in indices[0]]
+        node_idxs = indices[0]
 
-        return VectorStoreQueryResult(similarities=dists, ids=node_idxs)
+        filtered_dists = []
+        filtered_node_idxs = []
+        for dist, idx in zip(dists, node_idxs):
+            if idx < 0:
+                continue
+            filtered_dists.append(dist)
+            filtered_node_idxs.append(str(idx))
+
+        return VectorStoreQueryResult(
+            similarities=filtered_dists, ids=filtered_node_idxs
+        )

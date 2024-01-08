@@ -78,6 +78,7 @@ scikit-learn = {optional = true, version = "*"}
 spacy = {optional = true, version = "^3.7.1"}
 aiohttp = "^3.8.6"
 networkx = ">=3.0"
+psycopg2 = {optional = true, version = "^2.9.9"}
 
 [tool.poetry.extras]
 gradientai = [
@@ -95,6 +96,7 @@ postgres = [
     "asyncpg",
     "pgvector",
     "psycopg-binary",
+    "psycopg2",
 ]
 query_tools = [
     "guidance",
