@@ -120,9 +120,10 @@ class MonsterLLM(CustomLLM):
         return self.complete(prompt, formatted=True, **kwargs)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        is_formatted = kwargs.pop("formatted", False)
-        if not is_formatted:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
         # Validate input args against input Pydantic model
@@ -138,5 +139,7 @@ class MonsterLLM(CustomLLM):
         return CompletionResponse(text=result["text"])
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError

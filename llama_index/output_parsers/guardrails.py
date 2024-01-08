@@ -5,6 +5,8 @@ See https://github.com/ShreyaR/guardrails.
 """
 from deprecated import deprecated
 
+from llama_index.output_parsers.base import ChainableOutputParser
+
 try:
     from guardrails import Guard
 except ImportError:
@@ -16,7 +18,6 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 
 if TYPE_CHECKING:
     from llama_index.bridge.langchain import BaseLLM
-from llama_index.types import BaseOutputParser
 
 
 def get_callable(llm: Optional["BaseLLM"]) -> Optional[Callable]:
@@ -27,7 +28,7 @@ def get_callable(llm: Optional["BaseLLM"]) -> Optional[Callable]:
     return llm.__call__
 
 
-class GuardrailsOutputParser(BaseOutputParser):
+class GuardrailsOutputParser(ChainableOutputParser):
     """Guardrails output parser."""
 
     def __init__(

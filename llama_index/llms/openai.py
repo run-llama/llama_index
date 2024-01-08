@@ -247,7 +247,9 @@ class OpenAI(LLM):
         return stream_chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._use_chat_completions(kwargs):
             complete_fn = chat_to_completion_decorator(self._chat)
         else:
@@ -255,7 +257,9 @@ class OpenAI(LLM):
         return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         if self._use_chat_completions(kwargs):
             stream_complete_fn = stream_chat_to_completion_decorator(self._stream_chat)
         else:
@@ -505,7 +509,9 @@ class OpenAI(LLM):
         return await astream_chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._use_chat_completions(kwargs):
             acomplete_fn = achat_to_completion_decorator(self._achat)
         else:
@@ -514,7 +520,7 @@ class OpenAI(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         if self._use_chat_completions(kwargs):
             astream_complete_fn = astream_chat_to_completion_decorator(
