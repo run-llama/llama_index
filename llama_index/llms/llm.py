@@ -344,9 +344,9 @@ class LLM(BaseLLM):
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return query component."""
         if self.metadata.is_chat_model:
-            return LLMChatComponent(llm=self)
+            return LLMChatComponent(llm=self, **kwargs)
         else:
-            return LLMCompleteComponent(llm=self)
+            return LLMCompleteComponent(llm=self, **kwargs)
 
 
 class BaseLLMComponent(QueryComponent):
