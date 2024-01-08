@@ -541,6 +541,7 @@ class PromptComponent(QueryComponent):
         """Validate component inputs during run_component."""
         keys = list(input.keys())
         for k in keys:
+            print('VALIDATING: {k}, {v}'.format(k=k, v=input[k]))
             input[k] = validate_and_convert_stringable(input[k])
         return input
 

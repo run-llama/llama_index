@@ -3,11 +3,13 @@ from typing import (
     Any,
     Dict,
     List,
+    Generator,
     Optional,
     Protocol,
     Sequence,
     get_args,
     runtime_checkable,
+    Union
 )
 
 from llama_index.bridge.pydantic import BaseModel, Field, validator
@@ -19,6 +21,8 @@ from llama_index.core.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
+    ChatResponse,
+    CompletionResponse
 )
 from llama_index.core.query_pipeline.query_component import (
     InputKeys,
@@ -41,6 +45,7 @@ from llama_index.types import (
     TokenAsyncGen,
     TokenGen,
 )
+# from llama_index.response.utils import get_response_text
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -344,10 +349,11 @@ class LLM(BaseLLM):
             return LLMCompleteComponent(llm=self)
 
 
-class LLMCompleteComponent(QueryComponent):
-    """LLM completion component."""
+class BaseLLMComponent(QueryComponent):
+    """Base LLM component."""
 
     llm: LLM = Field(..., description="LLM")
+    streaming: bool = Field(default=False, description="Streaming mode")
 
     class Config:
         arbitrary_types_allowed = True
@@ -356,12 +362,32 @@ class LLMCompleteComponent(QueryComponent):
         """Set callback manager."""
         self.llm.callback_manager = callback_manager
 
+
+# modified get_response_text
+def get_response_text(response_gen: Generator) -> str:
+    """Get response text."""
+    response_text = ""
+    for response in response_gen:
+        if isinstance(response, ChatResponse):
+            response_text += response.delta
+        elif isinstance(response, CompletionResponse):
+            response_text += response.delta
+        else:
+            raise ValueError(f"Invalid response type: {type(response)}")
+
+class LLMCompleteComponent(BaseLLMComponent):
+    """LLM completion component."""
+
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         if "prompt" not in input:
             raise ValueError("Prompt must be in input dict.")
+        
+        if isinstance(input["prompt"], Generator):
+            # can't check if isinstance of generator, so yolo and try get_response_text
+            input["prompt"] = get_response_text(input["prompt"])
         # do special check to see if prompt is a list of chat messages
-        if isinstance(input["prompt"], get_args(List[ChatMessage])):
+        elif isinstance(input["prompt"], get_args(List[ChatMessage])):
             input["prompt"] = self.llm.messages_to_prompt(input["prompt"])
             input["prompt"] = validate_and_convert_stringable(input["prompt"])
         else:
@@ -376,7 +402,10 @@ class LLMCompleteComponent(QueryComponent):
         # non-trivial to figure how to support chat/complete/etc.
         prompt = kwargs["prompt"]
         # ignore all other kwargs for now
-        response = self.llm.complete(prompt, formatted=True)
+        if self.streaming:
+            response = self.llm.stream_complete(prompt, formatted=True)
+        else:
+            response = self.llm.complete(prompt, formatted=True)
         return {"output": response}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
@@ -400,22 +429,17 @@ class LLMCompleteComponent(QueryComponent):
         return OutputKeys.from_keys({"output"})
 
 
-class LLMChatComponent(QueryComponent):
+class LLMChatComponent(BaseLLMComponent):
     """LLM chat component."""
-
-    llm: LLM = Field(..., description="LLM")
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    def set_callback_manager(self, callback_manager: Any) -> None:
-        """Set callback manager."""
-        self.llm.callback_manager = callback_manager
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         if "messages" not in input:
             raise ValueError("Messages must be in input dict.")
+
+        if isinstance(input["messages"], Generator):
+            # can't check if isinstance of generator, so yolo and try get_response_text
+            input["messages"] = get_response_text(input["messages"])
 
         # if `messages` is a string, convert to a list of chat message
         if isinstance(input["messages"], get_args(StringableInput)):
@@ -431,7 +455,10 @@ class LLMChatComponent(QueryComponent):
         # TODO: support only complete for now
         # non-trivial to figure how to support chat/complete/etc.
         messages = kwargs["messages"]
-        response = self.llm.chat(messages)
+        if self.streaming:
+            response = self.llm.stream_chat(messages)
+        else:
+            response = self.llm.chat(messages)
         return {"output": response}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
@@ -439,7 +466,10 @@ class LLMChatComponent(QueryComponent):
         # TODO: support only complete for now
         # non-trivial to figure how to support chat/complete/etc.
         messages = kwargs["messages"]
-        response = await self.llm.achat(messages)
+        if self.streaming:
+            response = await self.llm.astream_chat(messages)
+        else:
+            response = await self.llm.achat(messages)
         return {"output": response}
 
     @property
