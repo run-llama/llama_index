@@ -64,7 +64,34 @@ from llama_index.prompts import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.readers import SimpleDirectoryReader, download_loader
+from llama_index.readers import (
+    BeautifulSoupWebReader,
+    ChromaReader,
+    DeepLakeReader,
+    DiscordReader,
+    FaissReader,
+    GithubRepositoryReader,
+    GoogleDocsReader,
+    JSONReader,
+    MboxReader,
+    MilvusReader,
+    NotionPageReader,
+    ObsidianReader,
+    PineconeReader,
+    PsychicReader,
+    QdrantReader,
+    RssReader,
+    SimpleDirectoryReader,
+    SimpleMongoReader,
+    SimpleWebPageReader,
+    SlackReader,
+    StringIterableReader,
+    TrafilaturaWebReader,
+    TwitterTweetReader,
+    WeaviateReader,
+    WikipediaReader,
+    download_loader,
+)
 
 # Response Synthesizer
 from llama_index.response_synthesizers.factory import get_response_synthesizer
