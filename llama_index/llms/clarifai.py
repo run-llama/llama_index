@@ -149,7 +149,11 @@ class Clarifai(LLM):
         return ChatResponse(message=ChatMessage(content=response))
 
     def complete(
-        self, prompt: str, inference_params: Optional[Dict] = {}, **kwargs: Any
+        self,
+        prompt: str,
+        formatted: bool = False,
+        inference_params: Optional[Dict] = {},
+        **kwargs: Any,
     ) -> CompletionResponse:
         """Completion endpoint for LLM."""
         try:
@@ -173,7 +177,9 @@ class Clarifai(LLM):
             "Clarifai does not currently support streaming completion."
         )
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError(
             "Clarifai does not currently support streaming completion."
         )
@@ -185,7 +191,9 @@ class Clarifai(LLM):
         raise NotImplementedError("Currently not supported.")
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         return self.complete(prompt, **kwargs)
 
     @llm_chat_callback()
@@ -196,6 +204,6 @@ class Clarifai(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError("Clarifai does not currently support this function.")

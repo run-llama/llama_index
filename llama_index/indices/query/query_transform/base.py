@@ -340,7 +340,6 @@ class QueryTransformComponent(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM?
         output = self._query_transform.run(
             kwargs["query_str"],
             metadata=kwargs["metadata"],

@@ -25,8 +25,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
     # )
 
     def __init__(self, callback_manager: Optional[CallbackManager] = None) -> None:
-        callback_manager = callback_manager or CallbackManager()
-        # super().__init__(callback_manager=callback_manager)
+        self.callback_manager = callback_manager or CallbackManager()
 
     def _check_callback_manager(self) -> None:
         """Check callback manager."""
@@ -143,13 +142,11 @@ class RetrieverComponent(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM?
         output = self.retriever.retrieve(kwargs["input"])
         return {"output": output}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM?
         output = await self.retriever.aretrieve(kwargs["input"])
         return {"output": output}
 

@@ -104,13 +104,11 @@ class QueryEngineComponent(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM?
         output = self.query_engine.query(kwargs["input"])
         return {"output": output}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        # include LLM?
         output = await self.query_engine.aquery(kwargs["input"])
         return {"output": output}
 
