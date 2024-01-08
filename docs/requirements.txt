@@ -14,4 +14,3 @@ sphinx-automodapi==0.16.0
 sphinxcontrib-gtagjs==0.2.1
 flask
 flask_cors
-google-generativeai
