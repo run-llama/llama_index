@@ -165,11 +165,15 @@ class NotionPageReader(BasePydanticReader):
             page_ids = self.query_database(database_id)
             for page_id in page_ids:
                 page_text = self.read_page(page_id)
-                docs.append(Document(text=page_text, metadata={"page_id": page_id}))
+                docs.append(
+                    Document(text=page_text, id_=page_id, metadata={"page_id": page_id})
+                )
         else:
             for page_id in page_ids:
                 page_text = self.read_page(page_id)
-                docs.append(Document(text=page_text, metadata={"page_id": page_id}))
+                docs.append(
+                    Document(text=page_text, id_=page_id, metadata={"page_id": page_id})
+                )
 
         return docs
 
