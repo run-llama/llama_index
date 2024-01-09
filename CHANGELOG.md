@@ -1,5 +1,20 @@
 # ChangeLog
 
+## [0.9.28] - 2024-01-09
+
+### New Features
+
+- Added support for Nvidia TenorRT LLM (#9842)
+- Allow `tool_choice` to be set during agent construction (#9924)
+- Added streaming support for `QueryPipeline` (#9919)
+
+### Bug Fixes / Nits
+
+- Set consistent doc-ids for llama-index readers (#9923, #9916)
+- Remove unneeded model inputs for HuggingFaceEmbedding (#9922)
+- Propagate `tool_choice` flag to downstream APIs (#9901)
+- Add `chat_store_key` to chat memory `from_defaults()` (#9928)
+
 ## [0.9.27] - 2024-01-08
 
 ### New Features
