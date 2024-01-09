@@ -1,9 +1,12 @@
 import builtins
 import unittest
-from typing import Any, Callable, Type
+from typing import Any
+from typing import Callable
+from typing import Type
 from unittest.mock import patch
 
 import pytest
+
 from llama_index.vector_stores.pinecone import (
     PineconeVectorStore,
 )
@@ -48,11 +51,13 @@ def get_version_attr_from_mock_classes(mock_class: Type[Any]) -> None:
         raise AttributeError(
             "The version of pinecone you are using does not contain necessary __version__ attribute."
         )
+    return mock_class.__version__
 
 
 def mock_import(name: str, *args: Any, **kwargs: Any) -> Callable:
     if name == "pinecone":
-        return MockPineconePods if pods_version else MockPineconeServerless  # type: ignore[name-defined]
+        # type: ignore[name-defined]
+        return MockPineconePods if pods_version else MockPineconeServerless
     return original_import(name, *args, **kwargs)  # type: ignore[name-defined]
 
 
@@ -68,7 +73,11 @@ class TestPineconeVectorStore(unittest.TestCase):
         global pods_version
         pods_version = True  # type: ignore[name-defined]
         with patch("builtins.__import__", side_effect=mock_import):
-            get_version_attr_from_mock_classes(MockPineconePods)
+            mocked_version = get_version_attr_from_mock_classes(
+                MockPineconePods)
+
+            assert mocked_version == "2.2.4"
+
             store = PineconeVectorStore(
                 api_key="dummy_key", index_name="dummy_index", environment="dummy_env"
             )
@@ -77,8 +86,13 @@ class TestPineconeVectorStore(unittest.TestCase):
         global pods_version
         pods_version = False  # type: ignore[name-defined]
         with patch("builtins.__import__", side_effect=mock_import):
-            get_version_attr_from_mock_classes(MockPineconeServerless)
-            store = PineconeVectorStore(api_key="dummy_key", index_name="dummy_index")
+            mock_version = get_version_attr_from_mock_classes(
+                MockPineconeServerless)
+
+            assert mock_version == "3.0.0"
+
+            store = PineconeVectorStore(
+                api_key="dummy_key", index_name="dummy_index")
 
     def test_unversioned_pinecone_client(self) -> None:
         with pytest.raises(
