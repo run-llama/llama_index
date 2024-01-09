@@ -21,9 +21,6 @@ from llama_index.llms.base import (
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import completion_response_to_chat_response
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
 
 EOS_TOKEN = 2
 PAD_TOKEN = 2
@@ -170,8 +167,6 @@ class LocalTensorRTLLM(CustomLLM):
                     self._model_config, engine_buffer, runtime_mapping, debug_mode=False
                 )
                 self._model = decoder
-        messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        completion_to_prompt = completion_to_prompt or (lambda x: x)
 
         generate_kwargs = generate_kwargs or {}
         generate_kwargs.update(
@@ -212,7 +207,9 @@ class LocalTensorRTLLM(CustomLLM):
         return completion_response_to_chat_response(completion_response)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         try:
             import torch
         except ImportError:
@@ -220,8 +217,7 @@ class LocalTensorRTLLM(CustomLLM):
 
         self.generate_kwargs.update({"stream": False})
 
-        is_formatted = kwargs.pop("formatted", False)
-        if not is_formatted:
+        if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
         input_text = prompt
