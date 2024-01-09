@@ -1,12 +1,9 @@
 import builtins
 import unittest
-from typing import Any
-from typing import Callable
-from typing import Type
+from typing import Any, Callable, Type
 from unittest.mock import patch
 
 import pytest
-
 from llama_index.vector_stores.pinecone import (
     PineconeVectorStore,
 )
@@ -73,8 +70,7 @@ class TestPineconeVectorStore(unittest.TestCase):
         global pods_version
         pods_version = True  # type: ignore[name-defined]
         with patch("builtins.__import__", side_effect=mock_import):
-            mocked_version = get_version_attr_from_mock_classes(
-                MockPineconePods)
+            mocked_version = get_version_attr_from_mock_classes(MockPineconePods)
 
             assert mocked_version == "2.2.4"
 
@@ -87,13 +83,11 @@ class TestPineconeVectorStore(unittest.TestCase):
         global pods_version
         pods_version = False  # type: ignore[name-defined]
         with patch("builtins.__import__", side_effect=mock_import):
-            mock_version = get_version_attr_from_mock_classes(
-                MockPineconeServerless)
+            mock_version = get_version_attr_from_mock_classes(MockPineconeServerless)
 
             assert mock_version == "3.0.0"
 
-            store = PineconeVectorStore(
-                api_key="dummy_key", index_name="dummy_index")
+            store = PineconeVectorStore(api_key="dummy_key", index_name="dummy_index")
 
     def test_unversioned_pinecone_client(self) -> None:
         with pytest.raises(

@@ -5,32 +5,28 @@ An index that that is built on top of an existing vector store.
 
 """
 import logging
-import re
 from collections import Counter
 from functools import partial
-from typing import Any
-from typing import Callable
-from typing import cast
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
 from packaging import version
 from pkg_resources import get_distribution
 
 from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.schema import BaseNode
-from llama_index.schema import MetadataMode
-from llama_index.schema import TextNode
-from llama_index.vector_stores.types import BasePydanticVectorStore
-from llama_index.vector_stores.types import MetadataFilters
-from llama_index.vector_stores.types import VectorStoreQuery
-from llama_index.vector_stores.types import VectorStoreQueryMode
-from llama_index.vector_stores.types import VectorStoreQueryResult
-from llama_index.vector_stores.utils import DEFAULT_TEXT_KEY
-from llama_index.vector_stores.utils import legacy_metadata_dict_to_node
-from llama_index.vector_stores.utils import metadata_dict_to_node
-from llama_index.vector_stores.utils import node_to_metadata_dict
+from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.vector_stores.types import (
+    BasePydanticVectorStore,
+    MetadataFilters,
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+    VectorStoreQueryResult,
+)
+from llama_index.vector_stores.utils import (
+    DEFAULT_TEXT_KEY,
+    legacy_metadata_dict_to_node,
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
 
 ID_KEY = "id"
 VECTOR_KEY = "values"
@@ -214,7 +210,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
         default_empty_query_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> None:
-
         insert_kwargs = insert_kwargs or {}
 
         if tokenizer is None and add_sparse_vector:
@@ -234,15 +229,21 @@ class PineconeVectorStore(BasePydanticVectorStore):
         )
 
         self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
-            api_key, index_name, environment, **kwargs)
+            api_key, index_name, environment, **kwargs
+        )
 
     @staticmethod
-    def _initialize_pinecone_client(api_key: Optional[str], index_name: Optional[str],
-                                    environment: Optional[str], **kwargs) -> Any:
+    def _initialize_pinecone_client(
+        api_key: Optional[str],
+        index_name: Optional[str],
+        environment: Optional[str],
+        **kwargs,
+    ) -> Any:
         """Initialize Pinecone client based on version."""
         if not index_name:
             raise ValueError(
-                "index_name is required for Pinecone client initialization")
+                "index_name is required for Pinecone client initialization"
+            )
 
         import pinecone
         from packaging.version import parse as parse_version
@@ -252,10 +253,10 @@ class PineconeVectorStore(BasePydanticVectorStore):
             return pinecone_instance.Index(index_name)
 
         if not environment:
-            raise ValueError(
-                "environment is required for Pinecone client < 3.0.0")
-            pinecone.init(api_key=api_key, environment=environment)
-            return pinecone.Index(index_name)
+            raise ValueError("environment is required for Pinecone client < 3.0.0")
+
+        pinecone.init(api_key=api_key, environment=environment)
+        return pinecone.Index(index_name)
 
     @classmethod
     def from_params(
@@ -381,8 +382,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         """
         sparse_vector = None
         if (
-            query.mode in (VectorStoreQueryMode.SPARSE,
-                           VectorStoreQueryMode.HYBRID)
+            query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID)
             and self._tokenizer is not None
         ):
             if query.query_str is None:
