@@ -74,7 +74,7 @@ class OpenAIAgent(AgentRunner):
             memory=memory,
             llm=llm,
             callback_manager=callback_manager,
-            default_tool_choice=default_tool_choice
+            default_tool_choice=default_tool_choice,
         )
 
     @classmethod
