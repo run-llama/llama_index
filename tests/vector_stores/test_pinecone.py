@@ -43,7 +43,7 @@ class MockUnVersionedPineconeRelease:
             pass
 
 
-def get_version_attr_from_mock_classes(mock_class: Type[Any]) -> None:
+def get_version_attr_from_mock_classes(mock_class: Type[Any]) -> str:
     if not hasattr(mock_class, "__version__"):
         raise AttributeError(
             "The version of pinecone you are using does not contain necessary __version__ attribute."
@@ -53,8 +53,7 @@ def get_version_attr_from_mock_classes(mock_class: Type[Any]) -> None:
 
 def mock_import(name: str, *args: Any, **kwargs: Any) -> Callable:
     if name == "pinecone":
-        # type: ignore[name-defined]
-        return MockPineconePods if pods_version else MockPineconeServerless
+        return MockPineconePods if pods_version else MockPineconeServerless  # type: ignore[name-defined]
     return original_import(name, *args, **kwargs)  # type: ignore[name-defined]
 
 

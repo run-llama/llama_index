@@ -168,7 +168,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
     k most similar nodes.
 
     Args:
-        pinecone_index (Optional[pinecone.Index]): Pinecone index instance
+        pinecone_index (Optional[Union[pinecone.Pinecone.Index, pinecone.Index]]): Pinecone index instance,
+        pinecone.Pinecone.Index for clients >= 3.0.0; pinecone.Index for older clients.
         insert_kwargs (Optional[Dict]): insert kwargs during `upsert` call.
         add_sparse_vector (bool): whether to add sparse vector to index.
         tokenizer (Optional[Callable]): tokenizer to use to generate sparse
@@ -196,7 +197,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        pinecone_index: Optional[Any] = None,
+        pinecone_index: Optional[
+            Any
+        ] = None,  # Dynamic import prevents specific type hinting here
         api_key: Optional[str] = None,
         index_name: Optional[str] = None,
         environment: Optional[str] = None,
@@ -237,7 +240,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         api_key: Optional[str],
         index_name: Optional[str],
         environment: Optional[str],
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         """Initialize Pinecone client based on version."""
         if not index_name:
