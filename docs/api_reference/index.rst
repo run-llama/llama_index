@@ -8,6 +8,7 @@ API Reference for the ``llama-index`` package.
 .. toctree::
    :maxdepth: 1
 
+   agents.rst
    callbacks.rst
    composability.rst
    evaluation.rst
@@ -17,6 +18,7 @@ API Reference for the ``llama-index`` package.
    llm_predictor.rst
    llms.rst
    memory.rst
+   multi_modal.rst
    node_postprocessor.rst
    node.rst
    playground.rst

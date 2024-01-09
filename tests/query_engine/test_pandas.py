@@ -7,13 +7,13 @@ from typing import Any, Dict, cast
 
 import pandas as pd
 import pytest
+from llama_index.core.response.schema import Response
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.query_engine.pandas_query_engine import (
     PandasQueryEngine,
     default_output_processor,
 )
-from llama_index.response.schema import Response
 
 
 def test_pandas_query_engine(mock_service_context: ServiceContext) -> None:
@@ -82,6 +82,29 @@ def test_default_output_processor_rce(tmp_path: Path) -> None:
     default_output_processor(injected_code, df)
 
     assert not tmp_file.is_file(), "file has been created via RCE!"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Requires Python 3.9 or higher")
+def test_default_output_processor_rce2() -> None:
+    """
+    Test that output processor prevents RCE.
+    https://github.com/run-llama/llama_index/issues/7054#issuecomment-1829141330 .
+    """
+    df = pd.DataFrame(
+        {
+            "city": ["Toronto", "Tokyo", "Berlin"],
+            "population": [2930000, 13960000, 3645000],
+        }
+    )
+
+    injected_code = "().__class__.__mro__[-1].__subclasses__()[137].__init__.__globals__['system']('ls')"
+
+    output = default_output_processor(injected_code, df)
+
+    assert (
+        "Execution of code containing references to private or dunder methods is forbidden!"
+        in output
+    ), "Injected code executed successfully!"
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="Requires Python 3.9 or higher")

@@ -121,7 +121,7 @@ class TypesenseVectorStore(VectorStore):
     @staticmethod
     def _to_typesense_filter(standard_filters: MetadataFilters) -> str:
         """Convert from standard dataclass to typesense filter dict."""
-        for filter in standard_filters.filters:
+        for filter in standard_filters.legacy_filters():
             if filter.key == "filter_by":
                 return str(filter.value)
 

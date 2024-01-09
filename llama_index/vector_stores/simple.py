@@ -46,7 +46,7 @@ def _build_metadata_filter_fn(
     metadata_filters: Optional[MetadataFilters] = None,
 ) -> Callable[[str], bool]:
     """Build metadata filter function."""
-    filter_list = metadata_filters.filters if metadata_filters else []
+    filter_list = metadata_filters.legacy_filters() if metadata_filters else []
     if not filter_list:
         return lambda _: True
 

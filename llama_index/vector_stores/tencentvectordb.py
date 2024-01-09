@@ -530,9 +530,9 @@ class TencentVectorDB(VectorStore):
                 if type(search_filter) is Filter
                 else Filter(search_filter)
             )
-        elif query.filters is not None:
+        elif query.filters is not None and len(query.filters.legacy_filters()) > 0:
             search_filter = " and ".join(
-                [f'{f.key} = "{f.value}"' for f in query.filters.filters]
+                [f'{f.key} = "{f.value}"' for f in query.filters.legacy_filters()]
             )
             search_filter = Filter(search_filter)
         elif query.doc_ids is not None:

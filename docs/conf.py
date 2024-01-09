@@ -23,7 +23,7 @@ with open("../llama_index/VERSION") as f:
 
 
 project = "LlamaIndex 🦙"
-copyright = "2022, Jerry Liu"
+copyright = "2023, Jerry Liu"
 author = "Jerry Liu"
 
 # -- General configuration ---------------------------------------------------
@@ -42,6 +42,7 @@ extensions = [
     "sphinxcontrib.autodoc_pydantic",
     "sphinx_reredirects",
     "sphinx_automodapi.automodapi",
+    "sphinxcontrib.gtagjs",
 ]
 
 # automodapi requires this to avoid duplicates apparently
@@ -114,3 +115,7 @@ redirects = {
     "core_modules/supporting_modules/evaluation/root": "/en/stable/module_guides/evaluating/root.html",
     "core_modules/supporting_modules/cost_analysis/root": "/en/stable/understanding/evaluating/cost_analysis/root.html",
 }
+
+gtagjs_ids = [
+    "G-BYVB1ZVE6J",
+]

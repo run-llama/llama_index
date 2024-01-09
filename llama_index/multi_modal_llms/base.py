@@ -1,6 +1,5 @@
 from abc import abstractmethod
-from enum import Enum
-from typing import Any, AsyncGenerator, Generator, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.constants import (
@@ -8,75 +7,34 @@ from llama_index.constants import (
     DEFAULT_NUM_INPUT_FILES,
     DEFAULT_NUM_OUTPUTS,
 )
+from llama_index.core.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+)
 from llama_index.schema import BaseComponent, ImageDocument
 
 
-class MessageRole(str, Enum):
-    """Message role."""
-
-    SYSTEM = "system"
-    USER = "user"
-    ASSISTANT = "assistant"
-    FUNCTION = "function"
-
-
-# ===== Generic Model Input - Chat =====
-class ChatMessage(BaseModel):
-    """Chat message."""
-
-    role: MessageRole = MessageRole.USER
-    content: Optional[Any] = ""
-    additional_kwargs: dict = Field(default_factory=dict)
-
-    def __str__(self) -> str:
-        return f"{self.role.value}: {self.content}"
-
-
-# ===== Generic Model Output - Completion =====
-class MultiModalCompletionResponse(BaseModel):
-    """
-    Completion response.
-
-    Fields:
-        text: Text content of the response if not streaming, or if streaming,
-            the current extent of streamed text.
-        additional_kwargs: Additional information on the response(i.e. token
-            counts, function calling information).
-        raw: Optional raw JSON that was parsed to populate text, if relevant.
-        delta: New text that just streamed in (only relevant when streaming).
-    """
-
-    text: str
-    additional_kwargs: dict = Field(default_factory=dict)
-    raw: Optional[dict] = None
-    delta: Optional[str] = None
-
-    def __str__(self) -> str:
-        return self.text
-
-
-MultiModalCompletionResponseGen = Generator[MultiModalCompletionResponse, None, None]
-MultiModalCompletionResponseAsyncGen = AsyncGenerator[
-    MultiModalCompletionResponse, None
-]
-
-
 class MultiModalLLMMetadata(BaseModel):
-    context_window: int = Field(
+    context_window: Optional[int] = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=(
             "Total number of tokens the model can be input when generating a response."
         ),
     )
-    num_output: int = Field(
+    num_output: Optional[int] = Field(
         default=DEFAULT_NUM_OUTPUTS,
         description="Number of tokens the model can output when generating a response.",
     )
-    num_input_files: int = Field(
+    num_input_files: Optional[int] = Field(
         default=DEFAULT_NUM_INPUT_FILES,
         description="Number of input files the model can take when generating a response.",
     )
-    is_function_calling_model: bool = Field(
+    is_function_calling_model: Optional[bool] = Field(
         default=False,
         # SEE: https://openai.com/blog/function-calling-and-other-api-updates
         description=(
@@ -113,23 +71,57 @@ class MultiModalLLM(BaseComponent):
     @abstractmethod
     def complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> MultiModalCompletionResponse:
+    ) -> CompletionResponse:
         """Completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     def stream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> MultiModalCompletionResponseGen:
+    ) -> CompletionResponseGen:
         """Streaming completion endpoint for Multi-Modal LLM."""
+
+    @abstractmethod
+    def chat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Chat endpoint for Multi-Modal LLM."""
+
+    @abstractmethod
+    def stream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponseGen:
+        """Stream chat endpoint for Multi-Modal LLM."""
+
+    # ===== Async Endpoints =====
 
     @abstractmethod
     async def acomplete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> MultiModalCompletionResponse:
+    ) -> CompletionResponse:
         """Async completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     async def astream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
-    ) -> MultiModalCompletionResponseAsyncGen:
+    ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for Multi-Modal LLM."""
+
+    @abstractmethod
+    async def achat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Async chat endpoint for Multi-Modal LLM."""
+
+    @abstractmethod
+    async def astream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponseAsyncGen:
+        """Async streaming chat endpoint for Multi-Modal LLM."""

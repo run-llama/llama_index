@@ -336,7 +336,7 @@ class LanternVectorStore(BasePydanticVectorStore):
             session.commit()
         return ids
 
-    async def async_add(self, nodes: List[BaseNode]) -> List[str]:
+    async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         self._initialize()
         ids = []
         async with self._async_session() as session, session.begin():
@@ -356,7 +356,7 @@ class LanternVectorStore(BasePydanticVectorStore):
         import sqlalchemy
 
         if metadata_filters:
-            for filter_ in metadata_filters.filters:
+            for filter_ in metadata_filters.legacy_filters():
                 bind_parameter = f"value_{filter_.key}"
                 stmt = stmt.where(  # type: ignore
                     sqlalchemy.text(f"metadata_->>'{filter_.key}' = :{bind_parameter}")
@@ -377,7 +377,7 @@ class LanternVectorStore(BasePydanticVectorStore):
         stmt = select(  # type: ignore
             self._table_class,
             func.cos_dist(self._table_class.embedding, embedding),
-        ).order_by(self._table_class.embedding.op("<->")(embedding))
+        ).order_by(self._table_class.embedding.op("<=>")(embedding))
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 

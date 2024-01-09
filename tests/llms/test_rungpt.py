@@ -2,7 +2,7 @@ from typing import Any, Dict, Generator, List
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.llms.base import (
+from llama_index.core.llms.types import (
     ChatMessage,
     MessageRole,
 )

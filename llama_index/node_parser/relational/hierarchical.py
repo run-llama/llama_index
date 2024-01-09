@@ -98,6 +98,8 @@ class HierarchicalNodeParser(NodeParser):
                     chunk_size=chunk_size,
                     callback_manager=callback_manager,
                     chunk_overlap=chunk_overlap,
+                    include_metadata=include_metadata,
+                    include_prev_next_rel=include_prev_next_rel,
                 )
         else:
             if chunk_sizes is not None:

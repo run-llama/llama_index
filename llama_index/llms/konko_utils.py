@@ -11,7 +11,7 @@ from tenacity import (
 )
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import ChatMessage
+from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_KONKO_API_TYPE = "open_ai"

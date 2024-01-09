@@ -42,6 +42,7 @@ class BaseDocumentStore(ABC):
         docs: Sequence[BaseNode],
         allow_update: bool = True,
         batch_insert: bool = False,
+        store_text: bool = True,
     ) -> None:
         ...
 
@@ -65,6 +66,10 @@ class BaseDocumentStore(ABC):
 
     @abstractmethod
     def get_document_hash(self, doc_id: str) -> Optional[str]:
+        ...
+
+    @abstractmethod
+    def get_all_document_hashes(self) -> Dict[str, str]:
         ...
 
     # ==== Ref Docs =====

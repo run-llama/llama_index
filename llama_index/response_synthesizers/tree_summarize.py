@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.prompts import BasePromptTemplate
@@ -70,37 +70,54 @@ class TreeSummarize(BaseSynthesizer):
         if len(text_chunks) == 1:
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
-                response = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm.stream(
                     summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:
-                response = await self._service_context.llm_predictor.apredict(
-                    summary_template,
-                    output_cls=self._output_cls,
-                    context_str=text_chunks[0],
-                    **response_kwargs,
-                )
+                if self._output_cls is None:
+                    response = await self._service_context.llm.apredict(
+                        summary_template,
+                        context_str=text_chunks[0],
+                        **response_kwargs,
+                    )
+                else:
+                    response = await self._service_context.llm.astructured_predict(
+                        self._output_cls,
+                        summary_template,
+                        context_str=text_chunks[0],
+                        **response_kwargs,
+                    )
 
             # return pydantic object if output_cls is specified
-            return (
-                response
-                if self._output_cls is None
-                else self._output_cls.parse_raw(response)
-            )
+            return response
 
         else:
             # summarize each chunk
-            tasks = [
-                self._service_context.llm_predictor.apredict(
-                    summary_template,
-                    output_cls=self._output_cls,
-                    context_str=text_chunk,
-                    **response_kwargs,
-                )
-                for text_chunk in text_chunks
-            ]
+            if self._output_cls is None:
+                tasks = [
+                    self._service_context.llm.apredict(
+                        summary_template,
+                        context_str=text_chunk,
+                        **response_kwargs,
+                    )
+                    for text_chunk in text_chunks
+                ]
+            else:
+                tasks = [
+                    self._service_context.llm.astructured_predict(
+                        self._output_cls,
+                        summary_template,
+                        context_str=text_chunk,
+                        **response_kwargs,
+                    )
+                    for text_chunk in text_chunks
+                ]
 
-            summaries: List[str] = await asyncio.gather(*tasks)
+            summary_responses = await asyncio.gather(*tasks)
+            if self._output_cls is not None:
+                summaries = [summary.json() for summary in summary_responses]
+            else:
+                summaries = summary_responses
 
             # recursively summarize the summaries
             return await self.aget_response(
@@ -129,48 +146,76 @@ class TreeSummarize(BaseSynthesizer):
         if len(text_chunks) == 1:
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
-                response = self._service_context.llm_predictor.stream(
+                response = self._service_context.llm.stream(
                     summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:
-                response = self._service_context.llm_predictor.predict(
-                    summary_template,
-                    output_cls=self._output_cls,
-                    context_str=text_chunks[0],
-                    **response_kwargs,
-                )
+                if self._output_cls is None:
+                    response = self._service_context.llm.predict(
+                        summary_template,
+                        context_str=text_chunks[0],
+                        **response_kwargs,
+                    )
+                else:
+                    response = self._service_context.llm.structured_predict(
+                        self._output_cls,
+                        summary_template,
+                        context_str=text_chunks[0],
+                        **response_kwargs,
+                    )
 
-            # return pydantic object if output_cls is specified
-            return (
-                response
-                if self._output_cls is None
-                else self._output_cls.parse_raw(response)
-            )
+            return response
 
         else:
             # summarize each chunk
             if self._use_async:
-                tasks = [
-                    self._service_context.llm_predictor.apredict(
-                        summary_template,
-                        output_cls=self._output_cls,
-                        context_str=text_chunk,
-                        **response_kwargs,
-                    )
-                    for text_chunk in text_chunks
-                ]
+                if self._output_cls is None:
+                    tasks = [
+                        self._service_context.llm.apredict(
+                            summary_template,
+                            context_str=text_chunk,
+                            **response_kwargs,
+                        )
+                        for text_chunk in text_chunks
+                    ]
+                else:
+                    tasks = [
+                        self._service_context.llm.astructured_predict(
+                            self._output_cls,
+                            summary_template,
+                            context_str=text_chunk,
+                            **response_kwargs,
+                        )
+                        for text_chunk in text_chunks
+                    ]
 
-                summaries: List[str] = run_async_tasks(tasks)
+                summary_responses = run_async_tasks(tasks)
+
+                if self._output_cls is not None:
+                    summaries = [summary.json() for summary in summary_responses]
+                else:
+                    summaries = summary_responses
             else:
-                summaries = [
-                    self._service_context.llm_predictor.predict(
-                        summary_template,
-                        output_cls=self._output_cls,
-                        context_str=text_chunk,
-                        **response_kwargs,
-                    )
-                    for text_chunk in text_chunks
-                ]
+                if self._output_cls is None:
+                    summaries = [
+                        self._service_context.llm.predict(
+                            summary_template,
+                            context_str=text_chunk,
+                            **response_kwargs,
+                        )
+                        for text_chunk in text_chunks
+                    ]
+                else:
+                    summaries = [
+                        self._service_context.llm.structured_predict(
+                            self._output_cls,
+                            summary_template,
+                            context_str=text_chunk,
+                            **response_kwargs,
+                        )
+                        for text_chunk in text_chunks
+                    ]
+                    summaries = [summary.json() for summary in summaries]
 
             # recursively summarize the summaries
             return self.get_response(

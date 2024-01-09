@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, Union
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.llms.base import LLMMetadata
+from llama_index.core.llms.types import LLMMetadata
 from llama_index.llms.openai import OpenAI, Tokenizer
 
 
@@ -34,7 +34,7 @@ class OpenAILike(OpenAI):
             "is_function_calling_model"
         ].field_info.description,
     )
-    tokenizer: Optional[Tokenizer] = Field(
+    tokenizer: Union[Tokenizer, str, None] = Field(
         default=None,
         description=(
             "An instance of a tokenizer object that has an encode method, or the name"

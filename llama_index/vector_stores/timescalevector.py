@@ -133,11 +133,11 @@ class TimescaleVectorStore(VectorStore):
     def _filter_to_dict(
         self, metadata_filters: Optional[MetadataFilters]
     ) -> Optional[Dict[str, str]]:
-        if metadata_filters is None:
+        if metadata_filters is None or len(metadata_filters.legacy_filters()) <= 0:
             return None
 
         res = {}
-        for filter in metadata_filters.filters:
+        for filter in metadata_filters.legacy_filters():
             res[filter.key] = filter.value
 
         return res

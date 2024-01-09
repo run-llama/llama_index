@@ -266,9 +266,9 @@ class MyScaleVectorStore(VectorStore):
             if query.doc_ids
             else None
         )
-        if query.filters is not None:
+        if query.filters is not None and len(query.filters.legacy_filters()) > 0:
             where_str = self._append_meta_filter_condition(
-                where_str, query.filters.filters
+                where_str, query.filters.legacy_filters()
             )
 
         # build query sql
@@ -304,13 +304,13 @@ class MyScaleVectorStore(VectorStore):
                 start_char_idx = r["node_info"].get("start", None)
                 end_char_idx = r["node_info"].get("end", None)
             node = TextNode(
-                id_=r["doc_id"],
+                id_=r["id"],
                 text=r["text"],
                 metadata=r["metadata"],
                 start_char_idx=start_char_idx,
                 end_char_idx=end_char_idx,
                 relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=r["doc_id"])
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=r["id"])
                 },
             )
 

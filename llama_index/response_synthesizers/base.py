@@ -11,15 +11,23 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
-from llama_index.bridge.pydantic import BaseModel
+from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.prompts.mixin import PromptMixin
-from llama_index.response.schema import (
+from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
+from llama_index.core.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
     Response,
     StreamingResponse,
 )
+from llama_index.prompts.mixin import PromptMixin
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.types import RESPONSE_TEXT_TYPE
@@ -29,7 +37,7 @@ logger = logging.getLogger(__name__)
 QueryTextType = Union[str, QueryBundle]
 
 
-class BaseSynthesizer(PromptMixin):
+class BaseSynthesizer(ChainableMixin, PromptMixin):
     """Response builder class."""
 
     def __init__(
@@ -52,6 +60,14 @@ class BaseSynthesizer(PromptMixin):
     @property
     def service_context(self) -> ServiceContext:
         return self._service_context
+
+    @property
+    def callback_manager(self) -> CallbackManager:
+        return self._callback_manager
+
+    @callback_manager.setter
+    def callback_manager(self, callback_manager: CallbackManager) -> None:
+        self._callback_manager = callback_manager
 
     @abstractmethod
     def get_response(
@@ -192,3 +208,59 @@ class BaseSynthesizer(PromptMixin):
             event.on_end(payload={EventPayload.RESPONSE: response})
 
         return response
+
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """As query component."""
+        return SynthesizerComponent(synthesizer=self)
+
+
+class SynthesizerComponent(QueryComponent):
+    """Synthesizer component."""
+
+    synthesizer: BaseSynthesizer = Field(..., description="Synthesizer")
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        self.synthesizer.callback_manager = callback_manager
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        # make sure both query_str and nodes are there
+        if "query_str" not in input:
+            raise ValueError("Input must have key 'query_str'")
+        input["query_str"] = validate_and_convert_stringable(input["query_str"])
+
+        if "nodes" not in input:
+            raise ValueError("Input must have key 'nodes'")
+        nodes = input["nodes"]
+        if not isinstance(nodes, list):
+            raise ValueError("Input nodes must be a list")
+        for node in nodes:
+            if not isinstance(node, NodeWithScore):
+                raise ValueError("Input nodes must be a list of NodeWithScore")
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
+        """Run component."""
+        output = self.synthesizer.synthesize(kwargs["query_str"], kwargs["nodes"])
+        return {"output": output}
+
+    async def _arun_component(self, **kwargs: Any) -> Dict[str, Any]:
+        """Run component."""
+        output = await self.synthesizer.asynthesize(
+            kwargs["query_str"], kwargs["nodes"]
+        )
+        return {"output": output}
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        return InputKeys.from_keys({"query_str", "nodes"})
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"output"})

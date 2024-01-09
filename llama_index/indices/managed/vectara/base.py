@@ -13,7 +13,8 @@ from typing import Any, Dict, List, Optional, Sequence, Type
 
 import requests
 
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
@@ -64,7 +65,10 @@ class VectaraIndex(BaseManagedIndex):
         )
 
         super().__init__(
-            show_progress=show_progress, index_struct=index_struct, **kwargs
+            show_progress=show_progress,
+            index_struct=index_struct,
+            service_context=ServiceContext.from_defaults(llm=None, llm_predictor=None),
+            **kwargs,
         )
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
             "VECTARA_CUSTOMER_ID"

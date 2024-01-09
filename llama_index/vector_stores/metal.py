@@ -17,7 +17,7 @@ from llama_index.vector_stores.utils import (
 
 def _to_metal_filters(standard_filters: MetadataFilters) -> list:
     filters = []
-    for filter in standard_filters.filters:
+    for filter in standard_filters.legacy_filters():
         filters.append(
             {
                 "field": filter.key,

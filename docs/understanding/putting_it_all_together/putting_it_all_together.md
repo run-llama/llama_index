@@ -11,6 +11,10 @@ Congratulations! You've loaded your data, indexed it, stored your index, and que
 - We talk about [building agents in LlamaIndex](agents.md)
 - And last but not least we show you how to build [a full stack web application](apps.md) using LlamaIndex
 
+LlamaIndex also provides some tools / project templates to help you build a full-stack template. For instance, [`create-llama`](https://github.com/run-llama/LlamaIndexTS/tree/main/packages/create-llama) spins up a full-stack scaffold for you.
+
+Check out our [Full-Stack Projects](/community/full_stack_projects.md) page for more details.
+
 ```{toctree}
 ---
 maxdepth: 1
@@ -20,4 +24,5 @@ hidden: true
 /understanding/putting_it_all_together/apps.md
 /understanding/putting_it_all_together/chatbots/building_a_chatbot.md
 /understanding/putting_it_all_together/agents.md
+/community/full_stack_projects.md
 ```

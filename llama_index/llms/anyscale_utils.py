@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Sequence
 
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.core.llms.types import ChatMessage, MessageRole
 
 LLAMA_MODELS = {
     "meta-llama/Llama-2-7b-chat-hf": 4096,
@@ -10,7 +10,8 @@ LLAMA_MODELS = {
 }
 
 MISTRAL_MODELS = {
-    "mistralai/Mistral-7B-Instruct-v0.1": 4096,
+    "mistralai/Mistral-7B-Instruct-v0.1": 16384,
+    "mistralai/Mixtral-8x7B-Instruct-v0.1": 32768,
 }
 
 ALL_AVAILABLE_MODELS = {

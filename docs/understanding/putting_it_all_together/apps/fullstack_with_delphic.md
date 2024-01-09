@@ -329,7 +329,7 @@ async def receive(self, text_data):
 To load the collection model, the `load_collection_model` function is used, which can be found
 in [`delphic/utils/collections.py`](https://github.com/JSv4/Delphic/blob/main/delphic/utils/collections.py). This
 function retrieves the collection object with the given collection ID, checks if a JSON file for the collection model
-exists, and if not, creates one. Then, it sets up the `LLMPredictor` and `ServiceContext` before loading
+exists, and if not, creates one. Then, it sets up the `LLM` and `ServiceContext` before loading
 the `VectorStoreIndex` using the cache file.
 
 ```python

@@ -66,6 +66,7 @@ class KVDocumentStore(BaseDocumentStore):
         nodes: Sequence[BaseNode],
         allow_update: bool = True,
         batch_insert: bool = False,
+        store_text: bool = True,
     ) -> None:
         """Add a document to the store.
 
@@ -75,10 +76,11 @@ class KVDocumentStore(BaseDocumentStore):
 
         """
         if batch_insert:
-            self._kvstore.put_all(
-                [(node.node_id, doc_to_json(node)) for node in nodes],
-                collection=self._node_collection,
-            )
+            if store_text:
+                self._kvstore.put_all(
+                    [(node.node_id, doc_to_json(node)) for node in nodes],
+                    collection=self._node_collection,
+                )
             ref_docs, metadatas = [], []
             for node in nodes:
                 metadata = {"doc_hash": node.hash}
@@ -111,7 +113,9 @@ class KVDocumentStore(BaseDocumentStore):
                     )
                 node_key = node.node_id
                 data = doc_to_json(node)
-                self._kvstore.put(node_key, data, collection=self._node_collection)
+                
+                if store_text:
+                    self._kvstore.put(node_key, data, collection=self._node_collection)
 
                 # update doc_collection if needed
                 metadata = {"doc_hash": node.hash}
@@ -138,6 +142,7 @@ class KVDocumentStore(BaseDocumentStore):
                     self._kvstore.put(
                         node_key, metadata, collection=self._metadata_collection
                     )
+
 
     def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]:
         """Get a document from the store.
@@ -270,3 +275,12 @@ class KVDocumentStore(BaseDocumentStore):
             return metadata.get("doc_hash", None)
         else:
             return None
+
+    def get_all_document_hashes(self) -> Dict[str, str]:
+        """Get the stored hash for all documents."""
+        hashes = {}
+        for doc_id in self._kvstore.get_all(collection=self._metadata_collection):
+            hash = self.get_document_hash(doc_id)
+            if hash is not None:
+                hashes[hash] = doc_id
+        return hashes

@@ -8,7 +8,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.constants import GRAPH_STORE_KEY
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import KG
 from llama_index.graph_stores.simple import SimpleGraphStore
 from llama_index.graph_stores.types import GraphStore
@@ -119,7 +119,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
     def _llm_extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
-        response = self._service_context.llm_predictor.predict(
+        response = self._service_context.llm.predict(
             self.kg_triple_extract_template,
             text=text,
         )

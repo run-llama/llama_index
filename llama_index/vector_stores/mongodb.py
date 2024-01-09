@@ -8,8 +8,6 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
-from pymongo import MongoClient
-
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
@@ -29,7 +27,7 @@ logger = logging.getLogger(__name__)
 def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
     """Convert from standard dataclass to filter dict."""
     filters = {}
-    for filter in standard_filters.filters:
+    for filter in standard_filters.legacy_filters():
         filters[filter.key] = filter.value
     return filters
 
@@ -49,7 +47,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def __init__(
         self,
-        mongodb_client: Optional[MongoClient] = None,
+        mongodb_client: Optional[Any] = None,
         db_name: str = "default_db",
         collection_name: str = "default_collection",
         index_name: str = "default",

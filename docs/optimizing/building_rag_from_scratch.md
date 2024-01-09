@@ -25,7 +25,7 @@ maxdepth: 1
 
 ## Building Vector Retrieval from Scratch
 
-This tutorial shows you how to build a retriever to query an vector store.
+This tutorial shows you how to build a retriever to query a vector store.
 
 ```{toctree}
 ---
@@ -84,6 +84,17 @@ maxdepth: 1
 ## Building Advanced RAG from Scratch
 
 These tutorials will show you how to build advanced functionality beyond the basic RAG pipeline. Especially helpful for advanced users with custom workflows / production needs.
+
+### Building Hybrid Search from Scratch
+
+Hybrid search is an advanced retrieval feature supported by many vector databases. It allows you to combine **dense** retrieval with **sparse** retrieval with matching keywords.
+
+```{toctree}
+---
+maxdepth: 1
+---
+Building Hybrid Search from Scratch </examples/vector_stores/qdrant_hybrid.ipynb>
+```
 
 ### Building a Router from Scratch
 

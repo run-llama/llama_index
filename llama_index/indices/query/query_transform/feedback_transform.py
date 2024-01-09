@@ -3,8 +3,8 @@ from typing import Dict, Optional
 
 from llama_index.evaluation.base import Evaluation
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
-from llama_index.llm_predictor import LLMPredictor
-from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llm_predictor.base import LLMPredictorType
+from llama_index.llms.utils import resolve_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import QueryBundle
@@ -30,7 +30,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
 
     Args:
         eval(Evaluation): An evaluation object.
-        llm_predictor(BaseLLMPredictor): An LLM predictor.
+        llm(LLM): An LLM.
         resynthesize_query(bool): Whether to resynthesize the query.
         resynthesis_prompt(BasePromptTemplate): A prompt for resynthesizing the query.
 
@@ -38,12 +38,12 @@ class FeedbackQueryTransformation(BaseQueryTransform):
 
     def __init__(
         self,
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm: Optional[LLMPredictorType] = None,
         resynthesize_query: bool = False,
         resynthesis_prompt: Optional[BasePromptTemplate] = None,
     ) -> None:
         super().__init__()
-        self.llm_predictor = llm_predictor or LLMPredictor()
+        self.llm = llm or resolve_llm("default")
         self.should_resynthesize_query = resynthesize_query
         self.resynthesis_prompt = resynthesis_prompt or DEFAULT_RESYNTHESIS_PROMPT
 
@@ -106,7 +106,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
         if feedback is None:
             return query_str
         else:
-            new_query_str = self.llm_predictor.predict(
+            new_query_str = self.llm.predict(
                 self.resynthesis_prompt,
                 query_str=query_str,
                 response=response,

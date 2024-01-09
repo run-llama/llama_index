@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Set, Union
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import KeywordTable
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
@@ -219,7 +219,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        response = self._service_context.llm_predictor.predict(
+        response = self._service_context.llm.predict(
             self.keyword_extract_template,
             text=text,
         )
@@ -227,7 +227,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
 
     async def _async_extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        response = await self._service_context.llm_predictor.apredict(
+        response = await self._service_context.llm.apredict(
             self.keyword_extract_template,
             text=text,
         )

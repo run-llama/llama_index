@@ -8,7 +8,7 @@ import logging
 from typing import Any, Callable, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
@@ -80,7 +80,7 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
             query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(summary_nodes)
             # call each batch independently
-            raw_response = self._service_context.llm_predictor.predict(
+            raw_response = self._service_context.llm.predict(
                 self._choice_select_prompt,
                 context_str=fmt_batch_str,
                 query_str=query_str,

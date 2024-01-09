@@ -1,4 +1,4 @@
-from llama_index.llms.base import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,

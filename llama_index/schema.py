@@ -71,8 +71,10 @@ class BaseComponent(BaseModel):
 
         # remove local functions
         keys_to_remove = []
-        for key in state["__dict__"]:
+        for key, val in state["__dict__"].items():
             if key.endswith("_fn"):
+                keys_to_remove.append(key)
+            if "<lambda>" in str(val):
                 keys_to_remove.append(key)
         for key in keys_to_remove:
             state["__dict__"].pop(key, None)
@@ -456,6 +458,7 @@ class ImageNode(TextNode):
     image: Optional[str] = None
     image_path: Optional[str] = None
     image_url: Optional[str] = None
+    image_mimetype: Optional[str] = None
     text_embedding: Optional[List[float]] = Field(
         default=None,
         description="Text embedding of image node, if text field is filled out",
@@ -524,7 +527,8 @@ class NodeWithScore(BaseComponent):
     score: Optional[float] = None
 
     def __str__(self) -> str:
-        return f"{self.node}\nScore: {self.score: 0.3f}\n"
+        score_str = "None" if self.score is None else f"{self.score: 0.3f}"
+        return f"{self.node}\nScore: {score_str}\n"
 
     def get_score(self, raise_error: bool = False) -> float:
         """Get score."""
@@ -756,6 +760,10 @@ class QueryBundle(DataClassJsonMixin):
         if self.image_path is None:
             return []
         return [self.image_path]
+
+    def __str__(self) -> str:
+        """Convert to string representation."""
+        return self.query_str
 
 
 QueryType = Union[str, QueryBundle]

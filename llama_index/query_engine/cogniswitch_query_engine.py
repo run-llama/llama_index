@@ -2,8 +2,8 @@ from typing import Any, Dict
 
 import requests
 
-from llama_index.core import BaseQueryEngine
-from llama_index.response.schema import Response
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.response.schema import Response
 from llama_index.schema import QueryBundle
 
 
