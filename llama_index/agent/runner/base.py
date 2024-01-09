@@ -209,7 +209,7 @@ class AgentRunner(BaseAgentRunner):
         callback_manager: Optional[CallbackManager] = None,
         init_task_state_kwargs: Optional[dict] = None,
         delete_task_on_finish: bool = False,
-        default_tool_choice: str = 'auto',
+        default_tool_choice: str = "auto",
     ) -> None:
         """Initialize."""
         self.agent_worker = agent_worker
