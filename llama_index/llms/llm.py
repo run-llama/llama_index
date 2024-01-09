@@ -7,6 +7,7 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    cast,
     get_args,
     runtime_checkable,
 )
@@ -367,9 +368,9 @@ def get_response_text(response_gen: Generator) -> str:
     response_text = ""
     for response in response_gen:
         if isinstance(response, ChatResponse):
-            response_text += response.delta
+            response_text += cast(str, response.delta)
         elif isinstance(response, CompletionResponse):
-            response_text += response.delta
+            response_text += cast(str, response.delta)
         else:
             raise ValueError(f"Invalid response type: {type(response)}")
 

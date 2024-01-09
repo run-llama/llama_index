@@ -1,7 +1,7 @@
 """Pipeline schema."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generator, Optional, Set, Union, get_args
+from typing import Any, Dict, Generator, Optional, Set, Union, cast, get_args
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
@@ -27,7 +27,7 @@ def validate_and_convert_stringable(input: Any) -> str:
             if not isinstance(elem, get_args(StringableInput)):
                 raise ValueError(f"Input {elem} is not stringable.")
             elif isinstance(elem, (ChatResponse, CompletionResponse)):
-                new_input += elem.delta
+                new_input += cast(str, elem.delta)
             else:
                 new_input += str(elem)
         return new_input
