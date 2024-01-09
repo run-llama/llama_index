@@ -345,7 +345,7 @@ class IngestionPipeline(BaseModel):
         num_batches: int, nodes: Union[List[BaseNode], List[Document]]
     ) -> Generator[Union[List[BaseNode], List[Document]], Any, Any]:
         """Yield successive n-sized chunks from lst."""
-        batch_size = int(len(nodes) / num_batches)
+        batch_size = max(1, int(len(nodes) / num_batches))
         for i in range(0, len(nodes), batch_size):
             yield nodes[i : i + batch_size]
 
