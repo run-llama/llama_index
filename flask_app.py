@@ -1,18 +1,23 @@
 from flask import Flask, request, Response
 from flask_cors import CORS
-from llama_index import SimpleDirectoryReader, ServiceContext, VectorStoreIndex
+from llama_index import SimpleDirectoryReader, VectorStoreIndex
 import os
 import time
 
 index = None
 chat_engine = None
 
+
 def initialize_index():
     global index
     global chat_engine
+    print("reading docs")
     documents = SimpleDirectoryReader("./examples/ncs/faq_data/").load_data()
+    print("creating index")
     index = VectorStoreIndex.from_documents(documents)
+    print("initializing chat engine")
     chat_engine = index.as_chat_engine(chat_mode="context")
+    print("done")
 
 app = Flask(__name__)
 CORS(app)
@@ -36,6 +41,10 @@ def query_index():
   return flask_response
 
 if __name__ == "__main__":
+    file = open("openai_api_key.txt", "r")
+    os.environ['OPENAI_API_KEY'] = str(file.read().strip())
+    print(os.environ['OPENAI_API_KEY'])
+    file.close()
     initialize_index()
     app.run(host="localhost", port=5601)
 
