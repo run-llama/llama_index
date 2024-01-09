@@ -150,6 +150,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
             return_tensors="pt",
         )
 
+        # pop token_type_ids
+        encoded_input.pop("token_type_ids", None)
+
         # move tokenizer inputs to device
         encoded_input = {
             key: val.to(self._device) for key, val in encoded_input.items()
