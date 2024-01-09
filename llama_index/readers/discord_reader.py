@@ -73,6 +73,7 @@ async def read_channel(
     return [
         Document(
             text=msg.content,
+            id_=msg.id,
             metadata={
                 "message_id": msg.id,
                 "username": msg.author.name,
