@@ -1,6 +1,6 @@
 """Sentence splitter."""
 from dataclasses import dataclass
-from typing import Callable, Generator, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
@@ -9,7 +9,6 @@ from llama_index.constants import DEFAULT_CHUNK_SIZE
 from llama_index.node_parser.interface import MetadataAwareTextSplitter
 from llama_index.node_parser.node_utils import default_id_func
 from llama_index.node_parser.text.utils import (
-    SplitCallable,
     split_by_char,
     split_by_regex,
     split_by_sentence_tokenizer,
@@ -59,8 +58,8 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
     _chunking_tokenizer_fn: Callable[[str], List[str]] = PrivateAttr()
     _tokenizer: Callable = PrivateAttr()
-    _split_fns: List[SplitCallable] = PrivateAttr()
-    _sub_sentence_split_fns: List[SplitCallable] = PrivateAttr()
+    _split_fns: List[Callable] = PrivateAttr()
+    _sub_sentence_split_fns: List[Callable] = PrivateAttr()
 
     def __init__(
         self,
@@ -69,7 +68,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         chunk_overlap: int = SENTENCE_CHUNK_OVERLAP,
         tokenizer: Optional[Callable] = None,
         paragraph_separator: str = DEFAULT_PARAGRAPH_SEP,
-        chunking_tokenizer_fn: Optional[SplitCallable] = None,
+        chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
         secondary_chunking_regex: str = CHUNKING_REGEX,
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
@@ -121,7 +120,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         chunk_overlap: int = SENTENCE_CHUNK_OVERLAP,
         tokenizer: Optional[Callable] = None,
         paragraph_separator: str = DEFAULT_PARAGRAPH_SEP,
-        chunking_tokenizer_fn: Optional[SplitCallable] = None,
+        chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
         secondary_chunking_regex: str = CHUNKING_REGEX,
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
@@ -188,23 +187,6 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
         return chunks
 
-    def _split_text_block(
-        self, text_block: str, chunk_size: int, split_fn: SplitCallable
-    ) -> Tuple[List[_Split], List[str]]:
-        block_text_splits = []
-        blocks_for_next_split_fn = []
-        block_generator = self._get_splits_by_fn(text_block, split_fn=split_fn)
-        if block_generator is None:
-            # next split_fn
-            blocks_for_next_split_fn.append(text_block)
-        else:
-            for this_block in block_generator:
-                if self._token_size(this_block) <= chunk_size:
-                    block_text_splits.append(_Split(this_block, is_sentence=True))
-                else:
-                    blocks_for_next_split_fn.append(this_block)
-        return block_text_splits, blocks_for_next_split_fn
-
     def _split(self, text: str, chunk_size: int) -> List[_Split]:
         r"""Break text into splits that are smaller than chunk size.
 
@@ -218,42 +200,18 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         if self._token_size(text) <= chunk_size:
             return [_Split(text, is_sentence=True)]
 
-        new = True
-        if new:
-            split_fns = self._split_fns + self._sub_sentence_split_fns
-            text_splits = []
+        text_splits_by_fns, is_sentence = self._get_splits_by_fns(text)
 
-            # use generators
-            blocks = [text]
-            for split_fn in split_fns:
-                blocks_for_next_split_fn = []
-                for text_block in blocks:
-                    (
-                        this_block_text_splits,
-                        this_blocks_for_next_split_fn,
-                    ) = self._split_text_block(
-                        text_block=text_block, chunk_size=chunk_size, split_fn=split_fn
-                    )
-                    text_splits.extend(this_block_text_splits)
-                    blocks_for_next_split_fn.extend(this_blocks_for_next_split_fn)
-                blocks = blocks_for_next_split_fn
-            return text_splits
-
-        else:
-            text_splits_by_fns, is_sentence = self._get_splits_by_fns(text)
-
-            text_splits = []
-            for text_split_by_fns in text_splits_by_fns:
-                if self._token_size(text_split_by_fns) <= chunk_size:
-                    text_splits.append(
-                        _Split(text_split_by_fns, is_sentence=is_sentence)
-                    )
-                else:
-                    recursive_text_splits = self._split(
-                        text_split_by_fns, chunk_size=chunk_size
-                    )
-                    text_splits.extend(recursive_text_splits)
-            return text_splits
+        text_splits = []
+        for text_split_by_fns in text_splits_by_fns:
+            if self._token_size(text_split_by_fns) <= chunk_size:
+                text_splits.append(_Split(text_split_by_fns, is_sentence=is_sentence))
+            else:
+                recursive_text_splits = self._split(
+                    text_split_by_fns, chunk_size=chunk_size
+                )
+                text_splits.extend(recursive_text_splits)
+        return text_splits
 
     def _merge(self, splits: List[_Split], chunk_size: int) -> List[str]:
         """Merge splits into chunks."""
@@ -348,11 +306,3 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 break
 
         return splits, False
-
-    def _get_splits_by_fn(
-        self, text: str, split_fn: SplitCallable
-    ) -> Optional[Generator[str, None, None]]:
-        splits = split_fn(text=text)
-        if len(splits) > 1:
-            return (s for s in splits)
-        return None
