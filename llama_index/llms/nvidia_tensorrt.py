@@ -5,8 +5,6 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from nvidia_tensorrt_utils import generate_completion_dict, get_output, parse_input
-
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -20,6 +18,11 @@ from llama_index.llms.base import (
 )
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import completion_response_to_chat_response
+from llama_index.llms.nvidia_tensorrt_utils import (
+    generate_completion_dict,
+    get_output,
+    parse_input,
+)
 
 EOS_TOKEN = 2
 PAD_TOKEN = 2

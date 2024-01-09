@@ -1,6 +1,6 @@
 import time
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -62,7 +62,9 @@ def get_output(
     return output_text, outputs
 
 
-def generate_completion_dict(text_str: str, model: Any, model_path: str) -> Dict:
+def generate_completion_dict(
+    text_str: str, model: Any, model_path: Optional[str]
+) -> Dict:
     """
     Generate a dictionary for text completion details.
 
