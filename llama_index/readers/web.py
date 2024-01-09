@@ -292,6 +292,7 @@ class RssReader(BasePydanticReader):
         for url in urls:
             parsed = feedparser.parse(url)
             for entry in parsed.entries:
+                doc_id = entry.id or entry.link
                 if "content" in entry:
                     data = entry.content[0].value
                 else:
@@ -303,7 +304,7 @@ class RssReader(BasePydanticReader):
                     data = html2text.html2text(data)
 
                 metadata = {"title": entry.title, "link": entry.link}
-                documents.append(Document(id_=url, text=data, metadata=metadata))
+                documents.append(Document(id_=doc_id, text=data, metadata=metadata))
 
         return documents
 
