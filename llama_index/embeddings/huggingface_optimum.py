@@ -137,6 +137,10 @@ class OptimumEmbedding(BaseEmbedding):
             truncation=True,
             return_tensors="pt",
         )
+
+        # pop token_type_ids
+        encoded_input.pop("token_type_ids", None)
+
         model_output = self._model(**encoded_input)
 
         if self.pooling == "cls":

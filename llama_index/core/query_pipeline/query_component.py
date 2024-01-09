@@ -1,23 +1,40 @@
 """Pipeline schema."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Set, Union, get_args
+from typing import Any, Dict, Generator, Optional, Set, Union, cast, get_args
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core.llms.types import ChatResponse, CompletionResponse
+from llama_index.core.llms.types import (
+    ChatResponse,
+    CompletionResponse,
+)
 from llama_index.core.response.schema import Response
 from llama_index.schema import QueryBundle
 
 ## Define common types used throughout these components
-StringableInput = Union[CompletionResponse, ChatResponse, str, QueryBundle, Response]
+StringableInput = Union[
+    CompletionResponse, ChatResponse, str, QueryBundle, Response, Generator
+]
 
 
 def validate_and_convert_stringable(input: Any) -> str:
-    """Validate and convert stringable input."""
-    if not isinstance(input, get_args(StringableInput)):
+    # special handling for generator
+    if isinstance(input, Generator):
+        # iterate through each element, make sure is stringable
+        new_input = ""
+        for elem in input:
+            if not isinstance(elem, get_args(StringableInput)):
+                raise ValueError(f"Input {elem} is not stringable.")
+            elif isinstance(elem, (ChatResponse, CompletionResponse)):
+                new_input += cast(str, elem.delta)
+            else:
+                new_input += str(elem)
+        return new_input
+    elif isinstance(input, get_args(StringableInput)):
+        return str(input)
+    else:
         raise ValueError(f"Input {input} is not stringable.")
-    return str(input)
 
 
 class InputKeys(BaseModel):
@@ -118,7 +135,7 @@ class QueryComponent(BaseModel):
         self.partial_dict.update(kwargs)
 
     @abstractmethod
-    def set_callback_manager(self, callback_manager: Any) -> None:
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
         # TODO: refactor so that callback_manager is always passed in during runtime.
 
@@ -191,7 +208,7 @@ class CustomQueryComponent(QueryComponent):
     class Config:
         arbitrary_types_allowed = True
 
-    def set_callback_manager(self, callback_manager: Any) -> None:
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
         self.callback_manager = callback_manager
 

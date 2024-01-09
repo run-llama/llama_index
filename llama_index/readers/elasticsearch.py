@@ -75,10 +75,14 @@ class ElasticsearchReader(BasePydanticReader):
         """
         res = self._client.post(f"{self.index}/_search", json=query).json()
         documents = []
+        doc_id = 0
         for hit in res["hits"]["hits"]:
+            doc_id = hit["_id"]
             value = hit["_source"][field]
             embedding = hit["_source"].get(embedding_field or "", None)
             documents.append(
-                Document(text=value, metadata=hit["_source"], embedding=embedding)
+                Document(
+                    id_=doc_id, text=value, metadata=hit["_source"], embedding=embedding
+                )
             )
         return documents
