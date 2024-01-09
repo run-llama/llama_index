@@ -2,27 +2,26 @@ from collections import ChainMap
 from typing import (
     Any,
     Dict,
-    List,
     Generator,
+    List,
     Optional,
     Protocol,
     Sequence,
     get_args,
     runtime_checkable,
-    Union
 )
 
 from llama_index.bridge.pydantic import BaseModel, Field, validator
 from llama_index.callbacks import CBEventType, EventPayload
 from llama_index.core.llms.types import (
     ChatMessage,
+    ChatResponse,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
-    ChatResponse,
-    CompletionResponse
 )
 from llama_index.core.query_pipeline.query_component import (
     InputKeys,
@@ -45,7 +44,6 @@ from llama_index.types import (
     TokenAsyncGen,
     TokenGen,
 )
-# from llama_index.response.utils import get_response_text
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -375,6 +373,7 @@ def get_response_text(response_gen: Generator) -> str:
         else:
             raise ValueError(f"Invalid response type: {type(response)}")
 
+
 class LLMCompleteComponent(BaseLLMComponent):
     """LLM completion component."""
 
@@ -382,7 +381,7 @@ class LLMCompleteComponent(BaseLLMComponent):
         """Validate component inputs during run_component."""
         if "prompt" not in input:
             raise ValueError("Prompt must be in input dict.")
-        
+
         if isinstance(input["prompt"], Generator):
             # can't check if isinstance of generator, so yolo and try get_response_text
             input["prompt"] = get_response_text(input["prompt"])

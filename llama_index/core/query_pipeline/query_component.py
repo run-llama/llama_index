@@ -1,25 +1,24 @@
 """Pipeline schema."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Set, Union, get_args, Generator
+from typing import Any, Dict, Generator, Optional, Set, Union, get_args
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.llms.types import (
-    ChatResponse, CompletionResponse, ChatResponseGen, ChatResponseAsyncGen, CompletionResponseGen, CompletionResponseAsyncGen
+    ChatResponse,
+    CompletionResponse,
 )
 from llama_index.core.response.schema import Response
 from llama_index.schema import QueryBundle
 
 ## Define common types used throughout these components
 StringableInput = Union[
-    CompletionResponse, ChatResponse, str, QueryBundle, Response,
-    Generator
+    CompletionResponse, ChatResponse, str, QueryBundle, Response, Generator
 ]
 
 
 def validate_and_convert_stringable(input: Any) -> str:
-
     # special handling for generator
     if isinstance(input, Generator):
         # iterate through each element, make sure is stringable
@@ -36,6 +35,7 @@ def validate_and_convert_stringable(input: Any) -> str:
         return str(input)
     else:
         raise ValueError(f"Input {input} is not stringable.")
+
 
 class InputKeys(BaseModel):
     """Input keys."""
