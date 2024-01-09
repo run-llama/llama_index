@@ -339,15 +339,16 @@ class LLM(BaseLLM):
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return query component."""
         if self.metadata.is_chat_model:
-            return LLMChatComponent(llm=self)
+            return LLMChatComponent(llm=self, **kwargs)
         else:
-            return LLMCompleteComponent(llm=self)
+            return LLMCompleteComponent(llm=self, **kwargs)
 
 
-class LLMCompleteComponent(QueryComponent):
-    """LLM completion component."""
+class BaseLLMComponent(QueryComponent):
+    """Base LLM component."""
 
     llm: LLM = Field(..., description="LLM")
+    streaming: bool = Field(default=False, description="Streaming mode")
 
     class Config:
         arbitrary_types_allowed = True
@@ -356,10 +357,15 @@ class LLMCompleteComponent(QueryComponent):
         """Set callback manager."""
         self.llm.callback_manager = callback_manager
 
+
+class LLMCompleteComponent(BaseLLMComponent):
+    """LLM completion component."""
+
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         if "prompt" not in input:
             raise ValueError("Prompt must be in input dict.")
+
         # do special check to see if prompt is a list of chat messages
         if isinstance(input["prompt"], get_args(List[ChatMessage])):
             input["prompt"] = self.llm.messages_to_prompt(input["prompt"])
@@ -376,7 +382,10 @@ class LLMCompleteComponent(QueryComponent):
         # non-trivial to figure how to support chat/complete/etc.
         prompt = kwargs["prompt"]
         # ignore all other kwargs for now
-        response = self.llm.complete(prompt, formatted=True)
+        if self.streaming:
+            response = self.llm.stream_complete(prompt, formatted=True)
+        else:
+            response = self.llm.complete(prompt, formatted=True)
         return {"output": response}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
@@ -400,17 +409,8 @@ class LLMCompleteComponent(QueryComponent):
         return OutputKeys.from_keys({"output"})
 
 
-class LLMChatComponent(QueryComponent):
+class LLMChatComponent(BaseLLMComponent):
     """LLM chat component."""
-
-    llm: LLM = Field(..., description="LLM")
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    def set_callback_manager(self, callback_manager: Any) -> None:
-        """Set callback manager."""
-        self.llm.callback_manager = callback_manager
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -419,6 +419,7 @@ class LLMChatComponent(QueryComponent):
 
         # if `messages` is a string, convert to a list of chat message
         if isinstance(input["messages"], get_args(StringableInput)):
+            input["messages"] = validate_and_convert_stringable(input["messages"])
             input["messages"] = prompt_to_messages(str(input["messages"]))
 
         for message in input["messages"]:
@@ -431,7 +432,10 @@ class LLMChatComponent(QueryComponent):
         # TODO: support only complete for now
         # non-trivial to figure how to support chat/complete/etc.
         messages = kwargs["messages"]
-        response = self.llm.chat(messages)
+        if self.streaming:
+            response = self.llm.stream_chat(messages)
+        else:
+            response = self.llm.chat(messages)
         return {"output": response}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
@@ -439,7 +443,10 @@ class LLMChatComponent(QueryComponent):
         # TODO: support only complete for now
         # non-trivial to figure how to support chat/complete/etc.
         messages = kwargs["messages"]
-        response = await self.llm.achat(messages)
+        if self.streaming:
+            response = await self.llm.astream_chat(messages)
+        else:
+            response = await self.llm.achat(messages)
         return {"output": response}
 
     @property
