@@ -1,5 +1,6 @@
 import multiprocessing
 import re
+import warnings
 from enum import Enum
 from functools import reduce
 from hashlib import sha256
@@ -362,19 +363,17 @@ class IngestionPipeline(BaseModel):
     ) -> Sequence[BaseNode]:
         """
         Args:
-            show_progress (bool, optional): _description_. Defaults to False.
-            documents (Optional[List[Document]], optional): _description_. Defaults to None.
-            nodes (Optional[List[BaseNode]], optional): _description_. Defaults to None.
-            cache_collection (Optional[str], optional): _description_. Defaults to None.
-            in_place (bool, optional): _description_. Defaults to True.
+            show_progress (bool, optional): Shows execution progress bar(s). Defaults to False.
+            documents (Optional[List[Document]], optional): Set of documents to be transformed. Defaults to None.
+            nodes (Optional[List[BaseNode]], optional): Set of nodes to be transformed. Defaults to None.
+            cache_collection (Optional[str], optional): Cache for transformations. Defaults to None.
+            in_place (bool, optional): Whether transformations creates a new list for transformed nodes or modifies the
+                array passed to `run_transformations`. Defaults to True.
             num_workers (Optional[int], optional): The number of parallel processes to use.
                 If set to None, then sequential compute is used. Defaults to None.
 
-        Raises:
-            ValueError: _description_
-
         Returns:
-            Sequence[BaseNode]: _description_
+            Sequence[BaseNode]: The set of transformed Nodes/Documents
         """
         input_nodes = self._prepare_inputs(documents, nodes)
 
@@ -414,6 +413,12 @@ class IngestionPipeline(BaseModel):
             nodes_to_run = input_nodes
 
         if num_workers and num_workers > 1:
+            if num_workers > multiprocessing.cpu_count():
+                warnings.warn(
+                    "Specified num_workers exceed number of CPUs in the system. "
+                    "Setting `num_workers` down to the maximum CPU count."
+                )
+
             with multiprocessing.Pool(num_workers) as p:
                 node_batches = self._node_batcher(
                     num_batches=num_workers, nodes=nodes_to_run
