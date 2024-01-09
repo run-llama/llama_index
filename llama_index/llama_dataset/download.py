@@ -55,6 +55,8 @@ def download_llama_dataset(
         disable_library_cache: Boolean to control library cache
         override_path: Boolean to control overriding path
         show_progress: Boolean for showing progress on downloading source files
+        load_documents: Boolean for whether or not source_files for LabelledRagDataset should
+                        be loaded.
 
     Returns:
         a `BaseLlamaDataset` and a `List[Document]`
