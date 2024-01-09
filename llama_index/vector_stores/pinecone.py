@@ -162,28 +162,6 @@ import_err_msg = (
 )
 
 
-def apply_regex(input_string: str) -> str:
-    """
-    Removes any characters in a package's __version__ name after and including the third period.
-
-    Example:
-    >>> version = apply_regex("3.0.0.dev6")
-    >>> print(version)
-    >>> "3.0.0"
-
-    Args:
-        input_string (str): String you want to apply regex to.
-    """
-    pattern = r"^([^.]+?\.[^.]+(?:\.\d+)?)(?:\..+)?$"
-    match = re.search(pattern, input_string)
-    if match:
-        return match.group(1)
-    else:
-        raise ValueError(
-            f"No valid pattern found in the input string: '{input_string}'"
-        )
-
-
 class PineconeVectorStore(BasePydanticVectorStore):
     """Pinecone Vector Store.
 
@@ -236,39 +214,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
         default_empty_query_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize params."""
-        try:
-            # Dynamic import of pinecone module, needed to simulate different versions of client in tests
-            pinecone = __import__("pinecone")
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        if pinecone_index is not None:
-            # Cast pinecone_index to pinecone.Index type, which is the expected type of self._pinecone_index
-            # See class docstring: "self._pinecone_index (Optional[pinecone.Index]): Pinecone index instance"
-            # type: ignore[name-defined]
-            self._pinecone_index = cast(pinecone.Index, pinecone_index)
-        else:
-            # Pinecone client version >= 3.0.0 has breaking changes to initialization signature
-            if (
-                hasattr(pinecone, "__version__")
-                and apply_regex(pinecone.__version__) >= "3.0.0"
-            ):
-                if index_name is None:
-                    raise ValueError(
-                        "Must specify index_name if not directly passing in client."
-                    )
-                pinecone_instance = pinecone.Pinecone(api_key=api_key)
-                self._pinecone_index = pinecone_instance.Index(index_name)
-            else:
-                if index_name is None or environment is None:
-                    raise ValueError(
-                        "Must specify index_name and environment "
-                        "if not directly passing in client."
-                    )
-
-                pinecone.init(api_key=api_key, environment=environment)
-                self._pinecone_index = pinecone.Index(index_name)
 
         insert_kwargs = insert_kwargs or {}
 
@@ -287,6 +232,30 @@ class PineconeVectorStore(BasePydanticVectorStore):
             batch_size=batch_size,
             remove_text_from_metadata=remove_text_from_metadata,
         )
+
+        self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
+            api_key, index_name, environment, **kwargs)
+
+    @staticmethod
+    def _initialize_pinecone_client(api_key: Optional[str], index_name: Optional[str],
+                                    environment: Optional[str], **kwargs) -> Any:
+        """Initialize Pinecone client based on version."""
+        if not index_name:
+            raise ValueError(
+                "index_name is required for Pinecone client initialization")
+
+        import pinecone
+        from packaging.version import parse as parse_version
+
+        if parse_version(pinecone.__version__) >= parse_version("3.0.0"):
+            pinecone_instance = pinecone.Pinecone(api_key=api_key)
+            return pinecone_instance.Index(index_name)
+
+        if not environment:
+            raise ValueError(
+                "environment is required for Pinecone client < 3.0.0")
+            pinecone.init(api_key=api_key, environment=environment)
+            return pinecone.Index(index_name)
 
     @classmethod
     def from_params(

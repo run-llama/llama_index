@@ -78,6 +78,7 @@ class TestPineconeVectorStore(unittest.TestCase):
 
             assert mocked_version == "2.2.4"
 
+            # PineconeVectorStore calls its own init method when instantiated
             store = PineconeVectorStore(
                 api_key="dummy_key", index_name="dummy_index", environment="dummy_env"
             )
