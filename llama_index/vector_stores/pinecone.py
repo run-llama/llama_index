@@ -9,9 +9,6 @@ from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from packaging import version
-from pkg_resources import get_distribution
-
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
@@ -211,6 +208,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
         default_empty_query_vector: Optional[List[float]] = None,
+        use_pod_based: bool = False,
         **kwargs: Any,
     ) -> None:
         insert_kwargs = insert_kwargs or {}
@@ -232,7 +230,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         )
 
         self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
-            api_key, index_name, environment, **kwargs
+            api_key, index_name, environment, use_pod_based, **kwargs
         )
 
     @staticmethod
@@ -240,6 +238,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         api_key: Optional[str],
         index_name: Optional[str],
         environment: Optional[str],
+        use_pod_based: bool,
         **kwargs: Any,
     ) -> Any:
         """Initialize Pinecone client based on version."""
@@ -249,14 +248,15 @@ class PineconeVectorStore(BasePydanticVectorStore):
             )
 
         import pinecone
-        from packaging.version import parse as parse_version
 
-        if parse_version(pinecone.__version__) >= parse_version("3.0.0"):
+        if not use_pod_based:
             pinecone_instance = pinecone.Pinecone(api_key=api_key)
             return pinecone_instance.Index(index_name)
 
         if not environment:
-            raise ValueError("environment is required for Pinecone client < 3.0.0")
+            raise ValueError(
+                "environment is required for Pod-based Pinecone client usage"
+            )
 
         pinecone.init(api_key=api_key, environment=environment)
         return pinecone.Index(index_name)
@@ -275,21 +275,12 @@ class PineconeVectorStore(BasePydanticVectorStore):
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
         default_empty_query_vector: Optional[List[float]] = None,
+        use_pod_based: bool = False,
         **kwargs: Any,
     ) -> "PineconeVectorStore":
-        try:
-            import pinecone
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        pinecone_client_version = get_distribution("pinecone-client").version
-
-        if version.parse(pinecone_client_version) >= version.parse("3.0.0"):
-            pinecone_instance = pinecone.Pinecone(api_key=api_key)
-            pinecone_index = pinecone_instance.Index(index_name)
-        else:
-            pinecone.init(api_key=api_key, environment=environment)
-            pinecone_index = pinecone.Index(index_name)
+        pinecone_index = cls.initialize_pinecone_client(
+            api_key, index_name, environment, use_pod_based, **kwargs
+        )
 
         return cls(
             pinecone_index=pinecone_index,
