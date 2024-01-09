@@ -1,12 +1,11 @@
-import copyreg
 import multiprocessing
 import re
 from enum import Enum
-from functools import partial, reduce
+from functools import reduce
 from hashlib import sha256
 from itertools import repeat
 from pathlib import Path
-from typing import Any, Callable, Generator, List, Optional, Sequence, Tuple, Union
+from typing import Any, Generator, List, Optional, Sequence, Union
 
 from fsspec import AbstractFileSystem
 
@@ -415,26 +414,7 @@ class IngestionPipeline(BaseModel):
             nodes_to_run = input_nodes
 
         if num_workers and num_workers > 1:
-            import tiktoken
-
             with multiprocessing.Pool(num_workers) as p:
-
-                def pickle_Encoding(
-                    enc: tiktoken.core.Encoding,
-                ) -> Tuple[Callable, Tuple]:
-                    return (
-                        partial(
-                            tiktoken.core.Encoding,
-                            enc.name,
-                            pat_str=enc._pat_str,
-                            mergeable_ranks=enc._mergeable_ranks,
-                            special_tokens=enc._special_tokens,
-                        ),
-                        (),
-                    )
-
-                copyreg.pickle(tiktoken.core.Encoding, pickle_Encoding)
-
                 node_batches = self._node_batcher(
                     num_batches=num_workers, nodes=nodes_to_run
                 )
