@@ -1,8 +1,10 @@
+import asyncio
 import multiprocessing
 import re
 import warnings
+from concurrent.futures import ProcessPoolExecutor
 from enum import Enum
-from functools import reduce
+from functools import partial, reduce
 from hashlib import sha256
 from itertools import repeat
 from pathlib import Path
@@ -116,6 +118,32 @@ async def arun_transformations(
         else:
             nodes = await transform.acall(nodes, **kwargs)
 
+    return nodes
+
+
+def arun_transformations_wrapper(
+    nodes: List[BaseNode],
+    transformations: Sequence[TransformComponent],
+    in_place: bool = True,
+    cache: Optional[IngestionCache] = None,
+    cache_collection: Optional[str] = None,
+    **kwargs: Any,
+) -> List[BaseNode]:
+    """Wrapper for async run_transformation. To be used in loop.run_in_executor
+    within a ProcessPoolExecutor.
+    """
+    loop = asyncio.new_event_loop()
+    nodes = loop.run_until_complete(
+        arun_transformations(
+            nodes=nodes,
+            transformations=transformations,
+            in_place=in_place,
+            cache=cache,
+            cache_collection=cache_collection,
+            **kwargs,
+        )
+    )
+    loop.close()
     return nodes
 
 
@@ -458,6 +486,7 @@ class IngestionPipeline(BaseModel):
         cache_collection: Optional[str] = None,
         in_place: bool = True,
         store_doc_text: bool = True,
+        num_workers: Optional[int] = None,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
         input_nodes = self._prepare_inputs(documents, nodes)
@@ -497,15 +526,44 @@ class IngestionPipeline(BaseModel):
         else:
             nodes_to_run = input_nodes
 
-        nodes = await arun_transformations(
-            nodes_to_run,
-            self.transformations,
-            show_progress=show_progress,
-            cache=self.cache if not self.disable_cache else None,
-            cache_collection=cache_collection,
-            in_place=in_place,
-            **kwargs,
-        )
+        if num_workers and num_workers > 1:
+            if num_workers > multiprocessing.cpu_count():
+                warnings.warn(
+                    "Specified num_workers exceed number of CPUs in the system. "
+                    "Setting `num_workers` down to the maximum CPU count."
+                )
+
+            loop = asyncio.get_event_loop()
+            with ProcessPoolExecutor(max_workers=num_workers) as p:
+                node_batches = self._node_batcher(
+                    num_batches=num_workers, nodes=nodes_to_run
+                )
+                tasks = [
+                    loop.run_in_executor(
+                        p,
+                        partial(
+                            arun_transformations_wrapper,
+                            transformations=self.transformations,
+                            in_place=in_place,
+                            cache=self.cache if not self.disable_cache else None,
+                            cache_collection=cache_collection,
+                        ),
+                        batch,
+                    )
+                    for batch in node_batches
+                ]
+                result: List[List[BaseNode]] = await asyncio.gather(*tasks)
+                nodes = reduce(lambda x, y: x + y, result)
+        else:
+            nodes = await arun_transformations(
+                nodes_to_run,
+                self.transformations,
+                show_progress=show_progress,
+                cache=self.cache if not self.disable_cache else None,
+                cache_collection=cache_collection,
+                in_place=in_place,
+                **kwargs,
+            )
 
         if self.vector_store is not None:
             await self.vector_store.async_add(
