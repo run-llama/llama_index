@@ -2,11 +2,10 @@ import gc
 import json
 import os
 import time
-import uuid
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Sequence
 
-import numpy as np
+from nvidia_tensorrt_utils import generate_completion_dict, get_output, parse_input
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
@@ -71,7 +70,7 @@ class LocalTensorRTLLM(CustomLLM):
     ) -> None:
         try:
             import torch
-            from transformers import LlamaTokenizer
+            from transformers import AutoTokenizer
         except ImportError:
             raise ImportError(
                 "nvidia_tensorrt requires `pip install torch` and `pip install transformers`."
@@ -150,7 +149,7 @@ class LocalTensorRTLLM(CustomLLM):
                     world_size, runtime_rank, tp_size=tp_size, pp_size=pp_size
                 )
                 torch.cuda.set_device(runtime_rank % runtime_mapping.gpus_per_node)
-                self._tokenizer = LlamaTokenizer.from_pretrained(
+                self._tokenizer = AutoTokenizer.from_pretrained(
                     tokenizer_dir, legacy=False
                 )
                 self._sampling_config = SamplingConfig(
@@ -221,7 +220,7 @@ class LocalTensorRTLLM(CustomLLM):
             prompt = self.completion_to_prompt(prompt)
 
         input_text = prompt
-        input_ids, input_lengths = self.parse_input(
+        input_ids, input_lengths = parse_input(
             input_text, self._tokenizer, EOS_TOKEN, self._model_config
         )
 
@@ -240,7 +239,7 @@ class LocalTensorRTLLM(CustomLLM):
             end_time = time.time()
             elapsed_time = end_time - start_time
 
-        output_txt, output_token_ids = self.get_output(
+        output_txt, output_token_ids = get_output(
             output_ids, input_lengths, self._max_new_tokens, self._tokenizer
         )
 
@@ -257,93 +256,9 @@ class LocalTensorRTLLM(CustomLLM):
         gc.collect()
 
         return CompletionResponse(
-            text=output_txt, raw=self.generate_completion_dict(output_txt)
+            text=output_txt,
+            raw=generate_completion_dict(output_txt, self._model, self.model_path),
         )
-
-    def parse_input(
-        self, input_text: str, tokenizer: Any, end_id: int, remove_input_padding: bool
-    ) -> Any:
-        try:
-            import torch
-        except ImportError:
-            raise ImportError("nvidia_tensorrt requires `pip install torch`.")
-
-        input_tokens = []
-
-        input_tokens.append(tokenizer.encode(input_text, add_special_tokens=False))
-
-        input_lengths = torch.tensor(
-            [len(x) for x in input_tokens], dtype=torch.int32, device="cuda"
-        )
-        if remove_input_padding:
-            input_ids = np.concatenate(input_tokens)
-            input_ids = torch.tensor(
-                input_ids, dtype=torch.int32, device="cuda"
-            ).unsqueeze(0)
-        else:
-            input_ids = torch.nested.to_padded_tensor(
-                torch.nested.nested_tensor(input_tokens, dtype=torch.int32), end_id
-            ).cuda()
-
-        return input_ids, input_lengths
-
-    def remove_extra_eos_ids(self, outputs: Any) -> Any:
-        outputs.reverse()
-        while outputs and outputs[0] == 2:
-            outputs.pop(0)
-        outputs.reverse()
-        outputs.append(2)
-        return outputs
-
-    def get_output(
-        self,
-        output_ids: Any,
-        input_lengths: Any,
-        max_output_len: int,
-        tokenizer: Any,
-    ) -> Any:
-        num_beams = output_ids.size(1)
-        output_text = ""
-        outputs = None
-        for b in range(input_lengths.size(0)):
-            for beam in range(num_beams):
-                output_begin = input_lengths[b]
-                output_end = input_lengths[b] + max_output_len
-                outputs = output_ids[b][beam][output_begin:output_end].tolist()
-                outputs = self.remove_extra_eos_ids(outputs)
-                output_text = tokenizer.decode(outputs)
-
-        return output_text, outputs
-
-    def generate_completion_dict(self, text_str: str) -> Dict:
-        """
-        Generate a dictionary for text completion details.
-
-        Returns:
-        dict: A dictionary containing completion details.
-        """
-        completion_id: str = f"cmpl-{uuid.uuid4()!s}"
-        created: int = int(time.time())
-        model_name: str = self._model if self._model is not None else self.model_path
-        return {
-            "id": completion_id,
-            "object": "text_completion",
-            "created": created,
-            "model": model_name,
-            "choices": [
-                {
-                    "text": text_str,
-                    "index": 0,
-                    "logprobs": None,
-                    "finish_reason": "stop",
-                }
-            ],
-            "usage": {
-                "prompt_tokens": None,
-                "completion_tokens": None,
-                "total_tokens": None,
-            },
-        }
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
