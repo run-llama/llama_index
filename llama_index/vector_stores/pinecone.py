@@ -4,31 +4,33 @@ Pinecone Vector store index.
 An index that that is built on top of an existing vector store.
 
 """
-
 import logging
 import re
 from collections import Counter
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any
+from typing import Callable
+from typing import cast
+from typing import Dict
+from typing import List
+from typing import Optional
 
 from packaging import version
 from pkg_resources import get_distribution
 
 from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.vector_stores.types import (
-    BasePydanticVectorStore,
-    MetadataFilters,
-    VectorStoreQuery,
-    VectorStoreQueryMode,
-    VectorStoreQueryResult,
-)
-from llama_index.vector_stores.utils import (
-    DEFAULT_TEXT_KEY,
-    legacy_metadata_dict_to_node,
-    metadata_dict_to_node,
-    node_to_metadata_dict,
-)
+from llama_index.schema import BaseNode
+from llama_index.schema import MetadataMode
+from llama_index.schema import TextNode
+from llama_index.vector_stores.types import BasePydanticVectorStore
+from llama_index.vector_stores.types import MetadataFilters
+from llama_index.vector_stores.types import VectorStoreQuery
+from llama_index.vector_stores.types import VectorStoreQueryMode
+from llama_index.vector_stores.types import VectorStoreQueryResult
+from llama_index.vector_stores.utils import DEFAULT_TEXT_KEY
+from llama_index.vector_stores.utils import legacy_metadata_dict_to_node
+from llama_index.vector_stores.utils import metadata_dict_to_node
+from llama_index.vector_stores.utils import node_to_metadata_dict
 
 ID_KEY = "id"
 VECTOR_KEY = "values"
@@ -244,7 +246,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
         if pinecone_index is not None:
             # Cast pinecone_index to pinecone.Index type, which is the expected type of self._pinecone_index
             # See class docstring: "self._pinecone_index (Optional[pinecone.Index]): Pinecone index instance"
-            self._pinecone_index = cast(pinecone.Index, pinecone_index)  # type: ignore[name-defined]
+            # type: ignore[name-defined]
+            self._pinecone_index = cast(pinecone.Index, pinecone_index)
         else:
             # Pinecone client version >= 3.0.0 has breaking changes to initialization signature
             if (
@@ -409,7 +412,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
         """
         sparse_vector = None
         if (
-            query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID)
+            query.mode in (VectorStoreQueryMode.SPARSE,
+                           VectorStoreQueryMode.HYBRID)
             and self._tokenizer is not None
         ):
             if query.query_str is None:
