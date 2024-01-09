@@ -209,6 +209,7 @@ class AgentRunner(BaseAgentRunner):
         callback_manager: Optional[CallbackManager] = None,
         init_task_state_kwargs: Optional[dict] = None,
         delete_task_on_finish: bool = False,
+        default_tool_choice: str = "auto",
     ) -> None:
         """Initialize."""
         self.agent_worker = agent_worker
@@ -217,6 +218,7 @@ class AgentRunner(BaseAgentRunner):
         self.callback_manager = callback_manager or CallbackManager([])
         self.init_task_state_kwargs = init_task_state_kwargs or {}
         self.delete_task_on_finish = delete_task_on_finish
+        self.default_tool_choice = default_tool_choice
 
     @property
     def chat_history(self) -> List[ChatMessage]:
@@ -477,8 +479,11 @@ class AgentRunner(BaseAgentRunner):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: Optional[Union[str, dict]] = None,
     ) -> AgentChatResponse:
+        # override tool choice is provided as input.
+        if tool_choice is None:
+            tool_choice = self.default_tool_choice
         with self.callback_manager.event(
             CBEventType.AGENT_STEP,
             payload={EventPayload.MESSAGES: [message]},
@@ -495,8 +500,11 @@ class AgentRunner(BaseAgentRunner):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: Optional[Union[str, dict]] = None,
     ) -> AgentChatResponse:
+        # override tool choice is provided as input.
+        if tool_choice is None:
+            tool_choice = self.default_tool_choice
         with self.callback_manager.event(
             CBEventType.AGENT_STEP,
             payload={EventPayload.MESSAGES: [message]},
@@ -513,8 +521,11 @@ class AgentRunner(BaseAgentRunner):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: Optional[Union[str, dict]] = None,
     ) -> StreamingAgentChatResponse:
+        # override tool choice is provided as input.
+        if tool_choice is None:
+            tool_choice = self.default_tool_choice
         with self.callback_manager.event(
             CBEventType.AGENT_STEP,
             payload={EventPayload.MESSAGES: [message]},
@@ -531,8 +542,11 @@ class AgentRunner(BaseAgentRunner):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: Optional[Union[str, dict]] = None,
     ) -> StreamingAgentChatResponse:
+        # override tool choice is provided as input.
+        if tool_choice is None:
+            tool_choice = self.default_tool_choice
         with self.callback_manager.event(
             CBEventType.AGENT_STEP,
             payload={EventPayload.MESSAGES: [message]},
