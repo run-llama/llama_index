@@ -447,6 +447,9 @@ class AgentRunner(BaseAgentRunner):
                 result_output = cur_step_output
                 break
 
+            # ensure tool_choice does not cause endless loops
+            tool_choice = "auto"
+
         return self.finalize_response(task.task_id, result_output)
 
     async def _achat(
@@ -471,6 +474,9 @@ class AgentRunner(BaseAgentRunner):
             if cur_step_output.is_last:
                 result_output = cur_step_output
                 break
+
+            # ensure tool_choice does not cause endless loops
+            tool_choice = "auto"
 
         return self.finalize_response(task.task_id, result_output)
 
