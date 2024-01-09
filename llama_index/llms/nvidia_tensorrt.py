@@ -151,6 +151,11 @@ class LocalTensorRTLLM(CustomLLM):
                 runtime_mapping = tensorrt_llm.Mapping(
                     world_size, runtime_rank, tp_size=tp_size, pp_size=pp_size
                 )
+
+                # TensorRT-LLM must run on a GPU.
+                assert (
+                    torch.cuda.is_available()
+                ), "LocalTensorRTLLM requires a Nvidia CUDA enabled GPU to operate"
                 torch.cuda.set_device(runtime_rank % runtime_mapping.gpus_per_node)
                 self._tokenizer = AutoTokenizer.from_pretrained(
                     tokenizer_dir, legacy=False
