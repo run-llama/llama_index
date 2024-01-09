@@ -12,8 +12,6 @@ from llama_index.schema import BaseNode, TextNode
 
 def md_to_df(md_str: str) -> pd.DataFrame:
     """Convert Markdown to dataframe."""
-    print(">>")
-    print(md_str)
     # Replace " by "" in md_str
     md_str = md_str.replace('"', '""')
 
@@ -31,8 +29,7 @@ def md_to_df(md_str: str) -> pd.DataFrame:
     # Check if the table is empty
     if len(md_str) == 0:
         return None
-    print("CSV>>")
-    print(md_str)
+
     # Use pandas to read the CSV string into a DataFrame
     return pd.read_csv(StringIO(md_str))
 
