@@ -1,8 +1,12 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
 import mimetypes
+import multiprocessing
 import os
+import warnings
 from datetime import datetime
+from functools import reduce
+from itertools import repeat
 from pathlib import Path
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
@@ -98,6 +102,8 @@ class SimpleDirectoryReader(BaseReader):
             Default is None.
     """
 
+    supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
+
     def __init__(
         self,
         input_dir: Optional[str] = None,
@@ -147,7 +153,6 @@ class SimpleDirectoryReader(BaseReader):
         else:
             self.file_extractor = {}
 
-        self.supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
         self.file_metadata = file_metadata or default_file_metadata_func
         self.filename_as_id = filename_as_id
 
@@ -247,6 +252,67 @@ class SimpleDirectoryReader(BaseReader):
 
         return documents
 
+    @staticmethod
+    def load_file(
+        input_file: Path,
+        file_metadata: Callable[[str], Dict],
+        file_extractor: Dict[str, BaseReader],
+        filename_as_id: bool = False,
+        encoding: str = "utf-8",
+        errors: str = "ignore",
+    ) -> List[Document]:
+        metadata: Optional[dict] = None
+        documents: List[Document] = []
+
+        if file_metadata is not None:
+            metadata = file_metadata(str(input_file))
+
+        file_suffix = input_file.suffix.lower()
+        if (
+            file_suffix in SimpleDirectoryReader.supported_suffix
+            or file_suffix in file_extractor
+        ):
+            # use file readers
+            if file_suffix not in file_extractor:
+                # instantiate file reader if not already
+                reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
+                file_extractor[file_suffix] = reader_cls()
+            reader = file_extractor[file_suffix]
+
+            # load data -- catch all errors except for ImportError
+            try:
+                docs = reader.load_data(input_file, extra_info=metadata)
+            except ImportError as e:
+                # ensure that ImportError is raised so user knows
+                # about missing dependencies
+                raise ImportError(str(e))
+            except Exception as e:
+                # otherwise, just skip the file and report the error
+                print(
+                    f"Failed to load file {input_file} with error: {e}. Skipping...",
+                    flush=True,
+                )
+                return []
+
+            # iterate over docs if needed
+            if filename_as_id:
+                for i, doc in enumerate(docs):
+                    doc.id_ = f"{input_file!s}_part_{i}"
+
+            documents.extend(docs)
+        else:
+            # do standard read
+            with open(input_file, errors=errors, encoding=encoding) as f:
+                data = f.read()
+
+            doc = Document(text=data, metadata=metadata or {})
+            if filename_as_id:
+                doc.id_ = str(input_file)
+
+            documents.append(doc)
+
+        return documents
+
     def _load_file(self, input_file: Path) -> List[Document]:
         metadata: Optional[dict] = None
         documents: List[Document] = []
@@ -297,7 +363,9 @@ class SimpleDirectoryReader(BaseReader):
 
         return documents
 
-    def load_data(self, show_progress: bool = False) -> List[Document]:
+    def load_data(
+        self, show_progress: bool = False, num_workers: Optional[int] = None
+    ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
@@ -310,11 +378,46 @@ class SimpleDirectoryReader(BaseReader):
 
         files_to_process = self.input_files
 
-        if show_progress:
-            files_to_process = tqdm(self.input_files, desc="Loading files", unit="file")
+        if num_workers and num_workers > 1:
+            if num_workers > multiprocessing.cpu_count():
+                warnings.warn(
+                    "Specified num_workers exceed number of CPUs in the system. "
+                    "Setting `num_workers` down to the maximum CPU count."
+                )
+            with multiprocessing.Pool(num_workers) as p:
+                # batches = batcher(
+                #     num_batches=num_workers,
+                #     list=[p.resolve() for p in files_to_process],
+                # )
+                results = p.starmap(
+                    SimpleDirectoryReader.load_file,
+                    zip(
+                        files_to_process,
+                        repeat(self.file_metadata),
+                        repeat(self.file_extractor),
+                        repeat(self.filename_as_id),
+                        repeat(self.encoding),
+                        repeat(self.errors),
+                    ),
+                )
+                documents = reduce(lambda x, y: x + y, results)
 
-        for input_file in files_to_process:
-            documents.extend(self._load_file(input_file))
+        else:
+            if show_progress:
+                files_to_process = tqdm(
+                    self.input_files, desc="Loading files", unit="file"
+                )
+            for input_file in files_to_process:
+                documents.extend(
+                    SimpleDirectoryReader.load_file(
+                        input_file=input_file,
+                        file_metadata=self.file_metadata,
+                        file_extractor=self.file_extractor,
+                        filename_as_id=self.filename_as_id,
+                        encoding=self.encoding,
+                        errors=self.errors,
+                    )
+                )
 
         return self._exclude_metadata(documents)
 
