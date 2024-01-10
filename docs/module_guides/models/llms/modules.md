@@ -149,7 +149,7 @@ maxdepth: 1
 /examples/llm/monsterapi.ipynb
 ```
 
-## Nvidia TensorRT
+## Nvidia TensorRT-LLM
 
 ```{toctree}
 ---
