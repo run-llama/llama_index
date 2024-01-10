@@ -441,17 +441,15 @@ def test_parallel_load() -> None:
         with open(f"{tmp_dir}/test5.json", "w") as f:
             f.write("test5")
 
-        reader = SimpleDirectoryReader(
-            tmp_dir,
-        )
+        reader = SimpleDirectoryReader(tmp_dir, filename_as_id=True)
         num_workers = min(2, cpu_count())
         documents = reader.load_data(num_workers=num_workers)
 
         doc_paths = [
             f"{tmp_dir}/test1.txt",
-            f"{tmp_dir}/test2.txt",
-            f"{tmp_dir}/test3.txt",
-            f"{tmp_dir}/test4.md",
+            f"{tmp_dir}/test2.md",
+            f"{tmp_dir}/test3.tmp",
+            f"{tmp_dir}/test4.json",
             f"{tmp_dir}/test5.json",
         ]
 
