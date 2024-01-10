@@ -1,3 +1,14 @@
+from llama_index.core.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.llms.ai21 import AI21
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anyscale import Anyscale
@@ -19,6 +30,7 @@ from llama_index.llms.localai import LOCALAI_DEFAULTS, LocalAI
 from llama_index.llms.mistral import MistralAI
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.monsterapi import MonsterLLM
+from llama_index.llms.nvidia_tensorrt import LocalTensorRTLLM
 from llama_index.llms.nvidia_triton import NvidiaTriton
 from llama_index.llms.ollama import Ollama
 from llama_index.llms.openai import OpenAI
@@ -77,6 +89,7 @@ __all__ = [
     "LlamaCPP",
     "LocalAI",
     "LOCALAI_DEFAULTS",
+    "LocalTensorRTLLM",
     "MessageRole",
     "MockLLM",
     "MonsterLLM",

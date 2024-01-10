@@ -1,3 +1,4 @@
+import asyncio
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type
 
@@ -14,7 +15,8 @@ def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     """Sync to async."""
 
     async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
-        return fn(*args, **kwargs)
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: fn(*args, **kwargs))
 
     return _async_wrapped_fn
 

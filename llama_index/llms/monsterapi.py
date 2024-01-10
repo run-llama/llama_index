@@ -3,15 +3,15 @@ from typing import Any, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.custom import CustomLLM
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_MONSTER_TEMP = 0.75
@@ -120,9 +120,10 @@ class MonsterLLM(CustomLLM):
         return self.complete(prompt, formatted=True, **kwargs)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        is_formatted = kwargs.pop("formatted", False)
-        if not is_formatted:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
         # Validate input args against input Pydantic model
@@ -138,5 +139,7 @@ class MonsterLLM(CustomLLM):
         return CompletionResponse(text=result["text"])
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError

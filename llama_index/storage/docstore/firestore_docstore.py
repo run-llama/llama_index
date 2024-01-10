@@ -1,6 +1,7 @@
 from typing import Optional
 
 from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
+from llama_index.storage.docstore.types import DEFAULT_BATCH_SIZE
 from llama_index.storage.kvstore.firestore_kvstore import FirestoreKVStore
 
 
@@ -19,9 +20,10 @@ class FirestoreDocumentStore(KVDocumentStore):
         self,
         firestore_kvstore: FirestoreKVStore,
         namespace: Optional[str] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         """Init a FirestoreDocumentStore."""
-        super().__init__(firestore_kvstore, namespace)
+        super().__init__(firestore_kvstore, namespace=namespace, batch_size=batch_size)
 
     @classmethod
     def from_database(

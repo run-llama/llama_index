@@ -2,6 +2,7 @@ import json
 from typing import Any, Callable, Dict, List, Optional
 
 from llama_index.bridge.pydantic import Field, root_validator
+from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.llms.llm import LLM
 from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.memory.types import DEFAULT_CHAT_STORE_KEY, BaseMemory
@@ -68,6 +69,7 @@ class ChatMemoryBuffer(BaseMemory):
             token_limit=token_limit,
             tokenizer_fn=tokenizer_fn or get_tokenizer(),
             chat_store=chat_store or SimpleChatStore(),
+            chat_store_key=chat_store_key,
         )
 
     def to_string(self) -> str:

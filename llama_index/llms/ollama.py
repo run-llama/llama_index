@@ -6,9 +6,7 @@ from httpx import Timeout
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
@@ -17,6 +15,8 @@ from llama_index.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.custom import CustomLLM
 
 DEFAULT_REQUEST_TIMEOUT = 30.0
 
@@ -165,7 +165,9 @@ class Ollama(CustomLLM):
                         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         payload = {
             self.prompt_key: prompt,
             "model": self.model,
@@ -189,7 +191,9 @@ class Ollama(CustomLLM):
             )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         payload = {
             self.prompt_key: prompt,
             "model": self.model,

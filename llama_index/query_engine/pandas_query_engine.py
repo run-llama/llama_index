@@ -13,13 +13,13 @@ from typing import Any, Callable, Optional
 import numpy as np
 import pandas as pd
 
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.response.schema import Response
 from llama_index.exec_utils import safe_eval, safe_exec
 from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.mixin import PromptMixinType
-from llama_index.response.schema import Response
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.utils import print_text

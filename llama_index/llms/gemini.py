@@ -6,6 +6,14 @@ from typing import Any, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
+from llama_index.core.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
@@ -17,14 +25,6 @@ from llama_index.llms.gemini_utils import (
     chat_message_to_gemini,
     completion_from_gemini_response,
     merge_neighboring_same_role_messages,
-)
-from llama_index.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseGen,
-    LLMMetadata,
 )
 
 if typing.TYPE_CHECKING:
@@ -138,11 +138,15 @@ class Gemini(CustomLLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         result = self._model.generate_content(prompt, **kwargs)
         return completion_from_gemini_response(result)
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         it = self._model.generate_content(prompt, stream=True, **kwargs)
         yield from map(completion_from_gemini_response, it)
 

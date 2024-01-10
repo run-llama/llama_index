@@ -1,15 +1,6 @@
 from typing import Any, Sequence
 
-from llama_index.llms.base import (
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.llms.generic_utils import (
-    completion_to_chat_decorator,
-    stream_completion_to_chat_decorator,
-)
-from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -17,6 +8,15 @@ from llama_index.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
 )
+from llama_index.llms.base import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.llm import LLM
 
 
 class CustomLLM(LLM):
@@ -28,15 +28,17 @@ class CustomLLM(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        chat_fn = completion_to_chat_decorator(self.complete)
-        return chat_fn(messages, **kwargs)
+        prompt = self.messages_to_prompt(messages)
+        completion_response = self.complete(prompt, formatted=True, **kwargs)
+        return completion_response_to_chat_response(completion_response)
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        stream_chat_fn = stream_completion_to_chat_decorator(self.stream_complete)
-        return stream_chat_fn(messages, **kwargs)
+        prompt = self.messages_to_prompt(messages)
+        completion_response_gen = self.stream_complete(prompt, formatted=True, **kwargs)
+        return stream_completion_response_to_chat_response(completion_response_gen)
 
     @llm_chat_callback()
     async def achat(
@@ -60,15 +62,17 @@ class CustomLLM(LLM):
         return gen()
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        return self.complete(prompt, **kwargs)
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        return self.complete(prompt, formatted=formatted, **kwargs)
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         async def gen() -> CompletionResponseAsyncGen:
-            for message in self.stream_complete(prompt, **kwargs):
+            for message in self.stream_complete(prompt, formatted=formatted, **kwargs):
                 yield message
 
         # NOTE: convert generator to async generator

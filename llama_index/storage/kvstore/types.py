@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 import fsspec
 
@@ -14,7 +14,31 @@ class BaseKVStore(ABC):
         pass
 
     @abstractmethod
+    async def aput(
+        self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def put_all(
+        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def aput_all(
+        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        pass
+
+    @abstractmethod
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
+        pass
+
+    @abstractmethod
+    async def aget(
+        self, key: str, collection: str = DEFAULT_COLLECTION
+    ) -> Optional[dict]:
         pass
 
     @abstractmethod
@@ -22,7 +46,15 @@ class BaseKVStore(ABC):
         pass
 
     @abstractmethod
+    async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+        pass
+
+    @abstractmethod
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        pass
+
+    @abstractmethod
+    async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         pass
 
 

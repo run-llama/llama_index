@@ -11,6 +11,9 @@ from typing import Callable, Optional
 
 # import global eval handler
 from llama_index.callbacks.global_handlers import set_global_handler
+
+# response
+from llama_index.core.response.schema import Response
 from llama_index.data_structs.struct_type import IndexStructType
 
 # embeddings
@@ -61,10 +64,10 @@ from llama_index.prompts import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.readers import SimpleDirectoryReader, download_loader
-
-# response
-from llama_index.response.schema import Response
+from llama_index.readers import (
+    SimpleDirectoryReader,
+    download_loader,
+)
 
 # Response Synthesizer
 from llama_index.response_synthesizers.factory import get_response_synthesizer
@@ -126,30 +129,8 @@ __all__ = [
     "KeywordExtractPrompt",
     "QueryKeywordExtractPrompt",
     "Response",
-    "WikipediaReader",
-    "ObsidianReader",
     "Document",
     "SimpleDirectoryReader",
-    "JSONReader",
-    "SimpleMongoReader",
-    "NotionPageReader",
-    "GoogleDocsReader",
-    "MboxReader",
-    "SlackReader",
-    "StringIterableReader",
-    "WeaviateReader",
-    "FaissReader",
-    "ChromaReader",
-    "DeepLakeReader",
-    "PineconeReader",
-    "PsychicReader",
-    "QdrantReader",
-    "MilvusReader",
-    "DiscordReader",
-    "SimpleWebPageReader",
-    "RssReader",
-    "BeautifulSoupWebReader",
-    "TrafilaturaWebReader",
     "LLMPredictor",
     "MockLLMPredictor",
     "VellumPredictor",
@@ -160,9 +141,7 @@ __all__ = [
     "SQLContextBuilder",
     "PromptHelper",
     "IndexStructType",
-    "TwitterTweetReader",
     "download_loader",
-    "GithubRepositoryReader",
     "load_graph_from_storage",
     "load_index_from_storage",
     "load_indices_from_storage",

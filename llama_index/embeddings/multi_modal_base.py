@@ -5,7 +5,7 @@ from abc import abstractmethod
 from typing import Coroutine, List, Tuple
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.embeddings.base import (
+from llama_index.core.embeddings.base import (
     BaseEmbedding,
     Embedding,
 )

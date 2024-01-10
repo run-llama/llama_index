@@ -2,12 +2,12 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
+from llama_index.core.llms.types import ChatMessage, LLMMetadata
 from llama_index.llms.anyscale_utils import (
     anyscale_modelname_to_contextsize,
 )
 from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.types import ChatMessage, LLMMetadata
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"

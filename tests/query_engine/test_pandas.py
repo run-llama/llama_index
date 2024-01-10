@@ -7,13 +7,13 @@ from typing import Any, Dict, cast
 
 import pandas as pd
 import pytest
+from llama_index.core.response.schema import Response
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.query_engine.pandas_query_engine import (
     PandasQueryEngine,
     default_output_processor,
 )
-from llama_index.response.schema import Response
 
 
 def test_pandas_query_engine(mock_service_context: ServiceContext) -> None:

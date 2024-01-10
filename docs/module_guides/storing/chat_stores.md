@@ -11,10 +11,10 @@ The most basic chat store is `SimpleChatStore`, which stores messages in memory 
 Typically, you will insansiate a chat store and give it to a memory module. Memory modules that use chat stores will default to using `SimpleChatStore` if not provided.
 
 ```python
-from llama_index.storage.chat_stores import SimpleChatStore
+from llama_index.storage.chat_store import SimpleChatStore
 from llama_index.memory import ChatMemoryBuffer
 
-chat_store = SimpleChatStore(chat_store_)
+chat_store = SimpleChatStore()
 
 chat_memory = ChatMemoryBuffer.from_defaults(
     token_limit=3000,
@@ -45,4 +45,21 @@ Or you can convert to/from a string, saving the string somewhere else along the 
 ```python
 chat_store_string = chat_store.json()
 loaded_chat_store = SimpleChatStore.parse_raw(chat_store_string)
+```
+
+## RedisChatStore
+
+Using `RedisChatStore`, you can store your chat history remotely, without having to worry abouyt manually persisting and loading the chat history.
+
+```python
+from llama_index.storage.chat_store import RedisChatStore
+from llama_index.memory import ChatMemoryBuffer
+
+chat_store = RedisChatStore(redis_url="redis://localhost:6379", ttl=300)
+
+chat_memory = ChatMemoryBuffer.from_defaults(
+    token_limit=3000,
+    chat_store=chat_store,
+    chat_store_key="user1",
+)
 ```

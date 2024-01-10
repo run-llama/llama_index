@@ -2,13 +2,7 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.generic_utils import (
-    completion_to_chat_decorator,
-    stream_completion_to_chat_decorator,
-)
-from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -18,6 +12,12 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.generic_utils import (
+    completion_to_chat_decorator,
+    stream_completion_to_chat_decorator,
+)
+from llama_index.llms.llm import LLM
 from llama_index.llms.watsonx_utils import (
     WATSONX_MODELS,
     get_from_param_or_env_without_error,
@@ -149,7 +149,9 @@ class WatsonX(LLM):
         return {**self._model_kwargs, **kwargs}
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         response = self._model.generate_text(prompt=prompt, params=all_kwargs)
@@ -157,7 +159,9 @@ class WatsonX(LLM):
         return CompletionResponse(text=response)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         stream_response = self._model.generate_text_stream(
@@ -191,7 +195,9 @@ class WatsonX(LLM):
     # Async Functions
     # IBM Watson Machine Learning Package currently does not have Support for Async calls
 
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         raise NotImplementedError
 
     async def astream_chat(
@@ -205,6 +211,6 @@ class WatsonX(LLM):
         raise NotImplementedError
 
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError

@@ -6,13 +6,13 @@ from openai import AzureOpenAI as SyncAzureOpenAI
 
 from llama_index.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.callbacks import CallbackManager
+from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import (
     refresh_openai_azuread_token,
     resolve_from_aliases,
 )
-from llama_index.llms.types import ChatMessage
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
@@ -171,6 +171,7 @@ class AzureOpenAI(OpenAI):
             "api_version": self.api_version,
             "default_headers": self.default_headers,
             "http_client": self._http_client,
+            **kwargs,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
