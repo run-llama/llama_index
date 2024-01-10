@@ -5,6 +5,7 @@ An index that that is built on top of an existing vector store.
 
 """
 import logging
+import os
 from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
@@ -189,6 +190,10 @@ class PineconeVectorStore(BasePydanticVectorStore):
     batch_size: int
     remove_text_from_metadata: bool
 
+    use_pod_based: bool = (
+        True  # Continue with v3 behavior, unless explicitly overridden
+    )
+
     _pinecone_index: Any = PrivateAttr()
     _tokenizer: Optional[Callable] = PrivateAttr()
 
@@ -229,9 +234,20 @@ class PineconeVectorStore(BasePydanticVectorStore):
             remove_text_from_metadata=remove_text_from_metadata,
         )
 
-        self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
-            api_key, index_name, environment, use_pod_based, **kwargs
-        )
+        if not isinstance(pinecone_index, str):
+            self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
+                api_key, index_name, environment, use_pod_based, **kwargs
+            )
+        else:
+            if not os.getenv("PINECONE_API_KEY"):
+                raise OSError("PINECONE_API_KEY environment variable is required.")
+            if not pinecone_index == index_name:
+                raise ValueError(
+                    "The string value for `pinecone_index` must match the string value for `index_name`."
+                )
+            self._pinecone_index = self._initialize_pinecone_client(
+                api_key, index_name, environment, use_pod_based, **kwargs
+            )
 
     @staticmethod
     def _initialize_pinecone_client(
