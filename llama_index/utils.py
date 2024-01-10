@@ -24,7 +24,6 @@ from typing import (
     Protocol,
     Set,
     Type,
-    TypeVar,
     Union,
     runtime_checkable,
 )
@@ -498,13 +497,3 @@ async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
         Any: the single element
     """
     yield x
-
-
-T = TypeVar("T")
-
-
-def batcher(num_batches: int, list: List[T]) -> Generator[List[T], Any, Any]:
-    """Yield successive n-sized chunks from list."""
-    batch_size = max(1, int(len(list) / num_batches))
-    for i in range(0, len(list), batch_size):
-        yield list[i : i + batch_size]
