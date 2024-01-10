@@ -183,6 +183,24 @@ A full walkthrough is found in our [demo notebook](/examples/ingestion/document_
 
 Also check out another guide using [Redis as our entire ingestion stack](/examples/ingestion/redis_ingestion_pipeline.ipynb).
 
+## Parallel Processing
+
+The `run` method of `IngestionPipeline` can be executed with parallel processes.
+It does so by making use of `multiprocessing.Pool` distributing batches of nodes
+to across processors.
+
+To execute with parallel processing, set `num_workers` to the number of processes
+you'd like use:
+
+```python
+from llama_index.ingestion import IngestionPipeline
+
+pipeline = IngestionPipeline(
+    transformations=[...],
+)
+pipeline.run(documents=[...], num_workers=4)
+```
+
 ## Modules
 
 ```{toctree}
@@ -195,4 +213,5 @@ transformations.md
 /examples/ingestion/document_management_pipeline.ipynb
 /examples/ingestion/redis_ingestion_pipeline.ipynb
 /examples/ingestion/ingestion_gdrive.ipynb
+/examples/ingestion/parallel_execution_ingestion_pipeline.ipynb
 ```
