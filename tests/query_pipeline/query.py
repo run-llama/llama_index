@@ -3,9 +3,9 @@
 from typing import Any, Dict
 
 import pytest
+from llama_index.core.query_pipeline.components import InputComponent
 from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
-    InputComponent,
     InputKeys,
     OutputKeys,
     QueryComponent,

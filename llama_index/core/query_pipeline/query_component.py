@@ -1,7 +1,7 @@
 """Pipeline schema."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generator, Optional, Set, Union, cast, get_args, Callable
+from typing import Any, Dict, Generator, Optional, Set, Union, cast, get_args
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
@@ -253,4 +253,3 @@ class CustomQueryComponent(QueryComponent):
         # NOTE: user can override this too, but we have them implement an
         # abstract method to make sure they do it
         return OutputKeys.from_keys(self._output_keys)
-
