@@ -33,9 +33,13 @@ documents = reader.load_data()
 ```
 
 Documents can also be loaded with parallel processing if loading many files from
-a directory.
+a directory. Note that there are differences when using `multiprocessing` with
+Windows and Linux/MacOS machines, which is explained throughout the `multiprocessing` docs
+(e.g. see [here](https://docs.python.org/3/library/multiprocessing.html?highlight=process#the-spawn-and-forkserver-start-methods)).
+Ultimately, Windows users may see less or no performance gains whereas Linux/MacOS
+users would see these gains when loading the exact same set of files.
 
-```
+```python
 ...
 documents = reader.load_data(num_workers=4)
 ```
