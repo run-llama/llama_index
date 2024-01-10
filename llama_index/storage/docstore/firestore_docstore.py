@@ -29,7 +29,6 @@ class FirestoreDocumentStore(KVDocumentStore):
         project: str,
         database: str,
         namespace: Optional[str] = None,
-        use_async: bool = False,
     ) -> "FirestoreDocumentStore":
         """
         Args:
@@ -37,7 +36,5 @@ class FirestoreDocumentStore(KVDocumentStore):
             database (str): The database name that the client targets.
             namespace (str): namespace for the docstore.
         """
-        firestore_kvstore = FirestoreKVStore(
-            project=project, database=database, use_async=use_async
-        )
+        firestore_kvstore = FirestoreKVStore(project=project, database=database)
         return cls(firestore_kvstore, namespace)

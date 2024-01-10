@@ -29,14 +29,14 @@ def test_kvstore_basic(firestore_kvstore: FirestoreKVStore) -> None:
 
 @pytest.mark.asyncio()
 @pytest.mark.skipif(firestore is None, reason="firestore not installed")
-async def test_kvstore_async(firestore_kvstore_async: FirestoreKVStore) -> None:
+async def test_kvstore_async(firestore_kvstore: FirestoreKVStore) -> None:
     test_key = "test_key"
     test_doc = {"test_obj_key": "test_obj_val"}
-    await firestore_kvstore_async.aput(test_key, test_doc)
-    doc = await firestore_kvstore_async.aget(test_key)
+    await firestore_kvstore.aput(test_key, test_doc)
+    doc = await firestore_kvstore.aget(test_key)
     assert doc == test_doc
 
-    doc = await firestore_kvstore_async.aget(test_key, collection="non_existent")
+    doc = await firestore_kvstore.aget(test_key, collection="non_existent")
     assert doc is None
 
 

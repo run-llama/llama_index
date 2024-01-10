@@ -53,7 +53,7 @@ def test_firestore_docstore(
     assert len(ds.docs) == 0
 
     # test bulk insert
-    ds.add_documents(documents, batch_insert=True)
+    ds.add_documents(documents, batch_size=len(documents))
     assert len(ds.docs) == 2
     assert all(isinstance(doc, BaseNode) for doc in ds.docs.values())
 

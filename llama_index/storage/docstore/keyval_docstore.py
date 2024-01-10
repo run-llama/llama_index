@@ -3,7 +3,11 @@
 from typing import Dict, Optional, Sequence
 
 from llama_index.schema import BaseNode, TextNode
-from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
+from llama_index.storage.docstore.types import (
+    DEFAULT_BATCH_SIZE,
+    BaseDocumentStore,
+    RefDocInfo,
+)
 from llama_index.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.storage.kvstore.types import BaseKVStore
 
@@ -65,7 +69,7 @@ class KVDocumentStore(BaseDocumentStore):
         self,
         nodes: Sequence[BaseNode],
         allow_update: bool = True,
-        batch_insert: bool = False,
+        batch_size: int = DEFAULT_BATCH_SIZE,
         store_text: bool = True,
     ) -> None:
         """Add a document to the store.
@@ -75,7 +79,7 @@ class KVDocumentStore(BaseDocumentStore):
             allow_update (bool): allow update of docstore from document
 
         """
-        if batch_insert:
+        if batch_size > 1:
             if store_text:
                 self._kvstore.put_all(
                     [(node.node_id, doc_to_json(node)) for node in nodes],
@@ -113,7 +117,7 @@ class KVDocumentStore(BaseDocumentStore):
                     )
                 node_key = node.node_id
                 data = doc_to_json(node)
-                
+
                 if store_text:
                     self._kvstore.put(node_key, data, collection=self._node_collection)
 
@@ -142,7 +146,6 @@ class KVDocumentStore(BaseDocumentStore):
                     self._kvstore.put(
                         node_key, metadata, collection=self._metadata_collection
                     )
-
 
     def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]:
         """Get a document from the store.

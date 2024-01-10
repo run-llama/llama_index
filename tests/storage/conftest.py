@@ -23,11 +23,6 @@ def firestore_kvstore() -> FirestoreKVStore:
 
 
 @pytest.fixture()
-def firestore_kvstore_async() -> FirestoreKVStore:
-    return FirestoreKVStore(use_async=True)
-
-
-@pytest.fixture()
 def simple_kvstore() -> SimpleKVStore:
     return SimpleKVStore()
 

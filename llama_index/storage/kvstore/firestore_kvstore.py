@@ -27,7 +27,6 @@ class FirestoreKVStore(BaseKVStore):
         self,
         project: Optional[str] = None,
         database: str = DEFAULT_FIRESTORE_DATABASE,
-        use_async: bool = False,
     ) -> None:
         try:
             from google.cloud.firestore_v1.async_client import AsyncClient
@@ -40,10 +39,9 @@ class FirestoreKVStore(BaseKVStore):
 
         client_info = DEFAULT_CLIENT_INFO
         client_info.user_agent = USER_AGENT
-        if use_async:
-            self._adb = AsyncClient(
-                project=project, database=database, client_info=client_info
-            )
+        self._adb = AsyncClient(
+            project=project, database=database, client_info=client_info
+        )
         self._db = Client(project=project, database=database, client_info=client_info)
 
     def firestore_collection(self, collection: str) -> str:
