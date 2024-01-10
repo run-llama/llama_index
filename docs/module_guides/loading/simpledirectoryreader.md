@@ -32,6 +32,14 @@ reader = SimpleDirectoryReader(input_dir="path/to/directory")
 documents = reader.load_data()
 ```
 
+Documents can also be loaded with parallel processing if loading many files from
+a directory.
+
+```
+...
+documents = reader.load_data(num_workers=4)
+```
+
 ### Reading from subdirectories
 
 By default, `SimpleDirectoryReader` will only read files in the top level of the directory. To read from subdirectories, set `recursive=True`:
