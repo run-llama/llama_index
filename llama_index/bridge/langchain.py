@@ -8,13 +8,8 @@ from langchain.base_language import BaseLanguageModel
 # callback
 from langchain.callbacks.base import BaseCallbackHandler, BaseCallbackManager
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.chat_models import ChatAnyscale, ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.docstore.document import Document
-from langchain.embeddings import HuggingFaceBgeEmbeddings, HuggingFaceEmbeddings
-
-# LLMs
-from langchain.llms import AI21, BaseLLM, Cohere, FakeListLLM, OpenAI
 from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 
 # chat and memory
@@ -51,6 +46,14 @@ from langchain.schema.prompt_template import BasePromptTemplate
 # input & output
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from langchain.tools import BaseTool, StructuredTool, Tool
+from langchain_community.chat_models import ChatAnyscale, ChatOpenAI
+from langchain_community.embeddings import (
+    HuggingFaceBgeEmbeddings,
+    HuggingFaceEmbeddings,
+)
+
+# LLMs
+from langchain_community.llms import AI21, BaseLLM, Cohere, FakeListLLM, OpenAI
 
 __all__ = [
     "langchain",
