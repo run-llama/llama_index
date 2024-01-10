@@ -85,7 +85,10 @@ def test_kwarg_component() -> None:
     arg_c = KwargPackComponent()
     assert arg_c.run_component(a=1, b=2) == {"output": {"a": 1, "b": 2}}
 
-    convert_fn = lambda x: list(x.values())
+    def convert_fn(d: dict) -> list:
+        """Convert."""
+        return list(d.values())
+
     convert_c = FnComponent(fn=convert_fn)
     sum_c = FnComponent(fn=sum_fn)
 
