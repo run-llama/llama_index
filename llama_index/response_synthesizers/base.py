@@ -67,7 +67,13 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
     @callback_manager.setter
     def callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
         self._callback_manager = callback_manager
+        # TODO: please fix this later
+        self._service_context.callback_manager = callback_manager
+        self._service_context.llm.callback_manager = callback_manager
+        self._service_context.embed_model.callback_manager = callback_manager
+        self._service_context.node_parser.callback_manager = callback_manager
 
     @abstractmethod
     def get_response(
