@@ -4,4 +4,4 @@ COPY . .
 
 RUN pip3 install -r requirements.txt
 
-CMD ["python3", "flask_app.py"]
+CMD ["python3", "app.py"]

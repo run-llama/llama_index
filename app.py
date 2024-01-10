@@ -43,8 +43,6 @@ def query_index():
 if __name__ == "__main__":
     file = open("openai_api_key.txt", "r")
     os.environ['OPENAI_API_KEY'] = str(file.read().strip())
-    print(os.environ['OPENAI_API_KEY'])
     file.close()
     initialize_index()
-    app.run(host="localhost", port=5601)
-
+    app.run(host="0.0.0.0", port=5601)
