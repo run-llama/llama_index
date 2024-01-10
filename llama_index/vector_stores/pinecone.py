@@ -254,7 +254,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         api_key: Optional[str],
         index_name: Optional[str],
         environment: Optional[str],
-        use_pod_based: bool,
+        use_pod_based: Optional[bool],
         **kwargs: Any,
     ) -> Any:
         """Initialize Pinecone client based on version."""

@@ -1,4 +1,6 @@
+import os
 import unittest
+from typing import Optional
 from unittest.mock import patch
 
 import pytest
@@ -7,7 +9,7 @@ from llama_index.vector_stores.pinecone import PineconeVectorStore
 
 class MockPineconePods:
     @staticmethod
-    def init(api_key: str, environment: str) -> None:
+    def init(api_key: Optional[str], environment: str) -> None:
         pass
 
     class Index:
@@ -15,7 +17,7 @@ class MockPineconePods:
             pass
 
     class Pinecone:
-        def __init__(self, api_key: str) -> None:
+        def __init__(self, api_key: Optional[str]) -> None:
             pass
 
         def Index(self, index_name: str) -> None:
@@ -24,7 +26,7 @@ class MockPineconePods:
 
 class MockPineconeServerless:
     class Pinecone:
-        def __init__(self, api_key: str) -> None:
+        def __init__(self, api_key: Optional[str]) -> None:
             self.api_key = api_key
 
         def Index(self, index_name: str) -> "MockPineconeServerless.Index":
@@ -64,17 +66,17 @@ class TestPineconeVectorStore(unittest.TestCase):
     def test_str_value_for_pinecone_index_param_does_not_match_str_value_for_index_name_param(
         self,
     ) -> None:
+        os.environ["PINECONE_API_KEY"] = "some-key"
+        api_key = os.getenv("PINECONE_API_KEY")
         str_pinecone_index = "some-string-representing-an-existing-pinecone-index"
         with patch(
             "llama_index.vector_stores.pinecone.PineconeVectorStore._initialize_pinecone_client",
-            return_value=MockPineconeServerless.Pinecone("dummy_key").Index(
-                "dummy_index"
-            ),
+            return_value=MockPineconeServerless.Pinecone(api_key).Index("dummy_index"),
         ):  # MockPineconeServerless vs MockPineconePods is arbitrary for this test
             with pytest.raises(ValueError) as e:
                 store = PineconeVectorStore(
                     pinecone_index=str_pinecone_index,
-                    api_key="dummy_key",
+                    api_key=api_key,
                     index_name="dummy_index",
                     use_pod_based=False,
                 )
@@ -86,16 +88,18 @@ class TestPineconeVectorStore(unittest.TestCase):
     def test_str_value_for_pinecone_index_param_gets_transformed_into_index_obj(
         self,
     ) -> None:
+        os.environ["PINECONE_API_KEY"] = "some-key"
+        api_key = os.getenv("PINECONE_API_KEY")
         str_pinecone_index = "some-string-representing-an-existing-pinecone-index"
         with patch(
             "llama_index.vector_stores.pinecone.PineconeVectorStore._initialize_pinecone_client",
-            return_value=MockPineconeServerless.Pinecone("dummy_key").Index(
+            return_value=MockPineconeServerless.Pinecone(api_key).Index(
                 str_pinecone_index
             ),
         ):  # MockPineconeServerless vs MockPineconePods is arbitrary for this test
             store = PineconeVectorStore(
                 pinecone_index=str_pinecone_index,
-                api_key="dummy_key",
+                api_key=api_key,
                 index_name=str_pinecone_index,
             )
             self.assertIsInstance(store._pinecone_index, MockPineconeServerless.Index)
