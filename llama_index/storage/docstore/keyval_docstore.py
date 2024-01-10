@@ -46,6 +46,7 @@ class KVDocumentStore(BaseDocumentStore):
         self,
         kvstore: BaseKVStore,
         namespace: Optional[str] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         """Init a KVDocumentStore."""
         self._kvstore = kvstore
@@ -53,6 +54,7 @@ class KVDocumentStore(BaseDocumentStore):
         self._node_collection = f"{self._namespace}/data"
         self._ref_doc_collection = f"{self._namespace}/ref_doc_info"
         self._metadata_collection = f"{self._namespace}/metadata"
+        self._batch_size = batch_size
 
     @property
     def docs(self) -> Dict[str, BaseNode]:
@@ -69,7 +71,7 @@ class KVDocumentStore(BaseDocumentStore):
         self,
         nodes: Sequence[BaseNode],
         allow_update: bool = True,
-        batch_size: int = DEFAULT_BATCH_SIZE,
+        batch_size: Optional[int] = None,
         store_text: bool = True,
     ) -> None:
         """Add a document to the store.
@@ -79,6 +81,7 @@ class KVDocumentStore(BaseDocumentStore):
             allow_update (bool): allow update of docstore from document
 
         """
+        batch_size = batch_size or self._batch_size
         if batch_size > 1:
             if store_text:
                 self._kvstore.put_all(
