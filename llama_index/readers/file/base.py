@@ -261,6 +261,33 @@ class SimpleDirectoryReader(BaseReader):
         encoding: str = "utf-8",
         errors: str = "ignore",
     ) -> List[Document]:
+        """Static method for loading file.
+
+        NOTE: necessarily as a static method for parallel processing.
+
+        Args:
+            input_file (Path): _description_
+            file_metadata (Callable[[str], Dict]): _description_
+            file_extractor (Dict[str, BaseReader]): _description_
+            filename_as_id (bool, optional): _description_. Defaults to False.
+            encoding (str, optional): _description_. Defaults to "utf-8".
+            errors (str, optional): _description_. Defaults to "ignore".
+
+        input_file (Path): File path to read
+        file_metadata ([Callable[str, Dict]]): A function that takes
+            in a filename and returns a Dict of metadata for the Document.
+        file_extractor (Dict[str, BaseReader]): A mapping of file
+            extension to a BaseReader class that specifies how to convert that file
+            to text.
+        filename_as_id (bool): Whether to use the filename as the document id.
+        encoding (str): Encoding of the files.
+            Default is utf-8.
+        errors (str): how encoding and decoding errors are to be handled,
+              see https://docs.python.org/3/library/functions.html#open
+
+        Returns:
+            List[Document]: loaded documents
+        """
         metadata: Optional[dict] = None
         documents: List[Document] = []
 
@@ -313,56 +340,6 @@ class SimpleDirectoryReader(BaseReader):
 
         return documents
 
-    def _load_file(self, input_file: Path) -> List[Document]:
-        metadata: Optional[dict] = None
-        documents: List[Document] = []
-
-        if self.file_metadata is not None:
-            metadata = self.file_metadata(str(input_file))
-
-        file_suffix = input_file.suffix.lower()
-        if file_suffix in self.supported_suffix or file_suffix in self.file_extractor:
-            # use file readers
-            if file_suffix not in self.file_extractor:
-                # instantiate file reader if not already
-                reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
-                self.file_extractor[file_suffix] = reader_cls()
-            reader = self.file_extractor[file_suffix]
-
-            # load data -- catch all errors except for ImportError
-            try:
-                docs = reader.load_data(input_file, extra_info=metadata)
-            except ImportError as e:
-                # ensure that ImportError is raised so user knows
-                # about missing dependencies
-                raise ImportError(str(e))
-            except Exception as e:
-                # otherwise, just skip the file and report the error
-                print(
-                    f"Failed to load file {input_file} with error: {e}. Skipping...",
-                    flush=True,
-                )
-                return []
-
-            # iterate over docs if needed
-            if self.filename_as_id:
-                for i, doc in enumerate(docs):
-                    doc.id_ = f"{input_file!s}_part_{i}"
-
-            documents.extend(docs)
-        else:
-            # do standard read
-            with open(input_file, errors=self.errors, encoding=self.encoding) as f:
-                data = f.read()
-
-            doc = Document(text=data, metadata=metadata or {})
-            if self.filename_as_id:
-                doc.id_ = str(input_file)
-
-            documents.append(doc)
-
-        return documents
-
     def load_data(
         self, show_progress: bool = False, num_workers: Optional[int] = None
     ) -> List[Document]:
@@ -385,10 +362,6 @@ class SimpleDirectoryReader(BaseReader):
                     "Setting `num_workers` down to the maximum CPU count."
                 )
             with multiprocessing.Pool(num_workers) as p:
-                # batches = batcher(
-                #     num_batches=num_workers,
-                #     list=[p.resolve() for p in files_to_process],
-                # )
                 results = p.starmap(
                     SimpleDirectoryReader.load_file,
                     zip(
@@ -438,7 +411,14 @@ class SimpleDirectoryReader(BaseReader):
             files_to_process = tqdm(self.input_files, desc="Loading files", unit="file")
 
         for input_file in files_to_process:
-            documents = self._load_file(input_file)
+            documents = SimpleDirectoryReader.load_file(
+                input_file=input_file,
+                file_metadata=self.file_metadata,
+                file_extractor=self.file_extractor,
+                filename_as_id=self.filename_as_id,
+                encoding=self.encoding,
+                errors=self.errors,
+            )
 
             documents = self._exclude_metadata(documents)
 
