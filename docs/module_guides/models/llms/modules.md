@@ -158,7 +158,7 @@ maxdepth: 1
 /examples/llm/nvidia_tensorrt.ipynb
 ```
 
-## Nivida Triton
+## Nvidia Triton
 
 ```{toctree}
 ---
