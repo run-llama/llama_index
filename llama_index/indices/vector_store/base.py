@@ -259,9 +259,15 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             VectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
-        nodes = [
-            node for node in nodes if node.get_content(metadata_mode=MetadataMode.EMBED)
-        ]
+        # raise an error if even one node has no content
+        if any(
+            node.get_content(metadata_mode=MetadataMode.EMBED) == "" for node in nodes
+        ):
+            raise ValueError(
+                "Cannot build index from nodes with no content. "
+                "Please ensure all nodes have content."
+            )
+
         return self._build_index_from_nodes(nodes, **insert_kwargs)
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
