@@ -1,8 +1,13 @@
 """Test components."""
-from typing import Any
+from typing import Any, List
 
 import pytest
-from llama_index.core.query_pipeline.components import FnComponent, InputComponent
+from llama_index.core.query_pipeline.components import (
+    ArgPackComponent,
+    FnComponent,
+    InputComponent,
+    KwargPackComponent,
+)
 from llama_index.query_pipeline.query import QueryPipeline
 
 
@@ -14,6 +19,11 @@ def foo_fn(a: int, b: int = 1, c: int = 2) -> int:
 def bar_fn(a: Any, b: Any) -> str:
     """Bar function."""
     return str(a) + ":" + str(b)
+
+
+def sum_fn(a: List[int]) -> int:
+    """Mock list function."""
+    return sum(a)
 
 
 def test_fn_components() -> None:
@@ -57,3 +67,27 @@ def test_fn_pipeline() -> None:
     p2.add_link("foo2", "bar", dest_key="b")
     output = p2.run(a=1)
     assert output == "7:7"
+
+
+def test_arg_component() -> None:
+    """Test arg component."""
+    arg_c = ArgPackComponent()
+    assert arg_c.run_component(a=1, b=2) == {"output": [1, 2]}
+
+    sum_c = FnComponent(fn=sum_fn)
+
+    p = QueryPipeline(chain=[arg_c, sum_c])
+    assert p.run(a=1, b=2) == 3
+
+
+def test_kwarg_component() -> None:
+    """Test kwarg component."""
+    arg_c = KwargPackComponent()
+    assert arg_c.run_component(a=1, b=2) == {"output": {"a": 1, "b": 2}}
+
+    convert_fn = lambda x: list(x.values())
+    convert_c = FnComponent(fn=convert_fn)
+    sum_c = FnComponent(fn=sum_fn)
+
+    p = QueryPipeline(chain=[arg_c, convert_c, sum_c])
+    assert p.run(tmp=3, tmp2=2) == 5

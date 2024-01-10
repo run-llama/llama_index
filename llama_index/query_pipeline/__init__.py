@@ -1,8 +1,10 @@
 """Init file."""
 
 from llama_index.core.query_pipeline.components import (
+    ArgPackComponent,
     FnComponent,
     InputComponent,
+    KwargPackComponent,
 )
 from llama_index.core.query_pipeline.query_component import (
     CustomQueryComponent,
@@ -18,4 +20,6 @@ __all__ = [
     "CustomQueryComponent",
     "InputComponent",
     "FnComponent",
+    "ArgPackComponent",
+    "KwargPackComponent",
 ]
