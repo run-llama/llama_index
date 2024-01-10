@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 import fsspec
 
@@ -32,6 +32,25 @@ class SimpleKVStore(BaseInMemoryKVStore):
             self._data[collection] = {}
         self._data[collection][key] = val.copy()
 
+    async def aput(
+        self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        """Put a key-value pair into the store."""
+        self.put(key, val, collection)
+
+    def put_all(
+        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        """Put a dictionary of key-value pairs into the store."""
+        for key, val in kv_pairs:
+            self.put(key, val, collection)
+
+    async def aput_all(
+        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        """Put a dictionary of key-value pairs into the store."""
+        self.put_all(kv_pairs, collection)
+
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a value from the store."""
         collection_data = self._data.get(collection, None)
@@ -41,9 +60,19 @@ class SimpleKVStore(BaseInMemoryKVStore):
             return None
         return collection_data[key].copy()
 
+    async def aget(
+        self, key: str, collection: str = DEFAULT_COLLECTION
+    ) -> Optional[dict]:
+        """Get a value from the store."""
+        return self.get(key, collection)
+
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store."""
         return self._data.get(collection, {}).copy()
+
+    async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+        """Get all values from the store."""
+        return self.get_all(collection)
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the store."""
@@ -52,6 +81,10 @@ class SimpleKVStore(BaseInMemoryKVStore):
             return True
         except KeyError:
             return False
+
+    async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        """Delete a value from the store."""
+        return self.delete(key, collection)
 
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None

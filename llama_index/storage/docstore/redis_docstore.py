@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
+from llama_index.storage.docstore.types import DEFAULT_BATCH_SIZE
 from llama_index.storage.kvstore.redis_kvstore import RedisKVStore
 
 
@@ -19,9 +20,10 @@ class RedisDocumentStore(KVDocumentStore):
         self,
         redis_kvstore: RedisKVStore,
         namespace: Optional[str] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         """Init a RedisDocumentStore."""
-        super().__init__(redis_kvstore, namespace)
+        super().__init__(redis_kvstore, namespace=namespace, batch_size=batch_size)
         # avoid conflicts with redis index store
         self._node_collection = f"{self._namespace}/doc"
 

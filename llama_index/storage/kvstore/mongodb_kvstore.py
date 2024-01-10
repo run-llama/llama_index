@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 
@@ -115,6 +115,46 @@ class MongoDBKVStore(BaseKVStore):
             upsert=True,
         )
 
+    async def aput(
+        self,
+        key: str,
+        val: dict,
+        collection: str = DEFAULT_COLLECTION,
+    ) -> None:
+        """Put a key-value pair into the store.
+
+        Args:
+            key (str): key
+            val (dict): value
+            collection (str): collection name
+
+        """
+        raise NotImplementedError
+
+    def put_all(
+        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        """Put a dictionary of key-value pairs into the store.
+
+        Args:
+            kv_pairs (List[Tuple[str, dict]]): key-value pairs
+            collection (str): collection name
+
+        """
+        raise NotImplementedError
+
+    async def aput_all(
+        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        """Put a dictionary of key-value pairs into the store.
+
+        Args:
+            kv_pairs (List[Tuple[str, dict]]): key-value pairs
+            collection (str): collection name
+
+        """
+        raise NotImplementedError
+
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a value from the store.
 
@@ -128,6 +168,18 @@ class MongoDBKVStore(BaseKVStore):
             result.pop("_id")
             return result
         return None
+
+    async def aget(
+        self, key: str, collection: str = DEFAULT_COLLECTION
+    ) -> Optional[dict]:
+        """Get a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+
+        """
+        raise NotImplementedError
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store.
@@ -143,6 +195,15 @@ class MongoDBKVStore(BaseKVStore):
             output[key] = result
         return output
 
+    async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+        """Get all values from the store.
+
+        Args:
+            collection (str): collection name
+
+        """
+        raise NotImplementedError
+
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the store.
 
@@ -153,3 +214,13 @@ class MongoDBKVStore(BaseKVStore):
         """
         result = self._db[collection].delete_one({"_id": key})
         return result.deleted_count > 0
+
+    async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        """Delete a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+
+        """
+        raise NotImplementedError
