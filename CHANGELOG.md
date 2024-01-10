@@ -1,5 +1,19 @@
 # ChangeLog
 
+## [0.9.29] - 2024-01-10
+
+### New Features
+
+- Added support for together.ai models (#9962)
+- Added support for batch redis/firestore kvstores, async firestore kvstore (#9827)
+- Parallelize `IngestionPipeline.run()` (#9920)
+- Added new query pipeline components: function, argpack, kwargpack (#9952)
+
+### Bug Fixes / Nits
+
+- Updated optional langchain imports to avoid warnings (#9964)
+- Raise an error if empty nodes are embedded (#9953)
+
 ## [0.9.28] - 2024-01-09
 
 ### New Features
