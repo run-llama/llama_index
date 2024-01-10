@@ -42,6 +42,18 @@ from llama_index.llms.perplexity import Perplexity
 from llama_index.llms.portkey import Portkey
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
+from llama_index.llms.together import TogetherLLM
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.llms.vertex import Vertex
 from llama_index.llms.vllm import Vllm, VllmServer
 from llama_index.llms.watsonx import WatsonX
@@ -94,6 +106,7 @@ __all__ = [
     "Portkey",
     "PredibaseLLM",
     "Replicate",
+    "TogetherLLM",
     "WatsonX",
     "Xinference",
     "Vllm",
