@@ -166,6 +166,10 @@ class ArgPackComponent(QueryComponent):
 
     """
 
+    convert_fn: Optional[Callable] = Field(
+        default=None, description="Function to convert output."
+    )
+
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         raise NotImplementedError
@@ -189,6 +193,8 @@ class ArgPackComponent(QueryComponent):
         # combine all lists into one
         output = []
         for v in kwargs.values():
+            if self.convert_fn is not None:
+                v = self.convert_fn(v)
             output.append(v)
         return {"output": output}
 
@@ -215,6 +221,10 @@ class KwargPackComponent(QueryComponent):
 
     """
 
+    convert_fn: Optional[Callable] = Field(
+        default=None, description="Function to convert output."
+    )
+
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
         raise NotImplementedError
@@ -235,6 +245,9 @@ class KwargPackComponent(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
+        if self.convert_fn is not None:
+            for k, v in kwargs.items():
+                kwargs[k] = self.convert_fn(v)
         return {"output": kwargs}
 
     async def _arun_component(self, **kwargs: Any) -> Any:

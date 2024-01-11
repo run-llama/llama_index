@@ -251,6 +251,23 @@ async def test_query_pipeline_async() -> None:
     output = await p.arun(input1=2, input2=2)
     assert output == "4:foo"
 
+    # Test input component
+    # test connecting different inputs to different components
+    qc1 = QueryComponent1()
+    qc2 = QueryComponent2()
+    inp = InputComponent()
+    p = QueryPipeline()
+    p.add_modules({"qc1": qc1, "qc2": qc2, "inp": inp})
+    # add inp.inp1 to both qc1.input1 and qc2.input2
+    p.add_link("inp", "qc1", src_key="inp1", dest_key="input1")
+    p.add_link("inp", "qc2", src_key="inp1", dest_key="input2")
+    # add inp.inp2 to qc1.input2
+    p.add_link("inp", "qc1", src_key="inp2", dest_key="input2")
+    # add qc1 to qc2.input1
+    p.add_link("qc1", "qc2", dest_key="input1")
+    output = await p.arun(inp1=1, inp2=2)
+    assert output == "3:1"
+
     # try run run_multi
     # link both qc1_0 and qc1_1 to qc2
     qc1_0 = QueryComponent1()
