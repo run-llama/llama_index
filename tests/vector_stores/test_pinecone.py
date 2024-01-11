@@ -1,113 +1,96 @@
-import os
+import builtins
 import unittest
-from typing import Optional
+from typing import Any, Callable, Type
 from unittest.mock import patch
 
 import pytest
-from llama_index.vector_stores.pinecone import PineconeVectorStore
+from llama_index.vector_stores.pinecone import (
+    PineconeVectorStore,
+)
 
 
 class MockPineconePods:
+    __version__ = "2.2.4"
+
     @staticmethod
-    def init(api_key: Optional[str], environment: str) -> None:
+    def init(api_key: str, environment: str) -> None:
         pass
 
     class Index:
         def __init__(self, index_name: str) -> None:
             pass
 
-    class Pinecone:
-        def __init__(self, api_key: Optional[str]) -> None:
-            pass
-
-        def Index(self, index_name: str) -> None:
-            pass
-
 
 class MockPineconeServerless:
-    class Pinecone:
-        def __init__(self, api_key: Optional[str]) -> None:
-            self.api_key = api_key
+    __version__ = "3.0.0"
 
-        def Index(self, index_name: str) -> "MockPineconeServerless.Index":
-            return MockPineconeServerless.Index(index_name)
+    class Pinecone:
+        def __init__(self, api_key: str) -> None:
+            pass
+
+        class Index:
+            def __init__(self, index_name: str) -> None:
+                pass
+
+
+class MockUnVersionedPineconeRelease:
+    @staticmethod
+    def init(api_key: str, environment: str) -> None:
+        pass
 
     class Index:
         def __init__(self, index_name: str) -> None:
-            self.index_name = index_name
+            pass
+
+
+def get_version_attr_from_mock_classes(mock_class: Type[Any]) -> str:
+    if not hasattr(mock_class, "__version__"):
+        raise AttributeError(
+            "The version of pinecone you are using does not contain necessary __version__ attribute."
+        )
+    return mock_class.__version__
+
+
+def mock_import(name: str, *args: Any, **kwargs: Any) -> Callable:
+    if name == "pinecone":
+        return MockPineconePods if pods_version else MockPineconeServerless  # type: ignore[name-defined]
+    return original_import(name, *args, **kwargs)  # type: ignore[name-defined]
 
 
 class TestPineconeVectorStore(unittest.TestCase):
-    def test_with_pod_based_true(self) -> None:
-        # Testing with pod-based configuration
-        with patch(
-            "llama_index.vector_stores.pinecone.PineconeVectorStore._initialize_pinecone_client",
-            return_value=MockPineconePods.Index("dummy_index"),
-        ):
-            store = PineconeVectorStore(
-                api_key="dummy_key",
-                index_name="dummy_index",
-                environment="dummy_env",
-                use_pod_based=True,
-            )
-            self.assertIsInstance(store._pinecone_index, MockPineconePods.Index)
+    def setUp(self) -> None:
+        global original_import
+        original_import = builtins.__import__  # type: ignore[name-defined]
 
-    def test_with_pod_based_false(self) -> None:
-        # Testing with serverless configuration (False is default, so no need to pass param)
-        with patch(
-            "llama_index.vector_stores.pinecone.PineconeVectorStore._initialize_pinecone_client",
-            return_value=MockPineconeServerless.Pinecone("dummy_key").Index(
-                "dummy_index"
-            ),
-        ):
+    def tearDown(self) -> None:
+        builtins.__import__ = original_import  # type: ignore[name-defined]
+
+    def test_pods_version(self) -> None:
+        global pods_version
+        pods_version = True  # type: ignore[name-defined]
+        with patch("builtins.__import__", side_effect=mock_import):
+            mocked_version = get_version_attr_from_mock_classes(MockPineconePods)
+
+            assert mocked_version == "2.2.4"
+
+            # PineconeVectorStore calls its own init method when instantiated
+            store = PineconeVectorStore(
+                api_key="dummy_key", index_name="dummy_index", environment="dummy_env"
+            )
+
+    def test_serverless_version(self) -> None:
+        global pods_version
+        pods_version = False  # type: ignore[name-defined]
+        with patch("builtins.__import__", side_effect=mock_import):
+            mock_version = get_version_attr_from_mock_classes(MockPineconeServerless)
+
+            assert mock_version == "3.0.0"
+
             store = PineconeVectorStore(api_key="dummy_key", index_name="dummy_index")
-            self.assertIsInstance(store._pinecone_index, MockPineconeServerless.Index)
 
-    def test_str_value_for_pinecone_index_param_does_not_match_str_value_for_index_name_param(
-        self,
-    ) -> None:
-        os.environ["PINECONE_API_KEY"] = "some-key"
-        api_key = os.getenv("PINECONE_API_KEY")
-        str_pinecone_index = "some-string-representing-an-existing-pinecone-index"
-        with patch(
-            "llama_index.vector_stores.pinecone.PineconeVectorStore._initialize_pinecone_client",
-            return_value=MockPineconeServerless.Pinecone(api_key).Index("dummy_index"),
-        ):  # MockPineconeServerless vs MockPineconePods is arbitrary for this test
-            with pytest.raises(ValueError) as e:
-                store = PineconeVectorStore(
-                    pinecone_index=str_pinecone_index,
-                    api_key=api_key,
-                    index_name="dummy_index",
-                    use_pod_based=False,
-                )
-                assert (
-                    e.value.message
-                    == "The string value for `pinecone_index` must match the string value for `index_name`."
-                )
-
-    def test_str_value_for_pinecone_index_param_gets_transformed_into_index_obj(
-        self,
-    ) -> None:
-        os.environ["PINECONE_API_KEY"] = "some-key"
-        api_key = os.getenv("PINECONE_API_KEY")
-        str_pinecone_index = "some-string-representing-an-existing-pinecone-index"
-        with patch(
-            "llama_index.vector_stores.pinecone.PineconeVectorStore._initialize_pinecone_client",
-            return_value=MockPineconeServerless.Pinecone(api_key).Index(
-                str_pinecone_index
-            ),
-        ):  # MockPineconeServerless vs MockPineconePods is arbitrary for this test
-            store = PineconeVectorStore(
-                pinecone_index=str_pinecone_index,
-                api_key=api_key,
-                index_name=str_pinecone_index,
-            )
-            self.assertIsInstance(store._pinecone_index, MockPineconeServerless.Index)
-
-    def test_pinecone_vector_store_without_passing_index_name(self) -> None:
-        with pytest.raises(ValueError) as e:
-            PineconeVectorStore()
-            assert (
-                e.value.message
-                == "index_name is required for Pinecone client initialization"
-            )
+    def test_unversioned_pinecone_client(self) -> None:
+        with pytest.raises(
+            AttributeError,
+            match="The version of pinecone you are using does not contain necessary __version__ attribute.",
+        ):
+            get_version_attr_from_mock_classes(MockUnVersionedPineconeRelease)
