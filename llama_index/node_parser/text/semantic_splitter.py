@@ -5,6 +5,7 @@ import numpy as np
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.node_parser import NodeParser
 from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import build_nodes_from_splits
@@ -28,7 +29,8 @@ class SemanticSplitterNodeParser(NodeParser):
     Splits a document into Nodes, with each node being a group of semantically related sentences.
 
     Args:
-        embedding: (BaseEmbedding): embedding model to use
+        buffer_size (int): number of sentences to group together when evaluating semantic similarity
+        embed_model: (BaseEmbedding): embedding model to use
         sentence_splitter (Optional[Callable]): splits text into sentences
         include_metadata (bool): whether to include metadata in nodes
         include_prev_next_rel (bool): whether to include prev/next relationships
@@ -40,19 +42,26 @@ class SemanticSplitterNodeParser(NodeParser):
         exclude=True,
     )
 
-    embedding: BaseEmbedding = Field(
+    embed_model: BaseEmbedding = Field(
         description="The embedding model to use to for semantic comparison",
     )
 
-    window_size: int = Field(
-        description="The number of sentences to group together when evaluating semantic similarity.  Set to 1 to consider each sentence individually.  Set to >1 to group sentences together.",
-        exclude=True,
+    buffer_size: int = Field(
+        default=1,
+        description=(
+            "The number of sentences to group together when evaluating semantic similarity. "
+            "Set to 1 to consider each sentence individually. "
+            "Set to >1 to group sentences together."
+        ),
     )
 
     breakpoint_percentile_threshold = Field(
         default=95,
-        description="The percentile of cosine dissimilarity that must be exceeded between a group of sentences and the next to form a node.  The smaller this number is, the more nodes will be generated",
-        exclude=True,
+        description=(
+            "The percentile of cosine dissimilarity that must be exceeded between a "
+            "group of sentences and the next to form a node.  The smaller this "
+            "number is, the more nodes will be generated"
+        ),
     )
 
     @classmethod
@@ -62,9 +71,9 @@ class SemanticSplitterNodeParser(NodeParser):
     @classmethod
     def from_defaults(
         cls,
-        embedding: BaseEmbedding,
+        embed_model: Optional[BaseEmbedding] = None,
         breakpoint_percentile_threshold: Optional[int] = 95,
-        window_size: Optional[int] = 1,
+        buffer_size: Optional[int] = 1,
         sentence_splitter: Optional[Callable[[str], List[str]]] = None,
         original_text_metadata_key: str = DEFAULT_OG_TEXT_METADATA_KEY,
         include_metadata: bool = True,
@@ -74,11 +83,12 @@ class SemanticSplitterNodeParser(NodeParser):
         callback_manager = callback_manager or CallbackManager([])
 
         sentence_splitter = sentence_splitter or split_by_sentence_tokenizer()
+        embed_model = embed_model or OpenAIEmbedding()
 
         return cls(
-            embedding=embedding,
+            embed_model=embed_model,
             breakpoint_percentile_threshold=breakpoint_percentile_threshold,
-            window_size=window_size,
+            buffer_size=buffer_size,
             sentence_splitter=sentence_splitter,
             original_text_metadata_key=original_text_metadata_key,
             include_metadata=include_metadata,
@@ -115,7 +125,7 @@ class SemanticSplitterNodeParser(NodeParser):
 
             sentences = self._build_sentence_groups(text_splits)
 
-            combined_sentence_embeddings = self.embedding.get_text_embedding_batch(
+            combined_sentence_embeddings = self.embed_model.get_text_embedding_batch(
                 [s["combined_sentence"] for s in sentences],
                 show_progress=show_progress,
             )
@@ -154,13 +164,13 @@ class SemanticSplitterNodeParser(NodeParser):
         for i in range(len(sentences)):
             combined_sentence = ""
 
-            for j in range(i - self.window_size, i):
+            for j in range(i - self.buffer_size, i):
                 if j >= 0:
                     combined_sentence += sentences[j]["sentence"]
 
             combined_sentence += sentences[i]["sentence"]
 
-            for j in range(i + 1, i + 1 + self.window_size):
+            for j in range(i + 1, i + 1 + self.buffer_size):
                 if j < len(sentences):
                     combined_sentence += sentences[j]["sentence"]
 
@@ -176,7 +186,7 @@ class SemanticSplitterNodeParser(NodeParser):
             embedding_current = sentences[i]["combined_sentence_embedding"]
             embedding_next = sentences[i + 1]["combined_sentence_embedding"]
 
-            similarity = self.embedding.similarity(embedding_current, embedding_next)
+            similarity = self.embed_model.similarity(embedding_current, embedding_next)
 
             distance = 1 - similarity
 
