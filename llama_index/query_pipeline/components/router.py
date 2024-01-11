@@ -11,6 +11,7 @@ from llama_index.tools.types import ToolMetadata
 from llama_index.core.query_pipeline.query_component import QueryComponent, ChainableMixin, validate_and_convert_stringable, InputKeys, OutputKeys, QUERY_COMPONENT_TYPE
 from llama_index.callbacks.base import CallbackManager
 from llama_index.selectors.types import BaseSelector
+from llama_index.utils import print_text
 
 
 class SelectorComponent(QueryComponent):
@@ -78,6 +79,7 @@ class RouterComponent(QueryComponent):
     selector: BaseSelector = Field(..., description="Selector")
     choices: List[str] = Field(..., description="Choices (must correspond to components)")
     components: List[QueryComponent] = Field(..., description="Components (must correspond to choices)")
+    verbose: bool = Field(default=False, description="Verbose")
 
     _query_keys: List[str] = PrivateAttr()
 
@@ -89,6 +91,7 @@ class RouterComponent(QueryComponent):
         selector: BaseSelector,
         choices: List[str],
         components: List[QUERY_COMPONENT_TYPE],
+        verbose: bool = False,
     ) -> None:
         """Init."""
         new_components = []
@@ -111,11 +114,13 @@ class RouterComponent(QueryComponent):
             selector=selector,
             choices=choices,
             components=new_components,
+            verbose=verbose,
         )
                 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
-        pass
+        for component in self.components:
+            component.set_callback_manager(callback_manager)
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
@@ -143,6 +148,11 @@ class RouterComponent(QueryComponent):
         if len(sel_output.selections) != 1:
             raise ValueError("Expected one selection")
         component = self.components[sel_output.ind]
+        log_str = (
+            f"Selecting component {sel_output.ind}: " f"{sel_output.reason}."
+        )
+        if self.verbose:
+            print_text(log_str + "\n", color="pink")
         # run component
         # run with input_keys of component
         output = component.run_component(
@@ -161,6 +171,11 @@ class RouterComponent(QueryComponent):
         if len(sel_output.selections) != 1:
             raise ValueError("Expected one selection")
         component = self.components[sel_output.ind]
+        log_str = (
+            f"Selecting component {sel_output.ind}: " f"{sel_output.reason}."
+        )
+        if self.verbose:
+            print_text(log_str + "\n", color="pink")
         # run component
         output = await component.arun_component(
             **{self._query_keys[sel_output.ind]: kwargs["query"]}
