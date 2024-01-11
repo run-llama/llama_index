@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, cast, Union
 
 import networkx
 

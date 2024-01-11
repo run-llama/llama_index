@@ -253,3 +253,6 @@ class CustomQueryComponent(QueryComponent):
         # NOTE: user can override this too, but we have them implement an
         # abstract method to make sure they do it
         return OutputKeys.from_keys(self._output_keys)
+
+
+QUERY_COMPONENT_TYPE = Union[QueryComponent, ChainableMixin]
