@@ -122,7 +122,7 @@ class FirestoreKVStore(BaseKVStore):
             collection (str): collection name
         """
         batch = self._adb.batch()
-        for i, (key, val) in enumerate(kv_pairs):
+        for i, (key, val) in enumerate(kv_pairs, start=1):
             collection_id = self.firestore_collection(collection)
             doc = self._adb.collection(collection_id).document(key)
             val = self.replace_field_name_set(val)
