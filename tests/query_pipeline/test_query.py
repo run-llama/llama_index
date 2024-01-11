@@ -281,3 +281,26 @@ async def test_query_pipeline_async() -> None:
         {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
     )
     assert output == {"qc2": {"output": "3:7"}}
+
+
+def test_query_pipeline_init() -> None:
+    """Test query pipeline init params."""
+    qc1 = QueryComponent1()
+    qc2 = QueryComponent2()
+    inp = InputComponent()
+    p = QueryPipeline(
+        modules={
+            "qc1": qc1,
+            "qc2": qc2,
+            "inp": inp,
+        },
+        links=[
+            {"src": "inp", "dest": "qc1", "src_key": "inp1", "dest_key": "input1"},
+            {"src": "inp", "dest": "qc2", "src_key": "inp1", "dest_key": "input2"},
+            {"src": "inp", "dest": "qc1", "src_key": "inp2", "dest_key": "input2"},
+            {"src": "qc1", "dest": "qc2", "dest_key": "input1"},
+        ]
+    )
+
+    output = p.run(inp1=1, inp2=2)
+    assert output == "3:1"

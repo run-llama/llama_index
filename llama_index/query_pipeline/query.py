@@ -128,6 +128,8 @@ class QueryPipeline(QueryComponent):
         self,
         callback_manager: Optional[CallbackManager] = None,
         chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
+        modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
+        links: List[Dict[str, Dict]] = None,
         **kwargs: Any,
     ):
         super().__init__(
@@ -135,9 +137,29 @@ class QueryPipeline(QueryComponent):
             **kwargs,
         )
 
+        self._init_graph(chain=chain, modules=modules, links=links)
+
+    def _init_graph(
+        self,
+        chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
+        modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
+        links: List[Dict[str, Dict]] = None,
+    ) -> None:
+        """Initialize graph."""
         if chain is not None:
-            # generate implicit link between each item, add
+            if modules is not None or links is not None:
+                raise ValueError(
+                    "Cannot specify both chain and modules/links in init."
+                )
             self.add_chain(chain)
+        elif modules is not None or links is not None:
+            if modules is None or links is None:
+                raise ValueError(
+                    "Must specify both modules and links in init if chain is not specified."
+                )
+            self.add_modules(modules)
+            for link in links:
+                self.add_link(**link)
 
     def add_chain(self, chain: Sequence[QUERY_COMPONENT_TYPE]) -> None:
         """Add a chain of modules to the pipeline.
