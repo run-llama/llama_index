@@ -213,10 +213,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
     batch_size: int
     remove_text_from_metadata: bool
 
-    use_pod_based: bool = (
-        True  # Continue with v3 behavior, unless explicitly overridden
-    )
-
     _pinecone_index: Any = PrivateAttr()
     _tokenizer: Optional[Callable] = PrivateAttr()
 
@@ -236,7 +232,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
         default_empty_query_vector: Optional[List[float]] = None,
-        use_pod_based: bool = False,
         **kwargs: Any,
     ) -> None:
         insert_kwargs = insert_kwargs or {}
@@ -275,7 +270,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
         api_key: Optional[str],
         index_name: Optional[str],
         environment: Optional[str],
-        use_pod_based: Optional[bool],
         **kwargs: Any,
     ) -> Any:
         """Initialize Pinecone client based on version."""
@@ -309,11 +303,11 @@ class PineconeVectorStore(BasePydanticVectorStore):
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
         default_empty_query_vector: Optional[List[float]] = None,
-        use_pod_based: bool = False,
         **kwargs: Any,
     ) -> "PineconeVectorStore":
         pinecone_index = cls.initialize_pinecone_client(
-            api_key, index_name, environment, use_pod_based, **kwargs
+            api_key, index_name, environment,
+            **kwargs
         )  # TODO: not sure initialize_pinecone_client should be here
 
         return cls(
