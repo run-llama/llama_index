@@ -50,9 +50,11 @@ def get_llm_token_counts(
             response_tokens = 0
 
             if response is not None and response.raw is not None:
-                usage = response.raw.get("usage")
+                usage = response.raw.get("usage", None)
 
                 if usage is not None:
+                    if not isinstance(usage, dict):
+                        usage = dict(usage)
                     messages_tokens = usage.get("prompt_tokens", 0)
                     response_tokens = usage.get("completion_tokens", 0)
 
