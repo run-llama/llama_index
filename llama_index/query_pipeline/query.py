@@ -10,16 +10,13 @@ from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.query_pipeline.query_component import (
+    QUERY_COMPONENT_TYPE,
     ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
 )
 from llama_index.utils import print_text
-
-# accept both QueryComponent and ChainableMixin as inputs to query pipeline
-# ChainableMixin modules will be converted to components via `as_query_component`
-QUERY_COMPONENT_TYPE = Union[QueryComponent, ChainableMixin]
 
 
 def add_output_to_module_inputs(
@@ -472,3 +469,4 @@ class QueryPipeline(QueryComponent):
             raise ValueError("Only one leaf is supported.")
         leaf_module = self.module_dict[leaf_keys[0]]
         return leaf_module.output_keys
+

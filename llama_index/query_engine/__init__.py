@@ -35,6 +35,9 @@ from llama_index.query_engine.sub_question_query_engine import (
     SubQuestionQueryEngine,
 )
 from llama_index.query_engine.transform_query_engine import TransformQueryEngine
+from llama_index.query_engine.query_pipeline import (
+    QueryPipelineQueryEngine,
+)
 
 __all__ = [
     "CitationQueryEngine",
