@@ -1,12 +1,12 @@
 """Query Pipeline."""
 
-import asyncio
 import json
 import uuid
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import networkx
 
+from llama_index.async_utils import run_jobs
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -115,6 +115,13 @@ class QueryPipeline(QueryComponent):
     )
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
+    )
+    show_progress: bool = Field(
+        default=False,
+        description="Whether to show progress bar (currently async only).",
+    )
+    num_workers: int = Field(
+        default=4, description="Number of workers to use (currently async only)."
     )
 
     class Config:
@@ -480,7 +487,9 @@ class QueryPipeline(QueryComponent):
                 tasks.append(module.arun_component(**module_input))
 
             # run tasks
-            output_dicts = await asyncio.gather(*tasks)
+            output_dicts = await run_jobs(
+                tasks, show_progress=self.show_progress, workers=self.num_workers
+            )
 
             for output_dict, module_key in zip(output_dicts, popped_nodes):
                 # get new nodes and is_leaf
