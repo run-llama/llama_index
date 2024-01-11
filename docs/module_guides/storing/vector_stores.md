@@ -87,7 +87,6 @@ maxdepth: 1
 /examples/vector_stores/qdrant_hybrid.ipynb
 /examples/vector_stores/RocksetIndexDemo.ipynb
 /examples/vector_stores/SimpleIndexDemo.ipynb
-/examples/vector_stores/SingleStoreDemo.ipynb
 /examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 /examples/vector_stores/TairIndexDemo.ipynb
 /examples/vector_stores/TencentVectorDBIndexDemo.ipynb
