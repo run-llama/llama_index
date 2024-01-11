@@ -36,12 +36,16 @@ class RouterRetriever(BaseRetriever):
         selector: BaseSelector,
         retriever_tools: Sequence[RetrieverTool],
         service_context: Optional[ServiceContext] = None,
+        object_map: Optional[dict] = None,
     ) -> None:
         self.service_context = service_context or ServiceContext.from_defaults()
         self._selector = selector
         self._retrievers: List[BaseRetriever] = [x.retriever for x in retriever_tools]
         self._metadatas = [x.metadata for x in retriever_tools]
-        self.callback_manager = self.service_context.callback_manager
+        super().__init__(
+            callback_manager=self.service_context.callback_manager,
+            object_map=object_map,
+        )
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""

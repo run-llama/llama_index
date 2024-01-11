@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict
-from llama_index.indices.base import BaseIndex
+from llama_index.indices.base import BaseIndex, IndexNode
 from llama_index.schema import BaseNode, NodeWithScore
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
@@ -43,6 +43,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
@@ -81,6 +82,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
             service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
+            objects=objects,
             **kwargs,
         )
 
@@ -93,7 +95,7 @@ class ColbertIndex(BaseIndex[IndexDict]):
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         from .retriever import ColbertRetriever
 
-        return ColbertRetriever(index=self, **kwargs)
+        return ColbertRetriever(index=self, object_map=self._object_map, **kwargs)
 
     @property
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:

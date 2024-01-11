@@ -30,13 +30,14 @@ class AutoMergingRetriever(BaseRetriever):
         simple_ratio_thresh: float = 0.5,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
     ) -> None:
         """Init params."""
         self._vector_retriever = vector_retriever
         self._storage_context = storage_context
         self._simple_ratio_thresh = simple_ratio_thresh
         self._verbose = verbose
-        super().__init__(callback_manager)
+        super().__init__(callback_manager=callback_manager, object_map=object_map)
 
     def _get_parents_and_merge(
         self, nodes: List[NodeWithScore]

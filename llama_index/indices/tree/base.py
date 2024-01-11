@@ -15,7 +15,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, IndexNode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 
@@ -61,6 +61,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexGraph] = None,
         service_context: Optional[ServiceContext] = None,
         summary_template: Optional[BasePromptTemplate] = None,
@@ -83,6 +84,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
             index_struct=index_struct,
             service_context=service_context,
             show_progress=show_progress,
+            objects=objects,
             **kwargs,
         )
 
@@ -104,13 +106,15 @@ class TreeIndex(BaseIndex[IndexGraph]):
         self._validate_build_tree_required(TreeRetrieverMode(retriever_mode))
 
         if retriever_mode == TreeRetrieverMode.SELECT_LEAF:
-            return TreeSelectLeafRetriever(self, **kwargs)
+            return TreeSelectLeafRetriever(self, object_map=self._object_map, **kwargs)
         elif retriever_mode == TreeRetrieverMode.SELECT_LEAF_EMBEDDING:
-            return TreeSelectLeafEmbeddingRetriever(self, **kwargs)
+            return TreeSelectLeafEmbeddingRetriever(
+                self, object_map=self._object_map, **kwargs
+            )
         elif retriever_mode == TreeRetrieverMode.ROOT:
-            return TreeRootRetriever(self, **kwargs)
+            return TreeRootRetriever(self, object_map=self._object_map, **kwargs)
         elif retriever_mode == TreeRetrieverMode.ALL_LEAF:
-            return TreeAllLeafRetriever(self, **kwargs)
+            return TreeAllLeafRetriever(self, object_map=self._object_map, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 

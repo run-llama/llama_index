@@ -39,6 +39,7 @@ class QueryFusionRetriever(BaseRetriever):
         use_async: bool = True,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
     ) -> None:
         self.num_queries = num_queries
         self.query_gen_prompt = query_gen_prompt or QUERY_GEN_PROMPT
@@ -49,7 +50,7 @@ class QueryFusionRetriever(BaseRetriever):
 
         self._retrievers = retrievers
         self._llm = resolve_llm(llm)
-        super().__init__(callback_manager)
+        super().__init__(callback_manager=callback_manager, object_map=object_map)
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""

@@ -36,6 +36,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
@@ -55,6 +56,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
+            objects=objects,
             **kwargs,
         )
 
@@ -87,6 +89,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
             callback_manager=self._service_context.callback_manager,
+            object_map=self._object_map,
             **kwargs,
         )
 

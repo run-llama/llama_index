@@ -73,6 +73,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         child_branch_factor: int = 1,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
         **kwargs: Any,
     ):
         self._index = index
@@ -88,7 +89,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         )
         self.child_branch_factor = child_branch_factor
         self._verbose = verbose
-        super().__init__(callback_manager)
+        super().__init__(callback_manager=callback_manager, object_map=object_map)
 
     def _query_with_selected_node(
         self,

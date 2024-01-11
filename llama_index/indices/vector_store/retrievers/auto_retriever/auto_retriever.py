@@ -77,6 +77,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         extra_filters: Optional[MetadataFilters] = None,
+        object_map: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
@@ -103,7 +104,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         self._extra_filters = extra_filters or MetadataFilters(filters=[])
         self._kwargs = kwargs
         self._verbose = verbose
-        super().__init__(callback_manager)
+        super().__init__(callback_manager=callback_manager, object_map=object_map)
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -226,6 +227,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
                 filters=filters,
                 similarity_top_k=similarity_top_k,
                 vector_store_query_mode=self._vector_store_query_mode,
+                object_map=self.object_map,
                 **self._kwargs,
             ),
             new_query_bundle,

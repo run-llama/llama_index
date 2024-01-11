@@ -46,6 +46,7 @@ class VectorIndexRetriever(BaseRetriever):
         doc_ids: Optional[List[str]] = None,
         sparse_top_k: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -62,7 +63,7 @@ class VectorIndexRetriever(BaseRetriever):
         self._filters = filters
         self._sparse_top_k = sparse_top_k
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
-        super().__init__(callback_manager)
+        super().__init__(callback_manager=callback_manager, object_map=object_map)
 
     @property
     def similarity_top_k(self) -> int:
