@@ -4,8 +4,8 @@ from llama_index.embeddings.adapter import (
     AdapterEmbeddingModel,
     LinearAdapterEmbeddingModel,
 )
-from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from llama_index.embeddings.anyscale import AnyscaleEmbedding
+from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from llama_index.embeddings.base import BaseEmbedding, SimilarityMode
 from llama_index.embeddings.bedrock import BedrockEmbedding
 from llama_index.embeddings.clarifai import ClarifaiEmbedding
