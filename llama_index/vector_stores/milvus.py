@@ -161,7 +161,7 @@ class MilvusVectorStore(VectorStore):
         self.collection = Collection(
             self.collection_name, using=self.milvusclient._using
         )
-        self._create_index_if_required(force=True)
+        self._create_index_if_required()
 
         logger.debug(f"Successfully created a new collection: {self.collection_name}")
 
