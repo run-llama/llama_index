@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 import networkx
 
@@ -148,9 +148,7 @@ class QueryPipeline(QueryComponent):
         """Initialize graph."""
         if chain is not None:
             if modules is not None or links is not None:
-                raise ValueError(
-                    "Cannot specify both chain and modules/links in init."
-                )
+                raise ValueError("Cannot specify both chain and modules/links in init.")
             self.add_chain(chain)
         elif modules is not None or links is not None:
             if modules is None or links is None:
@@ -549,4 +547,3 @@ class QueryPipeline(QueryComponent):
             raise ValueError("Only one leaf is supported.")
         leaf_module = self.module_dict[leaf_keys[0]]
         return leaf_module.output_keys
-

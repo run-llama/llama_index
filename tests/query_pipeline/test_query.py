@@ -299,7 +299,7 @@ def test_query_pipeline_init() -> None:
             {"src": "inp", "dest": "qc2", "src_key": "inp1", "dest_key": "input2"},
             {"src": "inp", "dest": "qc1", "src_key": "inp2", "dest_key": "input2"},
             {"src": "qc1", "dest": "qc2", "dest_key": "input1"},
-        ]
+        ],
     )
 
     output = p.run(inp1=1, inp2=2)
