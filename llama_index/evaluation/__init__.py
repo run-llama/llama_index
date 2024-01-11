@@ -32,6 +32,14 @@ from llama_index.evaluation.retrieval.metrics import (
     resolve_metrics,
 )
 from llama_index.evaluation.semantic_similarity import SemanticSimilarityEvaluator
+from llama_index.evaluation.answer_consistency import AnswerConsistnecyEvaluator
+from llama_index.evaluation.answer_consistency_binary import (
+    AnswerConsistnecyBinaryEvaluator,
+)
+from llama_index.evaluation.answer_similarity import AnswerSimilarityEvaluator
+from llama_index.evaluation.augmentation_accuracy import AugmentationAccuracyEvaluator
+from llama_index.evaluation.augmentation_precision import AugmentationPrecisionEvaluator
+from llama_index.evaluation.retrieval_precision import RetrievalPrecisionEvaluator
 
 # import dataset generation too
 from llama_index.finetuning.embeddings.common import (
@@ -75,4 +83,11 @@ __all__ = [
     "MRR",
     "get_retrieval_results_df",
     "LabelledQADataset",
+    # tonic_validate evaluators
+    "AnswerConsistnecyEvaluator",
+    "AnswerConsistnecyBinaryEvaluator",
+    "AnswerSimilarityEvaluator",
+    "AugmentationAccuracyEvaluator",
+    "AugmentationPrecisionEvaluator",
+    "RetrievalPrecisionEvaluator",
 ]
