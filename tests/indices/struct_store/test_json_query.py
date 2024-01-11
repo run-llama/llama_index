@@ -6,11 +6,11 @@ from typing import Any, Dict, cast
 from unittest.mock import patch
 
 import pytest
+from llama_index.core.response.schema import Response
 from llama_index.indices.struct_store.json_query import JSONQueryEngine, JSONType
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llms.mock import MockLLM
 from llama_index.prompts.base import BasePromptTemplate
-from llama_index.response.schema import Response
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 

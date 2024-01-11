@@ -1,12 +1,14 @@
 from typing import List
 
 import pytest
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.llms.openai_utils import (
     from_openai_message_dicts,
     from_openai_messages,
     to_openai_message_dicts,
+    to_openai_tool,
 )
-from llama_index.llms.types import ChatMessage, MessageRole
 from openai.types.chat.chat_completion_assistant_message_param import (
     FunctionCall as FunctionCallParam,
 )
@@ -177,3 +179,38 @@ def test_from_openai_messages_function_calling_azure(
         azure_openai_message_dicts_with_function_calling
     )
     assert chat_messages == azure_chat_messages_with_function_calling
+
+
+def test_to_openai_tool_with_provided_description() -> None:
+    class TestOutput(BaseModel):
+        test: str
+
+    tool = to_openai_tool(TestOutput, description="Provided description")
+    assert tool == {
+        "type": "function",
+        "function": {
+            "name": "TestOutput",
+            "description": "Provided description",
+            "parameters": TestOutput.schema(),
+        },
+    }
+
+
+def test_to_openai_message_with_pydantic_description() -> None:
+    class TestOutput(BaseModel):
+        """
+        Pydantic description.
+        """
+
+        test: str
+
+    tool = to_openai_tool(TestOutput)
+
+    assert tool == {
+        "type": "function",
+        "function": {
+            "name": "TestOutput",
+            "description": "Pydantic description.",
+            "parameters": TestOutput.schema(),
+        },
+    }

@@ -8,14 +8,14 @@ from llama_index.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.llms.base import llm_completion_callback
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.llms.base import llm_completion_callback
+from llama_index.llms.custom import CustomLLM
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
@@ -108,7 +108,9 @@ class PredibaseLLM(CustomLLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> "CompletionResponse":
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> "CompletionResponse":
         llm = self._client.LLM(f"pb://deployments/{self.model_name}")
         results = llm.prompt(
             prompt, max_new_tokens=self.max_new_tokens, temperature=self.temperature
@@ -116,5 +118,7 @@ class PredibaseLLM(CustomLLM):
         return CompletionResponse(text=results.response)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> "CompletionResponseGen":
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> "CompletionResponseGen":
         raise NotImplementedError

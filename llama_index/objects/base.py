@@ -4,7 +4,7 @@ import pickle
 import warnings
 from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
 
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.objects.base_node_mapping import (

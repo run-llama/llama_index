@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Tuple
 
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.list.base import ListRetrieverMode, SummaryIndex
 from llama_index.schema import BaseNode, Document
 from llama_index.service_context import ServiceContext

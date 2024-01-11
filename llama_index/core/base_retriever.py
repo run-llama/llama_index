@@ -1,16 +1,23 @@
 """Base retriever."""
 from abc import abstractmethod
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
+from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.indices.query.schema import QueryBundle, QueryType
-from llama_index.indices.service_context import ServiceContext
+from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.schema import NodeWithScore
+from llama_index.schema import NodeWithScore, QueryBundle, QueryType
+from llama_index.service_context import ServiceContext
 
 
-class BaseRetriever(PromptMixin):
+class BaseRetriever(ChainableMixin, PromptMixin):
     """Base retriever."""
 
     def __init__(self, callback_manager: Optional[CallbackManager] = None) -> None:
@@ -105,3 +112,46 @@ class BaseRetriever(PromptMixin):
         elif hasattr(self, "_index") and hasattr(self._index, "service_context"):
             return self._index.service_context
         return None
+
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """Return a query component."""
+        return RetrieverComponent(retriever=self)
+
+
+class RetrieverComponent(QueryComponent):
+    """Retriever component."""
+
+    retriever: BaseRetriever = Field(..., description="Retriever")
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        self.retriever.callback_manager = callback_manager
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        # make sure input is a string
+        input["input"] = validate_and_convert_stringable(input["input"])
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        output = self.retriever.retrieve(kwargs["input"])
+        return {"output": output}
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        output = await self.retriever.aretrieve(kwargs["input"])
+        return {"output": output}
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        return InputKeys.from_keys({"input"})
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"output"})

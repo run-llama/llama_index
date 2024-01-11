@@ -2,12 +2,7 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -17,6 +12,11 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.llms.base import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.llm import LLM
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
@@ -149,7 +149,11 @@ class Clarifai(LLM):
         return ChatResponse(message=ChatMessage(content=response))
 
     def complete(
-        self, prompt: str, inference_params: Optional[Dict] = {}, **kwargs: Any
+        self,
+        prompt: str,
+        formatted: bool = False,
+        inference_params: Optional[Dict] = {},
+        **kwargs: Any,
     ) -> CompletionResponse:
         """Completion endpoint for LLM."""
         try:
@@ -173,7 +177,9 @@ class Clarifai(LLM):
             "Clarifai does not currently support streaming completion."
         )
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError(
             "Clarifai does not currently support streaming completion."
         )
@@ -185,7 +191,9 @@ class Clarifai(LLM):
         raise NotImplementedError("Currently not supported.")
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         return self.complete(prompt, **kwargs)
 
     @llm_chat_callback()
@@ -196,6 +204,6 @@ class Clarifai(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError("Clarifai does not currently support this function.")

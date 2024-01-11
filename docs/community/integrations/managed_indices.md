@@ -101,15 +101,15 @@ caption: Examples
 maxdepth: 1
 ---
 /examples/managed/vectaraDemo.ipynb
+/examples/retrievers/vectara_auto_retriever.ipynb
 ```
 
 ## Zilliz
 
-First, [sign up](https://cloud.zilliz.com/signup) or use existing Zilliz Cloud account to create a free Serverless Cluster. This is to get the cluster id and API key to grant access to Zilliz Cloud Pipelines service.
+First, set up your [Zilliz Cloud](https://cloud.zilliz.com/signup?utm_source=twitter&utm_medium=social%20&utm_campaign=2023-12-22_social_pipeline-llamaindex_twitter) account and create a free serverless cluster.
+Then copy the Cluster ID and API Key from your account.
 
-Then set the environment variables `ZILLIZ_CLUSTER_ID` and `ZILLIZ_TOKEN` by copying the value from the [Zilliz Cloud UI](https://raw.githubusercontent.com/milvus-io/bootcamp/2596ea9a4a1a089101a0b46e3cb012b8dfb2eb9a/images/zilliz_api_key_cluster_id.jpeg).
-
-Now you can construct the `ZillizCloudPipelineIndex` to ingest docs and query index as follows:
+Now you can construct `ZillizCloudPipelineIndex` to index docs and query as follows:
 
 ```python
 import os
@@ -120,9 +120,9 @@ from llama_index.indices import ZillizCloudPipelineIndex
 # Load documents from url and build document index
 zcp_index = ZillizCloudPipelineIndex.from_document_url(
     url="https://publicdataset.zillizcloud.com/milvus_doc.md",
-    cluster_id=os.getenv("ZILLIZ_CLUSTER_ID"),
-    token=os.getenv("ZILLIZ_TOKEN"),
-    metadata={"version": "2.3"},
+    cluster_id="<YOUR_ZILLIZ_CLUSTER_ID>",
+    token="<YOUR_ZILLIZ_API_KEY>",
+    metadata={"version": "2.3"},  # optional
 )
 
 # Insert more docs into index, eg. a Milvus v2.2 document
@@ -143,6 +143,12 @@ query_engine_milvus23 = zcp_index.as_query_engine(
     ),
     output_metadata=["version"],
 )
+
+question = "Can users delete entities by complex boolean expressions?"
+# Retrieving
+retrieval_result = query_engine_with_filters.retrieve(question)
+# Querying
+answer = query_engine_with_filters.query(question)
 ```
 
 ```{toctree}

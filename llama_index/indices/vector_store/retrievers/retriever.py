@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import VectorStoreIndex

@@ -1,6 +1,6 @@
 from typing import Any, Callable, Optional, Sequence
 
-from llama_index.embeddings.base import SimilarityMode, similarity
+from llama_index.core.embeddings.base import SimilarityMode, similarity
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.service_context import ServiceContext

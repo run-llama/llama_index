@@ -8,6 +8,17 @@ from llama_index.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
 )
+from llama_index.core.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
@@ -19,17 +30,6 @@ from llama_index.llms.generic_utils import (
 )
 from llama_index.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
-)
-from llama_index.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
 )
 from llama_index.prompts.base import PromptTemplate
 from llama_index.types import BaseOutputParser, PydanticProgramMode
@@ -273,11 +273,12 @@ class HuggingFaceLLM(CustomLLM):
         return generic_messages_to_prompt(messages)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         """Completion endpoint."""
         full_prompt = prompt
-        is_formatted = kwargs.pop("formatted", False)
-        if not is_formatted:
+        if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
             if self.system_prompt:
@@ -303,13 +304,14 @@ class HuggingFaceLLM(CustomLLM):
         return CompletionResponse(text=completion, raw={"model_output": tokens})
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         """Streaming completion endpoint."""
         from transformers import TextIteratorStreamer
 
         full_prompt = prompt
-        is_formatted = kwargs.pop("formatted", False)
-        if not is_formatted:
+        if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
             if self.system_prompt:
@@ -576,7 +578,9 @@ class HuggingFaceInferenceAPI(CustomLLM):
             )
         )
 
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         return CompletionResponse(
             text=self._sync_client.text_generation(
                 prompt, **{**{"max_new_tokens": self.num_output}, **kwargs}
@@ -588,7 +592,9 @@ class HuggingFaceInferenceAPI(CustomLLM):
     ) -> ChatResponseGen:
         raise NotImplementedError
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError
 
     async def achat(
@@ -596,7 +602,9 @@ class HuggingFaceInferenceAPI(CustomLLM):
     ) -> ChatResponse:
         raise NotImplementedError
 
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         response = await self._async_client.text_generation(
             prompt, **{**{"max_new_tokens": self.num_output}, **kwargs}
         )
@@ -608,6 +616,6 @@ class HuggingFaceInferenceAPI(CustomLLM):
         raise NotImplementedError
 
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError

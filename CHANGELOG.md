@@ -1,5 +1,119 @@
 # ChangeLog
 
+## [0.9.29] - 2024-01-10
+
+### New Features
+
+- Added support for together.ai models (#9962)
+- Added support for batch redis/firestore kvstores, async firestore kvstore (#9827)
+- Parallelize `IngestionPipeline.run()` (#9920)
+- Added new query pipeline components: function, argpack, kwargpack (#9952)
+
+### Bug Fixes / Nits
+
+- Updated optional langchain imports to avoid warnings (#9964)
+- Raise an error if empty nodes are embedded (#9953)
+
+## [0.9.28] - 2024-01-09
+
+### New Features
+
+- Added support for Nvidia TenorRT LLM (#9842)
+- Allow `tool_choice` to be set during agent construction (#9924)
+- Added streaming support for `QueryPipeline` (#9919)
+
+### Bug Fixes / Nits
+
+- Set consistent doc-ids for llama-index readers (#9923, #9916)
+- Remove unneeded model inputs for HuggingFaceEmbedding (#9922)
+- Propagate `tool_choice` flag to downstream APIs (#9901)
+- Add `chat_store_key` to chat memory `from_defaults()` (#9928)
+
+## [0.9.27] - 2024-01-08
+
+### New Features
+
+- add query pipeline (#9908)
+- Feature: Azure Multi Modal (fixes: #9471) (#9843)
+- add postgres docker (#9906)
+- Vectara auto_retriever (#9865)
+- Redis Chat Store support (#9880)
+- move more classes to core (#9871)
+
+### Bug Fixes / Nits / Smaller Features
+
+- Propagate `tool_choice` flag to downstream APIs (#9901)
+- filter out negative indexes from faiss query (#9907)
+- added NE filter for qdrant payloads (#9897)
+- Fix incorrect id assignment in MyScale query result (#9900)
+- Qdrant Text Match Filter (#9895)
+- Fusion top k for hybrid search (#9894)
+- Fix (#9867) sync_to_async to avoid blocking during asynchronous calls (#9869)
+- A single node passed into compute_scores returns as a float (#9866)
+- Remove extra linting steps (#9878)
+- add vectara links (#9886)
+
+## [0.9.26] - 2024-01-05
+
+### New Features
+
+- Added a `BaseChatStore` and `SimpleChatStore` abstraction for dedicated chat memory storage (#9863)
+- Enable custom `tree_sitter` parser to be passed into `CodeSplitter` (#9845)
+- Created a `BaseAutoRetriever` base class, to allow other retrievers to extend to auto modes (#9846)
+- Added support for Nvidia Triton LLM (#9488)
+- Added `DeepEval` one-click observability (#9801)
+
+### Bug Fixes / Nits
+
+- Updated the guidance integration to work with the latest version (#9830)
+- Made text storage optional for doctores/ingestion pipeline (#9847)
+- Added missing `sphinx-automodapi` dependency for docs (#9852)
+- Return actual node ids in weaviate query results (#9854)
+- Added prompt formatting to LangChainLLM (#9844)
+
+## [0.9.25] - 2024-01-03
+
+### New Features
+
+- Added concurrancy limits for dataset generation (#9779)
+- New `deepeval` one-click observability handler (#9801)
+- Added jaguar vector store (#9754)
+- Add beta multimodal ReAct agent (#9807)
+
+### Bug Fixes / Nits
+
+- Changed default batch size for OpenAI embeddings to 100 (#9805)
+- Use batch size properly for qdrant upserts (#9814)
+- `_verify_source_safety` uses AST, not regexes, for proper safety checks (#9789)
+- use provided LLM in element node parsers (#9776)
+- updated legacy vectordb loading function to be more robust (#9773)
+- Use provided http client in AzureOpenAI (#9772)
+
+## [0.9.24] - 2023-12-30
+
+### New Features
+
+- Add reranker for BEIR evaluation (#9743)
+- Add Pathway integration. (#9719)
+- custom agents implementation + notebook (#9746)
+
+### Bug Fixes / Nits
+
+- fix beam search for vllm: add missing parameter (#9741)
+- Fix alpha for hrbrid search (#9742)
+- fix token counter (#9744)
+- BM25 tokenizer lowercase (#9745)
+
+## [0.9.23] - 2023-12-28
+
+### Bug Fixes / Nits
+
+- docs: fixes qdrant_hybrid.ipynb typos (#9729)
+- make llm completion program more general (#9731)
+- Refactor MM Vector store and Index for empty collection (#9717)
+- Adding IF statement to check for Schema using "Select" (#9712)
+- allow skipping module loading in `download_module` and `download_llama_pack` (#9734)
+
 ## [0.9.22] - 2023-12-26
 
 ### New Features
@@ -1030,7 +1144,7 @@
 ### Breaking Changes
 
 - Update milvus vector store to support filters and dynamic schemas (#7286)
-  - See the [updated notebook](https://gpt-index.readthedocs.io/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
+  - See the [updated notebook](https://docs.llamaindex.ai/en/stable/examples/vector_stores/MilvusIndexDemo.html) for usage
 - Added NLTK to core dependencies to support the default sentence splitter (#7606)
 
 ## [0.8.22] - 2023-09-07

@@ -304,13 +304,13 @@ class MyScaleVectorStore(VectorStore):
                 start_char_idx = r["node_info"].get("start", None)
                 end_char_idx = r["node_info"].get("end", None)
             node = TextNode(
-                id_=r["doc_id"],
+                id_=r["id"],
                 text=r["text"],
                 metadata=r["metadata"],
                 start_char_idx=start_char_idx,
                 end_char_idx=end_char_idx,
                 relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=r["doc_id"])
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=r["id"])
                 },
             )
 

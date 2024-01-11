@@ -2,12 +2,7 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -18,6 +13,11 @@ from llama_index.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.llms.base import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.llm import LLM
 from llama_index.llms.vertex_gemini_utils import is_gemini_model
 from llama_index.llms.vertex_utils import (
     CHAT_MODELS,
@@ -187,7 +187,9 @@ class Vertex(LLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
         if self.iscode and "candidate_count" in params:
@@ -248,7 +250,9 @@ class Vertex(LLM):
         return gen()
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
         if "candidate_count" in params:
@@ -311,7 +315,9 @@ class Vertex(LLM):
         )
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
         if self.iscode and "candidate_count" in params:
@@ -333,6 +339,6 @@ class Vertex(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise (ValueError("Not Implemented"))

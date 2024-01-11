@@ -2,11 +2,12 @@ from typing import Any, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import NodeWithScore, QueryBundle
 
 

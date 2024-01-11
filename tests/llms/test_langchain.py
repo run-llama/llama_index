@@ -1,7 +1,7 @@
 from typing import List
 
 import pytest
-from llama_index.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms.types import ChatMessage, MessageRole
 
 try:
     import cohere

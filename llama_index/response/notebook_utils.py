@@ -8,8 +8,8 @@ import requests
 from IPython.display import Markdown, display
 from PIL import Image
 
+from llama_index.core.response.schema import Response
 from llama_index.img_utils import b64_2_img
-from llama_index.response.schema import Response
 from llama_index.schema import ImageNode, MetadataMode, NodeWithScore
 from llama_index.utils import truncate_text
 

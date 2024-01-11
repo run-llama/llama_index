@@ -11,6 +11,7 @@ from llama_index.schema import BaseNode
 DEFAULT_PERSIST_FNAME = "docstore.json"
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_PATH = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
+DEFAULT_BATCH_SIZE = 1
 
 
 @dataclass
@@ -38,7 +39,11 @@ class BaseDocumentStore(ABC):
 
     @abstractmethod
     def add_documents(
-        self, docs: Sequence[BaseNode], allow_update: bool = True
+        self,
+        docs: Sequence[BaseNode],
+        allow_update: bool = True,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        store_text: bool = True,
     ) -> None:
         ...
 

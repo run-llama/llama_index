@@ -5,18 +5,19 @@ from llama_index.async_utils import run_async_tasks
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core import BaseQueryEngine, BaseRetriever
-from llama_index.objects.base import ObjectRetriever
-from llama_index.prompts.default_prompt_selectors import (
-    DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
-)
-from llama_index.prompts.mixin import PromptMixinType
-from llama_index.response.schema import (
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
     Response,
     StreamingResponse,
 )
+from llama_index.objects.base import ObjectRetriever
+from llama_index.prompts.default_prompt_selectors import (
+    DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
+)
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response_synthesizers import TreeSummarize
 from llama_index.schema import BaseNode, QueryBundle
 from llama_index.selectors.types import BaseSelector
@@ -24,6 +25,7 @@ from llama_index.selectors.utils import get_selector_from_context
 from llama_index.service_context import ServiceContext
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.types import ToolMetadata
+from llama_index.utils import print_text
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +104,7 @@ class RouterQueryEngine(BaseQueryEngine):
         query_engine_tools: Sequence[QueryEngineTool],
         service_context: Optional[ServiceContext] = None,
         summarizer: Optional[TreeSummarize] = None,
+        verbose: bool = False,
     ) -> None:
         self.service_context = service_context or ServiceContext.from_defaults()
         self._selector = selector
@@ -111,6 +114,7 @@ class RouterQueryEngine(BaseQueryEngine):
             service_context=self.service_context,
             summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
         )
+        self._verbose = verbose
 
         super().__init__(self.service_context.callback_manager)
 
@@ -152,9 +156,13 @@ class RouterQueryEngine(BaseQueryEngine):
             if len(result.inds) > 1:
                 responses = []
                 for i, engine_ind in enumerate(result.inds):
-                    logger.info(
+                    log_str = (
                         f"Selecting query engine {engine_ind}: " f"{result.reasons[i]}."
                     )
+                    logger.info(log_str)
+                    if self._verbose:
+                        print_text(log_str + "\n", color="pink")
+
                     selected_query_engine = self._query_engines[engine_ind]
                     responses.append(selected_query_engine.query(query_bundle))
 
@@ -167,9 +175,10 @@ class RouterQueryEngine(BaseQueryEngine):
             else:
                 try:
                     selected_query_engine = self._query_engines[result.ind]
-                    logger.info(
-                        f"Selecting query engine {result.ind}: {result.reason}."
-                    )
+                    log_str = f"Selecting query engine {result.ind}: {result.reason}."
+                    logger.info(log_str)
+                    if self._verbose:
+                        print_text(log_str + "\n", color="pink")
                 except ValueError as e:
                     raise ValueError("Failed to select query engine") from e
 
@@ -192,9 +201,12 @@ class RouterQueryEngine(BaseQueryEngine):
             if len(result.inds) > 1:
                 tasks = []
                 for i, engine_ind in enumerate(result.inds):
-                    logger.info(
+                    log_str = (
                         f"Selecting query engine {engine_ind}: " f"{result.reasons[i]}."
                     )
+                    logger.info(log_str)
+                    if self._verbose:
+                        print_text(log_str + "\n", color="pink")
                     selected_query_engine = self._query_engines[engine_ind]
                     tasks.append(selected_query_engine.aquery(query_bundle))
 
@@ -208,9 +220,10 @@ class RouterQueryEngine(BaseQueryEngine):
             else:
                 try:
                     selected_query_engine = self._query_engines[result.ind]
-                    logger.info(
-                        f"Selecting query engine {result.ind}: {result.reason}."
-                    )
+                    log_str = f"Selecting query engine {result.ind}: {result.reason}."
+                    logger.info(log_str)
+                    if self._verbose:
+                        print_text(log_str + "\n", color="pink")
                 except ValueError as e:
                     raise ValueError("Failed to select query engine") from e
 

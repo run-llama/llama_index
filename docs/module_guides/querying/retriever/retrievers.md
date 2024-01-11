@@ -42,6 +42,7 @@ maxdepth: 1
 Auto-Retrieval (with Chroma) </examples/vector_stores/chroma_auto_retriever.ipynb>
 Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 /examples/query_engine/multi_doc_auto_retrieval/multi_doc_auto_retrieval.ipynb
+/examples/retrievers/vectara_auto_retriever.ipynb
 ```
 
 ### Knowledge Graph Retrievers
@@ -94,4 +95,5 @@ maxdepth: 1
 /examples/retrievers/you_retriever.ipynb
 /examples/index_structs/struct_indices/SQLIndexDemo.ipynb
 DeepMemory (Activeloop) </examples/retrievers/deep_memory.ipynb>
+/examples/retrievers/pathway_retriever.ipynb
 ```

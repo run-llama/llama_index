@@ -34,6 +34,7 @@ from llama_index.embeddings.ollama_embedding import OllamaEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.pooling import Pooling
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
+from llama_index.embeddings.together import TogetherEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.embeddings.voyageai import VoyageEmbedding
 
@@ -63,6 +64,7 @@ __all__ = [
     "GooglePaLMEmbedding",
     "SimilarityMode",
     "TextEmbeddingsInference",
+    "TogetherEmbedding",
     "resolve_embed_model",
     # Deprecated, kept for backwards compatibility
     "LLMRailsEmbeddings",

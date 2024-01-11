@@ -72,7 +72,8 @@ class SimpleWebPageReader(BasePydanticReader):
             if self._metadata_fn is not None:
                 metadata = self._metadata_fn(url)
 
-            documents.append(Document(text=response, metadata=metadata or {}))
+            documents.append(Document(text=response, id_=url, metadata=metadata or {}))
+            documents.append(Document(id_=url, text=response, metadata=metadata or {}))
 
         return documents
 
@@ -132,7 +133,7 @@ class TrafilaturaWebReader(BasePydanticReader):
                 if self.error_on_missing:
                     raise ValueError(f"Trafilatura fails to parse page: {url}")
                 continue
-            documents.append(Document(text=response))
+            documents.append(Document(id_=url, text=response))
 
         return documents
 
@@ -229,7 +230,7 @@ class BeautifulSoupWebReader(BasePydanticReader):
             else:
                 data = soup.getText()
 
-            documents.append(Document(text=data, metadata=metadata))
+            documents.append(Document(id_=url, text=data, metadata=metadata))
 
         return documents
 
@@ -292,6 +293,7 @@ class RssReader(BasePydanticReader):
         for url in urls:
             parsed = feedparser.parse(url)
             for entry in parsed.entries:
+                doc_id = entry.id or entry.link
                 if "content" in entry:
                     data = entry.content[0].value
                 else:
@@ -303,7 +305,7 @@ class RssReader(BasePydanticReader):
                     data = html2text.html2text(data)
 
                 metadata = {"title": entry.title, "link": entry.link}
-                documents.append(Document(text=data, metadata=metadata))
+                documents.append(Document(id_=doc_id, text=data, metadata=metadata))
 
         return documents
 

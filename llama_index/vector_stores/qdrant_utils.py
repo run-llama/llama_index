@@ -66,6 +66,7 @@ def default_sparse_encoder(model_id: str) -> SparseEncoderCallable:
 def relative_score_fusion(
     dense_result: VectorStoreQueryResult,
     sparse_result: VectorStoreQueryResult,
+    # NOTE: only for hybrid search (0 for sparse search, 1 for dense search)
     alpha: float = 0.5,
     top_k: int = 2,
 ) -> VectorStoreQueryResult:
@@ -140,7 +141,7 @@ def relative_score_fusion(
     for node_id in all_nodes_dict:
         sparse_sim = sparse_per_node.get(node_id, 0)
         dense_sim = dense_per_node.get(node_id, 0)
-        fused_sim = alpha * (sparse_sim + dense_sim)
+        fused_sim = (1 - alpha) * sparse_sim + alpha * dense_sim
         fused_similarities.append((fused_sim, all_nodes_dict[node_id]))
 
     fused_similarities.sort(key=lambda x: x[0], reverse=True)

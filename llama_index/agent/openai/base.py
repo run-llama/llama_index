@@ -54,6 +54,7 @@ class OpenAIAgent(AgentRunner):
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        default_tool_choice: str = "auto",
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     ) -> None:
@@ -73,6 +74,7 @@ class OpenAIAgent(AgentRunner):
             memory=memory,
             llm=llm,
             callback_manager=callback_manager,
+            default_tool_choice=default_tool_choice,
         )
 
     @classmethod
@@ -86,6 +88,7 @@ class OpenAIAgent(AgentRunner):
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        default_tool_choice: str = "auto",
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
@@ -133,4 +136,5 @@ class OpenAIAgent(AgentRunner):
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
+            default_tool_choice=default_tool_choice,
         )

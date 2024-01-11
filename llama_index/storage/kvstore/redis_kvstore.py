@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 
@@ -59,6 +59,46 @@ class RedisKVStore(BaseKVStore):
         """
         self._redis_client.hset(name=collection, key=key, value=json.dumps(val))
 
+    async def aput(
+        self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        """Put a key-value pair into the store.
+
+        Args:
+            key (str): key
+            val (dict): value
+            collection (str): collection name
+
+        """
+        raise NotImplementedError
+
+    def put_all(
+        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        """Put a dictionary of key-value pairs into the store.
+
+        Args:
+            kv_pairs (List[Tuple[str, dict]]): key-value pairs
+            collection (str): collection name
+
+        """
+        with self._redis_client.pipeline() as pipe:
+            for key, val in kv_pairs:
+                pipe.hset(name=collection, key=key, value=json.dumps(val))
+            pipe.execute()
+
+    async def aput_all(
+        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        """Put a dictionary of key-value pairs into the store.
+
+        Args:
+            kv_pairs (List[Tuple[str, dict]]): key-value pairs
+            collection (str): collection name
+
+        """
+        raise NotImplementedError
+
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a value from the store.
 
@@ -72,6 +112,18 @@ class RedisKVStore(BaseKVStore):
             return None
         return json.loads(val_str)
 
+    async def aget(
+        self, key: str, collection: str = DEFAULT_COLLECTION
+    ) -> Optional[dict]:
+        """Get a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+
+        """
+        raise NotImplementedError
+
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store."""
         collection_kv_dict = {}
@@ -79,6 +131,10 @@ class RedisKVStore(BaseKVStore):
             value = dict(json.loads(val_str))
             collection_kv_dict[key.decode()] = value
         return collection_kv_dict
+
+    async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+        """Get all values from the store."""
+        raise NotImplementedError
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the store.
@@ -90,6 +146,16 @@ class RedisKVStore(BaseKVStore):
         """
         deleted_num = self._redis_client.hdel(collection, key)
         return bool(deleted_num > 0)
+
+    async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        """Delete a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+
+        """
+        raise NotImplementedError
 
     @classmethod
     def from_host_and_port(

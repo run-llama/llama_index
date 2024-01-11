@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core import (
+from llama_index.core.base_multi_modal_retriever import (
     MultiModalRetriever,
 )
 from llama_index.data_structs.data_structs import IndexDict

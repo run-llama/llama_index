@@ -4,6 +4,14 @@ Portkey integration with Llama_index for enhanced monitoring.
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 from llama_index.llms.base import llm_chat_callback, llm_completion_callback
 from llama_index.llms.custom import CustomLLM
 from llama_index.llms.generic_utils import (
@@ -17,14 +25,6 @@ from llama_index.llms.portkey_utils import (
     generate_llm_metadata,
     get_llm,
     is_chat_model,
-)
-from llama_index.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseGen,
-    LLMMetadata,
 )
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
@@ -152,7 +152,9 @@ class Portkey(CustomLLM):
         return self
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         """Completion endpoint for LLM."""
         if self._is_chat_model:
             complete_fn = chat_to_completion_decorator(self._chat)
@@ -169,7 +171,9 @@ class Portkey(CustomLLM):
         return chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         """Completion endpoint for LLM."""
         if self._is_chat_model:
             complete_fn = stream_chat_to_completion_decorator(self._stream_chat)

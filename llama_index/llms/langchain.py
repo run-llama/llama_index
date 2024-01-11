@@ -6,9 +6,7 @@ if TYPE_CHECKING:
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -18,6 +16,12 @@ from llama_index.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.llm import LLM
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
@@ -67,13 +71,23 @@ class LangChainLLM(LLM):
             to_lc_messages,
         )
 
+        if not self.metadata.is_chat_model:
+            prompt = self.messages_to_prompt(messages)
+            completion_response = self.complete(prompt, formatted=True, **kwargs)
+            return completion_response_to_chat_response(completion_response)
+
         lc_messages = to_lc_messages(messages)
         lc_message = self._llm.predict_messages(messages=lc_messages, **kwargs)
         message = from_lc_messages([lc_message])[0]
         return ChatResponse(message=message)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        if not formatted:
+            prompt = self.completion_to_prompt(prompt)
+
         output_str = self._llm.predict(prompt, **kwargs)
         return CompletionResponse(text=output_str)
 
@@ -81,6 +95,11 @@ class LangChainLLM(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        if not self.metadata.is_chat_model:
+            prompt = self.messages_to_prompt(messages)
+            stream_completion = self.stream_complete(prompt, formatted=True, **kwargs)
+            return stream_completion_response_to_chat_response(stream_completion)
+
         from llama_index.langchain_helpers.streaming import (
             StreamingGeneratorCallbackHandler,
         )
@@ -112,7 +131,12 @@ class LangChainLLM(LLM):
         return gen()
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        if not formatted:
+            prompt = self.completion_to_prompt(prompt)
+
         from llama_index.langchain_helpers.streaming import (
             StreamingGeneratorCallbackHandler,
         )
@@ -148,9 +172,11 @@ class LangChainLLM(LLM):
         return self.chat(messages, **kwargs)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         # TODO: Implement async complete
-        return self.complete(prompt, **kwargs)
+        return self.complete(prompt, formatted=formatted, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
@@ -166,12 +192,12 @@ class LangChainLLM(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         # TODO: Implement async stream_complete
 
         async def gen() -> CompletionResponseAsyncGen:
-            for response in self.stream_complete(prompt, **kwargs):
+            for response in self.stream_complete(prompt, formatted=formatted, **kwargs):
                 yield response
 
         return gen()
