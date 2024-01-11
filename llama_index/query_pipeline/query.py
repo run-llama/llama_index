@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import networkx
 
+from llama_index.async_utils import run_jobs
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
@@ -70,6 +71,28 @@ def print_debug_input(
     print_text(output + "\n", color="llama_lavender")
 
 
+def print_debug_input_multi(
+    module_keys: List[str],
+    module_inputs: List[Dict[str, Any]],
+    val_str_len: int = 200,
+) -> None:
+    """Print debug input."""
+    output = f"> Running modules and inputs in parallel: \n"
+    for module_key, input in zip(module_keys, module_inputs):
+        cur_output = f"Module key: {module_key}. Input: \n"
+        for key, value in input.items():
+            # stringify and truncate output
+            val_str = (
+                str(value)[:val_str_len] + "..."
+                if len(str(value)) > val_str_len
+                else str(value)
+            )
+            cur_output += f"{key}: {val_str}\n"
+        output += cur_output + "\n"
+
+    print_text(output + "\n", color="llama_lavender")
+
+
 class QueryPipeline(QueryComponent):
     """A query pipeline that can allow arbitrary chaining of different modules.
 
@@ -89,6 +112,13 @@ class QueryPipeline(QueryComponent):
     )
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
+    )
+    show_progress: bool = Field(
+        default=False,
+        description="Whether to show progress bar (currently async only).",
+    )
+    num_workers: int = Field(
+        default=4, description="Number of workers to use (currently async only)."
     )
 
     class Config:
@@ -423,18 +453,46 @@ class QueryPipeline(QueryComponent):
             all_module_inputs[module_key] = module_input
 
         while len(queue) > 0:
-            module_key = queue.pop(0)
-            module = self.module_dict[module_key]
-            module_input = all_module_inputs[module_key]
+            popped_indices = set()
+            popped_nodes = []
+            # get subset of nodes who don't have ancestors also in the queue
+            # these are tasks that are parallelizable
+            for i, module_key in enumerate(queue):
+                module_ancestors = networkx.ancestors(self.dag, module_key)
+                if len(set(module_ancestors).intersection(queue)) == 0:
+                    popped_indices.add(i)
+                    popped_nodes.append(module_key)
+
+            # update queue
+            queue = [
+                module_key
+                for i, module_key in enumerate(queue)
+                if i not in popped_indices
+            ]
 
             if self.verbose:
-                print_debug_input(module_key, module_input)
-            output_dict = await module.arun_component(**module_input)
+                print_debug_input_multi(
+                    popped_nodes,
+                    [all_module_inputs[module_key] for module_key in popped_nodes],
+                )
 
-            # get new nodes and is_leaf
-            self._process_component_output(
-                output_dict, module_key, all_module_inputs, result_outputs
+            # create tasks from popped nodes
+            tasks = []
+            for module_key in popped_nodes:
+                module = self.module_dict[module_key]
+                module_input = all_module_inputs[module_key]
+                tasks.append(module.arun_component(**module_input))
+
+            # run tasks
+            output_dicts = await run_jobs(
+                tasks, show_progress=self.show_progress, workers=self.num_workers
             )
+
+            for output_dict, module_key in zip(output_dicts, popped_nodes):
+                # get new nodes and is_leaf
+                self._process_component_output(
+                    output_dict, module_key, all_module_inputs, result_outputs
+                )
 
         return result_outputs
 
