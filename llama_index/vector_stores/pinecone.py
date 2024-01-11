@@ -171,12 +171,11 @@ def _import_pinecone() -> Any:
 def _is_pinecone_v3() -> bool:
     pinecone = _import_pinecone()
     pinecone_client_version = pinecone.__version__
-    if version.parse(pinecone_client_version) >= version.parse(
+    if not version.parse(pinecone_client_version) >= version.parse(
         "3.0.0"
     ):  # Will not work with .dev versions
-        return True
-    else:
         return False
+    return True
 
 
 class PineconeVectorStore(BasePydanticVectorStore):
@@ -253,13 +252,11 @@ class PineconeVectorStore(BasePydanticVectorStore):
         )
         pinecone = _import_pinecone()
 
-        # Cannot pass in str for pinecone_index
-        # Both clients >= 3.0.0 and < 3.0.0 should have pinecone.Index class
-        if not isinstance(pinecone_index, pinecone.Index):
+        if isinstance(pinecone_index, str):
             raise ValueError(
-                f"`pinecone_index` should be an instance of pinecone.Index, "
-                f"got {type(pinecone_index)}"
+                f"`pinecone_index` cannot be of type `str`; should be an instance of pinecone.Index, "
             )
+        # TODO: Make instance check stronger -- check if pinecone_index is not pinecone.Index, else raise ValueError
 
         self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
             api_key, index_name, environment, **kwargs
@@ -306,8 +303,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> "PineconeVectorStore":
         pinecone_index = cls.initialize_pinecone_client(
-            api_key, index_name, environment,
-            **kwargs
+            api_key, index_name, environment, **kwargs
         )  # TODO: not sure initialize_pinecone_client should be here
 
         return cls(

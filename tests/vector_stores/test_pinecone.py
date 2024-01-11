@@ -28,9 +28,9 @@ class MockPineconeServerless:
         def __init__(self, api_key: str) -> None:
             pass
 
-        class Index:
-            def __init__(self, index_name: str) -> None:
-                pass
+    class Index:
+        def __init__(self, index_name: str) -> None:
+            pass
 
 
 class MockUnVersionedPineconeRelease:
@@ -75,7 +75,10 @@ class TestPineconeVectorStore(unittest.TestCase):
 
             # PineconeVectorStore calls its own init method when instantiated
             store = PineconeVectorStore(
-                api_key="dummy_key", index_name="dummy_index", environment="dummy_env"
+                api_key="dummy_key",
+                index_name="dummy_index",
+                environment="dummy_env",
+                pinecone_index=MockPineconePods.Index("some-pinecone-index"),
             )
 
     def test_serverless_version(self) -> None:
@@ -86,7 +89,11 @@ class TestPineconeVectorStore(unittest.TestCase):
 
             assert mock_version == "3.0.0"
 
-            store = PineconeVectorStore(api_key="dummy_key", index_name="dummy_index")
+            store = PineconeVectorStore(
+                api_key="dummy_key",
+                index_name="dummy_index",
+                pinecone_index=MockPineconeServerless.Index("some-pinecone-index"),
+            )
 
     def test_unversioned_pinecone_client(self) -> None:
         with pytest.raises(
