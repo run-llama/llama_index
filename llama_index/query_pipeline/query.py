@@ -1,9 +1,9 @@
 """Query Pipeline."""
 
+import asyncio
 import json
 import uuid
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
-import asyncio
 
 import networkx
 
@@ -460,11 +460,16 @@ class QueryPipeline(QueryComponent):
                     popped_nodes.append(module_key)
 
             # update queue
-            queue = [module_key for i, module_key in enumerate(queue) if i not in popped_indices]
+            queue = [
+                module_key
+                for i, module_key in enumerate(queue)
+                if i not in popped_indices
+            ]
 
             if self.verbose:
                 print_debug_input_multi(
-                    popped_nodes, [all_module_inputs[module_key] for module_key in popped_nodes]
+                    popped_nodes,
+                    [all_module_inputs[module_key] for module_key in popped_nodes],
                 )
 
             # create tasks from popped nodes
