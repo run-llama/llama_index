@@ -158,6 +158,9 @@ import_err_msg = (
 
 
 def _import_pinecone() -> Any:
+    """ "
+    Try to import pinecone module. If it's not already installed, instruct user how to install.
+    """
     try:
         import pinecone
     except ImportError as e:
@@ -169,13 +172,16 @@ def _import_pinecone() -> Any:
 
 
 def _is_pinecone_v3() -> bool:
+    """
+    Check whether the pinecone client is >= 3.0.0.
+    """
     pinecone = _import_pinecone()
     pinecone_client_version = pinecone.__version__
-    if not version.parse(pinecone_client_version) >= version.parse(
+    if version.parse(pinecone_client_version) >= version.parse(
         "3.0.0"
-    ):  # Will not work with .dev versions
-        return False
-    return True
+    ):  # Will not work with .dev versions, e.g. "3.0.0.dev8"
+        return True
+    return False
 
 
 class PineconeVectorStore(BasePydanticVectorStore):
@@ -250,26 +256,31 @@ class PineconeVectorStore(BasePydanticVectorStore):
             batch_size=batch_size,
             remove_text_from_metadata=remove_text_from_metadata,
         )
-        pinecone = _import_pinecone()
 
+        # TODO: Make following instance check stronger -- check if pinecone_index is not pinecone.Index, else raise
+        #  ValueError
         if isinstance(pinecone_index, str):
             raise ValueError(
                 f"`pinecone_index` cannot be of type `str`; should be an instance of pinecone.Index, "
             )
-        # TODO: Make instance check stronger -- check if pinecone_index is not pinecone.Index, else raise ValueError
 
         self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
             api_key, index_name, environment, **kwargs
         )
 
-    @staticmethod
+    @classmethod
     def _initialize_pinecone_client(
+        cls,
         api_key: Optional[str],
         index_name: Optional[str],
         environment: Optional[str],
         **kwargs: Any,
     ) -> Any:
-        """Initialize Pinecone client based on version."""
+        """
+        Initialize Pinecone client based on version.
+
+        If client version <3.0.0, use pods-based initialization; else, use serverless initialization.
+        """
         if not index_name:
             raise ValueError(
                 "`index_name` is required for Pinecone client initialization"
@@ -277,12 +288,14 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         pinecone = _import_pinecone()
 
-        if _is_pinecone_v3():
+        if (
+            not _is_pinecone_v3()
+        ):  # If old version of Pinecone client (version bifurcation temporary):
             if not environment:
                 raise ValueError("environment is required for Pinecone client < 3.0.0")
             pinecone.init(api_key=api_key, environment=environment)
             return pinecone.Index(index_name)
-        else:  # If serverless:
+        else:  # If new version of Pinecone client (serverless):
             pinecone_instance = pinecone.Pinecone(api_key=api_key)
             return pinecone_instance.Index(index_name)
 
@@ -302,9 +315,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
         default_empty_query_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> "PineconeVectorStore":
-        pinecone_index = cls.initialize_pinecone_client(
+        pinecone_index = cls._initialize_pinecone_client(
             api_key, index_name, environment, **kwargs
-        )  # TODO: not sure initialize_pinecone_client should be here
+        )
 
         return cls(
             pinecone_index=pinecone_index,
