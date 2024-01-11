@@ -5,10 +5,11 @@ An index that that is built on top of an existing vector store.
 
 """
 import logging
-import os
 from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
+
+from packaging import version
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
@@ -156,6 +157,28 @@ import_err_msg = (
 )
 
 
+def _import_pinecone() -> Any:
+    try:
+        import pinecone
+    except ImportError as e:
+        raise ImportError(
+            "Could not import pinecone python package. "
+            "Please install it with `pip install pinecone-client`."
+        ) from e
+    return pinecone
+
+
+def _is_pinecone_v3() -> bool:
+    pinecone = _import_pinecone()
+    pinecone_client_version = pinecone.__version__
+    if version.parse(pinecone_client_version) >= version.parse(
+        "3.0.0"
+    ):  # Will not work with .dev versions
+        return True
+    else:
+        return False
+
+
 class PineconeVectorStore(BasePydanticVectorStore):
     """Pinecone Vector Store.
 
@@ -233,21 +256,19 @@ class PineconeVectorStore(BasePydanticVectorStore):
             batch_size=batch_size,
             remove_text_from_metadata=remove_text_from_metadata,
         )
+        pinecone = _import_pinecone()
 
-        if not isinstance(pinecone_index, str):
-            self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
-                api_key, index_name, environment, use_pod_based, **kwargs
+        # Cannot pass in str for pinecone_index
+        # Both clients >= 3.0.0 and < 3.0.0 should have pinecone.Index class
+        if not isinstance(pinecone_index, pinecone.Index):
+            raise ValueError(
+                f"`pinecone_index` should be an instance of pinecone.Index, "
+                f"got {type(pinecone_index)}"
             )
-        else:
-            if not os.getenv("PINECONE_API_KEY"):
-                raise OSError("PINECONE_API_KEY environment variable is required.")
-            if not pinecone_index == index_name:
-                raise ValueError(
-                    "The string value for `pinecone_index` must match the string value for `index_name`."
-                )
-            self._pinecone_index = self._initialize_pinecone_client(
-                api_key, index_name, environment, use_pod_based, **kwargs
-            )
+
+        self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
+            api_key, index_name, environment, **kwargs
+        )
 
     @staticmethod
     def _initialize_pinecone_client(
@@ -260,22 +281,19 @@ class PineconeVectorStore(BasePydanticVectorStore):
         """Initialize Pinecone client based on version."""
         if not index_name:
             raise ValueError(
-                "index_name is required for Pinecone client initialization"
+                "`index_name` is required for Pinecone client initialization"
             )
 
-        import pinecone
+        pinecone = _import_pinecone()
 
-        if not use_pod_based:
+        if _is_pinecone_v3():
+            if not environment:
+                raise ValueError("environment is required for Pinecone client < 3.0.0")
+            pinecone.init(api_key=api_key, environment=environment)
+            return pinecone.Index(index_name)
+        else:  # If serverless:
             pinecone_instance = pinecone.Pinecone(api_key=api_key)
             return pinecone_instance.Index(index_name)
-
-        if not environment:
-            raise ValueError(
-                "environment is required for Pod-based Pinecone client usage"
-            )
-
-        pinecone.init(api_key=api_key, environment=environment)
-        return pinecone.Index(index_name)
 
     @classmethod
     def from_params(
@@ -296,7 +314,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     ) -> "PineconeVectorStore":
         pinecone_index = cls.initialize_pinecone_client(
             api_key, index_name, environment, use_pod_based, **kwargs
-        )
+        )  # TODO: not sure initialize_pinecone_client should be here
 
         return cls(
             pinecone_index=pinecone_index,
