@@ -150,14 +150,11 @@ class QueryPipeline(QueryComponent):
             if modules is not None or links is not None:
                 raise ValueError("Cannot specify both chain and modules/links in init.")
             self.add_chain(chain)
-        elif modules is not None or links is not None:
-            if modules is None or links is None:
-                raise ValueError(
-                    "Must specify both modules and links in init if chain is not specified."
-                )
+        elif modules is not None:
             self.add_modules(modules)
-            for link in links:
-                self.add_link(**link)
+            if links is not None:
+                for link in links:
+                    self.add_link(**link)
 
     def add_chain(self, chain: Sequence[QUERY_COMPONENT_TYPE]) -> None:
         """Add a chain of modules to the pipeline.
