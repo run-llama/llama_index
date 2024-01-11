@@ -96,13 +96,15 @@ class SemanticSplitterNodeParser(NodeParser):
         nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
 
         for node in nodes_with_progress:
-            nodes = self.build_semantic_nodes_from_documents([node])
+            nodes = self.build_semantic_nodes_from_documents([node], show_progress)
             all_nodes.extend(nodes)
 
         return all_nodes
 
     def build_semantic_nodes_from_documents(
-        self, documents: Sequence[Document]
+        self,
+        documents: Sequence[Document],
+        show_progress: bool = False,
     ) -> List[BaseNode]:
         """Build window nodes from documents."""
         all_nodes: List[BaseNode] = []
@@ -136,9 +138,14 @@ class SemanticSplitterNodeParser(NodeParser):
                         combined_sentence += " " + sentences[j]["sentence"]
 
                 sentences[i]["combined_sentence"] = combined_sentence
-                sentences[i][
-                    "combined_sentence_embedding"
-                ] = self.embedding.get_text_embedding(combined_sentence)
+
+            combined_sentence_embeddings = self.embedding.get_text_embedding_batch(
+                [s["combined_sentence"] for s in sentences],
+                show_progress=show_progress,
+            )
+
+            for i, embedding in enumerate(combined_sentence_embeddings):
+                sentences[i]["combined_sentence_embedding"] = embedding
 
             # Calculate similarity between sentence groups
             distances = []
