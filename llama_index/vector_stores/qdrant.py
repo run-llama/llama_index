@@ -406,6 +406,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 "Hybrid search is not enabled. Please build the query with "
                 "`enable_hybrid=True` in the constructor."
             )
+        elif query.mode == VectorStoreQueryMode.MMR:
+            # if self.enable_hybrid:
+            raise ValueError(
+                "Hybrid search and MMR is enabled. Please build the query with "
+                "`enable_hybrid=True` in the constructor."
+            )
         elif (
             query.mode == VectorStoreQueryMode.HYBRID
             and self.enable_hybrid
