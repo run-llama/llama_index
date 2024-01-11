@@ -253,8 +253,3 @@ class CustomQueryComponent(QueryComponent):
         # NOTE: user can override this too, but we have them implement an
         # abstract method to make sure they do it
         return OutputKeys.from_keys(self._output_keys)
-
-
-# accept both QueryComponent and ChainableMixin as inputs to query pipeline
-# ChainableMixin modules will be converted to components via `as_query_component`
-QUERY_COMPONENT_TYPE = Union[QueryComponent, ChainableMixin]
