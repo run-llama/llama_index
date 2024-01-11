@@ -20,7 +20,6 @@ class SentenceCombination(TypedDict):
     index: int
     combined_sentence: str
     combined_sentence_embedding: List[float]
-    distance_to_next: float
 
 
 class SemanticSplitterNodeParser(NodeParser):
@@ -46,12 +45,14 @@ class SemanticSplitterNodeParser(NodeParser):
     )
 
     window_size: int = Field(
-        description="The number of sentences to group together when evaluating semantic similarity.  Set to 1 to consider each sentence individually.  Set to >1 to group sentences together."
+        description="The number of sentences to group together when evaluating semantic similarity.  Set to 1 to consider each sentence individually.  Set to >1 to group sentences together.",
+        exclude=True,
     )
 
     breakpoint_percentile_threshold = Field(
         default=95,
         description="The percentile of cosine dissimilarity that must be exceeded between a group of sentences and the next to form a node.  The smaller this number is, the more nodes will be generated",
+        exclude=True,
     )
 
     @classmethod
@@ -62,8 +63,8 @@ class SemanticSplitterNodeParser(NodeParser):
     def from_defaults(
         cls,
         embedding: BaseEmbedding,
-        breakpoint_percentile_threshold: int = 95,
-        window_size: int = 1,
+        breakpoint_percentile_threshold: Optional[int] = 95,
+        window_size: Optional[int] = 1,
         sentence_splitter: Optional[Callable[[str], List[str]]] = None,
         original_text_metadata_key: str = DEFAULT_OG_TEXT_METADATA_KEY,
         include_metadata: bool = True,
@@ -112,32 +113,7 @@ class SemanticSplitterNodeParser(NodeParser):
             text = doc.text
             text_splits = self.sentence_splitter(text)
 
-            sentences: List[SentenceCombination] = [
-                {
-                    "sentence": x,
-                    "index": i,
-                    "combined_sentence": "",
-                    "combined_sentence_embedding": [],
-                    "distance_to_next": 0,
-                }
-                for i, x in enumerate(text_splits)
-            ]
-
-            # Group sentences and calculate embeddings for sentence groups
-            for i in range(len(sentences)):
-                combined_sentence = ""
-
-                for j in range(i - self.window_size, i):
-                    if j >= 0:
-                        combined_sentence += sentences[j]["sentence"] + " "
-
-                combined_sentence += sentences[i]["sentence"]
-
-                for j in range(i + 1, i + 1 + self.window_size):
-                    if j < len(sentences):
-                        combined_sentence += " " + sentences[j]["sentence"]
-
-                sentences[i]["combined_sentence"] = combined_sentence
+            sentences = self._build_sentence_groups(text_splits)
 
             combined_sentence_embeddings = self.embedding.get_text_embedding_batch(
                 [s["combined_sentence"] for s in sentences],
@@ -147,52 +123,9 @@ class SemanticSplitterNodeParser(NodeParser):
             for i, embedding in enumerate(combined_sentence_embeddings):
                 sentences[i]["combined_sentence_embedding"] = embedding
 
-            # Calculate similarity between sentence groups
-            distances = []
-            for i in range(len(sentences) - 1):
-                embedding_current = sentences[i]["combined_sentence_embedding"]
-                embedding_next = sentences[i + 1]["combined_sentence_embedding"]
+            distances = self._calculate_distances_between_sentence_groups(sentences)
 
-                similarity = self.embedding.similarity(
-                    embedding_current, embedding_next
-                )
-
-                distance = 1 - similarity
-
-                distances.append(distance)
-                sentences[i]["distance_to_next"] = distance
-
-            chunks = []
-            if len(distances) > 0:
-                breakpoint_distance_threshold = np.percentile(
-                    distances, self.breakpoint_percentile_threshold
-                )
-
-                indices_above_threshold = [
-                    i
-                    for i, x in enumerate(distances)
-                    if x > breakpoint_distance_threshold
-                ]
-
-                # Chunk sentences into semantic groups based on percentile breakpoints
-                start_index = 0
-
-                for index in indices_above_threshold:
-                    end_index = index - 1
-
-                    group = sentences[start_index : end_index + 1]
-                    combined_text = "  ".join([d["sentence"] for d in group])
-                    chunks.append(combined_text)
-
-                    start_index = index
-
-                if start_index < len(sentences):
-                    combined_text = "  ".join(
-                        [d["sentence"] for d in sentences[start_index:]]
-                    )
-                    chunks.append(combined_text)
-            else:
-                chunks = [" ".join(text_splits)]
+            chunks = self._build_node_chunks(sentences, distances)
 
             nodes = build_nodes_from_splits(
                 chunks,
@@ -203,3 +136,87 @@ class SemanticSplitterNodeParser(NodeParser):
             all_nodes.extend(nodes)
 
         return all_nodes
+
+    def _build_sentence_groups(
+        self, text_splits: List[str]
+    ) -> List[SentenceCombination]:
+        sentences: List[SentenceCombination] = [
+            {
+                "sentence": x,
+                "index": i,
+                "combined_sentence": "",
+                "combined_sentence_embedding": [],
+            }
+            for i, x in enumerate(text_splits)
+        ]
+
+        # Group sentences and calculate embeddings for sentence groups
+        for i in range(len(sentences)):
+            combined_sentence = ""
+
+            for j in range(i - self.window_size, i):
+                if j >= 0:
+                    combined_sentence += sentences[j]["sentence"]
+
+            combined_sentence += sentences[i]["sentence"]
+
+            for j in range(i + 1, i + 1 + self.window_size):
+                if j < len(sentences):
+                    combined_sentence += sentences[j]["sentence"]
+
+            sentences[i]["combined_sentence"] = combined_sentence
+
+        return sentences
+
+    def _calculate_distances_between_sentence_groups(
+        self, sentences: List[SentenceCombination]
+    ) -> List[float]:
+        distances = []
+        for i in range(len(sentences) - 1):
+            embedding_current = sentences[i]["combined_sentence_embedding"]
+            embedding_next = sentences[i + 1]["combined_sentence_embedding"]
+
+            similarity = self.embedding.similarity(embedding_current, embedding_next)
+
+            distance = 1 - similarity
+
+            distances.append(distance)
+
+        return distances
+
+    def _build_node_chunks(
+        self, sentences: List[SentenceCombination], distances: List[float]
+    ) -> List[str]:
+        chunks = []
+        if len(distances) > 0:
+            breakpoint_distance_threshold = np.percentile(
+                distances, self.breakpoint_percentile_threshold
+            )
+
+            indices_above_threshold = [
+                i for i, x in enumerate(distances) if x > breakpoint_distance_threshold
+            ]
+
+            # Chunk sentences into semantic groups based on percentile breakpoints
+            start_index = 0
+
+            for index in indices_above_threshold:
+                end_index = index - 1
+
+                group = sentences[start_index : end_index + 1]
+                combined_text = "".join([d["sentence"] for d in group])
+                chunks.append(combined_text)
+
+                start_index = index
+
+            if start_index < len(sentences):
+                combined_text = "".join(
+                    [d["sentence"] for d in sentences[start_index:]]
+                )
+                chunks.append(combined_text)
+        else:
+            # If, for some reason we didn't get any distances (i.e. very, very small documents) just
+            # treat the whole document as a single node
+            chunks = [" ".join([s["sentence"] for s in sentences])]
+
+        return chunks
