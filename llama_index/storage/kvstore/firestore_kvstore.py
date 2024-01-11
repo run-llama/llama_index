@@ -103,7 +103,7 @@ class FirestoreKVStore(BaseKVStore):
         self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
     ) -> None:
         batch = self._db.batch()
-        for i, (key, val) in enumerate(kv_pairs):
+        for i, (key, val) in enumerate(kv_pairs, start=1):
             collection_id = self.firestore_collection(collection)
             val = self.replace_field_name_set(val)
             batch.set(self._db.collection(collection_id).document(key), val, merge=True)
