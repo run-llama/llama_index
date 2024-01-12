@@ -129,7 +129,7 @@ Traceloop.init()
 ---
 maxdepth: 1
 ---
-/examples/callbacks/WandbCallbackHandler.ipynb
+/examples/callbacks/OpenLLMetry.ipynb
 ```
 
 ![](/_static/integrations/openllmetry.png)
