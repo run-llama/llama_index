@@ -2,7 +2,6 @@ from typing import Any, Dict, Optional
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import (
-    DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
@@ -31,7 +30,7 @@ class Neutrino(OpenAILike):
 
     def __init__(
         self,
-        model: str = None,
+        model: Optional[str] = None,
         router: str = DEFAULT_ROUTER,
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: int = DEFAULT_NUM_OUTPUTS,
