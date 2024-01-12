@@ -3,12 +3,7 @@ from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
@@ -17,6 +12,11 @@ from llama_index.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.llms.base import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.llms.custom import CustomLLM
 from llama_index.llms.xinference_utils import (
     xinference_message_to_history,
     xinference_modelname_to_contextsize,
@@ -216,7 +216,9 @@ class Xinference(CustomLLM):
         return gen()
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         assert self._generator is not None
         response_text = self._generator.chat(
             prompt=prompt,
@@ -233,7 +235,9 @@ class Xinference(CustomLLM):
         )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         assert self._generator is not None
         response_iter = self._generator.chat(
             prompt=prompt,

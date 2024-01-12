@@ -39,7 +39,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | pgvecto.rs               | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
-| Qdrant                   | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓     |
+| Qdrant                   | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Redis                    | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Simple                   | in-memory           | ✓                  |               | ✓      |                 |       |
 | SingleStore              | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
@@ -87,7 +87,6 @@ maxdepth: 1
 /examples/vector_stores/qdrant_hybrid.ipynb
 /examples/vector_stores/RocksetIndexDemo.ipynb
 /examples/vector_stores/SimpleIndexDemo.ipynb
-/examples/vector_stores/SingleStoreDemo.ipynb
 /examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 /examples/vector_stores/TairIndexDemo.ipynb
 /examples/vector_stores/TencentVectorDBIndexDemo.ipynb

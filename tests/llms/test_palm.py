@@ -31,8 +31,8 @@ class MockPalmPackage(MagicMock):
         return self._mock_models()
 
 
+from llama_index.core.llms.types import CompletionResponse
 from llama_index.llms.palm import PaLM
-from llama_index.llms.types import CompletionResponse
 
 
 @pytest.mark.skipif(

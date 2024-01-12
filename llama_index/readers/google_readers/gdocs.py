@@ -65,7 +65,11 @@ class GoogleDocsReader(BasePydanticReader):
         results = []
         for document_id in document_ids:
             doc = self._load_doc(document_id)
-            results.append(Document(text=doc, metadata={"document_id": document_id}))
+            results.append(
+                Document(
+                    text=doc, id_=document_id, metadata={"document_id": document_id}
+                )
+            )
         return results
 
     def _load_doc(self, document_id: str) -> str:

@@ -1,9 +1,9 @@
 from typing import List
 from unittest.mock import MagicMock, call, patch
 
+from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.llms import LOCALAI_DEFAULTS, OpenAILike
 from llama_index.llms.openai import Tokenizer
-from llama_index.llms.types import ChatMessage, MessageRole
 from openai.types import Completion, CompletionChoice
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage

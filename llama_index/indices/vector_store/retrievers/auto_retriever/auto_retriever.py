@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Tuple, cast
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core import BaseAutoRetriever
+from llama_index.core.base_auto_retriever import BaseAutoRetriever
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.indices.vector_store.retrievers import VectorIndexRetriever

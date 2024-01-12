@@ -5,7 +5,7 @@ from nltk.stem import PorterStemmer
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import simple_extract_keywords
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.schema import BaseNode, NodeWithScore, QueryBundle

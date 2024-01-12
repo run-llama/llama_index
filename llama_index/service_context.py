@@ -1,12 +1,11 @@
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, List, Optional, cast
 
 import llama_index
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.utils import EmbedType, resolve_embed_model
+from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
@@ -88,7 +87,7 @@ class ServiceContext:
         llm_predictor: Optional[BaseLLMPredictor] = None,
         llm: Optional[LLMType] = "default",
         prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[EmbedType] = "default",
+        embed_model: Optional[Any] = "default",
         node_parser: Optional[NodeParser] = None,
         text_splitter: Optional[TextSplitter] = None,
         transformations: Optional[List[TransformComponent]] = None,
@@ -132,6 +131,10 @@ class ServiceContext:
             chunk_size_limit (Optional[int]): renamed to chunk_size
 
         """
+        from llama_index.embeddings.utils import EmbedType, resolve_embed_model
+
+        embed_model = cast(EmbedType, embed_model)
+
         if chunk_size_limit is not None and chunk_size is None:
             logger.warning(
                 "chunk_size_limit is deprecated, please specify chunk_size instead"
@@ -227,7 +230,7 @@ class ServiceContext:
         llm_predictor: Optional[BaseLLMPredictor] = None,
         llm: Optional[LLMType] = "default",
         prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[EmbedType] = "default",
+        embed_model: Optional[Any] = "default",
         node_parser: Optional[NodeParser] = None,
         text_splitter: Optional[TextSplitter] = None,
         transformations: Optional[List[TransformComponent]] = None,
@@ -245,6 +248,10 @@ class ServiceContext:
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
         """Instantiate a new service context using a previous as the defaults."""
+        from llama_index.embeddings.utils import EmbedType, resolve_embed_model
+
+        embed_model = cast(EmbedType, embed_model)
+
         if chunk_size_limit is not None and chunk_size is None:
             logger.warning(
                 "chunk_size_limit is deprecated, please specify chunk_size",

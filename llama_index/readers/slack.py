@@ -208,7 +208,11 @@ class SlackReader(BasePydanticReader):
                 channel_id, reverse_chronological=reverse_chronological
             )
             results.append(
-                Document(text=channel_content, metadata={"channel": channel_id})
+                Document(
+                    id_=channel_id,
+                    text=channel_content,
+                    metadata={"channel": channel_id},
+                )
             )
         return results
 

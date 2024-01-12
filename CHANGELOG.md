@@ -1,5 +1,98 @@
 # ChangeLog
 
+## [0.9.30] - 2024-01-11
+
+### New Features
+
+- Implements a Node Parser using embeddings for Semantic Splitting (#9988)
+- Add Anyscale Embedding model support (#9470)
+
+### Bug Fixes / Nits
+
+- nit: fix pandas get prompt (#10001)
+- Fix: Token counting bug (#9912)
+- Bump jinja2 from 3.1.2 to 3.1.3 (#9997)
+- Fix corner case for qdrant hybrid search (#9993)
+- Bugfix: sphinx generation errors (#9944)
+- Fix: `language` used before assignment in `CodeSplitter` (#9987)
+- fix inconsistent name "text_parser" in section "Use a Text Splitter… (#9980)
+- :bug: fixing batch size (#9982)
+- add auto-async execution to query pipelines (#9967)
+- :bug: fixing init (#9977)
+- Parallel Loading with SimpleDirectoryReader (#9965)
+- do not force delete an index in milvus (#9974)
+
+## [0.9.29] - 2024-01-10
+
+### New Features
+
+- Added support for together.ai models (#9962)
+- Added support for batch redis/firestore kvstores, async firestore kvstore (#9827)
+- Parallelize `IngestionPipeline.run()` (#9920)
+- Added new query pipeline components: function, argpack, kwargpack (#9952)
+
+### Bug Fixes / Nits
+
+- Updated optional langchain imports to avoid warnings (#9964)
+- Raise an error if empty nodes are embedded (#9953)
+
+## [0.9.28] - 2024-01-09
+
+### New Features
+
+- Added support for Nvidia TenorRT LLM (#9842)
+- Allow `tool_choice` to be set during agent construction (#9924)
+- Added streaming support for `QueryPipeline` (#9919)
+
+### Bug Fixes / Nits
+
+- Set consistent doc-ids for llama-index readers (#9923, #9916)
+- Remove unneeded model inputs for HuggingFaceEmbedding (#9922)
+- Propagate `tool_choice` flag to downstream APIs (#9901)
+- Add `chat_store_key` to chat memory `from_defaults()` (#9928)
+
+## [0.9.27] - 2024-01-08
+
+### New Features
+
+- add query pipeline (#9908)
+- Feature: Azure Multi Modal (fixes: #9471) (#9843)
+- add postgres docker (#9906)
+- Vectara auto_retriever (#9865)
+- Redis Chat Store support (#9880)
+- move more classes to core (#9871)
+
+### Bug Fixes / Nits / Smaller Features
+
+- Propagate `tool_choice` flag to downstream APIs (#9901)
+- filter out negative indexes from faiss query (#9907)
+- added NE filter for qdrant payloads (#9897)
+- Fix incorrect id assignment in MyScale query result (#9900)
+- Qdrant Text Match Filter (#9895)
+- Fusion top k for hybrid search (#9894)
+- Fix (#9867) sync_to_async to avoid blocking during asynchronous calls (#9869)
+- A single node passed into compute_scores returns as a float (#9866)
+- Remove extra linting steps (#9878)
+- add vectara links (#9886)
+
+## [0.9.26] - 2024-01-05
+
+### New Features
+
+- Added a `BaseChatStore` and `SimpleChatStore` abstraction for dedicated chat memory storage (#9863)
+- Enable custom `tree_sitter` parser to be passed into `CodeSplitter` (#9845)
+- Created a `BaseAutoRetriever` base class, to allow other retrievers to extend to auto modes (#9846)
+- Added support for Nvidia Triton LLM (#9488)
+- Added `DeepEval` one-click observability (#9801)
+
+### Bug Fixes / Nits
+
+- Updated the guidance integration to work with the latest version (#9830)
+- Made text storage optional for doctores/ingestion pipeline (#9847)
+- Added missing `sphinx-automodapi` dependency for docs (#9852)
+- Return actual node ids in weaviate query results (#9854)
+- Added prompt formatting to LangChainLLM (#9844)
+
 ## [0.9.25] - 2024-01-03
 
 ### New Features

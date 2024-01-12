@@ -1,6 +1,7 @@
 from typing import Optional
 
 from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
+from llama_index.storage.docstore.types import DEFAULT_BATCH_SIZE
 from llama_index.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 
 
@@ -19,9 +20,10 @@ class MongoDocumentStore(KVDocumentStore):
         self,
         mongo_kvstore: MongoDBKVStore,
         namespace: Optional[str] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         """Init a MongoDocumentStore."""
-        super().__init__(mongo_kvstore, namespace)
+        super().__init__(mongo_kvstore, namespace=namespace, batch_size=batch_size)
 
     @classmethod
     def from_uri(

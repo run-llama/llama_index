@@ -8,7 +8,7 @@ in sequence in order to answer a given query.
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union
 
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexList
 from llama_index.indices.base import BaseIndex
 from llama_index.schema import BaseNode

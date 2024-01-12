@@ -3,7 +3,11 @@
 from typing import Dict, Optional, Sequence
 
 from llama_index.schema import BaseNode, TextNode
-from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
+from llama_index.storage.docstore.types import (
+    DEFAULT_BATCH_SIZE,
+    BaseDocumentStore,
+    RefDocInfo,
+)
 from llama_index.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.storage.kvstore.types import BaseKVStore
 
@@ -42,6 +46,7 @@ class KVDocumentStore(BaseDocumentStore):
         self,
         kvstore: BaseKVStore,
         namespace: Optional[str] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         """Init a KVDocumentStore."""
         self._kvstore = kvstore
@@ -49,6 +54,7 @@ class KVDocumentStore(BaseDocumentStore):
         self._node_collection = f"{self._namespace}/data"
         self._ref_doc_collection = f"{self._namespace}/ref_doc_info"
         self._metadata_collection = f"{self._namespace}/metadata"
+        self._batch_size = batch_size
 
     @property
     def docs(self) -> Dict[str, BaseNode]:
@@ -62,7 +68,11 @@ class KVDocumentStore(BaseDocumentStore):
         return {key: json_to_doc(json) for key, json in json_dict.items()}
 
     def add_documents(
-        self, nodes: Sequence[BaseNode], allow_update: bool = True
+        self,
+        nodes: Sequence[BaseNode],
+        allow_update: bool = True,
+        batch_size: Optional[int] = None,
+        store_text: bool = True,
     ) -> None:
         """Add a document to the store.
 
@@ -71,40 +81,74 @@ class KVDocumentStore(BaseDocumentStore):
             allow_update (bool): allow update of docstore from document
 
         """
-        for node in nodes:
-            # NOTE: doc could already exist in the store, but we overwrite it
-            if not allow_update and self.document_exists(node.node_id):
-                raise ValueError(
-                    f"node_id {node.node_id} already exists. "
-                    "Set allow_update to True to overwrite."
+        batch_size = batch_size or self._batch_size
+        if batch_size > 1:
+            if store_text:
+                self._kvstore.put_all(
+                    [(node.node_id, doc_to_json(node)) for node in nodes],
+                    collection=self._node_collection,
                 )
-            node_key = node.node_id
-            data = doc_to_json(node)
-            self._kvstore.put(node_key, data, collection=self._node_collection)
+            ref_docs, metadatas = [], []
+            for node in nodes:
+                metadata = {"doc_hash": node.hash}
+                if isinstance(node, TextNode) and node.ref_doc_id is not None:
+                    ref_doc_info = (
+                        self.get_ref_doc_info(node.ref_doc_id) or RefDocInfo()
+                    )
+                    if node.node_id not in ref_doc_info.node_ids:
+                        ref_doc_info.node_ids.append(node.node_id)
+                    if not ref_doc_info.metadata:
+                        ref_doc_info.metadata = node.metadata or {}
+                    metadata["ref_doc_id"] = node.ref_doc_id
+                    ref_docs.append((node.node_id, ref_doc_info.to_dict()))
+                metadatas.append((node.node_id, metadata))
+            self._kvstore.put_all(
+                ref_docs,
+                collection=self._ref_doc_collection,
+            )
+            self._kvstore.put_all(
+                metadatas,
+                collection=self._metadata_collection,
+            )
+        else:
+            for node in nodes:
+                # NOTE: doc could already exist in the store, but we overwrite it
+                if not allow_update and self.document_exists(node.node_id):
+                    raise ValueError(
+                        f"node_id {node.node_id} already exists. "
+                        "Set allow_update to True to overwrite."
+                    )
+                node_key = node.node_id
+                data = doc_to_json(node)
 
-            # update doc_collection if needed
-            metadata = {"doc_hash": node.hash}
-            if isinstance(node, TextNode) and node.ref_doc_id is not None:
-                ref_doc_info = self.get_ref_doc_info(node.ref_doc_id) or RefDocInfo()
-                if node.node_id not in ref_doc_info.node_ids:
-                    ref_doc_info.node_ids.append(node.node_id)
-                if not ref_doc_info.metadata:
-                    ref_doc_info.metadata = node.metadata or {}
-                self._kvstore.put(
-                    node.ref_doc_id,
-                    ref_doc_info.to_dict(),
-                    collection=self._ref_doc_collection,
-                )
+                if store_text:
+                    self._kvstore.put(node_key, data, collection=self._node_collection)
 
-                # update metadata with map
-                metadata["ref_doc_id"] = node.ref_doc_id
-                self._kvstore.put(
-                    node_key, metadata, collection=self._metadata_collection
-                )
-            else:
-                self._kvstore.put(
-                    node_key, metadata, collection=self._metadata_collection
-                )
+                # update doc_collection if needed
+                metadata = {"doc_hash": node.hash}
+                if isinstance(node, TextNode) and node.ref_doc_id is not None:
+                    ref_doc_info = (
+                        self.get_ref_doc_info(node.ref_doc_id) or RefDocInfo()
+                    )
+                    if node.node_id not in ref_doc_info.node_ids:
+                        ref_doc_info.node_ids.append(node.node_id)
+                    if not ref_doc_info.metadata:
+                        ref_doc_info.metadata = node.metadata or {}
+                    self._kvstore.put(
+                        node.ref_doc_id,
+                        ref_doc_info.to_dict(),
+                        collection=self._ref_doc_collection,
+                    )
+
+                    # update metadata with map
+                    metadata["ref_doc_id"] = node.ref_doc_id
+                    self._kvstore.put(
+                        node_key, metadata, collection=self._metadata_collection
+                    )
+                else:
+                    self._kvstore.put(
+                        node_key, metadata, collection=self._metadata_collection
+                    )
 
     def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]:
         """Get a document from the store.

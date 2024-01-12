@@ -7,13 +7,14 @@ from typing import Any, Dict, cast
 
 import pandas as pd
 import pytest
+from llama_index.core.response.schema import Response
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
+from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.query_engine.pandas_query_engine import (
     PandasQueryEngine,
     default_output_processor,
 )
-from llama_index.response.schema import Response
 
 
 def test_pandas_query_engine(mock_service_context: ServiceContext) -> None:
@@ -62,6 +63,10 @@ With its welcoming atmosphere, top-notch education, and multicultural charm, Tor
         correst_rsp_str = str(df["description"])
         pd.reset_option("display.max_colwidth")
         assert str(response) == correst_rsp_str
+
+    # test get prompts
+    prompts = query_engine.get_prompts()
+    assert prompts["pandas_prompt"] == DEFAULT_PANDAS_PROMPT
 
 
 def test_default_output_processor_rce(tmp_path: Path) -> None:

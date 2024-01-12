@@ -3,6 +3,16 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
+from llama_index.core.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
@@ -20,16 +30,6 @@ from llama_index.llms.generic_utils import (
     stream_completion_response_to_chat_response,
 )
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-)
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
@@ -179,9 +179,10 @@ class Bedrock(LLM):
         }
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        is_formatted = kwargs.pop("formatted", False)
-        if not is_formatted:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        if not formatted:
             prompt = self.completion_to_prompt(prompt)
         all_kwargs = self._get_all_kwargs(**kwargs)
         request_body = self._provider.get_request_body(prompt, all_kwargs)
@@ -199,12 +200,15 @@ class Bedrock(LLM):
         )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         if self.model in BEDROCK_FOUNDATION_LLMS and self.model not in STREAMING_MODELS:
             raise ValueError(f"Model {self.model} does not support streaming")
-        is_formatted = kwargs.pop("formatted", False)
-        if not is_formatted:
+
+        if not formatted:
             prompt = self.completion_to_prompt(prompt)
+
         all_kwargs = self._get_all_kwargs(**kwargs)
         request_body = self._provider.get_request_body(prompt, all_kwargs)
         request_body_str = json.dumps(request_body)
@@ -247,7 +251,9 @@ class Bedrock(LLM):
         # TODO: do synchronous chat for now
         return self.chat(messages, **kwargs)
 
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         raise NotImplementedError
 
     async def astream_chat(
@@ -256,6 +262,6 @@ class Bedrock(LLM):
         raise NotImplementedError
 
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError

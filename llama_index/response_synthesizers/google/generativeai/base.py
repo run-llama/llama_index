@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
 
 from llama_index.bridge.pydantic import BaseModel  # type: ignore
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.core.response.schema import Response
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.prompts.mixin import PromptDictType
-from llama_index.response.schema import Response
 from llama_index.response_synthesizers.base import BaseSynthesizer, QueryTextType
 from llama_index.schema import MetadataMode, NodeWithScore, TextNode
 from llama_index.types import RESPONSE_TEXT_TYPE
