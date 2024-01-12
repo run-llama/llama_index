@@ -14,6 +14,7 @@ from llama_index.core.query_pipeline.query_component import (
     QUERY_COMPONENT_TYPE,
     ChainableMixin,
     InputKeys,
+    Link,
     OutputKeys,
     QueryComponent,
 )
@@ -129,7 +130,7 @@ class QueryPipeline(QueryComponent):
         callback_manager: Optional[CallbackManager] = None,
         chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
         modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
-        links: Optional[List[Dict[str, Dict]]] = None,
+        links: Optional[List[Link]] = None,
         **kwargs: Any,
     ):
         super().__init__(
@@ -143,7 +144,7 @@ class QueryPipeline(QueryComponent):
         self,
         chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
         modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
-        links: List[Dict[str, Dict]] = None,
+        links: List[Link] = None,
     ) -> None:
         """Initialize graph."""
         if chain is not None:
@@ -154,7 +155,7 @@ class QueryPipeline(QueryComponent):
             self.add_modules(modules)
             if links is not None:
                 for link in links:
-                    self.add_link(**link)
+                    self.add_link(**link.dict())
 
     def add_chain(self, chain: Sequence[QUERY_COMPONENT_TYPE]) -> None:
         """Add a chain of modules to the pipeline.
@@ -173,6 +174,14 @@ class QueryPipeline(QueryComponent):
         # then add all links
         for i in range(len(chain) - 1):
             self.add_link(src=module_keys[i], dest=module_keys[i + 1])
+
+    def add_links(
+        self,
+        links: List[Link],
+    ) -> None:
+        """Add links to the pipeline."""
+        for link in links:
+            self.add_link(**link.dict())
 
     def add_modules(self, module_dict: Dict[str, QUERY_COMPONENT_TYPE]) -> None:
         """Add modules to the pipeline."""

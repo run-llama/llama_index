@@ -7,6 +7,7 @@ from llama_index.core.query_pipeline.components import InputComponent
 from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
     InputKeys,
+    Link,
     OutputKeys,
     QueryComponent,
 )
@@ -295,12 +296,40 @@ def test_query_pipeline_init() -> None:
             "inp": inp,
         },
         links=[
-            {"src": "inp", "dest": "qc1", "src_key": "inp1", "dest_key": "input1"},
-            {"src": "inp", "dest": "qc2", "src_key": "inp1", "dest_key": "input2"},
-            {"src": "inp", "dest": "qc1", "src_key": "inp2", "dest_key": "input2"},
-            {"src": "qc1", "dest": "qc2", "dest_key": "input1"},
+            Link("inp", "qc1", src_key="inp1", dest_key="input1"),
+            Link("inp", "qc2", src_key="inp1", dest_key="input2"),
+            Link("inp", "qc1", src_key="inp2", dest_key="input2"),
+            Link("qc1", "qc2", dest_key="input1"),
         ],
     )
 
     output = p.run(inp1=1, inp2=2)
     assert output == "3:1"
+
+    p = QueryPipeline()
+    p.add_modules(
+        {
+            "input": InputComponent(),
+            "qc1": QueryComponent1(),
+            "qc2": QueryComponent1(),
+            "qc3": QueryComponent1(),
+        }
+    )
+    # add links from input
+    p.add_links(
+        [
+            Link("input", "qc1", src_key="inp1", dest_key="input1"),
+            Link("input", "qc2", src_key="inp1", dest_key="input1"),
+            Link("input", "qc3", src_key="inp1", dest_key="input1"),
+        ]
+    )
+    # add link chain from input through qc1, qc2, q3
+    p.add_links(
+        [
+            Link("input", "qc1", src_key="inp2", dest_key="input2"),
+            Link("qc1", "qc2", dest_key="input2"),
+            Link("qc2", "qc3", dest_key="input2"),
+        ]
+    )
+    output = p.run(inp2=1, inp1=2)
+    assert output == 7
