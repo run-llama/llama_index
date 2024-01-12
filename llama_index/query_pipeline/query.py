@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast, get_args
 
 import networkx
 
@@ -145,7 +145,7 @@ class QueryPipeline(QueryComponent):
 
     def _init_graph(
         self,
-        chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
+        chain: Optional[Sequence[CHAIN_COMPONENT_TYPE]] = None,
         modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
         links: Optional[List[Link]] = None,
     ) -> None:
@@ -168,14 +168,16 @@ class QueryPipeline(QueryComponent):
 
         """
         # first add all modules
-        module_keys = []
+        module_keys: List[str] = []
         for module in chain:
-            if isinstance(module, QUERY_COMPONENT_TYPE):
+            if isinstance(module, get_args(QUERY_COMPONENT_TYPE)):
                 module_key = str(uuid.uuid4())
-                self.add(module_key, module)
+                self.add(module_key, cast(QUERY_COMPONENT_TYPE, module))
                 module_keys.append(module_key)
-            else:
+            elif isinstance(module, str):
                 module_keys.append(module)
+            else:
+                raise ValueError("Chain must be a sequence of modules or module keys.")
 
         # then add all links
         for i in range(len(chain) - 1):

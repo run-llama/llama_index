@@ -334,6 +334,9 @@ def test_query_pipeline_init() -> None:
     output = p.run(inp2=1, inp1=2)
     assert output == 7
 
+
+def test_query_pipeline_chain_str() -> None:
+    """Test add_chain with only module strings."""
     p = QueryPipeline(
         modules={
             "input": InputComponent(),
@@ -351,5 +354,5 @@ def test_query_pipeline_init() -> None:
         ]
     )
     p.add_chain(["a", "b", "c"])
-    output = p.run(inp1=1, inp2=2)
-    assert output == 10
+    output = p.run(inp1=1, inp2=3)
+    assert output == 11
