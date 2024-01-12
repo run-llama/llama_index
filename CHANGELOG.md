@@ -1,5 +1,27 @@
 # ChangeLog
 
+## [0.9.30] - 2024-01-11
+
+### New Features
+
+- Implements a Node Parser using embeddings for Semantic Splitting (#9988)
+- Add Anyscale Embedding model support (#9470)
+
+### Bug Fixes / Nits
+
+- nit: fix pandas get prompt (#10001)
+- Fix: Token counting bug (#9912)
+- Bump jinja2 from 3.1.2 to 3.1.3 (#9997)
+- Fix corner case for qdrant hybrid search (#9993)
+- Bugfix: sphinx generation errors (#9944)
+- Fix: `language` used before assignment in `CodeSplitter` (#9987)
+- fix inconsistent name "text_parser" in section "Use a Text Splitter… (#9980)
+- :bug: fixing batch size (#9982)
+- add auto-async execution to query pipelines (#9967)
+- :bug: fixing init (#9977)
+- Parallel Loading with SimpleDirectoryReader (#9965)
+- do not force delete an index in milvus (#9974)
+
 ## [0.9.29] - 2024-01-10
 
 ### New Features
