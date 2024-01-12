@@ -7,11 +7,11 @@ import fsspec
 from dataclasses_json import DataClassJsonMixin
 
 from llama_index.schema import BaseNode
+from llama_index.storage.kvstore.types import DEFAULT_BATCH_SIZE
 
 DEFAULT_PERSIST_FNAME = "docstore.json"
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_PATH = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME)
-DEFAULT_BATCH_SIZE = 1
 
 
 @dataclass
@@ -48,7 +48,7 @@ class BaseDocumentStore(ABC):
         ...
 
     @abstractmethod
-    async def aadd_documents(
+    async def async_add_documents(
         self,
         docs: Sequence[BaseNode],
         allow_update: bool = True,
