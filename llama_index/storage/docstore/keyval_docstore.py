@@ -1,6 +1,6 @@
 """Document store."""
 
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from llama_index.schema import BaseNode, TextNode
 from llama_index.storage.docstore.types import (
@@ -100,6 +100,20 @@ class KVDocumentStore(BaseDocumentStore):
 
         return node_kv_pair, metadata_kv_pair, ref_doc_kv_pair
 
+    def _merge_ref_doc_kv_pairs(self, ref_doc_kv_pairs: dict) -> List[Tuple[str, dict]]:
+        merged_ref_doc_kv_pairs = []
+        for key, kv_pairs in ref_doc_kv_pairs.items():
+            merged_node_ids = []
+            metadata = {}
+            for kv_pair in kv_pairs:
+                merged_node_ids.extend(kv_pair[1].get("node_ids", []))
+                metadata.update(kv_pair[1].get("metadata", {}))
+            merged_ref_doc_kv_pairs.append(
+                (key, {"node_ids": merged_node_ids, "metadata": metadata})
+            )
+
+        return merged_ref_doc_kv_pairs
+
     def add_documents(
         self,
         nodes: Sequence[BaseNode],
@@ -118,7 +132,7 @@ class KVDocumentStore(BaseDocumentStore):
 
         node_kv_pairs = []
         metadata_kv_pairs = []
-        ref_doc_kv_pairs = []
+        ref_doc_kv_pairs: Dict[str, List[Tuple[str, dict]]] = {}
 
         for node in nodes:
             # NOTE: doc could already exist in the store, but we overwrite it
@@ -142,7 +156,10 @@ class KVDocumentStore(BaseDocumentStore):
             if metadata_kv_pair is not None:
                 metadata_kv_pairs.append(metadata_kv_pair)
             if ref_doc_kv_pair is not None:
-                ref_doc_kv_pairs.append(ref_doc_kv_pair)
+                key = ref_doc_kv_pair[0]
+                if key not in ref_doc_kv_pairs:
+                    ref_doc_kv_pairs[key] = []
+                ref_doc_kv_pairs[key].append(ref_doc_kv_pair)
 
         self._kvstore.put_all(
             node_kv_pairs,
@@ -154,8 +171,11 @@ class KVDocumentStore(BaseDocumentStore):
             collection=self._metadata_collection,
             batch_size=batch_size,
         )
+
+        # multiple nodes can point to the same ref_doc_id
+        merged_ref_doc_kv_pairs = self._merge_ref_doc_kv_pairs(ref_doc_kv_pairs)
         self._kvstore.put_all(
-            ref_doc_kv_pairs,
+            merged_ref_doc_kv_pairs,
             collection=self._ref_doc_collection,
             batch_size=batch_size,
         )
@@ -178,7 +198,7 @@ class KVDocumentStore(BaseDocumentStore):
 
         node_kv_pairs = []
         metadata_kv_pairs = []
-        ref_doc_kv_pairs = []
+        ref_doc_kv_pairs: Dict[str, List[Tuple[str, dict]]] = {}
 
         for node in nodes:
             # NOTE: doc could already exist in the store, but we overwrite it
@@ -204,7 +224,10 @@ class KVDocumentStore(BaseDocumentStore):
             if metadata_kv_pair is not None:
                 metadata_kv_pairs.append(metadata_kv_pair)
             if ref_doc_kv_pair is not None:
-                ref_doc_kv_pairs.append(ref_doc_kv_pair)
+                key = ref_doc_kv_pair[0]
+                if key not in ref_doc_kv_pairs:
+                    ref_doc_kv_pairs[key] = []
+                ref_doc_kv_pairs[key].append(ref_doc_kv_pair)
 
         await self._kvstore.aput_all(
             node_kv_pairs,
@@ -216,8 +239,11 @@ class KVDocumentStore(BaseDocumentStore):
             collection=self._metadata_collection,
             batch_size=batch_size,
         )
+
+        # multiple nodes can point to the same ref_doc_id
+        merged_ref_doc_kv_pairs = self._merge_ref_doc_kv_pairs(ref_doc_kv_pairs)
         await self._kvstore.aput_all(
-            ref_doc_kv_pairs,
+            merged_ref_doc_kv_pairs,
             collection=self._ref_doc_collection,
             batch_size=batch_size,
         )
