@@ -5,6 +5,17 @@ from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 
 
 class RetrievalPrecisionEvaluator(BaseEvaluator):
+    """Tonic Validate's retrieval precision metric.
+
+    The output score is a float between 0.0 and 1.0.
+
+    See https://docs.tonic.ai/validate/ for more details.
+
+    Args:
+        openai_service(OpenAIService): The OpenAI service to use. Specifies the chat
+            completion model to use as the LLM evaluator. Defaults to "gpt-4".
+    """
+
     def __init__(self, openai_service: Optional[Any] = None):
         import_err_msg = (
             "`tonic-validate` package not found, please run `pip install "

@@ -7,6 +7,8 @@ from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 class AugmentationPrecisionEvaluator(BaseEvaluator):
     """Tonic Validate's augmentation precision metric.
 
+    The output score is a float between 0.0 and 1.0.
+
     See https://docs.tonic.ai/validate/ for more details.
 
     Args:

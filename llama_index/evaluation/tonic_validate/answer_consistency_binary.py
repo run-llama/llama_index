@@ -7,6 +7,8 @@ from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 class AnswerConsistencyBinaryEvaluator(BaseEvaluator):
     """Tonic Validate's answer consistency binary metric.
 
+    The output score is a float that is either 0.0 or 1.0.
+
     See https://docs.tonic.ai/validate/ for more details.
 
     Args:
