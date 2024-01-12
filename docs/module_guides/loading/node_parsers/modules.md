@@ -159,7 +159,7 @@ A full example can be found in our [guide on using the `SemanticSplitterNodePars
 
 ### TokenTextSplitter
 
-The `TokenTextSplitter` attempts to split text while respecting the boundaries of sentences.
+The `TokenTextSplitter` attempts to split to a consistent chunk size according to raw token counts.
 
 ```python
 from llama_index.text_splitter import TokenTextSplitter

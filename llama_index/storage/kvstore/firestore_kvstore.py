@@ -1,6 +1,10 @@
 from typing import Any, Dict, List, Optional, Tuple
 
-from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
+from llama_index.storage.kvstore.types import (
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_COLLECTION,
+    BaseKVStore,
+)
 
 # keyword "_" is reserved in Firestore but referred in llama_index/constants.py.
 FIELD_NAME_REPLACE_SET = {"__data__": "data", "__type__": "type"}
@@ -100,20 +104,26 @@ class FirestoreKVStore(BaseKVStore):
         await doc.set(val, merge=True)
 
     def put_all(
-        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         batch = self._db.batch()
         for i, (key, val) in enumerate(kv_pairs, start=1):
             collection_id = self.firestore_collection(collection)
             val = self.replace_field_name_set(val)
             batch.set(self._db.collection(collection_id).document(key), val, merge=True)
-            if i % 500 == 0:
+            if i % batch_size == 0:
                 batch.commit()
                 batch = self._db.batch()
         batch.commit()
 
     async def aput_all(
-        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         """Put a dictionary of key-value pairs into the Firestore collection.
 
@@ -127,7 +137,7 @@ class FirestoreKVStore(BaseKVStore):
             doc = self._adb.collection(collection_id).document(key)
             val = self.replace_field_name_set(val)
             batch.set(doc, val, merge=True)
-            if i % 500 == 0:
+            if i % batch_size == 0:
                 await batch.commit()
                 batch = self._adb.batch()
         await batch.commit()
