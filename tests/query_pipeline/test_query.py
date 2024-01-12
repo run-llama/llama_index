@@ -333,3 +333,23 @@ def test_query_pipeline_init() -> None:
     )
     output = p.run(inp2=1, inp1=2)
     assert output == 7
+
+    p = QueryPipeline(
+        modules={
+            "input": InputComponent(),
+            "a": QueryComponent3(),
+            "b": QueryComponent3(),
+            "c": QueryComponent3(),
+            "d": QueryComponent1(),
+        }
+    )
+    p.add_links(
+        [
+            Link("input", "a", src_key="inp1", dest_key="input"),
+            Link("input", "d", src_key="inp2", dest_key="input2"),
+            Link("c", "d", dest_key="input1"),
+        ]
+    )
+    p.add_chain(["a", "b", "c"])
+    output = p.run(inp1=1, inp2=2)
+    assert output == 10

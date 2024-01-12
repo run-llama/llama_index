@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import networkx
 
@@ -94,6 +94,9 @@ def print_debug_input_multi(
     print_text(output + "\n", color="llama_lavender")
 
 
+CHAIN_COMPONENT_TYPE = Union[QUERY_COMPONENT_TYPE, str]
+
+
 class QueryPipeline(QueryComponent):
     """A query pipeline that can allow arbitrary chaining of different modules.
 
@@ -128,7 +131,7 @@ class QueryPipeline(QueryComponent):
     def __init__(
         self,
         callback_manager: Optional[CallbackManager] = None,
-        chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
+        chain: Optional[Sequence[CHAIN_COMPONENT_TYPE]] = None,
         modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
         links: Optional[List[Link]] = None,
         **kwargs: Any,
@@ -157,7 +160,7 @@ class QueryPipeline(QueryComponent):
                 for link in links:
                     self.add_link(**link.dict())
 
-    def add_chain(self, chain: Sequence[QUERY_COMPONENT_TYPE]) -> None:
+    def add_chain(self, chain: Sequence[CHAIN_COMPONENT_TYPE]) -> None:
         """Add a chain of modules to the pipeline.
 
         This is a special form of pipeline that is purely sequential/linear.
@@ -167,9 +170,12 @@ class QueryPipeline(QueryComponent):
         # first add all modules
         module_keys = []
         for module in chain:
-            module_key = str(uuid.uuid4())
-            self.add(module_key, module)
-            module_keys.append(module_key)
+            if isinstance(module, QUERY_COMPONENT_TYPE):
+                module_key = str(uuid.uuid4())
+                self.add(module_key, module)
+                module_keys.append(module_key)
+            else:
+                module_keys.append(module)
 
         # then add all links
         for i in range(len(chain) - 1):
