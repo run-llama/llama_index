@@ -43,6 +43,8 @@ def handle_download_llama_dataset(
         llama_hub_url=llama_hub_url,
         llama_datasets_lfs_url=llama_datasets_lfs_url,
         llama_datasets_source_files_tree_url=llama_datasets_source_files_tree_url,
+        show_progress=True,
+        load_documents=False,
     )
 
     print(f"Successfully downloaded {llama_dataset_class} to {download_dir}")

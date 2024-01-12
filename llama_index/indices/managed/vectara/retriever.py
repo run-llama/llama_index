@@ -11,7 +11,16 @@ from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.managed.types import ManagedIndexQueryMode
 from llama_index.indices.managed.vectara.base import VectaraIndex
+from llama_index.indices.vector_store.retrievers.auto_retriever.auto_retriever import (
+    VectorIndexAutoRetriever,
+)
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.vector_stores.types import (
+    FilterCondition,
+    MetadataFilters,
+    VectorStoreInfo,
+    VectorStoreQuerySpec,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -217,3 +226,79 @@ class VectaraRetriever(BaseRetriever):
 
         """
         return self._vectara_query(query_bundle)
+
+
+class VectaraAutoRetriever(VectorIndexAutoRetriever):
+    """Managed Index auto retriever.
+
+    A retriever for a Vectara index that uses an LLM to automatically set
+    filtering query parameters.
+    Based on VectorStoreAutoRetriever, and uses some of the vector_store
+    types that are associated with auto retrieval.
+
+    Args:
+        index (VectaraIndex): Vectara Index instance
+        vector_store_info (VectorStoreInfo): additional information about
+            vector store content and supported metadata filters. The natural language
+            description is used by an LLM to automatically set vector store query
+            parameters.
+        Other variables are the same as VectorStoreAutoRetriever or VectaraRetriever
+    """
+
+    def __init__(
+        self,
+        index: VectaraIndex,
+        vector_store_info: VectorStoreInfo,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(index, vector_store_info, **kwargs)  # type: ignore
+        self._index = index  # type: ignore
+        self._kwargs = kwargs
+        self._verbose = self._kwargs.get("verbose", False)
+        self._explicit_filter = self._kwargs.pop("filter", "")
+
+    def _build_retriever_from_spec(
+        self, spec: VectorStoreQuerySpec
+    ) -> Tuple[BaseRetriever, QueryBundle]:
+        query_bundle = QueryBundle(query_str=spec.query)
+
+        filter_list = [
+            (filter.key, filter.operator.value, filter.value) for filter in spec.filters
+        ]
+        if self._verbose:
+            print(f"Using query str: {spec.query}")
+            print(f"Using implicit filters: {filter_list}")
+
+        # create filter string from implicit filters
+        if len(spec.filters) == 0:
+            filter_str = ""
+        else:
+            filters = MetadataFilters(
+                filters=[*spec.filters, *self._extra_filters.filters]
+            )
+            condition = " and " if filters.condition == FilterCondition.AND else " or "
+            filter_str = condition.join(
+                [
+                    f"(doc.{f.key} {f.operator.value} '{f.value}')"
+                    for f in filters.filters
+                ]
+            )
+
+        # add explicit filter if specified
+        if self._explicit_filter:
+            if len(filter_str) > 0:
+                filter_str = f"({filter_str}) and ({self._explicit_filter})"
+            else:
+                filter_str = self._explicit_filter
+
+        if self._verbose:
+            print(f"final filter string: {filter_str}")
+
+        return (
+            VectaraRetriever(
+                index=self._index,  # type: ignore
+                filter=filter_str,
+                **self._kwargs,
+            ),
+            query_bundle,
+        )

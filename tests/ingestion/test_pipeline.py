@@ -1,3 +1,5 @@
+from multiprocessing import cpu_count
+
 from llama_index.embeddings import OpenAIEmbedding
 from llama_index.extractors import KeywordExtractor
 from llama_index.ingestion.pipeline import IngestionPipeline
@@ -139,3 +141,22 @@ def test_pipeline_dedup_duplicates_only() -> None:
 
     nodes = pipeline.run(documents=documents)
     assert len(nodes) == 0
+
+
+def test_pipeline_parallel() -> None:
+    document1 = Document.example()
+    document1.id_ = "1"
+    document2 = Document(text="One\n\n\nTwo\n\n\nThree.", doc_id="2")
+
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        ],
+        docstore=SimpleDocumentStore(),
+    )
+
+    num_workers = min(2, cpu_count())
+    nodes = pipeline.run(documents=[document1, document2], num_workers=num_workers)
+    assert len(nodes) == 20
+    assert pipeline.docstore is not None
+    assert len(pipeline.docstore.docs) == 2

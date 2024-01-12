@@ -46,6 +46,7 @@ class TextEmbeddingsInference(BaseEmbedding):
         timeout: float = 60.0,
         truncate_text: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        auth_token: Optional[Union[str, Callable[[str], str]]] = None,
     ):
         try:
             import httpx  # noqa
@@ -64,6 +65,7 @@ class TextEmbeddingsInference(BaseEmbedding):
             timeout=timeout,
             truncate_text=truncate_text,
             callback_manager=callback_manager,
+            auth_token=auth_token,
         )
 
     @classmethod

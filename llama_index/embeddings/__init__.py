@@ -4,6 +4,7 @@ from llama_index.embeddings.adapter import (
     AdapterEmbeddingModel,
     LinearAdapterEmbeddingModel,
 )
+from llama_index.embeddings.anyscale import AnyscaleEmbedding
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from llama_index.embeddings.base import BaseEmbedding, SimilarityMode
 from llama_index.embeddings.bedrock import BedrockEmbedding
@@ -34,6 +35,7 @@ from llama_index.embeddings.ollama_embedding import OllamaEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.pooling import Pooling
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
+from llama_index.embeddings.together import TogetherEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.embeddings.voyageai import VoyageEmbedding
 
@@ -58,11 +60,13 @@ __all__ = [
     "MistralAIEmbedding",
     "OpenAIEmbedding",
     "AzureOpenAIEmbedding",
+    "AnyscaleEmbedding",
     "OptimumEmbedding",
     "Pooling",
     "GooglePaLMEmbedding",
     "SimilarityMode",
     "TextEmbeddingsInference",
+    "TogetherEmbedding",
     "resolve_embed_model",
     # Deprecated, kept for backwards compatibility
     "LLMRailsEmbeddings",

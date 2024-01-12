@@ -1,5 +1,6 @@
 """Test file reader."""
 
+from multiprocessing import cpu_count
 from tempfile import TemporaryDirectory
 from typing import Any, Dict
 
@@ -423,3 +424,35 @@ def test_error_if_not_dir_or_file() -> None:
         SimpleDirectoryReader(input_files=["not_a_file"])
     with TemporaryDirectory() as tmp_dir, pytest.raises(ValueError, match="No files"):
         SimpleDirectoryReader(tmp_dir)
+
+
+def test_parallel_load() -> None:
+    """Test parallel load."""
+    # test nonrecursive
+    with TemporaryDirectory() as tmp_dir:
+        with open(f"{tmp_dir}/test1.txt", "w") as f:
+            f.write("test1")
+        with open(f"{tmp_dir}/test2.md", "w") as f:
+            f.write("test2")
+        with open(f"{tmp_dir}/test3.tmp", "w") as f:
+            f.write("test3")
+        with open(f"{tmp_dir}/test4.json", "w") as f:
+            f.write("test4")
+        with open(f"{tmp_dir}/test5.json", "w") as f:
+            f.write("test5")
+
+        reader = SimpleDirectoryReader(tmp_dir, filename_as_id=True)
+        num_workers = min(2, cpu_count())
+        documents = reader.load_data(num_workers=num_workers)
+
+        doc_paths = [
+            f"{tmp_dir}/test1.txt",
+            f"{tmp_dir}/test2.md",
+            f"{tmp_dir}/test3.tmp",
+            f"{tmp_dir}/test4.json",
+            f"{tmp_dir}/test5.json",
+        ]
+
+        # check paths. Split handles path_part_X doc_ids from md and json files
+        for doc in documents:
+            assert str(doc.node_id).split("_part")[0] in doc_paths

@@ -69,6 +69,7 @@ class ChatMemoryBuffer(BaseMemory):
             token_limit=token_limit,
             tokenizer_fn=tokenizer_fn or get_tokenizer(),
             chat_store=chat_store or SimpleChatStore(),
+            chat_store_key=chat_store_key,
         )
 
     def to_string(self) -> str:

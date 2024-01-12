@@ -171,6 +171,7 @@ class AzureOpenAI(OpenAI):
             "api_version": self.api_version,
             "default_headers": self.default_headers,
             "http_client": self._http_client,
+            **kwargs,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:

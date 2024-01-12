@@ -55,3 +55,16 @@ def test_kvstore_getall(redis_kvstore: RedisKVStore) -> None:
 
     blob = redis_kvstore.get_all()
     assert len(blob) == 2
+
+
+@pytest.mark.skipif(Redis is None, reason="redis not installed")
+def test_kvstore_putall(redis_kvstore: RedisKVStore) -> None:
+    test_key = "test_key"
+    test_blob = {"test_obj_key": "test_obj_val"}
+    test_key2 = "test_key2"
+    test_blob2 = {"test_obj_key2": "test_obj_val2"}
+    redis_kvstore.put_all([(test_key, test_blob), (test_key2, test_blob2)])
+    blob = redis_kvstore.get(test_key)
+    assert blob == test_blob
+    blob = redis_kvstore.get(test_key2)
+    assert blob == test_blob2

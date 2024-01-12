@@ -1,9 +1,23 @@
-from typing import Optional, Union
+from typing import Any, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.core.llms.types import LLMMetadata
+from llama_index.llms.generic_utils import (
+    async_stream_completion_response_to_chat_response,
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
 from llama_index.llms.openai import OpenAI, Tokenizer
+from llama_index.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 
 
 class OpenAILike(OpenAI):
@@ -70,3 +84,85 @@ class OpenAILike(OpenAI):
     @classmethod
     def class_name(cls) -> str:
         return "OpenAILike"
+
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        """Complete the prompt."""
+        if not formatted:
+            prompt = self.completion_to_prompt(prompt)
+
+        return super().complete(prompt, **kwargs)
+
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        """Stream complete the prompt."""
+        if not formatted:
+            prompt = self.completion_to_prompt(prompt)
+
+        return super().stream_complete(prompt, **kwargs)
+
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        """Chat with the model."""
+        if not self.metadata.is_chat_model:
+            prompt = self.messages_to_prompt(messages)
+            completion_response = self.complete(prompt, formatted=True, **kwargs)
+            return completion_response_to_chat_response(completion_response)
+
+        return super().chat(messages, **kwargs)
+
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        if not self.metadata.is_chat_model:
+            prompt = self.messages_to_prompt(messages)
+            completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
+            return stream_completion_response_to_chat_response(completion_response)
+
+        return super().stream_chat(messages, **kwargs)
+
+    # -- Async methods --
+
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        """Complete the prompt."""
+        if not formatted:
+            prompt = self.completion_to_prompt(prompt)
+
+        return await super().acomplete(prompt, **kwargs)
+
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        """Stream complete the prompt."""
+        if not formatted:
+            prompt = self.completion_to_prompt(prompt)
+
+        return await super().astream_complete(prompt, **kwargs)
+
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        """Chat with the model."""
+        if not self.metadata.is_chat_model:
+            prompt = self.messages_to_prompt(messages)
+            completion_response = await self.acomplete(prompt, formatted=True, **kwargs)
+            return completion_response_to_chat_response(completion_response)
+
+        return await super().achat(messages, **kwargs)
+
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        if not self.metadata.is_chat_model:
+            prompt = self.messages_to_prompt(messages)
+            completion_response = await self.astream_complete(
+                prompt, formatted=True, **kwargs
+            )
+            return async_stream_completion_response_to_chat_response(
+                completion_response
+            )
+
+        return await super().astream_chat(messages, **kwargs)
