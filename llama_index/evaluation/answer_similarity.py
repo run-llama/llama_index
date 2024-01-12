@@ -1,11 +1,12 @@
 from typing import Any, Optional, Sequence
 
-from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.prompts.mixin import PromptDictType
+from tonic_validate.classes.benchmark import BenchmarkItem
+from tonic_validate.classes.llm_response import LLMResponse
 from tonic_validate.metrics.answer_similarity_metric import AnswerSimilarityMetric
 from tonic_validate.services.openai_service import OpenAIService
-from tonic_validate.classes.llm_response import LLMResponse
-from tonic_validate.classes.benchmark import BenchmarkItem
+
+from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 
 
 class AnswerSimilarityEvaluator(BaseEvaluator):
@@ -47,7 +48,7 @@ class AnswerSimilarityEvaluator(BaseEvaluator):
     def _get_prompts(self) -> PromptDictType:
         return {}
 
-    def _get_prompt_modules(self) -> PromptDictType:
+    def _get_prompt_modules(self) -> PromptMixinType:
         return {}
 
     def _update_prompts(self, prompts_dict: PromptDictType) -> None:

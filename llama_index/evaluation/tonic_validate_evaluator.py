@@ -1,10 +1,9 @@
 import asyncio
-from typing import List, Optional, Sequence, Any, Dict
+from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.bridge.pydantic import Field
-from llama_index.prompts.mixin import PromptDictType
-from tonic_validate.validate_scorer import ValidateScorer
+from tonic_validate.classes.benchmark import BenchmarkItem
+from tonic_validate.classes.llm_response import LLMResponse
+from tonic_validate.classes.run import Run
 from tonic_validate.metrics.answer_consistency_metric import AnswerConsistencyMetric
 from tonic_validate.metrics.answer_similarity_metric import AnswerSimilarityMetric
 from tonic_validate.metrics.augmentation_accuracy_metric import (
@@ -13,11 +12,13 @@ from tonic_validate.metrics.augmentation_accuracy_metric import (
 from tonic_validate.metrics.augmentation_precision_metric import (
     AugmentationPrecisionMetric,
 )
-from tonic_validate.metrics.retrieval_precision_metric import RetrievalPrecisionMetric
 from tonic_validate.metrics.metric import Metric
-from tonic_validate.classes.llm_response import LLMResponse
-from tonic_validate.classes.benchmark import BenchmarkItem
-from tonic_validate.classes.run import Run
+from tonic_validate.metrics.retrieval_precision_metric import RetrievalPrecisionMetric
+from tonic_validate.validate_scorer import ValidateScorer
+
+from llama_index.bridge.pydantic import Field
+from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 
 DEFAULT_METRICS = [
     AnswerConsistencyMetric(),
@@ -60,8 +61,7 @@ class TonicValidateEvaluator(BaseEvaluator):
             else:
                 ave_score += score
             metric_cnt += 1
-        ave_score = ave_score / metric_cnt
-        return ave_score
+        return ave_score / metric_cnt
 
     async def aevaluate(
         self,
@@ -149,7 +149,7 @@ class TonicValidateEvaluator(BaseEvaluator):
     def _get_prompts(self) -> PromptDictType:
         return {}
 
-    def _get_prompt_modules(self) -> PromptDictType:
+    def _get_prompt_modules(self) -> PromptMixinType:
         return {}
 
     def _update_prompts(self, prompts_dict: PromptDictType) -> None:

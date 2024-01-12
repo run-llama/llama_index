@@ -1,6 +1,13 @@
 """Evaluation modules."""
 
+from llama_index.evaluation.answer_consistency import AnswerConsistencyEvaluator
+from llama_index.evaluation.answer_consistency_binary import (
+    AnswerConsistencyBinaryEvaluator,
+)
 from llama_index.evaluation.answer_relevancy import AnswerRelevancyEvaluator
+from llama_index.evaluation.answer_similarity import AnswerSimilarityEvaluator
+from llama_index.evaluation.augmentation_accuracy import AugmentationAccuracyEvaluator
+from llama_index.evaluation.augmentation_precision import AugmentationPrecisionEvaluator
 from llama_index.evaluation.base import (
     BaseEvaluator,
     EvaluationResult,
@@ -31,15 +38,8 @@ from llama_index.evaluation.retrieval.metrics import (
     RetrievalMetricResult,
     resolve_metrics,
 )
-from llama_index.evaluation.semantic_similarity import SemanticSimilarityEvaluator
-from llama_index.evaluation.answer_consistency import AnswerConsistencyEvaluator
-from llama_index.evaluation.answer_consistency_binary import (
-    AnswerConsistencyBinaryEvaluator,
-)
-from llama_index.evaluation.answer_similarity import AnswerSimilarityEvaluator
-from llama_index.evaluation.augmentation_accuracy import AugmentationAccuracyEvaluator
-from llama_index.evaluation.augmentation_precision import AugmentationPrecisionEvaluator
 from llama_index.evaluation.retrieval_precision import RetrievalPrecisionEvaluator
+from llama_index.evaluation.semantic_similarity import SemanticSimilarityEvaluator
 from llama_index.evaluation.tonic_validate_evaluator import TonicValidateEvaluator
 
 # import dataset generation too
