@@ -74,11 +74,13 @@ def relative_score_fusion(
     Fuse dense and sparse results using relative score fusion.
     """
     # check if dense or sparse results is empty
-    if dense_result.nodes is None and sparse_result.nodes is None:
+    if (dense_result.nodes is None or len(dense_result.nodes) == 0) and (
+        sparse_result.nodes is None or len(sparse_result.nodes) == 0
+    ):
         return VectorStoreQueryResult(nodes=None, similarities=None, ids=None)
-    elif sparse_result.nodes is None:
+    elif sparse_result.nodes is None or len(sparse_result.nodes) == 0:
         return dense_result
-    elif dense_result.nodes is None:
+    elif dense_result.nodes is None or len(dense_result.nodes) == 0:
         return sparse_result
 
     assert dense_result.nodes is not None
