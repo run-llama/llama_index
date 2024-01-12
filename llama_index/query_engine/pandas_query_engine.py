@@ -17,6 +17,7 @@ from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.response.schema import Response
 from llama_index.exec_utils import safe_eval, safe_exec
 from llama_index.indices.struct_store.pandas import PandasIndex
+from llama_index.output_parsers.utils import parse_code_markdown
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
@@ -28,11 +29,11 @@ logger = logging.getLogger(__name__)
 
 
 DEFAULT_INSTRUCTION_STR = (
-    "We wish to convert this query to executable Python code using Pandas.\n"
-    "The final line of code should be a Python expression that can be called "
-    "with the `eval()` function. This expression should represent a solution "
-    "to the query. This expression should not have leading or trailing "
-    "quotes.\n"
+    "1. Convert the query to executable Python code using Pandas.\n"
+    "2. The final line of code should be a Python expression that can be called with the `eval()` function.\n"
+    "3. The code should represent a solution to the query.\n"
+    "4. PRINT ONLY THE EXPRESSION.\n"
+    "5. Do not quote the expression.\n"
 )
 
 
@@ -54,6 +55,8 @@ def default_output_processor(
         return output
 
     local_vars = {"df": df}
+
+    output = parse_code_markdown(output, only_last=True)[0]
 
     # NOTE: inspired from langchain's tool
     # see langchain.tools.python.tool (PythonAstREPLTool)

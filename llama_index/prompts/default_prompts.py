@@ -369,11 +369,10 @@ DEFAULT_PANDAS_TMPL = (
     "The name of the dataframe is `df`.\n"
     "This is the result of `print(df.head())`:\n"
     "{df_str}\n\n"
-    "Here is the input query: {query_str}.\n"
-    "Given the df information and the input query, please follow "
-    "these instructions:\n"
-    "{instruction_str}"
-    "Output:\n"
+    "Follow these instructions:\n"
+    "{instruction_str}\n"
+    "Query: {query_str}\n\n"
+    "Expression:"
 )
 
 DEFAULT_PANDAS_PROMPT = PromptTemplate(
