@@ -1,7 +1,7 @@
 import contextlib
 import json
 import re
-from typing import Any
+from typing import Any, List
 
 with contextlib.suppress(ImportError):
     import yaml
@@ -59,6 +59,42 @@ def parse_json_markdown(text: str) -> Any:
             raise ImportError("Please pip install PyYAML.") from exc
 
     return json_obj
+
+
+def parse_code_markdown(text: str, only_last: bool) -> List[str]:
+    # Regular expression pattern to match code within triple-backticks
+    pattern = r"```(.*?)```"
+
+    # Find all matches of the pattern in the text
+    matches = re.findall(pattern, text, re.DOTALL)
+
+    # Return the last matched group if requested
+    code = matches[-1] if matches and only_last else matches
+
+    # If empty we optimistically assume the output is the code
+    if not code:
+        # we want to handle cases where the code may start or end with triple
+        # backticks
+        # we also want to handle cases where the code is surrounded by regular
+        # quotes
+        # we can't just remove all backticks due to JS template strings
+
+        candidate = text.strip()
+
+        if candidate.startswith('"') and candidate.endswith('"'):
+            candidate = candidate[1:-1]
+
+        if candidate.startswith("'") and candidate.endswith("'"):
+            candidate = candidate[1:-1]
+
+        if candidate.startswith("```"):
+            candidate = candidate[3:]
+
+        if candidate.endswith("```"):
+            candidate = candidate[:-3]
+        code = [candidate]
+
+    return code
 
 
 def extract_json_str(text: str) -> str:
