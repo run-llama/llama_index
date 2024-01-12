@@ -1,32 +1,9 @@
 import asyncio
 from typing import Any, Dict, List, Optional, Sequence
 
-from tonic_validate.classes.benchmark import BenchmarkItem
-from tonic_validate.classes.llm_response import LLMResponse
-from tonic_validate.classes.run import Run
-from tonic_validate.metrics.answer_consistency_metric import AnswerConsistencyMetric
-from tonic_validate.metrics.answer_similarity_metric import AnswerSimilarityMetric
-from tonic_validate.metrics.augmentation_accuracy_metric import (
-    AugmentationAccuracyMetric,
-)
-from tonic_validate.metrics.augmentation_precision_metric import (
-    AugmentationPrecisionMetric,
-)
-from tonic_validate.metrics.metric import Metric
-from tonic_validate.metrics.retrieval_precision_metric import RetrievalPrecisionMetric
-from tonic_validate.validate_scorer import ValidateScorer
-
 from llama_index.bridge.pydantic import Field
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-
-DEFAULT_METRICS = [
-    AnswerConsistencyMetric(),
-    AnswerSimilarityMetric(),
-    AugmentationAccuracyMetric(),
-    AugmentationPrecisionMetric(),
-    RetrievalPrecisionMetric(),
-]
 
 
 class TonicValidateEvaluationResult(EvaluationResult):
@@ -46,13 +23,50 @@ class TonicValidateEvaluator(BaseEvaluator):
     """
 
     def __init__(
-        self, metrics: List[Metric] = DEFAULT_METRICS, model_evaluator: str = "gpt-4"
+        self, metrics: Optional[List[Any]] = None, model_evaluator: str = "gpt-4"
     ):
+        import_err_msg = (
+            "`tonic-validate` package not found, please run `pip install "
+            "tonic-validate`"
+        )
+        try:
+            from tonic_validate.metrics.answer_consistency_metric import (
+                AnswerConsistencyMetric,
+            )
+            from tonic_validate.metrics.answer_similarity_metric import (
+                AnswerSimilarityMetric,
+            )
+            from tonic_validate.metrics.augmentation_accuracy_metric import (
+                AugmentationAccuracyMetric,
+            )
+            from tonic_validate.metrics.augmentation_precision_metric import (
+                AugmentationPrecisionMetric,
+            )
+            from tonic_validate.metrics.retrieval_precision_metric import (
+                RetrievalPrecisionMetric,
+            )
+            from tonic_validate.validate_scorer import ValidateScorer
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        if metrics is None:
+            metrics = [
+                AnswerConsistencyMetric(),
+                AnswerSimilarityMetric(),
+                AugmentationAccuracyMetric(),
+                AugmentationPrecisionMetric(),
+                RetrievalPrecisionMetric(),
+            ]
+
         self.metrics = metrics
         self.model_evaluator = model_evaluator
         self.validate_scorer = ValidateScorer(metrics, model_evaluator)
 
-    def _calculate_average_score(self, run: Run) -> float:
+    def _calculate_average_score(self, run: Any) -> float:
+        from tonic_validate.metrics.answer_similarity_metric import (
+            AnswerSimilarityMetric,
+        )
+
         ave_score = 0.0
         metric_cnt = 0
         for metric_name, score in run.overall_scores.items():
@@ -71,6 +85,9 @@ class TonicValidateEvaluator(BaseEvaluator):
         reference_response: Optional[str] = None,
         **kwargs: Any,
     ) -> TonicValidateEvaluationResult:
+        from tonic_validate.classes.benchmark import BenchmarkItem
+        from tonic_validate.classes.llm_response import LLMResponse
+
         benchmark_item = BenchmarkItem(question=query, answer=reference_response)
 
         llm_response = LLMResponse(
@@ -100,12 +117,15 @@ class TonicValidateEvaluator(BaseEvaluator):
         contexts_list: List[List[str]],
         reference_responses: List[str],
         **kwargs: Any,
-    ) -> Run:
+    ) -> Any:
         """Evaluates a batch of responses.
 
         Returns a Tonic Validate Run object, which can be logged to the Tonic Validate
         UI. See https://docs.tonic.ai/validate/ for more details.
         """
+        from tonic_validate.classes.benchmark import BenchmarkItem
+        from tonic_validate.classes.llm_response import LLMResponse
+
         llm_responses = []
 
         for query, response, contexts, reference_response in zip(
@@ -130,7 +150,7 @@ class TonicValidateEvaluator(BaseEvaluator):
         contexts_list: List[List[str]],
         reference_responses: List[str],
         **kwargs: Any,
-    ) -> Run:
+    ) -> Any:
         """Evaluates a batch of responses.
 
         Returns a Tonic Validate Run object, which can be logged to the Tonic Validate

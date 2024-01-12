@@ -1,10 +1,5 @@
 from typing import Any, Optional, Sequence
 
-from tonic_validate.classes.benchmark import BenchmarkItem
-from tonic_validate.classes.llm_response import LLMResponse
-from tonic_validate.metrics.answer_similarity_metric import AnswerSimilarityMetric
-from tonic_validate.services.openai_service import OpenAIService
-
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 
@@ -19,7 +14,21 @@ class AnswerSimilarityEvaluator(BaseEvaluator):
             completion model to use as the LLM evaluator. Defaults to "gpt-4".
     """
 
-    def __init__(self, openai_service: OpenAIService = OpenAIService("gpt-4")):
+    def __init__(self, openai_service: Optional[Any] = None):
+        import_err_msg = (
+            "`tonic-validate` package not found, please run `pip install "
+            "tonic-validate`"
+        )
+        try:
+            from tonic_validate.metrics.answer_similarity_metric import (
+                AnswerSimilarityMetric,
+            )
+            from tonic_validate.services.openai_service import OpenAIService
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        if openai_service is None:
+            openai_service = OpenAIService("gpt-4")
         self.openai_service = openai_service
         self.metric = AnswerSimilarityMetric()
 
@@ -31,6 +40,9 @@ class AnswerSimilarityEvaluator(BaseEvaluator):
         reference_response: Optional[str] = None,
         **kwargs: Any
     ) -> EvaluationResult:
+        from tonic_validate.classes.benchmark import BenchmarkItem
+        from tonic_validate.classes.llm_response import LLMResponse
+
         benchmark_item = BenchmarkItem(question=query, answer=reference_response)
 
         llm_response = LLMResponse(
