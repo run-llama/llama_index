@@ -87,12 +87,19 @@ def parse_code_markdown(text: str, only_last: bool) -> List[str]:
         if candidate.startswith("'") and candidate.endswith("'"):
             candidate = candidate[1:-1]
 
+        if candidate.startswith("`") and candidate.endswith("`"):
+            candidate = candidate[1:-1]
+
+        # For triple backticks we split the handling of the start and end
+        # partly because there can be cases where only one and not the other
+        # is present, and partly because we don't need to be so worried
+        # about it being a string in a programming language
         if candidate.startswith("```"):
-            candidate = candidate[3:]
+            candidate = re.sub(r"^```[a-zA-Z]*", "", candidate)
 
         if candidate.endswith("```"):
             candidate = candidate[:-3]
-        code = [candidate]
+        code = [candidate.strip()]
 
     return code
 
