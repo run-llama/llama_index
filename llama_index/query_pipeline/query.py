@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 import networkx
 
@@ -129,7 +129,7 @@ class QueryPipeline(QueryComponent):
         callback_manager: Optional[CallbackManager] = None,
         chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
         modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
-        links: List[Dict[str, Dict]] = None,
+        links: Optional[List[Dict[str, Dict]]] = None,
         **kwargs: Any,
     ):
         super().__init__(
