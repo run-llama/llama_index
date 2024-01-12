@@ -8,7 +8,7 @@ require heavy sandboxing or virtual machines
 """
 
 import logging
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -19,7 +19,7 @@ from llama_index.exec_utils import safe_eval, safe_exec
 from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
-from llama_index.prompts.mixin import PromptMixinType
+from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.utils import print_text
@@ -139,7 +139,16 @@ class PandasQueryEngine(BaseQueryEngine):
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
+        return {}
+
+    def _get_prompts(self) -> Dict[str, Any]:
+        """Get prompts."""
         return {"pandas_prompt": self._pandas_prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "pandas_prompt" in prompts:
+            self._pandas_prompt = prompts["pandas_prompt"]
 
     @classmethod
     def from_index(cls, index: PandasIndex, **kwargs: Any) -> "PandasQueryEngine":
