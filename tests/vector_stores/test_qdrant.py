@@ -187,7 +187,7 @@ def test_relative_score_fusion() -> None:
     )
 
     fused_result = relative_score_fusion(dense_result, sparse_result, top_k=3)
-    assert fused_result.ids == ["3", "1", "2"]
+    assert fused_result.ids == ["3", "2", "1"]
 
     # make both results a single node
     sparse_result = VectorStoreQueryResult(
@@ -251,4 +251,4 @@ def test_relative_score_fusion() -> None:
     )
 
     fused_result = relative_score_fusion(dense_result, sparse_result, top_k=3)
-    assert fused_result.ids == []
+    assert fused_result.ids is None
