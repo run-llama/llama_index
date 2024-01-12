@@ -144,7 +144,7 @@ class QueryPipeline(QueryComponent):
         self,
         chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
         modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
-        links: List[Link] = None,
+        links: Optional[List[Link]] = None,
     ) -> None:
         """Initialize graph."""
         if chain is not None:
