@@ -100,35 +100,57 @@ class LangChainLLM(LLM):
             stream_completion = self.stream_complete(prompt, formatted=True, **kwargs)
             return stream_completion_response_to_chat_response(stream_completion)
 
-        from llama_index.langchain_helpers.streaming import (
-            StreamingGeneratorCallbackHandler,
-        )
+        if hasattr(self._llm, "stream"):
 
-        handler = StreamingGeneratorCallbackHandler()
-
-        if not hasattr(self._llm, "streaming"):
-            raise ValueError("LLM must support streaming.")
-        if not hasattr(self._llm, "callbacks"):
-            raise ValueError("LLM must support callbacks to use streaming.")
-
-        self._llm.callbacks = [handler]  # type: ignore
-        self._llm.streaming = True  # type: ignore
-
-        thread = Thread(target=self.chat, args=[messages], kwargs=kwargs)
-        thread.start()
-
-        response_gen = handler.get_response_gen()
-
-        def gen() -> Generator[ChatResponse, None, None]:
-            text = ""
-            for delta in response_gen:
-                text += delta
-                yield ChatResponse(
-                    message=ChatMessage(text=text),
-                    delta=delta,
+            def gen() -> Generator[ChatResponse, None, None]:
+                from llama_index.llms.langchain_utils import (
+                    from_lc_messages,
+                    to_lc_messages,
                 )
 
-        return gen()
+                lc_messages = to_lc_messages(messages)
+                response_str = ""
+                for message in self._llm.stream(lc_messages, **kwargs):
+                    message = from_lc_messages([message])[0]
+                    delta = message.content
+                    response_str += delta
+                    yield ChatResponse(
+                        message=ChatMessage(role=message.role, content=response_str),
+                        delta=delta,
+                    )
+
+            return gen()
+
+        else:
+            from llama_index.langchain_helpers.streaming import (
+                StreamingGeneratorCallbackHandler,
+            )
+
+            handler = StreamingGeneratorCallbackHandler()
+
+            if not hasattr(self._llm, "streaming"):
+                raise ValueError("LLM must support streaming.")
+            if not hasattr(self._llm, "callbacks"):
+                raise ValueError("LLM must support callbacks to use streaming.")
+
+            self._llm.callbacks = [handler]  # type: ignore
+            self._llm.streaming = True  # type: ignore
+
+            thread = Thread(target=self.chat, args=[messages], kwargs=kwargs)
+            thread.start()
+
+            response_gen = handler.get_response_gen()
+
+            def gen() -> Generator[ChatResponse, None, None]:
+                text = ""
+                for delta in response_gen:
+                    text += delta
+                    yield ChatResponse(
+                        message=ChatMessage(text=text),
+                        delta=delta,
+                    )
+
+            return gen()
 
     @llm_completion_callback()
     def stream_complete(
