@@ -9,10 +9,9 @@ from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from packaging import version
-
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.utilities.pinecone_utils import _import_pinecone, _is_pinecone_v3
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -155,33 +154,6 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
 import_err_msg = (
     "`pinecone` package not found, please run `pip install pinecone-client`"
 )
-
-
-def _import_pinecone() -> Any:
-    """ "
-    Try to import pinecone module. If it's not already installed, instruct user how to install.
-    """
-    try:
-        import pinecone
-    except ImportError as e:
-        raise ImportError(
-            "Could not import pinecone python package. "
-            "Please install it with `pip install pinecone-client`."
-        ) from e
-    return pinecone
-
-
-def _is_pinecone_v3() -> bool:
-    """
-    Check whether the pinecone client is >= 3.0.0.
-    """
-    pinecone = _import_pinecone()
-    pinecone_client_version = pinecone.__version__
-    if version.parse(pinecone_client_version) >= version.parse(
-        "3.0.0"
-    ):  # Will not work with .dev versions, e.g. "3.0.0.dev8"
-        return True
-    return False
 
 
 class PineconeVectorStore(BasePydanticVectorStore):
