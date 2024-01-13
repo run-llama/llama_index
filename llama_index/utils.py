@@ -131,10 +131,9 @@ def get_tokenizer() -> Callable[[str], List]:
 
         try:
             enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+            logger.debug("Tiktoken encoder loaded successfully")
         except Exception as e:
-            # TODO: Raise error that encoding download failed, and that local model can be used?
-            print(e)
-            logger.error("Failed to download default tiktoken encoder")
+            logger.error("Failed to load default tiktoken encoder")
 
         tokenizer = partial(enc.encode, allowed_special="all")
         set_global_tokenizer(tokenizer)

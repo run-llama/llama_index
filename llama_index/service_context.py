@@ -95,6 +95,7 @@ class ServiceContext:
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         query_wrapper_prompt: Optional[BasePromptTemplate] = None,
+        local_files_only: Optional[bool] = False,
         # pydantic program mode (used if output_cls is specified)
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         # node parser kwargs
@@ -126,6 +127,8 @@ class ServiceContext:
                 to all input prompts, used to guide system "decision making"
             query_wrapper_prompt (Optional[BasePromptTemplate]): A format to wrap
                 passed-in input queries.
+            local_files_only (Optional[bool]): If True, only use local files,
+                do not try to make any network requests.
 
         Deprecated Args:
             chunk_size_limit (Optional[int]): renamed to chunk_size
@@ -160,13 +163,14 @@ class ServiceContext:
                 system_prompt=system_prompt,
                 query_wrapper_prompt=query_wrapper_prompt,
                 transformations=transformations,
+                local_files_only=local_files_only,
             )
 
         callback_manager = callback_manager or CallbackManager([])
         if llm != "default":
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
-            llm = resolve_llm(llm)
+            llm = resolve_llm(llm, local_files_only)
             llm.system_prompt = llm.system_prompt or system_prompt
             llm.query_wrapper_prompt = llm.query_wrapper_prompt or query_wrapper_prompt
             llm.pydantic_program_mode = (
@@ -188,7 +192,7 @@ class ServiceContext:
         # NOTE: the embed_model isn't used in all indices
         # NOTE: embed model should be a transformation, but the way the service
         # context works, we can't put in there yet.
-        embed_model = resolve_embed_model(embed_model)
+        embed_model = resolve_embed_model(embed_model, local_files_only)
         embed_model.callback_manager = callback_manager
 
         prompt_helper = prompt_helper or _get_default_prompt_helper(
@@ -238,6 +242,7 @@ class ServiceContext:
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         query_wrapper_prompt: Optional[BasePromptTemplate] = None,
+        local_files_only: Optional[bool] = False,
         # node parser kwargs
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
@@ -263,7 +268,7 @@ class ServiceContext:
         if llm != "default":
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
-            llm = resolve_llm(llm)
+            llm = resolve_llm(llm=llm, local_files_only=local_files_only)
             llm_predictor = LLMPredictor(llm=llm)
 
         llm_predictor = llm_predictor or service_context.llm_predictor
