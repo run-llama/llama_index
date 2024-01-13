@@ -18,12 +18,13 @@ from llama_index.core.response.schema import Response
 from llama_index.exec_utils import safe_eval, safe_exec
 from llama_index.indices.struct_store.pandas import PandasIndex
 from llama_index.output_parsers.utils import parse_code_markdown
-from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.utils import print_text
+from llama_index.query_engine.pandas.output_parser import PandasInstructionParser
 
 logger = logging.getLogger(__name__)
 
@@ -37,61 +38,23 @@ DEFAULT_INSTRUCTION_STR = (
 )
 
 
-def default_output_processor(
-    output: str, df: pd.DataFrame, **output_kwargs: Any
-) -> str:
-    """Process outputs in a default manner."""
-    import ast
-    import sys
-    import traceback
 
-    if sys.version_info < (3, 9):
-        logger.warning(
-            "Python version must be >= 3.9 in order to use "
-            "the default output processor, which executes "
-            "the Python query. Instead, we will return the "
-            "raw Python instructions as a string."
-        )
-        return output
+# **NOTE**: newer version of sql query engine
+DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
+    "Given an input question, synthesize a response from the query results.\n"
+    "Query: {query_str}\n\n"
+    "Pandas Instructions (optional):\n{pandas_instructions}\n\n"
+    "Pandas Output: {pandas_output}\n\n"
+    "Response: "
+)
+DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
+    DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL,
+)
 
-    local_vars = {"df": df}
-
-    output = parse_code_markdown(output, only_last=True)[0]
-
-    # NOTE: inspired from langchain's tool
-    # see langchain.tools.python.tool (PythonAstREPLTool)
-    try:
-        tree = ast.parse(output)
-        module = ast.Module(tree.body[:-1], type_ignores=[])
-        safe_exec(ast.unparse(module), {}, local_vars)  # type: ignore
-        module_end = ast.Module(tree.body[-1:], type_ignores=[])
-        module_end_str = ast.unparse(module_end)  # type: ignore
-        if module_end_str.strip("'\"") != module_end_str:
-            # if there's leading/trailing quotes, then we need to eval
-            # string to get the actual expression
-            module_end_str = safe_eval(module_end_str, {"np": np}, local_vars)
-        try:
-            # str(pd.dataframe) will truncate output by display.max_colwidth
-            # set width temporarily to extract more text
-            if "max_colwidth" in output_kwargs:
-                pd.set_option("display.max_colwidth", output_kwargs["max_colwidth"])
-            output_str = str(safe_eval(module_end_str, {"np": np}, local_vars))
-            pd.reset_option("display.max_colwidth")
-            return output_str
-
-        except Exception:
-            raise
-    except Exception as e:
-        err_string = (
-            "There was an error running the output as Python code. "
-            f"Error message: {e}"
-        )
-        traceback.print_exc()
-        return err_string
 
 
 class PandasQueryEngine(BaseQueryEngine):
-    """GPT Pandas query.
+    """Pandas query engine.
 
     Convert natural language to Pandas python code.
 
@@ -119,12 +82,14 @@ class PandasQueryEngine(BaseQueryEngine):
         self,
         df: pd.DataFrame,
         instruction_str: Optional[str] = None,
-        output_processor: Optional[Callable] = None,
+        instruction_parser: Optional[PandasInstructionParser] = None,
         pandas_prompt: Optional[BasePromptTemplate] = None,
         output_kwargs: Optional[dict] = None,
         head: int = 5,
         verbose: bool = False,
         service_context: Optional[ServiceContext] = None,
+        synthesize_response: bool = False,
+        response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -133,10 +98,15 @@ class PandasQueryEngine(BaseQueryEngine):
         self._head = head
         self._pandas_prompt = pandas_prompt or DEFAULT_PANDAS_PROMPT
         self._instruction_str = instruction_str or DEFAULT_INSTRUCTION_STR
-        self._output_processor = output_processor or default_output_processor
-        self._output_kwargs = output_kwargs or {}
+        self._instruction_parser = PandasInstructionParser(
+            df, output_kwargs or {}
+        )
         self._verbose = verbose
         self._service_context = service_context or ServiceContext.from_defaults()
+        self._synthesize_response = synthesize_response
+        self._response_synthesis_prompt = (
+            response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT
+        )
 
         super().__init__(self._service_context.callback_manager)
 
@@ -146,12 +116,17 @@ class PandasQueryEngine(BaseQueryEngine):
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
-        return {"pandas_prompt": self._pandas_prompt}
+        return {
+            "pandas_prompt": self._pandas_prompt,
+            "response_synthesis_prompt": self._response_synthesis_prompt,
+        }
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "pandas_prompt" in prompts:
             self._pandas_prompt = prompts["pandas_prompt"]
+        if "response_synthesis_prompt" in prompts:
+            self._response_synthesis_prompt = prompts["response_synthesis_prompt"]
 
     @classmethod
     def from_index(cls, index: PandasIndex, **kwargs: Any) -> "PandasQueryEngine":
@@ -178,19 +153,24 @@ class PandasQueryEngine(BaseQueryEngine):
 
         if self._verbose:
             print_text(f"> Pandas Instructions:\n" f"```\n{pandas_response_str}\n```\n")
-        pandas_output = self._output_processor(
-            pandas_response_str,
-            self._df,
-            **self._output_kwargs,
-        )
+        pandas_output = self._instruction_parser.parse(pandas_response_str)
         if self._verbose:
             print_text(f"> Pandas Output: {pandas_output}\n")
 
         response_metadata = {
             "pandas_instruction_str": pandas_response_str,
         }
+        if self._synthesize_response:
+            response_str = str(self._service_context.llm.predict(
+                self._response_synthesis_prompt,
+                query_str=query_bundle.query_str,
+                pandas_instructions=pandas_response_str,
+                pandas_output=pandas_output,
+            ))
+        else:
+            response_str = str(pandas_output)
 
-        return Response(response=pandas_output, metadata=response_metadata)
+        return Response(response=response_str, metadata=response_metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         return self._query(query_bundle)
