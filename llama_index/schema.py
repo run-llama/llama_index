@@ -475,7 +475,9 @@ class ImageNode(TextNode):
     def resolve_image(self) -> ImageType:
         """Resolve an image such that PIL can read it."""
         if self.image is not None:
-            return self.image
+            import base64
+
+            return BytesIO(base64.b64decode(self.image))
         elif self.image_path is not None:
             return self.image_path
         elif self.image_url is not None:
