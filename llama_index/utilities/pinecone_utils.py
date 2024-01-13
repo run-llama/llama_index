@@ -4,7 +4,7 @@ from packaging import version
 
 
 def _import_pinecone() -> Any:
-    """ "
+    """
     Try to import pinecone module. If it's not already installed, instruct user how to install.
     """
     try:
