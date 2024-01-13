@@ -138,9 +138,10 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                             obj, query_bundle=query_bundle, score=score
                         )
                     )
+                else:
+                    retrieved_nodes.append(n)
             else:
                 retrieved_nodes.append(n)
-                continue
 
         return retrieved_nodes
 
@@ -150,18 +151,20 @@ class BaseRetriever(ChainableMixin, PromptMixin):
         retrieved_nodes: List[NodeWithScore] = []
         for n in nodes:
             node = n.node
+            score = n.score or 1.0
             if isinstance(node, IndexNode):
                 obj = self.object_map.get(node.index_id, None)
                 if obj is not None:
                     # TODO: Add concurrent execution via `run_jobs()` ?
                     retrieved_nodes.extend(
                         await self._aretrieve_from_object(
-                            obj, query_bundle=query_bundle, score=node.score
+                            obj, query_bundle=query_bundle, score=score
                         )
                     )
+                else:
+                    retrieved_nodes.append(n)
             else:
                 retrieved_nodes.append(n)
-                continue
 
         return retrieved_nodes
 
