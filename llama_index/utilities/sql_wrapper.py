@@ -183,6 +183,19 @@ class SQLDatabase:
         with self._engine.begin() as connection:
             connection.execute(stmt)
 
+    def truncate_word(self, content: Any, *, length: int, suffix: str = "...") -> str:
+        """
+        Truncate a string to a certain number of words, based on the max string
+        length.
+        """
+        if not isinstance(content, str) or length <= 0:
+            return content
+
+        if len(content) <= length:
+            return content
+
+        return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
+
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """Execute a SQL statement and return a string representing the results.
 
@@ -198,5 +211,18 @@ class SQLDatabase:
                 ) from exc
             if cursor.returns_rows:
                 result = cursor.fetchall()
-                return str(result), {"result": result, "col_keys": list(cursor.keys())}
+                # truncate the results to the max string length
+                # we can't use str(result) directly because it automatically truncates long strings
+                truncated_results = []
+                for row in result:
+                    # truncate each column, then convert the row to a tuple
+                    truncated_row = tuple(
+                        self.truncate_word(column, length=self._max_string_length)
+                        for column in row
+                    )
+                    truncated_results.append(truncated_row)
+                return str(truncated_results), {
+                    "result": truncated_results,
+                    "col_keys": list(cursor.keys()),
+                }
         return "", {}
