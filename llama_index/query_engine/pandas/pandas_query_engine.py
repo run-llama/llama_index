@@ -98,7 +98,7 @@ class PandasQueryEngine(BaseQueryEngine):
         self._head = head
         self._pandas_prompt = pandas_prompt or DEFAULT_PANDAS_PROMPT
         self._instruction_str = instruction_str or DEFAULT_INSTRUCTION_STR
-        self._instruction_parser = PandasInstructionParser(
+        self._instruction_parser = instruction_parser or PandasInstructionParser(
             df, output_kwargs or {}
         )
         self._verbose = verbose

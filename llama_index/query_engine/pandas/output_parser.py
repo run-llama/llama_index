@@ -1,8 +1,8 @@
 """Pandas output parser."""
 
-from llama_index.types import BaseOutputParser
+from llama_index.output_parsers.base import ChainableOutputParser
 import pandas as pd
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from llama_index.output_parsers.utils import parse_code_markdown
 from llama_index.exec_utils import safe_eval, safe_exec
 import numpy as np
@@ -60,7 +60,7 @@ def default_output_processor(
         return err_string
 
 
-class PandasInstructionParser(BaseOutputParser):
+class PandasInstructionParser(ChainableOutputParser):
     """Pandas instruction parser.
 
     This 'output parser' takes in pandas instructions (in Python code) and
@@ -68,10 +68,14 @@ class PandasInstructionParser(BaseOutputParser):
     
     """
 
-    def __init__(self, df: pd.DataFrame, output_kwargs: Dict[str, Any]) -> None:
+    def __init__(
+        self, 
+        df: pd.DataFrame, 
+        output_kwargs: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Initialize params."""
         self.df = df
-        self.output_kwargs = output_kwargs
+        self.output_kwargs = output_kwargs or {}
 
     def parse(self, output: str) -> Any:
         """Parse, validate, and correct errors programmatically."""
