@@ -81,7 +81,7 @@ class ContextChatEngine(BaseChatEngine):
                     "Cannot specify both system_prompt and prefix_messages"
                 )
             prefix_messages = [
-                ChatMessage(content=system_prompt, role=MessageRole.SYSTEM)
+                ChatMessage(content=system_prompt, role=llm.metadata.system_role)
             ]
 
         prefix_messages = prefix_messages or []
@@ -138,7 +138,9 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_w_sys_prompt = system_prompt.strip() + "\n" + context_str
         return [
-            ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM),
+            ChatMessage(
+                content=context_str_w_sys_prompt, role=self._llm.metadata.system_role
+            ),
             *prefix_messages,
         ]
 
