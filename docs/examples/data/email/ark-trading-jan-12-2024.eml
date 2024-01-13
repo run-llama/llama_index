@@ -42,29 +42,29 @@ Authentication-Results: mx.google.com;
        dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=arkfunds.com
 Received: by 172.16.124.15 with SMTP id aybkfun4xszmp2e0iw0actih0n3sjebunz4f47l0;
         Sat, 13 Jan 2024 01:01:40 GMT
-DKIM-Signature: v=1; s=hs1; d=mail.arkinvest.com; 
-        i=@mail.arkinvest.com; 
-        h=sender:from:from:reply-to:to:to:cc:cc:subject:subject:list-unsubscribe:form-sub:feedback-id; 
-        a=rsa-sha256; c=relaxed/relaxed; 
-        bh=eNG7/QDXLxW6juxKxwO1kSAk3suUhjzH9+oEXZLVMA0=; 
+DKIM-Signature: v=1; s=hs1; d=mail.arkinvest.com;
+        i=@mail.arkinvest.com;
+        h=sender:from:from:reply-to:to:to:cc:cc:subject:subject:list-unsubscribe:form-sub:feedback-id;
+        a=rsa-sha256; c=relaxed/relaxed;
+        bh=eNG7/QDXLxW6juxKxwO1kSAk3suUhjzH9+oEXZLVMA0=;
         b=oNIyxWxWu643/0jpluWxychV//DGyn/jJNMFcu65Q08zFNBT5m9ozgz6aTAKKP
          S7eFaTuhnobrIA2e5bIb1xH081GHguePF6mpvzEvw6oMxvAignxeVLkSNsFuvAO
          CAum1vuwDACEJPKqmr1a2Hahkcrwcq0uiix/yBSKzFRbU4cvgsfzwqBXP+LNgV1
          +iOO2PMdGLi3R2ZZ7QcGHa2GDmBVnk4g3i4bB6dV0cszE7I+X2zNQCtWCIRf937
          XuVuPzyz/5anWU7abqksWETJgzwWdGBglf7qg/hFddFYveVUY2GlPRvv8UdWYM+
-         47lUC+mVE8PY+NpiCBkZLlAl/ssA==; q=dns/txt; t=1705107700; 
+         47lUC+mVE8PY+NpiCBkZLlAl/ssA==; q=dns/txt; t=1705107700;
         x=1705370500;
-DKIM-Signature: v=1; s=hs1-533155; d=arkfunds.com; 
-        i=@arkfunds.com; 
-        h=sender:from:from:reply-to:to:to:cc:cc:subject:subject:list-unsubscribe:form-sub:feedback-id; 
-        a=rsa-sha256; c=relaxed/relaxed; 
-        bh=eNG7/QDXLxW6juxKxwO1kSAk3suUhjzH9+oEXZLVMA0=; 
+DKIM-Signature: v=1; s=hs1-533155; d=arkfunds.com;
+        i=@arkfunds.com;
+        h=sender:from:from:reply-to:to:to:cc:cc:subject:subject:list-unsubscribe:form-sub:feedback-id;
+        a=rsa-sha256; c=relaxed/relaxed;
+        bh=eNG7/QDXLxW6juxKxwO1kSAk3suUhjzH9+oEXZLVMA0=;
         b=jsx6kPbqfPY0KP4uhq03s1YIbDjSbEI1hKZhvFHoYydcBQjTE6za1P7UkqCFs4
          CTPv4QsNKZLMDGTg+EDhRJNR4qssGYxzANolex0R/WFhgzk2cclcBOrIYcs/Hkc
          G8f4dBOg+a0jKiUyMxh8bPVGvG+Lv1MBjiIoPTRgVZQuCv3eTg/ExTGhwwqVomv
          wNyxYfk2YDwvd4mJLMOEuWGUjnqBuefGKIgeCaKzy+V38lnpFl1clMLjUq3sJEF
          ujKbda6x2vV4MzGOW3Ly8RL6j4kxswaqvNFvwaf7RMQMyswZe0BDt5BoV0YYpsv
-         WQUne5GGQLNgrv+XWg2JzEm7rKDg==; q=dns/txt; t=1705107700; 
+         WQUne5GGQLNgrv+XWg2JzEm7rKDg==; q=dns/txt; t=1705107700;
         x=1705370500;
 Return-Path: <1axbt7xi5zlqk3ldkxx0x4h4mnszek8jos8iwx-llamaindex+2Etest1=gmail.com@mail.arkinvest.com>
 X-HS-Cid: 1axe07aw94n2xm5p2ff4nuhp5cwbok0dn4foox
@@ -77,7 +77,7 @@ Message-ID: <1705107700566.b6ec745e-8f8d-4596-ae9b-8622e34b2626@mail.arkinvest.c
 Subject: =?utf-8?Q?ARK_Investment_Management_LLC_=E2=80=93_Actively?=
  =?utf-8?Q?_Managed_ETFs_-_Daily_Trade_Information*?=
 MIME-Version: 1.0
-Content-Type: multipart/alternative; 
+Content-Type: multipart/alternative;
 	boundary="----=_Part_1130209_1756618583.1705107700667"
 Form-Sub: v=1; ip=none
 Precedence: bulk
@@ -1563,4 +1563,3 @@ n-bottom:0!important;margin-right:0!important;margin-left:0!important;paddi=
 ng-top:0!important;padding-bottom:0!important;padding-right:0!important;pad=
 ding-left:0!important"></body></html>
 ------=_Part_1130209_1756618583.1705107700667--
-
