@@ -159,10 +159,10 @@ class ObjectType(str, Enum):
 
 
 class MetadataMode(str, Enum):
-    ALL = auto()
-    EMBED = auto()
-    LLM = auto()
-    NONE = auto()
+    ALL = "all"
+    EMBED = "embed"
+    LLM = "llm"
+    NONE = "none"
 
 
 class RelatedNodeInfo(BaseComponent):
@@ -499,6 +499,7 @@ class IndexNode(TextNode):
     """
 
     index_id: str
+    obj: Any = Field(exclude=True)
 
     @classmethod
     def from_text_node(

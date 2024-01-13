@@ -68,7 +68,7 @@ class BaseIndex(Generic[IS], ABC):
         self._graph_store = self._storage_context.graph_store
 
         objects = objects or []
-        self._object_map = {obj.index_id: obj for obj in objects}
+        self._object_map = {obj.index_id: obj.obj for obj in objects}
         with self._service_context.callback_manager.as_trace("index_construction"):
             if index_struct is None:
                 assert nodes is not None
