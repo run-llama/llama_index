@@ -149,7 +149,8 @@ def test_default_output_processor_e2e(tmp_path: Path) -> None:
 
     assert isinstance(response, Response)
     # raw df should be equal to slice of dataframe that's just population at location 2
-    assert response.metadata["raw_pandas_output"] == str(df["population"].iloc[2:3])
+    rmetadata = cast(Dict[str, Any], response.metadata)
+    assert rmetadata["raw_pandas_output"] == str(df["population"].iloc[2:3])
 
     # attack 1: fail!
     print("[+] Attack 1 starts, it should fail!")
