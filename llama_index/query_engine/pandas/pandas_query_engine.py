@@ -8,23 +8,20 @@ require heavy sandboxing or virtual machines
 """
 
 import logging
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
-import numpy as np
 import pandas as pd
 
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.response.schema import Response
-from llama_index.exec_utils import safe_eval, safe_exec
 from llama_index.indices.struct_store.pandas import PandasIndex
-from llama_index.output_parsers.utils import parse_code_markdown
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.query_engine.pandas.output_parser import PandasInstructionParser
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.utils import print_text
-from llama_index.query_engine.pandas.output_parser import PandasInstructionParser
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +35,6 @@ DEFAULT_INSTRUCTION_STR = (
 )
 
 
-
 # **NOTE**: newer version of sql query engine
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
     "Given an input question, synthesize a response from the query results.\n"
@@ -50,7 +46,6 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL = (
 DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
     DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL,
 )
-
 
 
 class PandasQueryEngine(BaseQueryEngine):
@@ -161,12 +156,14 @@ class PandasQueryEngine(BaseQueryEngine):
             "pandas_instruction_str": pandas_response_str,
         }
         if self._synthesize_response:
-            response_str = str(self._service_context.llm.predict(
-                self._response_synthesis_prompt,
-                query_str=query_bundle.query_str,
-                pandas_instructions=pandas_response_str,
-                pandas_output=pandas_output,
-            ))
+            response_str = str(
+                self._service_context.llm.predict(
+                    self._response_synthesis_prompt,
+                    query_str=query_bundle.query_str,
+                    pandas_instructions=pandas_response_str,
+                    pandas_output=pandas_output,
+                )
+            )
         else:
             response_str = str(pandas_output)
 

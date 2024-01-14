@@ -1,11 +1,14 @@
 """Pandas output parser."""
 
-from llama_index.output_parsers.base import ChainableOutputParser
-import pandas as pd
-from typing import Dict, Any, Optional
-from llama_index.output_parsers.utils import parse_code_markdown
-from llama_index.exec_utils import safe_eval, safe_exec
+from typing import Any, Dict, Optional
+
 import numpy as np
+import pandas as pd
+
+from llama_index.exec_utils import safe_eval, safe_exec
+from llama_index.output_parsers.base import ChainableOutputParser
+from llama_index.output_parsers.utils import parse_code_markdown
+
 
 def default_output_processor(
     output: str, df: pd.DataFrame, **output_kwargs: Any
@@ -65,13 +68,11 @@ class PandasInstructionParser(ChainableOutputParser):
 
     This 'output parser' takes in pandas instructions (in Python code) and
     executes them to return an output.
-    
+
     """
 
     def __init__(
-        self, 
-        df: pd.DataFrame, 
-        output_kwargs: Optional[Dict[str, Any]] = None
+        self, df: pd.DataFrame, output_kwargs: Optional[Dict[str, Any]] = None
     ) -> None:
         """Initialize params."""
         self.df = df
