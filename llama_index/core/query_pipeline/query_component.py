@@ -31,6 +31,8 @@ def validate_and_convert_stringable(input: Any) -> str:
             else:
                 new_input += str(elem)
         return new_input
+    elif isinstance(input, ChatResponse):
+        return input.message.content or ""
     elif isinstance(input, get_args(StringableInput)):
         return str(input)
     else:
