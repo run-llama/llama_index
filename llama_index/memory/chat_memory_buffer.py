@@ -9,7 +9,7 @@ from llama_index.memory.types import DEFAULT_CHAT_STORE_KEY, BaseMemory
 from llama_index.storage.chat_store import BaseChatStore, SimpleChatStore
 from llama_index.utils import get_tokenizer
 
-DEFUALT_TOKEN_LIMIT_RATIO = 0.75
+DEFAULT_TOKEN_LIMIT_RATIO = 0.75
 DEFAULT_TOKEN_LIMIT = 3000
 
 
@@ -57,7 +57,7 @@ class ChatMemoryBuffer(BaseMemory):
         """Create a chat memory buffer from an LLM."""
         if llm is not None:
             context_window = llm.metadata.context_window
-            token_limit = token_limit or int(context_window * DEFUALT_TOKEN_LIMIT_RATIO)
+            token_limit = token_limit or int(context_window * DEFAULT_TOKEN_LIMIT_RATIO)
         elif token_limit is None:
             token_limit = DEFAULT_TOKEN_LIMIT
 
