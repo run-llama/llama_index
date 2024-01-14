@@ -63,7 +63,6 @@ def to_lc_messages(messages: Sequence[ChatMessage]) -> List[LC.BaseMessage]:
 def from_lc_messages(lc_messages: Sequence[LC.BaseMessage]) -> List[ChatMessage]:
     messages: List[ChatMessage] = []
     for lc_message in lc_messages:
-        msg_role: str = ""
         li_kw = dict(
             content=lc_message.content,
             additional_kwargs=lc_message.additional_kwargs,
