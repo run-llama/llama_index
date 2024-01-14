@@ -1,7 +1,7 @@
 """Pipeline schema."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generator, Optional, Set, Union, cast, get_args
+from typing import Any, Dict, Generator, List, Optional, Set, Union, cast, get_args
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
@@ -10,11 +10,18 @@ from llama_index.core.llms.types import (
     CompletionResponse,
 )
 from llama_index.core.response.schema import Response
-from llama_index.schema import QueryBundle
+from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 
 ## Define common types used throughout these components
 StringableInput = Union[
-    CompletionResponse, ChatResponse, str, QueryBundle, Response, Generator
+    CompletionResponse,
+    ChatResponse,
+    str,
+    QueryBundle,
+    Response,
+    Generator,
+    NodeWithScore,
+    TextNode,
 ]
 
 
@@ -31,6 +38,13 @@ def validate_and_convert_stringable(input: Any) -> str:
             else:
                 new_input += str(elem)
         return new_input
+    elif isinstance(input, List):
+        # iterate through each element, make sure is stringable
+        # do this recursively
+        new_input_list = []
+        for elem in input:
+            new_input_list.append(validate_and_convert_stringable(elem))
+        return str(new_input_list)
     elif isinstance(input, ChatResponse):
         return input.message.content or ""
     elif isinstance(input, get_args(StringableInput)):
