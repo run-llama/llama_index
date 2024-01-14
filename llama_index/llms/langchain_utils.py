@@ -1,5 +1,11 @@
 from typing import List, Sequence
 
+from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
+from llama_index.core.llms.types import ChatMessage, LLMMetadata, MessageRole
+from llama_index.llms.anyscale_utils import anyscale_modelname_to_contextsize
+from llama_index.llms.openai_utils import openai_modelname_to_contextsize
+
+
 class LC:
     from llama_index.bridge.langchain import (
         AI21,
@@ -17,11 +23,6 @@ class LC:
         SystemMessage,
     )
 
-from llama_index.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
-from llama_index.core.llms.types import ChatMessage, LLMMetadata, MessageRole
-from llama_index.llms.anyscale_utils import anyscale_modelname_to_contextsize
-from llama_index.llms.openai_utils import openai_modelname_to_contextsize
-
 
 def is_chat_model(llm: LC.BaseLanguageModel) -> bool:
     return isinstance(llm, LC.BaseChatModel)
@@ -31,10 +32,10 @@ def to_lc_messages(messages: Sequence[ChatMessage]) -> List[LC.BaseMessage]:
     lc_messages: List[LC.BaseMessage] = []
     for message in messages:
         LC_MessageClass = LC.BaseMessage
-        lc_kw = dict(
-            content=message.content,
-            additional_kwargs=message.additional_kwargs,
-        )
+        lc_kw = {
+            "content": message.content,
+            "additional_kwargs": message.additional_kwargs,
+        }
         if message.role == "user":
             LC_MessageClass = LC.HumanMessage
         elif message.role == "assistant":
@@ -49,11 +50,15 @@ def to_lc_messages(messages: Sequence[ChatMessage]) -> List[LC.BaseMessage]:
             raise ValueError(f"Invalid role: {message.role}")
 
         for req_key in LC_MessageClass.schema().get("required"):
-            if req_key not in lc_kw:                
-                if req_key in lc_kw.get("additional_kwargs"):
-                    lc_kw[req_key] = lc_kw.get("additional_kwargs").pop(req_key)
-                else:
+            if req_key not in lc_kw:
+                more_kw = lc_kw.get("additional_kwargs")
+                if not isinstance(more_kw, dict):
+                    raise ValueError(
+                        f"additional_kwargs must be a dict, got {type(more_kw)}"
+                    )
+                if req_key not in more_kw:
                     raise ValueError(f"{req_key} needed for {LC_MessageClass}")
+                lc_kw[req_key] = more_kw.pop(req_key)
 
         lc_messages.append(LC_MessageClass(**lc_kw))
 
@@ -63,10 +68,10 @@ def to_lc_messages(messages: Sequence[ChatMessage]) -> List[LC.BaseMessage]:
 def from_lc_messages(lc_messages: Sequence[LC.BaseMessage]) -> List[ChatMessage]:
     messages: List[ChatMessage] = []
     for lc_message in lc_messages:
-        li_kw = dict(
-            content=lc_message.content,
-            additional_kwargs=lc_message.additional_kwargs,
-        )
+        li_kw = {
+            "content": lc_message.content,
+            "additional_kwargs": lc_message.additional_kwargs,
+        }
         if isinstance(lc_message, LC.HumanMessage):
             li_kw["role"] = MessageRole.USER
         elif isinstance(lc_message, LC.AIMessage):
