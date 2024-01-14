@@ -561,3 +561,6 @@ class QueryPipeline(QueryComponent):
             raise ValueError("Only one leaf is supported.")
         leaf_module = self.module_dict[leaf_keys[0]]
         return leaf_module.output_keys
+
+    def draw(self) -> None:
+        networkx.draw(self.dag)

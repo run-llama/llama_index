@@ -122,7 +122,7 @@ class PandasQueryEngine(BaseQueryEngine):
         output_processor: Optional[Callable] = None,
         pandas_prompt: Optional[BasePromptTemplate] = None,
         output_kwargs: Optional[dict] = None,
-        head: int = 5,
+        head: Optional[int] = 5,
         verbose: bool = False,
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
@@ -163,7 +163,10 @@ class PandasQueryEngine(BaseQueryEngine):
 
     def _get_table_context(self) -> str:
         """Get table context."""
-        return str(self._df.head(self._head))
+        if self._head is None:
+            return self._df.to_markdown()
+        else:
+            return self._df.head(self._head).to_markdown()
 
     def _query(self, query_bundle: QueryBundle) -> Response:
         """Answer a query."""
