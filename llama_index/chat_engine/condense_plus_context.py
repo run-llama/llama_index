@@ -209,7 +209,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             system_message_content = self._system_prompt + "\n" + system_message_content
 
         system_message = ChatMessage(
-            content=system_message_content, role=MessageRole.SYSTEM
+            content=system_message_content, role=self._llm.metadata.system_role
         )
 
         initial_token_count = self._token_counter.estimate_tokens_in_messages(
@@ -256,7 +256,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             system_message_content = self._system_prompt + "\n" + system_message_content
 
         system_message = ChatMessage(
-            content=system_message_content, role=MessageRole.SYSTEM
+            content=system_message_content, role=self._llm.metadata.system_role
         )
 
         initial_token_count = self._token_counter.estimate_tokens_in_messages(
