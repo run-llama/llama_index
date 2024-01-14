@@ -1,5 +1,6 @@
 """Pandas output parser."""
 
+import logging
 from typing import Any, Dict, Optional
 
 import numpy as np
@@ -8,6 +9,8 @@ import pandas as pd
 from llama_index.exec_utils import safe_eval, safe_exec
 from llama_index.output_parsers.base import ChainableOutputParser
 from llama_index.output_parsers.utils import parse_code_markdown
+
+logger = logging.getLogger(__name__)
 
 
 def default_output_processor(

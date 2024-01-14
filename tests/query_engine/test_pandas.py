@@ -11,9 +11,9 @@ from llama_index.core.response.schema import Response
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
+from llama_index.query_engine.pandas.output_parser import PandasInstructionParser
 from llama_index.query_engine.pandas.pandas_query_engine import (
     PandasQueryEngine,
-    default_output_processor,
 )
 
 
@@ -84,7 +84,8 @@ def test_default_output_processor_rce(tmp_path: Path) -> None:
     tmp_file = tmp_path / "pwnnnnn"
 
     injected_code = f"__import__('os').system('touch {tmp_file}')"
-    default_output_processor(injected_code, df)
+    parser = PandasInstructionParser(df=df)
+    parser.parse(injected_code)
 
     assert not tmp_file.is_file(), "file has been created via RCE!"
 
@@ -104,7 +105,8 @@ def test_default_output_processor_rce2() -> None:
 
     injected_code = "().__class__.__mro__[-1].__subclasses__()[137].__init__.__globals__['system']('ls')"
 
-    output = default_output_processor(injected_code, df)
+    parser = PandasInstructionParser(df=df)
+    output = parser.parse(injected_code)
 
     assert (
         "Execution of code containing references to private or dunder methods is forbidden!"

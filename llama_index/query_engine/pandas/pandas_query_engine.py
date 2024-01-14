@@ -154,6 +154,7 @@ class PandasQueryEngine(BaseQueryEngine):
 
         response_metadata = {
             "pandas_instruction_str": pandas_response_str,
+            "raw_pandas_output": pandas_output,
         }
         if self._synthesize_response:
             response_str = str(
