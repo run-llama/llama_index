@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import PurePath
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 
@@ -92,34 +92,6 @@ class S3DBKVStore(BaseKVStore):
         Args:
             key (str): key
             val (dict): value
-            collection (str): collection name
-
-        """
-        raise NotImplementedError
-
-    def put_all(
-        self,
-        kv_pairs: List[Tuple[str, dict]],
-        collection: str = DEFAULT_COLLECTION,
-    ) -> None:
-        """Put a dictionary of key-value pairs into the store.
-
-        Args:
-            kv_pairs (List[Tuple[str, dict]]): key-value pairs
-            collection (str): collection name
-
-        """
-        raise NotImplementedError
-
-    async def aput_all(
-        self,
-        kv_pairs: List[Tuple[str, dict]],
-        collection: str = DEFAULT_COLLECTION,
-    ) -> None:
-        """Put a dictionary of key-value pairs into the store.
-
-        Args:
-            kv_pairs (List[Tuple[str, dict]]): key-value pairs
             collection (str): collection name
 
         """

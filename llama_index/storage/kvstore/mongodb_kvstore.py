@@ -1,6 +1,10 @@
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
+from llama_index.storage.kvstore.types import (
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_COLLECTION,
+    BaseKVStore,
+)
 
 IMPORT_ERROR_MSG = "`pymongo` package not found, please run `pip install pymongo`"
 
@@ -132,28 +136,19 @@ class MongoDBKVStore(BaseKVStore):
         raise NotImplementedError
 
     def put_all(
-        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        """Put a dictionary of key-value pairs into the store.
+        # Prepare documents with '_id' set to the key for batch insertion
 
-        Args:
-            kv_pairs (List[Tuple[str, dict]]): key-value pairs
-            collection (str): collection name
-
-        """
-        raise NotImplementedError
-
-    async def aput_all(
-        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
-    ) -> None:
-        """Put a dictionary of key-value pairs into the store.
-
-        Args:
-            kv_pairs (List[Tuple[str, dict]]): key-value pairs
-            collection (str): collection name
-
-        """
-        raise NotImplementedError
+        docs = [{"_id": key, **value} for key, value in kv_pairs]
+        # Insert documents in batches
+        for batch in (
+            docs[i : i + batch_size] for i in range(0, len(docs), batch_size)
+        ):
+            self._db[collection].insert_many(batch)
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a value from the store.

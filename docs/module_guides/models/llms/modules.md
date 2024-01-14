@@ -149,6 +149,15 @@ maxdepth: 1
 /examples/llm/monsterapi.ipynb
 ```
 
+## NeutrinoAI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/neutrino.ipynb
+```
+
 ## Nvidia TensorRT-LLM
 
 ```{toctree}

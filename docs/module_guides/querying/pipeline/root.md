@@ -15,7 +15,7 @@ This is centered around our `QueryPipeline` abstraction. Load in a variety of mo
 
 Our query pipelines also propagate callbacks throughout all sub-modules, and these integrate with our [observability partners](/module_guides/observability/observability.md).
 
-![](/_static/query/pipeline_rag_example.png)
+![](/_static/query/query_classes.png)
 
 ## Usage Pattern
 

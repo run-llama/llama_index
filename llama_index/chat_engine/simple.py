@@ -56,7 +56,9 @@ class SimpleChatEngine(BaseChatEngine):
                 raise ValueError(
                     "Cannot specify both system_prompt and prefix_messages"
                 )
-            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+            prefix_messages = [
+                ChatMessage(content=system_prompt, role=llm.metadata.system_role)
+            ]
 
         prefix_messages = prefix_messages or []
 

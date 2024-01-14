@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 
 import fsspec
 
@@ -37,19 +37,6 @@ class SimpleKVStore(BaseInMemoryKVStore):
     ) -> None:
         """Put a key-value pair into the store."""
         self.put(key, val, collection)
-
-    def put_all(
-        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
-    ) -> None:
-        """Put a dictionary of key-value pairs into the store."""
-        for key, val in kv_pairs:
-            self.put(key, val, collection)
-
-    async def aput_all(
-        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
-    ) -> None:
-        """Put a dictionary of key-value pairs into the store."""
-        self.put_all(kv_pairs, collection)
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a value from the store."""

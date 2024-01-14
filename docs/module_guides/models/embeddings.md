@@ -206,6 +206,7 @@ maxdepth: 1
 /examples/embeddings/fastembed.ipynb
 /examples/embeddings/google_palm.ipynb
 /examples/embeddings/gradient.ipynb
+/examples/embeddings/Anyscale.ipynb
 /examples/embeddings/huggingface.ipynb
 /examples/embeddings/jinaai_embeddings.ipynb
 /examples/embeddings/Langchain.ipynb
