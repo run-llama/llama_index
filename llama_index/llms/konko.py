@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
@@ -28,15 +29,22 @@ from llama_index.llms.konko_utils import (
     acompletion_with_retry,
     completion_with_retry,
     from_openai_message_dict,
-    is_chat_model,
-    konko_modelname_to_contextsize,
+    import_konko,
+    is_openai_v1,
     resolve_konko_credentials,
     to_openai_message_dicts,
 )
 from llama_index.llms.llm import LLM
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
-DEFAULT_KONKO_MODEL = "meta-llama/Llama-2-13b-chat-hf"
+DEFAULT_KONKO_MODEL = "meta-llama/llama-2-13b-chat"
+
+
+@dataclass
+class ModelInfo:
+    name: str
+    max_context_length: int
+    is_chat_model: bool
 
 
 class Konko(LLM):
@@ -64,8 +72,7 @@ class Konko(LLM):
     konko_api_key: str = Field(default=None, description="The konko API key.")
     openai_api_key: str = Field(default=None, description="The Openai API key.")
     api_type: str = Field(default=None, description="The konko API type.")
-    api_base: str = Field(description="The base URL for konko API.")
-    api_version: str = Field(description="The API version for konko API.")
+    model_info_dict: Dict[str, ModelInfo]
 
     def __init__(
         self,
@@ -85,10 +92,10 @@ class Konko(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        model_info_dict: Optional[Dict[str, ModelInfo]] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
-
         (
             konko_api_key,
             openai_api_key,
@@ -102,7 +109,6 @@ class Konko(LLM):
             api_base=api_base,
             api_version=api_version,
         )
-
         super().__init__(
             model=model,
             temperature=temperature,
@@ -120,6 +126,7 @@ class Konko(LLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            model_info_dict=self._create_model_info_dict(),
             **kwargs,
         )
 
@@ -130,18 +137,70 @@ class Konko(LLM):
     def class_name(cls) -> str:
         return "Konko_LLM"
 
+    def _create_model_info_dict(self) -> Dict[str, ModelInfo]:
+        konko = import_konko()
+
+        models_info_dict = {}
+        if is_openai_v1():
+            models = konko.models.list().data
+            for model in models:
+                model_info = ModelInfo(
+                    name=model.name,
+                    max_context_length=model.max_context_length,
+                    is_chat_model=model.is_chat,
+                )
+                models_info_dict[model.name] = model_info
+        else:
+            models = konko.Model.list().data
+            for model in models:
+                model_info = ModelInfo(
+                    name=model["name"],
+                    max_context_length=model["max_context_length"],
+                    is_chat_model=model["is_chat"],
+                )
+                models_info_dict[model["name"]] = model_info
+
+        return models_info_dict
+
+    def _get_model_info(self) -> ModelInfo:
+        model_name = self._get_model_name()
+        model_info = self.model_info_dict.get(model_name)
+        if model_info is None:
+            raise ValueError(
+                f"Unknown model: {model_name}. Please provide a valid Konko model name. "
+                "Known models are: " + ", ".join(self.model_info_dict.keys())
+            )
+        return model_info
+
+    def _is_chat_model(self) -> bool:
+        """
+        Check if the specified model is a chat model.
+
+        Args:
+        - model_id (str): The ID of the model to check.
+
+        Returns:
+        - bool: True if the model is a chat model, False otherwise.
+
+        Raises:
+        - ValueError: If the model_id is not found in the list of models.
+        """
+        model_info = self._get_model_info()
+        return model_info.is_chat_model
+
     @property
     def metadata(self) -> LLMMetadata:
+        model_info = self._get_model_info()
         return LLMMetadata(
-            context_window=konko_modelname_to_contextsize(self._get_model_name()),
+            context_window=model_info.max_context_length,
             num_output=self.max_tokens,
-            is_chat_model=True,
+            is_chat_model=model_info.is_chat_model,
             model_name=self.model,
         )
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        if self._is_chat_model:
+        if self._is_chat_model():
             chat_fn = self._chat
         else:
             chat_fn = completion_to_chat_decorator(self._complete)
@@ -151,23 +210,17 @@ class Konko(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        if self._is_chat_model:
+        if self._is_chat_model():
             stream_chat_fn = self._stream_chat
         else:
             stream_chat_fn = stream_completion_to_chat_decorator(self._stream_complete)
         return stream_chat_fn(messages, **kwargs)
 
     @property
-    def _is_chat_model(self) -> bool:
-        return is_chat_model(self._get_model_name())
-
-    @property
     def _credential_kwargs(self) -> Dict[str, Any]:
         return {
             "konko_api_key": self.konko_api_key,
             "api_type": self.api_type,
-            "api_base": self.api_base,
-            "api_version": self.api_version,
             "openai_api_key": self.openai_api_key,
         }
 
@@ -190,19 +243,22 @@ class Konko(LLM):
         }
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        if not self._is_chat_model:
+        if not self._is_chat_model():
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = completion_with_retry(
-            is_chat_model=self._is_chat_model,
+            is_chat_model=self._is_chat_model(),
             max_retries=self.max_retries,
             messages=message_dicts,
             stream=False,
             **all_kwargs,
         )
-        message_dict = response["choices"][0]["message"]
+        if is_openai_v1():
+            message_dict = response.choices[0].message
+        else:
+            message_dict = response["choices"][0]["message"]
         message = from_openai_message_dict(message_dict)
 
         return ChatResponse(
@@ -214,7 +270,7 @@ class Konko(LLM):
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        if not self._is_chat_model:
+        if not self._is_chat_model():
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
@@ -222,52 +278,34 @@ class Konko(LLM):
 
         def gen() -> ChatResponseGen:
             content = ""
-            function_call: Optional[dict] = None
             for response in completion_with_retry(
-                is_chat_model=self._is_chat_model,
+                is_chat_model=self._is_chat_model(),
                 max_retries=self.max_retries,
                 messages=message_dicts,
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) == 0 and response.get("prompt_annotations"):
-                    # When asking a stream response from the Azure OpenAI API
-                    # you first get an empty message with the content filtering
-                    # results. Ignore this message
-                    continue
-
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["delta"]
+                if is_openai_v1():
+                    if len(response.choices) == 0 and response.prompt_annotations:
+                        continue
+                    delta = (
+                        response.choices[0].delta if len(response.choices) > 0 else {}
+                    )
+                    role_value = delta.role
+                    content_delta = delta.content or ""
                 else:
-                    delta = {}
-                role_value = delta.get("role")
+                    if "choices" not in response or len(response["choices"]) == 0:
+                        continue
+                    delta = response["choices"][0].get("delta", {})
+                    role_value = delta["role"]
+                    content_delta = delta["content"] or ""
+
                 role = role_value if role_value is not None else "assistant"
-                content_delta = delta.get("content", "") or ""
                 content += content_delta
-
-                function_call_delta = delta.get("function_call", None)
-                if function_call_delta is not None:
-                    if function_call is None:
-                        function_call = function_call_delta
-
-                        ## ensure we do not add a blank function call
-                        if function_call.get("function_name", "") is None:
-                            del function_call["function_name"]
-                    else:
-                        function_call["arguments"] = (
-                            function_call.get("arguments", "")
-                            + function_call_delta["arguments"]
-                        )
-
-                additional_kwargs = {}
-                if function_call is not None:
-                    additional_kwargs["function_call"] = function_call
-
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
                         content=content,
-                        additional_kwargs=additional_kwargs,
                     ),
                     delta=content_delta,
                     raw=response,
@@ -280,7 +318,7 @@ class Konko(LLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        if self._is_chat_model:
+        if self._is_chat_model():
             complete_fn = chat_to_completion_decorator(self._chat)
         else:
             complete_fn = self._complete
@@ -290,7 +328,7 @@ class Konko(LLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        if self._is_chat_model:
+        if self._is_chat_model():
             stream_complete_fn = stream_chat_to_completion_decorator(self._stream_chat)
         else:
             stream_complete_fn = self._stream_complete
@@ -313,7 +351,7 @@ class Konko(LLM):
         }
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        if self._is_chat_model:
+        if self._is_chat_model():
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -323,13 +361,17 @@ class Konko(LLM):
             all_kwargs["max_tokens"] = max_tokens
 
         response = completion_with_retry(
-            is_chat_model=self._is_chat_model,
+            is_chat_model=self._is_chat_model(),
             max_retries=self.max_retries,
             prompt=prompt,
             stream=False,
             **all_kwargs,
         )
-        text = response["choices"][0]["text"]
+        if is_openai_v1():
+            text = response.choices[0].text
+        else:
+            text = response["choices"][0]["text"]
+
         return CompletionResponse(
             text=text,
             raw=response,
@@ -337,7 +379,7 @@ class Konko(LLM):
         )
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        if self._is_chat_model:
+        if self._is_chat_model():
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -349,16 +391,22 @@ class Konko(LLM):
         def gen() -> CompletionResponseGen:
             text = ""
             for response in completion_with_retry(
-                is_chat_model=self._is_chat_model,
+                is_chat_model=self._is_chat_model(),
                 max_retries=self.max_retries,
                 prompt=prompt,
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["text"]
+                if is_openai_v1():
+                    if len(response.choices) > 0:
+                        delta = response.choices[0].text
+                    else:
+                        delta = ""
                 else:
-                    delta = ""
+                    if len(response["choices"]) > 0:
+                        delta = response["choices"][0].text
+                    else:
+                        delta = ""
                 text += delta
                 yield CompletionResponse(
                     delta=delta,
@@ -395,7 +443,7 @@ class Konko(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         achat_fn: Callable[..., Awaitable[ChatResponse]]
-        if self._is_chat_model:
+        if self._is_chat_model():
             achat_fn = self._achat
         else:
             achat_fn = acompletion_to_chat_decorator(self._acomplete)
@@ -408,7 +456,7 @@ class Konko(LLM):
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         astream_chat_fn: Callable[..., Awaitable[ChatResponseAsyncGen]]
-        if self._is_chat_model:
+        if self._is_chat_model():
             astream_chat_fn = self._astream_chat
         else:
             astream_chat_fn = astream_completion_to_chat_decorator(
@@ -420,7 +468,7 @@ class Konko(LLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        if self._is_chat_model:
+        if self._is_chat_model():
             acomplete_fn = achat_to_completion_decorator(self._achat)
         else:
             acomplete_fn = self._acomplete
@@ -430,7 +478,7 @@ class Konko(LLM):
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        if self._is_chat_model:
+        if self._is_chat_model():
             astream_complete_fn = astream_chat_to_completion_decorator(
                 self._astream_chat
             )
@@ -441,19 +489,22 @@ class Konko(LLM):
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        if not self._is_chat_model:
+        if not self._is_chat_model():
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = await acompletion_with_retry(
-            is_chat_model=self._is_chat_model,
+            is_chat_model=self._is_chat_model(),
             max_retries=self.max_retries,
             messages=message_dicts,
             stream=False,
             **all_kwargs,
         )
-        message_dict = response["choices"][0]["message"]
+        if is_openai_v1:  # type: ignore
+            message_dict = response.choices[0].message
+        else:
+            message_dict = response["choices"][0]["message"]
         message = from_openai_message_dict(message_dict)
 
         return ChatResponse(
@@ -465,7 +516,7 @@ class Konko(LLM):
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        if not self._is_chat_model:
+        if not self._is_chat_model():
             raise ValueError("This model is not a chat model.")
 
         message_dicts = to_openai_message_dicts(messages)
@@ -475,40 +526,32 @@ class Konko(LLM):
             content = ""
             function_call: Optional[dict] = None
             async for response in await acompletion_with_retry(
-                is_chat_model=self._is_chat_model,
+                is_chat_model=self._is_chat_model(),
                 max_retries=self.max_retries,
                 messages=message_dicts,
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["delta"]
-                else:
-                    delta = {}
-                role = delta.get("role", "assistant")
-                content_delta = delta.get("content", "") or ""
-                content += content_delta
-
-                function_call_delta = delta.get("function_call", None)
-                if function_call_delta is not None:
-                    if function_call is None:
-                        function_call = function_call_delta
-
-                        ## ensure we do not add a blank function call
-                        if function_call.get("function_name", "") is None:
-                            del function_call["function_name"]
+                if is_openai_v1():
+                    if len(response.choices) > 0:
+                        delta = response.choices[0].delta
                     else:
-                        function_call["arguments"] += function_call_delta["arguments"]
-
-                additional_kwargs = {}
-                if function_call is not None:
-                    additional_kwargs["function_call"] = function_call
+                        delta = {}
+                    role = delta.role
+                    content_delta = delta.content
+                else:
+                    if len(response["choices"]) > 0:
+                        delta = response["choices"][0].delta
+                    else:
+                        delta = {}
+                    role = delta["role"]
+                    content_delta = delta["content"]
+                content += content_delta
 
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
                         content=content,
-                        additional_kwargs=additional_kwargs,
                     ),
                     delta=content_delta,
                     raw=response,
@@ -518,7 +561,7 @@ class Konko(LLM):
         return gen()
 
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        if self._is_chat_model:
+        if self._is_chat_model():
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -528,13 +571,16 @@ class Konko(LLM):
             all_kwargs["max_tokens"] = max_tokens
 
         response = await acompletion_with_retry(
-            is_chat_model=self._is_chat_model,
+            is_chat_model=self._is_chat_model(),
             max_retries=self.max_retries,
             prompt=prompt,
             stream=False,
             **all_kwargs,
         )
-        text = response["choices"][0]["text"]
+        if is_openai_v1():
+            text = response.choices[0].text
+        else:
+            text = response["choices"][0]["text"]
         return CompletionResponse(
             text=text,
             raw=response,
@@ -544,7 +590,7 @@ class Konko(LLM):
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        if self._is_chat_model:
+        if self._is_chat_model():
             raise ValueError("This model is a chat model.")
 
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -556,16 +602,22 @@ class Konko(LLM):
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
             async for response in await acompletion_with_retry(
-                is_chat_model=self._is_chat_model,
+                is_chat_model=self._is_chat_model(),
                 max_retries=self.max_retries,
                 prompt=prompt,
                 stream=True,
                 **all_kwargs,
             ):
-                if len(response["choices"]) > 0:
-                    delta = response["choices"][0]["text"]
+                if is_openai_v1():
+                    if len(response.choices) > 0:
+                        delta = response.choices[0].text
+                    else:
+                        delta = ""
                 else:
-                    delta = ""
+                    if len(response["choices"]) > 0:
+                        delta = response["choices"][0].text
+                    else:
+                        delta = ""
                 text += delta
                 yield CompletionResponse(
                     delta=delta,

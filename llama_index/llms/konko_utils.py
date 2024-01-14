@@ -1,7 +1,10 @@
 import logging
+from importlib.metadata import version
+from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
 import openai
+from packaging.version import parse
 from tenacity import (
     before_sleep_log,
     retry,
@@ -11,37 +14,42 @@ from tenacity import (
 )
 
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.generic_utils import get_from_param_or_env
+from llama_index.llms.types import ChatMessage
 
 DEFAULT_KONKO_API_TYPE = "open_ai"
 DEFAULT_KONKO_API_BASE = "https://api.konko.ai/v1"
 DEFAULT_KONKO_API_VERSION = ""
-
-LLAMA_MODELS = {
-    "meta-llama/Llama-2-13b-chat-hf": 4096,
-    "meta-llama/Llama-2-70b-chat-hf": 4096,
-}
-
-OPEN_AI_MODELS = {
-    "gpt-4": 8192,
-    "gpt-4-0314": 8192,
-    "gpt-3.5-turbo-0613": 4097,
-    "gpt-4-0613": 8192,
-    "gpt-3.5-turbo-0301": 4097,
-    "gpt-3.5-turbo": 4097,
-    "gpt-3.5-turbo-16k": 16385,
-    "gpt-3.5-turbo-16k-0613": 16385,
-}
-
-ALL_AVAILABLE_MODELS = {**LLAMA_MODELS, **OPEN_AI_MODELS}
-
-DISCONTINUED_MODELS: Dict[str, int] = {}
-
-MISSING_API_KEY_ERROR_MESSAGE = """No API key found for Konko AI.
-Please set KONKO_API_KEY environment variable"""
+MISSING_API_KEY_ERROR_MESSAGE = """No Konko API key found for LLM.
+E.g. to use konko Please set the KONKO_API_KEY environment variable or \
+konko.api_key prior to initialization.
+API keys can be found or created at \
+https://www.konko.ai/
+"""
 
 logger = logging.getLogger(__name__)
+
+
+def import_konko() -> ModuleType:
+    try:
+        import konko
+
+        return konko
+    except ImportError:
+        raise ImportError(
+            "Could not import konko python package. "
+            "Please install it with `pip install konko`."
+        )
+
+
+def is_openai_v1() -> bool:
+    try:
+        _version = parse(version("openai"))
+        major_version = _version.major
+    except AttributeError:
+        # Handle the case where version or major attribute is not present
+        return False
+    return bool(major_version >= 1)
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
@@ -76,57 +84,32 @@ def completion_with_retry(is_chat_model: bool, max_retries: int, **kwargs: Any) 
     return _completion_with_retry(**kwargs)
 
 
-def konko_modelname_to_contextsize(modelname: str) -> int:
-    """Calculate the maximum number of tokens possible to generate for a model.
+def get_completion_endpoint(is_chat_model: bool) -> Any:
+    """
+    Get the appropriate completion endpoint based on the model type and API version.
 
     Args:
-        modelname: The modelname we want to know the context size for.
+    - is_chat_model (bool): A flag indicating whether the model is a chat model.
 
     Returns:
-        The maximum context size
+    - The appropriate completion endpoint based on the model type and API version.
 
-    Example:
-        .. code-block:: python
-
-            max_tokens = konko.modelname_to_contextsize(model_name)
+    Raises:
+    - NotImplementedError: If the combination of is_chat_model and API version is not supported.
     """
-    # handling finetuned models
-    # TO BE FILLED
+    konko = import_konko()
+    # For OpenAI version 1
+    if is_openai_v1():
+        return konko.chat.completions if is_chat_model else konko.completions
 
-    if modelname in DISCONTINUED_MODELS:
-        raise ValueError(
-            f"Konko hosted model {modelname} has been discontinued. "
-            "Please choose another model."
-        )
+    # For other versions
+    if not is_openai_v1():
+        return konko.ChatCompletion if is_chat_model else konko.Completion
 
-    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
-
-    if context_size is None:
-        raise ValueError(
-            f"Unknown model: {modelname}. Please provide a valid Konko model name."
-            "Known models are: " + ", ".join(ALL_AVAILABLE_MODELS.keys())
-        )
-
-    return context_size
-
-
-def is_chat_model(model: str) -> bool:
-    return True
-
-
-def is_function_calling_model(model: str) -> bool:
-    is_chat_model_ = is_chat_model(model)
-    is_old = "0314" in model or "0301" in model
-    return is_chat_model_ and not is_old
-
-
-def get_completion_endpoint(is_chat_model: bool) -> Any:
-    import konko
-
-    if is_chat_model:
-        return konko.ChatCompletion
-    else:
-        return konko.Completion
+    # Raise error if the combination of is_chat_model and API version is not covered
+    raise NotImplementedError(
+        "The combination of model type and API version is not supported."
+    )
 
 
 def to_openai_message_dict(message: ChatMessage) -> dict:
@@ -145,14 +128,26 @@ def to_openai_message_dicts(messages: Sequence[ChatMessage]) -> List[dict]:
     return [to_openai_message_dict(message) for message in messages]
 
 
-def from_openai_message_dict(message_dict: dict) -> ChatMessage:
+def from_openai_message_dict(message_dict: Any) -> ChatMessage:
     """Convert openai message dict to generic message."""
-    role = message_dict["role"]
-    content = message_dict.get("content", None)
-
-    additional_kwargs = message_dict.copy()
-    additional_kwargs.pop("role")
-    additional_kwargs.pop("content", None)
+    if is_openai_v1():
+        # Handling for OpenAI version 1
+        role = message_dict.role
+        content = message_dict.content
+        additional_kwargs = {
+            attr: getattr(message_dict, attr)
+            for attr in dir(message_dict)
+            if not attr.startswith("_") and attr not in ["role", "content"]
+        }
+    else:
+        # Handling for OpenAI version 0
+        role = message_dict.get("role")
+        content = message_dict.get("content", None)
+        additional_kwargs = {
+            key: value
+            for key, value in message_dict.items()
+            if key not in ["role", "content"]
+        }
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
@@ -187,8 +182,7 @@ def resolve_konko_credentials(
     3. konkoai module
     4. default
     """
-    import konko
-
+    konko = import_konko()
     # resolve from param or env
     konko_api_key = get_from_param_or_env(
         "konko_api_key", konko_api_key, "KONKO_API_KEY", ""
@@ -219,12 +213,20 @@ async def acompletion_with_retry(
     is_chat_model: bool, max_retries: int, **kwargs: Any
 ) -> Any:
     """Use tenacity to retry the async completion call."""
+    konko = import_konko()
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        # Use OpenAI's async api https://github.com/openai/openai-python#async-api
-        client = get_completion_endpoint(is_chat_model)
-        return await client.acreate(**kwargs)
+        if is_chat_model:
+            if is_openai_v1():
+                return await konko.AsyncKonko().chat.completions.create(**kwargs)
+            else:
+                return await konko.ChatCompletion.acreate(**kwargs)
+        else:
+            if is_openai_v1():
+                return await konko.AsyncKonko().completions.create(**kwargs)
+            else:
+                return await konko.Completion.acreate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
