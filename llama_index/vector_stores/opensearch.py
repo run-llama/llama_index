@@ -74,7 +74,7 @@ def _bulk_ingest_embeddings(
     text_field: str = "content",
     mapping: Optional[Dict] = None,
     max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
-    is_aoss: bool = False
+    is_aoss: bool = False,
 ) -> List[str]:
     """Bulk Ingest Embeddings into given index."""
     if not mapping:
@@ -347,8 +347,7 @@ class OpensearchVectorClient:
             text_field=self._text_field,
             mapping=None,
             max_chunk_bytes=self._max_chunk_bytes,
-            is_aoss=self.is_aoss
-
+            is_aoss=self.is_aoss,
         )
 
     def delete_doc_id(self, doc_id: str) -> None:
