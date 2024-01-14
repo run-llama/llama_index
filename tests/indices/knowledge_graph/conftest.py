@@ -20,6 +20,9 @@ def doc_triplets_with_text_around() -> List[str]:
     # NOTE: in general it's good to be more relaxed when parsing triplet response. illustrated by the third triplet.
     # NOTE: one document for now
     # NOTE: in this unit test, document text == triplets
-    doc_text = "1. (foo, is, bar)\n" "2. (hello, is not, world)\n" "Third triplet is (Jane, is mother of, Bob) according to your query"
+    doc_text = (
+        "1. (foo, is, bar)\n"
+        "2. (hello, is not, world)\n"
+        "Third triplet is (Jane, is mother of, Bob) according to your query"
+    )
     return [Document(text=doc_text)]
-

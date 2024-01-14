@@ -221,13 +221,15 @@ def test_build_kg(
 
 
 def test__parse_triplet_response(
-        doc_triplets_with_text_around: List[str],
-        mock_service_context: ServiceContext,
+    doc_triplets_with_text_around: List[Document],
+    mock_service_context: ServiceContext,
 ) -> None:
     """Test build knowledge graph with triplet response in other format."""
     parsed_triplets = []
     for doc_triplet in doc_triplets_with_text_around:
-        parsed_triplets.append(KnowledgeGraphIndex._parse_triplet_response(doc_triplet.text))
+        parsed_triplets.append(
+            KnowledgeGraphIndex._parse_triplet_response(doc_triplet.text)
+        )
     assert len(parsed_triplets) == 1
     assert len(parsed_triplets[0]) == 3
     assert ("foo", "is", "bar") in parsed_triplets[0]
