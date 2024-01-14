@@ -2,9 +2,18 @@
 
 import pickle
 import warnings
-from typing import Any, Generic, List, Optional, Sequence, Type, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
+from llama_index.bridge.pydantic import Field
+from llama_index.callbacks.base import CallbackManager
 from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store.base import VectorStoreIndex
 from llama_index.objects.base_node_mapping import (
@@ -18,7 +27,7 @@ from llama_index.storage.storage_context import DEFAULT_PERSIST_DIR, StorageCont
 OT = TypeVar("OT")
 
 
-class ObjectRetriever(Generic[OT]):
+class ObjectRetriever(ChainableMixin, Generic[OT]):
     """Object retriever."""
 
     def __init__(
@@ -27,9 +36,61 @@ class ObjectRetriever(Generic[OT]):
         self._retriever = retriever
         self._object_node_mapping = object_node_mapping
 
+    @property
+    def retriever(self) -> BaseRetriever:
+        """Retriever."""
+        return self._retriever
+
     def retrieve(self, str_or_query_bundle: QueryType) -> List[OT]:
         nodes = self._retriever.retrieve(str_or_query_bundle)
         return [self._object_node_mapping.from_node(node.node) for node in nodes]
+
+    async def aretrieve(self, str_or_query_bundle: QueryType) -> List[OT]:
+        nodes = await self._retriever.aretrieve(str_or_query_bundle)
+        return [self._object_node_mapping.from_node(node.node) for node in nodes]
+
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """As query component."""
+        return ObjectRetrieverComponent(retriever=self)
+
+
+class ObjectRetrieverComponent(QueryComponent):
+    """Object retriever component."""
+
+    retriever: ObjectRetriever = Field(..., description="Retriever.")
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        self.retriever.retriever.callback_manager = callback_manager
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        # make sure input is a string
+        input["input"] = validate_and_convert_stringable(input["input"])
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        output = self.retriever.retrieve(kwargs["input"])
+        return {"output": output}
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component (async)."""
+        output = await self.retriever.aretrieve(kwargs["input"])
+        return {"output": output}
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        return InputKeys.from_keys({"input"})
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"output"})
 
 
 class ObjectIndex(Generic[OT]):
