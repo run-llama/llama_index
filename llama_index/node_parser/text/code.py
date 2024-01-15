@@ -67,7 +67,7 @@ class CodeSplitter(TextSplitter):
                 )
             except Exception:
                 print(
-                    f"Could not get parser for language {self.language}. Check "
+                    f"Could not get parser for language {language}. Check "
                     "https://github.com/grantjenks/py-tree-sitter-languages#license "
                     "for a list of valid languages."
                 )

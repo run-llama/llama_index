@@ -7,6 +7,7 @@ from llama_index.core.query_pipeline.components import InputComponent
 from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
     InputKeys,
+    Link,
     OutputKeys,
     QueryComponent,
 )
@@ -281,3 +282,77 @@ async def test_query_pipeline_async() -> None:
         {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
     )
     assert output == {"qc2": {"output": "3:7"}}
+
+
+def test_query_pipeline_init() -> None:
+    """Test query pipeline init params."""
+    qc1 = QueryComponent1()
+    qc2 = QueryComponent2()
+    inp = InputComponent()
+    p = QueryPipeline(
+        modules={
+            "qc1": qc1,
+            "qc2": qc2,
+            "inp": inp,
+        },
+        links=[
+            Link("inp", "qc1", src_key="inp1", dest_key="input1"),
+            Link("inp", "qc2", src_key="inp1", dest_key="input2"),
+            Link("inp", "qc1", src_key="inp2", dest_key="input2"),
+            Link("qc1", "qc2", dest_key="input1"),
+        ],
+    )
+
+    output = p.run(inp1=1, inp2=2)
+    assert output == "3:1"
+
+    p = QueryPipeline()
+    p.add_modules(
+        {
+            "input": InputComponent(),
+            "qc1": QueryComponent1(),
+            "qc2": QueryComponent1(),
+            "qc3": QueryComponent1(),
+        }
+    )
+    # add links from input
+    p.add_links(
+        [
+            Link("input", "qc1", src_key="inp1", dest_key="input1"),
+            Link("input", "qc2", src_key="inp1", dest_key="input1"),
+            Link("input", "qc3", src_key="inp1", dest_key="input1"),
+        ]
+    )
+    # add link chain from input through qc1, qc2, q3
+    p.add_links(
+        [
+            Link("input", "qc1", src_key="inp2", dest_key="input2"),
+            Link("qc1", "qc2", dest_key="input2"),
+            Link("qc2", "qc3", dest_key="input2"),
+        ]
+    )
+    output = p.run(inp2=1, inp1=2)
+    assert output == 7
+
+
+def test_query_pipeline_chain_str() -> None:
+    """Test add_chain with only module strings."""
+    p = QueryPipeline(
+        modules={
+            "input": InputComponent(),
+            "a": QueryComponent3(),
+            "b": QueryComponent3(),
+            "c": QueryComponent3(),
+            "d": QueryComponent1(),
+        }
+    )
+    p.add_links(
+        [
+            Link("input", "a", src_key="inp1", dest_key="input"),
+            Link("input", "d", src_key="inp2", dest_key="input2"),
+            Link("c", "d", dest_key="input1"),
+        ]
+    )
+    p.add_chain(["a", "b", "c"])
+    output = p.run(inp1=1, inp2=3)
+    assert output == 11

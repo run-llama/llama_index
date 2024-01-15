@@ -475,14 +475,8 @@ pinecone.create_index(
 )
 index = pinecone.Index("quickstart")
 
-# can define filters specific to this vector index (so you can
-# reuse pinecone indexes)
-metadata_filters = {"title": "paul_graham_essay"}
-
 # construct vector store
-vector_store = PineconeVectorStore(
-    pinecone_index=index, metadata_filters=metadata_filters
-)
+vector_store = PineconeVectorStore(pinecone_index=index)
 ```
 
 **Qdrant**
@@ -761,7 +755,6 @@ maxdepth: 1
 ../../examples/vector_stores/qdrant_hybrid.ipynb
 ../../examples/vector_stores/RocksetIndexDemo.ipynb
 ../../examples/vector_stores/SimpleIndexDemo.ipynb
-../../examples/vector_stores/SingleStoreDemo.ipynb
 ../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 ../../examples/vector_stores/TairIndexDemo.ipynb
 ../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb

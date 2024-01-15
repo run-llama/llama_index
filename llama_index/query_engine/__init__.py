@@ -16,7 +16,7 @@ from llama_index.query_engine.knowledge_graph_query_engine import (
 )
 from llama_index.query_engine.multi_modal import SimpleMultiModalQueryEngine
 from llama_index.query_engine.multistep_query_engine import MultiStepQueryEngine
-from llama_index.query_engine.pandas_query_engine import PandasQueryEngine
+from llama_index.query_engine.pandas.pandas_query_engine import PandasQueryEngine
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.query_engine.retry_query_engine import (
     RetryGuidelineQueryEngine,

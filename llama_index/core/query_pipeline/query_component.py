@@ -31,6 +31,8 @@ def validate_and_convert_stringable(input: Any) -> str:
             else:
                 new_input += str(elem)
         return new_input
+    elif isinstance(input, ChatResponse):
+        return input.message.content or ""
     elif isinstance(input, get_args(StringableInput)):
         return str(input)
     else:
@@ -253,6 +255,30 @@ class CustomQueryComponent(QueryComponent):
         # NOTE: user can override this too, but we have them implement an
         # abstract method to make sure they do it
         return OutputKeys.from_keys(self._output_keys)
+
+
+class Link(BaseModel):
+    """Link between two components."""
+
+    src: str = Field(..., description="Source component name")
+    dest: str = Field(..., description="Destination component name")
+    src_key: Optional[str] = Field(
+        default=None, description="Source component output key"
+    )
+    dest_key: Optional[str] = Field(
+        default=None, description="Destination component input key"
+    )
+
+    def __init__(
+        self,
+        src: str,
+        dest: str,
+        src_key: Optional[str] = None,
+        dest_key: Optional[str] = None,
+    ) -> None:
+        """Init params."""
+        # NOTE: This is to enable positional args.
+        super().__init__(src=src, dest=dest, src_key=src_key, dest_key=dest_key)
 
 
 # accept both QueryComponent and ChainableMixin as inputs to query pipeline
