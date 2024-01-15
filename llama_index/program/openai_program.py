@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, cast
 
 from llama_index.agent.openai.utils import resolve_tool_choice
-from llama_index.llms.llm import LLM
+from llama_index.llms.llm import LLM, ChatMessage, MessageRole
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import OpenAIToolCall, to_openai_tool
 from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
@@ -89,6 +89,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         llm: LLM,
         prompt: BasePromptTemplate,
         tool_choice: Union[str, Dict[str, Any]],
+        examples: Optional[List[Tuple[str, Type[Model]]]] = None,
         allow_multiple: bool = False,
         verbose: bool = False,
     ) -> None:
@@ -99,6 +100,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         self._verbose = verbose
         self._allow_multiple = allow_multiple
         self._tool_choice = tool_choice
+        self._examples = examples or []
 
     @classmethod
     def from_defaults(
@@ -110,6 +112,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         verbose: bool = False,
         allow_multiple: bool = False,
         tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
+        examples: Optional[List[Tuple[str, Type[Model]]]] = None,
         **kwargs: Any,
     ) -> "OpenAIPydanticProgram":
         llm = llm or OpenAI(model="gpt-3.5-turbo-0613")
@@ -139,6 +142,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             llm=llm,
             prompt=cast(PromptTemplate, prompt),
             tool_choice=tool_choice,
+            examples=examples,
             allow_multiple=allow_multiple,
             verbose=verbose,
         )
@@ -155,6 +159,41 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     def prompt(self, prompt: BasePromptTemplate) -> None:
         self._prompt = prompt
 
+    def _add_examples(self, messages: List[ChatMessage]) -> List[ChatMessage]:
+        if len(self._examples) > 0:
+            few_shot_messages = []
+            for i, (sample_prompt, sample_cls) in enumerate(self._examples):
+                user_msg = ChatMessage(role=MessageRole.USER, content=sample_prompt)
+                assistant_msg = ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content=None,
+                    additional_kwargs={
+                        "tool_calls": [
+                            {
+                                "id": f"call_{i}",
+                                "type": "function",
+                                "function": {
+                                    "name": sample_cls.schema()["title"],
+                                    "arguments": sample_cls.json(),
+                                },
+                            }
+                        ]
+                    },
+                )
+                tool_msg = ChatMessage(
+                    role=MessageRole.TOOL,
+                    content=sample_cls.json(),
+                    additional_kwargs={"tool_call_id": f"call_{i}"},
+                )
+                few_shot_messages.extend([user_msg, assistant_msg, tool_msg])
+
+            if messages[0].role == self._llm.metadata.system_role:
+                messages = [messages[0]] + few_shot_messages + messages[1:]
+            else:
+                messages = few_shot_messages + messages
+
+        return messages
+
     def __call__(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
@@ -167,6 +206,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         openai_fn_spec = to_openai_tool(self._output_cls, description=description)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+
+        messages = self._add_examples(messages)
 
         chat_response = self._llm.chat(
             messages=messages,
@@ -201,6 +242,8 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         openai_fn_spec = to_openai_tool(self._output_cls, description=description)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+
+        messages = self._add_examples(messages)
 
         chat_response = await self._llm.achat(
             messages=messages,

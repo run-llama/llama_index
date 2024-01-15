@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, cast
+from typing import Any, Dict, List, Optional, Tuple, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.llm import LLM
@@ -40,6 +40,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
         llm: Optional[LLM] = None,
+        examples: Optional[List[Tuple[str, Type[BaseModel]]]] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "LLMTextCompletionProgram":
@@ -58,7 +59,9 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
             output_cls = output_parser.output_cls
         else:
             if output_parser is None:
-                output_parser = PydanticOutputParser(output_cls=output_cls)
+                output_parser = PydanticOutputParser(
+                    output_cls=output_cls, examples=examples
+                )
 
         return cls(
             output_parser,
