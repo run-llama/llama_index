@@ -182,8 +182,11 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
             splits = self._split(text, chunk_size)
+            chunks = self._merge(splits, chunk_size)
 
-        return self._merge(splits, chunk_size)
+            event.on_end(payload={EventPayload.CHUNKS: chunks})
+
+        return chunks
 
     def _split(self, text: str, chunk_size: int) -> List[_Split]:
         r"""Break text into splits that are smaller than chunk size.
