@@ -148,3 +148,18 @@ maxdepth: 1
 /module_guides/loading/documents_and_nodes/usage_nodes.md
 /module_guides/loading/documents_and_nodes/usage_metadata_extractor.md
 ```
+
+## Multi-Tenancy RAG
+
+Multi-Tenancy in RAG systems is crucial for ensuring data security. It enables users to access exclusively their indexed documents, thereby preventing unauthorized sharing and safeguarding data privacy. Search operations are confined to the user's own data, protecting sensitive information. Implementation can be achieved with `VectorStoreIndex` and `VectorDB` providers through Metadata Filters.
+
+Refer the guides below for more details.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/multi_tenancy/multi_tenancy_rag.ipynb
+```
+
+For detailed guidance on implementing Multi-Tenancy RAG with LlamaIndex and Qdrant, refer to the [blog post](https://qdrant.tech/documentation/tutorials/llama-index-multitenancy/) released by Qdrant.
