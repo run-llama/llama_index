@@ -32,8 +32,13 @@ class BaseRetriever(ChainableMixin, PromptMixin):
         self,
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[Dict] = None,
+        objects: Optional[List[IndexNode]] = None,
     ) -> None:
         self.callback_manager = callback_manager or CallbackManager()
+
+        if objects is not None:
+            object_map = {obj.index_id: obj.obj for obj in objects}
+
         self.object_map = object_map or {}
 
     def _check_callback_manager(self) -> None:
@@ -143,7 +148,12 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             else:
                 retrieved_nodes.append(n)
 
-        return retrieved_nodes
+        seen = set()
+        return [
+            n
+            for n in retrieved_nodes
+            if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
+        ]
 
     async def _ahandle_recursive_retrieval(
         self, query_bundle: QueryBundle, nodes: List[NodeWithScore]
@@ -166,7 +176,13 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             else:
                 retrieved_nodes.append(n)
 
-        return retrieved_nodes
+        # remove any duplicates based on hash
+        seen = set()
+        return [
+            n
+            for n in retrieved_nodes
+            if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
+        ]
 
     def retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         """Retrieve nodes given query.

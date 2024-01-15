@@ -8,7 +8,7 @@ from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import simple_extract_keywords
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import BaseNode, NodeWithScore, QueryBundle
+from llama_index.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle
 from llama_index.storage.docstore.types import BaseDocumentStore
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ class BM25Retriever(BaseRetriever):
         tokenizer: Optional[Callable[[str], List[str]]],
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         callback_manager: Optional[CallbackManager] = None,
+        objects: Optional[List[IndexNode]] = None,
         object_map: Optional[dict] = None,
     ) -> None:
         try:
@@ -41,7 +42,9 @@ class BM25Retriever(BaseRetriever):
         self._similarity_top_k = similarity_top_k
         self._corpus = [self._tokenizer(node.get_content()) for node in self._nodes]
         self.bm25 = BM25Okapi(self._corpus)
-        super().__init__(callback_manager=callback_manager, object_map=object_map)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, objects=objects
+        )
 
     @classmethod
     def from_defaults(

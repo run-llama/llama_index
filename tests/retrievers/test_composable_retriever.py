@@ -12,7 +12,7 @@ def test_composable_retrieval() -> None:
         obj=TextNode(text="Hidden node!", id_="hidden_node"),
     )
 
-    index = SummaryIndex(nodes=[text_node], objects=[index_node])
+    index = SummaryIndex(nodes=[text_node, text_node], objects=[index_node])
 
     # Test retrieval
     retriever = index.as_retriever()

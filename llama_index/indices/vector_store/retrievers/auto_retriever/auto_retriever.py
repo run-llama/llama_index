@@ -17,7 +17,7 @@ from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
 from llama_index.output_parsers.base import OutputParserException, StructuredOutput
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
-from llama_index.schema import QueryBundle
+from llama_index.schema import IndexNode, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import (
     FilterCondition,
@@ -78,6 +78,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         verbose: bool = False,
         extra_filters: Optional[MetadataFilters] = None,
         object_map: Optional[dict] = None,
+        objects: Optional[List[IndexNode]] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
@@ -104,7 +105,9 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         self._extra_filters = extra_filters or MetadataFilters(filters=[])
         self._kwargs = kwargs
         self._verbose = verbose
-        super().__init__(callback_manager=callback_manager, object_map=object_map)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, objects=objects
+        )
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""

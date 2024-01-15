@@ -9,7 +9,7 @@ from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts import PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.retrievers import BaseRetriever
-from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.schema import IndexNode, NodeWithScore, QueryBundle
 
 QUERY_GEN_PROMPT = (
     "You are a helpful assistant that generates multiple search queries based on a "
@@ -39,6 +39,7 @@ class QueryFusionRetriever(BaseRetriever):
         use_async: bool = True,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
+        objects: Optional[List[IndexNode]] = None,
         object_map: Optional[dict] = None,
     ) -> None:
         self.num_queries = num_queries
@@ -50,7 +51,9 @@ class QueryFusionRetriever(BaseRetriever):
 
         self._retrievers = retrievers
         self._llm = resolve_llm(llm)
-        super().__init__(callback_manager=callback_manager, object_map=object_map)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, objects=objects
+        )
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""

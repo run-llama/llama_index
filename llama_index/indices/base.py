@@ -45,8 +45,8 @@ class BaseIndex(Generic[IS], ABC):
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
-        if index_struct is None and nodes is None:
-            raise ValueError("One of nodes or index_struct must be provided.")
+        if index_struct is None and nodes is None and objects is None:
+            raise ValueError("One of nodes, objects, or index_struct must be provided.")
         if index_struct is not None and nodes is not None:
             raise ValueError("Only one of nodes or index_struct can be provided.")
         # This is to explicitly make sure that the old UX is not used
@@ -71,7 +71,7 @@ class BaseIndex(Generic[IS], ABC):
         self._object_map = {obj.index_id: obj.obj for obj in objects}
         with self._service_context.callback_manager.as_trace("index_construction"):
             if index_struct is None:
-                assert nodes is not None
+                nodes = nodes or []
                 index_struct = self.build_index_from_nodes(
                     nodes + objects  # type: ignore
                 )
