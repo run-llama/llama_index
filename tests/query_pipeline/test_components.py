@@ -1,5 +1,5 @@
 """Test components."""
-from typing import Any, List
+from typing import Any, List, Sequence
 
 import pytest
 from llama_index.core.query_pipeline.components import (
@@ -8,7 +8,20 @@ from llama_index.core.query_pipeline.components import (
     InputComponent,
     KwargPackComponent,
 )
+from llama_index.prompts.mixin import PromptDictType
+from llama_index.query_pipeline.components.router import (
+    RouterComponent,
+    SelectorComponent,
+)
 from llama_index.query_pipeline.query import QueryPipeline
+from llama_index.schema import QueryBundle
+from llama_index.selectors.types import (
+    BaseSelector,
+    MultiSelection,
+    SelectorResult,
+    SingleSelection,
+)
+from llama_index.tools.types import ToolMetadata
 
 
 def foo_fn(a: int, b: int = 1, c: int = 2) -> int:
@@ -94,3 +107,51 @@ def test_kwarg_component() -> None:
 
     p = QueryPipeline(chain=[arg_c, convert_c, sum_c])
     assert p.run(tmp=3, tmp2=2) == 5
+
+
+class MockSelector(BaseSelector):
+    """Mock selector."""
+
+    def _select(
+        self, choices: Sequence[ToolMetadata], query: QueryBundle
+    ) -> SelectorResult:
+        """Select."""
+        return MultiSelection(
+            selections=[SingleSelection(index=len(choices) - 1, reason="foo")]
+        )
+
+    async def _aselect(
+        self, choices: Sequence[ToolMetadata], query: QueryBundle
+    ) -> SelectorResult:
+        return self._select(choices, query)
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {}
+
+    def _update_prompts(self, prompts_dict: PromptDictType) -> None:
+        """Update prompts."""
+
+
+def test_selector_component() -> None:
+    """Test selector component."""
+
+    def bar1_fn(a: Any) -> str:
+        """Bar function."""
+        return str(a) + ":bar1"
+
+    def bar2_fn(a: Any) -> str:
+        """Bar function."""
+        return str(a) + ":bar2"
+
+    selector = MockSelector()
+    router = RouterComponent(
+        selector=selector,
+        choices=["foo", "bar"],
+        components=[FnComponent(fn=bar1_fn), FnComponent(fn=bar2_fn)],
+    )
+    assert router.run_component(query="hello") == {"output": "hello:bar2"}
+
+    selector_c = SelectorComponent(selector=selector)
+    output = selector_c.run_component(query="hello", choices=["t1", "t2"])
+    assert output["output"][0] == SingleSelection(index=1, reason="foo")
