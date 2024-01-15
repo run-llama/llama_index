@@ -1,5 +1,22 @@
 # ChangeLog
 
+## [0.9.31] - 2024-01-15
+
+### New Features
+
+- Added selectors and routers to query pipeline (#9979)
+- Added sparse-only search to qdrant vector store (#10041)
+- Added Tonic evaluators (#10000)
+- Adding async support to firestore docstore (#9983)
+- Implement mongodb docstore `put_all` method (#10014)
+
+### Bug Fixes / Nits
+
+- Properly truncate sql results based on `max_string_length` (#10015)
+- Fixed `node.resolve_image()` for base64 strings (#10026)
+- Fixed cohere system prompt role (#10020)
+- Remove redundant token counting operation in SentenceSplitter (#10053)
+
 ## [0.9.30] - 2024-01-11
 
 ### New Features

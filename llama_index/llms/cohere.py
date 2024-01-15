@@ -99,6 +99,7 @@ class Cohere(LLM):
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
+            system_role=MessageRole.CHATBOT,
         )
 
     @property

@@ -13,6 +13,7 @@ class MessageRole(str, Enum):
     ASSISTANT = "assistant"
     FUNCTION = "function"
     TOOL = "tool"
+    CHATBOT = "chatbot"
 
 
 # ===== Generic Model Input - Chat =====
@@ -107,4 +108,9 @@ class LLMMetadata(BaseModel):
             " models this can be automatically discerned. For other models, like"
             " locally loaded models, this must be manually specified."
         ),
+    )
+    system_role: MessageRole = Field(
+        default=MessageRole.SYSTEM,
+        description="The role this specific LLM provider"
+        "expects for system prompt. E.g. 'SYSTEM' for OpenAI, 'CHATBOT' for Cohere",
     )

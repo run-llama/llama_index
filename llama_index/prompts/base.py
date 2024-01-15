@@ -562,7 +562,9 @@ class PromptComponent(QueryComponent):
     @property
     def input_keys(self) -> InputKeys:
         """Input keys."""
-        return InputKeys.from_keys(set(self.prompt.template_vars))
+        return InputKeys.from_keys(
+            set(self.prompt.template_vars) - set(self.prompt.kwargs)
+        )
 
     @property
     def output_keys(self) -> OutputKeys:

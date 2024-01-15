@@ -134,10 +134,11 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         knowledge_strs = response.strip().split("\n")
         results = []
         for text in knowledge_strs:
-            if not text or text[0] != "(" or text[-1] != ")":
+            if "(" not in text or ")" not in text or text.index(")") < text.index("("):
                 # skip empty lines and non-triplets
                 continue
-            tokens = text[1:-1].split(",")
+            triplet_part = text[text.index("(") + 1 : text.index(")")]
+            tokens = triplet_part.split(",")
             if len(tokens) != 3:
                 continue
 

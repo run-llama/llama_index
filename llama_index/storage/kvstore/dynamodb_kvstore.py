@@ -128,22 +128,6 @@ class DynamoDBKVStore(BaseKVStore):
         """
         raise NotImplementedError
 
-    def put_all(
-        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
-    ) -> None:
-        raise NotImplementedError
-
-    async def aput_all(
-        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
-    ) -> None:
-        """Put a dictionary of key-value pairs into the store.
-
-        Args:
-            kv_pairs (List[Tuple[str, dict]]): key-value pairs
-            collection (str): collection name
-        """
-        raise NotImplementedError
-
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> dict | None:
         """Get a value from the store.
 

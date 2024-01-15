@@ -34,6 +34,7 @@ def mock_chat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
                 ),
                 finish_reason="stop",
                 index=0,
+                logprobs=None,
             )
         ],
     )
@@ -63,6 +64,7 @@ def mock_chat_stream(
                     role="assistant",
                     content="\n\nThis is a test!",
                 ),
+                logprobs=None,
             )
         ],
     )
@@ -99,6 +101,7 @@ async def mock_achat_stream(
                         role="assistant",
                         content="\n\nThis is a test!",
                     ),
+                    logprobs=None,
                 )
             ],
         )
