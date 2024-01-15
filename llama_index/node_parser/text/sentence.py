@@ -26,7 +26,7 @@ DEFAULT_PARAGRAPH_SEP = "\n\n\n"
 class _Split:
     text: str  # the split text
     is_sentence: bool  # save whether this is a full sentence
-    token_size: int  # length of token
+    token_size: int  # token length of split text
 
 
 class SentenceSplitter(MetadataAwareTextSplitter):
