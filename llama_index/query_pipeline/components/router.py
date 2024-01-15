@@ -109,7 +109,7 @@ class RouterComponent(QueryComponent):
             # validate component has one input key
             if len(new_component.free_req_input_keys) != 1:
                 raise ValueError("Expected one required input key")
-            query_keys.append(list(new_component.free_req_input_keys)[0])
+            query_keys.append(next(iter(new_component.free_req_input_keys)))
             new_components.append(new_component)
 
         self._query_keys = query_keys
@@ -155,11 +155,9 @@ class RouterComponent(QueryComponent):
             print_text(log_str + "\n", color="pink")
         # run component
         # run with input_keys of component
-        output = component.run_component(
+        return component.run_component(
             **{self._query_keys[sel_output.ind]: kwargs["query"]}
         )
-
-        return output
 
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component (async)."""
@@ -173,11 +171,9 @@ class RouterComponent(QueryComponent):
         if self.verbose:
             print_text(log_str + "\n", color="pink")
         # run component
-        output = await component.arun_component(
+        return await component.arun_component(
             **{self._query_keys[sel_output.ind]: kwargs["query"]}
         )
-
-        return output
 
     @property
     def input_keys(self) -> InputKeys:
