@@ -1,12 +1,14 @@
 from abc import abstractmethod
-from typing import Any, List, Sequence, Union, Dict
+from typing import Any, List, Sequence, Union
 
-from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
+    QueryComponent,
+)
 from llama_index.prompts.mixin import PromptMixin, PromptMixinType
-from llama_index.schema import QueryBundle, QueryType, NodeWithScore
+from llama_index.schema import QueryBundle, QueryType
 from llama_index.tools.types import ToolMetadata
-from llama_index.core.query_pipeline.query_component import QueryComponent, ChainableMixin, validate_and_convert_stringable, InputKeys, OutputKeys, QUERY_COMPONENT_TYPE
-from llama_index.callbacks.base import CallbackManager
 
 MetadataType = Union[str, ToolMetadata]
 
@@ -72,6 +74,7 @@ def _wrap_query(query: QueryType) -> QueryBundle:
 
 class BaseSelector(PromptMixin, ChainableMixin):
     """Base selector."""
+
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
         return {}
@@ -107,4 +110,3 @@ class BaseSelector(PromptMixin, ChainableMixin):
         from llama_index.query_pipeline.components.router import SelectorComponent
 
         return SelectorComponent(selector=self)
-

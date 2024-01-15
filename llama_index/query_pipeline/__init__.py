@@ -10,8 +10,11 @@ from llama_index.core.query_pipeline.query_component import (
     CustomQueryComponent,
     QueryComponent,
 )
+from llama_index.query_pipeline.components.router import (
+    RouterComponent,
+    SelectorComponent,
+)
 from llama_index.query_pipeline.query import InputKeys, OutputKeys, QueryPipeline
-from llama_index.query_pipeline.components.router import RouterComponent, SelectorComponent
 
 __all__ = [
     "QueryPipeline",
@@ -24,5 +27,5 @@ __all__ = [
     "ArgPackComponent",
     "KwargPackComponent",
     "RouterComponent",
-    "SelectorComponent"
+    "SelectorComponent",
 ]

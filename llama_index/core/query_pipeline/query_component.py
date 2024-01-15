@@ -258,4 +258,3 @@ class CustomQueryComponent(QueryComponent):
 # accept both QueryComponent and ChainableMixin as inputs to query pipeline
 # ChainableMixin modules will be converted to components via `as_query_component`
 QUERY_COMPONENT_TYPE = Union[QueryComponent, ChainableMixin]
-

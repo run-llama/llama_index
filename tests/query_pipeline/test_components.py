@@ -2,19 +2,26 @@
 from typing import Any, List, Sequence
 
 import pytest
-from abc import abstractmethod
 from llama_index.core.query_pipeline.components import (
     ArgPackComponent,
     FnComponent,
     InputComponent,
     KwargPackComponent,
 )
-from llama_index.query_pipeline.components.router import RouterComponent, SelectorComponent
-from llama_index.query_pipeline.query import QueryPipeline
-from llama_index.selectors.types import BaseSelector, SelectorResult, MultiSelection, SingleSelection
-from llama_index.schema import QueryBundle
-from llama_index.tools.types import ToolMetadata
 from llama_index.prompts.mixin import PromptDictType
+from llama_index.query_pipeline.components.router import (
+    RouterComponent,
+    SelectorComponent,
+)
+from llama_index.query_pipeline.query import QueryPipeline
+from llama_index.schema import QueryBundle
+from llama_index.selectors.types import (
+    BaseSelector,
+    MultiSelection,
+    SelectorResult,
+    SingleSelection,
+)
+from llama_index.tools.types import ToolMetadata
 
 
 def foo_fn(a: int, b: int = 1, c: int = 2) -> int:
@@ -104,12 +111,13 @@ def test_kwarg_component() -> None:
 
 class MockSelector(BaseSelector):
     """Mock selector."""
+
     def _select(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         """Select."""
         return MultiSelection(
-            selections=[SingleSelection(index=len(choices)-1, reason="foo")]
+            selections=[SingleSelection(index=len(choices) - 1, reason="foo")]
         )
 
     async def _aselect(
@@ -137,18 +145,12 @@ def test_selector_component() -> None:
 
     selector = MockSelector()
     router = RouterComponent(
-        selector=selector, 
-        choices=["foo", "bar"], 
-        components=[FnComponent(fn=bar1_fn), FnComponent(fn=bar2_fn)]
+        selector=selector,
+        choices=["foo", "bar"],
+        components=[FnComponent(fn=bar1_fn), FnComponent(fn=bar2_fn)],
     )
     assert router.run_component(query="hello") == {"output": "hello:bar2"}
 
     selector_c = SelectorComponent(selector=selector)
     output = selector_c.run_component(query="hello", choices=["t1", "t2"])
-    assert output["output"][0] == SingleSelection(
-        index=1, reason="foo"
-    )
-
-    
-
-    
+    assert output["output"][0] == SingleSelection(index=1, reason="foo")
