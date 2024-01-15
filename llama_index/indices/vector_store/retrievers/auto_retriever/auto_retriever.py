@@ -106,7 +106,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         self._kwargs = kwargs
         super().__init__(
             callback_manager=callback_manager,
-            object_map=object_map,
+            object_map=object_map or self._index._object_map,
             objects=objects,
             verbose=verbose,
         )
@@ -233,6 +233,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
                 similarity_top_k=similarity_top_k,
                 vector_store_query_mode=self._vector_store_query_mode,
                 object_map=self.object_map,
+                verbose=self._verbose,
                 **self._kwargs,
             ),
             new_query_bundle,

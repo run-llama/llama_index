@@ -129,3 +129,42 @@ hidden: True
 ---
 vector_store_guide.ipynb
 ```
+
+## Composable Retrieval
+
+The `VectorStoreIndex` (and any other index/retriever) is capable of retrieving generic objects, including
+
+- references to nodes
+- query engines
+- retrievers
+- query pipelines
+
+If these objects are retrieved, they will be automatically ran using the provided query.
+
+For example:
+
+```python
+from llama_index.schema import IndexNode
+
+query_engine = other_index.as_query_engine
+obj = IndexNode(
+    text="A query engine describing X, Y, and Z.",
+    obj=query_engine,
+    index_id="my_query_engine",
+)
+
+index = VectorStoreIndex(nodes=nodes, objects=[obj])
+retriever = index.as_retreiver(verbose=True)
+```
+
+If the index node containing the query engine is retrieved, the query engine will be ran and the resulting response returned as a node.
+
+For more details, checkout the guide below.
+
+```{toctree}
+---
+maxdepth: 1
+hidden: True
+---
+/examples/retrievers/composable_retrievers.ipynb
+```
