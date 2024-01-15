@@ -47,12 +47,14 @@ class QueryFusionRetriever(BaseRetriever):
         self.similarity_top_k = similarity_top_k
         self.mode = mode
         self.use_async = use_async
-        self.verbose = verbose
 
         self._retrievers = retrievers
         self._llm = resolve_llm(llm)
         super().__init__(
-            callback_manager=callback_manager, object_map=object_map, objects=objects
+            callback_manager=callback_manager,
+            object_map=object_map,
+            objects=objects,
+            verbose=verbose,
         )
 
     def _get_prompts(self) -> PromptDictType:
@@ -75,7 +77,7 @@ class QueryFusionRetriever(BaseRetriever):
 
         # assume LLM proper put each query on a newline
         queries = response.text.split("\n")
-        if self.verbose:
+        if self._verbose:
             queries_str = "\n".join(queries)
             print(f"Generated queries:\n{queries_str}")
         return response.text.split("\n")

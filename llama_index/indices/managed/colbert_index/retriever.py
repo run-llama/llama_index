@@ -31,6 +31,7 @@ class ColbertRetriever(BaseRetriever):
         doc_ids: Optional[List[str]] = None,
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -42,7 +43,9 @@ class ColbertRetriever(BaseRetriever):
         self._doc_ids = doc_ids
         self._filters = filters
         self._kwargs: Dict[str, Any] = kwargs.get("colbert_kwargs", {})
-        super().__init__(callback_manager=callback_manager, object_map=object_map)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     def _retrieve(
         self,

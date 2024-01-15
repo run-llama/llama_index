@@ -88,8 +88,9 @@ class TreeSelectLeafRetriever(BaseRetriever):
             query_template_multiple or DEFAULT_QUERY_PROMPT_MULTIPLE
         )
         self.child_branch_factor = child_branch_factor
-        self._verbose = verbose
-        super().__init__(callback_manager=callback_manager, object_map=object_map)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     def _query_with_selected_node(
         self,

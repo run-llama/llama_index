@@ -104,9 +104,11 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
             raise ValueError("extra_filters cannot be OR condition")
         self._extra_filters = extra_filters or MetadataFilters(filters=[])
         self._kwargs = kwargs
-        self._verbose = verbose
         super().__init__(
-            callback_manager=callback_manager, object_map=object_map, objects=objects
+            callback_manager=callback_manager,
+            object_map=object_map,
+            objects=objects,
+            verbose=verbose,
         )
 
     def _get_prompts(self) -> PromptDictType:

@@ -55,6 +55,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
         num_chunks_per_query: int = 10,
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -72,6 +73,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,
+            verbose=verbose,
         )
 
     @abstractmethod

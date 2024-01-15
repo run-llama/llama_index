@@ -23,6 +23,7 @@ from llama_index.schema import (
     TextNode,
 )
 from llama_index.service_context import ServiceContext
+from llama_index.utils import print_text
 
 
 class BaseRetriever(ChainableMixin, PromptMixin):
@@ -33,6 +34,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[Dict] = None,
         objects: Optional[List[IndexNode]] = None,
+        verbose: bool = False,
     ) -> None:
         self.callback_manager = callback_manager or CallbackManager()
 
@@ -40,6 +42,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             object_map = {obj.index_id: obj.obj for obj in objects}
 
         self.object_map = object_map or {}
+        self._verbose = verbose
 
     def _check_callback_manager(self) -> None:
         """Check callback manager."""
@@ -64,6 +67,11 @@ class BaseRetriever(ChainableMixin, PromptMixin):
         score: float,
     ) -> List[NodeWithScore]:
         """Retrieve nodes from object."""
+        if self._verbose:
+            print_text(
+                f"Retrieving from object {obj.__class__.__name__} with query {query_bundle.query_str}\n",
+                color="llama_pink",
+            )
         if isinstance(obj, NodeWithScore):
             return [obj]
         elif isinstance(obj, BaseNode):
@@ -72,7 +80,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             response = obj.query(query_bundle)
             return [
                 NodeWithScore(
-                    node=TextNode(text=str(response), metadata=response.metadata),
+                    node=TextNode(text=str(response), metadata=response.metadata or {}),
                     score=score,
                 )
             ]
@@ -138,6 +146,11 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             if isinstance(node, IndexNode):
                 obj = self.object_map.get(node.index_id, None)
                 if obj is not None:
+                    if self._verbose:
+                        print_text(
+                            f"Retrieval entering {node.index_id}: {obj.__class__.__name__}\n",
+                            color="llama_turquoise",
+                        )
                     retrieved_nodes.extend(
                         self._retrieve_from_object(
                             obj, query_bundle=query_bundle, score=score
@@ -165,6 +178,11 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             if isinstance(node, IndexNode):
                 obj = self.object_map.get(node.index_id, None)
                 if obj is not None:
+                    if self._verbose:
+                        print_text(
+                            f"Retrieval entering {node.index_id}: {obj.__class__.__name__}\n",
+                            color="llama_turquoise",
+                        )
                     # TODO: Add concurrent execution via `run_jobs()` ?
                     retrieved_nodes.extend(
                         await self._aretrieve_from_object(
@@ -204,11 +222,12 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 payload={EventPayload.QUERY_STR: query_bundle.query_str},
             ) as retrieve_event:
                 nodes = self._retrieve(query_bundle)
+                nodes = self._handle_recursive_retrieval(query_bundle, nodes)
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
 
-        return self._handle_recursive_retrieval(query_bundle, nodes)
+        return nodes
 
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         self._check_callback_manager()
@@ -223,11 +242,12 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 payload={EventPayload.QUERY_STR: query_bundle.query_str},
             ) as retrieve_event:
                 nodes = await self._aretrieve(query_bundle)
+                nodes = await self._ahandle_recursive_retrieval(query_bundle, nodes)
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
 
-        return await self._ahandle_recursive_retrieval(query_bundle, nodes)
+        return nodes
 
     @abstractmethod
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:

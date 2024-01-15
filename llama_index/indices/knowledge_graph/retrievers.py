@@ -92,6 +92,7 @@ class KGTableRetriever(BaseRetriever):
         max_knowledge_sequence: int = REL_TEXT_LIMIT,
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -121,7 +122,9 @@ class KGTableRetriever(BaseRetriever):
         except Exception as e:
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
-        super().__init__(callback_manager=callback_manager, object_map=object_map)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""

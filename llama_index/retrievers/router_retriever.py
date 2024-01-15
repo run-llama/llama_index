@@ -38,6 +38,7 @@ class RouterRetriever(BaseRetriever):
         service_context: Optional[ServiceContext] = None,
         objects: Optional[List[IndexNode]] = None,
         object_map: Optional[dict] = None,
+        verbose: bool = False,
     ) -> None:
         self.service_context = service_context or ServiceContext.from_defaults()
         self._selector = selector
@@ -48,6 +49,7 @@ class RouterRetriever(BaseRetriever):
             callback_manager=self.service_context.callback_manager,
             object_map=object_map,
             objects=objects,
+            verbose=verbose,
         )
 
     def _get_prompt_modules(self) -> PromptMixinType:

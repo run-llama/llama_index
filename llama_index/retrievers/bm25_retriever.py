@@ -31,6 +31,7 @@ class BM25Retriever(BaseRetriever):
         callback_manager: Optional[CallbackManager] = None,
         objects: Optional[List[IndexNode]] = None,
         object_map: Optional[dict] = None,
+        verbose: bool = False,
     ) -> None:
         try:
             from rank_bm25 import BM25Okapi
@@ -43,7 +44,10 @@ class BM25Retriever(BaseRetriever):
         self._corpus = [self._tokenizer(node.get_content()) for node in self._nodes]
         self.bm25 = BM25Okapi(self._corpus)
         super().__init__(
-            callback_manager=callback_manager, object_map=object_map, objects=objects
+            callback_manager=callback_manager,
+            object_map=object_map,
+            objects=objects,
+            verbose=verbose,
         )
 
     @classmethod
@@ -54,6 +58,7 @@ class BM25Retriever(BaseRetriever):
         docstore: Optional[BaseDocumentStore] = None,
         tokenizer: Optional[Callable[[str], List[str]]] = None,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        verbose: bool = False,
     ) -> "BM25Retriever":
         # ensure only one of index, nodes, or docstore is passed
         if sum(bool(val) for val in [index, nodes, docstore]) != 1:
@@ -74,6 +79,7 @@ class BM25Retriever(BaseRetriever):
             nodes=nodes,
             tokenizer=tokenizer,
             similarity_top_k=similarity_top_k,
+            verbose=verbose,
         )
 
     def _get_scored_nodes(self, query: str) -> List[NodeWithScore]:

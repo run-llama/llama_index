@@ -37,9 +37,11 @@ class AutoMergingRetriever(BaseRetriever):
         self._vector_retriever = vector_retriever
         self._storage_context = storage_context
         self._simple_ratio_thresh = simple_ratio_thresh
-        self._verbose = verbose
         super().__init__(
-            callback_manager=callback_manager, object_map=object_map, objects=objects
+            callback_manager=callback_manager,
+            object_map=object_map,
+            objects=objects,
+            verbose=verbose,
         )
 
     def _get_parents_and_merge(
