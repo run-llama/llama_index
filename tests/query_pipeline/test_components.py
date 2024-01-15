@@ -131,7 +131,6 @@ class MockSelector(BaseSelector):
 
     def _update_prompts(self, prompts_dict: PromptDictType) -> None:
         """Update prompts."""
-        pass
 
 
 def test_selector_component() -> None:
