@@ -93,6 +93,28 @@ def print_debug_input_multi(
 
     print_text(output + "\n", color="llama_lavender")
 
+def _get_root_keys(dag: networkx.MultiDiGraph) -> List[str]:
+    """Get root keys."""
+    return [v for v, d in dag.in_degree() if d == 0]
+
+def _get_leaf_keys(dag: networkx.MultiDiGraph) -> List[str]:
+    """Get leaf keys."""
+    # get all modules without downstream dependencies
+    return [v for v, d in dag.out_degree() if d == 0]
+
+def _get_root_key(dag: networkx.MultiDiGraph) -> str:
+    root_keys = _get_root_keys(dag)
+    if len(root_keys) != 1:
+        raise ValueError("Only one root is supported.")
+    return root_keys[0]
+
+def _get_leaf_key(dag: networkx.MultiDiGraph) -> str:
+    leaf_keys = _get_leaf_keys(dag)
+    if len(leaf_keys) != 1:
+        raise ValueError("Only one leaf is supported.")
+    return leaf_keys[0]
+
+
 
 CHAIN_COMPONENT_TYPE = Union[QUERY_COMPONENT_TYPE, str]
 
@@ -221,16 +243,7 @@ class QueryPipeline(QueryComponent):
         if src not in self.module_dict:
             raise ValueError(f"Module {src} does not exist in pipeline.")
         self.dag.add_edge(src, dest, src_key=src_key, dest_key=dest_key)
-
-    def _get_root_keys(self) -> List[str]:
-        """Get root keys."""
-        return [v for v, d in self.dag.in_degree() if d == 0]
-
-    def _get_leaf_keys(self) -> List[str]:
-        """Get leaf keys."""
-        # get all modules without downstream dependencies
-        return [v for v, d in self.dag.out_degree() if d == 0]
-
+    
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
         # go through every module in module dict and set callback manager
@@ -316,10 +329,7 @@ class QueryPipeline(QueryComponent):
         """
         ## run pipeline
         ## assume there is only one root - for multiple roots, need to specify `run_multi`
-        root_keys = self._get_root_keys()
-        if len(root_keys) != 1:
-            raise ValueError("Only one root is supported.")
-        root_key = root_keys[0]
+        root_key = _get_root_key(self.dag)
 
         root_module = self.module_dict[root_key]
         if len(args) > 0:
@@ -391,7 +401,7 @@ class QueryPipeline(QueryComponent):
         return self._get_single_result_output(result_outputs, return_values_direct)
 
     def _validate_inputs(self, module_input_dict: Dict[str, Any]) -> None:
-        root_keys = self._get_root_keys()
+        root_keys = _get_root_keys(self.dag)
         # if root keys don't match up with kwargs keys, raise error
         if set(root_keys) != set(module_input_dict.keys()):
             raise ValueError(
@@ -409,7 +419,7 @@ class QueryPipeline(QueryComponent):
     ) -> None:
         """Process component output."""
         # if there's no more edges, add result to output
-        if module_key in self._get_leaf_keys():
+        if module_key in _get_leaf_keys(self.dag):
             result_outputs[module_key] = output_dict
         else:
             for _, dest, attr in self.dag.edges(module_key, data=True):
@@ -546,7 +556,7 @@ class QueryPipeline(QueryComponent):
     def input_keys(self) -> InputKeys:
         """Input keys."""
         # get input key of first module
-        root_keys = self._get_root_keys()
+        root_keys = _get_root_keys(self.dag)
         if len(root_keys) != 1:
             raise ValueError("Only one root is supported.")
         root_module = self.module_dict[root_keys[0]]
@@ -556,8 +566,61 @@ class QueryPipeline(QueryComponent):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         # get output key of last module
-        leaf_keys = self._get_leaf_keys()
-        if len(leaf_keys) != 1:
-            raise ValueError("Only one leaf is supported.")
-        leaf_module = self.module_dict[leaf_keys[0]]
+        leaf_key = _get_leaf_key(self.dag)
+        leaf_module = self.module_dict[leaf_key]
         return leaf_module.output_keys
+
+
+    def _flatten_dag(self, dag: networkx.MultiDiGraph) -> None:
+        """Visualize the pipeline."""
+
+        new_dag: networkx.MultiDiGraph = dag.copy()
+        # for each node in the DAG, see if it's a key 
+        dag_nodes = list(new_dag.nodes)
+        for node in dag_nodes:
+            if node not in self.module_dict:
+                raise ValueError(f"Node {node} is not a module key.")
+
+            # check if module corresponds to another query pipeline
+            if isinstance(self.module_dict[node], QueryPipeline):
+                # if so, add all nodes in the subgraph to the DAG
+                subgraph: networkx.MultiDiGraph = self.module_dict[node].dag.copy()
+                subgraph = self._flatten_dag(self.module_dict[node], subgraph)
+
+                new_dag = networkx.compose(new_dag, subgraph)
+                node_edges = list(new_dag.edges(node, data=True))
+
+                # remove old edge from node to dest
+                for _, dest, _ in node_edges:
+                    new_dag.remove_edge(node, dest)
+
+                # add edge from node to root node in subgraph
+                subgraph_root_key = _get_root_key(subgraph)
+                new_dag.add_edge(node, subgraph_root_key)
+
+                # add edge from leaf node in subgraph to node edges
+                subgraph_leaf_key = _get_leaf_key(subgraph)
+
+                for _, dest, attr in node_edges:
+                    src_key = attr["src_key"] if "src_key" in attr else None
+                    dest_key = attr["dest_key"] if "dest_key" in attr else None
+                    new_dag.add_edge(
+                        subgraph_leaf_key, dest, src_key=src_key, dest_key=dest_key
+                    )
+
+        return new_dag
+    
+
+    def visualize(self, save_path: str = "vis.html") -> None:
+        """Visualize the pipeline."""
+        new_dag = self._flatten_dag(self.dag)
+        from pyvis.network import Network
+
+        net = Network(notebook=True, cdn_resources="in_line", directed=True)
+        # net = Network(cdn_resources="in_line", directed=True)
+        net.from_nx(new_dag)
+        net.show(save_path)
+                
+
+                
+            
