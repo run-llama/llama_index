@@ -74,6 +74,7 @@ def _bulk_ingest_embeddings(
     text_field: str = "content",
     mapping: Optional[Dict] = None,
     max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
+    is_aoss: bool = False,
 ) -> List[str]:
     """Bulk Ingest Embeddings into given index."""
     if not mapping:
@@ -99,12 +100,16 @@ def _bulk_ingest_embeddings(
             vector_field: embeddings[i],
             text_field: text,
             "metadata": metadata,
-            "_id": _id,
         }
+        if is_aoss:
+            request["id"] = _id
+        else:
+            request["_id"] = _id
         requests.append(request)
         return_ids.append(_id)
     bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
-    client.indices.refresh(index=index_name)
+    if not is_aoss:
+        client.indices.refresh(index=index_name)
     return return_ids
 
 
@@ -231,6 +236,17 @@ def _default_painless_scripting_query(
     }
 
 
+def _is_aoss_enabled(http_auth: Any) -> bool:
+    """Check if the service is http_auth is set as `aoss`."""
+    if (
+        http_auth is not None
+        and hasattr(http_auth, "service")
+        and http_auth.service == "aoss"
+    ):
+        return True
+    return False
+
+
 class OpensearchVectorClient:
     """Object encapsulating an Opensearch index that has vector search enabled.
 
@@ -285,6 +301,8 @@ class OpensearchVectorClient:
         self._max_chunk_bytes = max_chunk_bytes
 
         self._search_pipeline = search_pipeline
+        http_auth = kwargs.get("http_auth")
+        self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
         # initialize mapping
         idx_conf = {
             "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
@@ -329,6 +347,7 @@ class OpensearchVectorClient:
             text_field=self._text_field,
             mapping=None,
             max_chunk_bytes=self._max_chunk_bytes,
+            is_aoss=self.is_aoss,
         )
 
     def delete_doc_id(self, doc_id: str) -> None:
