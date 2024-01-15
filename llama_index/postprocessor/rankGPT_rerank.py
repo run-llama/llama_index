@@ -12,7 +12,7 @@ from llama_index.llms.openai_utils import (
 )
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import NodeWithScore, QueryBundle
-from llama_index.service_context import ServiceContext
+from llama_index.utilities.token_counting import TokenCounter
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo-0301"
 
@@ -24,9 +24,6 @@ class RankGPTRerank(BaseNodePostprocessor):
     """LLM-based reranker."""
 
     top_n: int = Field(description="Top N nodes to return.")
-    service_context: ServiceContext = Field(
-        description="Service context.", exclude=True
-    )
     model: str = Field(
         default=DEFAULT_OPENAI_MODEL, description="The OpenAI model to use."
     )
@@ -42,7 +39,6 @@ class RankGPTRerank(BaseNodePostprocessor):
 
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
         top_n: int = 10,
         model: Optional[str] = "gpt-3.5-turbo",
         temperature: float = 0.0,
@@ -51,23 +47,21 @@ class RankGPTRerank(BaseNodePostprocessor):
         api_version: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        service_context = service_context or ServiceContext.from_defaults()
-
         api_key, api_base, api_version = resolve_openai_credentials(
             api_key=api_key,
             api_base=api_base,
             api_version=api_version,
         )
         super().__init__(
-            service_context=service_context,
             top_n=top_n,
-            model=model or service_context.llm.metadata.model_name,
+            model=model,
             temperature=temperature,
             api_key=api_key,
             api_base=api_base,
             api_version=api_version,
             **kwargs,
         )
+        self._token_counter = TokenCounter()
 
     @classmethod
     def class_name(cls) -> str:
@@ -179,7 +173,7 @@ class RankGPTRerank(BaseNodePostprocessor):
             for m in messages:
                 print(m)
             if (
-                self._num_tokens_from_messages(messages, self.model)
+                self._token_counter.estimate_tokens_in_messages(messages)
                 <= openai_modelname_to_contextsize(self.model) - 200
             ):
                 break
