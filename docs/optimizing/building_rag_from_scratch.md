@@ -118,7 +118,6 @@ maxdepth: 1
 /examples/low_level/fusion_retriever.ipynb
 ```
 
-
 ## Building QA over Structured Data from Scratch
 
 RAG as a framework is primarily focused on unstructured data. LlamaIndex also has out of the box support for structured data and semi-structured data as well.
