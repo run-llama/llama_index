@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
-from llama_index.llms import ChatMessage, ChatResponse, OpenAI
+from llama_index.llms import ChatMessage, ChatResponse, LiteLLM, OpenAI
 from llama_index.llms.openai_utils import (
     openai_modelname_to_contextsize,
     resolve_openai_credentials,
@@ -21,9 +21,9 @@ logger.setLevel(logging.WARNING)
 class RankGPTRerank(BaseNodePostprocessor):
     """RankGPT-based reranker."""
 
-    top_n: int = Field(description="Top N nodes to return.")
+    top_n: int = Field(description="Top N nodes to return from reranking.")
     model: str = Field(
-        default=DEFAULT_OPENAI_MODEL, description="The OpenAI model to use."
+        default=DEFAULT_OPENAI_MODEL, description="The LLM model to use."
     )
     temperature: float = Field(
         default=0.0,
@@ -31,9 +31,9 @@ class RankGPTRerank(BaseNodePostprocessor):
         gte=0.0,
         lte=1.0,
     )
-    api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
-    api_base: str = Field(description="The base URL for OpenAI API.")
-    api_version: str = Field(description="The API version for OpenAI API.")
+    api_key: str = Field(default=None, description="The LLM API key.", exclude=True)
+    api_base: str = Field(description="The base URL for LLM API.")
+    api_version: str = Field(description="The API version for LLM API.")
     token_counter: TokenCounter = Field(description="token counter.")
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
@@ -51,11 +51,13 @@ class RankGPTRerank(BaseNodePostprocessor):
         verbose: bool = False,
         **kwargs: Any,
     ) -> None:
-        api_key, api_base, api_version = resolve_openai_credentials(
-            api_key=api_key,
-            api_base=api_base,
-            api_version=api_version,
-        )
+        if model and "gpt" in model:
+            # only for openai models
+            api_key, api_base, api_version = resolve_openai_credentials(
+                api_key=api_key,
+                api_base=api_base,
+                api_version=api_version,
+            )
         token_counter = TokenCounter()
         super().__init__(
             top_n=top_n,
@@ -153,9 +155,19 @@ class RankGPTRerank(BaseNodePostprocessor):
         return messages
 
     def run_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
-        return OpenAI(temperature=0, model=self.model, api_key=self.api_key).chat(
-            messages=messages
-        )
+        if "gpt" in self.model:
+            return OpenAI(
+                temperature=self.temperature, model=self.model, api_key=self.api_key
+            ).chat(messages=messages)
+        else:
+            # using LiteLLM for serving other models
+            return LiteLLM(
+                temperature=self.temperature,
+                model=self.model,
+                api_key=self.api_key,
+                api_base=self.api_base,
+                api_version=self.api_version,
+            ).chat(messages=messages)
 
     def _clean_response(self, response: str) -> str:
         new_response = ""
