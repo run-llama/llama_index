@@ -2,8 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
-from llama_index.llms import ChatMessage, ChatResponse, OpenAI
-from llama_index.llms.llm import LLM
+from llama_index.llms import LLM, ChatMessage, ChatResponse, OpenAI
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.utils import print_text
