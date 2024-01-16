@@ -2,16 +2,11 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
-from llama_index.llms import ChatMessage, ChatResponse, LiteLLM, OpenAI
-from llama_index.llms.openai_utils import (
-    openai_modelname_to_contextsize,
-)
+from llama_index.llms import ChatMessage, ChatResponse, OpenAI
+from llama_index.llms.llm import LLM
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import NodeWithScore, QueryBundle
-from llama_index.utilities.token_counting import TokenCounter
 from llama_index.utils import print_text
-
-DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo-0301"
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -20,50 +15,25 @@ logger.setLevel(logging.WARNING)
 class RankGPTRerank(BaseNodePostprocessor):
     """RankGPT-based reranker."""
 
-    top_n: int = Field(description="Top N nodes to return from reranking.")
-    model: str = Field(
-        default=DEFAULT_OPENAI_MODEL, description="The LLM model to use."
+    top_n: int = Field(default=5, description="Top N nodes to return from reranking.")
+    llm: LLM = Field(
+        default=OpenAI("gpt-3.5-turbo"), description="LLM to use for rankGPT"
     )
-    temperature: float = Field(
-        default=0.0,
-        description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
-    )
-    api_key: str = Field(default=None, description="The LLM API key.", exclude=True)
-    context_size: int = Field(
-        default=3000,
-        description="The context size to use for LLM models. Need to set for non-GPT models.",
-        gte=0,
-        lte=2048,
-    )
-
-    token_counter: TokenCounter = Field(description="token counter.")
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
     )
 
     def __init__(
         self,
-        top_n: int = 10,
-        model: Optional[str] = "gpt-3.5-turbo",
-        temperature: float = 0.0,
-        context_size: Optional[int] = None,
-        api_key: Optional[str] = None,
-        token_counter: Optional[TokenCounter] = None,
+        top_n: int = 5,
+        llm: Optional[LLM] = OpenAI("gpt-3.5-turbo"),
         verbose: bool = False,
         **kwargs: Any,
     ) -> None:
-        token_counter = token_counter or TokenCounter()
-        context_size = context_size or 3000
-
+        llm = llm or OpenAI("gpt-3.5-turbo")
         super().__init__(
             top_n=top_n,
-            model=model,
-            temperature=temperature,
-            api_key=api_key,
-            context_size=context_size,
-            token_counter=token_counter,
+            llm=llm,
             verbose=verbose,
             **kwargs,
         )
@@ -124,50 +94,26 @@ class RankGPTRerank(BaseNodePostprocessor):
         query = item["query"]
         num = len(item["hits"])
 
-        max_length = 300
-        while True:
-            messages = self._get_prefix_prompt(query, num)
-            rank = 0
-            for hit in item["hits"]:
-                rank += 1
-                content = hit["content"]
-                content = content.replace("Title: Content: ", "")
-                content = content.strip()
-                # For Japanese should cut by character: content = content[:int(max_length)]
-                content = " ".join(content.split()[: int(max_length)])
-                messages.append(ChatMessage(role="user", content=f"[{rank}] {content}"))
-                messages.append(
-                    ChatMessage(role="assistant", content=f"Received passage [{rank}].")
-                )
+        messages = self._get_prefix_prompt(query, num)
+        rank = 0
+        for hit in item["hits"]:
+            rank += 1
+            content = hit["content"]
+            content = content.replace("Title: Content: ", "")
+            content = content.strip()
+            # For Japanese should cut by character: content = content[:int(max_length)]
+            content = " ".join(content.split()[:300])
+            messages.append(ChatMessage(role="user", content=f"[{rank}] {content}"))
             messages.append(
-                ChatMessage(role="user", content=self._get_post_prompt(query, num))
+                ChatMessage(role="assistant", content=f"Received passage [{rank}].")
             )
-            context_size_limit = (
-                openai_modelname_to_contextsize(self.model)
-                if "gpt" in self.model
-                else self.context_size
-            )
-            if (
-                self.token_counter.estimate_tokens_in_messages(messages)
-                <= context_size_limit - 200
-            ):
-                break
-            else:
-                max_length -= 1
+        messages.append(
+            ChatMessage(role="user", content=self._get_post_prompt(query, num))
+        )
         return messages
 
     def run_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
-        if "gpt" in self.model:
-            return OpenAI(
-                temperature=self.temperature, model=self.model, api_key=self.api_key
-            ).chat(messages=messages)
-        else:
-            # using LiteLLM for serving other models
-            return LiteLLM(
-                temperature=self.temperature,
-                model=self.model,
-                api_key=self.api_key,
-            ).chat(messages=messages)
+        return self.llm.chat(messages)
 
     def _clean_response(self, response: str) -> str:
         new_response = ""
