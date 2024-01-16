@@ -107,7 +107,7 @@ maxdepth: 1
 ## Zilliz
 
 First, set up your [Zilliz Cloud](https://cloud.zilliz.com/signup?utm_source=twitter&utm_medium=social%20&utm_campaign=2023-12-22_social_pipeline-llamaindex_twitter) account and create a free serverless cluster.
-Then copy the Cluster ID and API Key from your account.
+Then copy the Project ID, Cluster ID and API Key from your account.
 
 Now you can construct `ZillizCloudPipelineIndex` to index docs and query as follows:
 
@@ -120,6 +120,7 @@ from llama_index.indices import ZillizCloudPipelineIndex
 # Load documents from url and build document index
 zcp_index = ZillizCloudPipelineIndex.from_document_url(
     url="https://publicdataset.zillizcloud.com/milvus_doc.md",
+    project_id="<YOUR_ZILLIZ_PROJECT_ID>",
     cluster_id="<YOUR_ZILLIZ_CLUSTER_ID>",
     token="<YOUR_ZILLIZ_API_KEY>",
     metadata={"version": "2.3"},  # optional
