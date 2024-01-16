@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.utilities.pinecone_utils import _import_pinecone, _is_pinecone_v3
+from llama_index.vector_stores.pinecone_utils import _import_pinecone, _is_pinecone_v3
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
