@@ -5,7 +5,6 @@ from llama_index.bridge.pydantic import Field
 from llama_index.llms import ChatMessage, ChatResponse, LiteLLM, OpenAI
 from llama_index.llms.openai_utils import (
     openai_modelname_to_contextsize,
-    resolve_openai_credentials,
 )
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import NodeWithScore, QueryBundle
@@ -32,8 +31,13 @@ class RankGPTRerank(BaseNodePostprocessor):
         lte=1.0,
     )
     api_key: str = Field(default=None, description="The LLM API key.", exclude=True)
-    api_base: str = Field(description="The base URL for LLM API.")
-    api_version: str = Field(description="The API version for LLM API.")
+    context_size: int = Field(
+        default=3000,
+        description="The context size to use for LLM models. Need to set for non-GPT models.",
+        gte=0,
+        lte=2048,
+    )
+
     token_counter: TokenCounter = Field(description="token counter.")
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
@@ -44,28 +48,21 @@ class RankGPTRerank(BaseNodePostprocessor):
         top_n: int = 10,
         model: Optional[str] = "gpt-3.5-turbo",
         temperature: float = 0.0,
+        context_size: Optional[int] = None,
         api_key: Optional[str] = None,
-        api_base: Optional[str] = None,
-        api_version: Optional[str] = None,
         token_counter: Optional[TokenCounter] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> None:
-        if model and "gpt" in model:
-            # only for openai models
-            api_key, api_base, api_version = resolve_openai_credentials(
-                api_key=api_key,
-                api_base=api_base,
-                api_version=api_version,
-            )
-        token_counter = TokenCounter()
+        token_counter = token_counter or TokenCounter()
+        context_size = context_size or 3000
+
         super().__init__(
             top_n=top_n,
             model=model,
             temperature=temperature,
             api_key=api_key,
-            api_base=api_base,
-            api_version=api_version,
+            context_size=context_size,
             token_counter=token_counter,
             verbose=verbose,
             **kwargs,
@@ -145,9 +142,14 @@ class RankGPTRerank(BaseNodePostprocessor):
             messages.append(
                 ChatMessage(role="user", content=self._get_post_prompt(query, num))
             )
+            context_size_limit = (
+                openai_modelname_to_contextsize(self.model)
+                if "gpt" in self.model
+                else self.context_size
+            )
             if (
                 self.token_counter.estimate_tokens_in_messages(messages)
-                <= openai_modelname_to_contextsize(self.model) - 200
+                <= context_size_limit - 200
             ):
                 break
             else:
@@ -165,8 +167,6 @@ class RankGPTRerank(BaseNodePostprocessor):
                 temperature=self.temperature,
                 model=self.model,
                 api_key=self.api_key,
-                api_base=self.api_base,
-                api_version=self.api_version,
             ).chat(messages=messages)
 
     def _clean_response(self, response: str) -> str:
