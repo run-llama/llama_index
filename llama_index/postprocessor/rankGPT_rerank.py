@@ -16,7 +16,8 @@ class RankGPTRerank(BaseNodePostprocessor):
 
     top_n: int = Field(default=5, description="Top N nodes to return from reranking.")
     llm: LLM = Field(
-        default=OpenAI(model="gpt-3.5-turbo-16k"), description="LLM to use for rankGPT"
+        default_factory=lambda: OpenAI(model="gpt-3.5-turbo-16k"),
+        description="LLM to use for rankGPT",
     )
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
@@ -25,11 +26,10 @@ class RankGPTRerank(BaseNodePostprocessor):
     def __init__(
         self,
         top_n: int = 5,
-        llm: Optional[LLM] = OpenAI(model="gpt-3.5-turbo-16k"),
+        llm: Optional[LLM] = None,
         verbose: bool = False,
     ):
-        super().__init__(verbose=verbose, top_n=top_n)
-        self.llm = llm or OpenAI(model="gpt-3.5-turbo-16k")
+        super().__init__(verbose=verbose, llm=llm, top_n=top_n)
 
     @classmethod
     def class_name(cls) -> str:
