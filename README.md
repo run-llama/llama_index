@@ -21,8 +21,8 @@ Discord: https://discord.gg/dGcwcsnxhU.
 
 ### Ecosystem
 
-- LlamaHub (community library of data loaders): https://llamahub.ai
-- LlamaLab (cutting-edge AGI projects using LlamaIndex): https://github.com/run-llama/llama-lab
+- LlamaHub (community library of data loaders): https://llamahub.ai.
+- LlamaLab (cutting-edge AGI projects using LlamaIndex): https://github.com/run-llama/llama-lab.
 
 ## 🚀 Overview
 
@@ -39,7 +39,7 @@ We need a comprehensive toolkit to help perform this data augmentation for LLMs.
 
 That's where **LlamaIndex** comes in. LlamaIndex is a "data framework" to help you build LLM apps. It provides the following tools:
 
-- Offers **data connectors** to ingest your existing data sources and data formats (APIs, PDFs, docs, SQL, etc.)
+- Offers **data connectors** to ingest your existing data sources and data formats (APIs, PDFs, docs, SQL, etc.).
 - Provides ways to **structure your data** (indices, graphs) so that this data can be easily used with LLMs.
 - Provides an **advanced retrieval/query interface over your data**: Feed in any LLM input prompt, get back retrieved context and knowledge-augmented output.
 - Allows easy integrations with your outer application framework (e.g. with LangChain, Flask, Docker, ChatGPT, anything else).
