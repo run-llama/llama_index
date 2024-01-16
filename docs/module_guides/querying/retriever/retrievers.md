@@ -28,6 +28,7 @@ BM25 Hybrid Retriever </examples/retrievers/bm25_retriever.ipynb>
 /examples/retrievers/reciprocal_rerank_fusion.ipynb
 /examples/retrievers/auto_merging_retriever.ipynb
 /examples/node_postprocessor/MetadataReplacementDemo.ipynb
+/examples/retrievers/composable_retrievers.ipynb
 ```
 
 ### Auto-Retrieval

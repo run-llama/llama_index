@@ -54,6 +54,8 @@ class BaseKeywordTableRetriever(BaseRetriever):
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -68,7 +70,11 @@ class BaseKeywordTableRetriever(BaseRetriever):
             keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
         )
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager,
+            object_map=object_map,
+            verbose=verbose,
+        )
 
     @abstractmethod
     def _get_keywords(self, query_str: str) -> List[str]:

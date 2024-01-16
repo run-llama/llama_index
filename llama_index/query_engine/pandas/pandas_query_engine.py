@@ -15,6 +15,7 @@ import pandas as pd
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.response.schema import Response
 from llama_index.indices.struct_store.pandas import PandasIndex
+from llama_index.llms.utils import LLMType
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
@@ -70,6 +71,7 @@ class PandasQueryEngine(BaseQueryEngine):
             if there is possibly long text in the dataframe.
         pandas_prompt (Optional[BasePromptTemplate]): Pandas prompt to use.
         head (int): Number of rows to show in the table context.
+        llm (Optional[LLM]): Language model to use.
 
     """
 
@@ -83,6 +85,7 @@ class PandasQueryEngine(BaseQueryEngine):
         head: int = 5,
         verbose: bool = False,
         service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLMType] = "default",
         synthesize_response: bool = False,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
@@ -97,7 +100,8 @@ class PandasQueryEngine(BaseQueryEngine):
             df, output_kwargs or {}
         )
         self._verbose = verbose
-        self._service_context = service_context or ServiceContext.from_defaults()
+
+        self._service_context = service_context or ServiceContext.from_defaults(llm=llm)
         self._synthesize_response = synthesize_response
         self._response_synthesis_prompt = (
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT
