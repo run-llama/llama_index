@@ -22,6 +22,8 @@ from llama_index.query_engine.pandas.output_parser import PandasInstructionParse
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.utils import print_text
+from llama_index.llms.llm import LLM
+from llama_index.llms.utils import resolve_llm, LLMType
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +72,7 @@ class PandasQueryEngine(BaseQueryEngine):
             if there is possibly long text in the dataframe.
         pandas_prompt (Optional[BasePromptTemplate]): Pandas prompt to use.
         head (int): Number of rows to show in the table context.
+        llm (Optional[LLM]): Language model to use.
 
     """
 
@@ -83,6 +86,7 @@ class PandasQueryEngine(BaseQueryEngine):
         head: int = 5,
         verbose: bool = False,
         service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLMType] = "default",
         synthesize_response: bool = False,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
@@ -97,7 +101,10 @@ class PandasQueryEngine(BaseQueryEngine):
             df, output_kwargs or {}
         )
         self._verbose = verbose
-        self._service_context = service_context or ServiceContext.from_defaults()
+
+        self._service_context = service_context or ServiceContext.from_defaults(
+            llm=llm
+        )
         self._synthesize_response = synthesize_response
         self._response_synthesis_prompt = (
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT

@@ -20,6 +20,7 @@ from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinTy
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType, TextNode
 from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
+from llama_index.llms.utils import LLMType
 
 logger = logging.getLogger(__name__)
 
@@ -173,6 +174,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         handle_sql_errors (bool): Whether to handle SQL errors. Defaults to True.
         sql_only (bool) : Whether to get only sql and not the sql query result.
             Default to False.
+        llm (Optional[LLM]): Language model to use.
 
     """
 
@@ -185,6 +187,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         table_retriever: Optional[ObjectRetriever[SQLTableSchema]] = None,
         context_str_prefix: Optional[str] = None,
         sql_parser_mode: SQLParserMode = SQLParserMode.DEFAULT,
+        llm: Optional[LLMType] = "default",
         service_context: Optional[ServiceContext] = None,
         return_raw: bool = True,
         handle_sql_errors: bool = True,
@@ -200,7 +203,9 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             sql_database, tables, context_query_kwargs, table_retriever
         )
         self._context_str_prefix = context_str_prefix
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._service_context = service_context or ServiceContext.from_defaults(
+            llm=llm
+        )
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._sql_parser_mode = sql_parser_mode
         self._sql_parser = self._load_sql_parser(sql_parser_mode, self._service_context)
