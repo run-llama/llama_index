@@ -3,8 +3,9 @@
 ## [0.9.32] - 2024-01-16
 
 ### New Features
+
 - added query-time row retrieval + fix nits with query pipeline over structured data (#10061)
--  ReActive Agents w/ Context + updated stale link (#10058)
+- ReActive Agents w/ Context + updated stale link (#10058)
 
 ## [0.9.31] - 2024-01-15
 
