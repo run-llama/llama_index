@@ -131,18 +131,18 @@ Define any function and pass it to `FnComponent`. The positional argument names 
 **NOTE**: We assume there is only a single output.
 
 ```python
-
 from llama_index.query_pipeline import FnComponent
+
 
 def add(a: int, b: int) -> int:
     """Adds two numbers."""
     return a + b
 
+
 add_component = FnComponent(fn=add, output_key="output")
 
 # input keys to add_component are "a" and "b", output key is 'output'
 ```
-
 
 ### Subclassing a `CustomQueryComponent`
 
