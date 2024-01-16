@@ -27,9 +27,9 @@ class RankGPTRerank(BaseNodePostprocessor):
         top_n: int = 5,
         llm: Optional[LLM] = OpenAI(model="gpt-3.5-turbo-16k"),
         verbose: bool = False,
-    ) -> None:
-        llm = llm or OpenAI(model="gpt-3.5-turbo-16k")
-        super().__init__(verbose=verbose, llm=llm, top_n=top_n)
+    ):
+        super().__init__(verbose=verbose, top_n=top_n)
+        self.llm = llm or OpenAI(model="gpt-3.5-turbo-16k")
 
     @classmethod
     def class_name(cls) -> str:
