@@ -35,6 +35,20 @@ class TiDBVector(BasePydanticVectorStore):
         pre_delete_collection: bool = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Initialize a TiDBVector object.
+
+        Args:
+            connection_string (str): The connection string for the TiDB database.
+                format: "mysql+pymysql://root@34.212.137.91:4000/test".
+            collection_name (str, optional): The name of the collection. Defaults to llama_index_tidb_vector.
+            engine_args (Optional[Dict[str, Any]], optional): Additional engine arguments. Defaults to None.
+            pre_delete_collection (bool, optional): Whether to delete the collection before creating a new one. Defaults to False.
+            **kwargs (Any): Additional keyword arguments.
+
+        Raises:
+            ImportError: If the tidbvec python package is not installed.
+        """
         super().__init__(**kwargs)
         self._connection_string = connection_string
         self._engine_args = engine_args or {}
@@ -70,6 +84,16 @@ class TiDBVector(BasePydanticVectorStore):
         return "TiDBVector"
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        """
+        Add nodes to the vector store.
+
+        Args:
+            nodes (List[BaseNode]): List of nodes to be added.
+            **add_kwargs: Additional keyword arguments to be passed to the underlying storage.
+
+        Returns:
+            List[str]: List of node IDs that were added.
+        """
         ids = []
         metadatas = []
         embeddings = []
@@ -91,10 +115,33 @@ class TiDBVector(BasePydanticVectorStore):
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete all nodes of a document from the vector store.
+
+        Args:
+            ref_doc_id (str): The reference document ID to be deleted.
+            **delete_kwargs: Additional keyword arguments to be passed to the delete method.
+
+        Returns:
+            None
+        """
         delete_kwargs["filter"] = {"doc_id": ref_doc_id}
         self._tidb.delete(**delete_kwargs)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """
+        Perform a similarity search with the given query embedding.
+
+        Args:
+            query (VectorStoreQuery): The query object containing the query data.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            VectorStoreQueryResult: The result of the similarity search.
+
+        Raises:
+            ValueError: If the query embedding is not provided.
+        """
         if query.query_embedding is None:
             raise ValueError("Query embedding must be provided.")
         return self._similarity_search_with_score(
@@ -111,6 +158,18 @@ class TiDBVector(BasePydanticVectorStore):
         metadata_filters: Optional[MetadataFilters] = None,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
+        """
+        Performs a similarity search with scores based on the given condition.
+
+        Args:
+            embedding (List[float]): The embedding vector for similarity search.
+            limit (int, optional): The maximum number of results to return. Defaults to 10.
+            metadata_filters (Optional[MetadataFilters], optional): Filters to apply on metadata. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            VectorStoreQueryResult: The result of the similarity search, including nodes, similarities, and ids.
+        """
         filters = self._to_tidb_filters(metadata_filters)
         results = self._tidb.query(
             query_vector=embedding, k=limit, filter=filters, **kwargs
@@ -146,6 +205,18 @@ class TiDBVector(BasePydanticVectorStore):
     def _to_tidb_filters(
         self, metadata_filters: Optional[MetadataFilters] = None
     ) -> Optional[Dict[str, Any]]:
+        """
+        Converts metadata filters to TiDB filters.
+
+        Args:
+            metadata_filters (Optional[MetadataFilters]): The metadata filters to be converted.
+
+        Returns:
+            Optional[Dict[str, Any]]: The converted TiDB filters.
+
+        Raises:
+            ValueError: If an unsupported operator is encountered.
+        """
         if metadata_filters is None:
             return None
 
