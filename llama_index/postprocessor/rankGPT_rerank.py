@@ -10,6 +10,7 @@ from llama_index.llms.openai_utils import (
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.utilities.token_counting import TokenCounter
+from llama_index.utils import print_text
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo-0301"
 
@@ -18,7 +19,7 @@ logger.setLevel(logging.WARNING)
 
 
 class RankGPTRerank(BaseNodePostprocessor):
-    """LLM-based reranker."""
+    """RankGPT-based reranker."""
 
     top_n: int = Field(description="Top N nodes to return.")
     model: str = Field(
@@ -34,6 +35,9 @@ class RankGPTRerank(BaseNodePostprocessor):
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
     token_counter: TokenCounter = Field(description="token counter.")
+    verbose: bool = Field(
+        default=False, description="Whether to print intermediate steps."
+    )
 
     def __init__(
         self,
@@ -44,6 +48,7 @@ class RankGPTRerank(BaseNodePostprocessor):
         api_base: Optional[str] = None,
         api_version: Optional[str] = None,
         token_counter: Optional[TokenCounter] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         api_key, api_base, api_version = resolve_openai_credentials(
@@ -60,6 +65,7 @@ class RankGPTRerank(BaseNodePostprocessor):
             api_base=api_base,
             api_version=api_version,
             token_counter=token_counter,
+            verbose=verbose,
             **kwargs,
         )
 
@@ -86,6 +92,8 @@ class RankGPTRerank(BaseNodePostprocessor):
             rerank_ranks = self._receive_permutation(
                 items, str(permutation.message.content)
             )
+            if self.verbose:
+                print_text(f"After Reranking, new rank list for nodes: {rerank_ranks}")
 
             initial_results: List[NodeWithScore] = []
 
