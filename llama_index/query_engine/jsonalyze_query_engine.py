@@ -151,7 +151,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
         """Answer an analytical query on the JSON List."""
         query = query_bundle.query_str
         if self._verbose:
-            print_text(f"Query: {query}")
+            print_text(f"Query: {query}\n", color="green")
 
         sql_query, table_schema, results = self._analyzer(
             self._list_of_dict,
@@ -161,9 +161,9 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
             prompt=self._jsonalyze_prompt,
         )
         if self._verbose:
-            print_text(f"SQL Query: {sql_query}\n")
-            print_text(f"Table Schema: {table_schema}\n")
-            print_text(f"SQL Response: {results}\n")
+            print_text(f"SQL Query: {sql_query}\n", color="blue")
+            print_text(f"Table Schema: {table_schema}\n", color="cyan")
+            print_text(f"SQL Response: {results}\n", color="yellow")
 
         if self._synthesize_response:
             response_str = self._service_context.llm.predict(
@@ -174,7 +174,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
                 query_str=query_bundle.query_str,
             )
             if self._verbose:
-                print_text(f"Response: {response_str}")
+                print_text(f"Response: {response_str}", color="magenta")
         else:
             response_str = json.dumps(
                 {
@@ -191,7 +191,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
         """Answer an analytical query on the JSON List."""
         query = query_bundle.query_str
         if self._verbose:
-            print_text(f"Query: {query}")
+            print_text(f"Query: {query}", color="green")
 
         sql_query, table_schema, results = self._analyzer(
             self._list_of_dict,
@@ -201,9 +201,9 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
             prompt=self._jsonalyze_prompt,
         )
         if self._verbose:
-            print_text(f"SQL Query: {sql_query}")
-            print_text(f"Table Schema: {table_schema}")
-            print_text(f"SQL Response: {results}")
+            print_text(f"SQL Query: {sql_query}\n", color="blue")
+            print_text(f"Table Schema: {table_schema}\n", color="cyan")
+            print_text(f"SQL Response: {results}\n", color="yellow")
 
         if self._synthesize_response:
             response_str = await self._service_context.llm.apredict(
@@ -214,7 +214,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
                 query_str=query_bundle.query_str,
             )
             if self._verbose:
-                print_text(f"Response: {response_str}")
+                print_text(f"Response: {response_str}", color="magenta")
         else:
             response_str = json.dumps(
                 {
