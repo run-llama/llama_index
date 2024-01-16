@@ -32,12 +32,16 @@ class TreeAllLeafRetriever(BaseRetriever):
         self,
         index: TreeIndex,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     def _retrieve(
         self,

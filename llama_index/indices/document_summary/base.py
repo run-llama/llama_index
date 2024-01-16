@@ -22,6 +22,7 @@ from llama_index.response_synthesizers import (
 )
 from llama_index.schema import (
     BaseNode,
+    IndexNode,
     NodeRelationship,
     NodeWithScore,
     RelatedNodeInfo,
@@ -70,6 +71,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexDocumentSummary] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
@@ -92,6 +94,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
+            objects=objects,
             **kwargs,
         )
 
@@ -127,9 +130,9 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
             if "service_context" not in kwargs:
                 kwargs["service_context"] = self._service_context
-            return EmbeddingRetriever(self, **kwargs)
+            return EmbeddingRetriever(self, object_map=self._object_map, **kwargs)
         if retriever_mode == _RetrieverMode.LLM:
-            return LLMRetriever(self, **kwargs)
+            return LLMRetriever(self, object_map=self._object_map, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 

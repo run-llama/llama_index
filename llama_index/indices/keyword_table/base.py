@@ -22,7 +22,7 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
-from llama_index.schema import BaseNode, MetadataMode
+from llama_index.schema import BaseNode, IndexNode, MetadataMode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.utils import get_tqdm_iterable
@@ -62,6 +62,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[KeywordTable] = None,
         service_context: Optional[ServiceContext] = None,
         keyword_extract_template: Optional[BasePromptTemplate] = None,
@@ -86,6 +87,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
             index_struct=index_struct,
             service_context=service_context,
             show_progress=show_progress,
+            objects=objects,
             **kwargs,
         )
 
@@ -104,11 +106,15 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         )
 
         if retriever_mode == KeywordTableRetrieverMode.DEFAULT:
-            return KeywordTableGPTRetriever(self, **kwargs)
+            return KeywordTableGPTRetriever(self, object_map=self._object_map, **kwargs)
         elif retriever_mode == KeywordTableRetrieverMode.SIMPLE:
-            return KeywordTableSimpleRetriever(self, **kwargs)
+            return KeywordTableSimpleRetriever(
+                self, object_map=self._object_map, **kwargs
+            )
         elif retriever_mode == KeywordTableRetrieverMode.RAKE:
-            return KeywordTableRAKERetriever(self, **kwargs)
+            return KeywordTableRAKERetriever(
+                self, object_map=self._object_map, **kwargs
+            )
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
