@@ -333,7 +333,7 @@ make test
 For changes that involve entirely new features, it may be worth adding an example Jupyter notebook to showcase
 this feature.
 
-Example notebooks can be found in this folder: <https://github.com/jerryjliu/llama_index/tree/main/examples>.
+Example notebooks can be found in this folder: <https://github.com/run-llama/llama_index/tree/main/docs/examples>.
 
 ### Creating a pull request
 

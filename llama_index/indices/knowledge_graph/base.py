@@ -15,7 +15,7 @@ from llama_index.graph_stores.types import GraphStore
 from llama_index.indices.base import BaseIndex
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
-from llama_index.schema import BaseNode, MetadataMode
+from llama_index.schema import BaseNode, IndexNode, MetadataMode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
@@ -51,6 +51,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[KG] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
@@ -84,6 +85,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
+            objects=objects,
             **kwargs,
         )
 
@@ -109,7 +111,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         if len(self.index_struct.embedding_dict) > 0 and "retriever_mode" not in kwargs:
             kwargs["retriever_mode"] = KGRetrieverMode.HYBRID
 
-        return KGTableRetriever(self, **kwargs)
+        return KGTableRetriever(self, object_map=self._object_map, **kwargs)
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         if self._kg_triplet_extract_fn is not None:
@@ -134,10 +136,11 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         knowledge_strs = response.strip().split("\n")
         results = []
         for text in knowledge_strs:
-            if not text or text[0] != "(" or text[-1] != ")":
+            if "(" not in text or ")" not in text or text.index(")") < text.index("("):
                 # skip empty lines and non-triplets
                 continue
-            tokens = text[1:-1].split(",")
+            triplet_part = text[text.index("(") + 1 : text.index(")")]
+            tokens = triplet_part.split(",")
             if len(tokens) != 3:
                 continue
 

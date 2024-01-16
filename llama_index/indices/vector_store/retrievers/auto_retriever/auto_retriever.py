@@ -17,7 +17,7 @@ from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
 from llama_index.output_parsers.base import OutputParserException, StructuredOutput
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
-from llama_index.schema import QueryBundle
+from llama_index.schema import IndexNode, QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.vector_stores.types import (
     FilterCondition,
@@ -77,6 +77,8 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         extra_filters: Optional[MetadataFilters] = None,
+        object_map: Optional[dict] = None,
+        objects: Optional[List[IndexNode]] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
@@ -102,8 +104,12 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
             raise ValueError("extra_filters cannot be OR condition")
         self._extra_filters = extra_filters or MetadataFilters(filters=[])
         self._kwargs = kwargs
-        self._verbose = verbose
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager,
+            object_map=object_map or self._index._object_map,
+            objects=objects,
+            verbose=verbose,
+        )
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -226,6 +232,8 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
                 filters=filters,
                 similarity_top_k=similarity_top_k,
                 vector_store_query_mode=self._vector_store_query_mode,
+                object_map=self.object_map,
+                verbose=self._verbose,
                 **self._kwargs,
             ),
             new_query_bundle,
