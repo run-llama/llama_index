@@ -15,6 +15,7 @@ import pandas as pd
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.response.schema import Response
 from llama_index.indices.struct_store.pandas import PandasIndex
+from llama_index.llms.utils import LLMType
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
@@ -22,8 +23,6 @@ from llama_index.query_engine.pandas.output_parser import PandasInstructionParse
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
 from llama_index.utils import print_text
-from llama_index.llms.llm import LLM
-from llama_index.llms.utils import resolve_llm, LLMType
 
 logger = logging.getLogger(__name__)
 
@@ -102,9 +101,7 @@ class PandasQueryEngine(BaseQueryEngine):
         )
         self._verbose = verbose
 
-        self._service_context = service_context or ServiceContext.from_defaults(
-            llm=llm
-        )
+        self._service_context = service_context or ServiceContext.from_defaults(llm=llm)
         self._synthesize_response = synthesize_response
         self._response_synthesis_prompt = (
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT

@@ -10,6 +10,7 @@ from sqlalchemy import Table
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.embeddings.base import BaseEmbedding
+from llama_index.llms.utils import LLMType
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate
@@ -20,7 +21,6 @@ from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinTy
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType, TextNode
 from llama_index.service_context import ServiceContext
 from llama_index.utilities.sql_wrapper import SQLDatabase
-from llama_index.llms.utils import LLMType
 
 logger = logging.getLogger(__name__)
 
@@ -203,9 +203,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             sql_database, tables, context_query_kwargs, table_retriever
         )
         self._context_str_prefix = context_str_prefix
-        self._service_context = service_context or ServiceContext.from_defaults(
-            llm=llm
-        )
+        self._service_context = service_context or ServiceContext.from_defaults(llm=llm)
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._sql_parser_mode = sql_parser_mode
         self._sql_parser = self._load_sql_parser(sql_parser_mode, self._service_context)
