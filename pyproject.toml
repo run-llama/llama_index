@@ -49,6 +49,7 @@ SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
 beautifulsoup4 = "^4.12.2"
 dataclasses-json = "*"
 deprecated = ">=1.2.9.3"
+elasticsearch = {optional = true, version = "^8.11.1"}
 fsspec = ">=2023.5.0"
 httpx = "*"
 langchain = {optional = true, version = ">=0.0.303"}
@@ -111,6 +112,7 @@ query_tools = [
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 boto3 = "1.33.6"  # needed for tests
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
+elasticsearch = "^8.11.1"
 google-ai-generativelanguage = {python = ">=3.9,<3.12", version = "^0.4.0"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
