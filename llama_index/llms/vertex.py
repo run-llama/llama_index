@@ -78,15 +78,18 @@ class Vertex(LLM):
         callback_manager = callback_manager or CallbackManager([])
 
         self._is_gemini = False
+        self._is_chat_model = False
         if model in CHAT_MODELS:
             from vertexai.language_models import ChatModel
 
             self._chat_client = ChatModel.from_pretrained(model)
+            self._is_chat_model = True
         elif model in CODE_CHAT_MODELS:
             from vertexai.language_models import CodeChatModel
 
             self._chat_client = CodeChatModel.from_pretrained(model)
             iscode = True
+            self._is_chat_model = True
         elif model in CODE_MODELS:
             from vertexai.language_models import CodeGenerationModel
 
@@ -102,6 +105,7 @@ class Vertex(LLM):
             self._client = create_gemini_client(model)
             self._chat_client = self._client
             self._is_gemini = True
+            self._is_chat_model = True
         else:
             raise (ValueError(f"Model {model} not found, please verify the model name"))
 
@@ -128,6 +132,7 @@ class Vertex(LLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
+            is_chat_model=self._is_chat_model,
             model_name=self.model,
         )
 
