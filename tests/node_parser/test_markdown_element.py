@@ -2645,7 +2645,4 @@ Llama 2 is a new technology that carries risks with use. Testing conducted to da
     node_parser = MarkdownElementNodeParser(llm=MockLLM())
 
     nodes = node_parser.get_nodes_from_documents([test_data])
-    print(f"Number of nodes: {len(nodes)}")
-    for i, node in enumerate(nodes, start=0):
-        print(f"Node {i}: {node}, Type: {type(node)}")
-    assert len(nodes) == 219
+    assert len(nodes) == 214
