@@ -58,6 +58,21 @@ def test_add_stores_data(node_embeddings: List[TextNode]) -> None:
 
 
 @pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
+def test_add_stores_data_multiple_connections(node_embeddings: List[TextNode]) -> None:
+    client = qdrant_client.QdrantClient(":memory:")
+    qdrant_vector_store_a = QdrantVectorStore(collection_name="test", client=client)
+    qdrant_vector_store_b = QdrantVectorStore(collection_name="test", client=client)
+
+    with pytest.raises(ValueError):
+        client.count("test")  # That indicates the collection does not exist
+
+    qdrant_vector_store_a.add([node_embeddings[0]])
+    qdrant_vector_store_b.add([node_embeddings[1]])
+
+    assert client.count("test").count == 2
+
+
+@pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
 def test_build_query_filter_returns_none() -> None:
     client = qdrant_client.QdrantClient(":memory:")
     qdrant_vector_store = QdrantVectorStore(collection_name="test", client=client)
