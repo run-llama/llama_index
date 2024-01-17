@@ -4,6 +4,9 @@ from typing import Any, Dict, List, Optional, Sequence
 from llama_index.bridge.pydantic import Field
 from llama_index.llms import LLM, ChatMessage, ChatResponse, OpenAI
 from llama_index.postprocessor.types import BaseNodePostprocessor
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.default_prompts import RANKGPT_RERANK_PROMPT
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.utils import print_text
 
@@ -22,14 +25,24 @@ class RankGPTRerank(BaseNodePostprocessor):
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
     )
+    rankgpt_rerank_prompt: BasePromptTemplate = Field(
+        description="rankGPT rerank prompt."
+    )
 
     def __init__(
         self,
         top_n: int = 5,
         llm: Optional[LLM] = None,
         verbose: bool = False,
+        rankgpt_rerank_prompt: Optional[BasePromptTemplate] = None,
     ):
-        super().__init__(verbose=verbose, llm=llm, top_n=top_n)
+        rankgpt_rerank_prompt = rankgpt_rerank_prompt or RANKGPT_RERANK_PROMPT
+        super().__init__(
+            verbose=verbose,
+            llm=llm,
+            top_n=top_n,
+            rankgpt_rerank_prompt=rankgpt_rerank_prompt,
+        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -67,6 +80,15 @@ class RankGPTRerank(BaseNodePostprocessor):
         else:
             return nodes[: self.top_n]
 
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {"rankgpt_rerank_prompt": self.rankgpt_rerank_prompt}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "rankgpt_rerank_prompt" in prompts:
+            self.rankgpt_rerank_prompt = prompts["rankgpt_rerank_prompt"]
+
     def _get_prefix_prompt(self, query: str, num: int) -> List[ChatMessage]:
         return [
             ChatMessage(
@@ -81,7 +103,7 @@ class RankGPTRerank(BaseNodePostprocessor):
         ]
 
     def _get_post_prompt(self, query: str, num: int) -> str:
-        return f"Search Query: {query}. \nRank the {num} passages above based on their relevance to the search query. The passages should be listed in descending order using identifiers. The most relevant passages should be listed first. The output format should be [] > [], e.g., [1] > [2]. Only response the ranking results, do not say any word or explain."
+        return self.rankgpt_rerank_prompt.format(query=query, num=num)
 
     def create_permutation_instruction(self, item: Dict[str, Any]) -> List[ChatMessage]:
         query = item["query"]

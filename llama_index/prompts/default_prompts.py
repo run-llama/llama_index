@@ -428,3 +428,21 @@ DEFAULT_CHOICE_SELECT_PROMPT_TMPL = (
 DEFAULT_CHOICE_SELECT_PROMPT = PromptTemplate(
     DEFAULT_CHOICE_SELECT_PROMPT_TMPL, prompt_type=PromptType.CHOICE_SELECT
 )
+
+
+############################################
+# RankGPT Rerank template
+############################################
+
+RANKGPT_RERANK_PROMPT_TMPL = (
+    "Search Query: {query}. \nRank the {num} passages above "
+    "based on their relevance to the search query. The passages "
+    "should be listed in descending order using identifiers. "
+    "The most relevant passages should be listed first. "
+    "The output format should be [] > [], e.g., [1] > [2]. "
+    "Only response the ranking results, "
+    "do not say any word or explain."
+)
+RANKGPT_RERANK_PROMPT = PromptTemplate(
+    RANKGPT_RERANK_PROMPT_TMPL, prompt_type=PromptType.RANKGPT_RERANK
+)
