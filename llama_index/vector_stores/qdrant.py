@@ -334,7 +334,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 )
         except ValueError as exc:
             if "already exists" not in str(exc):
-                raise exc
+                raise exc  # noqa: TRY201
             logger.warning(
                 "Collection %s already exists, skipping collection creation.",
                 collection_name,
@@ -371,7 +371,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 )
         except ValueError as exc:
             if "already exists" not in str(exc):
-                raise exc
+                raise exc  # noqa: TRY201
             logger.warning(
                 "Collection %s already exists, skipping collection creation.",
                 collection_name,
