@@ -242,6 +242,20 @@ postprocessor.postprocess_nodes(nodes)
 
 A full example notebook is available [here](/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb).
 
+## (Beta) RankGPT
+
+Uses RankGPT agent to rerank documents according to relevance. Returns the top N ranked nodes.
+
+```python
+from llama_index.postprocessor import RankGPTRerank
+
+postprocessor = RankGPTRerank(top_n=3, llm=OpenAI(model="gpt-3.5-turbo-16k"))
+
+postprocessor.postprocess_nodes(nodes)
+```
+
+Full notebook guide is available [her for Van Gogh](/examples/node_postprocessor/rankGPT.ipynb).
+
 ## All Notebooks
 
 ```{toctree}
@@ -258,4 +272,5 @@ maxdepth: 1
 /examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
 /examples/node_postprocessor/MetadataReplacementDemo.ipynb
 /examples/node_postprocessor/LongContextReorder.ipynb
+/examples/node_postprocessor/rankGPT.ipynb
 ```
