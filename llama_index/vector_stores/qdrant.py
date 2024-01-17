@@ -309,7 +309,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http import models as rest
 
         if self.enable_hybrid:
-            self._client.recreate_collection(
+            self._client.create_collection(
                 collection_name=collection_name,
                 vectors_config={
                     "text-dense": rest.VectorParams(
@@ -324,7 +324,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 },
             )
         else:
-            self._client.recreate_collection(
+            self._client.create_collection(
                 collection_name=collection_name,
                 vectors_config=rest.VectorParams(
                     size=vector_size,
@@ -338,7 +338,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http import models as rest
 
         if self.enable_hybrid:
-            await self._aclient.recreate_collection(
+            await self._aclient.create_collection(
                 collection_name=collection_name,
                 vectors_config={
                     "text-dense": rest.VectorParams(
@@ -353,7 +353,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 },
             )
         else:
-            await self._aclient.recreate_collection(
+            await self._aclient.create_collection(
                 collection_name=collection_name,
                 vectors_config=rest.VectorParams(
                     size=vector_size,
