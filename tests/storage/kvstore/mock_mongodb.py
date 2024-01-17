@@ -66,6 +66,19 @@ class MockMongoCollection:
         insert_result.inserted_ids = inserted_ids
         return insert_result
 
+    def bulk_write(self, operations: List[dict]) -> Any:
+        for operation in operations:
+            if operation["name"] == "insertOne":
+                self.insert_one(operation["document"])
+            elif operation["name"] == "updateOne":
+                self.update_one(operation["filter"], operation["update"])
+            elif operation["name"] == "replaceOne":
+                self.replace_one(operation["filter"], operation["replacement"])
+            elif operation["name"] == "deleteOne":
+                self.delete_one(operation["filter"])
+            else:
+                raise NotImplementedError
+
 
 class MockMongoDB:
     def __init__(self) -> None:
