@@ -123,6 +123,15 @@ from traceloop.sdk import Traceloop
 Traceloop.init()
 ```
 
+#### Guides
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/callbacks/OpenLLMetry.ipynb
+```
+
 ![](/_static/integrations/openllmetry.png)
 
 ### Arize Phoenix

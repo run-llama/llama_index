@@ -60,7 +60,7 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
             if output_parser is None:
                 output_parser = SubQuestionOutputParser()
             self._prompt = PromptTemplate(
-                prompts["question_gen_prompt"].template_str, output_parser=output_parser
+                prompts["question_gen_prompt"].template, output_parser=output_parser
             )
 
     def generate(

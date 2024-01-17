@@ -5,10 +5,10 @@ import pytest
 from llama_index.agent.openai.base import OpenAIAgent
 from llama_index.agent.openai.step import call_tool_with_error_handling
 from llama_index.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
+from llama_index.core.llms.types import ChatMessage, ChatResponse
 from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.mock import MockLLM
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.types import ChatMessage, ChatResponse
 from llama_index.tools.function_tool import FunctionTool
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
@@ -34,6 +34,7 @@ def mock_chat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
                 ),
                 finish_reason="stop",
                 index=0,
+                logprobs=None,
             )
         ],
     )
@@ -63,6 +64,7 @@ def mock_chat_stream(
                     role="assistant",
                     content="\n\nThis is a test!",
                 ),
+                logprobs=None,
             )
         ],
     )
@@ -99,6 +101,7 @@ async def mock_achat_stream(
                         role="assistant",
                         content="\n\nThis is a test!",
                     ),
+                    logprobs=None,
                 )
             ],
         )

@@ -1,4 +1,5 @@
 import sys
+from multiprocessing import cpu_count
 
 import pytest
 from llama_index.embeddings import OpenAIEmbedding
@@ -8,6 +9,7 @@ from llama_index.llms import MockLLM
 from llama_index.node_parser import SentenceSplitter
 from llama_index.readers import ReaderConfig, StringIterableReader
 from llama_index.schema import Document
+from llama_index.storage.docstore import SimpleDocumentStore
 
 python_version = sys.version
 
@@ -132,3 +134,22 @@ def test_from_pipeline_name() -> None:
     # TODO: nodes are stored on AWS, how to get them?
     # assert len(nodes) == 2
     assert len(nodes[0].metadata) > 0
+
+
+def test_pipeline_parallel() -> None:
+    document1 = Document.example()
+    document1.id_ = "1"
+    document2 = Document(text="One\n\n\nTwo\n\n\nThree.", doc_id="2")
+
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        ],
+        docstore=SimpleDocumentStore(),
+    )
+
+    num_workers = min(2, cpu_count())
+    nodes = pipeline.run(documents=[document1, document2], num_workers=num_workers)
+    assert len(nodes) == 20
+    assert pipeline.docstore is not None
+    assert len(pipeline.docstore.docs) == 2

@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Optional, Tuple, Union
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.embeddings import BaseEmbedding
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.ingestion.pipeline import run_transformations

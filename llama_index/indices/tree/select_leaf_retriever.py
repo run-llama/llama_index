@@ -4,7 +4,8 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.response.schema import Response
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.tree.utils import get_numbered_text_from_nodes
@@ -19,7 +20,6 @@ from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT_MULTIPLE,
     DEFAULT_TEXT_QA_PROMPT,
 )
-from llama_index.response.schema import Response
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
 from llama_index.utils import print_text, truncate_text
@@ -73,6 +73,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         child_branch_factor: int = 1,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
         **kwargs: Any,
     ):
         self._index = index
@@ -87,8 +88,9 @@ class TreeSelectLeafRetriever(BaseRetriever):
             query_template_multiple or DEFAULT_QUERY_PROMPT_MULTIPLE
         )
         self.child_branch_factor = child_branch_factor
-        self._verbose = verbose
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     def _query_with_selected_node(
         self,

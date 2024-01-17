@@ -110,7 +110,7 @@ class QdrantReader(BaseReader):
                  # gte, lte, gt, lt supported
                  rang_search_mapping={"text_field": {"gte": 0.1, "lte": 0.2}},
                  limit=10
-             )
+            )
 
         Returns:
             List[Document]: A list of documents.

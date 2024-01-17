@@ -6,11 +6,8 @@ from typing import Any, Dict, List, Literal, Optional
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks.base import CallbackManager
-from llama_index.embeddings.base import (
-    DEFAULT_EMBED_BATCH_SIZE,
-    BaseEmbedding,
-    Embedding,
-)
+from llama_index.constants import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.core.embeddings.base import BaseEmbedding, Embedding
 
 
 class PROVIDERS(str, Enum):

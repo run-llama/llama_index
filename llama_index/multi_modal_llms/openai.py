@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 
+import httpx
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
@@ -16,15 +17,7 @@ from llama_index.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
-from llama_index.llms.openai_utils import (
-    from_openai_message,
-    resolve_openai_credentials,
-    to_openai_message_dicts,
-)
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -33,6 +26,14 @@ from llama_index.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
+)
+from llama_index.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.llms.openai_utils import (
+    from_openai_message,
+    resolve_openai_credentials,
+    to_openai_message_dicts,
 )
 from llama_index.multi_modal_llms import (
     MultiModalLLM,
@@ -70,15 +71,20 @@ class OpenAIMultiModal(MultiModalLLM):
         gte=0,
     )
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
-    api_base: str = Field(description="The base URL for OpenAI API.")
+    api_base: str = Field(default=None, description="The base URL for OpenAI API.")
+    api_version: str = Field(description="The API version for OpenAI API.")
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
+    )
+    default_headers: Dict[str, str] = Field(
+        default=None, description="The default headers for API requests."
     )
 
     _messages_to_prompt: Callable = PrivateAttr()
     _completion_to_prompt: Callable = PrivateAttr()
     _client: SyncOpenAI = PrivateAttr()
     _aclient: AsyncOpenAI = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -96,6 +102,8 @@ class OpenAIMultiModal(MultiModalLLM):
         messages_to_prompt: Optional[Callable] = None,
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
+        default_headers: Optional[Dict[str, str]] = None,
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
@@ -119,7 +127,10 @@ class OpenAIMultiModal(MultiModalLLM):
             api_base=api_base,
             api_version=api_version,
             callback_manager=callback_manager,
+            default_headers=default_headers,
+            **kwargs,
         )
+        self._http_client = http_client
         self._client, self._aclient = self._get_clients(**kwargs)
 
     def _get_clients(self, **kwargs: Any) -> Tuple[SyncOpenAI, AsyncOpenAI]:
@@ -144,6 +155,8 @@ class OpenAIMultiModal(MultiModalLLM):
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
+            "default_headers": self.default_headers,
+            "http_client": self._http_client,
             "timeout": self.timeout,
             **kwargs,
         }
@@ -178,7 +191,7 @@ class OpenAIMultiModal(MultiModalLLM):
             # If max_tokens is None, don't include in the payload:
             # https://platform.openai.com/docs/api-reference/chat
             # https://platform.openai.com/docs/api-reference/completions
-            base_kwargs["max_tokens"] = str(self.max_new_tokens)
+            base_kwargs["max_tokens"] = self.max_new_tokens
         return {**base_kwargs, **self.additional_kwargs}
 
     def _get_response_token_counts(self, raw_response: Any) -> dict:

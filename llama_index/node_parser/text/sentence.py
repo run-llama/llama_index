@@ -26,6 +26,7 @@ DEFAULT_PARAGRAPH_SEP = "\n\n\n"
 class _Split:
     text: str  # the split text
     is_sentence: bool  # save whether this is a full sentence
+    token_size: int  # token length of split text
 
 
 class SentenceSplitter(MetadataAwareTextSplitter):
@@ -197,15 +198,23 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         4. split by default separator (" ")
 
         """
+        token_size = self._token_size(text)
         if self._token_size(text) <= chunk_size:
-            return [_Split(text, is_sentence=True)]
+            return [_Split(text, is_sentence=True, token_size=token_size)]
 
         text_splits_by_fns, is_sentence = self._get_splits_by_fns(text)
 
         text_splits = []
         for text_split_by_fns in text_splits_by_fns:
-            if self._token_size(text_split_by_fns) <= chunk_size:
-                text_splits.append(_Split(text_split_by_fns, is_sentence=is_sentence))
+            token_size = self._token_size(text_split_by_fns)
+            if token_size <= chunk_size:
+                text_splits.append(
+                    _Split(
+                        text_split_by_fns,
+                        is_sentence=is_sentence,
+                        token_size=token_size,
+                    )
+                )
             else:
                 recursive_text_splits = self._split(
                     text_split_by_fns, chunk_size=chunk_size
@@ -249,21 +258,20 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
         while len(splits) > 0:
             cur_split = splits[0]
-            cur_split_len = len(self._tokenizer(cur_split.text))
-            if cur_split_len > chunk_size:
+            if cur_split.token_size > chunk_size:
                 raise ValueError("Single token exceeded chunk size")
-            if cur_chunk_len + cur_split_len > chunk_size and not new_chunk:
+            if cur_chunk_len + cur_split.token_size > chunk_size and not new_chunk:
                 # if adding split to current chunk exceeds chunk size: close out chunk
                 close_chunk()
             else:
                 if (
                     cur_split.is_sentence
-                    or cur_chunk_len + cur_split_len <= chunk_size
+                    or cur_chunk_len + cur_split.token_size <= chunk_size
                     or new_chunk  # new chunk, always add at least one split
                 ):
                     # add split to chunk
-                    cur_chunk_len += cur_split_len
-                    cur_chunk.append((cur_split.text, cur_split_len))
+                    cur_chunk_len += cur_split.token_size
+                    cur_chunk.append((cur_split.text, cur_split.token_size))
                     splits.pop(0)
                     new_chunk = False
                 else:

@@ -10,12 +10,12 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
     ToolOutput,
 )
+from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
 from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import ChatMessage, MessageRole
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.base import PromptTemplate
@@ -209,7 +209,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             system_message_content = self._system_prompt + "\n" + system_message_content
 
         system_message = ChatMessage(
-            content=system_message_content, role=MessageRole.SYSTEM
+            content=system_message_content, role=self._llm.metadata.system_role
         )
 
         initial_token_count = self._token_counter.estimate_tokens_in_messages(
@@ -256,7 +256,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             system_message_content = self._system_prompt + "\n" + system_message_content
 
         system_message = ChatMessage(
-            content=system_message_content, role=MessageRole.SYSTEM
+            content=system_message_content, role=self._llm.metadata.system_role
         )
 
         initial_token_count = self._token_counter.estimate_tokens_in_messages(

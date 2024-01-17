@@ -1,4 +1,5 @@
-"""Qdrant vector store index.
+"""
+Qdrant vector store index.
 
 An index that is built on top of an existing Qdrant collection.
 
@@ -34,7 +35,8 @@ import_err_msg = (
 
 
 class QdrantVectorStore(BasePydanticVectorStore):
-    """Qdrant Vector Store.
+    """
+    Qdrant Vector Store.
 
     In this vector store, embeddings and docs are stored within a
     Qdrant collection.
@@ -127,9 +129,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
             self._sparse_query_fn = sparse_query_fn or default_sparse_encoder(
                 "naver/efficient-splade-VI-BT-large-query"
             )
-        self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
-            HybridFusionCallable, relative_score_fusion
-        )
+            self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
+                HybridFusionCallable, relative_score_fusion
+            )
 
         super().__init__(
             collection_name=collection_name,
@@ -199,7 +201,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return points, ids
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -223,7 +226,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return ids
 
     async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
-        """Asynchronous method to add nodes to Qdrant index.
+        """
+        Asynchronous method to add nodes to Qdrant index.
 
         Args:
             nodes: List[BaseNode]: List of nodes with embeddings.
@@ -304,28 +308,36 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Create a Qdrant collection."""
         from qdrant_client.http import models as rest
 
-        if self.enable_hybrid:
-            self._client.recreate_collection(
-                collection_name=collection_name,
-                vectors_config={
-                    "text-dense": rest.VectorParams(
+        try:
+            if self.enable_hybrid:
+                self._client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config={
+                        "text-dense": rest.VectorParams(
+                            size=vector_size,
+                            distance=rest.Distance.COSINE,
+                        )
+                    },
+                    sparse_vectors_config={
+                        "text-sparse": rest.SparseVectorParams(
+                            index=rest.SparseIndexParams()
+                        )
+                    },
+                )
+            else:
+                self._client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=rest.VectorParams(
                         size=vector_size,
                         distance=rest.Distance.COSINE,
-                    )
-                },
-                sparse_vectors_config={
-                    "text-sparse": rest.SparseVectorParams(
-                        index=rest.SparseIndexParams()
-                    )
-                },
-            )
-        else:
-            self._client.recreate_collection(
-                collection_name=collection_name,
-                vectors_config=rest.VectorParams(
-                    size=vector_size,
-                    distance=rest.Distance.COSINE,
-                ),
+                    ),
+                )
+        except ValueError as exc:
+            if "already exists" not in str(exc):
+                raise exc  # noqa: TRY201
+            logger.warning(
+                "Collection %s already exists, skipping collection creation.",
+                collection_name,
             )
         self._collection_initialized = True
 
@@ -333,28 +345,36 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Asynchronous method to create a Qdrant collection."""
         from qdrant_client.http import models as rest
 
-        if self.enable_hybrid:
-            await self._aclient.recreate_collection(
-                collection_name=collection_name,
-                vectors_config={
-                    "text-dense": rest.VectorParams(
+        try:
+            if self.enable_hybrid:
+                await self._aclient.create_collection(
+                    collection_name=collection_name,
+                    vectors_config={
+                        "text-dense": rest.VectorParams(
+                            size=vector_size,
+                            distance=rest.Distance.COSINE,
+                        )
+                    },
+                    sparse_vectors_config={
+                        "text-sparse": rest.SparseVectorParams(
+                            index=rest.SparseIndexParams()
+                        )
+                    },
+                )
+            else:
+                await self._aclient.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=rest.VectorParams(
                         size=vector_size,
                         distance=rest.Distance.COSINE,
-                    )
-                },
-                sparse_vectors_config={
-                    "text-sparse": rest.SparseVectorParams(
-                        index=rest.SparseIndexParams()
-                    )
-                },
-            )
-        else:
-            await self._aclient.recreate_collection(
-                collection_name=collection_name,
-                vectors_config=rest.VectorParams(
-                    size=vector_size,
-                    distance=rest.Distance.COSINE,
-                ),
+                    ),
+                )
+        except ValueError as exc:
+            if "already exists" not in str(exc):
+                raise exc  # noqa: TRY201
+            logger.warning(
+                "Collection %s already exists, skipping collection creation.",
+                collection_name,
             )
         self._collection_initialized = True
 
@@ -385,7 +405,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
@@ -449,8 +470,39 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 self.parse_to_query_result(sparse_response[1]),
                 # NOTE: only for hybrid search (0 for sparse search, 1 for dense search)
                 alpha=query.alpha or 0.5,
-                top_k=query.similarity_top_k,
+                # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
+                top_k=query.hybrid_top_k or query.similarity_top_k,
             )
+        elif (
+            query.mode == VectorStoreQueryMode.SPARSE
+            and self.enable_hybrid
+            and self._sparse_query_fn is not None
+            and query.query_str is not None
+        ):
+            sparse_indices, sparse_embedding = self._sparse_query_fn(
+                [query.query_str],
+            )
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
+
+            sparse_response = self._client.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedSparseVector(
+                            name="text-sparse",
+                            vector=rest.SparseVector(
+                                indices=sparse_indices[0],
+                                values=sparse_embedding[0],
+                            ),
+                        ),
+                        limit=sparse_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
+            return self.parse_to_query_result(sparse_response[0])
+
         elif self.enable_hybrid:
             # search for dense vectors only
             response = self._client.search_batch(
@@ -482,7 +534,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        """Asynchronous method to query index for top k most similar nodes.
+        """
+        Asynchronous method to query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
@@ -545,7 +598,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 self.parse_to_query_result(sparse_response[0]),
                 self.parse_to_query_result(sparse_response[1]),
                 alpha=query.alpha or 0.5,
-                top_k=query.similarity_top_k,
+                # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
+                top_k=query.hybrid_top_k or query.similarity_top_k,
             )
         elif self.enable_hybrid:
             # search for dense vectors only
@@ -576,7 +630,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             return self.parse_to_query_result(response)
 
     def parse_to_query_result(self, response: List[Any]) -> VectorStoreQueryResult:
-        """Convert vector store response to VectorStoreQueryResult.
+        """
+        Convert vector store response to VectorStoreQueryResult.
 
         Args:
             response: List[Any]: List of results returned from the vector store.
@@ -620,6 +675,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             FieldCondition,
             Filter,
             MatchAny,
+            MatchExcept,
+            MatchText,
             MatchValue,
             Range,
         )
@@ -695,6 +752,20 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     FieldCondition(
                         key=subfilter.key,
                         range=Range(lte=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == "text_match":
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchText(text=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == "!=":
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchExcept(**{"except": [subfilter.value]}),
                     )
                 )
 

@@ -5,14 +5,14 @@ from typing_extensions import override
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import llm_completion_callback
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.llms.base import llm_completion_callback
+from llama_index.llms.custom import CustomLLM
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
@@ -89,7 +89,9 @@ class _BaseGradientLLM(CustomLLM):
 
     @llm_completion_callback()
     @override
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         return CompletionResponse(
             text=self._model.complete(
                 query=prompt,
@@ -100,7 +102,9 @@ class _BaseGradientLLM(CustomLLM):
 
     @llm_completion_callback()
     @override
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         grdt_reponse = await self._model.acomplete(
             query=prompt,
             max_generated_token_count=self.max_tokens,
@@ -113,6 +117,7 @@ class _BaseGradientLLM(CustomLLM):
     def stream_complete(
         self,
         prompt: str,
+        formatted: bool = False,
         **kwargs: Any,
     ) -> CompletionResponseGen:
         raise NotImplementedError

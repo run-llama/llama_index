@@ -6,10 +6,10 @@ from tqdm import tqdm
 
 from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.callbacks.base import CallbackManager
+from llama_index.core.response.schema import PydanticResponse
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.node_parser.interface import NodeParser
-from llama_index.response.schema import PydanticResponse
 from llama_index.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.utils import get_tqdm_iterable
 
@@ -177,6 +177,22 @@ class BaseElementNodeParser(NodeParser):
                 base_nodes.append(node)
 
         return base_nodes, node_mappings
+
+    def get_nodes_and_objects(
+        self, nodes: List[BaseNode]
+    ) -> Tuple[List[BaseNode], List[IndexNode]]:
+        base_nodes, node_mappings = self.get_base_nodes_and_mappings(nodes)
+
+        nodes = []
+        objects = []
+        for node in base_nodes:
+            if isinstance(node, IndexNode):
+                node.obj = node_mappings[node.index_id]
+                objects.append(node)
+            else:
+                nodes.append(node)
+
+        return nodes, objects
 
     def _get_nodes_from_buffer(
         self, buffer: List[str], node_parser: NodeParser

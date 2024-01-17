@@ -2,7 +2,7 @@ from typing import Any, List, Optional
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.core.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 from llama_index.embeddings.huggingface_utils import (
     DEFAULT_INSTRUCT_MODEL,
     get_query_instruct_for_model_name,

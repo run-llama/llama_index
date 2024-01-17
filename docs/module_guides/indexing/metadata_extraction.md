@@ -65,7 +65,7 @@ from llama_index.extractors import BaseExtractor
 
 
 class CustomExtractor(BaseExtractor):
-    def extract(self, nodes) -> List[Dict]:
+    async def aextract(self, nodes) -> List[Dict]:
         metadata_list = [
             {
                 "custom": node.metadata["document_title"]
@@ -76,6 +76,8 @@ class CustomExtractor(BaseExtractor):
         ]
         return metadata_list
 ```
+
+`extractor.extract()` will automatically call `aextract()` under the hood, to provide both sync and async entrypoints.
 
 In a more advanced example, it can also make use of an `llm` to extract features from the node content and the existing metadata. Refer to the [source code of the provided metadata extractors](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/extractors/metadata_extractors.py) for more details.
 

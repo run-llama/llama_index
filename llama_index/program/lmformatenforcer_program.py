@@ -1,5 +1,5 @@
 import json
-from typing import Any, Optional, Type, Union, cast
+from typing import Any, Dict, Optional, Type, Union, cast
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.huggingface import HuggingFaceLLM
@@ -87,15 +87,17 @@ class LMFormatEnforcerPydanticProgram(BaseLLMFunctionProgram):
 
     def __call__(
         self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
+        llm_kwargs = llm_kwargs or {}
         # While the format enforcer is active, any calls to the llm will have the format enforced.
         with activate_lm_format_enforcer(self.llm, self._token_enforcer_fn):
             json_schema_str = json.dumps(self.output_cls.schema())
             full_str = self._prompt_template_str.format(
                 *args, **kwargs, json_schema=json_schema_str
             )
-            output = self.llm.complete(full_str)
+            output = self.llm.complete(full_str, **llm_kwargs)
             text = output.text
             return self.output_cls.parse_raw(text)

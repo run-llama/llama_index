@@ -1,16 +1,23 @@
 from abc import abstractmethod
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import BaseModel
+from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.llm import LLM
-from llama_index.llms.types import ChatMessage
+from llama_index.schema import BaseComponent
+
+DEFAULT_CHAT_STORE_KEY = "chat_history"
 
 
-class BaseMemory(BaseModel):
+class BaseMemory(BaseComponent):
     """Base class for all memory types.
 
     NOTE: The interface for memory is not yet finalized and is subject to change.
     """
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "BaseMemory"
 
     @classmethod
     @abstractmethod

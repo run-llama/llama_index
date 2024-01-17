@@ -12,8 +12,8 @@ from llama_index.schema import BaseNode, TextNode
 
 def md_to_df(md_str: str) -> pd.DataFrame:
     """Convert Markdown to dataframe."""
-    # Replace " by \" in md_str
-    md_str = md_str.replace('"', '\\"')
+    # Replace " by "" in md_str
+    md_str = md_str.replace('"', '""')
 
     # Replace markdown pipe tables with commas
     md_str = md_str.replace("|", '","')
@@ -143,16 +143,21 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
 
         for idx, element in enumerate(elements):
             if element.type == "table":
-                if table_filters is not None:
-                    should_keep = all(tf(element) for tf in table_filters)
-                else:
-                    should_keep = True  # default to keeping all tables
+                should_keep = True
 
                 # verify that the table (markdown) have the same number of columns on each rows
                 table_lines = element.element.split("\n")
                 table_columns = [len(line.split("|")) for line in table_lines]
                 if len(set(table_columns)) > 1:
                     should_keep = False
+
+                # verify that the table (markdown) have at least 2 rows
+                if len(table_lines) < 2:
+                    should_keep = False
+
+                # apply the table filter, now only filter empty tables
+                if should_keep and table_filters is not None:
+                    should_keep = all(tf(element) for tf in table_filters)
 
                 # if the element is a table, convert it to a dataframe
                 if should_keep:

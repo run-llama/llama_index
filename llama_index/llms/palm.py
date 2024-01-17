@@ -5,14 +5,14 @@ from typing import Any, Callable, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import llm_completion_callback
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.llms.base import llm_completion_callback
+from llama_index.llms.custom import CustomLLM
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_PALM_MODEL = "models/text-bison-001"
@@ -101,7 +101,9 @@ class PaLM(CustomLLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         """Predict the answer to a query.
 
         Args:
@@ -121,7 +123,9 @@ class PaLM(CustomLLM):
         return CompletionResponse(text=completion.result, raw=completion.candidates[0])
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         """Stream the answer to a query.
 
         NOTE: this is a beta feature. Will try to build or use
