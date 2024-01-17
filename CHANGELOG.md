@@ -1,5 +1,19 @@
 # ChangeLog
 
+## [0.9.33] - 2024-01-17
+
+### New Features
+- Added RankGPT as a postprocessor (#10054)
+- Ensure backwards compatibility with new Pinecone client version bifucation (#9995)
+- Recursive retriever all the things (#10019)
+
+### Bug Fixes / Nits
+- BugFix: When using markdown element parser on a table containing comma (#9926)
+- extend auto-retrieval notebook (#10065)
+-  Updated the Attribute name in llm_generators  (#10070)
+- jaguar vector store add text_tag to add_kwargs in add() (#10057)
+- ReActive Agents w/ Context + updated stale link (#10058)
+
 ## [0.9.31] - 2024-01-15
 
 ### New Features
