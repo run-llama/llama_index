@@ -128,7 +128,6 @@ class Vertex(LLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            is_chat_model=True,
             model_name=self.model,
         )
 
