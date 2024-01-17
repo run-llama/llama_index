@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.bridge.pydantic import BaseModel, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.llms.llm import (
@@ -42,6 +42,11 @@ class BaseLLMPredictor(BaseComponent, ABC):
         data = super().to_dict(**kwargs)
         data["llm"] = self.llm.to_dict()
         return data
+
+    @property
+    @abstractmethod
+    def llm(self) -> LLM:
+        """Get LLM."""
 
     @property
     @abstractmethod
@@ -89,7 +94,8 @@ class LLMPredictor(BaseLLMPredictor):
     system_prompt: Optional[str]
     query_wrapper_prompt: Optional[BasePromptTemplate]
     pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT
-    llm: LLM = Field(description="LLM to use for prediction.")
+
+    _llm: LLM = PrivateAttr()
 
     def __init__(
         self,
@@ -100,16 +106,15 @@ class LLMPredictor(BaseLLMPredictor):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         """Initialize params."""
-        llm = resolve_llm(llm)
+        self._llm = resolve_llm(llm)
 
         if callback_manager:
-            self.llm.callback_manager = callback_manager
+            self._llm.callback_manager = callback_manager
 
         super().__init__(
             system_prompt=system_prompt,
             query_wrapper_prompt=query_wrapper_prompt,
             pydantic_program_mode=pydantic_program_mode,
-            llm=llm,
         )
 
     @classmethod
@@ -133,14 +138,19 @@ class LLMPredictor(BaseLLMPredictor):
         return "LLMPredictor"
 
     @property
+    def llm(self) -> LLM:
+        """Get LLM."""
+        return self._llm
+
+    @property
     def callback_manager(self) -> CallbackManager:
         """Get callback manager."""
-        return self.llm.callback_manager
+        return self._llm.callback_manager
 
     @property
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
-        return self.llm.metadata
+        return self._llm.metadata
 
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any
@@ -153,7 +163,7 @@ class LLMPredictor(BaseLLMPredictor):
         with self.callback_manager.event(
             CBEventType.TEMPLATING,
             payload={
-                EventPayload.TEMPLATE: prompt.get_template(llm=self.llm),
+                EventPayload.TEMPLATE: prompt.get_template(llm=self._llm),
                 EventPayload.TEMPLATE_VARS: template_vars,
                 EventPayload.SYSTEM_PROMPT: self.system_prompt,
                 EventPayload.QUERY_WRAPPER_PROMPT: self.query_wrapper_prompt,
@@ -172,7 +182,7 @@ class LLMPredictor(BaseLLMPredictor):
         program = get_program_for_llm(
             output_cls,
             prompt,
-            self.llm,
+            self._llm,
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
@@ -190,7 +200,7 @@ class LLMPredictor(BaseLLMPredictor):
         program = get_program_for_llm(
             output_cls,
             prompt,
-            self.llm,
+            self._llm,
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
@@ -208,15 +218,15 @@ class LLMPredictor(BaseLLMPredictor):
 
         if output_cls is not None:
             output = self._run_program(output_cls, prompt, **prompt_args)
-        elif self.llm.metadata.is_chat_model:
-            messages = prompt.format_messages(llm=self.llm, **prompt_args)
+        elif self._llm.metadata.is_chat_model:
+            messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
-            chat_response = self.llm.chat(messages)
+            chat_response = self._llm.chat(messages)
             output = chat_response.message.content or ""
         else:
-            formatted_prompt = prompt.format(llm=self.llm, **prompt_args)
+            formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             formatted_prompt = self._extend_prompt(formatted_prompt)
-            response = self.llm.complete(formatted_prompt)
+            response = self._llm.complete(formatted_prompt)
             output = response.text
 
         logger.debug(output)
@@ -235,15 +245,15 @@ class LLMPredictor(BaseLLMPredictor):
 
         self._log_template_data(prompt, **prompt_args)
 
-        if self.llm.metadata.is_chat_model:
-            messages = prompt.format_messages(llm=self.llm, **prompt_args)
+        if self._llm.metadata.is_chat_model:
+            messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
-            chat_response = self.llm.stream_chat(messages)
+            chat_response = self._llm.stream_chat(messages)
             stream_tokens = stream_chat_response_to_tokens(chat_response)
         else:
-            formatted_prompt = prompt.format(llm=self.llm, **prompt_args)
+            formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             formatted_prompt = self._extend_prompt(formatted_prompt)
-            stream_response = self.llm.stream_complete(formatted_prompt)
+            stream_response = self._llm.stream_complete(formatted_prompt)
             stream_tokens = stream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
@@ -258,15 +268,15 @@ class LLMPredictor(BaseLLMPredictor):
 
         if output_cls is not None:
             output = await self._arun_program(output_cls, prompt, **prompt_args)
-        elif self.llm.metadata.is_chat_model:
-            messages = prompt.format_messages(llm=self.llm, **prompt_args)
+        elif self._llm.metadata.is_chat_model:
+            messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
-            chat_response = await self.llm.achat(messages)
+            chat_response = await self._llm.achat(messages)
             output = chat_response.message.content or ""
         else:
-            formatted_prompt = prompt.format(llm=self.llm, **prompt_args)
+            formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             formatted_prompt = self._extend_prompt(formatted_prompt)
-            response = await self.llm.acomplete(formatted_prompt)
+            response = await self._llm.acomplete(formatted_prompt)
             output = response.text
 
         logger.debug(output)
@@ -285,15 +295,15 @@ class LLMPredictor(BaseLLMPredictor):
 
         self._log_template_data(prompt, **prompt_args)
 
-        if self.llm.metadata.is_chat_model:
-            messages = prompt.format_messages(llm=self.llm, **prompt_args)
+        if self._llm.metadata.is_chat_model:
+            messages = prompt.format_messages(llm=self._llm, **prompt_args)
             messages = self._extend_messages(messages)
-            chat_response = await self.llm.astream_chat(messages)
+            chat_response = await self._llm.astream_chat(messages)
             stream_tokens = await astream_chat_response_to_tokens(chat_response)
         else:
-            formatted_prompt = prompt.format(llm=self.llm, **prompt_args)
+            formatted_prompt = prompt.format(llm=self._llm, **prompt_args)
             formatted_prompt = self._extend_prompt(formatted_prompt)
-            stream_response = await self.llm.astream_complete(formatted_prompt)
+            stream_response = await self._llm.astream_complete(formatted_prompt)
             stream_tokens = await astream_completion_response_to_tokens(stream_response)
         return stream_tokens
 
