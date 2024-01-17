@@ -47,6 +47,7 @@ def default_jsonalyzer(
         query (str): The query to execute.
         prompt (BasePromptTemplate): The prompt to use.
         service_context (Optional[ServiceContext]): The service context.
+        table_name (str): The table name to use, defaults to DEFAULT_TABLE_NAME.
 
     Returns:
         Tuple[str, Dict[str, Any], List[Dict[str, Any]]]: The SQL Query,
@@ -61,16 +62,20 @@ def default_jsonalyzer(
         )
 
         raise ImportError(IMPORT_ERROR_MSG) from exc
+    # Instantiate in-memory SQLite database
     db = sqlite_utils.Database(memory=True)
     try:
+        # Load list of dictionaries into SQLite database
         db[table_name].insert_all(list_of_dict)
     except sqlite_utils.db_exceptions.IntegrityError as exc:
         print_text(f"Error inserting into table {table_name}, expected format:")
         print_text("[{col1: val1, col2: val2, ...}, ...]")
         raise ValueError("Invalid list_of_dict") from exc
 
+    # Get the table schema
     table_schema = db[table_name].columns_dict
 
+    # Get the SQL query with text-to-SQL prompt
     sql_query = service_context.llm.predict(
         prompt,
         table_name=table_name,
@@ -79,6 +84,7 @@ def default_jsonalyzer(
     )
 
     try:
+        # Execute the SQL query
         results = list(db.query(sql_query))
     except sqlite_utils.db_exceptions.OperationalError as exc:
         print_text(f"Error executing query: {sql_query}")
@@ -153,6 +159,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
         if self._verbose:
             print_text(f"Query: {query}\n", color="green")
 
+        # Perform the analysis
         sql_query, table_schema, results = self._analyzer(
             self._list_of_dict,
             query,
@@ -193,6 +200,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
         if self._verbose:
             print_text(f"Query: {query}", color="green")
 
+        # Perform the analysis
         sql_query, table_schema, results = self._analyzer(
             self._list_of_dict,
             query,
