@@ -11,7 +11,7 @@ from typing import (
     runtime_checkable,
 )
 
-from llama_index.bridge.pydantic import BaseModel, Field, validator
+from llama_index.bridge.pydantic import BaseModel, Field, root_validator, validator
 from llama_index.callbacks import CBEventType, EventPayload
 from llama_index.core.llms.types import (
     ChatMessage,
@@ -148,6 +148,14 @@ class LLM(BaseLLM):
         cls, completion_to_prompt: Optional[CompletionToPromptType]
     ) -> CompletionToPromptType:
         return completion_to_prompt or default_completion_to_prompt
+
+    @root_validator
+    def check_prompts(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if values.get("completion_to_prompt") is None:
+            values["completion_to_prompt"] = default_completion_to_prompt
+        if values.get("messages_to_prompt") is None:
+            values["messages_to_prompt"] = generic_messages_to_prompt
+        return values
 
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any
