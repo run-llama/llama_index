@@ -114,19 +114,29 @@ def legacy_metadata_dict_to_node(
 
     # remove other known fields
     metadata.pop(text_key, None)
-    metadata.pop("id", None)
-    metadata.pop("document_id", None)
-    metadata.pop("doc_id", None)
-    metadata.pop("ref_doc_id", None)
+
+    id_ = metadata.pop("id", None)
+    document_id = metadata.pop("document_id", None)
+    doc_id = metadata.pop("doc_id", None)
+    ref_doc_id = metadata.pop("ref_doc_id", None)
+
+    # don't remove id's from metadata that llama-index doesn't know about
+    ref_doc_id_info = relationships.get(NodeRelationship.PARENT, None)
+    if ref_doc_id_info is not None:
+        ref_doc_id = ref_doc_id_info.node_id
+
+    if id_ is not None and id_ != ref_doc_id:
+        metadata["id"] = id_
+    if document_id is not None and document_id != ref_doc_id:
+        metadata["document_id"] = document_id
+    if doc_id is not None and doc_id != ref_doc_id:
+        metadata["doc_id"] = doc_id
 
     # remaining metadata is metadata or node_info
     new_metadata = {}
     for key, val in metadata.items():
-        # NOTE: right now we enforce metadata to be dict of simple types.
-        #       dump anything that's not a simple type into node_info.
-        if isinstance(val, (str, int, float, type(None))):
-            new_metadata[key] = val
-        else:
-            node_info[key] = val
+        # don't enforce types on metadata anymore (we did in the past)
+        # since how we store this data now has been updated
+        new_metadata[key] = val
 
     return new_metadata, node_info, relationships

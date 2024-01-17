@@ -1,10 +1,10 @@
 from typing import List, Optional, Sequence
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.prompts.mixin import PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import NodeWithScore, QueryBundle
 
 

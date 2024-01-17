@@ -3,9 +3,9 @@ import pickle
 import pytest
 from llama_index.llms import ChatMessage, MessageRole
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
-from llama_index.utils import GlobalsHelper
+from llama_index.utils import get_tokenizer
 
-tokenizer = GlobalsHelper().tokenizer
+tokenizer = get_tokenizer()
 
 USER_CHAT_MESSAGE = ChatMessage(role=MessageRole.USER, content="first message")
 USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(USER_CHAT_MESSAGE.content)))

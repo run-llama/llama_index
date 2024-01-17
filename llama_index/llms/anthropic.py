@@ -1,14 +1,9 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_TEMPERATURE
-from llama_index.llms.anthropic_utils import (
-    anthropic_modelname_to_contextsize,
-    messages_to_anthropic_prompt,
-)
-from llama_index.llms.base import (
-    LLM,
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -18,6 +13,12 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+)
+from llama_index.llms.anthropic_utils import (
+    anthropic_modelname_to_contextsize,
+    messages_to_anthropic_prompt,
+)
+from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -27,6 +28,8 @@ from llama_index.llms.generic_utils import (
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
 )
+from llama_index.llms.llm import LLM
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_ANTHROPIC_MODEL = "claude-2"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
@@ -73,6 +76,11 @@ class Anthropic(LLM):
         api_key: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         try:
             import anthropic
@@ -101,6 +109,11 @@ class Anthropic(LLM):
             max_retries=max_retries,
             model=model,
             callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @classmethod
@@ -150,7 +163,9 @@ class Anthropic(LLM):
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         complete_fn = chat_to_completion_decorator(self.chat)
         return complete_fn(prompt, **kwargs)
 
@@ -180,7 +195,9 @@ class Anthropic(LLM):
         return gen()
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
         return stream_complete_fn(prompt, **kwargs)
 
@@ -202,7 +219,9 @@ class Anthropic(LLM):
         )
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         acomplete_fn = achat_to_completion_decorator(self.achat)
         return await acomplete_fn(prompt, **kwargs)
 
@@ -233,7 +252,7 @@ class Anthropic(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)

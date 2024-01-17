@@ -3,7 +3,7 @@
 from typing import Any, List
 from unittest.mock import patch
 
-from llama_index.llm_predictor import LLMPredictor
+from llama_index.llms.mock import MockLLM
 from llama_index.postprocessor.llm_rerank import LLMRerank
 from llama_index.prompts import BasePromptTemplate
 from llama_index.schema import BaseNode, NodeWithScore, QueryBundle, TextNode
@@ -42,7 +42,7 @@ def mock_format_node_batch_fn(nodes: List[BaseNode]) -> str:
 
 
 @patch.object(
-    LLMPredictor,
+    MockLLM,
     "predict",
     mock_llmpredictor_predict,
 )

@@ -10,7 +10,7 @@ This is our famous "5 lines of code" starter example.
 
 This example uses the text of Paul Graham's essay, ["What I Worked On"](http://paulgraham.com/worked.html). This and many other examples can be found in the `examples` folder of our repo.
 
-The easiest way to get it is to [download it via this link](https://raw.githubusercontent.com/run-llama/llama_index/main/examples/paul_graham_essay/data/paul_graham_essay.txt) and save it in a folder called `data`.
+The easiest way to get it is to [download it via this link](https://raw.githubusercontent.com/run-llama/llama_index/main/docs/examples/data/paul_graham/paul_graham_essay.txt) and save it in a folder called `data`.
 
 ## Set your OpenAI API key
 
@@ -95,15 +95,16 @@ from llama_index import (
 )
 
 # check if storage already exists
-if not os.path.exists("./storage"):
+PERSIST_DIR = "./storage"
+if not os.path.exists(PERSIST_DIR):
     # load the documents and create the index
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
     # store it for later
-    index.storage_context.persist()
+    index.storage_context.persist(persist_dir=PERSIST_DIR)
 else:
     # load the existing index
-    storage_context = StorageContext.from_defaults(persist_dir="./storage")
+    storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
     index = load_index_from_storage(storage_context)
 
 # either way we can now query the index

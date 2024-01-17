@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import CompletionResponse
+from llama_index.core.llms.types import CompletionResponse
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.program.lmformatenforcer_program import LMFormatEnforcerPydanticProgram
 

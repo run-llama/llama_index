@@ -1,11 +1,10 @@
 import asyncio
-from typing import Any, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.prompt_helper import PromptHelper
-from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.llms import LLM
+from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TEXT_QA_PROMPT_SEL,
@@ -21,8 +20,7 @@ class Accumulate(BaseSynthesizer):
 
     def __init__(
         self,
-        llm: Optional[LLM] = None,
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm: Optional[LLMPredictorType] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
@@ -34,7 +32,6 @@ class Accumulate(BaseSynthesizer):
     ) -> None:
         super().__init__(
             llm=llm,
-            llm_predictor=llm_predictor,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
             service_context=service_context,
@@ -125,16 +122,31 @@ class Accumulate(BaseSynthesizer):
 
         text_chunks = self._prompt_helper.repack(text_qa_template, [text_chunk])
 
-        predictor = (
-            self._llm_predictor.apredict if use_async else self._llm_predictor.predict
-        )
+        predictor: Callable
+        if self._output_cls is None:
+            predictor = self._llm.apredict if use_async else self._llm.predict
 
-        return [
-            predictor(
-                text_qa_template,
-                context_str=cur_text_chunk,
-                output_cls=self._output_cls,
-                **response_kwargs,
+            return [
+                predictor(
+                    text_qa_template,
+                    context_str=cur_text_chunk,
+                    **response_kwargs,
+                )
+                for cur_text_chunk in text_chunks
+            ]
+        else:
+            predictor = (
+                self._llm.astructured_predict
+                if use_async
+                else self._llm.structured_predict
             )
-            for cur_text_chunk in text_chunks
-        ]
+
+            return [
+                predictor(
+                    self._output_cls,
+                    text_qa_template,
+                    context_str=cur_text_chunk,
+                    **response_kwargs,
+                )
+                for cur_text_chunk in text_chunks
+            ]

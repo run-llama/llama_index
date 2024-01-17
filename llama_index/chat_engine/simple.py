@@ -8,7 +8,8 @@ from llama_index.chat_engine.types import (
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
-from llama_index.llms.base import LLM, ChatMessage
+from llama_index.core.llms.types import ChatMessage
+from llama_index.llms.llm import LLM
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.service_context import ServiceContext
 from llama_index.settings import (
@@ -59,7 +60,9 @@ class SimpleChatEngine(BaseChatEngine):
                 raise ValueError(
                     "Cannot specify both system_prompt and prefix_messages"
                 )
-            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+            prefix_messages = [
+                ChatMessage(content=system_prompt, role=llm.metadata.system_role)
+            ]
 
         prefix_messages = prefix_messages or []
 

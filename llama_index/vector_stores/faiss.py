@@ -12,19 +12,25 @@ import fsspec
 import numpy as np
 from fsspec.implementations.local import LocalFileSystem
 
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode
+from llama_index.vector_stores.simple import DEFAULT_VECTOR_STORE, NAMESPACE_SEP
 from llama_index.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
 
 logger = logging.getLogger()
 
+DEFAULT_PERSIST_PATH = os.path.join(
+    DEFAULT_PERSIST_DIR, f"{DEFAULT_VECTOR_STORE}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
+)
 
-class FaissVectorStore(VectorStore):
+
+class FaissVectorStore(BasePydanticVectorStore):
     """Faiss Vector Store.
 
     Embeddings are stored within a Faiss index.
@@ -38,6 +44,8 @@ class FaissVectorStore(VectorStore):
     """
 
     stores_text: bool = False
+
+    _faiss_index = PrivateAttr()
 
     def __init__(
         self,
@@ -56,13 +64,18 @@ class FaissVectorStore(VectorStore):
 
         self._faiss_index = cast(faiss.Index, faiss_index)
 
+        super().__init__()
+
     @classmethod
     def from_persist_dir(
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "FaissVectorStore":
-        persist_path = os.path.join(persist_dir, DEFAULT_PERSIST_FNAME)
+        persist_path = os.path.join(
+            persist_dir,
+            f"{DEFAULT_VECTOR_STORE}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}",
+        )
         # only support local storage for now
         if fs and not isinstance(fs, LocalFileSystem):
             raise NotImplementedError("FAISS only supports local storage for now.")
@@ -117,7 +130,7 @@ class FaissVectorStore(VectorStore):
 
     def persist(
         self,
-        persist_path: str = os.path.join(DEFAULT_PERSIST_DIR, DEFAULT_PERSIST_FNAME),
+        persist_path: str = DEFAULT_PERSIST_PATH,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Save to file.
@@ -176,6 +189,16 @@ class FaissVectorStore(VectorStore):
             return VectorStoreQueryResult(similarities=[], ids=[])
 
         # returned dimension is 1 x k
-        node_idxs = [str(i) for i in indices[0]]
+        node_idxs = indices[0]
 
-        return VectorStoreQueryResult(similarities=dists, ids=node_idxs)
+        filtered_dists = []
+        filtered_node_idxs = []
+        for dist, idx in zip(dists, node_idxs):
+            if idx < 0:
+                continue
+            filtered_dists.append(dist)
+            filtered_node_idxs.append(str(idx))
+
+        return VectorStoreQueryResult(
+            similarities=filtered_dists, ids=filtered_node_idxs
+        )

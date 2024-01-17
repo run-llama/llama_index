@@ -1,4 +1,7 @@
 """Test tools."""
+import json
+from typing import List, Optional
+
 import pytest
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.tools.function_tool import FunctionTool
@@ -187,3 +190,15 @@ def test_retreiver_tool() -> None:
         "This is a test."
     )
     assert formated_doc in output.content
+
+
+def test_tool_fn_schema() -> None:
+    class TestSchema(BaseModel):
+        input: Optional[str]
+        page_list: List[int]
+
+    metadata = ToolMetadata(
+        name="a useful tool", description="test", fn_schema=TestSchema
+    )
+    parameter_dict = json.loads(metadata.fn_schema_str)
+    assert set(parameter_dict.keys()) == {"type", "properties", "required"}

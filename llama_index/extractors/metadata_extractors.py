@@ -25,8 +25,9 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
 from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.extractors.interface import BaseExtractor
-from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llms.base import LLM
+from llama_index.llm_predictor.base import LLMPredictorType
+from llama_index.llms.llm import LLM
+from llama_index.llms.utils import resolve_llm
 from llama_index.prompts import PromptTemplate
 from llama_index.schema import BaseNode, TextNode
 from llama_index.types import BasePydanticProgram
@@ -47,7 +48,7 @@ class TitleExtractor(BaseExtractor):
     metadata field.
 
     Args:
-        llm_predictor (Optional[LLMPredictor]): LLM predictor
+        llm (Optional[LLM]): LLM
         nodes (int): number of nodes from front to use for title extraction
         node_template (str): template for node-level title clues extraction
         combine_template (str): template for combining node-level clues into
@@ -55,9 +56,7 @@ class TitleExtractor(BaseExtractor):
     """
 
     is_text_node_only: bool = False  # can work for mixture of text and non-text nodes
-    llm_predictor: LLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
+    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
     nodes: int = Field(
         default=5,
         description="The number of nodes to extract titles from.",
@@ -76,7 +75,7 @@ class TitleExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictorType] = None,
         nodes: int = 5,
         node_template: str = DEFAULT_TITLE_NODE_TEMPLATE,
         combine_template: str = DEFAULT_TITLE_COMBINE_TEMPLATE,
@@ -87,13 +86,8 @@ class TitleExtractor(BaseExtractor):
         if nodes < 1:
             raise ValueError("num_nodes must be >= 1")
 
-        if llm is not None:
-            llm_predictor = LLMPredictor(llm=llm)
-        elif llm_predictor is None and llm is None:
-            llm_predictor = LLMPredictor()
-
         super().__init__(
-            llm_predictor=llm_predictor,
+            llm=llm or llm_predictor or resolve_llm("default"),
             nodes=nodes,
             node_template=node_template,
             combine_template=combine_template,
@@ -120,7 +114,7 @@ class TitleExtractor(BaseExtractor):
             return []
 
         title_jobs = [
-            self.llm_predictor.apredict(
+            self.llm.apredict(
                 PromptTemplate(template=self.node_template),
                 context_str=cast(TextNode, node).text,
             )
@@ -135,7 +129,7 @@ class TitleExtractor(BaseExtractor):
                 lambda x, y: x + "," + y, title_candidates[1:], title_candidates[0]
             )
 
-            title = await self.llm_predictor.apredict(
+            title = await self.llm.apredict(
                 PromptTemplate(template=self.combine_template),
                 context_str=titles,
             )
@@ -152,13 +146,11 @@ class KeywordExtractor(BaseExtractor):
     `excerpt_keywords` metadata field.
 
     Args:
-        llm_predictor (Optional[LLMPredictor]): LLM predictor
+        llm (Optional[LLM]): LLM
         keywords (int): number of keywords to extract
     """
 
-    llm_predictor: LLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
+    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
     keywords: int = Field(
         default=5, description="The number of keywords to extract.", gt=0
     )
@@ -167,7 +159,7 @@ class KeywordExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictorType] = None,
         keywords: int = 5,
         num_workers: int = DEFAULT_NUM_WORKERS,
         **kwargs: Any,
@@ -176,13 +168,8 @@ class KeywordExtractor(BaseExtractor):
         if keywords < 1:
             raise ValueError("num_keywords must be >= 1")
 
-        if llm is not None:
-            llm_predictor = LLMPredictor(llm=llm)
-        elif llm_predictor is None and llm is None:
-            llm_predictor = LLMPredictor()
-
         super().__init__(
-            llm_predictor=llm_predictor,
+            llm=llm or llm_predictor or resolve_llm("default"),
             keywords=keywords,
             num_workers=num_workers,
             **kwargs,
@@ -198,7 +185,7 @@ class KeywordExtractor(BaseExtractor):
             return {}
 
         # TODO: figure out a good way to allow users to customize keyword template
-        keywords = await self.llm_predictor.apredict(
+        keywords = await self.llm.apredict(
             PromptTemplate(
                 template=f"""\
 {{context_str}}. Give {self.keywords} unique keywords for this \
@@ -242,15 +229,13 @@ class QuestionsAnsweredExtractor(BaseExtractor):
     Extracts `questions_this_excerpt_can_answer` metadata field.
 
     Args:
-        llm_predictor (Optional[LLMPredictor]): LLM predictor
+        llm (Optional[LLM]): LLM
         questions (int): number of questions to extract
         prompt_template (str): template for question extraction,
         embedding_only (bool): whether to use embedding only
     """
 
-    llm_predictor: LLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
+    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
     questions: int = Field(
         default=5,
         description="The number of questions to generate.",
@@ -268,7 +253,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictorType] = None,
         questions: int = 5,
         prompt_template: str = DEFAULT_QUESTION_GEN_TMPL,
         embedding_only: bool = True,
@@ -279,13 +264,8 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         if questions < 1:
             raise ValueError("questions must be >= 1")
 
-        if llm is not None:
-            llm_predictor = LLMPredictor(llm=llm)
-        elif llm_predictor is None and llm is None:
-            llm_predictor = LLMPredictor()
-
         super().__init__(
-            llm_predictor=llm_predictor,
+            llm=llm or llm_predictor or resolve_llm("default"),
             questions=questions,
             prompt_template=prompt_template,
             embedding_only=embedding_only,
@@ -304,7 +284,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
 
         context_str = node.get_content(metadata_mode=self.metadata_mode)
         prompt = PromptTemplate(template=self.prompt_template)
-        questions = await self.llm_predictor.apredict(
+        questions = await self.llm.apredict(
             prompt, num_questions=self.questions, context_str=context_str
         )
 
@@ -338,14 +318,12 @@ class SummaryExtractor(BaseExtractor):
     metadata fields.
 
     Args:
-        llm_predictor (Optional[LLMPredictor]): LLM predictor
+        llm (Optional[LLM]): LLM
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
         prompt_template (str): template for summary extraction
     """
 
-    llm_predictor: LLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
+    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
     summaries: List[str] = Field(
         description="List of summaries to extract: 'self', 'prev', 'next'"
     )
@@ -362,17 +340,12 @@ class SummaryExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictorType] = None,
         summaries: List[str] = ["self"],
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
         num_workers: int = DEFAULT_NUM_WORKERS,
         **kwargs: Any,
     ):
-        if llm is not None:
-            llm_predictor = LLMPredictor(llm=llm)
-        elif llm_predictor is None and llm is None:
-            llm_predictor = LLMPredictor()
-
         # validation
         if not all(s in ["self", "prev", "next"] for s in summaries):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")
@@ -381,7 +354,7 @@ class SummaryExtractor(BaseExtractor):
         self._next_summary = "next" in summaries
 
         super().__init__(
-            llm_predictor=llm_predictor,
+            llm=llm or llm_predictor or resolve_llm("default"),
             summaries=summaries,
             prompt_template=prompt_template,
             num_workers=num_workers,
@@ -398,7 +371,7 @@ class SummaryExtractor(BaseExtractor):
             return ""
 
         context_str = node.get_content(metadata_mode=self.metadata_mode)
-        summary = await self.llm_predictor.apredict(
+        summary = await self.llm.apredict(
             PromptTemplate(template=self.prompt_template), context_str=context_str
         )
 

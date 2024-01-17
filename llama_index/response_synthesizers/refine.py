@@ -5,8 +5,7 @@ from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.callbacks.base import CallbackManager
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.indices.utils import truncate_text
-from llama_index.llm_predictor.base import BaseLLMPredictor
-from llama_index.llms import LLM
+from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL,
@@ -44,26 +43,45 @@ class DefaultRefineProgram(BasePydanticProgram):
     query_satisfied=True. In effect, doesn't do any answer filtering.
     """
 
-    def __init__(self, prompt: BasePromptTemplate, llm_predictor: BaseLLMPredictor):
+    def __init__(
+        self, prompt: BasePromptTemplate, llm: LLMPredictorType, output_cls: BaseModel
+    ):
         self._prompt = prompt
-        self._llm_predictor = llm_predictor
+        self._llm = llm
+        self._output_cls = output_cls
 
     @property
     def output_cls(self) -> Type[BaseModel]:
         return StructuredRefineResponse
 
     def __call__(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
-        answer = self._llm_predictor.predict(
-            self._prompt,
-            **kwds,
-        )
+        if self._output_cls is not None:
+            answer = self._llm.structured_predict(
+                self._output_cls,
+                self._prompt,
+                **kwds,
+            )
+            answer = answer.json()
+        else:
+            answer = self._llm.predict(
+                self._prompt,
+                **kwds,
+            )
         return StructuredRefineResponse(answer=answer, query_satisfied=True)
 
     async def acall(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
-        answer = await self._llm_predictor.apredict(
-            self._prompt,
-            **kwds,
-        )
+        if self._output_cls is not None:
+            answer = await self._llm.astructured_predict(
+                self._output_cls,
+                self._prompt,
+                **kwds,
+            )
+            answer = answer.json()
+        else:
+            answer = await self._llm.apredict(
+                self._prompt,
+                **kwds,
+            )
         return StructuredRefineResponse(answer=answer, query_satisfied=True)
 
 
@@ -72,8 +90,7 @@ class Refine(BaseSynthesizer):
 
     def __init__(
         self,
-        llm: Optional[LLM] = None,
-        llm_predictor: Optional[BaseLLMPredictor] = None,
+        llm: Optional[LLMPredictorType] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
@@ -90,7 +107,6 @@ class Refine(BaseSynthesizer):
     ) -> None:
         super().__init__(
             llm=llm,
-            llm_predictor=llm_predictor,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
             service_context=service_context,
@@ -164,13 +180,14 @@ class Refine(BaseSynthesizer):
             return get_program_for_llm(
                 StructuredRefineResponse,
                 prompt,
-                self._llm_predictor.llm,
+                self._llm,
                 verbose=self._verbose,
             )
         else:
             return DefaultRefineProgram(
                 prompt=prompt,
-                llm_predictor=self._llm_predictor,
+                llm=self._llm,
+                output_cls=self._output_cls,
             )
 
     def _give_response_single(
@@ -194,7 +211,6 @@ class Refine(BaseSynthesizer):
                         StructuredRefineResponse,
                         program(
                             context_str=cur_text_chunk,
-                            output_cls=self._output_cls,
                             **response_kwargs,
                         ),
                     )
@@ -206,10 +222,9 @@ class Refine(BaseSynthesizer):
                         f"Validation error on structured response: {e}", exc_info=True
                     )
             elif response is None and self._streaming:
-                response = self._llm_predictor.stream(
+                response = self._llm.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,
-                    output_cls=self._output_cls,
                     **response_kwargs,
                 )
                 query_satisfied = True
@@ -276,7 +291,6 @@ class Refine(BaseSynthesizer):
                         StructuredRefineResponse,
                         program(
                             context_msg=cur_text_chunk,
-                            output_cls=self._output_cls,
                             **response_kwargs,
                         ),
                     )
@@ -296,10 +310,9 @@ class Refine(BaseSynthesizer):
                     query_str=query_str, existing_answer=response
                 )
 
-                response = self._llm_predictor.stream(
+                response = self._llm.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
-                    output_cls=self._output_cls,
                     **response_kwargs,
                 )
 
@@ -380,7 +393,6 @@ class Refine(BaseSynthesizer):
                 try:
                     structured_response = await program.acall(
                         context_msg=cur_text_chunk,
-                        output_cls=self._output_cls,
                         **response_kwargs,
                     )
                     structured_response = cast(
@@ -421,7 +433,6 @@ class Refine(BaseSynthesizer):
                 try:
                     structured_response = await program.acall(
                         context_str=cur_text_chunk,
-                        output_cls=self._output_cls,
                         **response_kwargs,
                     )
                     structured_response = cast(

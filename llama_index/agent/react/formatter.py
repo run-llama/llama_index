@@ -3,10 +3,13 @@
 from abc import abstractmethod
 from typing import List, Optional, Sequence
 
-from llama_index.agent.react.prompts import REACT_CHAT_SYSTEM_HEADER
+from llama_index.agent.react.prompts import (
+    CONTEXT_REACT_CHAT_SYSTEM_HEADER,
+    REACT_CHAT_SYSTEM_HEADER,
+)
 from llama_index.agent.react.types import BaseReasoningStep, ObservationReasoningStep
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.tools import BaseTool
 
 
@@ -43,7 +46,8 @@ class BaseAgentChatFormatter(BaseModel):
 class ReActChatFormatter(BaseAgentChatFormatter):
     """ReAct chat formatter."""
 
-    system_header: str = REACT_CHAT_SYSTEM_HEADER
+    system_header: str = REACT_CHAT_SYSTEM_HEADER  # default
+    context: str = ""  # not needed w/ default
 
     def format(
         self,
@@ -54,12 +58,14 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         """Format chat history into list of ChatMessage."""
         current_reasoning = current_reasoning or []
 
-        tool_descs_str = "\n".join(get_react_tool_descriptions(tools))
+        format_args = {
+            "tool_desc": "\n".join(get_react_tool_descriptions(tools)),
+            "tool_names": ", ".join([tool.metadata.get_name() for tool in tools]),
+        }
+        if self.context:
+            format_args["context"] = self.context
 
-        fmt_sys_header = self.system_header.format(
-            tool_desc=tool_descs_str,
-            tool_names=", ".join([tool.metadata.get_name() for tool in tools]),
-        )
+        fmt_sys_header = self.system_header.format(**format_args)
 
         # format reasoning history as alternating user and assistant messages
         # where the assistant messages are thoughts and actions and the user
@@ -83,3 +89,11 @@ class ReActChatFormatter(BaseAgentChatFormatter):
             *chat_history,
             *reasoning_history,
         ]
+
+    @classmethod
+    def from_context(self, context: str) -> "ReActChatFormatter":
+        """Create ReActChatFormatter from context."""
+        return ReActChatFormatter(
+            context=context,
+            system_header=CONTEXT_REACT_CHAT_SYSTEM_HEADER,
+        )

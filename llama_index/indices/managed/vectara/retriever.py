@@ -4,14 +4,23 @@ An index that that is built on top of Vectara.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.managed.types import ManagedIndexQueryMode
 from llama_index.indices.managed.vectara.base import VectaraIndex
+from llama_index.indices.vector_store.retrievers.auto_retriever.auto_retriever import (
+    VectorIndexAutoRetriever,
+)
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.vector_stores.types import (
+    FilterCondition,
+    MetadataFilters,
+    VectorStoreInfo,
+    VectorStoreQuerySpec,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -33,17 +42,15 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_after (int):
              number of sentences after the matched sentence to return in the node
         filter: metadata filter (if specified)
-        vectara_kwargs (dict): Additional vectara specific kwargs to pass
-            through to Vectara at query time.
-            * mmr_k: number of results to fetch for MMR, defaults to 50
-            * mmr_diversity_bias: number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding
-                to minimum diversity and 1 to maximum diversity.
-                Defaults to 0.3.
-            * summary_enabled: whether to generate summaries or not. Defaults to False.
-            * summary_response_lang: language to use for summary generation.
-            * summary_num_results: number of results to use for summary generation.
-            * summary_prompt_name: name of the prompt to use for summary generation.
+        mmr_k: number of results to fetch for MMR, defaults to 50
+        mmr_diversity_bias: number between 0 and 1 that determines the degree
+            of diversity among the results with 0 corresponding
+            to minimum diversity and 1 to maximum diversity.
+            Defaults to 0.3.
+        summary_enabled: whether to generate summaries or not. Defaults to False.
+        summary_response_lang: language to use for summary generation.
+        summary_num_results: number of results to use for summary generation.
+        summary_prompt_name: name of the prompt to use for summary generation.
     """
 
     def __init__(
@@ -55,6 +62,12 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
         filter: str = "",
+        mmr_k: int = 50,
+        mmr_diversity_bias: float = 0.3,
+        summary_enabled: bool = False,
+        summary_response_lang: str = "eng",
+        summary_num_results: int = 7,
+        summary_prompt_name: str = "vectara-summary-ext-v1.2.0",
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -65,22 +78,19 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_before = n_sentences_before
         self._n_sentences_after = n_sentences_after
         self._filter = filter
-        self._kwargs: Dict[str, Any] = kwargs.get("vectara_kwargs", {})
 
         if vectara_query_mode == ManagedIndexQueryMode.MMR:
             self._mmr = True
-            self._mmr_k = kwargs.get("mmr_k", 50)
-            self._mmr_diversity_bias = kwargs.get("mmr_diversity_bias", 0.3)
+            self._mmr_k = mmr_k
+            self._mmr_diversity_bias = mmr_diversity_bias
         else:
             self._mmr = False
 
-        if kwargs.get("summary_enabled", False):
+        if summary_enabled:
             self._summary_enabled = True
-            self._summary_response_lang = kwargs.get("summary_response_lang", "eng")
-            self._summary_num_results = kwargs.get("summary_num_results", 7)
-            self._summary_prompt_name = kwargs.get(
-                "summary_prompt_name", "vectara-summary-ext-v1.2.0"
-            )
+            self._summary_response_lang = summary_response_lang
+            self._summary_num_results = summary_num_results
+            self._summary_prompt_name = summary_prompt_name
         else:
             self._summary_enabled = False
         super().__init__(callback_manager)
@@ -216,3 +226,79 @@ class VectaraRetriever(BaseRetriever):
 
         """
         return self._vectara_query(query_bundle)
+
+
+class VectaraAutoRetriever(VectorIndexAutoRetriever):
+    """Managed Index auto retriever.
+
+    A retriever for a Vectara index that uses an LLM to automatically set
+    filtering query parameters.
+    Based on VectorStoreAutoRetriever, and uses some of the vector_store
+    types that are associated with auto retrieval.
+
+    Args:
+        index (VectaraIndex): Vectara Index instance
+        vector_store_info (VectorStoreInfo): additional information about
+            vector store content and supported metadata filters. The natural language
+            description is used by an LLM to automatically set vector store query
+            parameters.
+        Other variables are the same as VectorStoreAutoRetriever or VectaraRetriever
+    """
+
+    def __init__(
+        self,
+        index: VectaraIndex,
+        vector_store_info: VectorStoreInfo,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(index, vector_store_info, **kwargs)  # type: ignore
+        self._index = index  # type: ignore
+        self._kwargs = kwargs
+        self._verbose = self._kwargs.get("verbose", False)
+        self._explicit_filter = self._kwargs.pop("filter", "")
+
+    def _build_retriever_from_spec(
+        self, spec: VectorStoreQuerySpec
+    ) -> Tuple[BaseRetriever, QueryBundle]:
+        query_bundle = QueryBundle(query_str=spec.query)
+
+        filter_list = [
+            (filter.key, filter.operator.value, filter.value) for filter in spec.filters
+        ]
+        if self._verbose:
+            print(f"Using query str: {spec.query}")
+            print(f"Using implicit filters: {filter_list}")
+
+        # create filter string from implicit filters
+        if len(spec.filters) == 0:
+            filter_str = ""
+        else:
+            filters = MetadataFilters(
+                filters=[*spec.filters, *self._extra_filters.filters]
+            )
+            condition = " and " if filters.condition == FilterCondition.AND else " or "
+            filter_str = condition.join(
+                [
+                    f"(doc.{f.key} {f.operator.value} '{f.value}')"
+                    for f in filters.filters
+                ]
+            )
+
+        # add explicit filter if specified
+        if self._explicit_filter:
+            if len(filter_str) > 0:
+                filter_str = f"({filter_str}) and ({self._explicit_filter})"
+            else:
+                filter_str = self._explicit_filter
+
+        if self._verbose:
+            print(f"final filter string: {filter_str}")
+
+        return (
+            VectaraRetriever(
+                index=self._index,  # type: ignore
+                filter=filter_str,
+                **self._kwargs,
+            ),
+            query_bundle,
+        )

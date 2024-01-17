@@ -3,22 +3,16 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
-from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.ingestion import run_transformations
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.prompts import BasePromptTemplate
-from llama_index.response_synthesizers import (
-    BaseSynthesizer,
-    ResponseMode,
-)
-from llama_index.schema import BaseNode, Document, TransformComponent
+from llama_index.schema import BaseNode, Document, IndexNode, TransformComponent
 from llama_index.service_context import ServiceContext
 from llama_index.settings import Settings, callback_manager_from_settings_or_context
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
@@ -37,7 +31,7 @@ class BaseIndex(Generic[IS], ABC):
         nodes (List[Node]): List of nodes to index
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         service_context (ServiceContext): Service context container (contains
-            components like LLMPredictor, PromptHelper, etc.).
+            components like LLM, Embeddings, etc.).
 
     """
 
@@ -46,6 +40,7 @@ class BaseIndex(Generic[IS], ABC):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IS] = None,
         storage_context: Optional[StorageContext] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -56,8 +51,8 @@ class BaseIndex(Generic[IS], ABC):
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
-        if index_struct is None and nodes is None:
-            raise ValueError("One of nodes or index_struct must be provided.")
+        if index_struct is None and nodes is None and objects is None:
+            raise ValueError("One of nodes, objects, or index_struct must be provided.")
         if index_struct is not None and nodes is not None:
             raise ValueError("Only one of nodes or index_struct can be provided.")
         # This is to explicitly make sure that the old UX is not used
@@ -80,17 +75,21 @@ class BaseIndex(Generic[IS], ABC):
             callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context)
         )
-        self._transformations = transformations
 
+        objects = objects or []
+        self._object_map = {obj.index_id: obj.obj for obj in objects}
         with self._callback_manager.as_trace("index_construction"):
             if index_struct is None:
-                assert nodes is not None
-                index_struct = self.build_index_from_nodes(nodes)
+                nodes = nodes or []
+                index_struct = self.build_index_from_nodes(
+                    nodes + objects  # type: ignore
+                )
             self._index_struct = index_struct
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
         # deprecated
         self._service_context = service_context or ServiceContext.from_defaults()
+        self._transformations = transformations or self._service_context.transformations
 
     @classmethod
     def from_documents(
@@ -120,6 +119,10 @@ class BaseIndex(Generic[IS], ABC):
         transformations = transformations
         if service_context is not None:
             transformations = service_context.transformations
+        elif transformations is None:
+            raise ValueError(
+                "Either service_context or transformations must be provided."
+            )
 
         with callback_manager.as_trace("index_construction"):
             for doc in documents:
@@ -370,46 +373,18 @@ class BaseIndex(Generic[IS], ABC):
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         ...
 
-    def as_query_engine(
-        self,
-        llm: Optional[LLMType] = None,
-        response_synthesizer: Optional[BaseSynthesizer] = None,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        # response synthesizer args
-        response_mode: ResponseMode = ResponseMode.COMPACT,
-        text_qa_template: Optional[BasePromptTemplate] = None,
-        refine_template: Optional[BasePromptTemplate] = None,
-        summary_template: Optional[BasePromptTemplate] = None,
-        simple_template: Optional[BasePromptTemplate] = None,
-        output_cls: Optional[BaseModel] = None,
-        use_async: bool = False,
-        streaming: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
-        **kwargs,
-    ) -> BaseQueryEngine:
+    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
         from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
+        llm = kwargs.get("llm", None)
         llm = resolve_llm(llm) if llm else Settings.llm
 
         return RetrieverQueryEngine.from_args(
             retriever,
             llm=llm,
-            response_synthesizer=response_synthesizer,
-            node_postprocessors=node_postprocessors,
-            # response synthesizer args
-            response_mode=response_mode,
-            text_qa_template=text_qa_template,
-            refine_template=refine_template,
-            summary_template=summary_template,
-            simple_template=simple_template,
-            output_cls=output_cls,
-            use_async=use_async,
-            streaming=streaming,
-            # deprecated
-            service_context=service_context,
+            **kwargs,
         )
 
     def as_chat_engine(

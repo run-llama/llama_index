@@ -23,7 +23,7 @@ with open("../llama_index/VERSION") as f:
 
 
 project = "LlamaIndex 🦙"
-copyright = "2022, Jerry Liu"
+copyright = "2023, Jerry Liu"
 author = "Jerry Liu"
 
 # -- General configuration ---------------------------------------------------

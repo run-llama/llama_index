@@ -10,12 +10,12 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
     ToolOutput,
 )
+from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.service_context import ServiceContext
-from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llms.base import LLM, ChatMessage, MessageRole
 from llama_index.llms.generic_utils import messages_to_history_str
+from llama_index.llms.llm import LLM
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.base import PromptTemplate
@@ -24,7 +24,6 @@ from llama_index.settings import (
     Settings,
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
-    llm_predictor_from_settings_or_context,
 )
 from llama_index.utilities.token_counting import TokenCounter
 
@@ -66,7 +65,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         self,
         retriever: BaseRetriever,
         llm: LLM,
-        llm_predictor: LLMPredictor,
         memory: BaseMemory,
         context_prompt: Optional[str] = None,
         condense_prompt: Optional[str] = None,
@@ -78,7 +76,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     ):
         self._retriever = retriever
         self._llm = llm
-        self._llm_predictor = llm_predictor
         self._memory = memory
         self._context_prompt_template = (
             context_prompt or DEFAULT_CONTEXT_PROMPT_TEMPLATE
@@ -111,10 +108,8 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
-        llm_predictor = llm_predictor_from_settings_or_context(
-            Settings, service_context
-        )
         llm = llm_from_settings_or_context(Settings, service_context)
+
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(
             chat_history=chat_history, token_limit=llm.metadata.context_window - 256
@@ -123,7 +118,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         return cls(
             retriever=retriever,
             llm=llm,
-            llm_predictor=llm_predictor,
             memory=memory,
             context_prompt=context_prompt,
             condense_prompt=condense_prompt,
@@ -146,7 +140,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        return self._llm_predictor.predict(
+        return self._llm.predict(
             self._condense_prompt_template,
             question=latest_message,
             chat_history=chat_history_str,
@@ -162,7 +156,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        return await self._llm_predictor.apredict(
+        return await self._llm.apredict(
             self._condense_prompt_template,
             question=latest_message,
             chat_history=chat_history_str,
@@ -222,7 +216,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             system_message_content = self._system_prompt + "\n" + system_message_content
 
         system_message = ChatMessage(
-            content=system_message_content, role=MessageRole.SYSTEM
+            content=system_message_content, role=self._llm.metadata.system_role
         )
 
         initial_token_count = self._token_counter.estimate_tokens_in_messages(
@@ -269,7 +263,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             system_message_content = self._system_prompt + "\n" + system_message_content
 
         system_message = ChatMessage(
-            content=system_message_content, role=MessageRole.SYSTEM
+            content=system_message_content, role=self._llm.metadata.system_role
         )
 
         initial_token_count = self._token_counter.estimate_tokens_in_messages(

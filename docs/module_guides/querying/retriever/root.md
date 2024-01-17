@@ -96,7 +96,7 @@ retriever = SummaryIndexLLMRetriever(
 
 ```{toctree}
 ---
-maxdepth: 1
+maxdepth: 2
 ---
 retrievers.md
 ```

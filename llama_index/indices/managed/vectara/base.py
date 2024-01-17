@@ -13,10 +13,18 @@ from typing import Any, Dict, List, Optional, Sequence, Type
 
 import requests
 
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.callbacks.base import CallbackManager
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
-from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
+from llama_index.schema import (
+    BaseNode,
+    Document,
+    MetadataMode,
+    TextNode,
+    TransformComponent,
+)
 from llama_index.service_context import ServiceContext
 from llama_index.storage.storage_context import StorageContext
 
@@ -64,7 +72,10 @@ class VectaraIndex(BaseManagedIndex):
         )
 
         super().__init__(
-            show_progress=show_progress, index_struct=index_struct, **kwargs
+            show_progress=show_progress,
+            index_struct=index_struct,
+            service_context=ServiceContext.from_defaults(llm=None, llm_predictor=None),
+            **kwargs,
         )
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
             "VECTARA_CUSTOMER_ID"
@@ -319,8 +330,11 @@ class VectaraIndex(BaseManagedIndex):
         cls: Type[IndexType],
         documents: Sequence[Document],
         storage_context: Optional[StorageContext] = None,
-        service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
+        transformations: Optional[List[TransformComponent]] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> IndexType:
         """Build a Vectara index from a sequence of documents."""

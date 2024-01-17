@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from llama_index.indices.utils import extract_numbers_given_response
-from llama_index.llm_predictor import LLMPredictor
+from llama_index.llms import OpenAI
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 
 
@@ -77,13 +77,11 @@ def get_eval_preds(
     train_prompt: BasePromptTemplate, train_str: str, eval_df: pd.DataFrame, n: int = 20
 ) -> List:
     """Get eval preds."""
-    llm_predictor = LLMPredictor()
+    llm = OpenAI()
     eval_preds = []
     for i in range(n):
         eval_str = get_sorted_dict_str(eval_df.iloc[i].to_dict())
-        response = llm_predictor.predict(
-            train_prompt, train_str=train_str, eval_str=eval_str
-        )
+        response = llm.predict(train_prompt, train_str=train_str, eval_str=eval_str)
         pred = extract_float_given_response(response)
         print(f"Getting preds: {i}/{n}: {pred}")
         if pred is None:

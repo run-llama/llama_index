@@ -6,7 +6,7 @@ LlamaIndex offers capabilities to not only build language-based applications, bu
 
 This space is actively being explored right now, but there are some fascinating use cases popping up.
 
-### Multi-Modal RAG
+### RAG (Retrieval Augmented Generation)
 
 All the core RAG concepts: indexing, retrieval, and synthesis, can be extended into the image setting.
 
@@ -24,11 +24,27 @@ maxdepth: 1
 /examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
 Multi-modal retrieval with CLIP </examples/multi_modal/multi_modal_retrieval.ipynb>
 Image to Image Retrieval </examples/multi_modal/image_to_image_retrieval.ipynb>
+/examples/multi_modal/structured_image_retrieval.ipynb
+/examples/multi_modal/ChromaMultiModalDemo.ipynb
+/examples/multi_modal/multi_modal_pdf_tables.ipynb
+```
+
+### Structured Outputs
+
+You can generate a `structured` output with the new OpenAI GPT4V via LlamaIndex. The user just needs to specify a Pydantic object to define the structure of the output.
+
+Check out the guide below:
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/multi_modal/multi_modal_pydantic.ipynb
 ```
 
 ### Retrieval-Augmented Image Captioning
 
-Oftentimes understanding an image requires looking up information from a knowledge base. A flow here is retrieval-augmented image captioning - first caption the image with a multi-modal model, then refine the caption by retrieving from a text corpus.
+Oftentimes understanding an image requires looking up information from a knowledge base. A flow here is retrieval-augmented image captioning - first caption the image with a multi-modal model, then refine the caption by retrieving it from a text corpus.
 
 Check out our guides below:
 
@@ -39,6 +55,22 @@ maxdepth: 1
 /examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
 ```
 
+### Agents
+
+Here are some initial works demonstrating agentic capabilities with GPT-4V.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/multi_modal/mm_agent.ipynb
+/examples/multi_modal/gpt4v_experiments_cot.ipynb
+```
+
+## Evaluations and Comparisons
+
+These sections show comparisons between different multi-modal models for different use cases.
+
 ### LLaVa-13, Fuyu-8B and MiniGPT-4 Multi-Modal LLM Models Comparison for Image Reasoning
 
 These notebooks show how to use different Multi-Modal LLM models for image understanding/reasoning. The various model inferences are supported by Replicate or OpenAI GPT4-V API. We compared several popular Multi-Modal LLMs:
@@ -47,6 +79,7 @@ These notebooks show how to use different Multi-Modal LLM models for image under
 - LLava-13B (Replicate)
 - Fuyu-8B (Replicate)
 - MiniGPT-4 (Replicate)
+- CogVLM (Replicate)
 
 Check out our guides below:
 
@@ -58,30 +91,7 @@ maxdepth: 1
 GPT4-V: </examples/multi_modal/openai_multi_modal.ipynb>
 ```
 
-### Pydantic Program for Generating Structured Output for Multi-Modal LLMs
-
-You can generate `structured` output with new OpenAI GPT4V via LlamaIndex. The user just needs to specify a Pydantic object to define the structure of output.
-
-Check out the guide below:
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/multi_modal/multi_modal_pydantic.ipynb
-```
-
-### Chain of Thought (COT) Prompting for GPT4-V
-
-GPT4-V has amazed us with its ability to analyze images and even generate website code from visuals.
-This tutorial investigates GPT4-V's proficiency in interpreting bar charts, scatter plots, and tables. We aim to assess whether specific questioning and chain of thought prompting can yield better responses compared to broader inquiries. Our demonstration seeks to determine if GPT-4V can exceed these known limitations with precise questioning and systematic reasoning techniques.
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/multi_modal/gpt4v_experiments_cot.ipynb
-```
+(multi-modal-pydantic-program)=
 
 ### Simple Evaluation of Multi-Modal RAG
 
@@ -92,16 +102,4 @@ In this notebook guide, we'll demonstrate how to evaluate a Multi-Modal RAG syst
 maxdepth: 1
 ---
 /examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb
-```
-
-### Using Chroma for Multi-Modal retrieval with single vector store
-
-Chroma vector DB supports single vector store for indexing both images and texts.
-Check out out Chroma + LlamaIndex integration with single Multi-Modal Vector Store for both images/texts index and retrieval.
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/multi_modal/ChromaMultiModalDemo.ipynb
 ```

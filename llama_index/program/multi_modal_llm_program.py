@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Type, cast
+from typing import Any, Dict, Optional, Sequence, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.multi_modal_llms import MultiModalLLM, OpenAIMultiModal
@@ -74,13 +74,17 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
 
     def __call__(
         self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
+        llm_kwargs = llm_kwargs or {}
         formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)
 
         response = self._multi_modal_llm.complete(
-            formatted_prompt, image_documents=self._image_documents
+            formatted_prompt,
+            image_documents=self._image_documents,
+            **llm_kwargs,
         )
 
         raw_output = response.text
@@ -89,13 +93,17 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
 
     async def acall(
         self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
+        llm_kwargs = llm_kwargs or {}
         formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)
 
         response = await self._multi_modal_llm.acomplete(
-            formatted_prompt, image_documents=self._image_documents
+            formatted_prompt,
+            image_documents=self._image_documents,
+            **llm_kwargs,
         )
 
         raw_output = response.text

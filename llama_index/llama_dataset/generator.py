@@ -6,6 +6,8 @@ import re
 from typing import List
 
 from llama_index import Document, ServiceContext, SummaryIndex
+from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.ingestion import run_transformations
 from llama_index.llama_dataset import (
     CreatedBy,
@@ -13,12 +15,10 @@ from llama_index.llama_dataset import (
     LabelledRagDataExample,
     LabelledRagDataset,
 )
-from llama_index.llms.openai import OpenAI
 from llama_index.postprocessor.node import KeywordNodePostprocessor
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
@@ -30,12 +30,6 @@ Given the context information and not prior knowledge.
 generate only questions based on the below query.
 {query_str}
 """
-
-
-def _get_default_service_context() -> ServiceContext:
-    """Get default service context."""
-    llm = OpenAI(temperature=0, model="gpt-3.5-turbo")
-    return ServiceContext.from_defaults(llm=llm, chunk_size_limit=3000)
 
 
 class RagDatasetGenerator(PromptMixin):
@@ -64,10 +58,13 @@ class RagDatasetGenerator(PromptMixin):
         question_gen_query: str | None = None,
         metadata_mode: MetadataMode = MetadataMode.NONE,
         show_progress: bool = False,
+        workers: int = DEFAULT_NUM_WORKERS,
     ) -> None:
         """Init params."""
         if service_context is None:
-            service_context = _get_default_service_context()
+            service_context = service_context or ServiceContext.from_defaults(
+                chunk_size_limit=3000
+            )
         self.service_context = service_context
         self.text_question_template = text_question_template or PromptTemplate(
             DEFAULT_QUESTION_GENERATION_PROMPT
@@ -84,6 +81,7 @@ class RagDatasetGenerator(PromptMixin):
         self.nodes = nodes
         self._metadata_mode = metadata_mode
         self._show_progress = show_progress
+        self._workers = workers
 
     @classmethod
     def from_documents(
@@ -97,10 +95,13 @@ class RagDatasetGenerator(PromptMixin):
         required_keywords: List[str] | None = None,
         exclude_keywords: List[str] | None = None,
         show_progress: bool = False,
+        workers: int = DEFAULT_NUM_WORKERS,
     ) -> RagDatasetGenerator:
         """Generate dataset from documents."""
         if service_context is None:
-            service_context = _get_default_service_context()
+            service_context = service_context or ServiceContext.from_defaults(
+                chunk_size_limit=3000
+            )
 
         nodes = run_transformations(
             documents, service_context.transformations, show_progress=show_progress
@@ -126,6 +127,7 @@ class RagDatasetGenerator(PromptMixin):
             text_qa_template=text_qa_template,
             question_gen_query=question_gen_query,
             show_progress=show_progress,
+            workers=workers,
         )
 
     async def _agenerate_dataset(
@@ -136,14 +138,6 @@ class RagDatasetGenerator(PromptMixin):
         """Node question generator."""
         query_tasks = []
         examples: List[LabelledRagDataExample] = []
-
-        if self._show_progress:
-            from tqdm.asyncio import tqdm_asyncio
-
-            async_module = tqdm_asyncio
-        else:
-            async_module = asyncio
-
         summary_indices: List[SummaryIndex] = []
         for node in nodes:
             index = SummaryIndex.from_documents(
@@ -167,7 +161,7 @@ class RagDatasetGenerator(PromptMixin):
             query_tasks.append(task)
             summary_indices.append(index)
 
-        responses = await async_module.gather(*query_tasks)  # result order is preserved
+        responses = await run_jobs(query_tasks, self._show_progress, self._workers)
         for idx, response in enumerate(responses):
             result = str(response).strip().split("\n")
             cleaned_questions = [
@@ -190,9 +184,9 @@ class RagDatasetGenerator(PromptMixin):
                     )
                     qr_task = qa_query_engine.aquery(query)
                     qr_tasks.append(qr_task)
-                answer_responses: List[RESPONSE_TYPE] = await async_module.gather(
-                    *qr_tasks
-                )  # execution order is not guaranteed but result values order is preserved
+                answer_responses: List[RESPONSE_TYPE] = await run_jobs(
+                    qr_tasks, self._show_progress, self._workers
+                )
                 for question, answer_response in zip(
                     cleaned_questions, answer_responses
                 ):

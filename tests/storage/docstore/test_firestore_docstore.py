@@ -49,10 +49,20 @@ def test_firestore_docstore(
     # test deleting documents
     ds.delete_document(documents[0].get_doc_id())
     assert len(ds.docs) == 1
+    ds.delete_document(documents[1].get_doc_id())
+    assert len(ds.docs) == 0
+
+    # test bulk insert
+    ds.add_documents(documents, batch_size=len(documents))
+    assert len(ds.docs) == 2
+    assert all(isinstance(doc, BaseNode) for doc in ds.docs.values())
 
 
+@pytest.mark.asyncio()
 @pytest.mark.skipif(firestore is None, reason="firestore not installed")
-def test_firestore_docstore_hash(firestore_docstore: FirestoreDocumentStore) -> None:
+async def test_firestore_docstore_hash(
+    firestore_docstore: FirestoreDocumentStore,
+) -> None:
     ds = firestore_docstore
 
     # Test setting hash
@@ -60,9 +70,19 @@ def test_firestore_docstore_hash(firestore_docstore: FirestoreDocumentStore) -> 
     doc_hash = ds.get_document_hash("test_doc_id")
     assert doc_hash == "test_doc_hash"
 
+    # Test setting hash (async)
+    await ds.aset_document_hash("test_doc_id", "test_doc_hash")
+    doc_hash = await ds.aget_document_hash("test_doc_id")
+    assert doc_hash == "test_doc_hash"
+
     # Test updating hash
     ds.set_document_hash("test_doc_id", "test_doc_hash_new")
     doc_hash = ds.get_document_hash("test_doc_id")
+    assert doc_hash == "test_doc_hash_new"
+
+    # Test updating hash (async)
+    await ds.aset_document_hash("test_doc_id", "test_doc_hash_new")
+    doc_hash = await ds.aget_document_hash("test_doc_id")
     assert doc_hash == "test_doc_hash_new"
 
     # Test getting non-existent

@@ -1,9 +1,9 @@
-"""Pinecone Vector store index.
+"""
+Pinecone Vector store index.
 
 An index that that is built on top of an existing vector store.
 
 """
-
 import logging
 from collections import Counter
 from functools import partial
@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.vector_stores.pinecone_utils import _import_pinecone, _is_pinecone_v3
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -33,6 +34,38 @@ METADATA_KEY = "metadata"
 DEFAULT_BATCH_SIZE = 100
 
 _logger = logging.getLogger(__name__)
+
+
+def _transform_pinecone_filter_condition(condition: str) -> str:
+    """Translate standard metadata filter op to Pinecone specific spec."""
+    if condition == "and":
+        return "$and"
+    elif condition == "or":
+        return "$or"
+    else:
+        raise ValueError(f"Filter condition {condition} not supported")
+
+
+def _transform_pinecone_filter_operator(operator: str) -> str:
+    """Translate standard metadata filter operator to Pinecone specific spec."""
+    if operator == "!=":
+        return "$ne"
+    elif operator == "==":
+        return "$eq"
+    elif operator == ">":
+        return "$gt"
+    elif operator == "<":
+        return "$lt"
+    elif operator == ">=":
+        return "$gte"
+    elif operator == "<=":
+        return "$lte"
+    elif operator == "in":
+        return "$in"
+    elif operator == "nin":
+        return "$nin"
+    else:
+        raise ValueError(f"Filter operator {operator} not supported")
 
 
 def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
@@ -92,8 +125,29 @@ def get_default_tokenizer() -> Callable:
 def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     """Convert from standard dataclass to pinecone filter dict."""
     filters = {}
-    for filter in standard_filters.legacy_filters():
-        filters[filter.key] = filter.value
+    filters_list = []
+    condition = standard_filters.condition or "and"
+    condition = _transform_pinecone_filter_condition(condition)
+    if standard_filters.filters:
+        for filter in standard_filters.filters:
+            if filter.operator:
+                filters_list.append(
+                    {
+                        filter.key: {
+                            _transform_pinecone_filter_operator(
+                                filter.operator
+                            ): filter.value
+                        }
+                    }
+                )
+            else:
+                filters_list.append({filter.key: filter.value})
+
+    if len(filters_list) == 1:
+        # If there is only one filter, return it directly
+        return filters_list[0]
+    elif len(filters_list) > 1:
+        filters[condition] = filters_list
     return filters
 
 
@@ -112,10 +166,14 @@ class PineconeVectorStore(BasePydanticVectorStore):
     k most similar nodes.
 
     Args:
-        pinecone_index (Optional[pinecone.Index]): Pinecone index instance
+        pinecone_index (Optional[Union[pinecone.Pinecone.Index, pinecone.Index]]): Pinecone index instance,
+        pinecone.Pinecone.Index for clients >= 3.0.0; pinecone.Index for older clients.
         insert_kwargs (Optional[Dict]): insert kwargs during `upsert` call.
         add_sparse_vector (bool): whether to add sparse vector to index.
         tokenizer (Optional[Callable]): tokenizer to use to generate sparse
+        default_empty_query_vector (Optional[List[float]]): default empty query vector.
+            Defaults to None. If not None, then this vector will be used as the query
+            vector if the query is empty.
 
     """
 
@@ -137,7 +195,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        pinecone_index: Optional[Any] = None,
+        pinecone_index: Optional[
+            Any
+        ] = None,  # Dynamic import prevents specific type hinting here
         api_key: Optional[str] = None,
         index_name: Optional[str] = None,
         environment: Optional[str] = None,
@@ -148,26 +208,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
+        default_empty_query_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize params."""
-        try:
-            import pinecone
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        if pinecone_index is not None:
-            self._pinecone_index = cast(pinecone.Index, pinecone_index)
-        else:
-            if index_name is None or environment is None:
-                raise ValueError(
-                    "Must specify index_name and environment "
-                    "if not directly passing in client."
-                )
-
-            pinecone.init(api_key=api_key, environment=environment)
-            self._pinecone_index = pinecone.Index(index_name)
-
         insert_kwargs = insert_kwargs or {}
 
         if tokenizer is None and add_sparse_vector:
@@ -186,6 +229,48 @@ class PineconeVectorStore(BasePydanticVectorStore):
             remove_text_from_metadata=remove_text_from_metadata,
         )
 
+        # TODO: Make following instance check stronger -- check if pinecone_index is not pinecone.Index, else raise
+        #  ValueError
+        if isinstance(pinecone_index, str):
+            raise ValueError(
+                f"`pinecone_index` cannot be of type `str`; should be an instance of pinecone.Index, "
+            )
+
+        self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
+            api_key, index_name, environment, **kwargs
+        )
+
+    @classmethod
+    def _initialize_pinecone_client(
+        cls,
+        api_key: Optional[str],
+        index_name: Optional[str],
+        environment: Optional[str],
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Initialize Pinecone client based on version.
+
+        If client version <3.0.0, use pods-based initialization; else, use serverless initialization.
+        """
+        if not index_name:
+            raise ValueError(
+                "`index_name` is required for Pinecone client initialization"
+            )
+
+        pinecone = _import_pinecone()
+
+        if (
+            not _is_pinecone_v3()
+        ):  # If old version of Pinecone client (version bifurcation temporary):
+            if not environment:
+                raise ValueError("environment is required for Pinecone client < 3.0.0")
+            pinecone.init(api_key=api_key, environment=environment)
+            return pinecone.Index(index_name)
+        else:  # If new version of Pinecone client (serverless):
+            pinecone_instance = pinecone.Pinecone(api_key=api_key)
+            return pinecone_instance.Index(index_name)
+
     @classmethod
     def from_params(
         cls,
@@ -199,15 +284,12 @@ class PineconeVectorStore(BasePydanticVectorStore):
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
+        default_empty_query_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> "PineconeVectorStore":
-        try:
-            import pinecone
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        pinecone.init(api_key=api_key, environment=environment)
-        pinecone_index = pinecone.Index(index_name)
+        pinecone_index = cls._initialize_pinecone_client(
+            api_key, index_name, environment, **kwargs
+        )
 
         return cls(
             pinecone_index=pinecone_index,
@@ -221,6 +303,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             text_key=text_key,
             batch_size=batch_size,
             remove_text_from_metadata=remove_text_from_metadata,
+            default_empty_query_vector=default_empty_query_vector,
             **kwargs,
         )
 

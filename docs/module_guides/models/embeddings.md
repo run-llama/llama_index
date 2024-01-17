@@ -36,7 +36,7 @@ You can find more usage details and available customization options below.
 
 ## Getting Started
 
-The most common usage for an embedding model will be setting it in the service context object, and then using it to construct an index and query. The input documents will be broken into nodes, and the emedding model will generate an embedding for each node.
+The most common usage for an embedding model will be setting it in the service context object, and then using it to construct an index and query. The input documents will be broken into nodes, and the embedding model will generate an embedding for each node.
 
 By default, LlamaIndex will use `text-embedding-ada-002`, which is what the example below manually sets up for you.
 
@@ -47,7 +47,7 @@ from llama_index.embeddings import OpenAIEmbedding
 embed_model = OpenAIEmbedding()
 service_context = ServiceContext.from_defaults(embed_model=embed_model)
 
-# optionally set a global service context to avoid passing it into other objects every time
+# Optionally set a global service context to avoid passing it into other objects every time
 from llama_index import set_global_service_context
 
 set_global_service_context(service_context)
@@ -198,19 +198,22 @@ We support integrations with OpenAI, Azure, and anything LangChain offers.
 ---
 maxdepth: 1
 ---
-/examples/embeddings/OpenAI.ipynb
-/examples/embeddings/Langchain.ipynb
-/examples/embeddings/cohereai.ipynb
-/examples/embeddings/fastembed.ipynb
-/examples/embeddings/gradient.ipynb
 /examples/customization/llms/AzureOpenAI.ipynb
-/examples/embeddings/custom_embeddings.ipynb
-/examples/embeddings/huggingface.ipynb
-/examples/embeddings/elasticsearch.ipynb
 /examples/embeddings/clarifai.ipynb
-/examples/embeddings/llm_rails.ipynb
-/examples/embeddings/text_embedding_inference.ipynb
+/examples/embeddings/cohereai.ipynb
+/examples/embeddings/custom_embeddings.ipynb
+/examples/embeddings/elasticsearch.ipynb
+/examples/embeddings/fastembed.ipynb
 /examples/embeddings/google_palm.ipynb
+/examples/embeddings/gradient.ipynb
+/examples/embeddings/Anyscale.ipynb
+/examples/embeddings/huggingface.ipynb
 /examples/embeddings/jinaai_embeddings.ipynb
+/examples/embeddings/Langchain.ipynb
+/examples/embeddings/llm_rails.ipynb
+/examples/embeddings/mistralai.ipynb
+/examples/embeddings/OpenAI.ipynb
+/examples/embeddings/text_embedding_inference.ipynb
+/examples/embeddings/together.ipynb
 /examples/embeddings/voyageai.ipynb
 ```

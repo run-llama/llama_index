@@ -9,19 +9,18 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.chat_engine.utils import response_gen_from_query_engine
-from llama_index.core import BaseQueryEngine
-from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.llms.types import ChatMessage, MessageRole
+from llama_index.core.response.schema import RESPONSE_TYPE, StreamingResponse
+from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.llms.generic_utils import messages_to_history_str
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.service_context import ServiceContext
 from llama_index.settings import (
     Settings,
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
-    llm_predictor_from_settings_or_context,
 )
 from llama_index.tools import ToolOutput
 
@@ -57,17 +56,14 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         query_engine: BaseQueryEngine,
         condense_question_prompt: BasePromptTemplate,
         memory: BaseMemory,
-        llm_predictor: Optional[LLMPredictor] = None,
-        service_context: Optional[ServiceContext] = None,
+        llm: LLMPredictorType,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._query_engine = query_engine
         self._condense_question_prompt = condense_question_prompt
         self._memory = memory
-        self._llm_predictor = llm_predictor or llm_from_settings_or_context(
-            Settings, service_context
-        )
+        self._llm = llm
         self._verbose = verbose
         self.callback_manager = callback_manager or CallbackManager([])
 
@@ -89,10 +85,6 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
 
         llm = llm_from_settings_or_context(Settings, service_context)
-        llm_predictor = llm_predictor_from_settings_or_context(
-            Settings,
-            service_context,
-        )
 
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
@@ -110,8 +102,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             query_engine,
             condense_question_prompt,
             memory,
-            llm_predictor=llm_predictor,
-            service_context=service_context,
+            llm,
             verbose=verbose,
             callback_manager=callback_manager_from_settings_or_context(
                 Settings, service_context
@@ -127,7 +118,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        return self._llm_predictor.predict(
+        return self._llm.predict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,
@@ -142,7 +133,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        return await self._llm_predictor.apredict(
+        return await self._llm.apredict(
             self._condense_question_prompt,
             question=last_message,
             chat_history=chat_history_str,

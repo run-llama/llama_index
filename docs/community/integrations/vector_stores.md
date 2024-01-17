@@ -22,6 +22,7 @@ as the storage backend for `VectorStoreIndex`.
 - Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
 - Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).
 - Milvus (`MilvusVectorStore`). [Installation](https://milvus.io/docs)
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
@@ -45,7 +46,7 @@ Once constructed, the index can be used for querying.
 
 **Default Vector Store Index Construction/Querying**
 
-By default, `VectorStoreIndex` uses a in-memory `SimpleVectorStore`
+By default, `VectorStoreIndex` uses an in-memory `SimpleVectorStore`
 that's initialized as part of the default storage context.
 
 ```python
@@ -284,6 +285,98 @@ vector_store = FaissVectorStore(faiss_index)
 storage_context.persist()
 ```
 
+**Jaguar**
+
+```python
+from llama_index.schema import TextNode
+from llama_index.vector_stores.types import VectorStoreQuery
+from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
+from llama_index.vector_stores.jaguar import JaguarVectorStore
+
+
+# construct vector store client
+url = "http://127.0.0.1:8080/fwww/"
+pod = "vdb"
+store = "llamaindex_rag_store"
+vector_index = "v"
+vector_type = "cosine_fraction_float"
+vector_dimension = 3
+
+# require JAGUAR_API_KEY environment variable or file $HOME/.jagrc to hold the
+# jaguar API key to connect to jaguar store server
+vector_store = JaguarVectorStore(
+    pod, store, vector_index, vector_type, vector_dimension, url
+)
+
+# login to jaguar server for security authentication
+vector_store.login()
+
+# create a vector store on the back-end server
+metadata_fields = "author char(32), category char(16)"
+text_size = 1024
+vector_store.create(metadata_fields, text_size)
+
+# store some text
+node = TextNode(
+    text="Return of King Lear",
+    metadata={"author": "William", "category": "Tragedy"},
+    embedding=[0.9, 0.1, 0.4],
+)
+vector_store.add(nodes=[node], use_node_metadata=True)
+
+# make a query
+qembedding = [0.4, 0.2, 0.8]
+vsquery = VectorStoreQuery(query_embedding=qembedding, similarity_top_k=1)
+query_result = vector_store.query(vsquery)
+
+# make a query with metadata filter (where condition)
+qembedding = [0.6, 0.1, 0.4]
+vsquery = VectorStoreQuery(query_embedding=qembedding, similarity_top_k=3)
+where = "author='Eve' or (author='Adam' and category='History')"
+query_result = vector_store.query(vsquery, where=where)
+
+# make a query ignoring old data (with time cutoff)
+qembedding = [0.3, 0.3, 0.8]
+vsquery = VectorStoreQuery(query_embedding=qembedding, similarity_top_k=3)
+args = "day_cutoff=180"  # only search recent 180 days data
+query_result = vector_store.query(vsquery, args=args)
+
+# check if a vector is anomalous
+text = ("Gone With The Wind",)
+embed_of_text = [0.7, 0.1, 0.2]
+node = TextNode(text=text, embedding=embed_of_text)
+true_or_false = vector_store.is_anomalous(node)
+
+# llama_index RAG application
+from llama_index.embeddings import OpenAIEmbedding
+from llama_index.storage.storage_context import StorageContext
+from llama_index import VectorStoreIndex, ServiceContext
+
+question = "What did the author do growing up?"
+
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
+embed_model = OpenAIEmbedding()
+embed_of_question = [0.7, 0.1, 0.2]
+service_context = ServiceContext.from_defaults(embed_model=embed_model)
+db_documents = vector_store.load_documents(embed_of_question, 10)
+index = VectorStoreIndex.from_documents(
+    db_documents,
+    storage_context=storage_context,
+    service_context=service_context,
+)
+
+query_engine = index.as_query_engine()
+print(f"Question: {question}")
+response = query_engine.query(question)
+print(f"Answer: {str(response)}")
+
+# logout to clean up resources
+vector_store.logout()
+```
+
+**Note**: Client(requires jaguardb-http-client) <--> Http Gateway <--> JaguarDB Server
+Client side needs to run: "pip install -U jaguardb-http-client"
+
 **Milvus**
 
 - Milvus Index offers the ability to store both Documents and their embeddings.
@@ -382,14 +475,8 @@ pinecone.create_index(
 )
 index = pinecone.Index("quickstart")
 
-# can define filters specific to this vector index (so you can
-# reuse pinecone indexes)
-metadata_filters = {"title": "paul_graham_essay"}
-
 # construct vector store
-vector_store = PineconeVectorStore(
-    pinecone_index=index, metadata_filters=metadata_filters
-)
+vector_store = PineconeVectorStore(pinecone_index=index)
 ```
 
 **Qdrant**
@@ -665,9 +752,9 @@ maxdepth: 1
 ../../examples/vector_stores/postgres.ipynb
 ../../examples/vector_stores/RedisIndexDemo.ipynb
 ../../examples/vector_stores/QdrantIndexDemo.ipynb
+../../examples/vector_stores/qdrant_hybrid.ipynb
 ../../examples/vector_stores/RocksetIndexDemo.ipynb
 ../../examples/vector_stores/SimpleIndexDemo.ipynb
-../../examples/vector_stores/SingleStoreDemo.ipynb
 ../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 ../../examples/vector_stores/TairIndexDemo.ipynb
 ../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb

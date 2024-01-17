@@ -2,15 +2,12 @@ import json
 import os
 import warnings
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.callbacks.base import CallbackManager
-from llama_index.embeddings.base import (
-    DEFAULT_EMBED_BATCH_SIZE,
-    BaseEmbedding,
-    Embedding,
-)
+from llama_index.constants import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.core.embeddings.base import BaseEmbedding, Embedding
 
 
 class PROVIDERS(str, Enum):
@@ -27,16 +24,17 @@ class Models(str, Enum):
 
 PROVIDER_SPECIFIC_IDENTIFIERS = {
     PROVIDERS.AMAZON.value: {
-        "embeddings": "embedding",
+        "get_embeddings_func": lambda r: r.get("embedding"),
     },
     PROVIDERS.COHERE.value: {
-        "embeddings": "embeddings",
+        "get_embeddings_func": lambda r: r.get("embeddings")[0],
     },
 }
 
 
 class BedrockEmbedding(BaseEmbedding):
     _client: Any = PrivateAttr()
+    _verbose: bool = PrivateAttr()
 
     def __init__(
         self,
@@ -44,8 +42,10 @@ class BedrockEmbedding(BaseEmbedding):
         client: Any = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
     ):
         self._client = client
+        self._verbose = verbose
 
         super().__init__(
             model_name=model_name,
@@ -136,6 +136,7 @@ class BedrockEmbedding(BaseEmbedding):
         aws_profile: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
     ) -> "BedrockEmbedding":
         """
         Instantiate using AWS credentials.
@@ -192,17 +193,18 @@ class BedrockEmbedding(BaseEmbedding):
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            verbose=verbose,
         )
 
-    def _get_embedding(self, payload: Any) -> Embedding:
+    def _get_embedding(self, payload: str, type: Literal["text", "query"]) -> Embedding:
         if self._client is None:
-            self.set_credentials(self.model_name)
+            self.set_credentials()
 
         if self._client is None:
             raise ValueError("Client not set")
 
         provider = self.model_name.split(".")[0]
-        request_body = self._get_request_body(provider, payload)
+        request_body = self._get_request_body(provider, payload, type)
 
         response = self._client.invoke_model(
             body=request_body,
@@ -215,15 +217,17 @@ class BedrockEmbedding(BaseEmbedding):
         identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider, None)
         if identifiers is None:
             raise ValueError("Provider not supported")
-        return resp.get(identifiers.get("embeddings"))
+        return identifiers["get_embeddings_func"](resp)
 
     def _get_query_embedding(self, query: str) -> Embedding:
-        return self._get_embedding(query)
+        return self._get_embedding(query, "query")
 
     def _get_text_embedding(self, text: str) -> Embedding:
-        return self._get_embedding(text)
+        return self._get_embedding(text, "text")
 
-    def _get_request_body(self, provider: str, payload: Any) -> Any:
+    def _get_request_body(
+        self, provider: str, payload: str, type: Literal["text", "query"]
+    ) -> Any:
         """Build the request body as per the provider.
         Currently supported providers are amazon, cohere.
 
@@ -240,14 +244,28 @@ class BedrockEmbedding(BaseEmbedding):
             }
 
         """
+        if self._verbose:
+            print("provider: ", provider, PROVIDERS.AMAZON)
         if provider == PROVIDERS.AMAZON:
-            request_body = json.dumps({"inputText": str(payload)})
-        if provider == PROVIDERS.COHERE:
-            request_body = json.dumps(payload)
+            request_body = json.dumps({"inputText": payload})
+        elif provider == PROVIDERS.COHERE:
+            input_types = {
+                "text": "search_document",
+                "query": "search_query",
+            }
+            request_body = json.dumps(
+                {
+                    "texts": [payload],
+                    "input_type": input_types[type],
+                    "truncate": "NONE",
+                }
+            )
+        else:
+            raise ValueError("Provider not supported")
         return request_body
 
     async def _aget_query_embedding(self, query: str) -> Embedding:
-        return self._get_embedding(query)
+        return self._get_embedding(query, "query")
 
     async def _aget_text_embedding(self, text: str) -> Embedding:
-        return self._get_embedding(text)
+        return self._get_embedding(text, "text")
