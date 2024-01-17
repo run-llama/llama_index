@@ -308,28 +308,36 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Create a Qdrant collection."""
         from qdrant_client.http import models as rest
 
-        if self.enable_hybrid:
-            self._client.recreate_collection(
-                collection_name=collection_name,
-                vectors_config={
-                    "text-dense": rest.VectorParams(
+        try:
+            if self.enable_hybrid:
+                self._client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config={
+                        "text-dense": rest.VectorParams(
+                            size=vector_size,
+                            distance=rest.Distance.COSINE,
+                        )
+                    },
+                    sparse_vectors_config={
+                        "text-sparse": rest.SparseVectorParams(
+                            index=rest.SparseIndexParams()
+                        )
+                    },
+                )
+            else:
+                self._client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=rest.VectorParams(
                         size=vector_size,
                         distance=rest.Distance.COSINE,
-                    )
-                },
-                sparse_vectors_config={
-                    "text-sparse": rest.SparseVectorParams(
-                        index=rest.SparseIndexParams()
-                    )
-                },
-            )
-        else:
-            self._client.recreate_collection(
-                collection_name=collection_name,
-                vectors_config=rest.VectorParams(
-                    size=vector_size,
-                    distance=rest.Distance.COSINE,
-                ),
+                    ),
+                )
+        except ValueError as exc:
+            if "already exists" not in str(exc):
+                raise exc  # noqa: TRY201
+            logger.warning(
+                "Collection %s already exists, skipping collection creation.",
+                collection_name,
             )
         self._collection_initialized = True
 
@@ -337,28 +345,36 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Asynchronous method to create a Qdrant collection."""
         from qdrant_client.http import models as rest
 
-        if self.enable_hybrid:
-            await self._aclient.recreate_collection(
-                collection_name=collection_name,
-                vectors_config={
-                    "text-dense": rest.VectorParams(
+        try:
+            if self.enable_hybrid:
+                await self._aclient.create_collection(
+                    collection_name=collection_name,
+                    vectors_config={
+                        "text-dense": rest.VectorParams(
+                            size=vector_size,
+                            distance=rest.Distance.COSINE,
+                        )
+                    },
+                    sparse_vectors_config={
+                        "text-sparse": rest.SparseVectorParams(
+                            index=rest.SparseIndexParams()
+                        )
+                    },
+                )
+            else:
+                await self._aclient.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=rest.VectorParams(
                         size=vector_size,
                         distance=rest.Distance.COSINE,
-                    )
-                },
-                sparse_vectors_config={
-                    "text-sparse": rest.SparseVectorParams(
-                        index=rest.SparseIndexParams()
-                    )
-                },
-            )
-        else:
-            await self._aclient.recreate_collection(
-                collection_name=collection_name,
-                vectors_config=rest.VectorParams(
-                    size=vector_size,
-                    distance=rest.Distance.COSINE,
-                ),
+                    ),
+                )
+        except ValueError as exc:
+            if "already exists" not in str(exc):
+                raise exc  # noqa: TRY201
+            logger.warning(
+                "Collection %s already exists, skipping collection creation.",
+                collection_name,
             )
         self._collection_initialized = True
 

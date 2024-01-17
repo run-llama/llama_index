@@ -12,6 +12,12 @@
 - extend auto-retrieval notebook (#10065)
 -  Updated the Attribute name in llm_generators  (#10070)
 - jaguar vector store add text_tag to add_kwargs in add() (#10057)
+
+## [0.9.32] - 2024-01-16
+
+### New Features
+
+- added query-time row retrieval + fix nits with query pipeline over structured data (#10061)
 - ReActive Agents w/ Context + updated stale link (#10058)
 
 ## [0.9.31] - 2024-01-15
