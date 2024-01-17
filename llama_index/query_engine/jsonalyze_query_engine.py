@@ -90,7 +90,7 @@ def default_jsonalyzer(
 class JSONalyzeQueryEngine(BaseQueryEngine):
     """JSON List Shape Data Analysis Query Engine.
 
-    Converts natural language statasical queries to JSON Path queries.
+    Converts natural language statasical queries to SQL within in-mem SQLite queries.
 
     list_of_dict(List[Dict[str, Any]]): List of dictionaries to query.
     service_context (ServiceContext): ServiceContext
@@ -138,8 +138,8 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
-        if "json_path_prompt" in prompts:
-            self._json_path_prompt = prompts["json_path_prompt"]
+        if "jsonalyze_prompt" in prompts:
+            self._jsonalyze_prompt = prompts["jsonalyze_prompt"]
         if "response_synthesis_prompt" in prompts:
             self._response_synthesis_prompt = prompts["response_synthesis_prompt"]
 
