@@ -9,7 +9,6 @@ from llama_index.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.core import BaseQueryEngine, BaseRetriever
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.ingestion import run_transformations
-from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.llms.utils import LLMType, resolve_llm
@@ -374,7 +373,6 @@ class BaseIndex(Generic[IS], ABC):
     def as_query_engine(
         self,
         llm: Optional[LLMType] = None,
-        llm_predictor: Optional[BaseLLMPredictor] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         # response synthesizer args
@@ -394,11 +392,11 @@ class BaseIndex(Generic[IS], ABC):
         from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
+        llm = resolve_llm(llm) if llm else Settings.llm
 
         return RetrieverQueryEngine.from_args(
             retriever,
             llm=llm,
-            llm_predictor=llm_predictor,
             response_synthesizer=response_synthesizer,
             node_postprocessors=node_postprocessors,
             # response synthesizer args
