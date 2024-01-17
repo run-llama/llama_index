@@ -76,6 +76,7 @@ html_js_files = [
         {"defer": "defer"},
     ),
     ("js/algolia.js", {"defer": "defer"}),
+    ("js/leadfeeder.js", {"defer": "defer"}),
 ]
 
 nb_execution_mode = "off"
