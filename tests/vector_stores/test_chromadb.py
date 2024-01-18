@@ -4,7 +4,7 @@ import pytest
 from llama_index.vector_stores import ChromaVectorStore
 
 ##
-# Start Elasticsearch locally
+# Start chromadb locally
 # cd tests
 # docker-compose up
 #
