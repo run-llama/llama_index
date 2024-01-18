@@ -14,7 +14,7 @@ class SubQuestionOutputParser(BaseOutputParser):
 
         # example code includes an 'items' key, which breaks
         # the parsing from open-source LLMs such as Zephyr.
-        # This get's the actual subquestions and recommended tools directly
+        # This gets the actual subquestions and recommended tools directly
         if 'items' in json_dict:
             json_dict = json_dict['items']
 
