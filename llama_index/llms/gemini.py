@@ -93,7 +93,7 @@ class Gemini(CustomLLM):
 
         base_gen_config = generation_config if generation_config else {}
         # Explicitly passed args take precedence over the generation_config.
-        final_gen_config = {"temperature": temperature} | base_gen_config
+        final_gen_config = {"temperature": temperature, **base_gen_config}
 
         self._model = genai.GenerativeModel(
             model_name=model_name,
