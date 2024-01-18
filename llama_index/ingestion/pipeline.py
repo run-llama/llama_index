@@ -15,10 +15,8 @@ from fsspec import AbstractFileSystem
 from llama_index_client import (
     ConfigurableDataSourceNames,
     ConfigurableTransformationNames,
-    ConfiguredTransformationItem,
-    DataSourceCreate,
     Pipeline,
-    PipelineCreate,
+    PipelineType,
     Project,
     ProjectCreate,
 )
@@ -29,11 +27,9 @@ from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
 from llama_index.ingestion.data_sources import (
     ConfigurableDataSources,
-    ConfiguredDataSource,
 )
 from llama_index.ingestion.transformations import (
     ConfigurableTransformations,
-    ConfiguredTransformation,
 )
 from llama_index.node_parser import SentenceSplitter
 from llama_index.readers.base import ReaderConfig
@@ -469,78 +465,28 @@ class IngestionPipeline(BaseModel):
 
         input_nodes = self._prepare_inputs(documents, nodes)
 
-        configured_transformations: List[ConfiguredTransformation] = []
-        for transformation in self.transformations:
-            try:
-                configured_transformations.append(
-                    ConfiguredTransformation.from_component(transformation)
-                )
-            except ValueError:
-                raise ValueError(f"Unsupported transformation: {type(transformation)}")
-
-        configured_transformation_items: List[ConfiguredTransformationItem] = []
-        for item in configured_transformations:
-            name = ConfigurableTransformationNames[
-                item.configurable_transformation_type.name
-            ]
-            configured_transformation_items.append(
-                ConfiguredTransformationItem(
-                    transformation_name=name,
-                    component=item.component,
-                    configurable_transformation_type=item.configurable_transformation_type.name,
-                )
-            )
-
-            # remove callback manager
-            configured_transformation_items[-1].component.pop("callback_manager", None)  # type: ignore
-
-        data_sources = []
-        for reader in self.readers:
-            if reader.reader.is_remote:
-                configured_data_source = ConfiguredDataSource.from_component(
-                    reader,
-                )
-                source_type = ConfigurableDataSourceNames[
-                    configured_data_source.configurable_data_source_type.name
-                ]
-                data_sources.append(
-                    DataSourceCreate(
-                        name=configured_data_source.name,
-                        source_type=source_type,
-                        component=configured_data_source.component,
-                    )
-                )
-            else:
-                documents = reader.read()
-                input_nodes += documents
-
-        for node in input_nodes:
-            configured_data_source = ConfiguredDataSource.from_component(node)
-            source_type = ConfigurableDataSourceNames[
-                configured_data_source.configurable_data_source_type.name
-            ]
-            data_sources.append(
-                DataSourceCreate(
-                    name=configured_data_source.name,
-                    source_type=source_type,
-                    component=node,
-                )
-            )
-
         project = client.project.upsert_project(
             request=ProjectCreate(name=self.project_name)
         )
         assert project.id is not None, "Project ID should not be None"
 
+        # delayed import to avoid circular import
+        from llama_index.indices.managed.llamaindex import get_pipeline_create
+
+        pipeline_create = get_pipeline_create(
+            self.name,
+            client,
+            PipelineType.PLAYGROUND,
+            project_name=self.project_name,
+            transformations=self.transformations,
+            input_nodes=input_nodes,
+            readers=self.readers,
+        )
+
         # upload
         pipeline = client.project.upsert_pipeline_for_project(
             project.id,
-            request=PipelineCreate(
-                name=self.name,
-                configured_transformations=configured_transformation_items,
-                data_sources=data_sources,
-                data_sinks=[],
-            ),
+            request=pipeline_create,
         )
         assert pipeline.id is not None, "Pipeline ID should not be None"
 
