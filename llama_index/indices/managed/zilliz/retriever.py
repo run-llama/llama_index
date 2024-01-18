@@ -36,7 +36,9 @@ class ZillizCloudPipelineRetriever(BaseRetriever):
         else:
             self.filter = ""
         self.offset = offset
-        self.search_pipeline_url = index.search_url
+
+        search_pipe_id = index.pipeline_ids.get("SEARCH")
+        self.search_pipeline_url = f"{index.domain}/{search_pipe_id}/run"
         self.headers = index.headers
         self.output_fields = output_metadata
         super().__init__(callback_manager)
@@ -51,6 +53,7 @@ class ZillizCloudPipelineRetriever(BaseRetriever):
                 "filter": self.filter,
             },
         }
+
         response = requests.post(
             self.search_pipeline_url, headers=self.headers, json=params
         )
