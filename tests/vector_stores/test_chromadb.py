@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 import pytest
@@ -14,8 +15,8 @@ from llama_index.vector_stores import ChromaVectorStore
 
 
 PARAMS: Dict[str, str] = {
-    "host": "localhost",
-    "port": "8000",
+    "host": os.environ.get("CHROMADB_HOST", "localhost"),
+    "port": os.environ.get("CHROMADB_PORT", "8000"),
 }
 COLLECTION_NAME = "llama_collection"
 
