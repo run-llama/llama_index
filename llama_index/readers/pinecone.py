@@ -16,7 +16,9 @@ class PineconeReader(BaseReader):
 
     def __init__(self, api_key: str, environment: Optional[str] = None) -> None:
         """Initialize with parameters."""
-        raise NotImplementedError("PineconeReader has been deprecated. Please use `PineconeVectorStore` instead.")
+        raise NotImplementedError(
+            "PineconeReader has been deprecated. Please use `PineconeVectorStore` instead."
+        )
 
     def load_data(
         self,
@@ -47,4 +49,6 @@ class PineconeReader(BaseReader):
         Returns:
             List[Document]: A list of documents.
         """
-        raise NotImplementedError("PineconeReader has been deprecated. Please use `PineconeVectorStore` instead.")
+        raise NotImplementedError(
+            "PineconeReader has been deprecated. Please use `PineconeVectorStore` instead."
+        )
