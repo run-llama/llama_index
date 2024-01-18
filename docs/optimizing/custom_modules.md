@@ -22,14 +22,8 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 
 ## Custom Retrievers
 
-```{toctree}
----
-maxdepth: 1
-hidden: true
----
-/examples/query_engine/CustomRetrievers.ipynb
-/examples/index_structs/knowledge_graph/KnowledgeGraphIndex_vs_VectorStoreIndex_vs_CustomIndex_combined.ipynb
-```
+- [Custom Retrievers](/examples/query_engine/CustomRetrievers.ipynb)
+- [Custom Knowledge Graph + Vector Retriever](/examples/index_structs/knowledge_graph/KnowledgeGraphIndex_vs_VectorStoreIndex_vs_CustomIndex_combined.ipynb)
 
 ## Custom Postprocessors/Rerankers
 
@@ -38,23 +32,11 @@ hidden: true
 
 ## Custom Query Engines
 
-```{toctree}
----
-maxdepth: 1
-hidden: true
----
-/examples/query_engine/custom_query_engine.ipynb
-```
+- [Custom Query Engine](/examples/query_engine/custom_query_engine.ipynb)
 
 ## Custom Agents
 
-```{toctree}
----
-maxdepth: 1
-hidden: true
----
-/examples/agent/custom_agents.ipynb
-```
+- [Custom Agents](/examples/agent/custom_agents.ipynb)
 
 ## Custom Query Components (for use in Query Pipeline)
 
@@ -64,14 +46,7 @@ hidden: true
 ## Other Ways of Customization
 
 Some modules can be customized heavily within your workflows but not through subclassing (and instead through parameters or functions we expose). We list these in guides below: 
-```{toctree}
----
-maxdepth: 1
-hidden: true
----
-/module_guides/loading/documents_and_nodes/usage_documents.ipynb
-/module_guides/loading/documents_and_nodes/usage_nodes.ipynb
-/examples/prompts/prompt_mixin.ipynb
 
-```
-
+- [Customizing Documents](/module_guides/loading/documents_and_nodes/usage_documents.ipynb)
+- [Customizing Nodes](/module_guides/loading/documents_and_nodes/usage_nodes.ipynb)
+- [Customizing Prompts within Higher-Level Modules](/examples/prompts/prompt_mixin.ipynb)
