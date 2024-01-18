@@ -746,7 +746,7 @@ class IngestionPipeline(BaseModel):
                     "Setting `num_workers` down to the maximum CPU count."
                 )
 
-            with multiprocessing.Pool(num_workers) as p:
+            with multiprocessing.get_context("spawn").Pool(num_workers) as p:
                 node_batches = self._node_batcher(
                     num_batches=num_workers, nodes=nodes_to_run
                 )

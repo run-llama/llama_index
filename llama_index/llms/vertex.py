@@ -50,6 +50,7 @@ class Vertex(LLM):
         default=False, description="Flag to determine if current model is a Code Model"
     )
     _is_gemini: bool = PrivateAttr()
+    _is_chat_model: bool = PrivateAttr()
     _client: Any = PrivateAttr()
     _chat_client: Any = PrivateAttr()
 
