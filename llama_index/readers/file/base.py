@@ -361,7 +361,7 @@ class SimpleDirectoryReader(BaseReader):
                     "Specified num_workers exceed number of CPUs in the system. "
                     "Setting `num_workers` down to the maximum CPU count."
                 )
-            with multiprocessing.Pool(num_workers) as p:
+            with multiprocessing.get_context("spawn").Pool(num_workers) as p:
                 results = p.starmap(
                     SimpleDirectoryReader.load_file,
                     zip(
