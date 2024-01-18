@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from dataclasses_json import DataClassJsonMixin
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.bridge.pydantic import BaseModel, Field, root_validator
 from llama_index.utils import SAMPLE_TEXT, truncate_text
 
 if TYPE_CHECKING:
@@ -189,6 +189,8 @@ class BaseNode(BaseComponent):
 
     class Config:
         allow_population_by_field_name = True
+        # hash is computed on local field, during the validation process
+        validate_assignment = True
 
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
@@ -376,22 +378,20 @@ class TextNode(BaseNode):
         description="Separator between metadata fields when converting to string.",
     )
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._ensure_hash()
-
     @classmethod
     def class_name(cls) -> str:
         return "TextNode"
 
-    def _ensure_hash(self) -> None:
+    @root_validator
+    def _check_hash(cls, values: dict) -> dict:
         """Generate a hash to represent the node."""
-        text = self.text or ""
-        metadata = self.metadata or {}
+        text = values.get("text", "")
+        metadata = values.get("metadata", {})
         doc_identity = str(text) + str(metadata)
-        self.hash = str(
+        values["hash"] = str(
             sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest()
         )
+        return values
 
     @classmethod
     def get_type(cls) -> str:
@@ -434,7 +434,6 @@ class TextNode(BaseNode):
     def set_content(self, value: str) -> None:
         """Set the content of the node."""
         self.text = value
-        self._ensure_hash()
 
     def get_node_info(self) -> Dict[str, Any]:
         """Get node info."""

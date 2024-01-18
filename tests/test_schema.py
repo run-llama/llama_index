@@ -39,7 +39,12 @@ def test_text_node_hash() -> None:
     assert (
         node.hash == "ce6a3cefc3451ecb1ff41ec41a7d7e24354983520d8b2d6f5447be0b6b9b6b99"
     )
-    node2 = TextNode(text="world", metadata={"foo": "bar"})
+
+    node.text = "new"
+    assert (
+        node.hash == "bef8ff82498c9aa7d9f9751f441da9a1a1c4e9941bd03c57caa4a602cd5cadd0"
+    )
+    node2 = TextNode(text="new", metadata={"foo": "bar"})
     assert node2.hash == node.hash
-    node3 = TextNode(text="world", metadata={"foo": "baz"})
+    node3 = TextNode(text="new", metadata={"foo": "baz"})
     assert node3.hash != node.hash
