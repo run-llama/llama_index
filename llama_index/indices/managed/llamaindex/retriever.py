@@ -60,23 +60,27 @@ class PlatformRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve from the platform."""
-        pipeline = self._client.pipeline.get_pipeline_by_name(
+        pipelines = self._client.pipeline.get_pipeline_by_name(
             pipeline_name=self.name, project_name=self.project_name
         )
+        assert len(pipelines) == 1
+        pipeline = pipelines[0]
+
         if pipeline.id is None:
             raise ValueError(
                 f"No pipeline found with name {self.name} in project {self.project_name}"
             )
 
+        # TODO: janky default values
         results = self._client.retrieval.run_search(
             query=query_bundle.query_str,
             pipeline_id=pipeline.id,
-            dense_similarity_top_k=self._dense_similarity_top_k,
-            sparse_similarity_top_k=self._sparse_similarity_top_k,
-            enable_reranking=self._enable_reranking,
-            rerank_top_n=self._rerank_top_n,
-            alpha=self._alpha,
-            search_filters=self._search_filters,
+            dense_similarity_top_k=self._dense_similarity_top_k or 4,
+            sparse_similarity_top_k=self._sparse_similarity_top_k or 4,
+            enable_reranking=self._enable_reranking or True,
+            rerank_top_n=self._rerank_top_n or 2,
+            alpha=self._alpha or 0.5,
+            search_filters=self._search_filters or {},
         )
 
         result_nodes = results.retrieval_nodes

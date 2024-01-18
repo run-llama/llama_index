@@ -98,6 +98,7 @@ class PlatformIndex(BaseManagedIndex):
             transformations=transformations or default_transformations(),
             input_nodes=documents,
         )
+        print(pipeline_create)
 
         project = client.project.upsert_project(
             request=ProjectCreate(name=project_name)
