@@ -1,6 +1,6 @@
 # Writing Custom Modules
 
-A core design principle of LlamaIndex is that **almost every core module can be subclassed and customized**. 
+A core design principle of LlamaIndex is that **almost every core module can be subclassed and customized**.
 
 This allows you to use LlamaIndex for any advanced LLM use case, beyond the capabilities offered by our prepackaged modules. You're free to write as much custom code for any given module, but still take advantage of our lower-level abstractions and also plug this module along with other components.
 
@@ -29,7 +29,6 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 
 - [Custom Node Postprocessor](custom-node-postprocessor)
 
-
 ## Custom Query Engines
 
 - [Custom Query Engine](/examples/query_engine/custom_query_engine.ipynb)
@@ -42,10 +41,9 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 
 - [Custom Query Component](query-pipeline-custom-component)
 
-
 ## Other Ways of Customization
 
-Some modules can be customized heavily within your workflows but not through subclassing (and instead through parameters or functions we expose). We list these in guides below: 
+Some modules can be customized heavily within your workflows but not through subclassing (and instead through parameters or functions we expose). We list these in guides below:
 
 - [Customizing Documents](/module_guides/loading/documents_and_nodes/usage_documents.ipynb)
 - [Customizing Nodes](/module_guides/loading/documents_and_nodes/usage_nodes.ipynb)
