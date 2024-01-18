@@ -28,3 +28,18 @@ def test_node_with_score_passthrough(node_with_score: NodeWithScore) -> None:
     _ = node_with_score.get_text()
     _ = node_with_score.get_content()
     _ = node_with_score.get_embedding()
+
+
+def test_text_node_hash() -> None:
+    node = TextNode(text="hello", metadata={"foo": "bar"})
+    assert (
+        node.hash == "aa158bf3388f103cef4bd85b2ca93f343ad8f5e50f58ae4141a35d75a2f21fb0"
+    )
+    node.set_content("world")
+    assert (
+        node.hash == "ce6a3cefc3451ecb1ff41ec41a7d7e24354983520d8b2d6f5447be0b6b9b6b99"
+    )
+    node2 = TextNode(text="world", metadata={"foo": "bar"})
+    assert node2.hash == node.hash
+    node3 = TextNode(text="world", metadata={"foo": "baz"})
+    assert node3.hash != node.hash
