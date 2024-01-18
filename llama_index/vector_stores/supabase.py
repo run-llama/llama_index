@@ -75,8 +75,12 @@ class SupabaseVectorStore(VectorStore):
     def _to_vecs_filters(self, filters: MetadataFilters) -> Any:
         """Convert llama filters to vecs filters. $eq is the only supported operator."""
         vecs_filter = {}
+        filter_cond = "${}".format(filters.condition.value)
+        vecs_filter[filter_cond] = []
         for f in filters.legacy_filters():
-            vecs_filter[f.key] = {"$eq": f.value}
+            sub_filter = {}
+            sub_filter[f.key] = {"$eq": f.value}
+            vecs_filter[filter_cond].append(sub_filter)
         return vecs_filter
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
