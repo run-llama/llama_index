@@ -189,6 +189,8 @@ class BaseNode(BaseComponent):
 
     class Config:
         allow_population_by_field_name = True
+        # hash is computed on local field, during the validation process
+        validate_assignment = True
 
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
