@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import uuid
-from typing import Any, Dict, Generator, List, Union
+from typing import Dict, Generator, List, Union
 
 import pandas as pd
 import pytest
@@ -40,13 +40,6 @@ try:
 except (ImportError, Exception):
     elasticsearch_not_available = True
     basic_license = True
-
-
-@pytest.fixture(scope="session")
-def conn() -> Any:
-    import elasticsearch
-
-    return elasticsearch.Elasticsearch("http://localhost:9200")
 
 
 @pytest.fixture()
