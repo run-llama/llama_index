@@ -36,7 +36,7 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 
 ## Custom Agents
 
-- [Custom Agents](/examples/agent/custom_agents.ipynb)
+- [Custom Agents](/examples/agent/custom_agent.ipynb)
 
 ## Custom Query Components (for use in Query Pipeline)
 
