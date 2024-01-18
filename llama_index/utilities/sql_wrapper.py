@@ -206,6 +206,8 @@ class SQLDatabase:
         """
         with self._engine.begin() as connection:
             try:
+                if self._schema:
+                    command = command.replace("FROM ", f"FROM {self._schema}.")
                 cursor = connection.execute(text(command))
             except (ProgrammingError, OperationalError) as exc:
                 raise NotImplementedError(
