@@ -130,9 +130,36 @@ node_parser = SentenceWindowNodeParser.from_defaults(
 
 A full example can be found [here in combination with the `MetadataReplacementNodePostProcessor`](/examples/node_postprocessor/MetadataReplacementDemo.ipynb).
 
+### SemanticSplitterNodeParser
+
+"Semantic chunking" is a new concept proposed Greg Kamradt in his video tutorial on 5 levels of embedding chunking: https://youtu.be/8OJC21T2SL4?t=1933.
+
+Instead of chunking text with a **fixed** chunk size, the semantic splitter adaptively picks the breakpoint in-between sentences using embedding similarity. This ensures that a "chunk" contains sentences that are semantically related to each other.
+
+We adapted it into a LlamaIndex module.
+
+Check out our notebook below!
+
+Caveats:
+
+- The regex primarily works for English sentences
+- You may have to tune the breakpoint percentile threshold.
+
+```python
+from llama_index.node_parser import SemanticSplitterNodeParser
+from llama_index.embeddings import OpenAIEmbedding
+
+embed_model = OpenAIEmbedding()
+splitter = SemanticSplitterNodeParser(
+    buffer_size=1, breakpoint_percentile_threshold=95, embed_model=embed_model
+)
+```
+
+A full example can be found in our [guide on using the `SemanticSplitterNodeParser`](/examples/node_parsers/semantic_chunking.ipynb).
+
 ### TokenTextSplitter
 
-The `TokenTextSplitter` attempts to split text while respecting the boundaries of sentences.
+The `TokenTextSplitter` attempts to split to a consistent chunk size according to raw token counts.
 
 ```python
 from llama_index.text_splitter import TokenTextSplitter

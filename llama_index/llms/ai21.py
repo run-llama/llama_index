@@ -2,20 +2,20 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.llms.ai21_utils import ai21_model_to_context_size
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.generic_utils import (
-    completion_to_chat_decorator,
-    get_from_param_or_env,
-)
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+)
+from llama_index.llms.ai21_utils import ai21_model_to_context_size
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.generic_utils import (
+    completion_to_chat_decorator,
+    get_from_param_or_env,
 )
 from llama_index.types import BaseOutputParser, PydanticProgramMode
 
@@ -104,7 +104,9 @@ class AI21(CustomLLM):
         }
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         import ai21
@@ -118,7 +120,9 @@ class AI21(CustomLLM):
         )
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         raise NotImplementedError(
             "AI21 does not currently support streaming completion."
         )

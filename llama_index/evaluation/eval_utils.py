@@ -18,7 +18,7 @@ from llama_index_client.client import PlatformApi
 from llama_index_client.types.eval_question_create import EvalQuestionCreate
 
 from llama_index.async_utils import asyncio_module
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.evaluation.base import EvaluationResult
 from llama_index.ingestion.pipeline import DEFAULT_BASE_URL, DEFAULT_PROJECT_NAME
 from llama_index.llama_dataset import LabelledRagDataset

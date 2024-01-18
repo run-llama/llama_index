@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
@@ -91,6 +91,8 @@ class KGTableRetriever(BaseRetriever):
         use_global_node_triplets: bool = False,
         max_knowledge_sequence: int = REL_TEXT_LIMIT,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -120,7 +122,9 @@ class KGTableRetriever(BaseRetriever):
         except Exception as e:
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""

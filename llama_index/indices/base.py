@@ -7,7 +7,8 @@ from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, 
 import unique_names_generator as ung
 
 from llama_index.chat_engine.types import BaseChatEngine, ChatMode
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.base_retriever import BaseRetriever
@@ -20,7 +21,7 @@ from llama_index.ingestion.pipeline import (
 )
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import is_function_calling_model
-from llama_index.schema import BaseNode, Document
+from llama_index.schema import BaseNode, Document, IndexNode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
@@ -47,6 +48,7 @@ class BaseIndex(Generic[IS], ABC):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IS] = None,
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
@@ -54,8 +56,8 @@ class BaseIndex(Generic[IS], ABC):
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
-        if index_struct is None and nodes is None:
-            raise ValueError("One of nodes or index_struct must be provided.")
+        if index_struct is None and nodes is None and objects is None:
+            raise ValueError("One of nodes, objects, or index_struct must be provided.")
         if index_struct is not None and nodes is not None:
             raise ValueError("Only one of nodes or index_struct can be provided.")
         # This is to explicitly make sure that the old UX is not used
@@ -76,10 +78,14 @@ class BaseIndex(Generic[IS], ABC):
         self._vector_store = self._storage_context.vector_store
         self._graph_store = self._storage_context.graph_store
 
+        objects = objects or []
+        self._object_map = {obj.index_id: obj.obj for obj in objects}
         with self._service_context.callback_manager.as_trace("index_construction"):
             if index_struct is None:
-                assert nodes is not None
-                index_struct = self.build_index_from_nodes(nodes)
+                nodes = nodes or []
+                index_struct = self.build_index_from_nodes(
+                    nodes + objects  # type: ignore
+                )
             self._index_struct = index_struct
             self._storage_context.index_store.add_index_struct(self._index_struct)
 

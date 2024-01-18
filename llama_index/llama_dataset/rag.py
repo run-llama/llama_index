@@ -7,7 +7,7 @@ from typing import List, Optional
 from pandas import DataFrame as PandasDataFrame
 
 from llama_index.bridge.pydantic import Field
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,

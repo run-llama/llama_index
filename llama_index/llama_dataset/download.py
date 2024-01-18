@@ -35,6 +35,7 @@ def download_llama_dataset(
     llama_datasets_lfs_url: str = LLAMA_DATASETS_LFS_URL,
     llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     show_progress: bool = False,
+    load_documents: bool = True,
 ) -> Tuple[Type[BaseLlamaDataset], List[Document]]:
     """Download dataset from datasets-LFS and llamahub.
 
@@ -54,6 +55,8 @@ def download_llama_dataset(
         disable_library_cache: Boolean to control library cache
         override_path: Boolean to control overriding path
         show_progress: Boolean for showing progress on downloading source files
+        load_documents: Boolean for whether or not source_files for LabelledRagDataset should
+                        be loaded.
 
     Returns:
         a `BaseLlamaDataset` and a `List[Document]`
@@ -78,7 +81,7 @@ def download_llama_dataset(
 
     # for now only rag datasets need to provide the documents
     # in order to build an index over them
-    if "rag_dataset.json" in dataset_filename:
+    if "rag_dataset.json" in dataset_filename and load_documents:
         documents = SimpleDirectoryReader(input_dir=source_files_dir).load_data(
             show_progress=show_progress
         )

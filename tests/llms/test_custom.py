@@ -1,25 +1,24 @@
 from typing import Any
 
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.types import (
+from llama_index.core.llms.types import (
     ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.llms.custom import CustomLLM
 
 
 class TestLLM(CustomLLM):
     __test__ = False
 
-    def __init__(self) -> None:
-        super().__init__(callback_manager=None)
-
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata()
 
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         return CompletionResponse(
             text="test output",
             additional_kwargs={
@@ -27,7 +26,9 @@ class TestLLM(CustomLLM):
             },
         )
 
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         def gen() -> CompletionResponseGen:
             text = "test output"
             text_so_far = ""

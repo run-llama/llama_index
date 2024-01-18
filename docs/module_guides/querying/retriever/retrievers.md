@@ -28,6 +28,7 @@ BM25 Hybrid Retriever </examples/retrievers/bm25_retriever.ipynb>
 /examples/retrievers/reciprocal_rerank_fusion.ipynb
 /examples/retrievers/auto_merging_retriever.ipynb
 /examples/node_postprocessor/MetadataReplacementDemo.ipynb
+/examples/retrievers/composable_retrievers.ipynb
 ```
 
 ### Auto-Retrieval
@@ -42,6 +43,7 @@ maxdepth: 1
 Auto-Retrieval (with Chroma) </examples/vector_stores/chroma_auto_retriever.ipynb>
 Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 /examples/query_engine/multi_doc_auto_retrieval/multi_doc_auto_retrieval.ipynb
+/examples/retrievers/vectara_auto_retriever.ipynb
 ```
 
 ### Knowledge Graph Retrievers

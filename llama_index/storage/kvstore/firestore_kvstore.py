@@ -1,6 +1,10 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
+from llama_index.storage.kvstore.types import (
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_COLLECTION,
+    BaseKVStore,
+)
 
 # keyword "_" is reserved in Firestore but referred in llama_index/constants.py.
 FIELD_NAME_REPLACE_SET = {"__data__": "data", "__type__": "type"}
@@ -24,10 +28,13 @@ class FirestoreKVStore(BaseKVStore):
     """
 
     def __init__(
-        self, project: Optional[str] = None, database: str = DEFAULT_FIRESTORE_DATABASE
+        self,
+        project: Optional[str] = None,
+        database: str = DEFAULT_FIRESTORE_DATABASE,
     ) -> None:
         try:
-            from google.cloud import firestore_v1 as firestore
+            from google.cloud.firestore_v1.async_client import AsyncClient
+            from google.cloud.firestore_v1.client import Client
             from google.cloud.firestore_v1.services.firestore.transports.base import (
                 DEFAULT_CLIENT_INFO,
             )
@@ -36,9 +43,10 @@ class FirestoreKVStore(BaseKVStore):
 
         client_info = DEFAULT_CLIENT_INFO
         client_info.user_agent = USER_AGENT
-        self._db = firestore.client.Client(
+        self._adb = AsyncClient(
             project=project, database=database, client_info=client_info
         )
+        self._db = Client(project=project, database=database, client_info=client_info)
 
     def firestore_collection(self, collection: str) -> str:
         return collection.replace("/", SLASH_REPLACEMENT)
@@ -77,6 +85,63 @@ class FirestoreKVStore(BaseKVStore):
         doc = self._db.collection(collection_id).document(key)
         doc.set(val, merge=True)
 
+    async def aput(
+        self,
+        key: str,
+        val: dict,
+        collection: str = DEFAULT_COLLECTION,
+    ) -> None:
+        """Put a key-value pair into the Firestore collection.
+
+        Args:
+            key (str): key
+            val (dict): value
+            collection (str): collection name
+        """
+        collection_id = self.firestore_collection(collection)
+        val = self.replace_field_name_set(val)
+        doc = self._adb.collection(collection_id).document(key)
+        await doc.set(val, merge=True)
+
+    def put_all(
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+    ) -> None:
+        batch = self._db.batch()
+        for i, (key, val) in enumerate(kv_pairs, start=1):
+            collection_id = self.firestore_collection(collection)
+            val = self.replace_field_name_set(val)
+            batch.set(self._db.collection(collection_id).document(key), val, merge=True)
+            if i % batch_size == 0:
+                batch.commit()
+                batch = self._db.batch()
+        batch.commit()
+
+    async def aput_all(
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+    ) -> None:
+        """Put a dictionary of key-value pairs into the Firestore collection.
+
+        Args:
+            kv_pairs (List[Tuple[str, dict]]): key-value pairs
+            collection (str): collection name
+        """
+        batch = self._adb.batch()
+        for i, (key, val) in enumerate(kv_pairs, start=1):
+            collection_id = self.firestore_collection(collection)
+            doc = self._adb.collection(collection_id).document(key)
+            val = self.replace_field_name_set(val)
+            batch.set(doc, val, merge=True)
+            if i % batch_size == 0:
+                await batch.commit()
+                batch = self._adb.batch()
+        await batch.commit()
+
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a key-value pair from the Firestore.
 
@@ -86,6 +151,24 @@ class FirestoreKVStore(BaseKVStore):
         """
         collection_id = self.firestore_collection(collection)
         result = self._db.collection(collection_id).document(key).get().to_dict()
+        if not result:
+            return None
+
+        return self.replace_field_name_get(result)
+
+    async def aget(
+        self, key: str, collection: str = DEFAULT_COLLECTION
+    ) -> Optional[dict]:
+        """Get a key-value pair from the Firestore.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+        """
+        collection_id = self.firestore_collection(collection)
+        result = (
+            await self._adb.collection(collection_id).document(key).get()
+        ).to_dict()
         if not result:
             return None
 
@@ -106,6 +189,24 @@ class FirestoreKVStore(BaseKVStore):
             output[key] = val
         return output
 
+    async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+        """Get all values from the Firestore collection.
+
+        Args:
+            collection (str): collection name
+        """
+        collection_id = self.firestore_collection(collection)
+        docs = self._adb.collection(collection_id).list_documents()
+        output = {}
+        async for doc in docs:
+            key = doc.id
+            data = doc.get().to_dict()
+            if data is None:
+                continue
+            val = self.replace_field_name_get(data)
+            output[key] = val
+        return output
+
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the Firestore.
 
@@ -116,4 +217,16 @@ class FirestoreKVStore(BaseKVStore):
         collection_id = self.firestore_collection(collection)
         doc = self._db.collection(collection_id).document(key)
         doc.delete()
+        return True
+
+    async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        """Delete a value from the Firestore.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+        """
+        collection_id = self.firestore_collection(collection)
+        doc = self._adb.collection(collection_id).document(key)
+        await doc.delete()
         return True

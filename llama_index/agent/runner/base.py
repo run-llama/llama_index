@@ -209,6 +209,7 @@ class AgentRunner(BaseAgentRunner):
         callback_manager: Optional[CallbackManager] = None,
         init_task_state_kwargs: Optional[dict] = None,
         delete_task_on_finish: bool = False,
+        default_tool_choice: str = "auto",
     ) -> None:
         """Initialize."""
         self.agent_worker = agent_worker
@@ -217,6 +218,7 @@ class AgentRunner(BaseAgentRunner):
         self.callback_manager = callback_manager or CallbackManager([])
         self.init_task_state_kwargs = init_task_state_kwargs or {}
         self.delete_task_on_finish = delete_task_on_finish
+        self.default_tool_choice = default_tool_choice
 
     @property
     def chat_history(self) -> List[ChatMessage]:
@@ -227,10 +229,19 @@ class AgentRunner(BaseAgentRunner):
 
     def create_task(self, input: str, **kwargs: Any) -> Task:
         """Create task."""
+        if not self.init_task_state_kwargs:
+            extra_state = kwargs.pop("extra_state", {})
+        else:
+            if "extra_state" in kwargs:
+                raise ValueError(
+                    "Cannot specify both `extra_state` and `init_task_state_kwargs`"
+                )
+            else:
+                extra_state = self.init_task_state_kwargs
         task = Task(
             input=input,
             memory=self.memory,
-            extra_state=self.init_task_state_kwargs,
+            extra_state=extra_state,
             **kwargs,
         )
         # # put input into memory
@@ -428,11 +439,16 @@ class AgentRunner(BaseAgentRunner):
         result_output = None
         while True:
             # pass step queue in as argument, assume step executor is stateless
-            cur_step_output = self._run_step(task.task_id, mode=mode)
+            cur_step_output = self._run_step(
+                task.task_id, mode=mode, tool_choice=tool_choice
+            )
 
             if cur_step_output.is_last:
                 result_output = cur_step_output
                 break
+
+            # ensure tool_choice does not cause endless loops
+            tool_choice = "auto"
 
         return self.finalize_response(task.task_id, result_output)
 
@@ -451,11 +467,16 @@ class AgentRunner(BaseAgentRunner):
         result_output = None
         while True:
             # pass step queue in as argument, assume step executor is stateless
-            cur_step_output = await self._arun_step(task.task_id, mode=mode)
+            cur_step_output = await self._arun_step(
+                task.task_id, mode=mode, tool_choice=tool_choice
+            )
 
             if cur_step_output.is_last:
                 result_output = cur_step_output
                 break
+
+            # ensure tool_choice does not cause endless loops
+            tool_choice = "auto"
 
         return self.finalize_response(task.task_id, result_output)
 
@@ -464,8 +485,11 @@ class AgentRunner(BaseAgentRunner):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: Optional[Union[str, dict]] = None,
     ) -> AgentChatResponse:
+        # override tool choice is provided as input.
+        if tool_choice is None:
+            tool_choice = self.default_tool_choice
         with self.callback_manager.event(
             CBEventType.AGENT_STEP,
             payload={EventPayload.MESSAGES: [message]},
@@ -482,8 +506,11 @@ class AgentRunner(BaseAgentRunner):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: Optional[Union[str, dict]] = None,
     ) -> AgentChatResponse:
+        # override tool choice is provided as input.
+        if tool_choice is None:
+            tool_choice = self.default_tool_choice
         with self.callback_manager.event(
             CBEventType.AGENT_STEP,
             payload={EventPayload.MESSAGES: [message]},
@@ -500,8 +527,11 @@ class AgentRunner(BaseAgentRunner):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: Optional[Union[str, dict]] = None,
     ) -> StreamingAgentChatResponse:
+        # override tool choice is provided as input.
+        if tool_choice is None:
+            tool_choice = self.default_tool_choice
         with self.callback_manager.event(
             CBEventType.AGENT_STEP,
             payload={EventPayload.MESSAGES: [message]},
@@ -518,8 +548,11 @@ class AgentRunner(BaseAgentRunner):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: Optional[Union[str, dict]] = None,
     ) -> StreamingAgentChatResponse:
+        # override tool choice is provided as input.
+        if tool_choice is None:
+            tool_choice = self.default_tool_choice
         with self.callback_manager.event(
             CBEventType.AGENT_STEP,
             payload={EventPayload.MESSAGES: [message]},

@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional, Sequence, Type
 
 import requests
 
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.ingestion.pipeline import DEFAULT_PROJECT_NAME

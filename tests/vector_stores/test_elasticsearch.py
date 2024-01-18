@@ -17,8 +17,8 @@ from llama_index.vector_stores.types import (
 
 ##
 # Start Elasticsearch locally
-# cd tests/vector_stores/docker-compose
-# docker-compose -f elasticsearch.yml up
+# cd tests
+# docker-compose up
 #
 # Run tests
 # cd tests/vector_stores
@@ -464,7 +464,7 @@ def test_check_user_agent(
     user_agent = es_client_instance.transport.requests[0]["headers"][  # type: ignore
         "user-agent"
     ]
-    pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+$"
+    pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+(\.post\d+)?$"
     match = re.match(pattern, user_agent)
 
     assert (

@@ -2,7 +2,7 @@ from typing import Callable, List, Optional, Union
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
-from llama_index.embeddings.base import (
+from llama_index.core.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
     Embedding,
@@ -46,6 +46,7 @@ class TextEmbeddingsInference(BaseEmbedding):
         timeout: float = 60.0,
         truncate_text: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        auth_token: Optional[Union[str, Callable[[str], str]]] = None,
     ):
         try:
             import httpx  # noqa
@@ -64,6 +65,7 @@ class TextEmbeddingsInference(BaseEmbedding):
             timeout=timeout,
             truncate_text=truncate_text,
             callback_manager=callback_manager,
+            auth_token=auth_token,
         )
 
     @classmethod

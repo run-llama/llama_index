@@ -10,6 +10,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.anthropic_utils import messages_to_anthropic_prompt
 from llama_index.llms.generic_utils import (
     prompt_to_messages,
@@ -20,7 +21,6 @@ from llama_index.llms.llama_utils import (
 from llama_index.llms.llama_utils import (
     messages_to_prompt as messages_to_llama_prompt,
 )
-from llama_index.llms.types import ChatMessage
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"

@@ -216,6 +216,10 @@ class JaguarVectorStore(VectorStore):
         text = text.replace("'", "\\'")
         vcol = self._vector_index
         filecol = kwargs.get("file_column", "")
+        text_tag = kwargs.get("text_tag", "")
+
+        if text_tag != "":
+            text = text_tag + " " + text
 
         podstorevcol = self._pod + "." + self._store + "." + vcol
         q = "textcol " + podstorevcol

@@ -92,6 +92,8 @@ class DatabaseReader(BaseReader):
 
             for item in result.fetchall():
                 # fetch each item
-                doc_str = ", ".join([str(entry) for entry in item])
+                doc_str = ", ".join(
+                    [f"{col}: {entry}" for col, entry in zip(result.keys(), item)]
+                )
                 documents.append(Document(text=doc_str))
         return documents
