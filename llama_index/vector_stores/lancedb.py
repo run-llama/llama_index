@@ -116,7 +116,7 @@ class LanceDBVectorStore(VectorStore):
         ids = []
         for node in nodes:
             metadata = node_to_metadata_dict(
-                node, remove_text=True, flat_metadata=self.flat_metadata
+                node, remove_text=False, flat_metadata=self.flat_metadata
             )
             append_data = {
                 "id": node.node_id,
