@@ -84,6 +84,7 @@ class LanceDBVectorStore(VectorStore):
         table_name: str = "vectors",
         nprobes: int = 20,
         refine_factor: Optional[int] = None,
+        tst_arg :Optional[int] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         **kwargs: Any,
     ) -> None:
@@ -178,18 +179,18 @@ class LanceDBVectorStore(VectorStore):
         for _, item in results.iterrows():
             try :
                 node = metadata_dict_to_node(item.metadata)
-                node.embedding = item.vector
+                node.embedding = list(item.vector)
             except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
+                # deprecated legacy logic for backward compatibility
                 _logger.debug(
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
-                metadata, node_info = legacy_metadata_dict_to_node(
-                    item.text, text_key=self.text_key
+                metadata, node_info, _relation = legacy_metadata_dict_to_node(
+                    item.metadata, text_key=self.text_key
                 )
                 node = TextNode(
-                    text=item.vector,
-                    id_=id,
+                    text=item.text or "",
+                    id_=item.id,
                     metadata=metadata,
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),
