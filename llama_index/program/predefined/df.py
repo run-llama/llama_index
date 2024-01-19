@@ -62,7 +62,7 @@ class DataFrameRowsOnly(BaseModel):
             new_df = pd.DataFrame([row.row_values for row in self.rows])
             new_df.columns = existing_df.columns
             # assume row values are in order of column names
-            return existing_df.append(new_df, ignore_index=True)
+            return pd.concat([existing_df, new_df], ignore_index=True)
 
 
 class DataFrameValuesPerColumn(BaseModel):
