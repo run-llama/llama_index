@@ -46,7 +46,7 @@ version = "0.9.34"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
-beautifulsoup4 = "^4.12.2"
+beautifulsoup4 = {extras = ["html"], optional = true, version = "^4.12.2"}
 dataclasses-json = "*"
 deprecated = ">=1.2.9.3"
 fsspec = ">=2023.5.0"
