@@ -85,7 +85,6 @@ class LanceDBVectorStore(VectorStore):
         table_name: str = "vectors",
         nprobes: int = 20,
         refine_factor: Optional[int] = None,
-        tst_arg: Optional[int] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         **kwargs: Any,
     ) -> None:
