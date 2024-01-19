@@ -59,6 +59,7 @@ STREAMING_MODELS = {
     "anthropic.claude-instant-v1",
     "anthropic.claude-v1",
     "anthropic.claude-v2",
+    "anthropic.claude-v2:1",
     "meta.llama2-13b-chat-v1",
 }
 
