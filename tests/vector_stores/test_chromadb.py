@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import Dict, List
 
 import pytest
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
@@ -16,7 +16,7 @@ from llama_index.vector_stores.types import VectorStoreQuery
 # pytest test_chromadb.py
 
 
-PARAMS = {
+PARAMS: Dict[str, str] = {
     "host": os.environ.get("CHROMADB_HOST", "localhost"),
     "port": os.environ.get("CHROMADB_PORT", "8000"),
 }
