@@ -1,9 +1,9 @@
 """LanceDB vector store."""
+import logging
 from typing import Any, List, Optional
 
 import numpy as np
 from pandas import DataFrame
-import logging
 
 from llama_index.schema import (
     BaseNode,
@@ -26,6 +26,7 @@ from llama_index.vector_stores.utils import (
 )
 
 _logger = logging.getLogger(__name__)
+
 
 def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
     """Translate standard metadata filters to Lance specific spec."""
@@ -84,7 +85,7 @@ class LanceDBVectorStore(VectorStore):
         table_name: str = "vectors",
         nprobes: int = 20,
         refine_factor: Optional[int] = None,
-        tst_arg :Optional[int] = None,
+        tst_arg: Optional[int] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         **kwargs: Any,
     ) -> None:
@@ -123,7 +124,7 @@ class LanceDBVectorStore(VectorStore):
                 "doc_id": node.ref_doc_id,
                 "vector": node.get_embedding(),
                 "text": node.get_content(metadata_mode=MetadataMode.NONE),
-                "metadata" : metadata,
+                "metadata": metadata,
             }
             data.append(append_data)
             ids.append(node.node_id)
@@ -177,7 +178,7 @@ class LanceDBVectorStore(VectorStore):
         results = lance_query.to_df()
         nodes = []
         for _, item in results.iterrows():
-            try :
+            try:
                 node = metadata_dict_to_node(item.metadata)
                 node.embedding = list(item.vector)
             except Exception:
@@ -196,9 +197,9 @@ class LanceDBVectorStore(VectorStore):
                     end_char_idx=node_info.get("end", None),
                     relationships={
                         NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),
-                        }
-                    )
-        
+                    },
+                )
+
             nodes.append(node)
 
         return VectorStoreQueryResult(
