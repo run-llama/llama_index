@@ -39,6 +39,7 @@ maxdepth: 1
 ---
 maxdepth: 1
 ---
+/examples/agent/react_agent.ipynb
 /examples/agent/react_agent_with_query_engine.ipynb
 /examples/agent/react_agent_with_initial_context.ipynb
 ```
