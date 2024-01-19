@@ -415,6 +415,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http.models import Filter
 
         query_embedding = cast(List[float], query.query_embedding)
+        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
         qdrant_filters = kwargs.get("qdrant_filters")
         if qdrant_filters is not None:
             query_filter = qdrant_filters
@@ -548,10 +549,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         query_embedding = cast(List[float], query.query_embedding)
 
+        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
         qdrant_filters = kwargs.get("qdrant_filters")
         if qdrant_filters is not None:
             query_filter = qdrant_filters
         else:
+            # build metadata filters
             query_filter = cast(Filter, self._build_query_filter(query))
 
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
