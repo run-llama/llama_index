@@ -1,5 +1,6 @@
 import logging
 import math
+from collections import defaultdict
 from typing import Any, List
 
 from llama_index.constants import DEFAULT_EMBEDDING_DIM
@@ -74,9 +75,9 @@ class SupabaseVectorStore(VectorStore):
 
     def _to_vecs_filters(self, filters: MetadataFilters) -> Any:
         """Convert llama filters to vecs filters. $eq is the only supported operator."""
-        vecs_filter = {}
-        filter_cond = "${}".format(filters.condition.value)
-        vecs_filter[filter_cond] = []
+        vecs_filter = defaultdict(list)
+        filter_cond = f"${filters.condition}"
+
         for f in filters.legacy_filters():
             sub_filter = {}
             sub_filter[f.key] = {"$eq": f.value}
