@@ -1,9 +1,14 @@
+import asyncio
 import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.response.schema import Response
+from llama_index.indices.struct_store.sql_retriever import (
+    BaseSQLParser,
+    DefaultSQLParser,
+)
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_JSONALYZE_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
@@ -35,19 +40,21 @@ DEFAULT_TABLE_NAME = "items"
 
 def default_jsonalyzer(
     list_of_dict: List[Dict[str, Any]],
-    query: str,
+    query_bundle: QueryBundle,
     service_context: ServiceContext,
     table_name: str = DEFAULT_TABLE_NAME,
     prompt: BasePromptTemplate = DEFAULT_JSONALYZE_PROMPT,
+    sql_parser: BaseSQLParser = DefaultSQLParser(),
 ) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
     """Default JSONalyzer that executes a query on a list of dictionaries.
 
     Args:
         list_of_dict (List[Dict[str, Any]]): List of dictionaries to query.
-        query (str): The query to execute.
-        prompt (BasePromptTemplate): The prompt to use.
+        query_bundle (QueryBundle): The query bundle.
         service_context (Optional[ServiceContext]): The service context.
         table_name (str): The table name to use, defaults to DEFAULT_TABLE_NAME.
+        prompt (BasePromptTemplate): The prompt to use.
+        sql_parser (BaseSQLParser): The SQL parser to use.
 
     Returns:
         Tuple[str, Dict[str, Any], List[Dict[str, Any]]]: The SQL Query,
@@ -75,13 +82,19 @@ def default_jsonalyzer(
     # Get the table schema
     table_schema = db[table_name].columns_dict
 
+    query = query_bundle.query_str
+    prompt = prompt or DEFAULT_JSONALYZE_PROMPT
     # Get the SQL query with text-to-SQL prompt
-    sql_query = service_context.llm.predict(
-        prompt,
+    response_str = service_context.llm.predict(
+        prompt=prompt,
         table_name=table_name,
         table_schema=table_schema,
         question=query,
     )
+
+    sql_parser = sql_parser or DefaultSQLParser()
+
+    sql_query = sql_parser.parse_response_to_sql(response_str, query_bundle)
 
     try:
         # Execute the SQL query
@@ -93,6 +106,100 @@ def default_jsonalyzer(
     return sql_query, table_schema, results
 
 
+async def async_default_jsonalyzer(
+    list_of_dict: List[Dict[str, Any]],
+    query_bundle: QueryBundle,
+    service_context: ServiceContext,
+    prompt: Optional[BasePromptTemplate] = None,
+    sql_parser: Optional[BaseSQLParser] = None,
+    table_name: str = DEFAULT_TABLE_NAME,
+) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
+    """Default JSONalyzer.
+
+    Args:
+        list_of_dict (List[Dict[str, Any]]): List of dictionaries to query.
+        query_bundle (QueryBundle): The query bundle.
+        service_context (ServiceContext): ServiceContext
+        prompt (BasePromptTemplate, optional): The prompt to use.
+        sql_parser (BaseSQLParser, optional): The SQL parser to use.
+        table_name (str, optional): The table name to use, defaults to DEFAULT_TABLE_NAME.
+
+    Returns:
+        Tuple[str, Dict[str, Any], List[Dict[str, Any]]]: The SQL Query,
+            the Schema, and the Result.
+    """
+    try:
+        import sqlite_utils
+    except ImportError as exc:
+        IMPORT_ERROR_MSG = (
+            "sqlite-utils is needed to use this Query Engine:\n"
+            "pip install sqlite-utils"
+        )
+
+        raise ImportError(IMPORT_ERROR_MSG) from exc
+    # Instantiate in-memory SQLite database
+    db = sqlite_utils.Database(memory=True)
+    try:
+        # Load list of dictionaries into SQLite database
+        db[table_name].insert_all(list_of_dict)
+    except sqlite_utils.db_exceptions.IntegrityError as exc:
+        print_text(f"Error inserting into table {table_name}, expected format:")
+        print_text("[{col1: val1, col2: val2, ...}, ...]")
+        raise ValueError("Invalid list_of_dict") from exc
+
+    # Get the table schema
+    table_schema = db[table_name].columns_dict
+
+    query = query_bundle.query_str
+    prompt = prompt or DEFAULT_JSONALYZE_PROMPT
+    # Get the SQL query with text-to-SQL prompt
+    response_str = await service_context.llm.apredict(
+        prompt=prompt,
+        table_name=table_name,
+        table_schema=table_schema,
+        question=query,
+    )
+
+    sql_parser = sql_parser or DefaultSQLParser()
+
+    sql_query = sql_parser.parse_response_to_sql(response_str, query_bundle)
+
+    try:
+        # Execute the SQL query
+        results = list(db.query(sql_query))
+    except sqlite_utils.db_exceptions.OperationalError as exc:
+        print_text(f"Error executing query: {sql_query}")
+        raise ValueError("Invalid query") from exc
+
+    return sql_query, table_schema, results
+
+
+def load_jsonalyzer(
+    use_async: bool = False,
+    custom_jsonalyzer: Optional[Callable] = None,
+) -> Callable:
+    """Load the JSONalyzer.
+
+    Args:
+        use_async (bool): Whether to use async.
+        custom_jsonalyzer (Callable): A custom JSONalyzer to use.
+
+    Returns:
+        Callable: The JSONalyzer.
+    """
+    if custom_jsonalyzer:
+        assert not use_async or asyncio.iscoroutinefunction(
+            custom_jsonalyzer
+        ), "custom_jsonalyzer function must be async when use_async is True"
+        return custom_jsonalyzer
+    else:
+        # make mypy happy to indent this
+        if use_async:
+            return async_default_jsonalyzer
+        else:
+            return default_jsonalyzer
+
+
 class JSONalyzeQueryEngine(BaseQueryEngine):
     """JSON List Shape Data Analysis Query Engine.
 
@@ -101,7 +208,10 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
     list_of_dict(List[Dict[str, Any]]): List of dictionaries to query.
     service_context (ServiceContext): ServiceContext
     jsonalyze_prompt (BasePromptTemplate): The JSONalyze prompt to use.
+    use_async (bool): Whether to use async.
     analyzer (Callable): The analyzer that executes the query.
+    sql_parser (BaseSQLParser): The SQL parser that ensures valid SQL being parsed
+        from llm output.
     synthesize_response (bool): Whether to synthesize a response.
     response_synthesis_prompt (BasePromptTemplate): The response synthesis prompt
         to use.
@@ -114,7 +224,9 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
         list_of_dict: List[Dict[str, Any]],
         service_context: ServiceContext,
         jsonalyze_prompt: Optional[BasePromptTemplate] = None,
+        use_async: bool = False,
         analyzer: Optional[Callable] = None,
+        sql_parser: Optional[BaseSQLParser] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         table_name: str = DEFAULT_TABLE_NAME,
@@ -123,9 +235,11 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
     ) -> None:
         """Initialize params."""
         self._list_of_dict = list_of_dict
-        self._service_context = service_context
+        self._service_context = service_context or ServiceContext.from_defaults()
         self._jsonalyze_prompt = jsonalyze_prompt or DEFAULT_JSONALYZE_PROMPT
-        self._analyzer = analyzer or default_jsonalyzer
+        self._use_async = use_async
+        self._analyzer = load_jsonalyzer(use_async, analyzer)
+        self._sql_parser = sql_parser or DefaultSQLParser()
         self._synthesize_response = synthesize_response
         self._response_synthesis_prompt = (
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT
@@ -162,10 +276,11 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
         # Perform the analysis
         sql_query, table_schema, results = self._analyzer(
             self._list_of_dict,
-            query,
+            query_bundle,
             self._service_context,
             table_name=self._table_name,
             prompt=self._jsonalyze_prompt,
+            sql_parser=self._sql_parser,
         )
         if self._verbose:
             print_text(f"SQL Query: {sql_query}\n", color="blue")
@@ -183,13 +298,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
             if self._verbose:
                 print_text(f"Response: {response_str}", color="magenta")
         else:
-            response_str = json.dumps(
-                {
-                    "sql_query": sql_query,
-                    "table_schema": table_schema,
-                    "sql_response": results,
-                }
-            )
+            response_str = str(results)
         response_metadata = {"sql_query": sql_query, "table_schema": str(table_schema)}
 
         return Response(response=response_str, metadata=response_metadata)
