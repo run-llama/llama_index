@@ -447,7 +447,7 @@ class IngestionPipeline(BaseModel):
                     "Setting `num_workers` down to the maximum CPU count."
                 )
 
-            with multiprocessing.Pool(num_workers) as p:
+            with multiprocessing.get_context("spawn").Pool(num_workers) as p:
                 node_batches = self._node_batcher(
                     num_batches=num_workers, nodes=nodes_to_run
                 )
@@ -478,6 +478,76 @@ class IngestionPipeline(BaseModel):
 
         return nodes
 
+    # ------ async methods ------
+
+    async def _ahandle_duplicates(
+        self,
+        nodes: List[BaseNode],
+        store_doc_text: bool = True,
+    ) -> List[BaseNode]:
+        """Handle docstore duplicates by checking all hashes."""
+        assert self.docstore is not None
+
+        existing_hashes = await self.docstore.aget_all_document_hashes()
+        current_hashes = []
+        nodes_to_run = []
+        for node in nodes:
+            if node.hash not in existing_hashes and node.hash not in current_hashes:
+                await self.docstore.aset_document_hash(node.id_, node.hash)
+                nodes_to_run.append(node)
+                current_hashes.append(node.hash)
+
+        await self.docstore.async_add_documents(nodes_to_run, store_text=store_doc_text)
+
+        return nodes_to_run
+
+    async def _ahandle_upserts(
+        self,
+        nodes: List[BaseNode],
+        store_doc_text: bool = True,
+    ) -> List[BaseNode]:
+        """Handle docstore upserts by checking hashes and ids."""
+        assert self.docstore is not None
+
+        existing_doc_ids_before = set(
+            (await self.docstore.aget_all_document_hashes()).values()
+        )
+        doc_ids_from_nodes = set()
+        deduped_nodes_to_run = {}
+        for node in nodes:
+            ref_doc_id = node.ref_doc_id if node.ref_doc_id else node.id_
+            doc_ids_from_nodes.add(ref_doc_id)
+            existing_hash = await self.docstore.aget_document_hash(ref_doc_id)
+            if not existing_hash:
+                # document doesn't exist, so add it
+                await self.docstore.aset_document_hash(ref_doc_id, node.hash)
+                deduped_nodes_to_run[ref_doc_id] = node
+            elif existing_hash and existing_hash != node.hash:
+                await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
+
+                if self.vector_store is not None:
+                    await self.vector_store.adelete(ref_doc_id)
+
+                await self.docstore.aset_document_hash(ref_doc_id, node.hash)
+
+                deduped_nodes_to_run[ref_doc_id] = node
+            else:
+                continue  # document exists and is unchanged, so skip it
+
+        if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
+            # Identify missing docs and delete them from docstore and vector store
+            doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
+            for ref_doc_id in doc_ids_to_delete:
+                await self.docstore.adelete_document(ref_doc_id)
+
+                if self.vector_store is not None:
+                    await self.vector_store.adelete(ref_doc_id)
+
+        nodes_to_run = list(deduped_nodes_to_run.values())
+        await self.docstore.async_add_documents(nodes_to_run, store_text=store_doc_text)
+
+        return nodes_to_run
+
     async def arun(
         self,
         show_progress: bool = False,
@@ -497,11 +567,11 @@ class IngestionPipeline(BaseModel):
                 DocstoreStrategy.UPSERTS,
                 DocstoreStrategy.UPSERTS_AND_DELETE,
             ):
-                nodes_to_run = self._handle_upserts(
+                nodes_to_run = await self._ahandle_upserts(
                     input_nodes, store_doc_text=store_doc_text
                 )
             elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
-                nodes_to_run = self._handle_duplicates(
+                nodes_to_run = await self._ahandle_duplicates(
                     input_nodes, store_doc_text=store_doc_text
                 )
             else:
@@ -519,7 +589,7 @@ class IngestionPipeline(BaseModel):
                     "Switching to duplicates_only strategy."
                 )
                 self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
-            nodes_to_run = self._handle_duplicates(
+            nodes_to_run = await self._ahandle_duplicates(
                 input_nodes, store_doc_text=store_doc_text
             )
 

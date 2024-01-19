@@ -159,10 +159,10 @@ class ObjectType(str, Enum):
 
 
 class MetadataMode(str, Enum):
-    ALL = auto()
-    EMBED = auto()
-    LLM = auto()
-    NONE = auto()
+    ALL = "all"
+    EMBED = "embed"
+    LLM = "llm"
+    NONE = "none"
 
 
 class RelatedNodeInfo(BaseComponent):
@@ -189,6 +189,8 @@ class BaseNode(BaseComponent):
 
     class Config:
         allow_population_by_field_name = True
+        # hash is computed on local field, during the validation process
+        validate_assignment = True
 
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
@@ -475,7 +477,9 @@ class ImageNode(TextNode):
     def resolve_image(self) -> ImageType:
         """Resolve an image such that PIL can read it."""
         if self.image is not None:
-            return self.image
+            import base64
+
+            return BytesIO(base64.b64decode(self.image))
         elif self.image_path is not None:
             return self.image_path
         elif self.image_url is not None:
@@ -499,6 +503,7 @@ class IndexNode(TextNode):
     """
 
     index_id: str
+    obj: Any = Field(exclude=True)
 
     @classmethod
     def from_text_node(

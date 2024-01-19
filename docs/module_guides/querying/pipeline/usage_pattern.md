@@ -122,7 +122,31 @@ p.run(topic="YC")
 
 ## Defining a Custom Query Component
 
-You can easily define a custom component. Simply subclass a `QueryComponent`, implement validation/run functions + some helpers, and plug it in.
+You can easily define a custom component: Either passing a function to a `FnComponent` or subclassing a `CustomQueryComponent`.
+
+### Passing a Function to `FnComponent`
+
+Define any function and pass it to `FnComponent`. The positional argument names (`args`) will get converted to required input keys, and the keyword argument names (`kwargs`) will get converted to optional input keys.
+
+**NOTE**: We assume there is only a single output.
+
+```python
+from llama_index.query_pipeline import FnComponent
+
+
+def add(a: int, b: int) -> int:
+    """Adds two numbers."""
+    return a + b
+
+
+add_component = FnComponent(fn=add, output_key="output")
+
+# input keys to add_component are "a" and "b", output key is 'output'
+```
+
+### Subclassing a `CustomQueryComponent`
+
+Simply subclass a `CustomQueryComponent`, implement validation/run functions + some helpers, and plug it in.
 
 ```python
 from llama_index.query_pipeline import CustomQueryComponent

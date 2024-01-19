@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast, get_args
 
 import networkx
 
@@ -11,16 +11,14 @@ from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.query_pipeline.query_component import (
+    QUERY_COMPONENT_TYPE,
     ChainableMixin,
     InputKeys,
+    Link,
     OutputKeys,
     QueryComponent,
 )
 from llama_index.utils import print_text
-
-# accept both QueryComponent and ChainableMixin as inputs to query pipeline
-# ChainableMixin modules will be converted to components via `as_query_component`
-QUERY_COMPONENT_TYPE = Union[QueryComponent, ChainableMixin]
 
 
 def add_output_to_module_inputs(
@@ -96,6 +94,9 @@ def print_debug_input_multi(
     print_text(output + "\n", color="llama_lavender")
 
 
+CHAIN_COMPONENT_TYPE = Union[QUERY_COMPONENT_TYPE, str]
+
+
 class QueryPipeline(QueryComponent):
     """A query pipeline that can allow arbitrary chaining of different modules.
 
@@ -130,7 +131,9 @@ class QueryPipeline(QueryComponent):
     def __init__(
         self,
         callback_manager: Optional[CallbackManager] = None,
-        chain: Optional[Sequence[QUERY_COMPONENT_TYPE]] = None,
+        chain: Optional[Sequence[CHAIN_COMPONENT_TYPE]] = None,
+        modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
+        links: Optional[List[Link]] = None,
         **kwargs: Any,
     ):
         super().__init__(
@@ -138,11 +141,26 @@ class QueryPipeline(QueryComponent):
             **kwargs,
         )
 
-        if chain is not None:
-            # generate implicit link between each item, add
-            self.add_chain(chain)
+        self._init_graph(chain=chain, modules=modules, links=links)
 
-    def add_chain(self, chain: Sequence[QUERY_COMPONENT_TYPE]) -> None:
+    def _init_graph(
+        self,
+        chain: Optional[Sequence[CHAIN_COMPONENT_TYPE]] = None,
+        modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
+        links: Optional[List[Link]] = None,
+    ) -> None:
+        """Initialize graph."""
+        if chain is not None:
+            if modules is not None or links is not None:
+                raise ValueError("Cannot specify both chain and modules/links in init.")
+            self.add_chain(chain)
+        elif modules is not None:
+            self.add_modules(modules)
+            if links is not None:
+                for link in links:
+                    self.add_link(**link.dict())
+
+    def add_chain(self, chain: Sequence[CHAIN_COMPONENT_TYPE]) -> None:
         """Add a chain of modules to the pipeline.
 
         This is a special form of pipeline that is purely sequential/linear.
@@ -150,15 +168,28 @@ class QueryPipeline(QueryComponent):
 
         """
         # first add all modules
-        module_keys = []
+        module_keys: List[str] = []
         for module in chain:
-            module_key = str(uuid.uuid4())
-            self.add(module_key, module)
-            module_keys.append(module_key)
+            if isinstance(module, get_args(QUERY_COMPONENT_TYPE)):
+                module_key = str(uuid.uuid4())
+                self.add(module_key, cast(QUERY_COMPONENT_TYPE, module))
+                module_keys.append(module_key)
+            elif isinstance(module, str):
+                module_keys.append(module)
+            else:
+                raise ValueError("Chain must be a sequence of modules or module keys.")
 
         # then add all links
         for i in range(len(chain) - 1):
             self.add_link(src=module_keys[i], dest=module_keys[i + 1])
+
+    def add_links(
+        self,
+        links: List[Link],
+    ) -> None:
+        """Add links to the pipeline."""
+        for link in links:
+            self.add_link(**link.dict())
 
     def add_modules(self, module_dict: Dict[str, QUERY_COMPONENT_TYPE]) -> None:
         """Add modules to the pipeline."""

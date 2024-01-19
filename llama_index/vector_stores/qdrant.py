@@ -250,7 +250,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         # batch upsert the points into Qdrant collection to avoid large payloads
         for points_batch in iter_batch(points, self.batch_size):
-            await self._client.upsert(
+            await self._aclient.upsert(
                 collection_name=self.collection_name,
                 points=points_batch,
             )
@@ -308,28 +308,36 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Create a Qdrant collection."""
         from qdrant_client.http import models as rest
 
-        if self.enable_hybrid:
-            self._client.recreate_collection(
-                collection_name=collection_name,
-                vectors_config={
-                    "text-dense": rest.VectorParams(
+        try:
+            if self.enable_hybrid:
+                self._client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config={
+                        "text-dense": rest.VectorParams(
+                            size=vector_size,
+                            distance=rest.Distance.COSINE,
+                        )
+                    },
+                    sparse_vectors_config={
+                        "text-sparse": rest.SparseVectorParams(
+                            index=rest.SparseIndexParams()
+                        )
+                    },
+                )
+            else:
+                self._client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=rest.VectorParams(
                         size=vector_size,
                         distance=rest.Distance.COSINE,
-                    )
-                },
-                sparse_vectors_config={
-                    "text-sparse": rest.SparseVectorParams(
-                        index=rest.SparseIndexParams()
-                    )
-                },
-            )
-        else:
-            self._client.recreate_collection(
-                collection_name=collection_name,
-                vectors_config=rest.VectorParams(
-                    size=vector_size,
-                    distance=rest.Distance.COSINE,
-                ),
+                    ),
+                )
+        except ValueError as exc:
+            if "already exists" not in str(exc):
+                raise exc  # noqa: TRY201
+            logger.warning(
+                "Collection %s already exists, skipping collection creation.",
+                collection_name,
             )
         self._collection_initialized = True
 
@@ -337,28 +345,36 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Asynchronous method to create a Qdrant collection."""
         from qdrant_client.http import models as rest
 
-        if self.enable_hybrid:
-            await self._aclient.recreate_collection(
-                collection_name=collection_name,
-                vectors_config={
-                    "text-dense": rest.VectorParams(
+        try:
+            if self.enable_hybrid:
+                await self._aclient.create_collection(
+                    collection_name=collection_name,
+                    vectors_config={
+                        "text-dense": rest.VectorParams(
+                            size=vector_size,
+                            distance=rest.Distance.COSINE,
+                        )
+                    },
+                    sparse_vectors_config={
+                        "text-sparse": rest.SparseVectorParams(
+                            index=rest.SparseIndexParams()
+                        )
+                    },
+                )
+            else:
+                await self._aclient.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=rest.VectorParams(
                         size=vector_size,
                         distance=rest.Distance.COSINE,
-                    )
-                },
-                sparse_vectors_config={
-                    "text-sparse": rest.SparseVectorParams(
-                        index=rest.SparseIndexParams()
-                    )
-                },
-            )
-        else:
-            await self._aclient.recreate_collection(
-                collection_name=collection_name,
-                vectors_config=rest.VectorParams(
-                    size=vector_size,
-                    distance=rest.Distance.COSINE,
-                ),
+                    ),
+                )
+        except ValueError as exc:
+            if "already exists" not in str(exc):
+                raise exc  # noqa: TRY201
+            logger.warning(
+                "Collection %s already exists, skipping collection creation.",
+                collection_name,
             )
         self._collection_initialized = True
 
@@ -457,6 +473,36 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
                 top_k=query.hybrid_top_k or query.similarity_top_k,
             )
+        elif (
+            query.mode == VectorStoreQueryMode.SPARSE
+            and self.enable_hybrid
+            and self._sparse_query_fn is not None
+            and query.query_str is not None
+        ):
+            sparse_indices, sparse_embedding = self._sparse_query_fn(
+                [query.query_str],
+            )
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
+
+            sparse_response = self._client.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedSparseVector(
+                            name="text-sparse",
+                            vector=rest.SparseVector(
+                                indices=sparse_indices[0],
+                                values=sparse_embedding[0],
+                            ),
+                        ),
+                        limit=sparse_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
+            return self.parse_to_query_result(sparse_response[0])
+
         elif self.enable_hybrid:
             # search for dense vectors only
             response = self._client.search_batch(
@@ -555,6 +601,35 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
                 top_k=query.hybrid_top_k or query.similarity_top_k,
             )
+        elif (
+            query.mode == VectorStoreQueryMode.SPARSE
+            and self.enable_hybrid
+            and self._sparse_query_fn is not None
+            and query.query_str is not None
+        ):
+            sparse_indices, sparse_embedding = self._sparse_query_fn(
+                [query.query_str],
+            )
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
+
+            sparse_response = await self._aclient.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedSparseVector(
+                            name="text-sparse",
+                            vector=rest.SparseVector(
+                                indices=sparse_indices[0],
+                                values=sparse_embedding[0],
+                            ),
+                        ),
+                        limit=sparse_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
+            return self.parse_to_query_result(sparse_response[0])
         elif self.enable_hybrid:
             # search for dense vectors only
             response = await self._aclient.search_batch(

@@ -75,3 +75,6 @@ class PromptType(str, Enum):
 
     # custom (by default)
     CUSTOM = "custom"
+
+    # RankGPT rerank
+    RANKGPT_RERANK = "rankgpt_rerank"

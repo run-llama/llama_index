@@ -155,7 +155,7 @@ class SQLDatabase:
             "and foreign keys: {foreign_keys}."
         )
         columns = []
-        for column in self._inspector.get_columns(table_name):
+        for column in self._inspector.get_columns(table_name, schema=self._schema):
             if column.get("comment"):
                 columns.append(
                     f"{column['name']} ({column['type']!s}): "
@@ -166,7 +166,9 @@ class SQLDatabase:
 
         column_str = ", ".join(columns)
         foreign_keys = []
-        for foreign_key in self._inspector.get_foreign_keys(table_name):
+        for foreign_key in self._inspector.get_foreign_keys(
+            table_name, schema=self._schema
+        ):
             foreign_keys.append(
                 f"{foreign_key['constrained_columns']} -> "
                 f"{foreign_key['referred_table']}.{foreign_key['referred_columns']}"
@@ -183,6 +185,19 @@ class SQLDatabase:
         with self._engine.begin() as connection:
             connection.execute(stmt)
 
+    def truncate_word(self, content: Any, *, length: int, suffix: str = "...") -> str:
+        """
+        Truncate a string to a certain number of words, based on the max string
+        length.
+        """
+        if not isinstance(content, str) or length <= 0:
+            return content
+
+        if len(content) <= length:
+            return content
+
+        return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
+
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """Execute a SQL statement and return a string representing the results.
 
@@ -191,6 +206,8 @@ class SQLDatabase:
         """
         with self._engine.begin() as connection:
             try:
+                if self._schema:
+                    command = command.replace("FROM ", f"FROM {self._schema}.")
                 cursor = connection.execute(text(command))
             except (ProgrammingError, OperationalError) as exc:
                 raise NotImplementedError(
@@ -198,5 +215,18 @@ class SQLDatabase:
                 ) from exc
             if cursor.returns_rows:
                 result = cursor.fetchall()
-                return str(result), {"result": result, "col_keys": list(cursor.keys())}
+                # truncate the results to the max string length
+                # we can't use str(result) directly because it automatically truncates long strings
+                truncated_results = []
+                for row in result:
+                    # truncate each column, then convert the row to a tuple
+                    truncated_row = tuple(
+                        self.truncate_word(column, length=self._max_string_length)
+                        for column in row
+                    )
+                    truncated_results.append(truncated_row)
+                return str(truncated_results), {
+                    "result": truncated_results,
+                    "col_keys": list(cursor.keys()),
+                }
         return "", {}

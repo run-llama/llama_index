@@ -32,6 +32,24 @@ maxdepth: 1
 /optimizing/advanced_retrieval/query_transformations.md
 ```
 
+## Composable Retrievers
+
+Every retriever is capable of retrieving and running other objects, including
+
+- other retrievers
+- query engines
+- query pipelines
+- other nodes
+
+For more details, check out the guide below.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/retrievers/composable_retrievers.ipynb
+```
+
 ## Third-Party Resources
 
 Here are some third-party resources on advanced retrieval strategies.

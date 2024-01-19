@@ -1,3 +1,4 @@
+from llama_index.storage.docstore.dynamodb_docstore import DynamoDBDocumentStore
 from llama_index.storage.docstore.firestore_docstore import FirestoreDocumentStore
 from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.storage.docstore.mongo_docstore import MongoDocumentStore
@@ -18,4 +19,5 @@ __all__ = [
     "MongoDocumentStore",
     "KVDocumentStore",
     "RedisDocumentStore",
+    "DynamoDBDocumentStore",
 ]

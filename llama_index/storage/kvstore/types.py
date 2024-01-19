@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple
 import fsspec
 
 DEFAULT_COLLECTION = "data"
+DEFAULT_BATCH_SIZE = 1
 
 
 class BaseKVStore(ABC):
@@ -19,17 +20,31 @@ class BaseKVStore(ABC):
     ) -> None:
         pass
 
-    @abstractmethod
     def put_all(
-        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        pass
+        # by default, support a batch size of 1
+        if batch_size != 1:
+            raise NotImplementedError("Batching not supported by this key-value store.")
+        else:
+            for key, val in kv_pairs:
+                self.put(key, val, collection=collection)
 
-    @abstractmethod
     async def aput_all(
-        self, kv_pairs: List[Tuple[str, dict]], collection: str = DEFAULT_COLLECTION
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        pass
+        # by default, support a batch size of 1
+        if batch_size != 1:
+            raise NotImplementedError("Batching not supported by this key-value store.")
+        else:
+            for key, val in kv_pairs:
+                await self.aput(key, val, collection=collection)
 
     @abstractmethod
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
