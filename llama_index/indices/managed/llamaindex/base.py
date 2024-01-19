@@ -4,7 +4,7 @@ A managed Index - where the index is accessible via some API that
 interfaces a managed service.
 
 """
-
+import time
 from typing import Any, List, Optional, Sequence, Type
 
 from llama_index_client import PipelineType, ProjectCreate
@@ -108,6 +108,13 @@ class PlatformIndex(BaseManagedIndex):
             project_id=project.id, request=pipeline_create
         )
         assert pipeline.id is not None
+
+        # TODO: remove when sourabh's PR is merged
+        for data_source in pipeline.data_sources:
+            client.data_source.create_data_source_execution(
+                data_source_id=data_source.id
+            )
+            time.sleep(120)
 
         # kick off execution
         execution = client.pipeline.run_managed_pipeline_ingestion(
