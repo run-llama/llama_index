@@ -1,5 +1,19 @@
 # ChangeLog
 
+## Unreleased
+
+## [0.9.34] - 2024-01-19
+
+### New Features
+
+- Added SageMakerEndpointLLM (#10140)
+- Added support for Qdrant filters (#10136)
+
+### Bug Fixes / Nits
+
+- Update bedrock utils for Claude 2:1 (#10139)
+- BugFix: deadlocks using multiprocessing (#10125)
+
 ## [0.9.33] - 2024-01-17
 
 ### New Features
