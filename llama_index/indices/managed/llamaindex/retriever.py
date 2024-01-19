@@ -39,12 +39,13 @@ class PlatformRetriever(BaseRetriever):
         if len(projects) == 0:
             raise ValueError(f"No project found with name {project_name}")
 
-        self._dense_similarity_top_k = dense_similarity_top_k
-        self._sparse_similarity_top_k = sparse_similarity_top_k
-        self._enable_reranking = enable_reranking
-        self._rerank_top_n = rerank_top_n
-        self._alpha = alpha
-        self._search_filters = search_filters
+        # TODO: janky default values to satisfy fern
+        self._dense_similarity_top_k = dense_similarity_top_k or 4
+        self._sparse_similarity_top_k = sparse_similarity_top_k or 4
+        self._enable_reranking = enable_reranking or True
+        self._rerank_top_n = rerank_top_n or 2
+        self._alpha = alpha or 0.5
+        self._search_filters = search_filters or {}
 
         super().__init__(**kwargs)
 
@@ -71,16 +72,15 @@ class PlatformRetriever(BaseRetriever):
                 f"No pipeline found with name {self.name} in project {self.project_name}"
             )
 
-        # TODO: janky default values
         results = self._client.retrieval.run_search(
             query=query_bundle.query_str,
             pipeline_id=pipeline.id,
-            dense_similarity_top_k=self._dense_similarity_top_k or 4,
-            sparse_similarity_top_k=self._sparse_similarity_top_k or 4,
-            enable_reranking=self._enable_reranking or True,
-            rerank_top_n=self._rerank_top_n or 2,
-            alpha=self._alpha or 0.5,
-            search_filters=self._search_filters or {},
+            dense_similarity_top_k=self._dense_similarity_top_k,
+            sparse_similarity_top_k=self._sparse_similarity_top_k,
+            enable_reranking=self._enable_reranking,
+            rerank_top_n=self._rerank_top_n,
+            alpha=self._alpha,
+            search_filters=self._search_filters,
         )
 
         result_nodes = results.retrieval_nodes

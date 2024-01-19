@@ -78,7 +78,7 @@ def get_aclient(
 
 
 def get_pipeline_create(
-    name: str,
+    pipeline_name: str,
     client: PlatformApi,
     pipeline_type: PipelineType,
     project_name: str = DEFAULT_PROJECT_NAME,
@@ -154,7 +154,7 @@ def get_pipeline_create(
 
     # upload
     return PipelineCreate(
-        name=name,
+        name=pipeline_name,
         configured_transformations=configured_transformation_items,
         data_sources=data_sources,
         data_sinks=[],
