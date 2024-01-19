@@ -91,9 +91,28 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         ]
 
     @classmethod
-    def from_context(self, context: str) -> "ReActChatFormatter":
-        """Create ReActChatFormatter from context."""
+    def from_defaults(
+        cls,
+        system_header: Optional[str] = None,
+        context: Optional[str] = None,
+    ) -> "ReActChatFormatter":
+        """Create ReActChatFormatter from defaults."""
+
+        if not system_header:
+            system_header = REACT_CHAT_SYSTEM_HEADER if not context else CONTEXT_REACT_CHAT_SYSTEM_HEADER
+
         return ReActChatFormatter(
-            context=context,
-            system_header=CONTEXT_REACT_CHAT_SYSTEM_HEADER,
+            system_header=system_header,
+            context=context or "",
+        )
+
+    @classmethod
+    def from_context(self, context: str) -> "ReActChatFormatter":
+        """Create ReActChatFormatter from context.
+
+        NOTE: deprecated
+        
+        """
+        return ReActChatFormatter.from_defaults(
+            system_header=CONTEXT_REACT_CHAT_SYSTEM_HEADER, context=context
         )
