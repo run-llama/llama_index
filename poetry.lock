@@ -7773,6 +7773,7 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [extras]
 gradientai = ["gradientai"]
+html = ["beautifulsoup4"]
 langchain = ["langchain"]
 local-models = ["optimum", "sentencepiece", "transformers"]
 postgres = ["asyncpg", "pgvector", "psycopg-binary", "psycopg2"]
@@ -7781,4 +7782,4 @@ query-tools = ["guidance", "jsonpath-ng", "lm-format-enforcer", "rank-bm25", "sc
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "acb3bc7b92fb1c50f8b2c2ae058fbea0ea39e666765aa07c37961939b29189ce"
+content-hash = "08bcbcbd6aaf4a093eb8830f06a879ca75291dd9d1ebd94716e1aebc89cd2ad1"
