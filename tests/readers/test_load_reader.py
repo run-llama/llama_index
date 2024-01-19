@@ -1,11 +1,18 @@
+import importlib.util
 from typing import cast
 
+import pytest
 from llama_index.readers.loading import load_reader
 from llama_index.readers.notion import NotionPageReader
 from llama_index.readers.string_iterable import StringIterableReader
 from llama_index.readers.web import BeautifulSoupWebReader
 
 
+@pytest.mark.xfail(
+    raises=ImportError,
+    reason="Requires beautifulsoup4.",
+    condition=importlib.util.find_spec("beautifulsoup4") is None,
+)
 def test_loading_readers() -> None:
     notion = NotionPageReader(integration_token="test")
     string_iterable = StringIterableReader()
