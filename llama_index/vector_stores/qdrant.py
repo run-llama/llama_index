@@ -415,7 +415,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http.models import Filter
 
         query_embedding = cast(List[float], query.query_embedding)
-        query_filter = cast(Filter, self._build_query_filter(query))
+        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
+        qdrant_filters = kwargs.get("qdrant_filters")
+        if qdrant_filters is not None:
+            query_filter = qdrant_filters
+        else:
+            query_filter = cast(Filter, self._build_query_filter(query))
 
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
@@ -528,7 +533,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
             )
-
             return self.parse_to_query_result(response)
 
     async def aquery(
@@ -544,7 +548,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http.models import Filter
 
         query_embedding = cast(List[float], query.query_embedding)
-        query_filter = cast(Filter, self._build_query_filter(query))
+
+        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
+        qdrant_filters = kwargs.get("qdrant_filters")
+        if qdrant_filters is not None:
+            query_filter = qdrant_filters
+        else:
+            # build metadata filters
+            query_filter = cast(Filter, self._build_query_filter(query))
 
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
