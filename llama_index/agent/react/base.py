@@ -29,8 +29,8 @@ from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.tools import BaseTool
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType, PromptMixin
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 

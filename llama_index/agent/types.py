@@ -1,6 +1,6 @@
 """Base agent type."""
 import uuid
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from llama_index.bridge.pydantic import BaseModel, Field
@@ -10,7 +10,7 @@ from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.llms.types import ChatMessage
 from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.memory.types import BaseMemory
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType, PromptMixin
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import QueryBundle
 
 

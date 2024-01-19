@@ -97,9 +97,12 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         context: Optional[str] = None,
     ) -> "ReActChatFormatter":
         """Create ReActChatFormatter from defaults."""
-
         if not system_header:
-            system_header = REACT_CHAT_SYSTEM_HEADER if not context else CONTEXT_REACT_CHAT_SYSTEM_HEADER
+            system_header = (
+                REACT_CHAT_SYSTEM_HEADER
+                if not context
+                else CONTEXT_REACT_CHAT_SYSTEM_HEADER
+            )
 
         return ReActChatFormatter(
             system_header=system_header,
@@ -111,7 +114,7 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         """Create ReActChatFormatter from context.
 
         NOTE: deprecated
-        
+
         """
         return ReActChatFormatter.from_defaults(
             system_header=CONTEXT_REACT_CHAT_SYSTEM_HEADER, context=context

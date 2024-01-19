@@ -48,11 +48,11 @@ from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
+from llama_index.prompts.base import PromptTemplate
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text, unit_generator
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType, PromptMixin
-from llama_index.prompts.base import PromptTemplate
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -148,9 +148,7 @@ class ReActAgentWorker(BaseAgentWorker):
         # TODO: the ReAct formatter does not explicitly specify PromptTemplate
         # objects, but wrap it in this to obey the interface
         sys_header = self._react_chat_formatter.system_header
-        return {
-            "system_prompt": PromptTemplate(sys_header)
-        }
+        return {"system_prompt": PromptTemplate(sys_header)}
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""

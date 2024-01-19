@@ -8,8 +8,8 @@ from llama_index.agent.openai.base import OpenAIAgent
 from llama_index.agent.openai.step import OpenAIAgentWorker
 from llama_index.agent.openai_assistant_agent import OpenAIAssistantAgent
 from llama_index.agent.react.base import ReActAgent
-from llama_index.agent.react.step import ReActAgentWorker
 from llama_index.agent.react.formatter import ReActChatFormatter
+from llama_index.agent.react.step import ReActAgentWorker
 from llama_index.agent.react_multimodal.step import MultimodalReActAgentWorker
 from llama_index.agent.runner.base import AgentRunner
 from llama_index.agent.runner.parallel import ParallelAgentRunner
