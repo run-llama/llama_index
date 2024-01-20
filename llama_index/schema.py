@@ -382,16 +382,10 @@ class TextNode(BaseNode):
     def class_name(cls) -> str:
         return "TextNode"
 
-    @root_validator
-    def _check_hash(cls, values: dict) -> dict:
-        """Generate a hash to represent the node."""
-        text = values.get("text", "")
-        metadata = values.get("metadata", {})
-        doc_identity = str(text) + str(metadata)
-        values["hash"] = str(
-            sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest()
-        )
-        return values
+    @property
+    def hash(self) -> str:
+        doc_identity = str(self.text) + str(self.metadata)
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
     @classmethod
     def get_type(cls) -> str:
