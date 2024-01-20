@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from dataclasses_json import DataClassJsonMixin
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import BaseModel, Field, root_validator
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.utils import SAMPLE_TEXT, truncate_text
 
 if TYPE_CHECKING:
@@ -223,7 +223,6 @@ class BaseNode(BaseComponent):
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
-    hash: str = Field(default="", description="Hash of the node content.")
 
     @classmethod
     @abstractmethod
@@ -241,6 +240,11 @@ class BaseNode(BaseComponent):
     @abstractmethod
     def set_content(self, value: Any) -> None:
         """Set the content of the node."""
+
+    @property
+    @abstractmethod
+    def hash(self) -> str:
+        """Get hash of node."""
 
     @property
     def node_id(self) -> str:
