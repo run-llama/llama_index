@@ -564,8 +564,8 @@ def generate_answer(
     )
 
 
-# TODO: restore to using candidate.finish_message when this field is launched.
-# For now, we derive this message from existing fields.
+# TODO: Use candidate.finish_message when that field is launched.
+# For now, we derive this message from other existing fields.
 def _get_finish_message(candidate: genai.Candidate) -> str:
     finish_messages: Dict[int, str] = {
         genai.Candidate.FinishReason.MAX_TOKENS: "Maximum token in context window reached.",
