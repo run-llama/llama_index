@@ -329,7 +329,8 @@ DEFAULT_KG_TRIPLET_EXTRACT_TMPL = (
     "Triplets:\n"
 )
 DEFAULT_KG_TRIPLET_EXTRACT_PROMPT = PromptTemplate(
-    DEFAULT_KG_TRIPLET_EXTRACT_TMPL, prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT
+    DEFAULT_KG_TRIPLET_EXTRACT_TMPL,
+    prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT,
 )
 
 ############################################
@@ -445,4 +446,22 @@ RANKGPT_RERANK_PROMPT_TMPL = (
 )
 RANKGPT_RERANK_PROMPT = PromptTemplate(
     RANKGPT_RERANK_PROMPT_TMPL, prompt_type=PromptType.RANKGPT_RERANK
+)
+
+
+############################################
+# JSONalyze Query Template
+############################################
+
+DEFAULT_JSONALYZE_PROMPT_TMPL = (
+    "You are given a table named: '{table_name}' with schema, "
+    "generate SQLite SQL query to answer the given question.\n"
+    "Table schema:\n"
+    "{table_schema}\n"
+    "Question: {question}\n\n"
+    "SQLQuery: "
+)
+
+DEFAULT_JSONALYZE_PROMPT = PromptTemplate(
+    DEFAULT_JSONALYZE_PROMPT_TMPL, prompt_type=PromptType.TEXT_TO_SQL
 )
