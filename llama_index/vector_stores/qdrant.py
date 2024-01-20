@@ -517,7 +517,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                             name="text-dense",
                             vector=query_embedding,
                         ),
-                        limit=sparse_top_k,
+                        limit=query.similarity_top_k,
                         filter=query_filter,
                         with_payload=True,
                     ),
