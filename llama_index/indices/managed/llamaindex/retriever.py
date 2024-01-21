@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from llama_index_client import TextNodeWithScore
+from llama_index_client.resources.retrieval.client import OMIT
 
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.managed.llamaindex.utils import get_aclient, get_client
@@ -39,13 +40,12 @@ class PlatformRetriever(BaseRetriever):
         if len(projects) == 0:
             raise ValueError(f"No project found with name {project_name}")
 
-        # TODO: janky default values to satisfy fern
-        self._dense_similarity_top_k = dense_similarity_top_k or 4
-        self._sparse_similarity_top_k = sparse_similarity_top_k or 4
-        self._enable_reranking = enable_reranking or True
-        self._rerank_top_n = rerank_top_n or 2
-        self._alpha = alpha or 0.5
-        self._search_filters = search_filters or {}
+        self._dense_similarity_top_k = dense_similarity_top_k or OMIT
+        self._sparse_similarity_top_k = sparse_similarity_top_k or OMIT
+        self._enable_reranking = enable_reranking or OMIT
+        self._rerank_top_n = rerank_top_n or OMIT
+        self._alpha = alpha or OMIT
+        self._search_filters = search_filters or OMIT
 
         super().__init__(**kwargs)
 
@@ -89,9 +89,12 @@ class PlatformRetriever(BaseRetriever):
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Asynchronously retrieve from the platform."""
-        pipeline = await self._aclient.pipeline.get_pipeline_by_name(
+        pipelines = await self._aclient.pipeline.get_pipeline_by_name(
             pipeline_name=self.name, project_name=self.project_name
         )
+        assert len(pipelines) == 1
+        pipeline = pipelines[0]
+
         if pipeline.id is None:
             raise ValueError(
                 f"No pipeline found with name {self.name} in project {self.project_name}"
