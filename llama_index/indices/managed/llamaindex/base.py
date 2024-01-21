@@ -124,13 +124,18 @@ class PlatformIndex(BaseManagedIndex):
         while not is_done:
             statuses = []
             for data_source_id, execution_id in zip(data_source_ids, execution_ids):
-                execution = client.data_source.get_data_source_execution(data_source_id=data_source_id, data_source_load_execution_id=execution_id)
+                execution = client.data_source.get_data_source_execution(
+                    data_source_id=data_source_id,
+                    data_source_load_execution_id=execution_id,
+                )
                 statuses.append(execution.status)
 
             if all(status == StatusEnum.SUCCESS for status in statuses):
                 is_done = True
                 print("Done!")
-            elif any(status in [StatusEnum.ERROR, StatusEnum.CANCELED] for status in statuses):
+            elif any(
+                status in [StatusEnum.ERROR, StatusEnum.CANCELED] for status in statuses
+            ):
                 raise ValueError("Data source execution failed!")
             else:
                 print(".", end="")
@@ -141,7 +146,6 @@ class PlatformIndex(BaseManagedIndex):
             pipeline_id=pipeline.id
         )
         ingestion_id = execution.id
-
 
         print("Running ingestion: ", end="")
         is_done = False
