@@ -1,6 +1,8 @@
 import argparse
+import os
 from typing import Any, Optional
 
+from llama_index import SimpleDirectoryReader, VectorStoreIndex
 from llama_index.llama_dataset.download import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
@@ -50,11 +52,52 @@ def handle_download_llama_dataset(
     print(f"Successfully downloaded {llama_dataset_class} to {download_dir}")
 
 
+def handle_question(
+    file_path: Optional[str] = None,
+    question: Optional[str] = None,
+    **kwargs: Any,
+) -> None:
+    assert file_path is not None
+    assert question is not None
+
+    # check if path is dir
+    if os.path.isdir(file_path):
+        documents = SimpleDirectoryReader(file_path).load_data()
+    else:
+        documents = SimpleDirectoryReader(input_files=[file_path]).load_data()
+    index = VectorStoreIndex.from_documents(documents)
+    query_engine = index.as_query_engine()
+    response = query_engine.query(question)
+    print(response)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="LlamaIndex CLI tool.")
 
     # Subparsers for the main commands
     subparsers = parser.add_subparsers(title="commands", dest="command", required=True)
+
+    # llama ask command
+    llamaask_parser = subparsers.add_parser(
+        "ask", help="Ask a question to a document / a directory of documents."
+    )
+
+    llamaask_parser.add_argument(
+        "file_path",
+        type=str,
+        help=(
+            "The name of the file or directory you want to ask a question about,"
+            "such as `file.pdf`."
+        ),
+    )
+
+    llamaask_parser.add_argument(
+        "-q",
+        "--question",
+        type=str,
+        help="The question you want to ask.",
+    )
+    llamaask_parser.set_defaults(func=lambda args: handle_question(**vars(args)))
 
     # download llamapacks command
     llamapack_parser = subparsers.add_parser(
