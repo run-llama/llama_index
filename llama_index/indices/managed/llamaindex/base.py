@@ -7,7 +7,7 @@ interfaces a managed service.
 import time
 from typing import Any, List, Optional, Sequence, Type
 
-from llama_index_client import PipelineType, ProjectCreate
+from llama_index_client import PipelineType, ProjectCreate, StatusEnum
 
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
@@ -110,36 +110,57 @@ class PlatformIndex(BaseManagedIndex):
         assert pipeline.id is not None
 
         # TODO: remove when sourabh's PR is merged
+        # kick off data source execution
+        execution_ids = []
+        data_source_ids = [data_source.id for data_source in pipeline.data_sources]
         for data_source in pipeline.data_sources:
-            client.data_source.create_data_source_execution(
+            execution = client.data_source.create_data_source_execution(
                 data_source_id=data_source.id
             )
-            time.sleep(120)
+            execution_ids.append(execution.id)
 
-        # kick off execution
+        print("Loading data: ", end="")
+        is_done = False
+        while not is_done:
+            statuses = []
+            for data_source_id, execution_id in zip(data_source_ids, execution_ids):
+                execution = client.data_source.get_data_source_execution(data_source_id=data_source_id, data_source_load_execution_id=execution_id)
+                statuses.append(execution.status)
+
+            if all(status == StatusEnum.SUCCESS for status in statuses):
+                is_done = True
+                print("Done!")
+            elif any(status in [StatusEnum.ERROR, StatusEnum.CANCELED] for status in statuses):
+                raise ValueError("Data source execution failed!")
+            else:
+                print(".", end="")
+                time.sleep(0.5)
+
+        # kick off ingestion
         execution = client.pipeline.run_managed_pipeline_ingestion(
             pipeline_id=pipeline.id
         )
-        assert execution.id is not None
-        print(execution.id)
+        ingestion_id = execution.id
 
-        # TODO: Update when pipeline status is available
-        # assert execution.status is not None
 
-        # execution = client.pipeline.get_managed_ingestion_execution(
-        #     pipline_id=pipeline.id, managed_pipeline_ingestion_id=execution.id
-        # )
+        print("Running ingestion: ", end="")
+        is_done = False
+        while not is_done:
+            ingestion = client.pipeline.get_managed_ingestion_execution(
+                pipeline_id=pipeline.id, managed_pipeline_ingestion_id=ingestion_id
+            )
 
-        # while execution.status not in ["SUCCEEDED", "FAILED"]:
-        #     time.sleep(1)
-        #     execution = client.pipeline.get_managed_ingestion_execution(
-        #         pipline_id=pipeline.id, managed_pipeline_ingestion_id=execution.id
-        #     )
-        #     assert execution.status is not None
+            if ingestion.status == StatusEnum.SUCCESS:
+                is_done = True
+                print("Done!")
+            elif ingestion.status in [StatusEnum.ERROR, StatusEnum.CANCELED]:
+                raise ValueError("Ingestion failed")
+            else:
+                print(".", end="")
+                time.sleep(0.5)
 
-        # TODO: What is the actual URL?
         print(
-            f"Find your deployed pipeline at {platform_app_url}/pipelines/{pipeline.id}"
+            f"Find your index at {platform_app_url}/project/{project.id}/index/{pipeline.id}"
         )
 
         return cls(
@@ -157,8 +178,8 @@ class PlatformIndex(BaseManagedIndex):
         """Return a Retriever for this managed index."""
         from llama_index.indices.managed.llamaindex.retriever import PlatformRetriever
 
-        similarity_top_k = kwargs.get("similarity_top_k", None)
-        dense_similarity_top_k = kwargs.get("dense_similarity_top_k", None)
+        similarity_top_k = kwargs.pop("similarity_top_k", None)
+        dense_similarity_top_k = kwargs.pop("dense_similarity_top_k", None)
         if similarity_top_k is not None:
             dense_similarity_top_k = similarity_top_k
 
