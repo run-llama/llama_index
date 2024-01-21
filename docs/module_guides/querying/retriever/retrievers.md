@@ -93,6 +93,7 @@ These are guides that don't fit neatly into a category but should be highlighted
 ---
 maxdepth: 1
 ---
+/examples/retrievers/multi_doc_together_hybrid.ipynb
 /examples/retrievers/you_retriever.ipynb
 /examples/index_structs/struct_indices/SQLIndexDemo.ipynb
 DeepMemory (Activeloop) </examples/retrievers/deep_memory.ipynb>
