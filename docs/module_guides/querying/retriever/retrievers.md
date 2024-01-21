@@ -47,6 +47,7 @@ Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 ```
 
 ### Knowledge Graph Retrievers
+
 ```{toctree}
 ---
 maxdepth: 1
