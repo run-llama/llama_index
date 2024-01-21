@@ -24,11 +24,7 @@ from llama_index.service_context import ServiceContext
 
 
 class PlatformIndex(BaseManagedIndex):
-    """Platform Index.
-
-    TODO: Docstring
-
-    """
+    """LlamaIndex Platform Index."""
 
     def __init__(
         self,
