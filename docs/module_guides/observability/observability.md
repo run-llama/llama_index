@@ -240,8 +240,8 @@ tru_query_engine.query("What did the author do growing up?")
 maxdepth: 1
 ---
 /community/integrations/trulens.md
-Quickstart Guide with LlamaIndex + TruLens <https://github.com/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
-Colab <https://colab.research.google.com/github/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
+Quickstart Guide with LlamaIndex + TruLens <https://github.com/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb>
+Colab <https://colab.research.google.com/github/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb>
 ```
 
 ### HoneyHive
