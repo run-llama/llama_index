@@ -16,7 +16,7 @@ from llama_index.query_pipeline.components.agent import (
 )
 
 
-def mock_fn(a: str) -> int:
+def mock_fn(a: str) -> str:
     """Mock function."""
     return a + "3"
 
@@ -32,7 +32,7 @@ def mock_agent_input_fn(task: Task, state: dict) -> dict:
 
 def mock_agent_output_fn(
     task: Task, state: dict, output: str
-) -> Tuple[bool, AgentChatResponse]:
+) -> Tuple[AgentChatResponse, bool]:
     state["count"] += 1
     state["input"] = output
     is_done = state["count"] >= state["max_count"]
