@@ -1,16 +1,16 @@
 """Query pipeline components."""
 
 from inspect import signature
-from typing import Any, Callable, Dict, Optional, Set, Tuple, List
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.query_pipeline.query_component import (
+    QUERY_COMPONENT_TYPE,
+    ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
-    ChainableMixin,
-    QUERY_COMPONENT_TYPE
 )
 
 
@@ -268,7 +268,6 @@ class KwargPackComponent(QueryComponent):
         return OutputKeys.from_keys({"output"})
 
 
-
 class IfElseComponent(QueryComponent):
     """If-else component.
 
@@ -310,8 +309,11 @@ class IfElseComponent(QueryComponent):
         self._opt_params = opt_params or default_opt_params
 
         super().__init__(
-            fn=fn, choice1=choice1, choice2=choice2,
-            req_params=self._req_params, opt_params=self._opt_params
+            fn=fn,
+            choice1=choice1,
+            choice2=choice2,
+            req_params=self._req_params,
+            opt_params=self._opt_params,
         )
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
@@ -358,7 +360,7 @@ class IfElseComponent(QueryComponent):
             raise ValueError(f"Output[0] is not a boolean.")
         if not isinstance(choice_input, dict):
             raise ValueError(f"Output[1] is not a dict.")
-        
+
         if is_true:
             return self.choice1.run_component(**choice_input)
         else:
@@ -372,9 +374,7 @@ class IfElseComponent(QueryComponent):
     def input_keys(self) -> InputKeys:
         """Input keys."""
         # NOTE: this shouldn't be used
-        return InputKeys.from_keys(
-            self._req_params, optional_keys=self._opt_params
-        )
+        return InputKeys.from_keys(self._req_params, optional_keys=self._opt_params)
 
     @property
     def output_keys(self) -> OutputKeys:
@@ -391,4 +391,3 @@ class IfElseComponent(QueryComponent):
 
         """
         return [self.choice1, self.choice2]
-

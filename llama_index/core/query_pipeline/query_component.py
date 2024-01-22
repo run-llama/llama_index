@@ -225,7 +225,6 @@ class QueryComponent(BaseModel):
         return []
 
 
-
 class CustomQueryComponent(QueryComponent):
     """Custom query component."""
 

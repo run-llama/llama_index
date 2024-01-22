@@ -1,24 +1,22 @@
 """Agent worker that takes in a query pipeline."""
 
-from llama_index.core.query_pipeline.query_component import QueryComponent
-from llama_index.query_pipeline.query import QueryPipeline
-from llama_index.query_pipeline.components.agent import AgentInputComponent, AgentFnComponent
-from llama_index.agent.types import BaseAgentWorker, Task, TaskStep, TaskStepOutput
 from typing import Any
-from abc import abstractmethod
+
+from llama_index.agent.types import BaseAgentWorker, Task, TaskStep, TaskStepOutput
+from llama_index.core.query_pipeline.query_component import QueryComponent
+from llama_index.query_pipeline.components.agent import (
+    AgentFnComponent,
+    AgentInputComponent,
+)
+from llama_index.query_pipeline.query import QueryPipeline
 
 """Custom agent worker."""
 
 import uuid
-from abc import abstractmethod
 from typing import (
     Any,
-    Callable,
-    Dict,
     List,
     Optional,
-    Sequence,
-    Tuple,
     cast,
 )
 
@@ -28,26 +26,19 @@ from llama_index.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks import (
     CallbackManager,
     trace_method,
 )
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
-    AgentChatResponse,
 )
-from llama_index.llms.llm import LLM
-from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
-from llama_index.objects.base import ObjectRetriever
-from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
-from llama_index.tools.types import AsyncBaseTool
-from llama_index.callbacks import (
-    CallbackManager
-)
+from llama_index.tools import ToolOutput
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
+
 
 def _get_agent_fn_components(query_component: QueryComponent) -> List[AgentFnComponent]:
     """Get agent fn components."""
@@ -67,7 +58,7 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
 
     Barebones agent worker that takes in a query pipeline.
 
-    Assumes that the first component in the query pipeline is an 
+    Assumes that the first component in the query pipeline is an
     `AgentInputComponent` and last is `AgentFnComponent`.
 
     Args:
@@ -160,9 +151,7 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         """Run step."""
         # partial agent output component with task and step
         for agent_fn_component in self.agent_fn_components:
-            agent_fn_component.partial(
-                task=task, state=step.step_state
-            )
+            agent_fn_component.partial(task=task, state=step.step_state)
 
         agent_response, is_done = self.pipeline.run(state=step.step_state, task=task)
         response = self._get_task_step_response(agent_response, step, is_done)
@@ -177,11 +166,11 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         """Run step (async)."""
         # partial agent output component with task and step
         for agent_fn_component in self.agent_fn_components:
-            agent_fn_component.partial(
-                task=task, state=step.step_state
-            )
+            agent_fn_component.partial(task=task, state=step.step_state)
 
-        agent_response, is_done = await self.pipeline.arun(state=step.step_state, task=task)
+        agent_response, is_done = await self.pipeline.arun(
+            state=step.step_state, task=task
+        )
         response = self._get_task_step_response(agent_response, step, is_done)
         task.extra_state.update(step.step_state)
         return response
@@ -204,4 +193,3 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         task.memory.set(task.memory.get() + task.extra_state["memory"].get_all())
         # reset new memory
         task.extra_state["memory"].reset()
-

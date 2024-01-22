@@ -1,22 +1,21 @@
 """Tool runner component."""
 
-from inspect import signature
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Sequence, cast
+from typing import Any, Dict, Optional, Sequence, cast
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks.base import CallbackManager
-from llama_index.core.query_pipeline.query_component import (
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    validate_and_convert_stringable
-)
-from llama_index.tools import AsyncBaseTool, adapt_to_async_tool
+from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import (
     CallbackManager,
     CBEventType,
     EventPayload,
 )
+from llama_index.callbacks.base import CallbackManager
+from llama_index.core.query_pipeline.query_component import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
+from llama_index.tools import AsyncBaseTool, adapt_to_async_tool
 
 
 class ToolRunnerComponent(QueryComponent):
@@ -39,7 +38,9 @@ class ToolRunnerComponent(QueryComponent):
         # determine parameters
         tool_dict = {tool.metadata.name: adapt_to_async_tool(tool) for tool in tools}
         callback_manager = callback_manager or CallbackManager([])
-        super().__init__(tool_dict=tool_dict, callback_manager=callback_manager, **kwargs)
+        super().__init__(
+            tool_dict=tool_dict, callback_manager=callback_manager, **kwargs
+        )
 
     class Config:
         arbitrary_types_allowed = True

@@ -32,10 +32,10 @@ def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
     return required_params, optional_params
 
 
-
 def default_agent_input_fn(task: Any, state: dict) -> dict:
     """Default agent input function."""
     from llama_index.agent.types import Task
+
     task = cast(Task, task)
 
     return {"input": task.input}
@@ -87,7 +87,7 @@ class AgentInputComponent(QueryComponent):
             raise ValueError("Input must have key 'task'")
         if not isinstance(input["task"], Task):
             raise ValueError("Input must have key 'task' of type Task")
-        
+
         if "state" not in input:
             raise ValueError("Input must have key 'state'")
         if not isinstance(input["state"], dict):
@@ -108,7 +108,7 @@ class AgentInputComponent(QueryComponent):
         output = self.fn(**kwargs)
         if not isinstance(output, dict):
             raise ValueError("Output must be a dictionary")
-        
+
         return output
 
     async def _arun_component(self, **kwargs: Any) -> Any:
@@ -125,7 +125,8 @@ class AgentInputComponent(QueryComponent):
     def input_keys(self) -> InputKeys:
         """Input keys."""
         return InputKeys.from_keys(
-            required_keys={"task", "state", *self._req_params}, optional_keys=self._opt_params
+            required_keys={"task", "state", *self._req_params},
+            optional_keys=self._opt_params,
         )
 
     @property
@@ -139,7 +140,7 @@ class AgentFnComponent(QueryComponent):
     """Function component for agents.
 
     Designed to let users easily modify state.
-    
+
     """
 
     fn: Callable = Field(..., description="Function to run.")
@@ -163,7 +164,9 @@ class AgentFnComponent(QueryComponent):
         default_req_params, default_opt_params = get_parameters(fn)
         # make sure task and step are part of the list, and remove them from the list
         if "task" not in default_req_params or "state" not in default_req_params:
-            raise ValueError("AgentFnComponent must have 'task' and 'state' as required parameters")
+            raise ValueError(
+                "AgentFnComponent must have 'task' and 'state' as required parameters"
+            )
 
         default_req_params = default_req_params - {"task", "state"}
         default_opt_params = default_opt_params - {"task", "state"}
@@ -192,7 +195,7 @@ class AgentFnComponent(QueryComponent):
             raise ValueError("Input must have key 'task'")
         if not isinstance(input["task"], Task):
             raise ValueError("Input must have key 'task' of type Task")
-        
+
         if "state" not in input:
             raise ValueError("Input must have key 'state'")
         if not isinstance(input["state"], dict):
@@ -213,7 +216,7 @@ class AgentFnComponent(QueryComponent):
         output = self.fn(**kwargs)
         # if not isinstance(output, dict):
         #     raise ValueError("Output must be a dictionary")
-        
+
         return {"output": output}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
@@ -230,7 +233,8 @@ class AgentFnComponent(QueryComponent):
     def input_keys(self) -> InputKeys:
         """Input keys."""
         return InputKeys.from_keys(
-            required_keys={"task", "state", *self._req_params}, optional_keys=self._opt_params
+            required_keys={"task", "state", *self._req_params},
+            optional_keys=self._opt_params,
         )
 
     @property
