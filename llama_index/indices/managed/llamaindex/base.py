@@ -79,6 +79,7 @@ class PlatformIndex(BaseManagedIndex):
         platform_base_url: Optional[str] = None,
         platform_app_url: Optional[str] = None,
         timeout: int = 60,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> "PlatformIndex":
         """Build a Vectara index from a sequence of documents."""
@@ -100,10 +101,16 @@ class PlatformIndex(BaseManagedIndex):
         )
         assert project.id is not None
 
+        if verbose:
+            print(f"Created project {project.id} with name {project.name}")
+
         pipeline = client.project.upsert_pipeline_for_project(
             project_id=project.id, request=pipeline_create
         )
         assert pipeline.id is not None
+
+        if verbose:
+            print(f"Created pipeline {pipeline.id} with name {pipeline.name}")
 
         # TODO: remove when sourabh's PR is merged
         # kick off data source execution
@@ -115,7 +122,9 @@ class PlatformIndex(BaseManagedIndex):
             )
             execution_ids.append(execution.id)
 
-        print("Loading data: ", end="")
+        if verbose:
+            print("Loading data: ", end="")
+
         is_done = False
         while not is_done:
             statuses = []
@@ -128,13 +137,17 @@ class PlatformIndex(BaseManagedIndex):
 
             if all(status == StatusEnum.SUCCESS for status in statuses):
                 is_done = True
-                print("Done!")
+                if verbose:
+                    print("Done!")
             elif any(
                 status in [StatusEnum.ERROR, StatusEnum.CANCELED] for status in statuses
             ):
-                raise ValueError("Data source execution failed!")
+                raise ValueError(
+                    f"Data source execution failed with statuses {statuses}!"
+                )
             else:
-                print(".", end="")
+                if verbose:
+                    print(".", end="")
                 time.sleep(0.5)
 
         # kick off ingestion
@@ -143,7 +156,9 @@ class PlatformIndex(BaseManagedIndex):
         )
         ingestion_id = execution.id
 
-        print("Running ingestion: ", end="")
+        if verbose:
+            print("Running ingestion: ", end="")
+
         is_done = False
         while not is_done:
             ingestion = client.pipeline.get_managed_ingestion_execution(
@@ -152,11 +167,13 @@ class PlatformIndex(BaseManagedIndex):
 
             if ingestion.status == StatusEnum.SUCCESS:
                 is_done = True
-                print("Done!")
+                if verbose:
+                    print("Done!")
             elif ingestion.status in [StatusEnum.ERROR, StatusEnum.CANCELED]:
-                raise ValueError("Ingestion failed")
+                raise ValueError(f"Ingestion failed with status {ingestion.status}")
             else:
-                print(".", end="")
+                if verbose:
+                    print(".", end="")
                 time.sleep(0.5)
 
         print(
