@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### New Features
+
+- `beautifulsoup4` dependency to new optional extra `html` (#10156)
+- make `BaseNode.hash` an `@property` (#10163)
+
 ## [0.9.34] - 2024-01-19
 
 ### New Features
