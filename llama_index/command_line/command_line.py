@@ -53,8 +53,8 @@ def handle_download_llama_dataset(
 
 
 def handle_question(
-    file_path: Optional[str] = None,
-    question: Optional[str] = None,
+    file_path: str,
+    question: str,
     **kwargs: Any,
 ) -> None:
     assert file_path is not None
