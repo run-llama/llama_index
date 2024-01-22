@@ -100,6 +100,15 @@ data = [
 ```
 
 
+## Perform the evaluation
+
+Now that we have the list of queries, we can use the EvalLlamaIndex object to generate responses for the queries and then perform evaluations on the responses. You can find an extensive list of the evaluations offered by UpTrain [here](https://docs.uptrain.ai/key-components/evals). We have chosen two that we found to be the most relevant for this tutorial:
+
+1. **Context Relevance**: This evaluation checks whether the retrieved context is relevant to the query. This is important because the retrieved context is used to generate the response. If the retrieved context is not relevant to the query, then the response will not be relevant to the query either.
+
+2. **Response Conciseness**: This evaluation checks whether the response is concise. This is important because the response should be concise and should not contain any unnecessary information.
+
+
 ```python
 results = llamaindex_object.evaluate(eval_llm, 
                               data=data, 
@@ -113,4 +122,5 @@ results = llamaindex_object.evaluate(eval_llm,
 
 ### Learn more
 
+- [Jupyter Notebook for this tutorial](https://github.com/uptrain-ai/uptrain/blob/main/examples/integrations/llamaindex_integration_tutorial.ipynb)
 - [UpTrain Documentation](https://docs.uptrain.ai/)
