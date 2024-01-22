@@ -38,15 +38,25 @@ except (ImportError, Exception):
 def test_instance_creation_from_collection() -> None:
     connection = chromadb.HttpClient(**PARAMS)
     collection = connection.get_collection(COLLECTION_NAME)
-    store = ChromaVectorStore(chroma_collection=collection)
+    store = ChromaVectorStore.from_collection(collection)
     assert isinstance(store, ChromaVectorStore)
 
 
 @pytest.mark.skipif(chromadb_not_available, reason="chromadb is not available")
 def test_instance_creation_from_http_params() -> None:
-    store = ChromaVectorStore(
+    store = ChromaVectorStore.from_params(
         host=PARAMS["host"],
         port=PARAMS["port"],
+        collection_name=COLLECTION_NAME,
+        collection_kwargs={},
+    )
+    assert isinstance(store, ChromaVectorStore)
+
+
+@pytest.mark.skipif(chromadb_not_available, reason="chromadb is not available")
+def test_instance_creation_from_persist_dir() -> None:
+    store = ChromaVectorStore.from_params(
+        persist_dir="./data",
         collection_name=COLLECTION_NAME,
         collection_kwargs={},
     )

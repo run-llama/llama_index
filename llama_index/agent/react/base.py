@@ -29,6 +29,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
+from llama_index.prompts.mixin import PromptMixinType
 from llama_index.tools import BaseTool
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
@@ -128,3 +129,7 @@ class ReActAgent(AgentRunner):
             verbose=verbose,
             context=context,
         )
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {"agent_worker": self.agent_worker}
