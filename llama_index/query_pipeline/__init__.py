@@ -5,6 +5,7 @@ from llama_index.core.query_pipeline.components import (
     FnComponent,
     InputComponent,
     KwargPackComponent,
+    IfElseComponent
 )
 from llama_index.core.query_pipeline.query_component import (
     CustomQueryComponent,
@@ -15,6 +16,11 @@ from llama_index.query_pipeline.components.router import (
     RouterComponent,
     SelectorComponent,
 )
+from llama_index.query_pipeline.components.agent import (
+    AgentInputComponent,
+    AgentFnComponent,
+)
+from llama_index.query_pipeline.components.tool_runner import ToolRunnerComponent
 from llama_index.query_pipeline.query import InputKeys, OutputKeys, QueryPipeline
 
 __all__ = [
@@ -27,7 +33,11 @@ __all__ = [
     "FnComponent",
     "ArgPackComponent",
     "KwargPackComponent",
+    "IfElseComponent",
     "RouterComponent",
     "SelectorComponent",
+    "ToolRunnerComponent",
+    "AgentInputComponent",
+    "AgentFnComponent",
     "Link",
 ]
