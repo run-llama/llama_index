@@ -471,7 +471,7 @@ class IngestionPipeline(BaseModel):
         assert project.id is not None, "Project ID should not be None"
 
         # delayed import to avoid circular import
-        from llama_index.indices.managed.llamaindex import get_pipeline_create
+        from llama_index.indices.managed.llama_index import get_pipeline_create
 
         pipeline_create = get_pipeline_create(
             self.name,

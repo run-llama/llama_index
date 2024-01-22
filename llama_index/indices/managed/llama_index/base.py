@@ -12,7 +12,7 @@ from llama_index_client import PipelineType, ProjectCreate, StatusEnum
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.managed.base import BaseManagedIndex
-from llama_index.indices.managed.llamaindex.utils import (
+from llama_index.indices.managed.llama_index.utils import (
     default_transformations,
     get_aclient,
     get_client,
@@ -193,7 +193,7 @@ class PlatformIndex(BaseManagedIndex):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
-        from llama_index.indices.managed.llamaindex.retriever import PlatformRetriever
+        from llama_index.indices.managed.llama_index.retriever import PlatformRetriever
 
         similarity_top_k = kwargs.pop("similarity_top_k", None)
         dense_similarity_top_k = kwargs.pop("dense_similarity_top_k", None)

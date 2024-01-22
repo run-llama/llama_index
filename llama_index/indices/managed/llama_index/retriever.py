@@ -4,7 +4,7 @@ from llama_index_client import TextNodeWithScore
 from llama_index_client.resources.retrieval.client import OMIT
 
 from llama_index.core.base_retriever import BaseRetriever
-from llama_index.indices.managed.llamaindex.utils import get_aclient, get_client
+from llama_index.indices.managed.llama_index.utils import get_aclient, get_client
 from llama_index.ingestion.pipeline import DEFAULT_PROJECT_NAME
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 
