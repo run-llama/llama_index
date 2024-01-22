@@ -136,7 +136,15 @@ class AgentInputComponent(QueryComponent):
         return OutputKeys.from_keys(set())
 
 
-class AgentFnComponent(QueryComponent):
+class BaseAgentComponent(QueryComponent):
+    """Agent component.
+
+    Abstract class used for type checking.
+
+    """
+
+
+class AgentFnComponent(BaseAgentComponent):
     """Function component for agents.
 
     Designed to let users easily modify state.
@@ -242,3 +250,68 @@ class AgentFnComponent(QueryComponent):
         """Output keys."""
         # output can be anything, overrode validate function
         return OutputKeys.from_keys({"output"})
+
+
+class CustomAgentComponent(BaseAgentComponent):
+    """Custom component for agents.
+
+    Designed to let users easily modify state.
+
+    """
+
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager, description="Callback manager"
+    )
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        self.callback_manager = callback_manager
+        # TODO: refactor to put this on base class
+        for component in self.sub_query_components:
+            component.set_callback_manager(callback_manager)
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        # NOTE: user can override this method to validate inputs
+        # but we do this by default for convenience
+        return input
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component (async)."""
+        raise NotImplementedError("This component does not support async run.")
+
+    @property
+    def _input_keys(self) -> Set[str]:
+        """Input keys dict."""
+        raise NotImplementedError("Not implemented yet. Please override this method.")
+
+    @property
+    def _optional_input_keys(self) -> Set[str]:
+        """Optional input keys dict."""
+        return set()
+
+    @property
+    def _output_keys(self) -> Set[str]:
+        """Output keys dict."""
+        raise NotImplementedError("Not implemented yet. Please override this method.")
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        # NOTE: user can override this too, but we have them implement an
+        # abstract method to make sure they do it
+
+        input_keys = self._input_keys.union({"task", "state"})
+        return InputKeys.from_keys(
+            required_keys=input_keys, optional_keys=self._optional_input_keys
+        )
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        # NOTE: user can override this too, but we have them implement an
+        # abstract method to make sure they do it
+        return OutputKeys.from_keys(self._output_keys)

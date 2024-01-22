@@ -1,29 +1,8 @@
 """Test components."""
-from typing import Any, List, Sequence
 
-import pytest
-from llama_index.core.query_pipeline.components import (
-    ArgPackComponent,
-    FnComponent,
-    InputComponent,
-    KwargPackComponent,
-)
-from llama_index.prompts.mixin import PromptDictType
-from llama_index.query_pipeline.components.router import (
-    RouterComponent,
-    SelectorComponent,
-)
-from llama_index.query_pipeline.query import QueryPipeline
-from llama_index.schema import QueryBundle
-from llama_index.selectors.types import (
-    BaseSelector,
-    MultiSelection,
-    SelectorResult,
-    SingleSelection,
-)
-from llama_index.tools.types import ToolMetadata
-from llama_index.tools.function_tool import FunctionTool
 from llama_index.query_pipeline.components.tool_runner import ToolRunnerComponent
+from llama_index.tools.function_tool import FunctionTool
+from llama_index.tools.types import ToolMetadata
 
 
 def foo_fn(a: int, b: int = 1, c: int = 2) -> int:
@@ -49,4 +28,3 @@ def test_tool_runner() -> None:
         tool_name="foo", tool_input={"a": 1, "b": 2, "c": 3}
     )
     assert output["output"].content == "6"
-    

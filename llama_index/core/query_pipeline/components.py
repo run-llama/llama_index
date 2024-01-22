@@ -1,13 +1,11 @@
 """Query pipeline components."""
 
 from inspect import signature
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.query_pipeline.query_component import (
-    QUERY_COMPONENT_TYPE,
-    ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,

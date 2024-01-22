@@ -14,6 +14,7 @@ from llama_index.core.query_pipeline.query_component import (
 from llama_index.query_pipeline.components.agent import (
     AgentFnComponent,
     AgentInputComponent,
+    CustomAgentComponent,
 )
 from llama_index.query_pipeline.components.router import (
     RouterComponent,
@@ -37,5 +38,6 @@ __all__ = [
     "ToolRunnerComponent",
     "AgentInputComponent",
     "AgentFnComponent",
+    "CustomAgentComponent",
     "Link",
 ]

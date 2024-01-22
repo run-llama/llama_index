@@ -1,17 +1,5 @@
 """Agent worker that takes in a query pipeline."""
 
-from typing import Any
-
-from llama_index.agent.types import BaseAgentWorker, Task, TaskStep, TaskStepOutput
-from llama_index.core.query_pipeline.query_component import QueryComponent
-from llama_index.query_pipeline.components.agent import (
-    AgentFnComponent,
-    AgentInputComponent,
-)
-from llama_index.query_pipeline.query import QueryPipeline
-
-"""Custom agent worker."""
-
 import uuid
 from typing import (
     Any,
@@ -34,23 +22,30 @@ from llama_index.callbacks import (
 from llama_index.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
 )
+from llama_index.core.query_pipeline.query_component import QueryComponent
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
+from llama_index.query_pipeline.components.agent import (
+    AgentFnComponent,
+    AgentInputComponent,
+    BaseAgentComponent,
+)
+from llama_index.query_pipeline.query import QueryPipeline
 from llama_index.tools import ToolOutput
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
-def _get_agent_fn_components(query_component: QueryComponent) -> List[AgentFnComponent]:
-    """Get agent fn components."""
-    fn_components: List[AgentFnComponent] = []
+def _get_agent_components(query_component: QueryComponent) -> List[BaseAgentComponent]:
+    """Get agent components."""
+    agent_components: List[BaseAgentComponent] = []
     for c in query_component.sub_query_components:
-        if isinstance(c, AgentFnComponent):
-            fn_components.append(cast(AgentFnComponent, c))
+        if isinstance(c, BaseAgentComponent):
+            agent_components.append(cast(BaseAgentComponent, c))
 
         if len(c.sub_query_components) > 0:
-            fn_components.extend(_get_agent_fn_components(c))
+            agent_components.extend(_get_agent_components(c))
 
-    return fn_components
+    return agent_components
 
 
 class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
@@ -67,9 +62,7 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
     """
 
     pipeline: QueryPipeline = Field(..., description="Query pipeline")
-    callback_manager: CallbackManager = Field(
-        default_factory=lambda: CallbackManager([]), exclude=True
-    )
+    callback_manager: CallbackManager = Field(..., exclude=True)
 
     class Config:
         arbitrary_types_allowed = True
@@ -80,13 +73,18 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initialize."""
+        if callback_manager is not None:
+            # set query pipeline callback
+            pipeline.set_callback_manager(callback_manager)
+        else:
+            callback_manager = pipeline.callback_manager
         super().__init__(
             pipeline=pipeline,
-            callback_manager=callback_manager or CallbackManager([]),
+            callback_manager=callback_manager,
         )
         # validate query pipeline
         self.agent_input_component
-        self.agent_fn_components
+        self.agent_components
 
     @property
     def agent_input_component(self) -> AgentInputComponent:
@@ -101,9 +99,9 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         return cast(AgentInputComponent, self.pipeline.module_dict[root_key])
 
     @property
-    def agent_fn_components(self) -> List[AgentFnComponent]:
+    def agent_components(self) -> List[AgentFnComponent]:
         """Get agent output component."""
-        return _get_agent_fn_components(self.pipeline)
+        return _get_agent_components(self.pipeline)
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
@@ -150,7 +148,7 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
         # partial agent output component with task and step
-        for agent_fn_component in self.agent_fn_components:
+        for agent_fn_component in self.agent_components:
             agent_fn_component.partial(task=task, state=step.step_state)
 
         agent_response, is_done = self.pipeline.run(state=step.step_state, task=task)
@@ -165,7 +163,7 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
     ) -> TaskStepOutput:
         """Run step (async)."""
         # partial agent output component with task and step
-        for agent_fn_component in self.agent_fn_components:
+        for agent_fn_component in self.agent_components:
             agent_fn_component.partial(task=task, state=step.step_state)
 
         agent_response, is_done = await self.pipeline.arun(
