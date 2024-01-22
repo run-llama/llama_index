@@ -213,3 +213,4 @@ We also integrate with community evaluation tools.
 
 - [DeepEval](../../../community/integrations/deepeval.md)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
+- [UpTrain](../../community/integrations/uptrain.md)
