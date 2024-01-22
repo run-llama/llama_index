@@ -3,7 +3,6 @@
 from llama_index.core.query_pipeline.components import (
     ArgPackComponent,
     FnComponent,
-    IfElseComponent,
     InputComponent,
     KwargPackComponent,
 )
@@ -33,7 +32,6 @@ __all__ = [
     "FnComponent",
     "ArgPackComponent",
     "KwargPackComponent",
-    "IfElseComponent",
     "RouterComponent",
     "SelectorComponent",
     "ToolRunnerComponent",
