@@ -169,6 +169,8 @@ Several example notebooks are also listed below:
 - [StableLM](/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
 - [Camel](/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
 
+(using-custom-llm-advanced)=
+
 ## Example: Using a Custom LLM Model - Advanced
 
 To use a custom LLM model, you only need to implement the `LLM` class (or `CustomLLM` for a simpler interface)

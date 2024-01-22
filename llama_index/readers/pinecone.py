@@ -14,18 +14,11 @@ class PineconeReader(BaseReader):
         environment (str): Pinecone environment.
     """
 
-    def __init__(self, api_key: str, environment: str):
+    def __init__(self, api_key: str, environment: Optional[str] = None) -> None:
         """Initialize with parameters."""
-        try:
-            import pinecone
-        except ImportError:
-            raise ImportError(
-                "`pinecone` package not found, please run `pip install pinecone-client`"
-            )
-
-        self._api_key = api_key
-        self._environment = environment
-        pinecone.init(api_key=api_key, environment=environment)
+        raise NotImplementedError(
+            "PineconeReader has been deprecated. Please use `PineconeVectorStore` instead."
+        )
 
     def load_data(
         self,
@@ -56,26 +49,6 @@ class PineconeReader(BaseReader):
         Returns:
             List[Document]: A list of documents.
         """
-        import pinecone
-
-        index = pinecone.Index(index_name)
-        if "include_values" not in query_kwargs:
-            query_kwargs["include_values"] = True
-        response = index.query(top_k=top_k, vector=vector, **query_kwargs)
-
-        documents = []
-        for match in response.matches:
-            if match.id not in id_to_text_map:
-                raise ValueError("ID not found in id_to_text_map.")
-            text = id_to_text_map[match.id]
-            embedding = match.values
-            if len(embedding) == 0:
-                embedding = None
-            documents.append(Document(text=text, embedding=embedding))
-
-        if not separate_documents:
-            text_list = [doc.get_content() for doc in documents]
-            text = "\n\n".join(text_list)
-            documents = [Document(text=text)]
-
-        return documents
+        raise NotImplementedError(
+            "PineconeReader has been deprecated. Please use `PineconeVectorStore` instead."
+        )

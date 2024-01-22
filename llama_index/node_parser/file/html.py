@@ -1,5 +1,5 @@
 """HTML node parser."""
-from typing import Any, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
@@ -7,6 +7,9 @@ from llama_index.node_parser.interface import NodeParser
 from llama_index.node_parser.node_utils import build_nodes_from_splits
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.utils import get_tqdm_iterable
+
+if TYPE_CHECKING:
+    from bs4 import Tag
 
 DEFAULT_TAGS = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "b", "i", "u", "section"]
 
@@ -21,8 +24,6 @@ class HTMLNodeParser(NodeParser):
         include_prev_next_rel (bool): whether to include prev/next relationships
 
     """
-
-    from bs4 import Tag
 
     tags: List[str] = Field(
         default=DEFAULT_TAGS, description="HTML tags to extract text from."
@@ -102,7 +103,7 @@ class HTMLNodeParser(NodeParser):
 
         return html_nodes
 
-    def _extract_text_from_tag(self, tag: Tag) -> str:
+    def _extract_text_from_tag(self, tag: "Tag") -> str:
         from bs4 import NavigableString
 
         texts = []

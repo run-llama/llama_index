@@ -140,6 +140,7 @@ Associated projects
    optimizing/evaluation/evaluation.md
    optimizing/fine-tuning/fine-tuning.md
    optimizing/production_rag.md
+   optimizing/custom_modules.md
    optimizing/building_rag_from_scratch.md
 .. toctree::
    :maxdepth: 2

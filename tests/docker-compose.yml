@@ -33,3 +33,7 @@ services:
       - 5432:5432
     volumes:
       - ./initialization/postgres/:/docker-entrypoint-initdb.d
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    ports:
+      - 8000:8000

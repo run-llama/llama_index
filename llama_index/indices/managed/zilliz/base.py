@@ -52,17 +52,18 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
     The Zilliz Cloud Pipeline's index implements a managed index that uses Zilliz Cloud Pipelines as the backend.
 
     Args:
+        project_id (str): Zilliz Cloud's project ID.
         cluster_id (str): Zilliz Cloud's cluster ID.
         token (str): Zilliz Cloud's token.
         cloud_region (str='gcp-us-west1'): The region of Zilliz Cloud's cluster. Defaults to 'gcp-us-west1'.
-        pipeline_ids (dict=None): A dictionary of pipeline ids for INGESTION, SEARCH, DELETION. Defaults to None
-        collection_name (str='zcp_llamalection'): A collection name, defaults to 'zcp_llamalection'. If no pipeline_ids is given, get or create pipelines with collection_name.
+        pipeline_ids (dict=None): A dictionary of pipeline ids for INGESTION, SEARCH, DELETION. Defaults to None.
+        collection_name (str='zcp_llamalection'): A collection name, defaults to 'zcp_llamalection'. If no pipeline_ids is given, get pipelines with collection_name.
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
-
     """
 
     def __init__(
         self,
+        project_id: str,
         cluster_id: str,
         token: str,
         cloud_region: str = "gcp-us-west1",
@@ -71,26 +72,23 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
         show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
-        if pipeline_ids is None:
-            pipeline_ids = self._get_pipeline_ids(
-                cluster_id=cluster_id,
-                token=token,
-                cloud_region=cloud_region,
-                collection_name=collection_name,
-            )
-        if len(pipeline_ids) == 0:
-            pipeline_ids = self._create_pipelines(
-                cluster_id=cluster_id,
-                token=token,
-                cloud_region=cloud_region,
-                collection_name=collection_name,
-            )
-        assert set(PIPELINE_TYPES).issubset(
-            set(pipeline_ids.keys())
-        ), f"Missing pipeline(s): {set(PIPELINE_TYPES) - set(pipeline_ids.keys())}"
+        self.project_id = project_id
+        self.cluster_id = cluster_id
+        self.token = token
+        self.cloud_region = cloud_region
+        self.collection_name = collection_name
+        self.domain = (
+            f"https://controller.api.{cloud_region}.zillizcloud.com/v1/pipelines"
+        )
+        self.headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        self.pipeline_ids = pipeline_ids or self.get_pipeline_ids()
 
         index_struct = ZillizCloudPipelineIndexStruct(
-            index_id="_".join([str(x) for x in pipeline_ids.values()]),
+            index_id=collection_name,
             summary="Zilliz Cloud Pipeline Index",
         )
 
@@ -98,34 +96,60 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
             show_progress=show_progress, index_struct=index_struct, **kwargs
         )
 
-        domain = f"https://controller.api.{cloud_region}.zillizcloud.com/v1/pipelines"
-
-        ingest_pipe_id = pipeline_ids["INGESTION"]
-        search_pipe_id = pipeline_ids["SEARCH"]
-        deletion_pipe_id = pipeline_ids["DELETION"]
-        self.ingestion_url = f"{domain}/{ingest_pipe_id}/run"
-        self.search_url = f"{domain}/{search_pipe_id}/run"
-        self.deletion_url = f"{domain}/{deletion_pipe_id}/run"
-
-        self.headers = {
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
-
-        self.cluster_id = cluster_id
+        if len(self.pipeline_ids) == 0:
+            print("No available pipelines. Please create pipelines first.")
+        else:
+            assert set(PIPELINE_TYPES).issubset(
+                set(self.pipeline_ids.keys())
+            ), f"Missing pipeline(s): {set(PIPELINE_TYPES) - set(self.pipeline_ids.keys())}"
 
     def insert_doc_url(self, url: str, metadata: Optional[Dict] = None) -> None:
+        """Insert doc from url with an initialized index.
+
+
+        Example:
+        >>> from llama_index.indices import ZillizCloudPipelineIndex
+        >>> index = ZillizCloudPipelineIndex(
+        >>>     project_id='YOUR_ZILLIZ_CLOUD_PROJECT_ID',
+        >>>     cluster_id='YOUR_ZILLIZ_CLOUD_CLUSTER_ID',
+        >>>     token='YOUR_ZILLIZ_CLOUD_API_KEY',
+        >>>     collection_name='your_collection_name'
+        >>> )
+        >>> index.insert_doc_url(
+        >>>     url='https://oss_bucket.test_doc.ext',
+        >>>     metadata={'year': 2023, 'author': 'zilliz'}  # only required when the Index was created with metadata schemas
+        >>> )
+        """
+        ingest_pipe_id = self.pipeline_ids.get("INGESTION")
+        ingestion_url = f"{self.domain}/{ingest_pipe_id}/run"
+
         if metadata is None:
             metadata = {}
         params = {"data": {"doc_url": url}}
         params["data"].update(metadata)
-        response = requests.post(self.ingestion_url, headers=self.headers, json=params)
+        response = requests.post(ingestion_url, headers=self.headers, json=params)
         if response.status_code != 200:
             raise RuntimeError(response.text)
         response_dict = response.json()
         if response_dict["code"] != 200:
             raise RuntimeError(response_dict)
+        return response_dict["data"]
+
+    def delete_by_doc_name(self, doc_name: str) -> int:
+        deletion_pipe_id = self.pipeline_ids.get("DELETION")
+        deletion_url = f"{self.domain}/{deletion_pipe_id}/run"
+
+        params = {"data": {"doc_name": doc_name}}
+        response = requests.post(deletion_url, headers=self.headers, json=params)
+        if response.status_code != 200:
+            raise RuntimeError(response.text)
+        response_dict = response.json()
+        if response_dict["code"] != 200:
+            raise RuntimeError(response_dict)
+        try:
+            return response_dict["data"]
+        except Exception as e:
+            raise RuntimeError(f"Run Zilliz Cloud Pipelines failed: {e}")
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a retriever."""
@@ -135,82 +159,12 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
 
         return ZillizCloudPipelineRetriever(self, **kwargs)
 
-    @classmethod
-    def from_document_url(
-        cls,
-        url: str,
-        cluster_id: str,
-        token: str,
-        cloud_region: str = "gcp-us-west1",
-        pipeline_ids: Optional[Dict] = None,
-        collection_name: str = "zcp_llamalection",
-        metadata: Optional[Dict] = None,
-        show_progress: bool = False,
-        **kwargs: Any,
-    ) -> BaseManagedIndex:
-        """Zilliz Cloud Pipeline loads document from a signed url and then builds auto index for it.
-
-        Args:
-            url: a gcs or s3 signed url
-            cluster_id (str): Zilliz Cloud's cluster ID.
-            token (str): Zilliz Cloud's token.
-            cloud_region (str='gcp-us-west1'): The region of Zilliz Cloud's cluster. Defaults to 'gcp-us-west1'.
-            pipeline_ids (dict=None): A dictionary of pipeline ids for INGESTION, SEARCH, DELETION. Defaults to None
-            collection_name (str='zcp_llamalection'): A collection name, defaults to 'zcp_llamalection'. If no pipeline_ids is given, get or create pipelines with collection_name.
-            metadata (Dict=None): A dictionary of metadata. Defaults to None. The key must be string and the value must be a string, float, integer, or boolean.
-            show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
-
-        Returns:
-            An initialized ZillizCloudPipelineIndex
-        """
-        if metadata is None:
-            metadata = {}
-        if pipeline_ids is None:
-            pipeline_ids = cls._get_pipeline_ids(
-                cluster_id=cluster_id,
-                token=token,
-                cloud_region=cloud_region,
-                collection_name=collection_name,
-            )
-        if len(pipeline_ids) == 0:
-            pipeline_ids = cls._create_pipelines(
-                cluster_id=cluster_id,
-                token=token,
-                cloud_region=cloud_region,
-                collection_name=collection_name,
-                metadata_schema={k: get_zcp_type(v) for k, v in metadata.items()},
-            )
-        index = cls(
-            cluster_id=cluster_id,
-            token=token,
-            cloud_region=cloud_region,
-            pipeline_ids=pipeline_ids,
-            collection_name=collection_name,
-            show_progress=show_progress,
-            **kwargs,
-        )
-        try:
-            index.insert_doc_url(url=url, metadata=metadata)
-        except Exception as e:
-            logger.error(
-                "Failed to build managed index given document url (%s):\n%s", url, e
-            )
-        return index
-
-    @classmethod
-    def _get_pipeline_ids(
-        cls, cluster_id: str, token: str, cloud_region: str, collection_name: str
-    ) -> dict:
+    def get_pipeline_ids(self) -> dict:
         """Get pipeline ids."""
-        url = f"https://controller.api.{cloud_region}.zillizcloud.com/v1/pipelines"
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
+        url = f"{self.domain}?projectId={self.project_id}"
 
         # Get pipelines
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=self.headers)
         if response.status_code != 200:
             raise RuntimeError(response.text)
         response_dict = response.json()
@@ -225,48 +179,66 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
             if pipe_type == "SEARCH":
                 pipe_clusters = [x["clusterId"] for x in pipe_info["functions"]]
                 pipe_collections = [x["collectionName"] for x in pipe_info["functions"]]
-                if cluster_id in pipe_clusters and collection_name in pipe_collections:
+                if (
+                    self.cluster_id in pipe_clusters
+                    and self.collection_name in pipe_collections
+                ):
                     pipeline_ids[pipe_type] = pipe_id
             elif pipe_type == "INGESTION":
                 if (
-                    cluster_id == pipe_info["clusterId"]
-                    and collection_name == pipe_info["newCollectionName"]
+                    self.cluster_id == pipe_info["clusterId"]
+                    and self.collection_name == pipe_info["newCollectionName"]
                 ):
                     pipeline_ids[pipe_type] = pipe_id
             elif pipe_type == "DELETION":
                 if (
-                    cluster_id == pipe_info["clusterId"]
-                    and collection_name == pipe_info["collectionName"]
+                    self.cluster_id == pipe_info["clusterId"]
+                    and self.collection_name == pipe_info["collectionName"]
                 ):
                     pipeline_ids[pipe_type] = pipe_id
         return pipeline_ids
 
-    @classmethod
-    def _create_pipelines(
-        cls,
-        cluster_id: str,
-        token: str,
-        cloud_region: str,
-        collection_name: str,
-        metadata_schema: Optional[Dict] = None,
+    def create_pipelines(
+        self, metadata_schema: Optional[Dict] = None, **kwargs: str
     ) -> dict:
-        """Given collection_name, create INGESTION, SEARCH, DELETION pipelines."""
-        url = f"https://controller.api.{cloud_region}.zillizcloud.com/v1/pipelines"
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
+        """Create INGESTION, SEARCH, DELETION pipelines using self.collection_name.
+
+        Args:
+            metadata_schema (Dict=None): A dictionary of metadata schema, defaults to None. Use metadata name as key and the corresponding data type as value: {'field_name': 'field_type'}.
+                Only support the following values as the field type: 'Bool', 'Int8', 'Int16', 'Int32', 'Int64', 'Float', 'Double', 'VarChar'.
+            kwargs: optional parameters to create ingestion pipeline
+                - chunkSize: An integer within range [20, 500] to customize chunk size.
+                - language: The language of documents. Available options: "ENGLISH", "CHINESE".
+
+        Returns:
+            A dictionary of pipeline ids for INGESTION, SEARCH, and DELETION pipelines.
+
+        Example:
+            >>> from llama_index.indices import ZillizCloudPipelineIndex
+            >>> index = ZillizCloudPipelineIndex(
+            >>>     project_id='YOUR_ZILLIZ_CLOUD_PROJECT_ID',
+            >>>     cluster_id='YOUR_ZILLIZ_CLOUD_CLUSTER_ID',
+            >>>     token='YOUR_ZILLIZ_CLOUD_API_KEY',
+            >>>     collection_name='your_new_collection_name'
+            >>> )
+            >>> pipeline_ids = index.create_pipelines(
+            >>>     metadata_schema={'year': 'Int32', 'author': 'VarChar'}  # optional, defaults to None
+            >>> )
+        """
+        if len(self.pipeline_ids) > 0:
+            raise RuntimeError(
+                f"Pipelines already exist for collection {self.collection_name}: {self.pipeline_ids}"
+            )
 
         params_dict = {}
-        functions = [
-            {
-                "name": "index_my_doc",
-                "action": "INDEX_DOC",
-                "inputField": "doc_url",
-                "language": "ENGLISH",
-            }
-        ]
+        index_doc_func = {
+            "name": "index_my_doc",
+            "action": "INDEX_DOC",
+            "inputField": "doc_url",
+            "language": "ENGLISH",
+        }
+        index_doc_func.update(kwargs)
+        functions = [index_doc_func]
         if metadata_schema:
             for k, v in metadata_schema.items():
                 preserve_func = {
@@ -278,29 +250,31 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
                 }
                 functions.append(preserve_func)
         params_dict["INGESTION"] = {
-            "name": "llamaindex_ingestion",
-            "clusterId": cluster_id,
-            "newCollectionName": collection_name,
+            "name": f"{self.collection_name}_ingestion",
+            "projectId": self.project_id,
+            "clusterId": self.cluster_id,
+            "newCollectionName": self.collection_name,
             "type": "INGESTION",
             "functions": functions,
         }
 
         params_dict["SEARCH"] = {
-            "name": "llamaindex_search",
+            "name": f"{self.collection_name}_search",
+            "projectId": self.project_id,
             "type": "SEARCH",
             "functions": [
                 {
                     "name": "search_chunk_text",
                     "action": "SEARCH_DOC_CHUNK",
                     "inputField": "query_text",
-                    "clusterId": cluster_id,
-                    "collectionName": collection_name,
+                    "clusterId": self.cluster_id,
+                    "collectionName": self.collection_name,
                 }
             ],
         }
 
         params_dict["DELETION"] = {
-            "name": "llamaindex_deletion",
+            "name": f"{self.collection_name}_deletion",
             "type": "DELETION",
             "functions": [
                 {
@@ -309,21 +283,86 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
                     "inputField": "doc_name",
                 }
             ],
-            "clusterId": cluster_id,
-            "collectionName": collection_name,
+            "projectId": self.project_id,
+            "clusterId": self.cluster_id,
+            "collectionName": self.collection_name,
         }
 
-        pipeline_ids = {}
         for k, v in params_dict.items():
-            response = requests.post(url, headers=headers, json=v)
+            response = requests.post(self.domain, headers=self.headers, json=v)
             if response.status_code != 200:
                 raise RuntimeError(response.text)
             response_dict = response.json()
             if response_dict["code"] != 200:
                 raise RuntimeError(response_dict)
-            pipeline_ids[k] = response_dict["data"]["pipelineId"]
+            self.pipeline_ids[k] = response_dict["data"]["pipelineId"]
 
-        return pipeline_ids
+        return self.pipeline_ids
+
+    @classmethod
+    def from_document_url(
+        cls,
+        url: str,
+        project_id: str,
+        cluster_id: str,
+        token: str,
+        cloud_region: str = "gcp-us-west1",
+        pipeline_ids: Optional[Dict] = None,
+        collection_name: str = "zcp_llamalection",
+        metadata: Optional[Dict] = None,
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> BaseManagedIndex:
+        """Zilliz Cloud Pipeline loads document from a signed url and then builds auto index for it.
+
+        Args:
+            url: a gcs or s3 signed url.
+            project_id (str): Zilliz Cloud's project ID.
+            cluster_id (str): Zilliz Cloud's cluster ID.
+            token (str): Zilliz Cloud's token.
+            cloud_region (str='gcp-us-west1'): The region of Zilliz Cloud's cluster. Defaults to 'gcp-us-west1'.
+            pipeline_ids (dict=None): A dictionary of pipeline ids for INGESTION, SEARCH, DELETION. Defaults to None.
+            collection_name (str='zcp_llamalection'): A collection name, defaults to 'zcp_llamalection'. If no pipeline_ids is given, get or create pipelines with collection_name.
+            metadata (Dict=None): A dictionary of metadata. Defaults to None. The key must be string and the value must be a string, float, integer, or boolean.
+            show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+
+        Returns:
+            An initialized ZillizCloudPipelineIndex
+
+        Example:
+            >>> from llama_index.indices import ZillizCloudPipelineIndex
+            >>> index = ZillizCloudPipelineIndex.from_document_url(
+            >>>     url='https://oss_bucket.test_doc.ext',
+            >>>     project_id='YOUR_ZILLIZ_CLOUD_PROJECT_ID',
+            >>>     cluster_id='YOUR_ZILLIZ_CLOUD_CLUSTER_ID',
+            >>>     token='YOUR_ZILLIZ_CLOUD_API_KEY',
+            >>>     collection_name='your_collection_name'
+            >>> )
+        """
+        metadata = metadata or {}
+        index = cls(
+            project_id=project_id,
+            cluster_id=cluster_id,
+            token=token,
+            cloud_region=cloud_region,
+            pipeline_ids=pipeline_ids,
+            collection_name=collection_name,
+            show_progress=show_progress,
+            **kwargs,
+        )
+        if len(index.pipeline_ids) == 0:
+            index.pipeline_ids = index.create_pipelines(
+                metadata_schema={k: get_zcp_type(v) for k, v in metadata.items()}
+            )
+            print("Pipelines are automatically created.")
+
+        try:
+            index.insert_doc_url(url=url, metadata=metadata)
+        except Exception as e:
+            logger.error(
+                "Failed to build managed index given document url (%s):\n%s", url, e
+            )
+        return index
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         raise NotImplementedError(

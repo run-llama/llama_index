@@ -11,6 +11,7 @@ from llama_index.query_engine.cogniswitch_query_engine import CogniswitchQueryEn
 from llama_index.query_engine.custom import CustomQueryEngine
 from llama_index.query_engine.flare.base import FLAREInstructQueryEngine
 from llama_index.query_engine.graph_query_engine import ComposableGraphQueryEngine
+from llama_index.query_engine.jsonalyze_query_engine import JSONalyzeQueryEngine
 from llama_index.query_engine.knowledge_graph_query_engine import (
     KnowledgeGraphQueryEngine,
 )
@@ -55,6 +56,7 @@ __all__ = [
     "RetryGuidelineQueryEngine",
     "FLAREInstructQueryEngine",
     "PandasQueryEngine",
+    "JSONalyzeQueryEngine",
     "KnowledgeGraphQueryEngine",
     "BaseQueryEngine",
     "CustomQueryEngine",

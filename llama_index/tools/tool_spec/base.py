@@ -56,9 +56,9 @@ class BaseToolSpec:
         """Convert tool spec to list of tools."""
         func_to_metadata_mapping = func_to_metadata_mapping or {}
         tool_list = []
-        func_sync = None
-        func_async = None
         for func_spec in self.spec_functions:
+            func_sync = None
+            func_async = None
             if isinstance(func_spec, str):
                 func = getattr(self, func_spec)
                 if asyncio.iscoroutinefunction(func):
@@ -99,6 +99,8 @@ class BaseToolSpec:
 
 
 def patch_sync(func_async: AsyncCallable) -> Callable:
+    """Patch sync function from async function."""
+
     def patched_sync(*args: Any, **kwargs: Any) -> Any:
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(func_async(*args, **kwargs))

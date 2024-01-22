@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from dataclasses_json import DataClassJsonMixin
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import BaseModel, Field, root_validator
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.utils import SAMPLE_TEXT, truncate_text
 
 if TYPE_CHECKING:
@@ -189,6 +189,8 @@ class BaseNode(BaseComponent):
 
     class Config:
         allow_population_by_field_name = True
+        # hash is computed on local field, during the validation process
+        validate_assignment = True
 
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
@@ -221,7 +223,6 @@ class BaseNode(BaseComponent):
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
-    hash: str = Field(default="", description="Hash of the node content.")
 
     @classmethod
     @abstractmethod
@@ -239,6 +240,11 @@ class BaseNode(BaseComponent):
     @abstractmethod
     def set_content(self, value: Any) -> None:
         """Set the content of the node."""
+
+    @property
+    @abstractmethod
+    def hash(self) -> str:
+        """Get hash of node."""
 
     @property
     def node_id(self) -> str:
@@ -380,16 +386,10 @@ class TextNode(BaseNode):
     def class_name(cls) -> str:
         return "TextNode"
 
-    @root_validator
-    def _check_hash(cls, values: dict) -> dict:
-        """Generate a hash to represent the node."""
-        text = values.get("text", "")
-        metadata = values.get("metadata", {})
-        doc_identity = str(text) + str(metadata)
-        values["hash"] = str(
-            sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest()
-        )
-        return values
+    @property
+    def hash(self) -> str:
+        doc_identity = str(self.text) + str(self.metadata)
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
     @classmethod
     def get_type(cls) -> str:
