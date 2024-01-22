@@ -1,6 +1,6 @@
-## How to use UpTrain with LlamaIndex
+## Evaluating LLM Responses with UpTrain
 
-**Overview**: In this example, we will see how to use UpTrain with LlamaIndex. 
+**Overview**: In this example, we will see how to use UpTrain with LlamaIndex to evaluate LLM responses. 
 
 **Problem**: There are two main problems:
 1. The data that most Large Language Models are trained on is not representative of the data that they are used on. This leads to a mismatch between the training and test distributions, which can lead to poor performance. 
