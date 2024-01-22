@@ -160,7 +160,7 @@ class PlatformIndex(BaseManagedIndex):
                 time.sleep(0.5)
 
         print(
-            f"Find your index at {platform_app_url}/project/{project.id}/index/{pipeline.id}"
+            f"Find your index at {platform_app_url}/project/{project.id}/deploy/{pipeline.id}"
         )
 
         return cls(
