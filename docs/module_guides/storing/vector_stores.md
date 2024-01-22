@@ -70,6 +70,7 @@ maxdepth: 1
 /examples/vector_stores/EpsillaIndexDemo.ipynb
 /examples/vector_stores/JaguarIndexDemo.ipynb
 /examples/vector_stores/LanceDBIndexDemo.ipynb
+/examples/vector_stores/LanternIndexDemo.ipynb
 /examples/vector_stores/MetalIndexDemo.ipynb
 /examples/vector_stores/MilvusIndexDemo.ipynb
 /examples/vector_stores/MyScaleIndexDemo.ipynb
