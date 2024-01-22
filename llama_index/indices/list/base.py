@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional, Sequence, Union
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexList
 from llama_index.indices.base import BaseIndex
-from llama_index.schema import BaseNode
+from llama_index.schema import BaseNode, IndexNode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.utils import get_tqdm_iterable
@@ -47,6 +47,7 @@ class SummaryIndex(BaseIndex[IndexList]):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexList] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
@@ -58,6 +59,7 @@ class SummaryIndex(BaseIndex[IndexList]):
             index_struct=index_struct,
             service_context=service_context,
             show_progress=show_progress,
+            objects=objects,
             **kwargs,
         )
 
@@ -73,11 +75,13 @@ class SummaryIndex(BaseIndex[IndexList]):
         )
 
         if retriever_mode == ListRetrieverMode.DEFAULT:
-            return SummaryIndexRetriever(self, **kwargs)
+            return SummaryIndexRetriever(self, object_map=self._object_map, **kwargs)
         elif retriever_mode == ListRetrieverMode.EMBEDDING:
-            return SummaryIndexEmbeddingRetriever(self, **kwargs)
+            return SummaryIndexEmbeddingRetriever(
+                self, object_map=self._object_map, **kwargs
+            )
         elif retriever_mode == ListRetrieverMode.LLM:
-            return SummaryIndexLLMRetriever(self, **kwargs)
+            return SummaryIndexLLMRetriever(self, object_map=self._object_map, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 

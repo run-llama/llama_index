@@ -25,6 +25,7 @@ from llama_index.postprocessor.pii import (
     NERPIINodePostprocessor,
     PIINodePostprocessor,
 )
+from llama_index.postprocessor.rankGPT_rerank import RankGPTRerank
 from llama_index.postprocessor.sbert_rerank import SentenceTransformerRerank
 
 __all__ = [
@@ -45,4 +46,5 @@ __all__ = [
     "LongContextReorder",
     "LongLLMLinguaPostprocessor",
     "FlagEmbeddingReranker",
+    "RankGPTRerank",
 ]

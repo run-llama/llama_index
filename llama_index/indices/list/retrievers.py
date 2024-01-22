@@ -32,10 +32,14 @@ class SummaryIndexRetriever(BaseRetriever):
         self,
         index: SummaryIndex,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         self._index = index
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     def _retrieve(
         self,
@@ -66,11 +70,15 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
         index: SummaryIndex,
         similarity_top_k: Optional[int] = 1,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         self._index = index
         self._similarity_top_k = similarity_top_k
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     def _retrieve(
         self,
@@ -151,6 +159,8 @@ class SummaryIndexLLMRetriever(BaseRetriever):
         parse_choice_select_answer_fn: Optional[Callable] = None,
         service_context: Optional[ServiceContext] = None,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         self._index = index
@@ -165,7 +175,9 @@ class SummaryIndexLLMRetriever(BaseRetriever):
             parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
         )
         self._service_context = service_context or index.service_context
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve nodes."""

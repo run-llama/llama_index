@@ -178,6 +178,22 @@ class BaseElementNodeParser(NodeParser):
 
         return base_nodes, node_mappings
 
+    def get_nodes_and_objects(
+        self, nodes: List[BaseNode]
+    ) -> Tuple[List[BaseNode], List[IndexNode]]:
+        base_nodes, node_mappings = self.get_base_nodes_and_mappings(nodes)
+
+        nodes = []
+        objects = []
+        for node in base_nodes:
+            if isinstance(node, IndexNode):
+                node.obj = node_mappings[node.index_id]
+                objects.append(node)
+            else:
+                nodes.append(node)
+
+        return nodes, objects
+
     def _get_nodes_from_buffer(
         self, buffer: List[str], node_parser: NodeParser
     ) -> List[BaseNode]:

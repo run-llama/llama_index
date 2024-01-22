@@ -155,7 +155,7 @@ class SQLDatabase:
             "and foreign keys: {foreign_keys}."
         )
         columns = []
-        for column in self._inspector.get_columns(table_name):
+        for column in self._inspector.get_columns(table_name, schema=self._schema):
             if column.get("comment"):
                 columns.append(
                     f"{column['name']} ({column['type']!s}): "
@@ -166,7 +166,9 @@ class SQLDatabase:
 
         column_str = ", ".join(columns)
         foreign_keys = []
-        for foreign_key in self._inspector.get_foreign_keys(table_name):
+        for foreign_key in self._inspector.get_foreign_keys(
+            table_name, schema=self._schema
+        ):
             foreign_keys.append(
                 f"{foreign_key['constrained_columns']} -> "
                 f"{foreign_key['referred_table']}.{foreign_key['referred_columns']}"
@@ -204,6 +206,8 @@ class SQLDatabase:
         """
         with self._engine.begin() as connection:
             try:
+                if self._schema:
+                    command = command.replace("FROM ", f"FROM {self._schema}.")
                 cursor = connection.execute(text(command))
             except (ProgrammingError, OperationalError) as exc:
                 raise NotImplementedError(

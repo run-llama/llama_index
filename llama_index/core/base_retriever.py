@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
     InputKeys,
@@ -13,15 +14,35 @@ from llama_index.core.query_pipeline.query_component import (
     validate_and_convert_stringable,
 )
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.schema import NodeWithScore, QueryBundle, QueryType
+from llama_index.schema import (
+    BaseNode,
+    IndexNode,
+    NodeWithScore,
+    QueryBundle,
+    QueryType,
+    TextNode,
+)
 from llama_index.service_context import ServiceContext
+from llama_index.utils import print_text
 
 
 class BaseRetriever(ChainableMixin, PromptMixin):
     """Base retriever."""
 
-    def __init__(self, callback_manager: Optional[CallbackManager] = None) -> None:
+    def __init__(
+        self,
+        callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[Dict] = None,
+        objects: Optional[List[IndexNode]] = None,
+        verbose: bool = False,
+    ) -> None:
         self.callback_manager = callback_manager or CallbackManager()
+
+        if objects is not None:
+            object_map = {obj.index_id: obj.obj for obj in objects}
+
+        self.object_map = object_map or {}
+        self._verbose = verbose
 
     def _check_callback_manager(self) -> None:
         """Check callback manager."""
@@ -38,6 +59,148 @@ class BaseRetriever(ChainableMixin, PromptMixin):
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
+
+    def _retrieve_from_object(
+        self,
+        obj: Any,
+        query_bundle: QueryBundle,
+        score: float,
+    ) -> List[NodeWithScore]:
+        """Retrieve nodes from object."""
+        if self._verbose:
+            print_text(
+                f"Retrieving from object {obj.__class__.__name__} with query {query_bundle.query_str}\n",
+                color="llama_pink",
+            )
+        if isinstance(obj, NodeWithScore):
+            return [obj]
+        elif isinstance(obj, BaseNode):
+            return [NodeWithScore(node=obj, score=score)]
+        elif isinstance(obj, BaseQueryEngine):
+            response = obj.query(query_bundle)
+            return [
+                NodeWithScore(
+                    node=TextNode(text=str(response), metadata=response.metadata or {}),
+                    score=score,
+                )
+            ]
+        elif isinstance(obj, BaseRetriever):
+            return obj.retrieve(query_bundle)
+        elif isinstance(obj, QueryComponent):
+            component_keys = obj.input_keys.required_keys
+            if len(component_keys) > 1:
+                raise ValueError(
+                    f"QueryComponent {obj} has more than one input key: {component_keys}"
+                )
+            elif len(component_keys) == 0:
+                component_response = obj.run_component()
+            else:
+                kwargs = {next(iter(component_keys)): query_bundle.query_str}
+                component_response = obj.run_component(**kwargs)
+
+            result_output = str(next(iter(component_response.values())))
+            return [NodeWithScore(node=TextNode(text=result_output), score=score)]
+        else:
+            raise ValueError(f"Object {obj} is not retrievable.")
+
+    async def _aretrieve_from_object(
+        self,
+        obj: Any,
+        query_bundle: QueryBundle,
+        score: float,
+    ) -> List[NodeWithScore]:
+        """Retrieve nodes from object."""
+        if isinstance(obj, NodeWithScore):
+            return [obj]
+        elif isinstance(obj, BaseNode):
+            return [NodeWithScore(node=obj, score=score)]
+        elif isinstance(obj, BaseQueryEngine):
+            response = await obj.aquery(query_bundle)
+            return [NodeWithScore(node=TextNode(text=str(response)), score=score)]
+        elif isinstance(obj, BaseRetriever):
+            return await obj.aretrieve(query_bundle)
+        elif isinstance(obj, QueryComponent):
+            component_keys = obj.input_keys.required_keys
+            if len(component_keys) > 1:
+                raise ValueError(
+                    f"QueryComponent {obj} has more than one input key: {component_keys}"
+                )
+            elif len(component_keys) == 0:
+                component_response = await obj.arun_component()
+            else:
+                kwargs = {next(iter(component_keys)): query_bundle.query_str}
+                component_response = await obj.arun_component(**kwargs)
+
+            result_output = str(next(iter(component_response.values())))
+            return [NodeWithScore(node=TextNode(text=result_output), score=score)]
+        else:
+            raise ValueError(f"Object {obj} is not retrievable.")
+
+    def _handle_recursive_retrieval(
+        self, query_bundle: QueryBundle, nodes: List[NodeWithScore]
+    ) -> List[NodeWithScore]:
+        retrieved_nodes: List[NodeWithScore] = []
+        for n in nodes:
+            node = n.node
+            score = n.score or 1.0
+            if isinstance(node, IndexNode):
+                obj = self.object_map.get(node.index_id, None)
+                if obj is not None:
+                    if self._verbose:
+                        print_text(
+                            f"Retrieval entering {node.index_id}: {obj.__class__.__name__}\n",
+                            color="llama_turquoise",
+                        )
+                    retrieved_nodes.extend(
+                        self._retrieve_from_object(
+                            obj, query_bundle=query_bundle, score=score
+                        )
+                    )
+                else:
+                    retrieved_nodes.append(n)
+            else:
+                retrieved_nodes.append(n)
+
+        seen = set()
+        return [
+            n
+            for n in retrieved_nodes
+            if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
+        ]
+
+    async def _ahandle_recursive_retrieval(
+        self, query_bundle: QueryBundle, nodes: List[NodeWithScore]
+    ) -> List[NodeWithScore]:
+        retrieved_nodes: List[NodeWithScore] = []
+        for n in nodes:
+            node = n.node
+            score = n.score or 1.0
+            if isinstance(node, IndexNode):
+                obj = self.object_map.get(node.index_id, None)
+                if obj is not None:
+                    if self._verbose:
+                        print_text(
+                            f"Retrieval entering {node.index_id}: {obj.__class__.__name__}\n",
+                            color="llama_turquoise",
+                        )
+                    # TODO: Add concurrent execution via `run_jobs()` ?
+                    retrieved_nodes.extend(
+                        await self._aretrieve_from_object(
+                            obj, query_bundle=query_bundle, score=score
+                        )
+                    )
+                else:
+                    retrieved_nodes.append(n)
+            else:
+                retrieved_nodes.append(n)
+
+        # remove any duplicates based on hash
+        seen = set()
+        return [
+            n
+            for n in retrieved_nodes
+            if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
+        ]
 
     def retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         """Retrieve nodes given query.
@@ -59,9 +222,11 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 payload={EventPayload.QUERY_STR: query_bundle.query_str},
             ) as retrieve_event:
                 nodes = self._retrieve(query_bundle)
+                nodes = self._handle_recursive_retrieval(query_bundle, nodes)
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
+
         return nodes
 
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
@@ -77,9 +242,11 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 payload={EventPayload.QUERY_STR: query_bundle.query_str},
             ) as retrieve_event:
                 nodes = await self._aretrieve(query_bundle)
+                nodes = await self._ahandle_recursive_retrieval(query_bundle, nodes)
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
+
         return nodes
 
     @abstractmethod

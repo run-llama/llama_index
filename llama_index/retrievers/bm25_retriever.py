@@ -8,7 +8,7 @@ from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.keyword_table.utils import simple_extract_keywords
 from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import BaseNode, NodeWithScore, QueryBundle
+from llama_index.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle
 from llama_index.storage.docstore.types import BaseDocumentStore
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,9 @@ class BM25Retriever(BaseRetriever):
         tokenizer: Optional[Callable[[str], List[str]]],
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         callback_manager: Optional[CallbackManager] = None,
+        objects: Optional[List[IndexNode]] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
     ) -> None:
         try:
             from rank_bm25 import BM25Okapi
@@ -40,7 +43,12 @@ class BM25Retriever(BaseRetriever):
         self._similarity_top_k = similarity_top_k
         self._corpus = [self._tokenizer(node.get_content()) for node in self._nodes]
         self.bm25 = BM25Okapi(self._corpus)
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager,
+            object_map=object_map,
+            objects=objects,
+            verbose=verbose,
+        )
 
     @classmethod
     def from_defaults(
@@ -50,6 +58,7 @@ class BM25Retriever(BaseRetriever):
         docstore: Optional[BaseDocumentStore] = None,
         tokenizer: Optional[Callable[[str], List[str]]] = None,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        verbose: bool = False,
     ) -> "BM25Retriever":
         # ensure only one of index, nodes, or docstore is passed
         if sum(bool(val) for val in [index, nodes, docstore]) != 1:
@@ -70,6 +79,7 @@ class BM25Retriever(BaseRetriever):
             nodes=nodes,
             tokenizer=tokenizer,
             similarity_top_k=similarity_top_k,
+            verbose=verbose,
         )
 
     def _get_scored_nodes(self, query: str) -> List[NodeWithScore]:

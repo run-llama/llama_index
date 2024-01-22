@@ -121,6 +121,9 @@ class StreamingAgentChatResponse:
 
         self._is_done = True
 
+        # This act as is_done events for any consumers waiting
+        self._is_function_not_none_thread_event.set()
+
     async def awrite_response_to_history(
         self,
         memory: BaseMemory,

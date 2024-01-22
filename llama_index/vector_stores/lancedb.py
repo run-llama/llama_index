@@ -1,4 +1,5 @@
 """LanceDB vector store."""
+import logging
 from typing import Any, List, Optional
 
 import numpy as np
@@ -17,7 +18,14 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict
+from llama_index.vector_stores.utils import (
+    DEFAULT_TEXT_KEY,
+    legacy_metadata_dict_to_node,
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
+
+_logger = logging.getLogger(__name__)
 
 
 def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
@@ -77,6 +85,7 @@ class LanceDBVectorStore(VectorStore):
         table_name: str = "vectors",
         nprobes: int = 20,
         refine_factor: Optional[int] = None,
+        text_key: str = DEFAULT_TEXT_KEY,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -90,6 +99,7 @@ class LanceDBVectorStore(VectorStore):
         self.uri = uri
         self.table_name = table_name
         self.nprobes = nprobes
+        self.text_key = text_key
         self.refine_factor = refine_factor
 
     @property
@@ -106,15 +116,15 @@ class LanceDBVectorStore(VectorStore):
         ids = []
         for node in nodes:
             metadata = node_to_metadata_dict(
-                node, remove_text=True, flat_metadata=self.flat_metadata
+                node, remove_text=False, flat_metadata=self.flat_metadata
             )
             append_data = {
                 "id": node.node_id,
                 "doc_id": node.ref_doc_id,
                 "vector": node.get_embedding(),
                 "text": node.get_content(metadata_mode=MetadataMode.NONE),
+                "metadata": metadata,
             }
-            append_data.update(metadata)
             data.append(append_data)
             ids.append(node.node_id)
 
@@ -167,13 +177,28 @@ class LanceDBVectorStore(VectorStore):
         results = lance_query.to_df()
         nodes = []
         for _, item in results.iterrows():
-            node = TextNode(
-                text=item.text or "",  # ensure text is a string
-                id_=item.id,
-                relationships={
-                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),
-                },
-            )
+            try:
+                node = metadata_dict_to_node(item.metadata)
+                node.embedding = list(item.vector)
+            except Exception:
+                # deprecated legacy logic for backward compatibility
+                _logger.debug(
+                    "Failed to parse Node metadata, fallback to legacy logic."
+                )
+                metadata, node_info, _relation = legacy_metadata_dict_to_node(
+                    item.metadata, text_key=self.text_key
+                )
+                node = TextNode(
+                    text=item.text or "",
+                    id_=item.id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),
+                    },
+                )
+
             nodes.append(node)
 
         return VectorStoreQueryResult(

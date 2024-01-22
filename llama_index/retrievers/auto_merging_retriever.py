@@ -9,7 +9,7 @@ from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.query.schema import QueryBundle
 from llama_index.indices.utils import truncate_text
 from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
-from llama_index.schema import BaseNode, NodeWithScore, QueryBundle
+from llama_index.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle
 from llama_index.storage.storage_context import StorageContext
 
 logger = logging.getLogger(__name__)
@@ -30,13 +30,19 @@ class AutoMergingRetriever(BaseRetriever):
         simple_ratio_thresh: float = 0.5,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        objects: Optional[List[IndexNode]] = None,
     ) -> None:
         """Init params."""
         self._vector_retriever = vector_retriever
         self._storage_context = storage_context
         self._simple_ratio_thresh = simple_ratio_thresh
-        self._verbose = verbose
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager,
+            object_map=object_map,
+            objects=objects,
+            verbose=verbose,
+        )
 
     def _get_parents_and_merge(
         self, nodes: List[NodeWithScore]
