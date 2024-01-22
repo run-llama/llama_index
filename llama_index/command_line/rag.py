@@ -83,7 +83,7 @@ class RagCLI(BaseModel):
         query_pipeline.add_link("prompt_tmpl", "llm")
         query_pipeline.add_link("llm", "retriever")
         query_pipeline.add_link("retriever", "summarizer", dest_key="nodes")
-        query_pipeline.add_link("llm", "summarizer", dest_key="query_str")
+        query_pipeline.add_link("prompt_tmpl", "summarizer", dest_key="query_str")
         return query_pipeline
 
     async def handle_cli(
@@ -92,11 +92,25 @@ class RagCLI(BaseModel):
         question: Optional[str] = None,
         chat: bool = False,
         verbose: bool = False,
+        clear: bool = False,
         **kwargs: Dict[str, Any],
     ) -> None:
         """
         Entrypoint for local document RAG CLI tool.
         """
+        if clear:
+            # delete self.persist_dir directory including all subdirectories and files
+            if os.path.exists(self.persist_dir):
+                # Ask for confirmation
+                response = input(
+                    f"Are you sure you want to delete data within {self.persist_dir}? [y/N] "
+                )
+                if response.strip().lower() != "y":
+                    print("Aborted.")
+                    return
+                os.system(f"rm -rf {self.persist_dir}")
+            print(f"Successfully cleared {self.persist_dir}")
+
         self.verbose = verbose
         ingestion_pipeline = cast(IngestionPipeline, self.ingestion_pipeline)
         if self.verbose:
@@ -148,7 +162,7 @@ class RagCLI(BaseModel):
 
     def add_parser_args(self, parser: Union[ArgumentParser, Any]) -> None:
         parser.add_argument(
-            "--q",
+            "-q",
             "--question",
             type=str,
             help="The question you want to ask.",
@@ -174,6 +188,11 @@ class RagCLI(BaseModel):
             "-v",
             "--verbose",
             help="Whether to print out verbose information during execution.",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--clear",
+            help="Clears out all currently embedded data.",
             action="store_true",
         )
         parser.set_defaults(
