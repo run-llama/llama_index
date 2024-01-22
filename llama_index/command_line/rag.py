@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from llama_index import (
-    PromptTemplate,
     Response,
+    ServiceContext,
     SimpleDirectoryReader,
     VectorStoreIndex,
 )
@@ -15,6 +15,7 @@ from llama_index.bridge.pydantic import BaseModel, Field, validator
 from llama_index.core.response.schema import StreamingResponse
 from llama_index.ingestion import IngestionPipeline
 from llama_index.llms import OpenAI
+from llama_index.query_pipeline import FnComponent
 from llama_index.query_pipeline.query import QueryPipeline
 from llama_index.response_synthesizers import CompactAndRefine
 from llama_index.schema import Document
@@ -23,6 +24,10 @@ from llama_index.utils import get_cache_dir
 
 def default_ragcli_persist_dir() -> str:
     return str(Path(get_cache_dir()) / "rag_cli")
+
+
+def query_input(query_str: Optional[str] = None) -> str:
+    return query_str or ""
 
 
 class RagCLI(BaseModel):
@@ -64,26 +69,31 @@ class RagCLI(BaseModel):
         if ingestion_pipeline.vector_store is None:
             return None
         verbose = cast(bool, values["verbose"])
-        prompt_tmpl = PromptTemplate("{question}")
+        query_component = FnComponent(
+            fn=query_input, output_key="output", req_params={"query_str"}
+        )
         retriever = VectorStoreIndex.from_vector_store(
             ingestion_pipeline.vector_store
-        ).as_retriever(similarity_top_k=5)
-        response_synthesizer = CompactAndRefine(streaming=True)
-        llm = OpenAI(model="gpt-3.5-turbo", streaming=True)
+        ).as_retriever(similarity_top_k=8)
+        service_context = ServiceContext.from_defaults(
+            llm=OpenAI(model="gpt-3.5-turbo", streaming=True)
+        )
+        response_synthesizer = CompactAndRefine(
+            service_context=service_context, streaming=True, verbose=verbose
+        )
+
         # define query pipeline
         query_pipeline = QueryPipeline(verbose=verbose)
         query_pipeline.add_modules(
             {
-                "llm": llm,
-                "prompt_tmpl": prompt_tmpl,
+                "query": query_component,
                 "retriever": retriever,
                 "summarizer": response_synthesizer,
             }
         )
-        query_pipeline.add_link("prompt_tmpl", "llm")
-        query_pipeline.add_link("llm", "retriever")
+        query_pipeline.add_link("query", "retriever")
         query_pipeline.add_link("retriever", "summarizer", dest_key="nodes")
-        query_pipeline.add_link("prompt_tmpl", "summarizer", dest_key="query_str")
+        query_pipeline.add_link("query", "summarizer", dest_key="query_str")
         return query_pipeline
 
     async def handle_cli(
@@ -142,7 +152,7 @@ class RagCLI(BaseModel):
             raise ValueError("query_pipeline is not defined.")
         query_pipeline = cast(QueryPipeline, self.query_pipeline)
         query_pipeline.verbose = self.verbose
-        response = query_pipeline.run(question=question)
+        response = query_pipeline.run(query_str=question)
 
         if isinstance(response, StreamingResponse):
             response.print_response_stream()
