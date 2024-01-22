@@ -195,4 +195,4 @@ class RouterComponent(QueryComponent):
         an IfElseComponent.
 
         """
-        return [self.components]
+        return self.components

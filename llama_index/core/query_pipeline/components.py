@@ -276,10 +276,10 @@ class IfElseComponent(QueryComponent):
     """
 
     fn: Callable = Field(..., description="Function to run.")
-    choice1: QUERY_COMPONENT_TYPE = Field(
+    choice1: QueryComponent = Field(
         default=None, description="Function to convert output."
     )
-    choice2: QUERY_COMPONENT_TYPE = Field(
+    choice2: QueryComponent = Field(
         default=None, description="Function to convert output."
     )
 
