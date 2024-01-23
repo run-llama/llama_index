@@ -128,7 +128,7 @@ class RagCLI(BaseModel):
         query_pipeline = cast(QueryPipeline, values["query_pipeline"])
         if query_pipeline is None:
             return None
-        query_engine = QueryPipelineQueryEngine(query_pipeline=query_pipeline)
+        query_engine = QueryPipelineQueryEngine(query_pipeline=query_pipeline)  # type: ignore
         verbose = cast(bool, values["verbose"])
         llm = cast(LLM, values["llm"])
         return CondenseQuestionChatEngine.from_defaults(
