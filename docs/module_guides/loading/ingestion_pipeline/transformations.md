@@ -55,6 +55,8 @@ index = VectorStoreIndex.from_documents(
 )
 ```
 
+(custom-transformations)=
+
 ## Custom Transformations
 
 You can implement any transformation yourself by implementing the base class.

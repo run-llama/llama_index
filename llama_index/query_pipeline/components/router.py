@@ -185,3 +185,14 @@ class RouterComponent(QueryComponent):
         """Output keys."""
         # not used
         return OutputKeys.from_keys(set())
+
+    @property
+    def sub_query_components(self) -> List["QueryComponent"]:
+        """Get sub query components.
+
+        Certain query components may have sub query components, e.g. a
+        query pipeline will have sub query components, and so will
+        an IfElseComponent.
+
+        """
+        return self.components

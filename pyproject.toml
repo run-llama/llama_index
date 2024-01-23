@@ -42,11 +42,11 @@ name = "llama-index"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.9.32"
+version = "0.9.35"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
-beautifulsoup4 = "^4.12.2"
+beautifulsoup4 = {optional = true, version = "^4.12.2"}
 dataclasses-json = "*"
 deprecated = ">=1.2.9.3"
 fsspec = ">=2023.5.0"
@@ -66,7 +66,6 @@ requests = ">=2.31.0"  # Pin to avoid CVE-2023-32681 in requests 2.3 to 2.30
 gradientai = {optional = true, version = ">=1.4.0"}
 asyncpg = {optional = true, version = "^0.28.0"}
 pgvector = {optional = true, version = "^0.1.0"}
-psycopg-binary = {optional = true, version = "^3.1.12"}
 optimum = {extras = ["onnxruntime"], optional = true, version = "^1.13.2"}
 sentencepiece = {optional = true, version = "^0.1.99"}
 transformers = {extras = ["torch"], optional = true, version = "^4.33.1"}
@@ -78,11 +77,14 @@ scikit-learn = {optional = true, version = "*"}
 spacy = {optional = true, version = "^3.7.1"}
 aiohttp = "^3.8.6"
 networkx = ">=3.0"
-psycopg2 = {optional = true, version = "^2.9.9"}
+psycopg2-binary = {optional = true, version = "^2.9.9"}
 
 [tool.poetry.extras]
 gradientai = [
     "gradientai",
+]
+html = [
+    "beautifulsoup4",
 ]
 langchain = [
     "langchain",
@@ -95,8 +97,7 @@ local_models = [
 postgres = [
     "asyncpg",
     "pgvector",
-    "psycopg-binary",
-    "psycopg2",
+    "psycopg2-binary",
 ]
 query_tools = [
     "guidance",
@@ -110,6 +111,7 @@ query_tools = [
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 boto3 = "1.33.6"  # needed for tests
+botocore = ">=1.33.13"
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 google-ai-generativelanguage = {python = ">=3.9,<3.12", version = "^0.4.0"}
 ipython = "8.10.0"

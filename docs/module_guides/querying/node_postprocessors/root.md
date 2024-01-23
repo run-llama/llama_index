@@ -97,6 +97,8 @@ processor = SimilarityPostprocessor(similarity_cutoff=0.75)
 filtered_nodes = processor.postprocess_nodes(nodes)
 ```
 
+(custom-node-postprocessor)=
+
 ## Custom Node PostProcessor
 
 The base class is `BaseNodePostprocessor`, and the API interface is very simple:

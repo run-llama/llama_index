@@ -181,3 +181,119 @@ def test_synthesize(mock_generate_answer: MagicMock) -> None:
 
     assert response.metadata is not None
     assert response.metadata.get("answerable_probability", None) == pytest.approx(0.9)
+
+
+@pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
+@patch("google.ai.generativelanguage.GenerativeServiceClient.generate_answer")
+def test_synthesize_with_max_token_blocking(mock_generate_answer: MagicMock) -> None:
+    # Arrange
+    mock_generate_answer.return_value = genai.GenerateAnswerResponse(
+        answer=genai.Candidate(
+            content=genai.Content(parts=[]),
+            grounding_attributions=[],
+            finish_reason=genai.Candidate.FinishReason.MAX_TOKENS,
+        ),
+    )
+
+    # Act
+    synthesizer = GoogleTextSynthesizer.from_defaults()
+    with pytest.raises(Exception) as e:
+        synthesizer.synthesize(
+            query="What is the meaning of life?",
+            nodes=[
+                NodeWithScore(
+                    node=TextNode(text="It's 42"),
+                    score=0.5,
+                ),
+            ],
+        )
+
+    # Assert
+    assert "Maximum token" in str(e.value)
+
+
+@pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
+@patch("google.ai.generativelanguage.GenerativeServiceClient.generate_answer")
+def test_synthesize_with_safety_blocking(mock_generate_answer: MagicMock) -> None:
+    # Arrange
+    mock_generate_answer.return_value = genai.GenerateAnswerResponse(
+        answer=genai.Candidate(
+            content=genai.Content(parts=[]),
+            grounding_attributions=[],
+            finish_reason=genai.Candidate.FinishReason.SAFETY,
+        ),
+    )
+
+    # Act
+    synthesizer = GoogleTextSynthesizer.from_defaults()
+    with pytest.raises(Exception) as e:
+        synthesizer.synthesize(
+            query="What is the meaning of life?",
+            nodes=[
+                NodeWithScore(
+                    node=TextNode(text="It's 42"),
+                    score=0.5,
+                ),
+            ],
+        )
+
+    # Assert
+    assert "safety" in str(e.value)
+
+
+@pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
+@patch("google.ai.generativelanguage.GenerativeServiceClient.generate_answer")
+def test_synthesize_with_recitation_blocking(mock_generate_answer: MagicMock) -> None:
+    # Arrange
+    mock_generate_answer.return_value = genai.GenerateAnswerResponse(
+        answer=genai.Candidate(
+            content=genai.Content(parts=[]),
+            grounding_attributions=[],
+            finish_reason=genai.Candidate.FinishReason.RECITATION,
+        ),
+    )
+
+    # Act
+    synthesizer = GoogleTextSynthesizer.from_defaults()
+    with pytest.raises(Exception) as e:
+        synthesizer.synthesize(
+            query="What is the meaning of life?",
+            nodes=[
+                NodeWithScore(
+                    node=TextNode(text="It's 42"),
+                    score=0.5,
+                ),
+            ],
+        )
+
+    # Assert
+    assert "recitation" in str(e.value)
+
+
+@pytest.mark.skipif(not has_google, reason=SKIP_TEST_REASON)
+@patch("google.ai.generativelanguage.GenerativeServiceClient.generate_answer")
+def test_synthesize_with_unknown_blocking(mock_generate_answer: MagicMock) -> None:
+    # Arrange
+    mock_generate_answer.return_value = genai.GenerateAnswerResponse(
+        answer=genai.Candidate(
+            content=genai.Content(parts=[]),
+            grounding_attributions=[],
+            finish_reason=genai.Candidate.FinishReason.OTHER,
+        ),
+    )
+
+    # Act
+    synthesizer = GoogleTextSynthesizer.from_defaults()
+    with pytest.raises(Exception) as e:
+        synthesizer.synthesize(
+            query="What is the meaning of life?",
+            nodes=[
+                NodeWithScore(
+                    node=TextNode(text="It's 42"),
+                    score=0.5,
+                ),
+            ],
+        )
+
+    # Assert
+    assert "Unexpected" in str(e.value)

@@ -250,7 +250,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         # batch upsert the points into Qdrant collection to avoid large payloads
         for points_batch in iter_batch(points, self.batch_size):
-            await self._client.upsert(
+            await self._aclient.upsert(
                 collection_name=self.collection_name,
                 points=points_batch,
             )
@@ -415,7 +415,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http.models import Filter
 
         query_embedding = cast(List[float], query.query_embedding)
-        query_filter = cast(Filter, self._build_query_filter(query))
+        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
+        qdrant_filters = kwargs.get("qdrant_filters")
+        if qdrant_filters is not None:
+            query_filter = qdrant_filters
+        else:
+            query_filter = cast(Filter, self._build_query_filter(query))
 
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
@@ -528,7 +533,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
             )
-
             return self.parse_to_query_result(response)
 
     async def aquery(
@@ -544,7 +548,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http.models import Filter
 
         query_embedding = cast(List[float], query.query_embedding)
-        query_filter = cast(Filter, self._build_query_filter(query))
+
+        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
+        qdrant_filters = kwargs.get("qdrant_filters")
+        if qdrant_filters is not None:
+            query_filter = qdrant_filters
+        else:
+            # build metadata filters
+            query_filter = cast(Filter, self._build_query_filter(query))
 
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
@@ -570,7 +581,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                             name="text-dense",
                             vector=query_embedding,
                         ),
-                        limit=sparse_top_k,
+                        limit=query.similarity_top_k,
                         filter=query_filter,
                         with_payload=True,
                     ),
@@ -601,6 +612,35 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
                 top_k=query.hybrid_top_k or query.similarity_top_k,
             )
+        elif (
+            query.mode == VectorStoreQueryMode.SPARSE
+            and self.enable_hybrid
+            and self._sparse_query_fn is not None
+            and query.query_str is not None
+        ):
+            sparse_indices, sparse_embedding = self._sparse_query_fn(
+                [query.query_str],
+            )
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
+
+            sparse_response = await self._aclient.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedSparseVector(
+                            name="text-sparse",
+                            vector=rest.SparseVector(
+                                indices=sparse_indices[0],
+                                values=sparse_embedding[0],
+                            ),
+                        ),
+                        limit=sparse_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
+            return self.parse_to_query_result(sparse_response[0])
         elif self.enable_hybrid:
             # search for dense vectors only
             response = await self._aclient.search_batch(
