@@ -8,7 +8,7 @@ This ingestion pipeline typically consists of three main stages:
 2. Transform the data
 3. Index and store the data
 
-We cover indexing/storage in [future](/docs/understanding/indexing/indexing.md) [sections](/docs/understanding/storing/storing.md). In this guide we'll mostly talk about loaders and transformations.
+We cover indexing/storage in [future](/understanding/indexing/indexing.md) [sections](/understanding/storing/storing.md). In this guide we'll mostly talk about loaders and transformations.
 
 ## Loaders
 
