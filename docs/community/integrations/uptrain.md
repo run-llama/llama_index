@@ -185,3 +185,9 @@ Histogram of score vs number of cases with that score
 You can filter failure cases and generate common topics among them. This can help identify the core issue and help fix it
 
 ![LlamaIndex_Integration.gif](UpTrain_files/LlamaIndex_Integration.gif)
+
+## Learn More
+
+1. [Colab Notebook on UpTrain Integration with LlamaIndex](https://colab.research.google.com/github/uptrain-ai/llama_index/blob/uptrain_integration/docs/examples/evaluation/UpTrain.ipynb)
+1. [UpTrain Github Repository](https://github.com/uptrain-ai/uptrain)
+1. [UpTrain Documentation](https://docs.uptrain.ai/)
