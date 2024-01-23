@@ -36,9 +36,6 @@ class QueryPipelineQueryEngine(CustomQueryEngine):
         description="Query Pipeline to use for Q&A.",
     )
 
-    def __init__(self, query_pipeline: QueryPipeline, **kwargs: Any) -> None:
-        super().__init__(query_pipeline, **kwargs)
-
     def custom_query(self, query_str: str) -> RESPONSE_TYPE:
         return self.query_pipeline.run(query_str=query_str)
 
@@ -194,7 +191,7 @@ class RagCLI(BaseModel):
         query_pipeline = cast(QueryPipeline, self.query_pipeline)
         query_pipeline.verbose = self.verbose
         chat_engine = cast(CondenseQuestionChatEngine, self.chat_engine)
-        response = await chat_engine.achat(question)
+        response = chat_engine.chat(question)
 
         if isinstance(response, StreamingResponse):
             response.print_response_stream()
