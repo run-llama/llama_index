@@ -1,5 +1,11 @@
 from typing import Any, Dict, Optional, Sequence
 
+from llama_index.core.base_selector import (
+    BaseSelector,
+    MultiSelection,
+    SelectorResult,
+    SingleSelection,
+)
 from llama_index.llms.openai import OpenAI
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.prompts.mixin import PromptDictType
@@ -8,12 +14,6 @@ from llama_index.selectors.llm_selectors import _build_choices_text
 from llama_index.selectors.prompts import (
     DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,
     DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL,
-)
-from llama_index.selectors.types import (
-    BaseSelector,
-    MultiSelection,
-    SelectorResult,
-    SingleSelection,
 )
 from llama_index.tools.types import ToolMetadata
 from llama_index.types import BasePydanticProgram
