@@ -128,7 +128,7 @@ print(document.get_content(metadata_mode=MetadataMode.EMBED))
 
 As you know by now, metadata is injected into the actual text of each document/node when sent to the LLM or embedding model. By default, the format of this metadata is controlled by three attributes:
 
-1. `Document.metadata_seperator` -> default = `"\n"`
+1. `Document.metadata_separator` -> default = `"\n"`
 
 When concatenating all key/value fields of your metadata, this field controls the separator between each key/value pair.
 
@@ -138,7 +138,7 @@ This attribute controls how each key/value pair in your metadata is formatted. T
 
 3. `Document.text_template` -> default = `{metadata_str}\n\n{content}`
 
-Once your metadata is converted into a string using `metadata_seperator` and `metadata_template`, this templates controls what that metadata looks like when joined with the text content of your document/node. The `metadata` and `content` string keys are required.
+Once your metadata is converted into a string using `metadata_separator` and `metadata_template`, this templates controls what that metadata looks like when joined with the text content of your document/node. The `metadata` and `content` string keys are required.
 
 ### Summary
 
@@ -156,7 +156,7 @@ document = Document(
         "author": "LlamaIndex",
     },
     excluded_llm_metadata_keys=["file_name"],
-    metadata_seperator="::",
+    metadata_separator="::",
     metadata_template="{key}=>{value}",
     text_template="Metadata: {metadata_str}\n-----\nContent: {content}",
 )
