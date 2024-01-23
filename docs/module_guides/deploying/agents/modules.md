@@ -61,6 +61,7 @@ LLMCompiler Agent Cookbook <https://github.com/run-llama/llama-hub/blob/main/lla
 maxdepth: 1
 ---
 /examples/agent/custom_agent.ipynb
+/examples/agent/agent_runner/query_pipeline_agent.ipynb
 ```
 
 ## Lower-Level Agent API
