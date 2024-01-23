@@ -37,6 +37,7 @@ for full tracing integrations.
 maxdepth: 1
 ---
 /module_guides/observability/observability.md
+integrations/uptrain.md
 integrations/graphsignal.md
 integrations/trulens.md
 integrations/deepeval.md
