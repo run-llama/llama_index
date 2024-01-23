@@ -14,7 +14,7 @@ from llama_index.utilities.aws_utils import get_aws_service_client
 DEFAULT_IO_HANDLER = IOHandler()
 
 
-class SageMakerEmbeddingEndPoint(BaseEmbedding):
+class SageMakerEmbedding(BaseEmbedding):
     endpoint_name: str = Field(description="SageMaker Embedding endpoint name")
     endpoint_kwargs: Dict[str, Any] = Field(
         default={},
@@ -103,7 +103,7 @@ class SageMakerEmbeddingEndPoint(BaseEmbedding):
 
     @classmethod
     def class_name(self) -> str:
-        return "SageMakerEmbeddingEndPoint"
+        return "SageMakerEmbedding"
 
     def _get_embedding(self, payload: List[str], **kwargs: Any) -> List[Embedding]:
         model_kwargs = {**self.model_kwargs, **kwargs}

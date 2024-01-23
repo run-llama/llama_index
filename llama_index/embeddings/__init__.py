@@ -35,7 +35,7 @@ from llama_index.embeddings.ollama_embedding import OllamaEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.pooling import Pooling
 from llama_index.embeddings.sagemaker_embedding_endpoint import (
-    SageMakerEmbeddingEndPoint,
+    SageMakerEmbedding,
 )
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 from llama_index.embeddings.together import TogetherEmbedding
@@ -66,7 +66,7 @@ __all__ = [
     "AnyscaleEmbedding",
     "OptimumEmbedding",
     "Pooling",
-    "SageMakerEmbeddingEndPoint",
+    "SageMakerEmbedding",
     "GooglePaLMEmbedding",
     "SimilarityMode",
     "TextEmbeddingsInference",

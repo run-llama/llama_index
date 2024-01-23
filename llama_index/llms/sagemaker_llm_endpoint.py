@@ -31,7 +31,7 @@ LLAMA_MESSAGES_TO_PROMPT = messages_to_prompt
 LLAMA_COMPLETION_TO_PROMPT = completion_to_prompt
 
 
-class SageMakerLLMEndPoint(LLM):
+class SageMakerLLM(LLM):
     endpoint_name: str = Field(description="SageMaker LLM endpoint name")
     endpoint_kwargs: Dict[str, Any] = Field(
         default={},
@@ -238,7 +238,7 @@ class SageMakerLLMEndPoint(LLM):
 
     @classmethod
     def class_name(cls) -> str:
-        return "sagemaker_llm_endpoint"
+        return "SageMakerLLM"
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -246,3 +246,7 @@ class SageMakerLLMEndPoint(LLM):
         return LLMMetadata(
             model_name=self.endpoint_name,
         )
+
+
+# Deprecated, kept for backwards compatibility
+SageMakerLLMEndPoint = SageMakerLLM
