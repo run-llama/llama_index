@@ -10,6 +10,7 @@ from llama_index.callbacks.open_inference_callback import OpenInferenceCallbackH
 from llama_index.callbacks.promptlayer_handler import PromptLayerHandler
 from llama_index.callbacks.simple_llm_handler import SimpleLLMHandler
 from llama_index.callbacks.wandb_callback import WandbCallbackHandler
+from llama_index.callbacks.argilla_callback import argilla_callback_handler
 
 
 def set_global_handler(eval_mode: str, **eval_params: Any) -> None:
@@ -35,6 +36,8 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         handler = deepeval_callback_handler(**eval_params)
     elif eval_mode == "simple":
         handler = SimpleLLMHandler(**eval_params)
+    elif eval_mode == "argilla":
+        handler = argilla_callback_handler(**eval_params)
     else:
         raise ValueError(f"Eval mode {eval_mode} not supported.")
 
