@@ -24,6 +24,7 @@ from llama_index.llms.llama_utils import completion_to_prompt, messages_to_promp
 from llama_index.llms.llm import LLM
 from llama_index.llms.sagemaker_llm_endpoint_utils import BaseIOHandler, IOHandler
 from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.utilities.aws_utils import get_aws_service_client
 
 DEFAULT_IO_HANDLER = IOHandler()
 LLAMA_MESSAGES_TO_PROMPT = messages_to_prompt
@@ -105,41 +106,16 @@ class SageMakerLLMEndPoint(LLM):
         model_kwargs["temperature"] = temperature
         content_handler = content_handler
         self._completion_to_prompt = completion_to_prompt
-
-        try:
-            import boto3
-            import botocore
-
-            config = botocore.config.Config(
-                retries={"max_attempts": max_retries, "mode": "standard"},
-                connect_timeout=timeout,
-            )
-
-        except ImportError as e:
-            raise ImportError(
-                "Could not import boto3 python package."
-                "Please install it with `pip install boto3`."
-            ) from e
-
-        try:
-            if not profile_name and aws_access_key_id:
-                session = boto3.Session(
-                    aws_access_key_id=aws_access_key_id,
-                    aws_secret_access_key=aws_secret_access_key,
-                    aws_session_token=aws_session_token,
-                    region_name=region_name,
-                )
-                self._client = session.client("sagemaker-runtime", config=config)
-            else:
-                session = boto3.Session(profile_name=profile_name)
-                if region_name:
-                    self._client = session.client(
-                        "sagemaker-runtime", region_name=region_name, config=config
-                    )
-                else:
-                    self._client = session.client("sagemaker-runtime", config=config)
-        except botocore.exceptions.BotocoreError as e:
-            raise ValueError("Please verify the provided credentials.") from e
+        self._client = get_aws_service_client(
+            service_name="sagemaker-runtime",
+            profile_name=profile_name,
+            region_name=region_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+            max_retries=max_retries,
+            timeout=timeout,
+        )
         callback_manager = callback_manager or CallbackManager([])
 
         super().__init__(
