@@ -1,8 +1,10 @@
 import abc
 import codecs
 import json
+from typing import TYPE_CHECKING
 
-from botocore.response import StreamingBody
+if TYPE_CHECKING:
+    from botocore.response import StreamingBody
 
 from llama_index.bridge.pydantic import BaseModel, Field
 
@@ -36,7 +38,7 @@ class BaseIOHandler(BaseModel, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def deserialize_output(self, response: StreamingBody) -> str:
+    def deserialize_output(self, response: "StreamingBody") -> str:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -56,7 +58,7 @@ class IOHandler(BaseIOHandler):
         request_str = json.dumps({"inputs": request, "parameters": model_kwargs})
         return request_str.encode("utf-8")
 
-    def deserialize_output(self, response: StreamingBody) -> str:
+    def deserialize_output(self, response: "StreamingBody") -> str:
         return json.load(codecs.getreader("utf-8")(response))[0]["generated_text"]
 
     def deserialize_streaming_output(self, response: bytes) -> str:
