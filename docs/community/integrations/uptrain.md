@@ -1,6 +1,6 @@
-## Evaluating LLM Responses with UpTrain
+# How to use UpTrain with LlamaIndex
 
-**Overview**: In this example, we will see how to use UpTrain with LlamaIndex to evaluate LLM responses. 
+**Overview**: In this example, we will see how to use UpTrain with LlamaIndex. 
 
 **Problem**: There are two main problems:
 1. The data that most Large Language Models are trained on is not representative of the data that they are used on. This leads to a mismatch between the training and test distributions, which can lead to poor performance. 
@@ -10,11 +10,11 @@
 1. LlamaIndex solves the first problem by allowing you to perform Retrieval Augmented Generation (RAG) with a retriever that is fine-tuned on your own data. This allows you to use your own data to fine-tune a retriever, and then use that retriever to perform RAG.
 2. UpTrain solves the second problem by allowing you to perform evaluations on the generated responses. This helps you to ensure that the responses are relevant to the prompt, align with the desired tone or the context, and are not offensive etc.
 
-## Install UpTrain with all dependencies
+## Install UpTrain and LlamaIndex
+
 
 ```bash
-pip install uptrain
-uptrain-add --feature full
+pip install uptrain llama_index
 ```
 
 ## Import required libraries
@@ -25,16 +25,7 @@ import openai
 import pandas as pd
 
 from llama_index import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
-from uptrain import EvalLLM, Evals, EvalLlamaIndex, Settings
-```
-
-**This tutorial uses the OpenAI API to generate text for prompts as well as to create the Vector Store Index. So, set openai.api_key and create an EvalLLM client using your OpenAI API key**
-
-
-```python
-openai.api_key = 'sk-*************' # your openai api key
-settings = Settings(openai_api_key=openai.api_key)
-eval_llm = EvalLLM(settings)
+from uptrain import Evals, EvalLlamaIndex, Settings
 ```
 
 ## Create the datset folder for the query engine
@@ -53,30 +44,6 @@ if not os.path.exists(dataset_path):
     r = httpx.get(url)
     with open(dataset_path, "wb") as f:
         f.write(r.content)
-```
-
-## Create a query engine using LlamaIndex
-
-Let's create a vector store index using LLamaIndex and then use that as a query engine to retrieve relevant sections from the documentation.
-
-
-```python
-documents = SimpleDirectoryReader("./nyc_wikipedia/").load_data()
-
-vector_index = VectorStoreIndex.from_documents(
-    documents, service_context=ServiceContext.from_defaults(chunk_size=512)
-)
-
-query_engine = vector_index.as_query_engine()
-```
-
-## Create the EvalLlamaIndex object
-
-Now that we have created the query engine, we can use it to create an EvalLlamaIndex object. This object will be used to generate responses for the queries.
-
-
-```python
-llamaindex_object = EvalLlamaIndex(query_engine=query_engine)
 ```
 
 ## Make the list of queries
@@ -99,8 +66,105 @@ data = [
 ]
 ```
 
+**This notebook uses the OpenAI API to generate text for prompts as well as to create the Vector Store Index. So, set openai.api_key to your OpenAI API key.**
 
-## Perform the evaluation
+
+```python
+openai.api_key = "sk-************************"  # your OpenAI API key
+```
+
+## Create a query engine using LlamaIndex
+
+Let's create a vector store index using LLamaIndex and then use that as a query engine to retrieve relevant sections from the documentation.
+
+
+```python
+documents = SimpleDirectoryReader("./nyc_wikipedia/").load_data()
+
+vector_index = VectorStoreIndex.from_documents(
+    documents, service_context=ServiceContext.from_defaults(chunk_size=512)
+)
+
+query_engine = vector_index.as_query_engine()
+```
+
+# Alternative 1: Evaluate using UpTrain's Open-Source Software (OSS)
+
+
+```python
+settings = Settings(
+    openai_api_key=openai.api_key,
+)
+```
+
+## Create the EvalLlamaIndex object
+
+Now that we have created the query engine, we can use it to create an EvalLlamaIndex object. This object will be used to generate responses for the queries.
+
+
+```python
+llamaindex_object = EvalLlamaIndex(settings=settings, query_engine=query_engine)
+```
+
+## Run the evaluation
+
+Now that we have the list of queries, we can use the EvalLlamaIndex object to generate responses for the queries and then perform evaluations on the responses. You can find an extensive list of the evaluations offered by UpTrain [here](https://docs.uptrain.ai/key-components/evals). We have chosen two that we found to be the most relevant for this tutorial:
+
+1. **Context Relevance**: This evaluation checks whether the retrieved context is relevant to the query. This is important because the retrieved context is used to generate the response. If the retrieved context is not relevant to the query, then the response will not be relevant to the query either.
+
+2. **Response Conciseness**: This evaluation checks whether the response is concise. This is important because the response should be concise and should not contain any unnecessary information.
+
+
+
+```python
+results = llamaindex_object.evaluate(
+    data=data,
+    checks=[
+        Evals.CONTEXT_RELEVANCE,
+        Evals.RESPONSE_CONCISENESS
+    ]
+)
+```
+
+
+```python
+pd.DataFrame(results)
+```
+
+# Alternative 2: Evaluate using UpTrain's Managed Service and Dashboards 
+
+Alternate to using the OSS, you can use the UpTrain API Client to send the generated responses to the UpTrain Managed Service. The Managed Service will then perform the evaluations and provide you with dashboards.
+
+You can create a free UpTrain account [here](https://uptrain.ai/) and get free trial credits. If you want more trial credits, [book a call with the maintainers of UpTrain here](https://calendly.com/uptrain-sourabh/30min).
+
+
+
+**UpTrain Managed service provides:**
+1. Dashboards with advanced drill-down and filtering options
+2. Insights and common topics among failing cases
+3. Observability and real-time monitoring of production data
+4. Regression testing via seamless integration with your CI/CD pipelines
+
+
+```python
+UPTRAIN_API_KEY = 'up-**********************'  # your UpTrain API key
+
+# We use `uptrain_access_token` parameter instead of 'openai_api_key' in settings in this case
+settings = Settings(
+    uptrain_access_token=UPTRAIN_API_KEY,
+)
+```
+
+## Create the EvalLlamaIndex object
+
+Now that we have created the query engine, we can use it to create an EvalLlamaIndex object. This object will be used to generate responses for the queries.
+
+
+```python
+llamaindex_object = EvalLlamaIndex(settings=settings, query_engine=query_engine)
+```
+
+## Run the evaluation
 
 Now that we have the list of queries, we can use the EvalLlamaIndex object to generate responses for the queries and then perform evaluations on the responses. You can find an extensive list of the evaluations offered by UpTrain [here](https://docs.uptrain.ai/key-components/evals). We have chosen two that we found to be the most relevant for this tutorial:
 
@@ -110,17 +174,26 @@ Now that we have the list of queries, we can use the EvalLlamaIndex object to ge
 
 
 ```python
-results = llamaindex_object.evaluate(eval_llm, 
-                              data=data, 
-                              checks=[
-                                   Evals.CONTEXT_RELEVANCE,
-                                   Evals.RESPONSE_CONCISENESS 
-                                   ]
-                             )
+results = llamaindex_object.evaluate(
+    project_name="nyc_wikipedia", # adding this project name allows you to track the results in the UpTrain dashboard
+    data=data,
+    checks=[
+        Evals.CONTEXT_RELEVANCE,
+        Evals.RESPONSE_CONCISENESS
+    ]
+)
 ```
 
+```python
+pd.DataFrame(results)
+```
 
-### Learn more
+### Dashboards: 
+Histogram of score vs number of cases with that score
 
-- [Jupyter Notebook for this tutorial](https://github.com/uptrain-ai/uptrain/blob/main/examples/integrations/llamaindex_integration_tutorial.ipynb)
-- [UpTrain Documentation](https://docs.uptrain.ai/)
+![image.png](UpTrain_files/image.png)
+
+### Insights:
+You can filter failure cases and generate common topics among them. This can help identify the core issue and help fix it
+
+![LlamaIndex_Integration.gif](UpTrain_files/LlamaIndex_Integration.gif)
