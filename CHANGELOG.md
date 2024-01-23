@@ -1,5 +1,18 @@
 # ChangeLog
 
+## [0.9.36] - 2024-01-23
+
+### New Features
+
+- Added support for `SageMakerEmbedding` (#10207)
+
+### Bug Fixes / Nits
+
+- Fix duplicated `file_id` on openai assistant (#10223)
+- Fix circular dependencies for programs (#10222)
+- Run `TitleExtractor` on groups of nodes from the same parent document (#10209)
+- Improve vectara auto-retrieval (#10195)
+
 ## [0.9.35] - 2024-01-22
 
 ### New Features
