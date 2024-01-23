@@ -12,9 +12,11 @@ from llama_index import (
     VectorStoreIndex,
 )
 from llama_index.bridge.pydantic import BaseModel, Field, validator
-from llama_index.core.response.schema import StreamingResponse
+from llama_index.chat_engine import CondenseQuestionChatEngine
+from llama_index.core.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.ingestion import IngestionPipeline
-from llama_index.llms import OpenAI
+from llama_index.llms import LLM, OpenAI
+from llama_index.query_engine import CustomQueryEngine
 from llama_index.query_pipeline import FnComponent
 from llama_index.query_pipeline.query import QueryPipeline
 from llama_index.response_synthesizers import CompactAndRefine
@@ -27,6 +29,21 @@ def default_ragcli_persist_dir() -> str:
 
 def query_input(query_str: Optional[str] = None) -> str:
     return query_str or ""
+
+
+class QueryPipelineQueryEngine(CustomQueryEngine):
+    query_pipeline: QueryPipeline = Field(
+        description="Query Pipeline to use for Q&A.",
+    )
+
+    def __init__(self, query_pipeline: QueryPipeline, **kwargs: Any) -> None:
+        super().__init__(query_pipeline, **kwargs)
+
+    def custom_query(self, query_str: str) -> RESPONSE_TYPE:
+        return self.query_pipeline.run(query_str=query_str)
+
+    async def acustom_query(self, query_str: str) -> RESPONSE_TYPE:
+        return await self.query_pipeline.arun(query_str=query_str)
 
 
 class RagCLI(BaseModel):
@@ -45,10 +62,21 @@ class RagCLI(BaseModel):
         description="Directory to persist ingestion pipeline.",
         default_factory=default_ragcli_persist_dir,
     )
+    llm: LLM = Field(
+        description="Language model to use for response generation.",
+        default_factory=lambda: OpenAI(model="gpt-3.5-turbo", streaming=True),
+    )
     query_pipeline: Optional[QueryPipeline] = Field(
         description="Query Pipeline to use for Q&A.",
         default=None,
     )
+    chat_engine: Optional[CondenseQuestionChatEngine] = Field(
+        description="Chat engine to use for chatting.",
+        default_factory=None,
+    )
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @validator("query_pipeline", always=True)
     def query_pipeline_from_ingestion_pipeline(
@@ -70,9 +98,8 @@ class RagCLI(BaseModel):
         retriever = VectorStoreIndex.from_vector_store(
             ingestion_pipeline.vector_store
         ).as_retriever(similarity_top_k=8)
-        service_context = ServiceContext.from_defaults(
-            llm=OpenAI(model="gpt-3.5-turbo", streaming=True)
-        )
+        llm = cast(LLM, values["llm"])
+        service_context = ServiceContext.from_defaults(llm=llm)
         response_synthesizer = CompactAndRefine(
             service_context=service_context, streaming=True, verbose=verbose
         )
@@ -90,6 +117,26 @@ class RagCLI(BaseModel):
         query_pipeline.add_link("retriever", "summarizer", dest_key="nodes")
         query_pipeline.add_link("query", "summarizer", dest_key="query_str")
         return query_pipeline
+
+    @validator("chat_engine", always=True)
+    def chat_engine_from_query_pipeline(
+        cls, chat_engine: Any, values: Dict[str, Any]
+    ) -> Optional[CondenseQuestionChatEngine]:
+        """
+        If chat_engine is not provided, create one from query_pipeline.
+        """
+        if chat_engine is not None:
+            return chat_engine
+
+        query_pipeline = cast(QueryPipeline, values["query_pipeline"])
+        if query_pipeline is None:
+            return None
+        query_engine = QueryPipelineQueryEngine(query_pipeline=query_pipeline)
+        verbose = cast(bool, values["verbose"])
+        llm = cast(LLM, values["llm"])
+        return CondenseQuestionChatEngine.from_defaults(
+            query_engine=query_engine, llm=llm, verbose=verbose
+        )
 
     async def handle_cli(
         self,
@@ -146,7 +193,8 @@ class RagCLI(BaseModel):
             raise ValueError("query_pipeline is not defined.")
         query_pipeline = cast(QueryPipeline, self.query_pipeline)
         query_pipeline.verbose = self.verbose
-        response = query_pipeline.run(query_str=question)
+        chat_engine = cast(CondenseQuestionChatEngine, self.chat_engine)
+        response = await chat_engine.achat(question)
 
         if isinstance(response, StreamingResponse):
             response.print_response_stream()
@@ -160,9 +208,8 @@ class RagCLI(BaseModel):
         """
         if self.query_pipeline is None:
             raise ValueError("query_pipeline is not defined.")
-        while True:
-            question = input("\n(rag) ")
-            await self.handle_question(question.strip())
+        chat_engine = cast(CondenseQuestionChatEngine, self.chat_engine)
+        chat_engine.streaming_chat_repl()
 
     def add_parser_args(self, parser: Union[ArgumentParser, Any]) -> None:
         parser.add_argument(
