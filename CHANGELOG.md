@@ -12,9 +12,10 @@
 - add from_collection method to ChromaVectorStore class (#10167)
 - CLI experiment v0: ask (#10168)
 - make react agent prompts more editable (#10154)
-- Add agent query pipeline  (#10180)
+- Add agent query pipeline (#10180)
 
 ### Bug Fixes / Nits
+
 - Update supabase vecs metadata filter function to support multiple fields (#10133)
 - Bugfix/code improvement for LanceDB integration (#10144)
 - `beautifulsoup4` optional dependency (#10156)
