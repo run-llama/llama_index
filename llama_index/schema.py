@@ -377,7 +377,7 @@ class TextNode(BaseNode):
             "{value} placeholders."
         ),
     )
-    metadata_seperator: str = Field(
+    metadata_separator: str = Field(
         default="\n",
         description="Separator between metadata fields when converting to string.",
     )
