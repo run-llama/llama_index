@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-import boto3
-import botocore
+if TYPE_CHECKING:
+    import botocore
 
 
 def get_aws_service_client(
@@ -13,7 +13,15 @@ def get_aws_service_client(
     profile_name: Optional[str] = None,
     max_retries: Optional[int] = 3,
     timeout: Optional[float] = 60.0,
-) -> botocore.client.BaseClient:
+) -> "botocore.client.BaseClient":
+    try:
+        import boto3
+        import botocore
+    except ImportError:
+        raise ImportError(
+            "Please run `pip install boto3 botocore` to use AWS services."
+        )
+
     config = botocore.config.Config(
         retries={"max_attempts": max_retries, "mode": "standard"},
         connect_timeout=timeout,
