@@ -3,7 +3,7 @@ import os
 from argparse import ArgumentParser
 from glob import iglob
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Dict, Optional, Union, cast
 
 from llama_index import (
     Response,
@@ -18,7 +18,6 @@ from llama_index.llms import OpenAI
 from llama_index.query_pipeline import FnComponent
 from llama_index.query_pipeline.query import QueryPipeline
 from llama_index.response_synthesizers import CompactAndRefine
-from llama_index.schema import Document
 from llama_index.utils import get_cache_dir
 
 
@@ -49,10 +48,6 @@ class RagCLI(BaseModel):
     query_pipeline: Optional[QueryPipeline] = Field(
         description="Query Pipeline to use for Q&A.",
         default=None,
-    )
-    on_ingestion: Callable[[List[Document]], None] = Field(
-        description="Callback to run after ingestion.",
-        default=lambda documents: None,
     )
 
     @validator("query_pipeline", always=True)
@@ -140,7 +135,6 @@ class RagCLI(BaseModel):
 
             await ingestion_pipeline.arun(show_progress=verbose, documents=documents)
             ingestion_pipeline.persist(persist_dir=self.persist_dir)
-            self.on_ingestion(documents)
 
         if question is not None:
             await self.handle_question(question)
@@ -185,13 +179,13 @@ class RagCLI(BaseModel):
             type=str,
             help=(
                 "The name of the file or directory you want to ask a question about,"
-                "such as `file.pdf`."
+                'such as "file.pdf".'
             ),
         )
         parser.add_argument(
             "-c",
             "--chat",
-            help="Whether to open a chat REPL.",
+            help="If flag is present, opens a chat REPL.",
             action="store_true",
         )
         parser.add_argument(

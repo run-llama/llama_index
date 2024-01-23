@@ -77,14 +77,10 @@ def default_rag_cli() -> RagCLI:
     except FileNotFoundError:
         pass
 
-    def persist_chroma(*args: list) -> None:
-        vector_store.persist(persist_dir)
-
     return RagCLI(
         ingestion_pipeline=ingestion_pipeline,
         verbose=False,
         persist_dir=persist_dir,
-        on_ingestion=persist_chroma,
     )
 
 
