@@ -19,6 +19,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         top_n: int = 2,
         model: str = "cross-encoder/stsb-distilroberta-base",
         device: Optional[str] = None,
+        keep_retrieval_score: Optional[bool] = False,
     ):
         try:
             from sentence_transformers import CrossEncoder
@@ -31,7 +32,12 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         self._model = CrossEncoder(
             model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH, device=device
         )
-        super().__init__(top_n=top_n, model=model, device=device)
+        super().__init__(
+            top_n=top_n,
+            model=model,
+            device=device,
+            keep_retrieval_score=keep_retrieval_score,
+        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -69,6 +75,9 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             assert len(scores) == len(nodes)
 
             for node, score in zip(nodes, scores):
+                if self.keep_retrieval_score:
+                    # keep the retrieval score in metadata
+                    node.node.metadata["retrieval_score"] = node.score
                 node.score = score
 
             new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
