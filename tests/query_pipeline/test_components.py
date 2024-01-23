@@ -2,6 +2,12 @@
 from typing import Any, List, Sequence
 
 import pytest
+from llama_index.core.base_selector import (
+    BaseSelector,
+    MultiSelection,
+    SelectorResult,
+    SingleSelection,
+)
 from llama_index.core.query_pipeline.components import (
     ArgPackComponent,
     FnComponent,
@@ -15,12 +21,6 @@ from llama_index.query_pipeline.components.router import (
 )
 from llama_index.query_pipeline.query import QueryPipeline
 from llama_index.schema import QueryBundle
-from llama_index.selectors.types import (
-    BaseSelector,
-    MultiSelection,
-    SelectorResult,
-    SingleSelection,
-)
 from llama_index.tools.types import ToolMetadata
 
 
