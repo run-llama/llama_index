@@ -134,4 +134,4 @@ for doc in documents:
     index.insert(doc)
 ```
 
-See the [document management how-to](/docs/module_guides/indexing/document_management.md) for more details on managing documents and an example notebook.
+See the [document management how-to](/module_guides/indexing/document_management.md) for more details on managing documents and an example notebook.
