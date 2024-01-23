@@ -1,11 +1,31 @@
 # ChangeLog
 
-## Unreleased
+## [0.9.35] - 2024-01-22
 
 ### New Features
 
 - `beautifulsoup4` dependency to new optional extra `html` (#10156)
 - make `BaseNode.hash` an `@property` (#10163)
+- Neutrino (#10150)
+- feat: JSONalyze Query Engine (#10067)
+- [wip] add custom hybrid retriever notebook (#10164)
+- add from_collection method to ChromaVectorStore class (#10167)
+- CLI experiment v0: ask (#10168)
+- make react agent prompts more editable (#10154)
+- Add agent query pipeline (#10180)
+
+### Bug Fixes / Nits
+
+- Update supabase vecs metadata filter function to support multiple fields (#10133)
+- Bugfix/code improvement for LanceDB integration (#10144)
+- `beautifulsoup4` optional dependency (#10156)
+- Fix qdrant aquery hybrid search (#10159)
+- make hash a @property (#10163)
+- fix: bug on poetry install of llama-index[postgres] (#10171)
+- [doc] update jaguar vector store documentation (#10179)
+- Remove use of not-launched finish_message (#10188)
+- Updates to Lantern vector stores docs (#10192)
+- fix typo in multi_document_agents.ipynb (#10196)
 
 ## [0.9.34] - 2024-01-19
 

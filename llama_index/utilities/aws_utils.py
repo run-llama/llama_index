@@ -36,7 +36,7 @@ def get_aws_service_client(
                 )
             else:
                 client = session.client(service_name, config=config)
-    except:
-        raise ValueError("Please verify the provided credentials.")
+    except Exception as e:
+        raise ValueError("Please verify the provided credentials.") from (e)
 
     return client

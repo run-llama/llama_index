@@ -42,11 +42,13 @@ name = "llama-index"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.9.34"
+version = "0.9.35"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
 beautifulsoup4 = {optional = true, version = "^4.12.2"}
+botocore = ">=1.33.13"
+boto3 = "1.33.6"
 dataclasses-json = "*"
 deprecated = ">=1.2.9.3"
 fsspec = ">=2023.5.0"
@@ -111,6 +113,7 @@ query_tools = [
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 boto3 = "1.33.6"  # needed for tests
+botocore = ">=1.33.13"
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 google-ai-generativelanguage = {python = ">=3.9,<3.12", version = "^0.4.0"}
 ipython = "8.10.0"
