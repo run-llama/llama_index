@@ -86,8 +86,8 @@ custom_query_pipeline.add_link(...)
 
 rag_cli_instance = RagCLI(
     ingestion_pipeline=custom_ingestion_pipeline,
-    llm=llm,
-    query_pipeline=custom_query_pipeline,  # optional!
+    llm=llm,  # optional
+    query_pipeline=custom_query_pipeline,  # optional
 )
 
 if __name__ == "__main__":
