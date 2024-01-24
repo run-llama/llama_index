@@ -8,7 +8,7 @@ This summary can be used for retrieval.
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.core.response.schema import Response
@@ -223,16 +223,41 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         self._add_nodes_to_index(self._index_struct, nodes)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
-        """Delete a node."""
-        if node_id not in self._index_struct.doc_id_to_summary_id:
-            raise ValueError(f"node_id {node_id} not in index")
-        summary_id = self._index_struct.doc_id_to_summary_id[node_id]
+        pass
 
-        # delete summary node from docstore
-        self.docstore.delete_document(summary_id)
+    def delete_nodes(
+        self,
+        node_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete a list of nodes from the index.
 
-        # delete from index struct
-        self._index_struct.delete(node_id)
+        Args:
+            node_ids (List[str]): A list of node_ids from the nodes to delete
+
+        """
+        index_nodes = self._index_struct.node_id_to_summary_id.keys()
+        for node in node_ids:
+            if node not in index_nodes:
+                logger.warning(f"node_id {node} not found, will not be deleted.")
+                node_ids.remove(node)
+        self._index_struct.delete_nodes(node_ids)
+
+    def delete_ref_doc(
+        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
+    ) -> None:
+        """Delete a document from the index.
+        All nodes in the index related to the document will be deleted.
+        """
+        ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+        if ref_doc_info is None:
+            logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
+            return
+        self._index_struct.delete(ref_doc_id)
+
+        if delete_from_docstore:
+            self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
 
     @property
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
