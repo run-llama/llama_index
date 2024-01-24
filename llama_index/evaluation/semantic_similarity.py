@@ -1,9 +1,10 @@
 from typing import Any, Callable, Optional, Sequence
 
-from llama_index.core.embeddings.base import SimilarityMode, similarity
+from llama_index.core.embeddings.base import BaseEmbedding, SimilarityMode, similarity
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.service_context import ServiceContext
+from llama_index.settings import Settings, embed_model_from_settings_or_context
 
 
 class SemanticSimilarityEvaluator(BaseEvaluator):
@@ -25,12 +26,16 @@ class SemanticSimilarityEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         similarity_fn: Optional[Callable[..., float]] = None,
         similarity_mode: Optional[SimilarityMode] = None,
         similarity_threshold: float = 0.8,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._embed_model = embed_model or embed_model_from_settings_or_context(
+            Settings, service_context
+        )
         if similarity_fn is None:
             similarity_mode = similarity_mode or SimilarityMode.DEFAULT
             self._similarity_fn = lambda x, y: similarity(x, y, mode=similarity_mode)
@@ -63,9 +68,8 @@ class SemanticSimilarityEvaluator(BaseEvaluator):
         if response is None or reference is None:
             raise ValueError("Must specify both response and reference")
 
-        embed_model = self._service_context.embed_model
-        response_embedding = await embed_model.aget_text_embedding(response)
-        reference_embedding = await embed_model.aget_text_embedding(reference)
+        response_embedding = await self._embed_model.aget_text_embedding(response)
+        reference_embedding = await self._embed_model.aget_text_embedding(reference)
 
         similarity_score = self._similarity_fn(response_embedding, reference_embedding)
         passing = similarity_score >= self._similarity_threshold

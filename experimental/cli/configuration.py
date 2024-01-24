@@ -1,20 +1,16 @@
 import os
-from configparser import ConfigParser, SectionProxy
+from configparser import ConfigParser
 from typing import Any, Type
 
-from llama_index import (
-    LLMPredictor,
-    ServiceContext,
-    VectorStoreIndex,
-)
+from llama_index import VectorStoreIndex
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.indices import SimpleKeywordTableIndex
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.loading import load_index_from_storage
-from llama_index.llm_predictor import StructuredLLMPredictor
 from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
+from llama_index.settings import Settings
 from llama_index.storage.storage_context import StorageContext
 
 CONFIG_FILE_NAME = "config.ini"
@@ -23,7 +19,7 @@ DEFAULT_CONFIG = {
     "store": {"persist_dir": DEFAULT_PERSIST_DIR},
     "index": {"type": "default"},
     "embed_model": {"type": "default"},
-    "llm_predictor": {"type": "default"},
+    "llm": {"type": "default"},
 }
 
 
@@ -44,7 +40,7 @@ def save_config(config: ConfigParser, root: str = ".") -> None:
 def load_index(root: str = ".") -> BaseIndex[Any]:
     """Load existing index file."""
     config = load_config(root)
-    service_context = _load_service_context(config)
+    _load_settings(config)
 
     # Index type
     index_type: Type
@@ -62,9 +58,7 @@ def load_index(root: str = ".") -> BaseIndex[Any]:
     except ValueError:
         # build index
         storage_context = StorageContext.from_defaults()
-        index = index_type(
-            nodes=[], service_context=service_context, storage_context=storage_context
-        )
+        index = index_type(nodes=[], storage_context=storage_context)
     return index
 
 
@@ -75,13 +69,12 @@ def save_index(index: BaseIndex[Any], root: str = ".") -> None:
     index.storage_context.persist(persist_dir=persist_dir)
 
 
-def _load_service_context(config: ConfigParser) -> ServiceContext:
+def _load_settings(config: ConfigParser) -> None:
     """Internal function to load service context based on configuration."""
     embed_model = _load_embed_model(config)
-    llm_predictor = _load_llm_predictor(config)
-    return ServiceContext.from_defaults(
-        llm_predictor=llm_predictor, embed_model=embed_model
-    )
+    llm = _load_llm(config)
+    Settings.llm = llm
+    Settings.embed_model = embed_model
 
 
 def _load_storage_context(config: ConfigParser) -> StorageContext:
@@ -89,20 +82,8 @@ def _load_storage_context(config: ConfigParser) -> StorageContext:
     return StorageContext.from_defaults(persist_dir=persist_dir)
 
 
-def _load_llm_predictor(config: ConfigParser) -> LLMPredictor:
-    """Internal function to load LLM predictor based on configuration."""
-    model_type = config["llm_predictor"]["type"].lower()
-    if model_type == "default":
-        llm = _load_llm(config["llm_predictor"])
-        return LLMPredictor(llm=llm)
-    elif model_type == "structured":
-        llm = _load_llm(config["llm_predictor"])
-        return StructuredLLMPredictor(llm=llm)
-    else:
-        raise KeyError("llm_predictor.type")
-
-
-def _load_llm(section: SectionProxy) -> LLM:
+def _load_llm(config: ConfigParser) -> LLM:
+    section = config["llm"]
     if "engine" in section:
         return OpenAI(engine=section["engine"])
     else:

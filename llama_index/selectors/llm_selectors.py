@@ -14,6 +14,7 @@ from llama_index.selectors.prompts import (
 )
 from llama_index.selectors.types import BaseSelector, SelectorResult, SingleSelection
 from llama_index.service_context import ServiceContext
+from llama_index.settings import Settings, llm_from_settings_or_context
 from llama_index.tools.types import ToolMetadata
 from llama_index.types import BaseOutputParser
 
@@ -65,12 +66,13 @@ class LLMSingleSelector(BaseSelector):
     @classmethod
     def from_defaults(
         cls,
+        llm: Optional[LLMPredictorType] = None,
         service_context: Optional[ServiceContext] = None,
         prompt_template_str: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> "LLMSingleSelector":
         # optionally initialize defaults
-        service_context = service_context or ServiceContext.from_defaults()
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
         prompt_template_str = prompt_template_str or DEFAULT_SINGLE_SELECT_PROMPT_TMPL
         output_parser = output_parser or SelectionOutputParser()
 
@@ -80,7 +82,7 @@ class LLMSingleSelector(BaseSelector):
             output_parser=output_parser,
             prompt_type=PromptType.SINGLE_SELECT,
         )
-        return cls(service_context.llm, prompt)
+        return cls(llm, prompt)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -157,12 +159,14 @@ class LLMMultiSelector(BaseSelector):
     @classmethod
     def from_defaults(
         cls,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLMPredictorType] = None,
         prompt_template_str: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
         max_outputs: Optional[int] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> "LLMMultiSelector":
-        service_context = service_context or ServiceContext.from_defaults()
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
         prompt_template_str = prompt_template_str or DEFAULT_MULTI_SELECT_PROMPT_TMPL
         output_parser = output_parser or SelectionOutputParser()
 
@@ -175,7 +179,7 @@ class LLMMultiSelector(BaseSelector):
             output_parser=output_parser,
             prompt_type=PromptType.MULTI_SELECT,
         )
-        return cls(service_context.llm, prompt, max_outputs)
+        return cls(llm, prompt, max_outputs)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""

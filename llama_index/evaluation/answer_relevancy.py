@@ -7,8 +7,10 @@ from typing import Any, Callable, Optional, Sequence, Tuple
 
 from llama_index import ServiceContext
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
+from llama_index.settings import Settings, llm_from_settings_or_context
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Your task is to evaluate if the response is relevant to the query.\n"
@@ -64,16 +66,18 @@ class AnswerRelevancyEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        service_context: ServiceContext | None = None,
+        llm: Optional[LLM] = None,
         raise_error: bool = False,
         eval_template: str | BasePromptTemplate | None = None,
         score_threshold: float = _DEFAULT_SCORE_THRESHOLD,
         parser_function: Callable[
             [str], Tuple[Optional[float], Optional[str]]
         ] = _default_parser_function,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Init params."""
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._raise_error = raise_error
 
         self._eval_template: BasePromptTemplate
@@ -116,7 +120,7 @@ class AnswerRelevancyEvaluator(BaseEvaluator):
 
         await asyncio.sleep(sleep_time_in_seconds)
 
-        eval_response = await self._service_context.llm.apredict(
+        eval_response = await self._llm.apredict(
             prompt=self._eval_template,
             query=query,
             response=response,

@@ -5,27 +5,30 @@ if TYPE_CHECKING:
 
 from llama_index.bridge.pydantic import BaseModel, PrivateAttr
 from llama_index.callbacks.base import BaseCallbackHandler, CallbackManager
-from llama_index.embeddings import BaseEmbedding
+from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.llms import LLM, ChatMessage
+from llama_index.indices.prompt_helper import PromptHelper
+from llama_index.llms import LLM
 from llama_index.llms.utils import resolve_llm
+from llama_index.node_parser import NodeParser, SentenceSplitter
+from llama_index.schema import TransformComponent
+from llama_index.types import PydanticProgramMode
 from llama_index.utils import get_tokenizer, set_global_tokenizer
 
 
 class _Settings(BaseModel):
     """Settings for the Llama Index, lazily initialized."""
 
-    system_prompt: Optional[str] = None
-    messages_to_prompt: Optional[Callable[[List[ChatMessage]], str]] = None
-    completion_to_prompt: Optional[Callable[[str], str]] = None
-
     # lazy initialization
     _llm: Optional[LLM] = PrivateAttr(None)
-    _embed_model: Optional[LLM] = PrivateAttr(None)
+    _embed_model: Optional[BaseEmbedding] = PrivateAttr(None)
     _callback_manager: Optional[CallbackManager] = PrivateAttr(None)
     _tokenizer: Optional[Callable[[str], List[Any]]] = PrivateAttr(None)
+    _node_parser: Optional[NodeParser] = PrivateAttr(None)
+    _prompt_helper: Optional[PromptHelper] = PrivateAttr(None)
+    _transformations: Optional[List[TransformComponent]] = PrivateAttr(None)
 
-    # -- LLM --
+    # ---- LLM ----
 
     @property
     def llm(self) -> LLM:
@@ -39,7 +42,17 @@ class _Settings(BaseModel):
         """Set the LLM."""
         self._llm = llm
 
-    # -- Embedding --
+    @property
+    def pydantic_program_mode(self) -> PydanticProgramMode:
+        """Get the pydantic program mode."""
+        return self.llm.pydantic_program_mode
+
+    @pydantic_program_mode.setter
+    def pydantic_program_mode(self, pydantic_program_mode: PydanticProgramMode) -> None:
+        """Set the pydantic program mode."""
+        self.llm.pydantic_program_mode = pydantic_program_mode
+
+    # ---- Embedding ----
 
     @property
     def embed_model(self) -> BaseEmbedding:
@@ -53,7 +66,7 @@ class _Settings(BaseModel):
         """Set the embedding model."""
         self._embed_model = embed_model
 
-    # -- Callbacks --
+    # ---- Callbacks ----
 
     @property
     def global_handler(self) -> Optional[BaseCallbackHandler]:
@@ -83,7 +96,7 @@ class _Settings(BaseModel):
         """Set the callback manager."""
         self._callback_manager = callback_manager
 
-    # -- Tokenizer --
+    # ---- Tokenizer ----
 
     @property
     def tokenizer(self) -> Callable[[str], List[Any]]:
@@ -100,6 +113,114 @@ class _Settings(BaseModel):
 
         # TODO: deprecated
         set_global_tokenizer(tokenizer)
+
+    # ---- Node parser ----
+
+    @property
+    def node_parser(self) -> NodeParser:
+        """Get the node parser."""
+        if self._node_parser is None:
+            self._node_parser = SentenceSplitter()
+
+        return self._node_parser
+
+    @node_parser.setter
+    def node_parser(self, node_parser: NodeParser) -> None:
+        """Set the node parser."""
+        self._node_parser = node_parser
+
+    @property
+    def chunk_size(self) -> int:
+        """Get the chunk size."""
+        if hasattr(self.node_parser, "chunk_size"):
+            return self.node_parser.chunk_size
+        else:
+            raise ValueError("Configured node parser does not have chunk size.")
+
+    @chunk_size.setter
+    def chunk_size(self, chunk_size: int) -> None:
+        """Set the chunk size."""
+        if hasattr(self.node_parser, "chunk_size"):
+            self.node_parser.chunk_size = chunk_size
+        else:
+            raise ValueError("Configured node parser does not have chunk size.")
+
+    @property
+    def chunk_overlap(self) -> int:
+        """Get the chunk overlap."""
+        if hasattr(self.node_parser, "chunk_overlap"):
+            return self.node_parser.chunk_overlap
+        else:
+            raise ValueError("Configured node parser does not have chunk overlap.")
+
+    @chunk_overlap.setter
+    def chunk_overlap(self, chunk_overlap: int) -> None:
+        """Set the chunk overlap."""
+        if hasattr(self.node_parser, "chunk_overlap"):
+            self.node_parser.chunk_overlap = chunk_overlap
+        else:
+            raise ValueError("Configured node parser does not have chunk overlap.")
+
+    # ---- Node parser alias ----
+
+    @property
+    def text_splitter(self) -> NodeParser:
+        """Get the text splitter."""
+        return self.node_parser
+
+    @text_splitter.setter
+    def text_splitter(self, text_splitter: NodeParser) -> None:
+        """Set the text splitter."""
+        self.node_parser = text_splitter
+
+    # ---- Prompt helper ----
+    @property
+    def prompt_helper(self) -> PromptHelper:
+        """Get the prompt helper."""
+        if self._llm is not None and self._prompt_helper is None:
+            self._prompt_helper = PromptHelper.from_llm_metadata(self._llm.metadata)
+        elif self._prompt_helper is None:
+            self._prompt_helper = PromptHelper()
+
+        return self._prompt_helper
+
+    @prompt_helper.setter
+    def prompt_helper(self, prompt_helper: PromptHelper) -> None:
+        """Set the prompt helper."""
+        self._prompt_helper = prompt_helper
+
+    @property
+    def num_output(self) -> int:
+        """Get the number of outputs."""
+        return self.prompt_helper.num_output
+
+    @num_output.setter
+    def num_output(self, num_output: int) -> None:
+        """Set the number of outputs."""
+        self.prompt_helper.num_output = num_output
+
+    @property
+    def context_window(self) -> int:
+        """Get the context window."""
+        return self.prompt_helper.context_window
+
+    @context_window.setter
+    def context_window(self, context_window: int) -> None:
+        """Set the context window."""
+        self.prompt_helper.context_window = context_window
+
+    # ---- Transformations ----
+    @property
+    def transformations(self) -> List[TransformComponent]:
+        """Get the transformations."""
+        if self._transformations is None:
+            self._transformations = [self.node_parser]
+        return self._transformations
+
+    @transformations.setter
+    def transformations(self, transformations: List[TransformComponent]) -> None:
+        """Set the transformations."""
+        self._transformations = transformations
 
 
 # Singleton
@@ -137,3 +258,33 @@ def callback_manager_from_settings_or_context(
         return context.callback_manager
 
     return settings.callback_manager
+
+
+def node_parser_from_settings_or_context(
+    settings: _Settings, context: Optional["ServiceContext"]
+) -> NodeParser:
+    """Get settings from either settings or context."""
+    if context is not None:
+        return context.node_parser
+
+    return settings.node_parser
+
+
+def prompt_helper_from_settings_or_context(
+    settings: _Settings, context: Optional["ServiceContext"]
+) -> PromptHelper:
+    """Get settings from either settings or context."""
+    if context is not None:
+        return context.prompt_helper
+
+    return settings.prompt_helper
+
+
+def transformations_from_settings_or_context(
+    settings: _Settings, context: Optional["ServiceContext"]
+) -> List[TransformComponent]:
+    """Get settings from either settings or context."""
+    if context is not None:
+        return context.transformations
+
+    return settings.transformations

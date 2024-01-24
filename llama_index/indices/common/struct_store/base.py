@@ -31,8 +31,7 @@ class SQLDocumentContextBuilder:
 
     Args:
         sql_database (Optional[SQLDatabase]): SQL database to use,
-        llm_predictor (Optional[BaseLLMPredictor]): LLM Predictor to use.
-        prompt_helper (Optional[PromptHelper]): Prompt Helper to use.
+        service_context (Optional[ServiceContext]): Service Context to use.
         text_splitter (Optional[TextSplitter]): Text Splitter to use.
         table_context_prompt (Optional[BasePromptTemplate]): A
             Table Context Prompt (see :ref:`Prompt-Templates`).

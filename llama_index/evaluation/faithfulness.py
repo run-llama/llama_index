@@ -2,14 +2,16 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence, Union
 
 from llama_index import ServiceContext
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.indices import SummaryIndex
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import Document
+from llama_index.settings import Settings, llm_from_settings_or_context
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Please tell if a given piece of information "
@@ -77,13 +79,15 @@ class FaithfulnessEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        service_context: ServiceContext | None = None,
+        llm: Optional[LLM] = None,
         raise_error: bool = False,
-        eval_template: str | BasePromptTemplate | None = None,
-        refine_template: str | BasePromptTemplate | None = None,
+        eval_template: Optional[Union[str, BasePromptTemplate]] = None,
+        refine_template: Optional[Union[str, BasePromptTemplate]] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Init params."""
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._raise_error = raise_error
 
         self._eval_template: BasePromptTemplate
@@ -130,9 +134,10 @@ class FaithfulnessEvaluator(BaseEvaluator):
             raise ValueError("contexts and response must be provided")
 
         docs = [Document(text=context) for context in contexts]
-        index = SummaryIndex.from_documents(docs, service_context=self._service_context)
+        index = SummaryIndex.from_documents(docs)
 
         query_engine = index.as_query_engine(
+            llm=self._llm,
             text_qa_template=self._eval_template,
             refine_template=self._refine_template,
         )

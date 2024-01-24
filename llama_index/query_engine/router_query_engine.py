@@ -13,6 +13,7 @@ from llama_index.core.response.schema import (
     Response,
     StreamingResponse,
 )
+from llama_index.llms import LLM
 from llama_index.objects.base import ObjectRetriever
 from llama_index.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
@@ -21,8 +22,13 @@ from llama_index.prompts.mixin import PromptMixinType
 from llama_index.response_synthesizers import TreeSummarize
 from llama_index.schema import BaseNode, QueryBundle
 from llama_index.selectors.types import BaseSelector
-from llama_index.selectors.utils import get_selector_from_context
+from llama_index.selectors.utils import get_selector_from_llm
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.tools.types import ToolMetadata
 from llama_index.utils import print_text
@@ -102,21 +108,28 @@ class RouterQueryEngine(BaseQueryEngine):
         self,
         selector: BaseSelector,
         query_engine_tools: Sequence[QueryEngineTool],
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         summarizer: Optional[TreeSummarize] = None,
         verbose: bool = False,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        self.service_context = service_context or ServiceContext.from_defaults()
+        self._llm = llm or llm_from_settings_or_context(Settings, llm)
         self._selector = selector
         self._query_engines = [x.query_engine for x in query_engine_tools]
         self._metadatas = [x.metadata for x in query_engine_tools]
         self._summarizer = summarizer or TreeSummarize(
-            service_context=self.service_context,
+            llm=self._llm,
+            service_context=service_context,
             summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
         )
         self._verbose = verbose
 
-        super().__init__(self.service_context.callback_manager)
+        super().__init__(
+            callback_manager=callback_manager_from_settings_or_context(
+                Settings, service_context
+            )
+        )
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
@@ -127,16 +140,16 @@ class RouterQueryEngine(BaseQueryEngine):
     def from_defaults(
         cls,
         query_engine_tools: Sequence[QueryEngineTool],
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         selector: Optional[BaseSelector] = None,
         summarizer: Optional[TreeSummarize] = None,
         select_multi: bool = False,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> "RouterQueryEngine":
-        service_context = service_context or ServiceContext.from_defaults()
+        llm = llm or llm_from_settings_or_context(Settings, llm)
 
-        selector = selector or get_selector_from_context(
-            service_context, is_multi=select_multi
-        )
+        selector = selector or get_selector_from_llm(llm, is_multi=select_multi)
 
         assert selector is not None
 

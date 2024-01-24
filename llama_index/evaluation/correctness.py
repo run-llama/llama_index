@@ -87,9 +87,9 @@ class CorrectnessEvaluator(BaseEvaluator):
 
     def __init__(
         self,
+        llm: Optional[LLM] = None,
         eval_template: Optional[Union[BasePromptTemplate, str]] = None,
         score_threshold: float = 4.0,
-        llm: Optional[LLM] = None,
         # deprecated
         service_context: Optional[ServiceContext] = None,
         parser_function: Callable[

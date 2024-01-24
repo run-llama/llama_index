@@ -44,13 +44,13 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
     def __init__(
         self,
+        nodes: Optional[Sequence[BaseNode]] = None,
         # vector store index params
         use_async: bool = False,
         store_nodes_override: bool = False,
         embed_model: Optional[EmbedType] = None,
         insert_batch_size: int = 2048,
         # parent class params
-        nodes: Optional[Sequence[BaseNode]] = None,
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexDict] = None,
         storage_context: Optional[StorageContext] = None,

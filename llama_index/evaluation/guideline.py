@@ -6,9 +6,11 @@ from typing import Any, Optional, Sequence, Union, cast
 from llama_index import ServiceContext
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.llms import LLM
 from llama_index.output_parsers import PydanticOutputParser
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
+from llama_index.settings import Settings, llm_from_settings_or_context
 
 logger = logging.getLogger(__name__)
 
@@ -54,11 +56,13 @@ class GuidelineEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         guidelines: Optional[str] = None,
         eval_template: Optional[Union[str, BasePromptTemplate]] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._guidelines = guidelines or DEFAULT_GUIDELINES
 
         self._eval_template: BasePromptTemplate
@@ -102,7 +106,7 @@ class GuidelineEvaluator(BaseEvaluator):
 
         await asyncio.sleep(sleep_time_in_seconds)
 
-        eval_response = await self._service_context.llm.apredict(
+        eval_response = await self._llm.apredict(
             self._eval_template,
             query=query,
             response=response,

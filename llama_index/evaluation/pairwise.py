@@ -9,6 +9,7 @@ from llama_index.evaluation.base import (
     BaseEvaluator,
     EvaluationResult,
 )
+from llama_index.llms import LLM
 from llama_index.prompts import (
     BasePromptTemplate,
     ChatMessage,
@@ -17,6 +18,7 @@ from llama_index.prompts import (
     PromptTemplate,
 )
 from llama_index.prompts.mixin import PromptDictType
+from llama_index.settings import Settings, llm_from_settings_or_context
 
 DEFAULT_SYSTEM_TEMPLATE = (
     "Please act as an impartial judge and evaluate the quality of the responses provided by two "
@@ -108,14 +110,16 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         eval_template: Optional[Union[BasePromptTemplate, str]] = None,
         parser_function: Callable[
             [str], Tuple[Optional[bool], Optional[float], Optional[str]]
         ] = _default_parser_function,
         enforce_consensus: bool = True,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
 
         self._eval_template: BasePromptTemplate
         if isinstance(eval_template, str):
@@ -145,7 +149,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         reference: Optional[str],
     ) -> EvaluationResult:
         """Get evaluation result."""
-        eval_response = await self._service_context.llm.apredict(
+        eval_response = await self._llm.apredict(
             prompt=self._eval_template,
             query=query,
             answer_1=response,

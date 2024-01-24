@@ -12,14 +12,14 @@ from llama_index.indices.struct_store.sql_query import (
     NLSQLTableQueryEngine,
 )
 from llama_index.llm_predictor.base import LLMPredictorType
-from llama_index.llms.utils import resolve_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.schema import QueryBundle
 from llama_index.selectors.llm_selectors import LLMSingleSelector
 from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
-from llama_index.selectors.utils import get_selector_from_context
+from llama_index.selectors.utils import get_selector_from_llm
 from llama_index.service_context import ServiceContext
+from llama_index.settings import Settings, llm_from_settings_or_context
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.utils import print_text
 
@@ -124,7 +124,7 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
         check_stop_parser: Optional[Callable[[QueryBundle], bool]] = None,
     ) -> None:
         """Initialize params."""
-        self._llm = llm or resolve_llm("default")
+        self._llm = llm or Settings.llm
 
         self._sql_augment_transform_prompt = (
             sql_augment_transform_prompt or DEFAULT_SQL_AUGMENT_TRANSFORM_PROMPT
@@ -190,12 +190,14 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         sql_query_tool: QueryEngineTool,
         other_query_tool: QueryEngineTool,
         selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLMPredictorType] = None,
         sql_join_synthesis_prompt: Optional[BasePromptTemplate] = None,
         sql_augment_query_transform: Optional[SQLAugmentQueryTransform] = None,
         use_sql_join_synthesis: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = True,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Initialize params."""
         super().__init__(callback_manager=callback_manager)
@@ -211,20 +213,16 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         self._sql_query_tool = sql_query_tool
         self._other_query_tool = other_query_tool
 
-        sql_query_engine = sql_query_tool.query_engine
-        self._service_context = service_context or sql_query_engine.service_context
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
 
-        self._selector = selector or get_selector_from_context(
-            self._service_context, is_multi=False
-        )
+        self._selector = selector or get_selector_from_llm(self._llm, is_multi=False)
         assert isinstance(self._selector, (LLMSingleSelector, PydanticSingleSelector))
 
         self._sql_join_synthesis_prompt = (
             sql_join_synthesis_prompt or DEFAULT_SQL_JOIN_SYNTHESIS_PROMPT
         )
         self._sql_augment_query_transform = (
-            sql_augment_query_transform
-            or SQLAugmentQueryTransform(llm=self._service_context.llm)
+            sql_augment_query_transform or SQLAugmentQueryTransform(llm=self._llm)
         )
         self._use_sql_join_synthesis = use_sql_join_synthesis
         self._verbose = verbose
@@ -282,7 +280,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             print_text(f"query engine response: {other_response}\n", color="pink")
         logger.info(f"> query engine response: {other_response}")
 
-        response_str = self._service_context.llm.predict(
+        response_str = self._llm.predict(
             self._sql_join_synthesis_prompt,
             query_str=query_bundle.query_str,
             sql_query_str=sql_query,
