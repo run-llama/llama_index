@@ -41,6 +41,7 @@ from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInfer
 from llama_index.embeddings.together import TogetherEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.embeddings.voyageai import VoyageEmbedding
+from llama_index.embeddings.nomic import NomicEmbedding
 
 __all__ = [
     "AdapterEmbeddingModel",
@@ -61,6 +62,7 @@ __all__ = [
     "LinearAdapterEmbeddingModel",
     "LLMRailsEmbedding",
     "MistralAIEmbedding",
+    "NomicEmbedding"
     "OpenAIEmbedding",
     "AzureOpenAIEmbedding",
     "AnyscaleEmbedding",
