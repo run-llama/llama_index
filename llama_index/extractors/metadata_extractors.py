@@ -99,21 +99,13 @@ class TitleExtractor(BaseExtractor):
         return "TitleExtractor"
 
     async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        nodes_to_extract_title = self.filter_nodes(nodes)
-
-        if not nodes_to_extract_title:
-            return []
-
-        nodes_by_doc_id = self.separate_nodes_by_ref_id(nodes_to_extract_title)
+        nodes_by_doc_id = self.separate_nodes_by_ref_id(nodes)
         titles_by_doc_id = await self.extract_titles(nodes_by_doc_id)
-
         return [{"document_title": titles_by_doc_id[node.ref_doc_id]} for node in nodes]
 
     def filter_nodes(self, nodes: Sequence[BaseNode]) -> List[BaseNode]:
         filtered_nodes: List[BaseNode] = []
         for node in nodes:
-            if len(filtered_nodes) >= self.nodes:
-                break
             if self.is_text_node_only and not isinstance(node, TextNode):
                 continue
             filtered_nodes.append(node)
@@ -127,7 +119,8 @@ class TitleExtractor(BaseExtractor):
             if key not in separated_items:
                 separated_items[key] = []
 
-            separated_items[key].append(node)
+            if len(separated_items[key]) < self.nodes:
+                separated_items[key].append(node)
 
         return separated_items
 
