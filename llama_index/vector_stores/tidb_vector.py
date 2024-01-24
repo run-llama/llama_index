@@ -15,7 +15,7 @@ from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metad
 
 _logger = logging.getLogger(__name__)
 
-DEFAULT_COLLECTION_NAME = "llama_index_tidb_vector"
+DEFAULT_VECTORSTORE_NAME = "llama_index_tidb_vector_store"
 
 
 class TiDBVector(BasePydanticVectorStore):
@@ -29,21 +29,23 @@ class TiDBVector(BasePydanticVectorStore):
     def __init__(
         self,
         connection_string: str,
-        collection_name: str = DEFAULT_COLLECTION_NAME,
+        vectorstore_name: str = DEFAULT_VECTORSTORE_NAME,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
-        pre_delete_collection: bool = False,
+        drop_existing_vectorstore: bool = False,
         **kwargs: Any,
     ) -> None:
         """
-        Initialize a TiDBVector object.
+        Initialize a TiDB Vector Store object.
 
         Args:
             connection_string (str): The connection string for the TiDB database.
                 format: "mysql+pymysql://root@34.212.137.91:4000/test".
-            collection_name (str, optional): The name of the collection. Defaults to llama_index_tidb_vector.
+            vectorstore_name (str, optional): The name of the tidb vector store.
+                Defaults to llama_index_tidb_vector.
             engine_args (Optional[Dict[str, Any]], optional): Additional engine arguments. Defaults to None.
-            pre_delete_collection (bool, optional): Whether to delete the collection before creating a new one. Defaults to False.
+            drop_existing_vectorstore (bool, optional): Whether to delete the tidb vector store before creating a new one.
+                Defaults to False.
             **kwargs (Any): Additional keyword arguments.
 
         Raises:
@@ -53,18 +55,18 @@ class TiDBVector(BasePydanticVectorStore):
         self._connection_string = connection_string
         self._engine_args = engine_args or {}
         try:
-            from tidb_vector.integrations.vectorstore import TiDBCollection
+            from tidb_vector.integrations import VectorStore as TiDBVectorStore
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
                 "Please install it with `pip install tidbvec`."
             )
 
-        self._tidb = TiDBCollection(
+        self._tidb = TiDBVectorStore(
             connection_string=connection_string,
-            collection_name=collection_name,
+            table_name=vectorstore_name,
             engine_args=engine_args,
-            pre_delete_collection=pre_delete_collection,
+            drop_existing_table=drop_existing_vectorstore,
             **kwargs,
         )
 
@@ -73,11 +75,11 @@ class TiDBVector(BasePydanticVectorStore):
         """Get client."""
         return self._tidb
 
-    def drop_collection(self) -> None:
+    def drop_vectorstore(self) -> None:
         """
-        Drop the collection from the TiDB database.
+        Drop the tidb vector store from the TiDB database.
         """
-        self._tidb.drop_collection()
+        self._tidb.drop_table()
 
     @classmethod
     def class_name(cls) -> str:

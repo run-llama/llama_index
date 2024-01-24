@@ -7,10 +7,10 @@ from typing import List
 import pytest
 
 try:
-    from tidb_vector.integrations.vectorstore import TiDBCollection  # noqa
+    from tidb_vector.integrations import VectorStore  # noqa
 
-    COLLECTION_NAME = "tidb_vector_index_test"
-    CONNECTION_STRING = os.getenv("TEST_TiDB_VECTOR_URL", "")
+    VECTORSTORE_NAME = "llama_index_tidb_vector_test"
+    CONNECTION_STRING = os.getenv("TEST_TiDB_CONNECTION_URL", "")
 
     if CONNECTION_STRING == "":
         raise OSError("TEST_TiDB_URL environment variable is not set")
@@ -82,9 +82,9 @@ def node_embeddings() -> list[TextNode]:
 def test_search(node_embeddings: List[TextNode]) -> None:
     """Test end to end construction and search."""
     tidbvec = TiDBVector(
-        collection_name=COLLECTION_NAME,
+        vectorstore_name=VECTORSTORE_NAME,
         connection_string=CONNECTION_STRING,
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
     )
 
     # Add nodes to the tidb vector
@@ -94,7 +94,7 @@ def test_search(node_embeddings: List[TextNode]) -> None:
     q = VectorStoreQuery(query_embedding=text_to_embedding("foo"), similarity_top_k=1)
 
     result = tidbvec.query(q)
-    tidbvec.drop_collection()
+    tidbvec.drop_vectorstore()
     assert result.nodes is not None and len(result.nodes) == 1
     assert (
         result.nodes[0].get_content(metadata_mode=MetadataMode.NONE)
@@ -106,11 +106,11 @@ def test_search(node_embeddings: List[TextNode]) -> None:
 
 @pytest.mark.skipif(not tidb_available, reason="tidb is not available")
 def test_delete_doc(node_embeddings: List[TextNode]) -> None:
-    """Test delete document from TiDB Vector."""
+    """Test delete document from TiDB Vector Store."""
     tidbvec = TiDBVector(
-        collection_name=COLLECTION_NAME,
+        vectorstore_name=VECTORSTORE_NAME,
         connection_string=CONNECTION_STRING,
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
     )
 
     # Add nodes to the tidb vector
@@ -135,7 +135,7 @@ def test_delete_doc(node_embeddings: List[TextNode]) -> None:
     q = VectorStoreQuery(query_embedding=text_to_embedding("foo"), similarity_top_k=3)
 
     result = tidbvec.query(q)
-    tidbvec.drop_collection()
+    tidbvec.drop_vectorstore()
     assert result.nodes is not None and len(result.nodes) == 1
     assert (
         result.nodes[0].get_content(metadata_mode=MetadataMode.NONE)
@@ -151,9 +151,9 @@ def test_delete_doc(node_embeddings: List[TextNode]) -> None:
 def test_search_with_filter(node_embeddings: List[TextNode]) -> None:
     """Test end to end construction and search with filter."""
     tidbvec = TiDBVector(
-        collection_name=COLLECTION_NAME,
+        vectorstore_name=VECTORSTORE_NAME,
         connection_string=CONNECTION_STRING,
-        pre_delete_collection=True,
+        drop_existing_vectorstore=True,
     )
 
     # Add nodes to the tidb vector
@@ -209,7 +209,7 @@ def test_search_with_filter(node_embeddings: List[TextNode]) -> None:
     )
 
     result = tidbvec.query(q)
-    tidbvec.drop_collection()
+    tidbvec.drop_vectorstore()
     assert result.nodes is not None and len(result.nodes) == 1
     assert (
         result.nodes[0].get_content(metadata_mode=MetadataMode.NONE)
