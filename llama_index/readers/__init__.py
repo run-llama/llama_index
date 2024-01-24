@@ -46,6 +46,7 @@ from llama_index.readers.slack import SlackReader
 from llama_index.readers.steamship.file_reader import SteamshipFileReader
 from llama_index.readers.string_iterable import StringIterableReader
 from llama_index.readers.twitter import TwitterTweetReader
+from llama_index.readers.txtai import TxtaiReader
 from llama_index.readers.weaviate.reader import WeaviateReader
 from llama_index.readers.web import (
     BeautifulSoupWebReader,
@@ -77,6 +78,7 @@ __all__ = [
     "ChromaReader",
     "DeepLakeReader",
     "FaissReader",
+    "TxtaiReader",
     "MyScaleReader",
     "Document",
     "StringIterableReader",

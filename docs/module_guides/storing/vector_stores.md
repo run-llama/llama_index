@@ -27,6 +27,7 @@ We are actively adding more integrations and improving feature coverage for each
 | DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
 | Elasticsearch            | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | FAISS                    | in-memory           |                    |               |        |                 |       |
+| txtai                    | in-memory           |                    |               |        |                 |       |
 | Jaguar                   | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 | LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Lantern                  | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
