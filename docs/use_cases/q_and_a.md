@@ -33,4 +33,4 @@ Q&A has all sorts of sub-types, such as:
 
 ## Further examples
 
-For further examples of Q&A use cases, see our [Q&A section in Putting it All Together](/understanding/putting_it_all_together/q_and_a.html).
+For further examples of Q&A use cases, see our [Q&A section in Putting it All Together](/understanding/putting_it_all_together/q_and_a.md).
