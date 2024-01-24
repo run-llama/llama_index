@@ -4,9 +4,9 @@ from llama_index.storage.index_store.postgres_index_store import PostgresIndexSt
 from llama_index.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 try:
-    import docker
+    import sqlalchemy
 except ImportError:
-    docker = None  # type: ignore
+    sqlalchemy = None  # type: ignore
 
 
 @pytest.fixture()
@@ -14,7 +14,7 @@ def postgres_indexstore(postgres_kvstore: PostgresKVStore) -> PostgresIndexStore
     return PostgresIndexStore(postgres_kvstore=postgres_kvstore)
 
 
-@pytest.mark.skipif(docker is None, reason="docker not installed")
+@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
 def test_postgres_index_store(postgres_indexstore: PostgresIndexStore) -> None:
     index_struct = IndexGraph()
     index_store = postgres_indexstore

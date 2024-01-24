@@ -2,12 +2,12 @@ import pytest
 from llama_index.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 try:
-    import docker
+    import sqlalchemy
 except ImportError:
-    docker = None  # type: ignore
+    sqlalchemy = None  # type: ignore
 
 
-@pytest.mark.skipif(docker is None, reason="docker not installed")
+@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
 def test_kvstore_basic(postgres_kvstore: PostgresKVStore) -> None:
     test_key = "test_key_basic"
     test_blob = {"test_obj_key": "test_obj_val"}
@@ -22,7 +22,7 @@ def test_kvstore_basic(postgres_kvstore: PostgresKVStore) -> None:
     assert deleted
 
 
-@pytest.mark.skipif(docker is None, reason="docker not installed")
+@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
 @pytest.mark.asyncio()
 async def test_kvstore_async_basic(postgres_kvstore: PostgresKVStore) -> None:
     test_key = "test_key_basic"
@@ -38,7 +38,7 @@ async def test_kvstore_async_basic(postgres_kvstore: PostgresKVStore) -> None:
     assert deleted
 
 
-@pytest.mark.skipif(docker is None, reason="docker not installed")
+@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
 def test_kvstore_delete(postgres_kvstore: PostgresKVStore) -> None:
     test_key = "test_key_delete"
     test_blob = {"test_obj_key": "test_obj_val"}
@@ -51,7 +51,7 @@ def test_kvstore_delete(postgres_kvstore: PostgresKVStore) -> None:
     assert blob is None
 
 
-@pytest.mark.skipif(docker is None, reason="docker not installed")
+@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
 @pytest.mark.asyncio()
 async def test_kvstore_adelete(postgres_kvstore: PostgresKVStore) -> None:
     test_key = "test_key_delete"
@@ -65,7 +65,7 @@ async def test_kvstore_adelete(postgres_kvstore: PostgresKVStore) -> None:
     assert blob is None
 
 
-@pytest.mark.skipif(docker is None, reason="docker not installed")
+@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
 def test_kvstore_getall(postgres_kvstore: PostgresKVStore) -> None:
     test_key_1 = "test_key_1"
     test_blob_1 = {"test_obj_key": "test_obj_val"}
@@ -85,7 +85,7 @@ def test_kvstore_getall(postgres_kvstore: PostgresKVStore) -> None:
     postgres_kvstore.delete(test_key_2)
 
 
-@pytest.mark.skipif(docker is None, reason="docker not installed")
+@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
 @pytest.mark.asyncio()
 async def test_kvstore_agetall(postgres_kvstore: PostgresKVStore) -> None:
     test_key_1 = "test_key_1"
@@ -106,7 +106,7 @@ async def test_kvstore_agetall(postgres_kvstore: PostgresKVStore) -> None:
     await postgres_kvstore.adelete(test_key_2)
 
 
-@pytest.mark.skipif(docker is None, reason="docker not installed")
+@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
 @pytest.mark.asyncio()
 async def test_kvstore_putall(postgres_kvstore: PostgresKVStore) -> None:
     test_key = "test_key_putall_1"

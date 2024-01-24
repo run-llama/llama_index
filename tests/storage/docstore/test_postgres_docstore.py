@@ -6,9 +6,9 @@ from llama_index.storage.docstore.postgres_docstore import PostgresDocumentStore
 from llama_index.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 try:
-    import docker
+    import sqlalchemy
 except ImportError:
-    docker = None  # type: ignore
+    sqlalchemy = None  # type: ignore
 
 
 @pytest.fixture()
@@ -24,7 +24,7 @@ def postgres_docstore(postgres_kvstore: PostgresKVStore) -> PostgresDocumentStor
     return PostgresDocumentStore(postgres_kvstore=postgres_kvstore)
 
 
-@pytest.mark.skipif(docker is None, reason="docker not installed")
+@pytest.mark.skipif(sqlalchemy is None, reason="dosqlalchemycker not installed")
 def test_postgres_docstore(
     postgres_docstore: PostgresDocumentStore, documents: List[Document]
 ) -> None:
@@ -51,7 +51,7 @@ def test_postgres_docstore(
     assert len(ds.docs) == 1
 
 
-@pytest.mark.skipif(docker is None, reason="docker not installed")
+@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
 def test_postgres_docstore_hash(
     postgres_docstore: PostgresDocumentStore, documents: List[Document]
 ) -> None:
