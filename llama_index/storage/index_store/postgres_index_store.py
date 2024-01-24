@@ -1,18 +1,15 @@
 from typing import Optional
 
-from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
-from llama_index.storage.docstore.types import DEFAULT_BATCH_SIZE
+from llama_index.storage.index_store.keyval_index_store import KVIndexStore
 from llama_index.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 
-class PostgresDocumentStore(KVDocumentStore):
-    """Mongo Document (Node) store.
-
-    A MongoDB store for Document and Node objects.
+class PostgresIndexStore(KVIndexStore):
+    """Mongo Index store.
 
     Args:
         mongo_kvstore (MongoDBKVStore): MongoDB key-value store
-        namespace (str): namespace for the docstore
+        namespace (str): namespace for the index store
 
     """
 
@@ -20,23 +17,22 @@ class PostgresDocumentStore(KVDocumentStore):
         self,
         postgres_kvstore: PostgresKVStore,
         namespace: Optional[str] = None,
-        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        """Init a PostgresDocumentStore."""
-        super().__init__(postgres_kvstore, namespace=namespace, batch_size=batch_size)
+        """Init a MongoIndexStore."""
+        super().__init__(postgres_kvstore, namespace=namespace)
 
     @classmethod
     def from_uri(
         cls,
         uri: str,
         namespace: Optional[str] = None,
-        table_name: str = "docstore",
+        table_name: str = "indexstore",
         schema_name: str = "public",
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
-    ) -> "PostgresDocumentStore":
-        """Load a PostgresDocumentStore from a Postgres URI."""
+    ) -> "PostgresIndexStore":
+        """Load a PostgresIndexStore from a PostgresURI."""
         postgres_kvstore = PostgresKVStore.from_uri(
             uri=uri,
             table_name=table_name,
@@ -56,13 +52,13 @@ class PostgresDocumentStore(KVDocumentStore):
         user: Optional[str] = None,
         password: Optional[str] = None,
         namespace: Optional[str] = None,
-        table_name: str = "docstore",
+        table_name: str = "indexstore",
         schema_name: str = "public",
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
-    ) -> "PostgresDocumentStore":
-        """Load a PostgresDocumentStore from a Postgres host and port."""
+    ) -> "PostgresIndexStore":
+        """Load a PostgresIndexStore from a Postgres host and port."""
         postgres_kvstore = PostgresKVStore.from_params(
             host=host,
             port=port,
