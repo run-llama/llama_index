@@ -97,11 +97,11 @@ class RagCLI(BaseModel):
         query_component = FnComponent(
             fn=query_input, output_key="output", req_params={"query_str"}
         )
-        retriever = VectorStoreIndex.from_vector_store(
-            ingestion_pipeline.vector_store
-        ).as_retriever(similarity_top_k=8)
         llm = cast(LLM, values["llm"])
         service_context = ServiceContext.from_defaults(llm=llm)
+        retriever = VectorStoreIndex.from_vector_store(
+            ingestion_pipeline.vector_store, service_context=service_context
+        ).as_retriever(similarity_top_k=8)
         response_synthesizer = CompactAndRefine(
             service_context=service_context, streaming=True, verbose=verbose
         )
@@ -271,7 +271,10 @@ class RagCLI(BaseModel):
         subparsers = parser.add_subparsers(
             title="commands", dest="command", required=True
         )
-        self.add_parser_args(subparsers, lambda: self)
+        llamarag_parser = subparsers.add_parser(
+            "rag", help="Ask a question to a document / a directory of documents."
+        )
+        self.add_parser_args(llamarag_parser, lambda: self)
         # Parse the command-line arguments
         args = parser.parse_args()
 

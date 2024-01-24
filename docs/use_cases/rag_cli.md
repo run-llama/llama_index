@@ -4,7 +4,9 @@ One common use case is chatting with an LLM about files you have saved locally o
 
 We have written a CLI tool do help you do just that very easily! You can point the rag CLI tool to a set of files you've saved locally, and it will ingest those files into a local vector database that is then used for a Chat Q&A repl within your terminal.
 
-By default, this tool uses OpenAI for the embeddings & LLM as well as a local Chroma Vector DB instance. **Warning**: this means the local data you ingest with this tool _will_ be sent to OpenAI's API.
+By default, this tool uses OpenAI for the embeddings & LLM as well as a local Chroma Vector DB instance. **Warning**: this means that, by default, the local data you ingest with this tool _will_ be sent to OpenAI's API.
+
+However, you do have the ability to customize the models and databases used in this tool. This includes the possibility of running all model execution locally! See the **Customization** section below.
 
 ## Setup
 
@@ -71,9 +73,14 @@ To create your own custom rag CLI tool, you can simply create an script that ins
 Here's some high-level code to show the general setup:
 
 ```python
+#!/path/to/your/virtualenv/bin/python
+import os
 from llama_index.ingestion import IngestionPipeline, IngestionCache
 from llama_index.query_pipeline.query import QueryPipeline
 from llama_index.storage.docstore import SimpleDocumentStore
+
+# optional, set any API keys your script may need (perhaps using python-dotenv library instead)
+os.environ["OPENAI_API_KEY"] = "sk-xxx"
 
 docstore = SimpleDocumentStore()
 
@@ -107,3 +114,12 @@ rag_cli_instance = RagCLI(
 if __name__ == "__main__":
     rag_cli_instance.cli()
 ```
+
+From there, you're just a few steps away from being able to use your custom CLI script:
+
+1. Make sure to replace the python path at the top to the one your virtual environment is using _(run `$ which python` while your virtual environment is activated)_
+
+1. Let's say you saved your file at `/path/to/your/script/my_rag_cli.py`. From there, you can simply modify your shell's configuration file _(like `.bashrc` or `.zshrc`)_ with a line like `export PATH="/path/to/your/script:$PATH"`.
+1. After that do `chmod +x my_rag_cli.py`
+1. That's it! You can now just open a new terminal session and run `my_rag_cli.py -h`. You can now run the script with the same parameters but using your custom code configurations!
+   - Note: you can remove the `.py` file extension from your `my_rag_cli.py` file if you just want to run the command as `my_rag_cli --chat`
