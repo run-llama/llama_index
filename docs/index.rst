@@ -108,12 +108,11 @@ Associated projects
    :caption: Use Cases
    :hidden:
 
-   use_cases/q_and_a.md
+   use_cases/q_and_a/root.md
    use_cases/chatbots.md
    use_cases/agents.md
    use_cases/extraction.md
    use_cases/multimodal.md
-   use_cases/rag_cli.md
 
 .. toctree::
    :maxdepth: 2
