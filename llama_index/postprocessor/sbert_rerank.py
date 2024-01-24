@@ -10,8 +10,16 @@ DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH = 512
 
 
 class SentenceTransformerRerank(BaseNodePostprocessor):
-    model: str = Field(ddescription="Sentence transformer model name.")
+    model: str = Field(description="Sentence transformer model name.")
     top_n: int = Field(description="Number of nodes to return sorted by score.")
+    device: str = Field(
+        default="cpu",
+        description="Device to use for sentence transformer.",
+    )
+    keep_retrieval_score: bool = Field(
+        default=False,
+        description="Whether to keep the retrieval score in metadata.",
+    )
     _model: Any = PrivateAttr()
 
     def __init__(
