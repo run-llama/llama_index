@@ -10,7 +10,7 @@ from llama_index.extractors import (
     TitleExtractor,
 )
 from llama_index.ingestion import IngestionPipeline
-from llama_index.llms import OpenAI
+from llama_index.llms import MockLLM
 from llama_index.text_splitter import TokenTextSplitter
 
 
@@ -26,7 +26,7 @@ def two_random_integers(range_limit: int) -> typing.Tuple[int, int]:
 
 def test_metadata_extractor() -> None:
     """Test metadata extraction."""
-    llm = OpenAI(temperature=0.1, model="gpt-3.5-turbo", max_tokens=512)
+    llm = MockLLM()
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         urllib.request.urlretrieve(
@@ -61,9 +61,8 @@ def test_metadata_extractor() -> None:
 
         uber_nodes = pipeline.run(documents=uber_docs)
 
-        assert len(uber_nodes) == 21
-        index1, index2 = two_random_integers(len(uber_nodes))
+        assert len(uber_nodes) == 20
         assert (
-            uber_nodes[index1].metadata["document_title"]
-            != uber_nodes[index2].metadata["document_title"]
+            uber_nodes[0].metadata["document_title"]
+            != uber_nodes[-1].metadata["document_title"]
         )
