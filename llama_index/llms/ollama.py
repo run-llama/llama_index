@@ -87,7 +87,7 @@ class Ollama(CustomLLM):
             "model": self.model,
             "messages": [
                 {
-                    "role": message.role,
+                    "role": message.role.value,
                     "content": message.content,
                     **message.additional_kwargs,
                 }
@@ -126,7 +126,7 @@ class Ollama(CustomLLM):
             "model": self.model,
             "messages": [
                 {
-                    "role": message.role,
+                    "role": message.role.value,
                     "content": message.content,
                     **message.additional_kwargs,
                 }

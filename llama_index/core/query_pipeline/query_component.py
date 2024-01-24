@@ -213,6 +213,17 @@ class QueryComponent(BaseModel):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
 
+    @property
+    def sub_query_components(self) -> List["QueryComponent"]:
+        """Get sub query components.
+
+        Certain query components may have sub query components, e.g. a
+        query pipeline will have sub query components, and so will
+        an IfElseComponent.
+
+        """
+        return []
+
 
 class CustomQueryComponent(QueryComponent):
     """Custom query component."""

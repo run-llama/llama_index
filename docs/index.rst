@@ -113,6 +113,7 @@ Associated projects
    use_cases/agents.md
    use_cases/extraction.md
    use_cases/multimodal.md
+   use_cases/rag_cli.md
 
 .. toctree::
    :maxdepth: 2

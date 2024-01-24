@@ -199,14 +199,16 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
         return pipeline_ids
 
     def create_pipelines(
-        self, metadata_schema: Optional[Dict] = None, chunk_size: Optional[int] = None
+        self, metadata_schema: Optional[Dict] = None, **kwargs: str
     ) -> dict:
         """Create INGESTION, SEARCH, DELETION pipelines using self.collection_name.
 
         Args:
             metadata_schema (Dict=None): A dictionary of metadata schema, defaults to None. Use metadata name as key and the corresponding data type as value: {'field_name': 'field_type'}.
                 Only support the following values as the field type: 'Bool', 'Int8', 'Int16', 'Int32', 'Int64', 'Float', 'Double', 'VarChar'.
-            chunk_size (int=None): An integer within range [20, 500] to customize chunk size, defaults to None.
+            kwargs: optional parameters to create ingestion pipeline
+                - chunkSize: An integer within range [20, 500] to customize chunk size.
+                - language: The language of documents. Available options: "ENGLISH", "CHINESE".
 
         Returns:
             A dictionary of pipeline ids for INGESTION, SEARCH, and DELETION pipelines.
@@ -229,21 +231,13 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
             )
 
         params_dict = {}
-        if chunk_size:
-            index_doc_func = {
-                "name": "index_my_doc",
-                "action": "INDEX_DOC",
-                "inputField": "doc_url",
-                "language": "ENGLISH",
-                "chunkSize": chunk_size,
-            }
-        else:
-            index_doc_func = {
-                "name": "index_my_doc",
-                "action": "INDEX_DOC",
-                "inputField": "doc_url",
-                "language": "ENGLISH",
-            }
+        index_doc_func = {
+            "name": "index_my_doc",
+            "action": "INDEX_DOC",
+            "inputField": "doc_url",
+            "language": "ENGLISH",
+        }
+        index_doc_func.update(kwargs)
         functions = [index_doc_func]
         if metadata_schema:
             for k, v in metadata_schema.items():

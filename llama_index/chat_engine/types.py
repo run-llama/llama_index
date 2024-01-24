@@ -233,6 +233,19 @@ class BaseChatEngine(ABC):
             print(f"Assistant: {response}\n")
             message = input("Human: ")
 
+    def streaming_chat_repl(self) -> None:
+        """Enter interactive chat REPL with streaming responses."""
+        print("===== Entering Chat REPL =====")
+        print('Type "exit" to exit.\n')
+        self.reset()
+        message = input("Human: ")
+        while message != "exit":
+            response = self.stream_chat(message)
+            print("Assistant: ", end="", flush=True)
+            response.print_response_stream()
+            print("\n")
+            message = input("Human: ")
+
     @property
     @abstractmethod
     def chat_history(self) -> List[ChatMessage]:

@@ -222,6 +222,14 @@ class QueryPipeline(QueryComponent):
             raise ValueError(f"Module {src} does not exist in pipeline.")
         self.dag.add_edge(src, dest, src_key=src_key, dest_key=dest_key)
 
+    def get_root_keys(self) -> List[str]:
+        """Get root keys."""
+        return self._get_root_keys()
+
+    def get_leaf_keys(self) -> List[str]:
+        """Get leaf keys."""
+        return self._get_leaf_keys()
+
     def _get_root_keys(self) -> List[str]:
         """Get root keys."""
         return [v for v, d in self.dag.in_degree() if d == 0]
@@ -250,8 +258,13 @@ class QueryPipeline(QueryComponent):
         callback_manager = callback_manager or self.callback_manager
         self.set_callback_manager(callback_manager)
         with self.callback_manager.as_trace("query"):
+            # try to get query payload
+            try:
+                query_payload = json.dumps(kwargs)
+            except TypeError:
+                query_payload = json.dumps(str(kwargs))
             with self.callback_manager.event(
-                CBEventType.QUERY, payload={EventPayload.QUERY_STR: json.dumps(kwargs)}
+                CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_payload}
             ) as query_event:
                 return self._run(
                     *args, return_values_direct=return_values_direct, **kwargs
@@ -284,8 +297,12 @@ class QueryPipeline(QueryComponent):
         callback_manager = callback_manager or self.callback_manager
         self.set_callback_manager(callback_manager)
         with self.callback_manager.as_trace("query"):
+            try:
+                query_payload = json.dumps(kwargs)
+            except TypeError:
+                query_payload = json.dumps(str(kwargs))
             with self.callback_manager.event(
-                CBEventType.QUERY, payload={EventPayload.QUERY_STR: json.dumps(kwargs)}
+                CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_payload}
             ) as query_event:
                 return await self._arun(
                     *args, return_values_direct=return_values_direct, **kwargs
@@ -532,7 +549,19 @@ class QueryPipeline(QueryComponent):
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
+        raise NotImplementedError
+
+    def validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs."""
         return input
+
+    def _validate_component_outputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        raise NotImplementedError
+
+    def validate_component_outputs(self, output: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component outputs."""
+        # NOTE: we override this to do nothing
+        return output
 
     def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""
@@ -561,3 +590,8 @@ class QueryPipeline(QueryComponent):
             raise ValueError("Only one leaf is supported.")
         leaf_module = self.module_dict[leaf_keys[0]]
         return leaf_module.output_keys
+
+    @property
+    def sub_query_components(self) -> List[QueryComponent]:
+        """Sub query components."""
+        return list(self.module_dict.values())
