@@ -49,7 +49,7 @@ The core retrieval evaluation steps revolve around the following:
 
 We also integrate with community evaluation tools.
 
-- [DeepEval](/docs/community/integrations/deepeval.md)
+- [DeepEval](/community/integrations/deepeval.md)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
 
 ## Usage Pattern
