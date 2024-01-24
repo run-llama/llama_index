@@ -3,7 +3,7 @@ import os
 from argparse import ArgumentParser
 from glob import iglob
 from pathlib import Path
-from typing import Any, Dict, Optional, Union, cast
+from typing import Any, Callable, Dict, Optional, Union, cast
 
 from llama_index import (
     Response,
@@ -208,7 +208,12 @@ class RagCLI(BaseModel):
         chat_engine = cast(CondenseQuestionChatEngine, self.chat_engine)
         chat_engine.streaming_chat_repl()
 
-    def add_parser_args(self, parser: Union[ArgumentParser, Any]) -> None:
+    @classmethod
+    def add_parser_args(
+        cls,
+        parser: Union[ArgumentParser, Any],
+        instance_generator: Callable[[], "RagCLI"],
+    ) -> None:
         parser.add_argument(
             "-q",
             "--question",
@@ -244,7 +249,7 @@ class RagCLI(BaseModel):
             action="store_true",
         )
         parser.set_defaults(
-            func=lambda args: asyncio.run(self.handle_cli(**vars(args)))
+            func=lambda args: asyncio.run(instance_generator().handle_cli(**vars(args)))
         )
 
     def cli(self) -> None:
@@ -255,7 +260,7 @@ class RagCLI(BaseModel):
         subparsers = parser.add_subparsers(
             title="commands", dest="command", required=True
         )
-        self.add_parser_args(subparsers)
+        self.add_parser_args(subparsers, lambda: self)
         # Parse the command-line arguments
         args = parser.parse_args()
 

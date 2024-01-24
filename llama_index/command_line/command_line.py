@@ -66,6 +66,7 @@ def default_rag_cli() -> RagCLI:
         chroma_collection=chroma_collection, persist_dir=persist_dir
     )
     docstore = SimpleDocumentStore()
+
     ingestion_pipeline = IngestionPipeline(
         transformations=[SentenceSplitter(), OpenAIEmbedding()],
         vector_store=vector_store,
@@ -91,11 +92,10 @@ def main() -> None:
     subparsers = parser.add_subparsers(title="commands", dest="command", required=True)
 
     # llama rag command
-    rag_cli = default_rag_cli()
     llamarag_parser = subparsers.add_parser(
         "rag", help="Ask a question to a document / a directory of documents."
     )
-    rag_cli.add_parser_args(llamarag_parser)
+    RagCLI.add_parser_args(llamarag_parser, default_rag_cli)
 
     # download llamapacks command
     llamapack_parser = subparsers.add_parser(
