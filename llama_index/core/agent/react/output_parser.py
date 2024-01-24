@@ -5,7 +5,7 @@ import json
 import re
 from typing import Tuple
 
-from llama_index.agent.react.types import (
+from llama_index.core.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
     ResponseReasoningStep,

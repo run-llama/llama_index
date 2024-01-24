@@ -4,7 +4,7 @@ import logging
 from abc import abstractmethod
 from typing import List, Optional, Sequence
 
-from llama_index.agent.react.types import BaseReasoningStep, ObservationReasoningStep
+from llama_index.core.agent.react.types import BaseReasoningStep, ObservationReasoningStep
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.tools import BaseTool
@@ -28,7 +28,6 @@ class ReActChatEngineFormatter:
         chat_history: List[ChatMessage],
         current_reasoning: Optional[List[BaseReasoningStep]] = None,
     ) -> List[ChatMessage]:
-        p
         current_reasoning = current_reasoning or []
 
         fmt_sys_header = self.system_header.format(data_desc=data_desc)

@@ -8,7 +8,7 @@ from llama_index.agent.react.prompts import (
     CONTEXT_REACT_CHAT_SYSTEM_HEADER,
     REACT_CHAT_SYSTEM_HEADER,
 )
-from llama_index.agent.react.types import BaseReasoningStep, ObservationReasoningStep
+from llama_index.core.agent.react.types import BaseReasoningStep, ObservationReasoningStep
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.tools import BaseTool

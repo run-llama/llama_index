@@ -12,8 +12,8 @@ from typing import (
 )
 
 from llama_index.agent.react.formatter import ReActChatFormatter
-from llama_index.agent.react.output_parser import ReActOutputParser
-from llama_index.agent.react.types import (
+from llama_index.core.agent.react.output_parser import ReActOutputParser
+from llama_index.core.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
     ObservationReasoningStep,

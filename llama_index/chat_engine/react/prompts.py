@@ -22,7 +22,8 @@ To answer the question, please use the following format if you need to perform s
 
 ```
 Thought: I need to perform search to help me answer the question.
-Search Input: the input to the search tool.
+Action: search
+Action Input: the input to the search tool.
 ```
 
 Please ALWAYS start with a Thought.

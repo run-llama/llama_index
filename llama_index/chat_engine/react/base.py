@@ -31,8 +31,8 @@ from llama_index.chat_engine.types import (
 from llama_index.utils import print_text, unit_generator
 
 # TODO: migrate
-from llama_index.agent.react.output_parser import ReActOutputParser
-from llama_index.agent.react.types import (
+from llama_index.core.agent.react.output_parser import ReActOutputParser
+from llama_index.core.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
     ObservationReasoningStep,
@@ -40,6 +40,29 @@ from llama_index.agent.react.types import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+
+class StreamToggle:
+    """Context manager to toggle streaming on a query engine."""
+    def __init__(
+        self,
+        query_engine: BaseQueryEngine,
+        is_streaming: bool,
+    ) -> None:
+        self._query_engine = query_engine
+        self._is_streaming = is_streaming
+
+    def __enter__(self) -> None:
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            self._query_engine._response_synthesizer._streaming = self._is_streaming
+            
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            self._query_engine._response_synthesizer._streaming = not self._is_streaming
 
 
 class ReActChatEngine(BaseChatEngine):
@@ -107,36 +130,6 @@ class ReActChatEngine(BaseChatEngine):
             callback_manager=service_context.callback_manager,
         )
 
-    def _condense_question(
-        self, chat_history: List[ChatMessage], last_message: str
-    ) -> str:
-        """
-        Generate standalone question from conversation context and last message.
-        """
-        chat_history_str = messages_to_history_str(chat_history)
-        logger.debug(chat_history_str)
-
-        return self._llm.predict(
-            self._condense_question_prompt,
-            question=last_message,
-            chat_history=chat_history_str,
-        )
-
-    async def _acondense_question(
-        self, chat_history: List[ChatMessage], last_message: str
-    ) -> str:
-        """
-        Generate standalone question from conversation context and last message.
-        """
-        chat_history_str = messages_to_history_str(chat_history)
-        logger.debug(chat_history_str)
-
-        return await self._llm.apredict(
-            self._condense_question_prompt,
-            question=last_message,
-            chat_history=chat_history_str,
-        )
-
     def _get_tool_output_from_response(
         self, query: str, response: RESPONSE_TYPE
     ) -> ToolOutput:
@@ -157,7 +150,7 @@ class ReActChatEngine(BaseChatEngine):
 
     def _extract_reasoning_step(
         self, output: ChatResponse, is_streaming: bool = False
-    ) -> Tuple[str, List[BaseReasoningStep], bool]:
+    ) -> Tuple[BaseReasoningStep, bool]:
         """
         Extracts the reasoning step from the given output.
 
@@ -169,35 +162,69 @@ class ReActChatEngine(BaseChatEngine):
         if output.message.content is None:
             raise ValueError("Got empty message.")
         message_content = output.message.content
-        current_reasoning = []
         try:
             reasoning_step = self._output_parser.parse(message_content, is_streaming)
         except BaseException as exc:
             raise ValueError(f"Could not parse output: {message_content}") from exc
         if self._verbose:
             print_text(f"{reasoning_step.get_content()}\n", color="pink")
-        current_reasoning.append(reasoning_step)
-
         if reasoning_step.is_done:
-            return message_content, current_reasoning, True
+            return reasoning_step, True
 
         reasoning_step = cast(ActionReasoningStep, reasoning_step)
         if not isinstance(reasoning_step, ActionReasoningStep):
             raise ValueError(f"Expected ActionReasoningStep, got {reasoning_step}")
-
-        return message_content, current_reasoning, False
+        return reasoning_step, False
 
     def _run_step(
         self,
         message: str,
         chat_history: List[ChatMessage],
-    ) -> Any:
+        current_reasoning: List[BaseReasoningStep],
+    ) -> Tuple[List[BaseReasoningStep], List[ToolOutput], bool]:
         """Run a single reasoning step."""
         input_chat = self._react_chat_formatter.format(
             data_desc=self.data_desc,
+            chat_history=chat_history,
+            current_reasoning=current_reasoning
         )
         chat_response = self._llm.chat(input_chat)
+        reasoning_step, is_done = self._extract_reasoning_step(chat_response)
+        if is_done:
+            return [reasoning_step], [], True
+
+        response = self._query_engine.query(reasoning_step.action_input)
+        observation_step = ObservationReasoningStep(observation=str(response))
+
+        tool_output = self._get_tool_output_from_response(
+            message, response
+        )
+        return [reasoning_step, observation_step], [tool_output], False
         
+    async def _arun_step(
+        self,
+        message: str,
+        chat_history: List[ChatMessage],
+        current_reasoning: List[BaseReasoningStep],
+    ) -> Tuple[List[BaseReasoningStep], List[ToolOutput], bool]:
+        """Run a single reasoning step."""
+        input_chat = self._react_chat_formatter.format(
+            data_desc=self.data_desc,
+            chat_history=chat_history,
+            current_reasoning=current_reasoning
+        )
+        chat_response = await self._llm.achat(input_chat)
+        reasoning_step, is_done = self._extract_reasoning_step(chat_response)
+        if is_done:
+            return [reasoning_step], [], True
+
+        response = await self._query_engine.aquery(reasoning_step.action_input)
+        observation_step = ObservationReasoningStep(observation=str(response))
+
+        tool_output = self._get_tool_output_from_response(
+            message, response
+        )
+        return [reasoning_step, observation_step], [tool_output], False
 
     @trace_method("chat")
     def chat(
@@ -205,94 +232,83 @@ class ReActChatEngine(BaseChatEngine):
     ) -> AgentChatResponse:
         chat_history = chat_history or self._memory.get()
 
-        # Generate standalone question from conversation context and last message
-        condensed_question = self._condense_question(chat_history, message)
+        is_done = False
+        reasoning = []
+        sources = []
+        while not is_done:
+            cur_reasoning, cur_sources, is_done = self._run_step(
+                message, chat_history, reasoning
+            )
+            reasoning.extend(cur_reasoning)
+            sources.extend(cur_sources)
 
-        log_str = f"Querying with: {condensed_question}"
-        logger.info(log_str)
-        if self._verbose:
-            print(log_str)
+        # response must be last reasoning step
+        response = cast(ResponseReasoningStep, cur_reasoning[-1])
 
-        # TODO: right now, query engine uses class attribute to configure streaming,
-        #       we are moving towards separate streaming and non-streaming methods.
-        #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            is_streaming = self._query_engine._response_synthesizer._streaming
-            self._query_engine._response_synthesizer._streaming = False
-
-        # Query with standalone question
-        query_response = self._query_engine.query(condensed_question)
-
-        # NOTE: reset streaming flag
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            self._query_engine._response_synthesizer._streaming = is_streaming
-
-        tool_output = self._get_tool_output_from_response(
-            condensed_question, query_response
-        )
+        # TODO: figure out streaming (see below)
 
         # Record response
         self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
         self._memory.put(
-            ChatMessage(role=MessageRole.ASSISTANT, content=str(query_response))
+            ChatMessage(role=MessageRole.ASSISTANT, content=str(response))
         )
 
-        return AgentChatResponse(response=str(query_response), sources=[tool_output])
+        return AgentChatResponse(response=str(response), sources=sources)
+
 
     @trace_method("chat")
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._memory.get()
+        raise NotImplementedError("stream_chat is not implemented yet")
+        # chat_history = chat_history or self._memory.get()
 
-        # Generate standalone question from conversation context and last message
-        condensed_question = self._condense_question(chat_history, message)
+        # # Generate standalone question from conversation context and last message
+        # condensed_question = self._condense_question(chat_history, message)
 
-        log_str = f"Querying with: {condensed_question}"
-        logger.info(log_str)
-        if self._verbose:
-            print(log_str)
+        # log_str = f"Querying with: {condensed_question}"
+        # logger.info(log_str)
+        # if self._verbose:
+        #     print(log_str)
 
-        # TODO: right now, query engine uses class attribute to configure streaming,
-        #       we are moving towards separate streaming and non-streaming methods.
-        #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+        # # TODO: right now, query engine uses class attribute to configure streaming,
+        # #       we are moving towards separate streaming and non-streaming methods.
+        # #       In the meanwhile, use this hack to toggle streaming.
+        # from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            is_streaming = self._query_engine._response_synthesizer._streaming
-            self._query_engine._response_synthesizer._streaming = True
+        # if isinstance(self._query_engine, RetrieverQueryEngine):
+        #     is_streaming = self._query_engine._response_synthesizer._streaming
+        #     self._query_engine._response_synthesizer._streaming = True
 
-        # Query with standalone question
-        query_response = self._query_engine.query(condensed_question)
+        # # Query with standalone question
+        # query_response = self._query_engine.query(condensed_question)
 
-        # NOTE: reset streaming flag
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            self._query_engine._response_synthesizer._streaming = is_streaming
+        # # NOTE: reset streaming flag
+        # if isinstance(self._query_engine, RetrieverQueryEngine):
+        #     self._query_engine._response_synthesizer._streaming = is_streaming
 
-        tool_output = self._get_tool_output_from_response(
-            condensed_question, query_response
-        )
+        # tool_output = self._get_tool_output_from_response(
+        #     condensed_question, query_response
+        # )
 
-        # Record response
-        if (
-            isinstance(query_response, StreamingResponse)
-            and query_response.response_gen is not None
-        ):
-            # override the generator to include writing to chat history
-            self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
-            response = StreamingAgentChatResponse(
-                chat_stream=response_gen_from_query_engine(query_response.response_gen),
-                sources=[tool_output],
-            )
-            thread = Thread(
-                target=response.write_response_to_history, args=(self._memory,)
-            )
-            thread.start()
-        else:
-            raise ValueError("Streaming is not enabled. Please use chat() instead.")
-        return response
+        # # Record response
+        # if (
+        #     isinstance(query_response, StreamingResponse)
+        #     and query_response.response_gen is not None
+        # ):
+        #     # override the generator to include writing to chat history
+        #     self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
+        #     response = StreamingAgentChatResponse(
+        #         chat_stream=response_gen_from_query_engine(query_response.response_gen),
+        #         sources=[tool_output],
+        #     )
+        #     thread = Thread(
+        #         target=response.write_response_to_history, args=(self._memory,)
+        #     )
+        #     thread.start()
+        # else:
+        #     raise ValueError("Streaming is not enabled. Please use chat() instead.")
+        # return response
 
     @trace_method("chat")
     async def achat(
@@ -300,95 +316,81 @@ class ReActChatEngine(BaseChatEngine):
     ) -> AgentChatResponse:
         chat_history = chat_history or self._memory.get()
 
-        # Generate standalone question from conversation context and last message
-        condensed_question = await self._acondense_question(chat_history, message)
+        is_done = False
+        reasoning = []
+        sources = []
+        while not is_done:
+            cur_reasoning, cur_sources, is_done = await self._arun_step(
+                message, chat_history, reasoning
+            )
+            reasoning.extend(cur_reasoning)
+            sources.extend(cur_sources)
 
-        log_str = f"Querying with: {condensed_question}"
-        logger.info(log_str)
-        if self._verbose:
-            print(log_str)
-
-        # TODO: right now, query engine uses class attribute to configure streaming,
-        #       we are moving towards separate streaming and non-streaming methods.
-        #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            is_streaming = self._query_engine._response_synthesizer._streaming
-            self._query_engine._response_synthesizer._streaming = False
-
-        # Query with standalone question
-        query_response = await self._query_engine.aquery(condensed_question)
-
-        # NOTE: reset streaming flag
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            self._query_engine._response_synthesizer._streaming = is_streaming
-
-        tool_output = self._get_tool_output_from_response(
-            condensed_question, query_response
-        )
+        response = cast(ResponseReasoningStep, cur_reasoning[-1])
+        # TODO: figure out streaming (see below)
 
         # Record response
         self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
         self._memory.put(
-            ChatMessage(role=MessageRole.ASSISTANT, content=str(query_response))
+            ChatMessage(role=MessageRole.ASSISTANT, content=str(response))
         )
 
-        return AgentChatResponse(response=str(query_response), sources=[tool_output])
+        return AgentChatResponse(response=str(response), sources=sources)
 
     @trace_method("chat")
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._memory.get()
+        raise Exception
+        # chat_history = chat_history or self._memory.get()
 
-        # Generate standalone question from conversation context and last message
-        condensed_question = await self._acondense_question(chat_history, message)
+        # # Generate standalone question from conversation context and last message
+        # condensed_question = await self._acondense_question(chat_history, message)
 
-        log_str = f"Querying with: {condensed_question}"
-        logger.info(log_str)
-        if self._verbose:
-            print(log_str)
+        # log_str = f"Querying with: {condensed_question}"
+        # logger.info(log_str)
+        # if self._verbose:
+        #     print(log_str)
 
-        # TODO: right now, query engine uses class attribute to configure streaming,
-        #       we are moving towards separate streaming and non-streaming methods.
-        #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+        # # TODO: right now, query engine uses class attribute to configure streaming,
+        # #       we are moving towards separate streaming and non-streaming methods.
+        # #       In the meanwhile, use this hack to toggle streaming.
+        # from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            is_streaming = self._query_engine._response_synthesizer._streaming
-            self._query_engine._response_synthesizer._streaming = True
+        # if isinstance(self._query_engine, RetrieverQueryEngine):
+        #     is_streaming = self._query_engine._response_synthesizer._streaming
+        #     self._query_engine._response_synthesizer._streaming = True
 
-        # Query with standalone question
-        query_response = await self._query_engine.aquery(condensed_question)
+        # # Query with standalone question
+        # query_response = await self._query_engine.aquery(condensed_question)
 
-        # NOTE: reset streaming flag
-        if isinstance(self._query_engine, RetrieverQueryEngine):
-            self._query_engine._response_synthesizer._streaming = is_streaming
+        # # NOTE: reset streaming flag
+        # if isinstance(self._query_engine, RetrieverQueryEngine):
+        #     self._query_engine._response_synthesizer._streaming = is_streaming
 
-        tool_output = self._get_tool_output_from_response(
-            condensed_question, query_response
-        )
+        # tool_output = self._get_tool_output_from_response(
+        #     condensed_question, query_response
+        # )
 
-        # Record response
-        if (
-            isinstance(query_response, StreamingResponse)
-            and query_response.response_gen is not None
-        ):
-            # override the generator to include writing to chat history
-            # TODO: query engine does not support async generator yet
-            self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
-            response = StreamingAgentChatResponse(
-                chat_stream=response_gen_from_query_engine(query_response.response_gen),
-                sources=[tool_output],
-            )
-            thread = Thread(
-                target=response.write_response_to_history, args=(self._memory,)
-            )
-            thread.start()
-        else:
-            raise ValueError("Streaming is not enabled. Please use achat() instead.")
-        return response
+        # # Record response
+        # if (
+        #     isinstance(query_response, StreamingResponse)
+        #     and query_response.response_gen is not None
+        # ):
+        #     # override the generator to include writing to chat history
+        #     # TODO: query engine does not support async generator yet
+        #     self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
+        #     response = StreamingAgentChatResponse(
+        #         chat_stream=response_gen_from_query_engine(query_response.response_gen),
+        #         sources=[tool_output],
+        #     )
+        #     thread = Thread(
+        #         target=response.write_response_to_history, args=(self._memory,)
+        #     )
+        #     thread.start()
+        # else:
+        #     raise ValueError("Streaming is not enabled. Please use achat() instead.")
+        # return response
 
     def reset(self) -> None:
         # Clear chat history
