@@ -19,6 +19,7 @@ from llama_index.llms import LLM, OpenAI
 from llama_index.query_engine import CustomQueryEngine
 from llama_index.query_pipeline import FnComponent
 from llama_index.query_pipeline.query import QueryPipeline
+from llama_index.readers.base import BaseReader
 from llama_index.response_synthesizers import CompactAndRefine
 from llama_index.utils import get_cache_dir
 
@@ -70,6 +71,10 @@ class RagCLI(BaseModel):
     chat_engine: Optional[CondenseQuestionChatEngine] = Field(
         description="Chat engine to use for chatting.",
         default_factory=None,
+    )
+    file_extractor: Optional[Dict[str, BaseReader]] = Field(
+        description="File extractor to use for extracting text from files.",
+        default=None,
     )
 
     class Config:
@@ -169,10 +174,16 @@ class RagCLI(BaseModel):
             for _file in iglob(files, recursive=True):
                 _file = os.path.abspath(_file)
                 if os.path.isdir(_file):
-                    reader = SimpleDirectoryReader(input_dir=_file, filename_as_id=True)
+                    reader = SimpleDirectoryReader(
+                        input_dir=_file,
+                        filename_as_id=True,
+                        file_extractor=self.file_extractor,
+                    )
                 else:
                     reader = SimpleDirectoryReader(
-                        input_files=[_file], filename_as_id=True
+                        input_files=[_file],
+                        filename_as_id=True,
+                        file_extractor=self.file_extractor,
                     )
 
                 documents.extend(reader.load_data(show_progress=verbose))

@@ -52,6 +52,16 @@ Here are some high level steps to get you started:
    ```
 1. **Open a Chat REPL**: You can even open a chat interface within your terminal! Just run `llamaindex-cli rag --chat` and start asking questions about the files you've ingested.
 
+### Supported File Types
+
+Internally, the `rag` CLI tool uses the [SimpleDirectoryReader](/api/llama_index.readers.SimpleDirectoryReader.rst) to parse the raw files in your local filesystem into strings.
+
+This module has custom readers for a wide variety of file types. Some of those may require that you `pip install` another module that is needed for parsing that particular file type.
+
+If a file type is encountered with a file extension that the `SimpleDirectoryReader` does not have a custom reader for, it will just read the file as a plain text file.
+
+See the next section for information on how to add your own custom file readers + customize other aspects of the CLI tool!
+
 ## Customization
 
 The `rag` CLI tool is highly customizable! The tool is powered by stitching together the [`IngestionPipeline`](https://docs.llamaindex.ai/en/stable/module_guides/loading/ingestion_pipeline/root.html) & [`QueryPipeline`](https://docs.llamaindex.ai/en/stable/module_guides/querying/pipeline/root.html) modules within the [`RagCLI`](https://github.com/run-llama/llama_index/blob/main/llama_index/command_line/rag.py) module.
@@ -84,10 +94,14 @@ custom_query_pipeline = QueryPipeline()
 custom_query_pipeline.add_modules(...)
 custom_query_pipeline.add_link(...)
 
+# you can optionally specify your own custom readers to support additional file types.
+file_extractor = {".html": ...}
+
 rag_cli_instance = RagCLI(
     ingestion_pipeline=custom_ingestion_pipeline,
     llm=llm,  # optional
     query_pipeline=custom_query_pipeline,  # optional
+    file_extractor=file_extractor,  # optional
 )
 
 if __name__ == "__main__":
