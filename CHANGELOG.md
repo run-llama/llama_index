@@ -6,6 +6,7 @@
 
 - Added a RAG CLI utility (#10193)
 - Added a textai vector store (#10240)
+- Added a Postgresql based docstore and index store (#10233)
 
 ### Bug Fixes / Nits
 
