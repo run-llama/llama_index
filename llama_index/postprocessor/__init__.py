@@ -48,5 +48,5 @@ __all__ = [
     "LongLLMLinguaPostprocessor",
     "FlagEmbeddingReranker",
     "RankGPTRerank",
-    "BaseNodePostprocessor"
+    "BaseNodePostprocessor",
 ]
