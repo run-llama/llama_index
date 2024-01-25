@@ -1,4 +1,7 @@
+from typing import Dict, Union
+
 import pytest
+from docker.models.containers import Container
 from llama_index.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 try:
@@ -26,6 +29,15 @@ def test_kvstore_basic(postgres_kvstore: PostgresKVStore) -> None:
 
     deleted = postgres_kvstore.delete(test_key)
     assert deleted
+
+
+@pytest.mark.skipif(
+    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+)
+def test_from_uri(postgres_container: Dict[str, Union[str, Container]]) -> None:
+    kvstore = PostgresKVStore.from_uri(uri=postgres_container["connection_string"])
+    output = kvstore.get_all()
+    assert len(list(output.keys())) == 0
 
 
 @pytest.mark.skipif(
