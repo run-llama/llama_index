@@ -261,6 +261,13 @@ class OpenAIEmbedding(BaseEmbedding):
             "volumes of async API calls, setting this to false can improve stability."
         ),
     )
+    dimensions: Optional[int] = Field(
+        default=None,
+        description=(
+            "The number of dimensions on the output embedding vectors. "
+            "Works only with v3 embedding models."
+        ),
+    )
 
     _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
     _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
@@ -273,6 +280,7 @@ class OpenAIEmbedding(BaseEmbedding):
         mode: str = OpenAIEmbeddingMode.TEXT_SEARCH_MODE,
         model: str = OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002,
         embed_batch_size: int = 100,
+        dimensions: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
@@ -286,6 +294,8 @@ class OpenAIEmbedding(BaseEmbedding):
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
+        if dimensions is not None:
+            additional_kwargs["dimensions"] = dimensions
 
         api_key, api_base, api_version = resolve_openai_credentials(
             api_key=api_key,
@@ -304,6 +314,7 @@ class OpenAIEmbedding(BaseEmbedding):
 
         super().__init__(
             embed_batch_size=embed_batch_size,
+            dimensions=dimensions,
             callback_manager=callback_manager,
             model_name=model_name,
             additional_kwargs=additional_kwargs,
