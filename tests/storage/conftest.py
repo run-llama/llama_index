@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict, Generator
+from typing import Dict, Generator, Union
 
 import docker
 import pytest
@@ -45,7 +45,7 @@ def redis_kvstore() -> "RedisKVStore":
 
 
 @pytest.fixture(scope="module")
-def postgres_container() -> Generator[Dict[str, Any], None, None]:
+def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, None]:
     # Define PostgreSQL settings
     postgres_image = "postgres:latest"
     postgres_env = {
@@ -89,7 +89,7 @@ def postgres_container() -> Generator[Dict[str, Any], None, None]:
 
 @pytest.fixture()
 def postgres_kvstore(
-    postgres_container: Container,
+    postgres_container: Dict[str, Union[str, Container]],
 ) -> Generator[PostgresKVStore, None, None]:
     kvstore = None
     try:
