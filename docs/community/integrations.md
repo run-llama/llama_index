@@ -39,7 +39,6 @@ maxdepth: 1
 /module_guides/observability/observability.md
 integrations/graphsignal.md
 integrations/trulens.md
-integrations/deepeval.md
 
 ```
 
