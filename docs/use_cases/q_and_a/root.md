@@ -37,7 +37,7 @@ For further examples of Q&A use cases, see our [Q&A section in Putting it All To
 
 ```{toctree}
 ---
-maxdepth: 1
+maxdepth: 2
 hidden: true
 ---
 /use_cases/q_and_a/rag_cli.md
