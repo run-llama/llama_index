@@ -24,7 +24,7 @@ class NomicEmbedding(BaseEmbedding):
     def __init__(
         self,
         model_name: str = "nomic-text-embed-v1",
-        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        embed_batch_size: int = 32,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         task_type: Optional[str] = "search_document",
