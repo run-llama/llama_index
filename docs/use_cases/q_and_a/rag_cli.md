@@ -1,8 +1,8 @@
 # RAG CLI
 
-One common use case is chatting with an LLM about files you have saved locally on your machine.
+One common use case is chatting with an LLM about files you have saved locally on your computer.
 
-We have written a CLI tool do help you do just that very easily! You can point the rag CLI tool to a set of files you've saved locally, and it will ingest those files into a local vector database that is then used for a Chat Q&A repl within your terminal.
+We have written a CLI tool do help you do just that! You can point the rag CLI tool to a set of files you've saved locally, and it will ingest those files into a local vector database that is then used for a Chat Q&A repl within your terminal.
 
 By default, this tool uses OpenAI for the embeddings & LLM as well as a local Chroma Vector DB instance. **Warning**: this means that, by default, the local data you ingest with this tool _will_ be sent to OpenAI's API.
 
@@ -66,7 +66,7 @@ See the next section for information on how to add your own custom file readers 
 
 ## Customization
 
-The `rag` CLI tool is highly customizable! The tool is powered by stitching together the [`IngestionPipeline`](/module_guides/loading/ingestion_pipeline/root.rst) & [`QueryPipeline`](/module_guides/querying/pipeline/root.rst) modules within the [`RagCLI`](https://github.com/run-llama/llama_index/blob/main/llama_index/command_line/rag.py) module.
+The `rag` CLI tool is highly customizable! The tool is powered by combining the [`IngestionPipeline`](/module_guides/loading/ingestion_pipeline/root.rst) & [`QueryPipeline`](/module_guides/querying/pipeline/root.rst) modules within the [`RagCLI`](https://github.com/run-llama/llama_index/blob/main/llama_index/command_line/rag.py) module.
 
 To create your own custom rag CLI tool, you can simply create an script that instantiates the `RagCLI` class with a `IngestionPipeline` & `QueryPipeline` that you've configured yourself. From there, you can simply run `rag_cli_instance.cli()` in your script to run the same ingestion and Q&A commands against your own choice of embedding models, LLMs, vector DBs, etc.
 
