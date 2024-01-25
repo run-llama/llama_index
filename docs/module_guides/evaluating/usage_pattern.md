@@ -241,8 +241,7 @@ response_object = rag_application.query(user_input)
 
 evaluator = DeepEvalAnswerRelevancyEvaluator()
 evaluation_result = evaluator.evaluate_response(
-    query=user_input,
-    response=response_object
+    query=user_input, response=response_object
 )
 print(evaluation_result)
 ```
