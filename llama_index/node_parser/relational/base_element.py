@@ -228,10 +228,9 @@ class BaseElementNodeParser(NodeParser):
 
                 # We build a summary of the table containing the extracted summary, and a description of the columns
                 table_summary = (
-                    "A table representing "
-                    + str(table_output.summary)
-                    + ", with the following columns:\n"
+                    str(table_output.summary) + ", with the following columns:\n"
                 )
+
                 for col in table_output.columns:
                     table_summary += f"- {col.col_name}: {col.summary}\n"
 
@@ -254,11 +253,12 @@ class BaseElementNodeParser(NodeParser):
                     table_md += f"---|"
                 table_md += "\n|"
                 for row in table_df.itertuples():
+                    table_md += "|"
                     for col in row[1:]:
                         table_md += f"{col}|"
-                    table_md += "\n|"
+                    table_md += "\n"
 
-                table_str = table_md
+                table_str = table_summary + "\n" + table_md
                 text_node = TextNode(
                     text=table_str,
                     id_=table_id,
