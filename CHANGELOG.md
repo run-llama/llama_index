@@ -1,5 +1,15 @@
 # ChangeLog
 
+## [0.9.38] - 2024-01-25
+
+### New Features
+
+- Support for new OpenAI v3 embedding models (#10279)
+
+### Bug Fixes / Nits
+
+- Extra checks on sparse embeddings for qdrant (#10275)
+
 ## [0.9.37] - 2024-01-24
 
 ### New Features
