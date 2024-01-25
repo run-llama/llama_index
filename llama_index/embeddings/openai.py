@@ -66,6 +66,12 @@ class OpenAIEmbeddingModeModel(str, Enum):
     # text-embedding-ada-002
     TEXT_EMBED_ADA_002 = "text-embedding-ada-002"
 
+    # text-embedding-3-large
+    TEXT_EMBED_3_LARGE = "text-embedding-3-large"
+
+    # text-embedding-3-small
+    TEXT_EMBED_3_SMALL = "text-embedding-3-small"
+
 
 # convenient shorthand
 OAEM = OpenAIEmbeddingMode
