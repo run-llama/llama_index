@@ -6,9 +6,13 @@ from llama_index.storage.docstore.postgres_docstore import PostgresDocumentStore
 from llama_index.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 try:
-    import sqlalchemy
+    import asyncpg  # noqa
+    import psycopg2  # noqa
+    import sqlalchemy  # noqa
+
+    no_packages = False
 except ImportError:
-    sqlalchemy = None  # type: ignore
+    no_packages = True
 
 
 @pytest.fixture()
@@ -24,7 +28,9 @@ def postgres_docstore(postgres_kvstore: PostgresKVStore) -> PostgresDocumentStor
     return PostgresDocumentStore(postgres_kvstore=postgres_kvstore)
 
 
-@pytest.mark.skipif(sqlalchemy is None, reason="dosqlalchemycker not installed")
+@pytest.mark.skipif(
+    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+)
 def test_postgres_docstore(
     postgres_docstore: PostgresDocumentStore, documents: List[Document]
 ) -> None:
@@ -51,7 +57,9 @@ def test_postgres_docstore(
     assert len(ds.docs) == 1
 
 
-@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
+@pytest.mark.skipif(
+    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+)
 def test_postgres_docstore_hash(
     postgres_docstore: PostgresDocumentStore, documents: List[Document]
 ) -> None:

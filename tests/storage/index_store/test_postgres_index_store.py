@@ -4,9 +4,13 @@ from llama_index.storage.index_store.postgres_index_store import PostgresIndexSt
 from llama_index.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 try:
-    import sqlalchemy
+    import asyncpg  # noqa
+    import psycopg2  # noqa
+    import sqlalchemy  # noqa
+
+    no_packages = False
 except ImportError:
-    sqlalchemy = None  # type: ignore
+    no_packages = True
 
 
 @pytest.fixture()
@@ -14,7 +18,9 @@ def postgres_indexstore(postgres_kvstore: PostgresKVStore) -> PostgresIndexStore
     return PostgresIndexStore(postgres_kvstore=postgres_kvstore)
 
 
-@pytest.mark.skipif(sqlalchemy is None, reason="sqlalchemy not installed")
+@pytest.mark.skipif(
+    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+)
 def test_postgres_index_store(postgres_indexstore: PostgresIndexStore) -> None:
     index_struct = IndexGraph()
     index_store = postgres_indexstore
