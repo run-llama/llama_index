@@ -1,6 +1,6 @@
 """Test tool spec."""
 
-from typing import List, Tuple, Type, Union
+from typing import List, Optional, Tuple, Type, Union
 
 import pytest
 from llama_index.bridge.pydantic import BaseModel
@@ -44,8 +44,13 @@ class TestToolSpec(BaseToolSpec):
         # NOTE: no docstring
         return f"bar {arg1}"
 
-    def get_fn_schema_from_fn_name(self, fn_name: str) -> Type[BaseModel]:
+    def get_fn_schema_from_fn_name(
+        self,
+        fn_name: str,
+        spec_functions: Optional[List[Union[str, Tuple[str, str]]]] = None,
+    ) -> Type[BaseModel]:
         """Return map from function name."""
+        spec_functions = spec_functions or self.spec_functions
         if fn_name == "foo":
             return FooSchema
         elif fn_name == "afoo":
@@ -124,3 +129,13 @@ def test_tool_spec_schema() -> None:
     assert schema1 == FooSchema
     schema2 = tool_spec.get_fn_schema_from_fn_name("bar")
     assert schema2 == BarSchema
+
+
+def test_tool_spec_subset() -> None:
+    """Test tool spec subset."""
+    tool_spec = TestToolSpec()
+    tools = tool_spec.to_tool_list(spec_functions=["abc"])
+    assert len(tools) == 1
+    assert tools[0].metadata.name == "abc"
+    assert tools[0].metadata.description == "abc(arg1: str) -> str\n"
+    assert tools[0].metadata.fn_schema == AbcSchema
