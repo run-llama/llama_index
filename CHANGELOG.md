@@ -1,5 +1,18 @@
 # ChangeLog
 
+## [0.9.37] - 2024-01-24
+
+### New Features
+
+- Added a RAG CLI utility (#10193)
+- Added a textai vector store (#10240)
+
+### Bug Fixes / Nits
+
+- Fixed serialization error in ollama chat (#10230)
+- Added missing fields to `SentenceTransformerRerank` (#10225)
+- Fixed title extraction (#10209, #10226)
+
 ## [0.9.36] - 2024-01-23
 
 ### New Features
