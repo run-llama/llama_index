@@ -196,6 +196,17 @@ print(scores.run_data[0].scores)
 }
 ```
 
+### Uploading Results to the UI
+If you want to upload your scores to the UI, then you can use the Tonic Validate API. Before doing so, make sure you have `TONIC_VALIDATE_API_KEY` set as described in the [Setting Up Tonic Validate](#setting-up-tonic-validate) section. You also need to make sure you have a project created in the Tonic Validate UI and that you have copied the project id. After the API Key and project are set up, you can initialize the Validate API and upload the results.
+```python
+validate_api = ValidateApi()
+project_id = 'your-project-id'
+validate_api.upload_run(project_id, scores)
+```
+Now you can see your results in the Tonic Validate UI!
+
+![Tonic Validate Graph](/_static/integrations/TonicValidate-Graph.png )
+
 
 ### End to End Example
 Here we will show you how to use Tonic Validate End To End with Llama Index. First, let's download a dataset for Llama Index to run on using the Llama Index CLI.
@@ -267,10 +278,6 @@ validate_api = ValidateApi()
 project_id = 'your-project-id'
 validate_api.upload_run(project_id, run)
 ```
-Now you can see your results in the Tonic Validate UI!
-
-
-![Tonic Validate Graph](/_static/integrations/TonicValidate-Graph.png)
 
 ## More Documentation
 
