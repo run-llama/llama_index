@@ -17,6 +17,7 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 - [Custom Embedding Model](custom_embeddings)
 
 ## Custom Output Parsers
+
 - [Custom Output Parsers](/examples/output_parsing/llm_program.ipynb)
 
 ## Custom Transformations
