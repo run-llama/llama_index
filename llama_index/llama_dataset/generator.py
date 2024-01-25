@@ -145,6 +145,9 @@ class RagDatasetGenerator(PromptMixin):
                     Document(
                         text=node.get_content(metadata_mode=self._metadata_mode),
                         metadata=node.metadata,
+                        excluded_llm_metadata_keys=node.excluded_llm_metadata_keys,
+                        excluded_embed_metadata_keys=node.excluded_embed_metadata_keys,
+                        relationships=node.relationships,
                     )
                 ],
                 service_context=self.service_context,
