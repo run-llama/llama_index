@@ -271,3 +271,7 @@ Now you can see your results in the Tonic Validate UI!
 
 
 ![Tonic Validate Graph](/_static/integrations/TonicValidate-Graph.png)
+
+## More Documentation
+
+In addition to the documentation here, you can also visit [Tonic Validate's Github page](https://github.com/TonicAI/tonic_validate) for more documentation about how to interact with our API for uploading results. 
