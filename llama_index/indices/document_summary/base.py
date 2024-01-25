@@ -255,6 +255,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
             return
         self._index_struct.delete(ref_doc_id)
+        self.vector_store.delete(ref_doc_id)
 
         if delete_from_docstore:
             self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
