@@ -1,5 +1,22 @@
 # ChangeLog
 
+## [0.9.37] - 2024-01-24
+
+### New Features
+
+- Added a RAG CLI utility (#10193)
+- Added a textai vector store (#10240)
+- Added a Postgresql based docstore and index store (#10233)
+- specify tool spec in tool specs (#10263)
+
+### Bug Fixes / Nits
+
+- Fixed serialization error in ollama chat (#10230)
+- Added missing fields to `SentenceTransformerRerank` (#10225)
+- Fixed title extraction (#10209, #10226)
+- nit: make chainable output parser more exposed in library/docs (#10262)
+- :bug: summary index not carrying over excluded metadata keys (#10259)
+
 ## [0.9.36] - 2024-01-23
 
 ### New Features
