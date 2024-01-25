@@ -171,15 +171,26 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 node_ids.append(node.node_id)
 
                 if self.enable_hybrid:
-                    vectors.append(
-                        {
-                            "text-sparse": rest.SparseVector(
-                                indices=sparse_indices[i],
-                                values=sparse_vectors[i],
-                            ),
-                            "text-dense": node.get_embedding(),
-                        }
-                    )
+                    if (
+                        len(sparse_vectors) > 0
+                        and len(sparse_indices) > 0
+                        and len(sparse_vectors) == len(sparse_indices)
+                    ):
+                        vectors.append(
+                            {
+                                "text-sparse": rest.SparseVector(
+                                    indices=sparse_indices[i],
+                                    values=sparse_vectors[i],
+                                ),
+                                "text-dense": node.get_embedding(),
+                            }
+                        )
+                    else:
+                        vectors.append(
+                            {
+                                "text-dense": node.get_embedding(),
+                            }
+                        )
                 else:
                     vectors.append(node.get_embedding())
 
