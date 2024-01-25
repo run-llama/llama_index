@@ -11,6 +11,14 @@ from llama_index.embeddings.bedrock import BedrockEmbedding
 from llama_index.embeddings.clarifai import ClarifaiEmbedding
 from llama_index.embeddings.clip import ClipEmbedding
 from llama_index.embeddings.cohereai import CohereEmbedding
+from llama_index.embeddings.dashscope import (
+    DashScopeBatchTextEmbedding,
+    DashScopeBatchTextEmbeddingModels,
+    DashScopeMultiModalEmbedding,
+    DashScopeMultiModalEmbeddingModels,
+    DashScopeTextEmbedding,
+    DashScopeTextEmbeddingModels,
+)
 from llama_index.embeddings.elasticsearch import (
     ElasticsearchEmbedding,
     ElasticsearchEmbeddings,
@@ -79,4 +87,10 @@ __all__ = [
     "VoyageEmbedding",
     "OllamaEmbedding",
     "GeminiEmbedding",
+    "DashScopeTextEmbedding",
+    "DashScopeTextEmbeddingModels",
+    "DashScopeBatchTextEmbedding",
+    "DashScopeBatchTextEmbeddingModels",
+    "DashScopeMultiModalEmbedding",
+    "DashScopeMultiModalEmbeddingModels",
 ]
