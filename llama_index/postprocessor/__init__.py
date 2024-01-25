@@ -27,6 +27,7 @@ from llama_index.postprocessor.pii import (
 )
 from llama_index.postprocessor.rankGPT_rerank import RankGPTRerank
 from llama_index.postprocessor.sbert_rerank import SentenceTransformerRerank
+from llama_index.postprocessor.types import BaseNodePostprocessor
 
 __all__ = [
     "SimilarityPostprocessor",
@@ -47,4 +48,5 @@ __all__ = [
     "LongLLMLinguaPostprocessor",
     "FlagEmbeddingReranker",
     "RankGPTRerank",
+    "BaseNodePostprocessor"
 ]
