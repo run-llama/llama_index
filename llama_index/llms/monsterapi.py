@@ -87,7 +87,9 @@ class MonsterLLM(CustomLLM):
             completion_to_prompt=_completion_to_prompt,
         )
 
-    def initialize_client(self, monster_api_key: Optional[str], base_url: Optional[str]) -> Any:
+    def initialize_client(
+        self, monster_api_key: Optional[str], base_url: Optional[str]
+    ) -> Any:
         try:
             from monsterapi import client as MonsterClient
             from monsterapi.InputDataModels import MODEL_TYPES
@@ -128,21 +130,27 @@ class MonsterLLM(CustomLLM):
         return self.complete(prompt, formatted=True, **kwargs)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, timeout: int = 100, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, timeout: int = 100, **kwargs: Any
+    ) -> CompletionResponse:
         is_formatted = kwargs.pop("formatted", False)
         if not is_formatted:
             prompt = self.completion_to_prompt(prompt)
 
         stream = kwargs.pop("stream", False)
 
-        if stream == True:
-            raise NotImplementedError("complete method cannot be used with stream=True, please use stream_complete method")
+        if stream is True:
+            raise NotImplementedError(
+                "complete method cannot be used with stream=True, please use stream_complete method"
+            )
 
         # Validate input args against input Pydantic model
         input_dict = self._get_input_dict(prompt, **kwargs)
 
-        result = self._client.generate(model=self.model, data=input_dict, timeout=timeout)
-        
+        result = self._client.generate(
+            model=self.model, data=input_dict, timeout=timeout
+        )
+
         if isinstance(result, Exception):
             raise result
 
@@ -154,20 +162,23 @@ class MonsterLLM(CustomLLM):
                 return CompletionResponse(text=result["text"][0])
             elif isinstance(result["text"], str):
                 return CompletionResponse(text=result["text"])
-        
+
         if isinstance(result, list):
             return CompletionResponse(text=result[0]["text"])
 
+        raise RuntimeError("Unexpected Return please contact monsterapi support!")
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        if 'deploy' not in self.model:
-            raise NotImplementedError("stream_complete method can only be used with deploy models for now. Support for other models will be added soon.")
+        if "deploy" not in self.model:
+            raise NotImplementedError(
+                "stream_complete method can only be used with deploy models for now. Support for other models will be added soon."
+            )
 
         # Validate input args against input Pydantic model
         input_dict = self._get_input_dict(prompt, **kwargs)
         input_dict["stream"] = True
-        
+
         # Starting the stream
         result_stream = self._client.generate(model=self.model, data=input_dict)
 
