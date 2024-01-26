@@ -25,7 +25,6 @@ from llama_index.llms.llm import (
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.schema import BaseComponent
-from llama_index.settings import Settings
 from llama_index.types import PydanticProgramMode, TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
@@ -100,14 +99,14 @@ class LLMPredictor(BaseLLMPredictor):
 
     def __init__(
         self,
-        llm: Optional[LLMType] = None,
+        llm: Optional[LLMType] = "default",
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         query_wrapper_prompt: Optional[BasePromptTemplate] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         """Initialize params."""
-        self._llm = resolve_llm(llm) if llm else Settings.llm
+        self._llm = resolve_llm(llm)
 
         if callback_manager:
             self._llm.callback_manager = callback_manager
