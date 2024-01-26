@@ -3,7 +3,7 @@
 import logging
 from enum import Enum
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from pydantic import PrivateAttr
 
@@ -31,12 +31,6 @@ class DashScopeBatchTextEmbeddingModels(str, Enum):
 
     TEXT_EMBEDDING_ASYNC_V1 = "text-embedding-async-v1"
     TEXT_EMBEDDING_ASYNC_V2 = "text-embedding-async-v2"
-
-
-class DashScopeMultiModalEmbeddingModels(str, Enum):
-    """DashScope MultiModalEmbedding models."""
-
-    MULTIMODAL_EMBEDDING_ONE_PEACE_V1 = "multimodal-embedding-one-peace-v1"
 
 
 EMBED_MAX_INPUT_LENGTH = 2048
@@ -287,45 +281,4 @@ class DashScopeBatchTextEmbedding:
             embedding_file_url,
             api_key=self._api_key,
             text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,
-        )
-
-
-class DashScopeMultiModalEmbedding:
-    """DashScope class for multimodal embedding. Images, audio, and text can be input for embedding.
-
-    Args:
-        model_name (str): Model name for embedding.
-            Defaults to DashScopeMultiModalEmbeddingModels.MULTIMODAL_EMBEDDING_ONE_PEACE_V1.
-                Options are:
-
-                - DashScopeMultiModalEmbeddingModels.MULTIMODAL_EMBEDDING_ONE_PEACE_V1.
-        api_key (str): The DashScope api key.
-        auto_truncation (bool): auto truncation text.
-            Defaults to False.
-    """
-
-    _api_key: Optional[str] = PrivateAttr()
-    _model_name: str = PrivateAttr()
-
-    def __init__(
-        self,
-        model_name: str = DashScopeMultiModalEmbeddingModels.MULTIMODAL_EMBEDDING_ONE_PEACE_V1,
-        api_key: Optional[str] = None,
-        auto_truncation: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        self.auto_truncation = auto_truncation
-        self._api_key = api_key
-        self._model_name = model_name
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "DashScopeMultiModalEmbedding"
-
-    def get_embedding(self, input: List[Dict]) -> List[float]:
-        return get_multimodal_embedding(
-            self._model_name,
-            input=input,
-            api_key=self._api_key,
-            auto_truncation=self.auto_truncation,
         )

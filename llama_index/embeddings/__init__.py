@@ -14,10 +14,12 @@ from llama_index.embeddings.cohereai import CohereEmbedding
 from llama_index.embeddings.dashscope import (
     DashScopeBatchTextEmbedding,
     DashScopeBatchTextEmbeddingModels,
-    DashScopeMultiModalEmbedding,
-    DashScopeMultiModalEmbeddingModels,
     DashScopeTextEmbedding,
     DashScopeTextEmbeddingModels,
+)
+from llama_index.embeddings.dashscope_multimodal import (
+    DashScopeMultiModalEmbedding,
+    DashScopeMultiModalEmbeddingModels,
 )
 from llama_index.embeddings.elasticsearch import (
     ElasticsearchEmbedding,
