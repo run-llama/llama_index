@@ -2,6 +2,8 @@ import logging
 from dataclasses import dataclass
 from typing import Any, List, Optional, cast
 
+from deprecated import deprecated
+
 import llama_index
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
@@ -82,6 +84,10 @@ class ServiceContext:
     callback_manager: CallbackManager
 
     @classmethod
+    @deprecated(
+        version="0.10.0",
+        reason="ServiceContext is deprecated, please use `llama_index.settings.Settings` instead.",
+    )
     def from_defaults(
         cls,
         llm_predictor: Optional[BaseLLMPredictor] = None,
