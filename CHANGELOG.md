@@ -1,5 +1,16 @@
 # ChangeLog
 
+## [0.9.39] - 2024-01-26
+
+### New Features
+
+- Support for new GPT Turbo Models (#10291)
+- Support Multiple docs for Sentence Transformer Fine tuning(#10297)
+
+### Bug Fixes / Nits
+
+- Marvin imports fixed (#9864)
+
 ## [0.9.38] - 2024-01-25
 
 ### New Features
