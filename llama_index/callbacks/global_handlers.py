@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from llama_index.callbacks.argilla_callback import argilla_callback_handler
 from llama_index.callbacks.arize_phoenix_callback import arize_phoenix_callback_handler
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.deepeval_callback import deepeval_callback_handler
@@ -35,6 +36,8 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         handler = deepeval_callback_handler(**eval_params)
     elif eval_mode == "simple":
         handler = SimpleLLMHandler(**eval_params)
+    elif eval_mode == "argilla":
+        handler = argilla_callback_handler(**eval_params)
     else:
         raise ValueError(f"Eval mode {eval_mode} not supported.")
 

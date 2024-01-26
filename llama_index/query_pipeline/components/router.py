@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
+from llama_index.core.base_selector import BaseSelector
 from llama_index.core.query_pipeline.query_component import (
     QUERY_COMPONENT_TYPE,
     ChainableMixin,
@@ -13,7 +14,6 @@ from llama_index.core.query_pipeline.query_component import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.selectors.types import BaseSelector
 from llama_index.utils import print_text
 
 

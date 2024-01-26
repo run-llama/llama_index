@@ -38,6 +38,8 @@ class OpenAIEmbeddingModelType(str, Enum):
     BABBAGE = "babbage"
     ADA = "ada"
     TEXT_EMBED_ADA_002 = "text-embedding-ada-002"
+    TEXT_EMBED_3_LARGE = "text-embedding-3-large"
+    TEXT_EMBED_3_SMALL = "text-embedding-3-small"
 
 
 class OpenAIEmbeddingModeModel(str, Enum):
@@ -66,6 +68,12 @@ class OpenAIEmbeddingModeModel(str, Enum):
     # text-embedding-ada-002
     TEXT_EMBED_ADA_002 = "text-embedding-ada-002"
 
+    # text-embedding-3-large
+    TEXT_EMBED_3_LARGE = "text-embedding-3-large"
+
+    # text-embedding-3-small
+    TEXT_EMBED_3_SMALL = "text-embedding-3-small"
+
 
 # convenient shorthand
 OAEM = OpenAIEmbeddingMode
@@ -81,11 +89,15 @@ _QUERY_MODE_MODEL_DICT = {
     (OAEM.SIMILARITY_MODE, "babbage"): OAEMM.TEXT_SIMILARITY_BABBAGE,
     (OAEM.SIMILARITY_MODE, "ada"): OAEMM.TEXT_SIMILARITY_ADA,
     (OAEM.SIMILARITY_MODE, "text-embedding-ada-002"): OAEMM.TEXT_EMBED_ADA_002,
+    (OAEM.SIMILARITY_MODE, "text-embedding-3-small"): OAEMM.TEXT_EMBED_3_SMALL,
+    (OAEM.SIMILARITY_MODE, "text-embedding-3-large"): OAEMM.TEXT_EMBED_3_LARGE,
     (OAEM.TEXT_SEARCH_MODE, "davinci"): OAEMM.TEXT_SEARCH_DAVINCI_QUERY,
     (OAEM.TEXT_SEARCH_MODE, "curie"): OAEMM.TEXT_SEARCH_CURIE_QUERY,
     (OAEM.TEXT_SEARCH_MODE, "babbage"): OAEMM.TEXT_SEARCH_BABBAGE_QUERY,
     (OAEM.TEXT_SEARCH_MODE, "ada"): OAEMM.TEXT_SEARCH_ADA_QUERY,
     (OAEM.TEXT_SEARCH_MODE, "text-embedding-ada-002"): OAEMM.TEXT_EMBED_ADA_002,
+    (OAEM.TEXT_SEARCH_MODE, "text-embedding-3-large"): OAEMM.TEXT_EMBED_3_LARGE,
+    (OAEM.TEXT_SEARCH_MODE, "text-embedding-3-small"): OAEMM.TEXT_EMBED_3_SMALL,
 }
 
 _TEXT_MODE_MODEL_DICT = {
@@ -94,11 +106,15 @@ _TEXT_MODE_MODEL_DICT = {
     (OAEM.SIMILARITY_MODE, "babbage"): OAEMM.TEXT_SIMILARITY_BABBAGE,
     (OAEM.SIMILARITY_MODE, "ada"): OAEMM.TEXT_SIMILARITY_ADA,
     (OAEM.SIMILARITY_MODE, "text-embedding-ada-002"): OAEMM.TEXT_EMBED_ADA_002,
+    (OAEM.SIMILARITY_MODE, "text-embedding-3-small"): OAEMM.TEXT_EMBED_3_SMALL,
+    (OAEM.SIMILARITY_MODE, "text-embedding-3-large"): OAEMM.TEXT_EMBED_3_LARGE,
     (OAEM.TEXT_SEARCH_MODE, "davinci"): OAEMM.TEXT_SEARCH_DAVINCI_DOC,
     (OAEM.TEXT_SEARCH_MODE, "curie"): OAEMM.TEXT_SEARCH_CURIE_DOC,
     (OAEM.TEXT_SEARCH_MODE, "babbage"): OAEMM.TEXT_SEARCH_BABBAGE_DOC,
     (OAEM.TEXT_SEARCH_MODE, "ada"): OAEMM.TEXT_SEARCH_ADA_DOC,
     (OAEM.TEXT_SEARCH_MODE, "text-embedding-ada-002"): OAEMM.TEXT_EMBED_ADA_002,
+    (OAEM.TEXT_SEARCH_MODE, "text-embedding-3-large"): OAEMM.TEXT_EMBED_3_LARGE,
+    (OAEM.TEXT_SEARCH_MODE, "text-embedding-3-small"): OAEMM.TEXT_EMBED_3_SMALL,
 }
 
 
@@ -245,6 +261,13 @@ class OpenAIEmbedding(BaseEmbedding):
             "volumes of async API calls, setting this to false can improve stability."
         ),
     )
+    dimensions: Optional[int] = Field(
+        default=None,
+        description=(
+            "The number of dimensions on the output embedding vectors. "
+            "Works only with v3 embedding models."
+        ),
+    )
 
     _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
     _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
@@ -257,6 +280,7 @@ class OpenAIEmbedding(BaseEmbedding):
         mode: str = OpenAIEmbeddingMode.TEXT_SEARCH_MODE,
         model: str = OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002,
         embed_batch_size: int = 100,
+        dimensions: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
@@ -270,6 +294,8 @@ class OpenAIEmbedding(BaseEmbedding):
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
+        if dimensions is not None:
+            additional_kwargs["dimensions"] = dimensions
 
         api_key, api_base, api_version = resolve_openai_credentials(
             api_key=api_key,
@@ -288,6 +314,7 @@ class OpenAIEmbedding(BaseEmbedding):
 
         super().__init__(
             embed_batch_size=embed_batch_size,
+            dimensions=dimensions,
             callback_manager=callback_manager,
             model_name=model_name,
             additional_kwargs=additional_kwargs,

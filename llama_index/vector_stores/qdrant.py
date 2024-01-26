@@ -171,15 +171,26 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 node_ids.append(node.node_id)
 
                 if self.enable_hybrid:
-                    vectors.append(
-                        {
-                            "text-sparse": rest.SparseVector(
-                                indices=sparse_indices[i],
-                                values=sparse_vectors[i],
-                            ),
-                            "text-dense": node.get_embedding(),
-                        }
-                    )
+                    if (
+                        len(sparse_vectors) > 0
+                        and len(sparse_indices) > 0
+                        and len(sparse_vectors) == len(sparse_indices)
+                    ):
+                        vectors.append(
+                            {
+                                "text-sparse": rest.SparseVector(
+                                    indices=sparse_indices[i],
+                                    values=sparse_vectors[i],
+                                ),
+                                "text-dense": node.get_embedding(),
+                            }
+                        )
+                    else:
+                        vectors.append(
+                            {
+                                "text-dense": node.get_embedding(),
+                            }
+                        )
                 else:
                     vectors.append(node.get_embedding())
 
@@ -307,6 +318,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def _create_collection(self, collection_name: str, vector_size: int) -> None:
         """Create a Qdrant collection."""
         from qdrant_client.http import models as rest
+        from qdrant_client.http.exceptions import UnexpectedResponse
 
         try:
             if self.enable_hybrid:
@@ -332,7 +344,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except ValueError as exc:
+        except (ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
             logger.warning(
@@ -344,6 +356,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     async def _acreate_collection(self, collection_name: str, vector_size: int) -> None:
         """Asynchronous method to create a Qdrant collection."""
         from qdrant_client.http import models as rest
+        from qdrant_client.http.exceptions import UnexpectedResponse
 
         try:
             if self.enable_hybrid:
@@ -369,7 +382,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except ValueError as exc:
+        except (ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
             logger.warning(

@@ -1,5 +1,56 @@
 # ChangeLog
 
+## [0.9.39] - 2024-01-26
+
+### New Features
+
+- Support for new GPT Turbo Models (#10291)
+- Support Multiple docs for Sentence Transformer Fine tuning(#10297)
+
+### Bug Fixes / Nits
+
+- Marvin imports fixed (#9864)
+
+## [0.9.38] - 2024-01-25
+
+### New Features
+
+- Support for new OpenAI v3 embedding models (#10279)
+
+### Bug Fixes / Nits
+
+- Extra checks on sparse embeddings for qdrant (#10275)
+
+## [0.9.37] - 2024-01-24
+
+### New Features
+
+- Added a RAG CLI utility (#10193)
+- Added a textai vector store (#10240)
+- Added a Postgresql based docstore and index store (#10233)
+- specify tool spec in tool specs (#10263)
+
+### Bug Fixes / Nits
+
+- Fixed serialization error in ollama chat (#10230)
+- Added missing fields to `SentenceTransformerRerank` (#10225)
+- Fixed title extraction (#10209, #10226)
+- nit: make chainable output parser more exposed in library/docs (#10262)
+- :bug: summary index not carrying over excluded metadata keys (#10259)
+
+## [0.9.36] - 2024-01-23
+
+### New Features
+
+- Added support for `SageMakerEmbedding` (#10207)
+
+### Bug Fixes / Nits
+
+- Fix duplicated `file_id` on openai assistant (#10223)
+- Fix circular dependencies for programs (#10222)
+- Run `TitleExtractor` on groups of nodes from the same parent document (#10209)
+- Improve vectara auto-retrieval (#10195)
+
 ## [0.9.35] - 2024-01-22
 
 ### New Features

@@ -3,9 +3,8 @@
 import logging
 from datetime import datetime
 from ssl import SSLContext
-from typing import List, Optional, Type
+from typing import List, Optional
 
-from llama_index.bridge.pydantic import BaseModel
 from llama_index.readers.slack import SlackReader
 from llama_index.schema import Document
 from llama_index.tools.tool_spec.base import BaseToolSpec
@@ -32,10 +31,6 @@ class SlackToolSpec(BaseToolSpec):
             earliest_date=earliest_date,
             latest_date=latest_date,
         )
-
-    def get_fn_schema_from_fn_name(self, fn_name: str) -> Optional[Type[BaseModel]]:
-        """Return map from function name."""
-        return None
 
     def load_data(
         self,

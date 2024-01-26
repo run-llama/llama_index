@@ -502,7 +502,7 @@ class GenerateAnswerError(Exception):
 
     def __str__(self) -> str:
         return (
-            f"finish_reason: {self.finish_reason.name} "
+            f"finish_reason: {self.finish_reason} "
             f"finish_message: {self.finish_message} "
             f"safety ratings: {self.safety_ratings}"
         )

@@ -6,10 +6,10 @@ from typing import List, Optional, Sequence
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base_selector import BaseSelector
 from llama_index.llms import LLM
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.schema import IndexNode, NodeWithScore, QueryBundle
-from llama_index.selectors.types import BaseSelector
 from llama_index.selectors.utils import get_selector_from_llm
 from llama_index.service_context import ServiceContext
 from llama_index.settings import (

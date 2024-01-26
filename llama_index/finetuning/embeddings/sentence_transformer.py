@@ -35,13 +35,12 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
         self.model_output_path = model_output_path
         self.model = SentenceTransformer(model_id)
 
-        # TODO: support more than 1 doc per query
         examples: Any = []
         for query_id, query in dataset.queries.items():
-            node_id = dataset.relevant_docs[query_id][0]
-            text = dataset.corpus[node_id]
-            example = InputExample(texts=[query, text])
-            examples.append(example)
+            for node_id in dataset.relevant_docs[query_id]:
+                text = dataset.corpus[node_id]
+                example = InputExample(texts=[query, text])
+                examples.append(example)
         self.examples = examples
 
         self.loader: DataLoader = DataLoader(examples, batch_size=batch_size)
