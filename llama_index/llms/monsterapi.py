@@ -126,7 +126,7 @@ class MonsterLLM(CustomLLM):
     def complete(
         self, prompt: str, formatted: bool = False, timeout: int = 100, **kwargs: Any
     ) -> CompletionResponse:
-        if not is_formatted:
+        if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
         stream = kwargs.pop("stream", False)
