@@ -149,7 +149,7 @@ class DashScopeTextEmbedding(BaseEmbedding):
     """DashScope class for text embedding.
 
     Args:
-        model (str): Model for embedding.
+        model_name (str): Model name for embedding.
             Defaults to DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V2.
                 Options are:
 
@@ -162,19 +162,19 @@ class DashScopeTextEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model: str = DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V2,
+        model_name: str = DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V2,
         api_key: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         self._api_key = api_key
         super().__init__(
-            model_name=model,
+            model_name=model_name,
             **kwargs,
         )
 
     @classmethod
     def class_name(cls) -> str:
-        return "DashScopeEmbedding"
+        return "DashScopeTextEmbedding"
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
@@ -230,7 +230,7 @@ class DashScopeBatchTextEmbedding:
        and the result file URL is returned to you.
 
     Args:
-        model (str): Model for embedding.
+        model_name (str): Model name for embedding.
             Defaults to DashScopeBatchTextEmbeddingModels.TEXT_EMBEDDING_ASYNC_V2.
                 Options are:
 
@@ -240,16 +240,16 @@ class DashScopeBatchTextEmbedding:
     """
 
     _api_key: Optional[str] = PrivateAttr()
-    _model: str = PrivateAttr()
+    _model_name: str = PrivateAttr()
 
     def __init__(
         self,
-        model: str = DashScopeBatchTextEmbeddingModels.TEXT_EMBEDDING_ASYNC_V2,
+        model_name: str = DashScopeBatchTextEmbeddingModels.TEXT_EMBEDDING_ASYNC_V2,
         api_key: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         self._api_key = api_key
-        self._model = model
+        self._model_name = model_name
 
     @classmethod
     def class_name(cls) -> str:
@@ -266,7 +266,7 @@ class DashScopeBatchTextEmbedding:
                  https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-async-api-details.
         """
         return get_batch_text_embedding(
-            self._model,
+            self._model_name,
             embedding_file_url,
             api_key=self._api_key,
             text_type=DashScopeTextEmbeddingType.TEXT_TYPE_QUERY,
@@ -283,7 +283,7 @@ class DashScopeBatchTextEmbedding:
                  https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-async-api-details.
         """
         return get_batch_text_embedding(
-            self._model,
+            self._model_name,
             embedding_file_url,
             api_key=self._api_key,
             text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,
@@ -294,7 +294,7 @@ class DashScopeMultiModalEmbedding:
     """DashScope class for multimodal embedding. Images, audio, and text can be input for embedding.
 
     Args:
-        model (str): Model for embedding.
+        model_name (str): Model name for embedding.
             Defaults to DashScopeMultiModalEmbeddingModels.MULTIMODAL_EMBEDDING_ONE_PEACE_V1.
                 Options are:
 
@@ -305,18 +305,18 @@ class DashScopeMultiModalEmbedding:
     """
 
     _api_key: Optional[str] = PrivateAttr()
-    _model: str = PrivateAttr()
+    _model_name: str = PrivateAttr()
 
     def __init__(
         self,
-        model: str = DashScopeMultiModalEmbeddingModels.MULTIMODAL_EMBEDDING_ONE_PEACE_V1,
+        model_name: str = DashScopeMultiModalEmbeddingModels.MULTIMODAL_EMBEDDING_ONE_PEACE_V1,
         api_key: Optional[str] = None,
         auto_truncation: bool = False,
         **kwargs: Any,
     ) -> None:
         self.auto_truncation = auto_truncation
         self._api_key = api_key
-        self._model = model
+        self._model_name = model_name
 
     @classmethod
     def class_name(cls) -> str:
@@ -324,7 +324,7 @@ class DashScopeMultiModalEmbedding:
 
     def get_embedding(self, input: List[Dict]) -> List[float]:
         return get_multimodal_embedding(
-            self._model,
+            self._model_name,
             input=input,
             api_key=self._api_key,
             auto_truncation=self.auto_truncation,
