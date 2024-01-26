@@ -11,7 +11,6 @@ from llama_index.indices.base import BaseIndex
 from llama_index.indices.list.base import ListRetrieverMode, SummaryIndex
 from llama_index.indices.tree.base import TreeIndex, TreeRetrieverMode
 from llama_index.indices.vector_store import VectorStoreIndex
-from llama_index.llm_predictor.base import LLMPredictor
 from llama_index.schema import Document
 from llama_index.utils import get_color_mapping, print_text
 
@@ -150,10 +149,8 @@ class Playground:
                 service_context = index.service_context
                 token_counter = TokenCountingHandler()
                 callback_manager = CallbackManager([token_counter])
-                if isinstance(service_context.llm_predictor, LLMPredictor):
-                    service_context.llm_predictor.llm.callback_manager = (
-                        callback_manager
-                    )
+                if service_context is not None:
+                    service_context.llm.callback_manager = callback_manager
                     service_context.embed_model.callback_manager = callback_manager
 
                 try:

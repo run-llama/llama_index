@@ -112,7 +112,7 @@ def test_myscale_combine_search(
     vector_store = MyScaleVectorStore(myscale_client=client)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
-    query.query_embedding = index.service_context.embed_model.get_query_embedding(
+    query.query_embedding = index._embed_model.get_query_embedding(
         cast(str, query.query_str)
     )
     responseNodes = cast(List[BaseNode], index._vector_store.query(query).nodes)
