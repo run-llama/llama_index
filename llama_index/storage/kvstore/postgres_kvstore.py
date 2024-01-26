@@ -1,5 +1,6 @@
 import json
 from typing import Any, Dict, List, Optional, Tuple, Type
+from urllib.parse import urlparse
 
 from llama_index.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
@@ -157,15 +158,9 @@ class PostgresKVStore(BaseKVStore):
         use_jsonb: bool = False,
     ) -> "PostgresKVStore":
         """Return connection string from database parameters."""
-        from sqlalchemy.engine.url import URL
-
-        url = URL.create("postgresql+psycopg2", uri)
+        params = params_from_uri(uri)
         return cls.from_params(
-            host=url.host,
-            port=url.port,
-            database=url.database,
-            user=url.username,
-            password=url.password,
+            **params,
             table_name=table_name,
             schema_name=schema_name,
             perform_setup=perform_setup,
@@ -450,3 +445,16 @@ class PostgresKVStore(BaseKVStore):
                     .filter_by(key=key)
                 )
         return result.rowcount > 0
+
+
+def params_from_uri(uri: str) -> dict:
+    result = urlparse(uri)
+    database = result.path[1:]
+    port = result.port if result.port else 5432
+    return {
+        "database": database,
+        "user": result.username,
+        "password": result.password,
+        "host": result.hostname,
+        "port": port,
+    }
