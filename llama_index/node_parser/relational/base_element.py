@@ -125,26 +125,24 @@ class BaseElementNodeParser(NodeParser):
     def extract_table_summaries(self, elements: List[Element]) -> None:
         """Go through elements, extract out summaries that are tables."""
         from llama_index.indices.list.base import SummaryIndex
-        from llama_index.service_context import ServiceContext
 
         llm = self.llm or OpenAI()
         llm = cast(LLM, llm)
 
-        service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
         for element in tqdm(elements):
             if element.type != "table":
                 continue
             index = SummaryIndex.from_documents(
-                [Document(text=str(element.element))], service_context=service_context
+                [Document(text=str(element.element))],
             )
-            query_engine = index.as_query_engine(output_cls=TableOutput)
+            query_engine = index.as_query_engine(llm=llm, output_cls=TableOutput)
             try:
                 response = query_engine.query(self.summary_query_str)
                 element.table_output = cast(PydanticResponse, response).response
             except ValidationError:
                 # There was a pydantic validation error, so we will run with text completion
                 # fill in the summary and leave other fields blank
-                query_engine = index.as_query_engine()
+                query_engine = index.as_query_engine(llm=llm)
                 response_txt = str(query_engine.query(self.summary_query_str))
                 element.table_output = TableOutput(summary=response_txt, columns=[])
 

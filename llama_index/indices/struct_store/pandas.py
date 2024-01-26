@@ -9,6 +9,7 @@ from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.table import PandasStructTable
 from llama_index.indices.struct_store.base import BaseStructStoreIndex
+from llama_index.llms.utils import LLMType
 from llama_index.schema import BaseNode
 
 logger = logging.getLogger(__name__)
@@ -60,13 +61,15 @@ class PandasIndex(BaseStructStoreIndex[PandasStructTable]):
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         raise NotImplementedError("Not supported")
 
-    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+    def as_query_engine(
+        self, llm: Optional[LLMType] = None, **kwargs: Any
+    ) -> BaseQueryEngine:
         # NOTE: lazy import
         from llama_index.query_engine.pandas.pandas_query_engine import (
             PandasQueryEngine,
         )
 
-        return PandasQueryEngine.from_index(self, **kwargs)
+        return PandasQueryEngine.from_index(self, llm=llm, **kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> PandasStructTable:
         """Build index from documents."""

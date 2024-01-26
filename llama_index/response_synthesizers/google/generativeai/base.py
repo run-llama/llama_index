@@ -13,11 +13,11 @@ from llama_index.bridge.pydantic import BaseModel  # type: ignore
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.response.schema import Response
 from llama_index.indices.query.schema import QueryBundle
+from llama_index.llms import MockLLM
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.response_synthesizers.base import BaseSynthesizer, QueryTextType
 from llama_index.schema import MetadataMode, NodeWithScore, TextNode
 from llama_index.types import RESPONSE_TEXT_TYPE
-from llama_index.vector_stores.google.generativeai import google_service_context
 
 if TYPE_CHECKING:
     import google.ai.generativelanguage as genai
@@ -73,7 +73,7 @@ class GoogleTextSynthesizer(BaseSynthesizer):
             raise ImportError(_import_err_msg)
 
         super().__init__(
-            service_context=google_service_context,
+            llm=MockLLM(),
             output_cls=SynthesizedResponse,
             **kwargs,
         )

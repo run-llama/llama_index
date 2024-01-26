@@ -18,7 +18,6 @@ from llama_index.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
 from llama_index.node_parser import SentenceSplitter
 from llama_index.readers.base import ReaderConfig
 from llama_index.schema import BaseNode, Document, MetadataMode, TransformComponent
-from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore import BaseDocumentStore, SimpleDocumentStore
 from llama_index.storage.storage_context import DOCSTORE_FNAME
 from llama_index.utils import concat_dirs
@@ -205,32 +204,6 @@ class IngestionPipeline(BaseModel):
             cache=cache or IngestionCache(),
             docstore=docstore,
             docstore_strategy=docstore_strategy,
-            disable_cache=disable_cache,
-        )
-
-    @classmethod
-    def from_service_context(
-        cls,
-        service_context: ServiceContext,
-        reader: Optional[ReaderConfig] = None,
-        documents: Optional[Sequence[Document]] = None,
-        vector_store: Optional[BasePydanticVectorStore] = None,
-        cache: Optional[IngestionCache] = None,
-        docstore: Optional[BaseDocumentStore] = None,
-        disable_cache: bool = False,
-    ) -> "IngestionPipeline":
-        transformations = [
-            *service_context.transformations,
-            service_context.embed_model,
-        ]
-
-        return cls(
-            transformations=transformations,
-            reader=reader,
-            documents=documents,
-            vector_store=vector_store,
-            cache=cache,
-            docstore=docstore,
             disable_cache=disable_cache,
         )
 

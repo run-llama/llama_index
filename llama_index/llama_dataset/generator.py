@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import List
+from typing import List, Optional
 
 from llama_index import Document, ServiceContext, SummaryIndex
 from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
@@ -15,11 +15,17 @@ from llama_index.llama_dataset import (
     LabelledRagDataExample,
     LabelledRagDataset,
 )
+from llama_index.llms import LLM
 from llama_index.postprocessor.node import KeywordNodePostprocessor
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, TransformComponent
+from llama_index.settings import (
+    Settings,
+    llm_from_settings_or_context,
+    transformations_from_settings_or_context,
+)
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
 Context information is below.
@@ -51,21 +57,19 @@ class RagDatasetGenerator(PromptMixin):
     def __init__(
         self,
         nodes: List[BaseNode],
-        service_context: ServiceContext | None = None,
+        llm: Optional[LLM] = None,
         num_questions_per_chunk: int = 3,
-        text_question_template: BasePromptTemplate | None = None,
-        text_qa_template: BasePromptTemplate | None = None,
-        question_gen_query: str | None = None,
+        text_question_template: Optional[BasePromptTemplate] = None,
+        text_qa_template: Optional[BasePromptTemplate] = None,
+        question_gen_query: Optional[str] = None,
         metadata_mode: MetadataMode = MetadataMode.NONE,
         show_progress: bool = False,
         workers: int = DEFAULT_NUM_WORKERS,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Init params."""
-        if service_context is None:
-            service_context = service_context or ServiceContext.from_defaults(
-                chunk_size_limit=3000
-            )
-        self.service_context = service_context
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self.text_question_template = text_question_template or PromptTemplate(
             DEFAULT_QUESTION_GENERATION_PROMPT
         )
@@ -87,30 +91,34 @@ class RagDatasetGenerator(PromptMixin):
     def from_documents(
         cls,
         documents: List[Document],
-        service_context: ServiceContext | None = None,
+        llm: Optional[LLM] = None,
+        transformations: Optional[List[TransformComponent]] = None,
         num_questions_per_chunk: int = 3,
-        text_question_template: BasePromptTemplate | None = None,
-        text_qa_template: BasePromptTemplate | None = None,
-        question_gen_query: str | None = None,
-        required_keywords: List[str] | None = None,
-        exclude_keywords: List[str] | None = None,
+        text_question_template: Optional[BasePromptTemplate] = None,
+        text_qa_template: Optional[BasePromptTemplate] = None,
+        question_gen_query: Optional[str] = None,
+        required_keywords: Optional[List[str]] = None,
+        exclude_keywords: Optional[List[str]] = None,
         show_progress: bool = False,
         workers: int = DEFAULT_NUM_WORKERS,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
     ) -> RagDatasetGenerator:
         """Generate dataset from documents."""
-        if service_context is None:
-            service_context = service_context or ServiceContext.from_defaults(
-                chunk_size_limit=3000
-            )
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        transformations = transformations or transformations_from_settings_or_context(
+            Settings, service_context
+        )
 
         nodes = run_transformations(
-            documents, service_context.transformations, show_progress=show_progress
+            documents, transformations, show_progress=show_progress
         )
 
         # use node postprocessor to filter nodes
         required_keywords = required_keywords or []
         exclude_keywords = exclude_keywords or []
         node_postprocessor = KeywordNodePostprocessor(
+            llm=llm,
             service_context=service_context,
             required_keywords=required_keywords,
             exclude_keywords=exclude_keywords,
@@ -121,6 +129,7 @@ class RagDatasetGenerator(PromptMixin):
 
         return cls(
             nodes=nodes,
+            llm=llm,
             service_context=service_context,
             num_questions_per_chunk=num_questions_per_chunk,
             text_question_template=text_question_template,
@@ -147,11 +156,10 @@ class RagDatasetGenerator(PromptMixin):
                         metadata=node.metadata,
                     )
                 ],
-                service_context=self.service_context,
             )
 
             query_engine = index.as_query_engine(
-                service_context=self.service_context,
+                llm=self._llm,
                 text_qa_template=self.text_question_template,
                 use_async=True,
             )
@@ -179,7 +187,7 @@ class RagDatasetGenerator(PromptMixin):
                 for query in cleaned_questions:
                     # build summary index off of node (i.e. context)
                     qa_query_engine = index.as_query_engine(
-                        service_context=self.service_context,
+                        llm=self._llm,
                         text_qa_template=self.text_qa_template,
                     )
                     qr_task = qa_query_engine.aquery(query)
@@ -190,7 +198,7 @@ class RagDatasetGenerator(PromptMixin):
                 for question, answer_response in zip(
                     cleaned_questions, answer_responses
                 ):
-                    model_name = self.service_context.llm.metadata.model_name
+                    model_name = self._llm.metadata.model_name
                     created_by = CreatedBy(type=CreatedByType.AI, model_name=model_name)
                     example = LabelledRagDataExample(
                         query=question,

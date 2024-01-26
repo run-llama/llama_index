@@ -4,6 +4,7 @@ from typing import Any, Dict, Generic, List, Optional, Type
 
 import pandas as pd
 
+from llama_index.llms import LLM
 from llama_index.program.predefined.df import (
     DataFrameRow,
     DataFrameRowsOnly,
@@ -59,6 +60,7 @@ class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
         cls,
         fields_to_extract: Optional[List[str]] = None,
         fields_context: Optional[Dict[str, Any]] = None,
+        llm: Optional[LLM] = None,
         service_context: Optional[ServiceContext] = None,
         schema_id_prompt: Optional[SchemaIDPrompt] = None,
         fn_generate_prompt: Optional[FnGeneratePrompt] = None,
@@ -68,6 +70,7 @@ class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
     ) -> "BaseEvaporateProgram":
         """Evaporate program."""
         extractor = EvaporateExtractor(
+            llm=llm,
             service_context=service_context,
             schema_id_prompt=schema_id_prompt,
             fn_generate_prompt=fn_generate_prompt,
@@ -203,6 +206,7 @@ class MultiValueEvaporateProgram(BaseEvaporateProgram[DataFrameValuesPerColumn])
         cls,
         fields_to_extract: Optional[List[str]] = None,
         fields_context: Optional[Dict[str, Any]] = None,
+        llm: Optional[LLM] = None,
         service_context: Optional[ServiceContext] = None,
         schema_id_prompt: Optional[SchemaIDPrompt] = None,
         fn_generate_prompt: Optional[FnGeneratePrompt] = None,
@@ -215,6 +219,7 @@ class MultiValueEvaporateProgram(BaseEvaporateProgram[DataFrameValuesPerColumn])
         return super().from_defaults(
             fields_to_extract=fields_to_extract,
             fields_context=fields_context,
+            llm=llm,
             service_context=service_context,
             schema_id_prompt=schema_id_prompt,
             fn_generate_prompt=fn_generate_prompt,

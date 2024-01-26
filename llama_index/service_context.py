@@ -388,3 +388,13 @@ class ServiceContext:
 def set_global_service_context(service_context: Optional[ServiceContext]) -> None:
     """Helper function to set the global service context."""
     llama_index.global_service_context = service_context
+
+    if service_context is not None:
+        from llama_index.settings import Settings
+
+        Settings.llm = service_context.llm
+        Settings.embed_model = service_context.embed_model
+        Settings.prompt_helper = service_context.prompt_helper
+        Settings.transformations = service_context.transformations
+        Settings.node_parser = service_context.node_parser
+        Settings.callback_manager = service_context.callback_manager

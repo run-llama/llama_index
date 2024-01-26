@@ -6,54 +6,21 @@ import numpy as np
 import pandas as pd
 
 from llama_index.bridge.pydantic import Field
+from llama_index.embeddings import BaseEmbedding
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
-from llama_index.service_context import ServiceContext
-
-# NOTE: currently not being used
-# DEFAULT_INFER_RECENCY_TMPL = (
-#     "A question is provided.\n"
-#     "The goal is to determine whether the question requires finding the most recent "
-#     "context.\n"
-#     "Please respond with YES or NO.\n"
-#     "Question: What is the current status of the patient?\n"
-#     "Answer: YES\n"
-#     "Question: What happened in the Battle of Yorktown?\n"
-#     "Answer: NO\n"
-#     "Question: What are the most recent changes to the project?\n"
-#     "Answer: YES\n"
-#     "Question: How did Harry defeat Voldemort in the Battle of Hogwarts?\n"
-#     "Answer: NO\n"
-#     "Question: {query_str}\n"
-#     "Answer: "
-# )
-
-
-# def parse_recency_pred(pred: str) -> bool:
-#     """Parse recency prediction."""
-#     if "YES" in pred:
-#         return True
-#     elif "NO" in pred:
-#         return False
-#     else:
-#         raise ValueError(f"Invalid recency prediction: {pred}.")
+from llama_index.settings import Settings
 
 
 class FixedRecencyPostprocessor(BaseNodePostprocessor):
-    """Recency post-processor.
+    """Fixed Recency post-processor.
 
-    This post-processor does the following steps:
+    This post-processor does the following steps orders nodes by date.
 
-    - Decides if we need to use the post-processor given the query
-      (is it temporal-related?)
-    - If yes, sorts nodes by date.
-    - Take the first k nodes (by default 1), and use that to synthesize an answer.
-
+    Assumes the date_key corresponds to a date field in the metadata.
     """
 
-    service_context: ServiceContext
     top_k: int = 1
-    # infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
     date_key: str = "date"
 
     @classmethod
@@ -92,21 +59,9 @@ DEFAULT_QUERY_EMBEDDING_TMPL = (
 
 
 class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
-    """Recency post-processor.
+    """Embedding Recency post-processor."""
 
-    This post-processor does the following steps:
-
-    - Decides if we need to use the post-processor given the query
-      (is it temporal-related?)
-    - If yes, sorts nodes by date.
-    - For each node, look at subsequent nodes and filter out nodes
-      that have high embedding similarity with the current node.
-      Because this means the subsequent node may have overlapping content
-      with the current node but is also out of date
-    """
-
-    service_context: ServiceContext
-    # infer_recency_tmpl: str = Field(default=DEFAULT_INFER_RECENCY_TMPL)
+    embed_model: BaseEmbedding = Field(default=lambda: Settings.embed_model)
     date_key: str = "date"
     similarity_cutoff: float = Field(default=0.7)
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)
@@ -132,9 +87,8 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
         sorted_nodes: List[NodeWithScore] = [nodes[idx] for idx in sorted_node_idxs]
 
         # get embeddings for each node
-        embed_model = self.service_context.embed_model
         texts = [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes]
-        text_embeddings = embed_model.get_text_embedding_batch(texts=texts)
+        text_embeddings = self.embed_model.get_text_embedding_batch(texts=texts)
 
         node_ids_to_skip: Set[str] = set()
         for idx, node in enumerate(sorted_nodes):
@@ -147,7 +101,7 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
             query_text = self.query_embedding_tmpl.format(
                 context_str=node.node.get_content(metadata_mode=MetadataMode.EMBED),
             )
-            query_embedding = embed_model.get_query_embedding(query_text)
+            query_embedding = self.embed_model.get_query_embedding(query_text)
 
             for idx2 in range(idx + 1, len(sorted_nodes)):
                 if sorted_nodes[idx2].node.node_id in node_ids_to_skip:

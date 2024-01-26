@@ -6,12 +6,14 @@ from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
+from llama_index.llms import LLM
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
+from llama_index.settings import Settings, llm_from_settings_or_context
 
 
 class LLMRerank(BaseNodePostprocessor):
@@ -22,15 +24,14 @@ class LLMRerank(BaseNodePostprocessor):
         description="Choice select prompt."
     )
     choice_batch_size: int = Field(description="Batch size for choice select.")
-    service_context: ServiceContext = Field(
-        description="Service context.", exclude=True
-    )
+    llm: LLM = Field(description="The LLM to rerank with.")
 
     _format_node_batch_fn: Callable = PrivateAttr()
     _parse_choice_select_answer_fn: Callable = PrivateAttr()
 
     def __init__(
         self,
+        llm: Optional[LLM] = None,
         choice_select_prompt: Optional[BasePromptTemplate] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
@@ -39,7 +40,8 @@ class LLMRerank(BaseNodePostprocessor):
         top_n: int = 10,
     ) -> None:
         choice_select_prompt = choice_select_prompt or DEFAULT_CHOICE_SELECT_PROMPT
-        service_context = service_context or ServiceContext.from_defaults()
+
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
 
         self._format_node_batch_fn = (
             format_node_batch_fn or default_format_node_batch_fn
@@ -49,6 +51,7 @@ class LLMRerank(BaseNodePostprocessor):
         )
 
         super().__init__(
+            llm=llm,
             choice_select_prompt=choice_select_prompt,
             choice_batch_size=choice_batch_size,
             service_context=service_context,
@@ -87,7 +90,7 @@ class LLMRerank(BaseNodePostprocessor):
             query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(nodes_batch)
             # call each batch independently
-            raw_response = self.service_context.llm.predict(
+            raw_response = self.llm.predict(
                 self.choice_select_prompt,
                 context_str=fmt_batch_str,
                 query_str=query_str,

@@ -17,20 +17,23 @@ import logging
 from typing import Any, List, Optional, Sequence, Type, cast
 
 from llama_index import VectorStoreIndex
+from llama_index.callbacks.base import CallbackManager
 from llama_index.data_structs.data_structs import IndexDict
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.base import IndexType
 from llama_index.indices.base_retriever import BaseRetriever
 from llama_index.indices.managed.base import BaseManagedIndex
 from llama_index.indices.query.base import BaseQueryEngine
 from llama_index.indices.service_context import ServiceContext
+from llama_index.llms.utils import LLMType
 from llama_index.response_synthesizers.google.generativeai import (
     GoogleTextSynthesizer,
 )
-from llama_index.schema import BaseNode, Document
+from llama_index.schema import BaseNode, Document, TransformComponent
+from llama_index.settings import Settings, embed_model_from_settings_or_context
 from llama_index.storage.storage_context import StorageContext
 from llama_index.vector_stores.google.generativeai import (
     GoogleVectorStore,
-    google_service_context,
 )
 
 _logger = logging.getLogger(__name__)
@@ -45,6 +48,8 @@ class GoogleIndex(BaseManagedIndex):
     def __init__(
         self,
         vector_store: GoogleVectorStore,
+        embed_model: Optional[BaseEmbedding] = None,
+        # deprecated
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
@@ -52,16 +57,18 @@ class GoogleIndex(BaseManagedIndex):
 
         Prefer to use the factories `from_corpus` or `create_corpus` instead.
         """
-        actual_service_context = service_context or google_service_context
+        embed_model = embed_model or embed_model_from_settings_or_context(
+            Settings, service_context
+        )
 
         self._store = vector_store
         self._index = VectorStoreIndex.from_vector_store(
-            vector_store, service_context=actual_service_context, **kwargs
+            vector_store, embed_model=embed_model, **kwargs
         )
 
         super().__init__(
             index_struct=self._index.index_struct,
-            service_context=actual_service_context,
+            service_context=service_context,
             **kwargs,
         )
 
@@ -116,8 +123,12 @@ class GoogleIndex(BaseManagedIndex):
         cls: Type[IndexType],
         documents: Sequence[Document],
         storage_context: Optional[StorageContext] = None,
-        service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
+        transformations: Optional[List[TransformComponent]] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> IndexType:
         """Build an index from a sequence of documents."""
@@ -126,11 +137,20 @@ class GoogleIndex(BaseManagedIndex):
         new_display_name = f"Corpus created on {datetime.datetime.now()}"
         instance = cls(
             vector_store=GoogleVectorStore.create_corpus(display_name=new_display_name),
+            embed_model=embed_model,
+            service_context=service_context,
+            storage_context=storage_context,
+            show_progress=show_progress,
+            callback_manager=callback_manager,
+            transformations=transformations,
             **kwargs,
         )
 
         index = cast(GoogleIndex, instance)
-        index.insert_documents(documents=documents, service_context=service_context)
+        index.insert_documents(
+            documents=documents,
+            service_context=service_context,
+        )
 
         return instance
 
@@ -164,7 +184,7 @@ class GoogleIndex(BaseManagedIndex):
 
     def as_query_engine(
         self,
-        *,
+        llm: Optional[LLMType] = None,
         temperature: float = 0.7,
         answer_style: Any = 1,
         safety_setting: List[Any] = [],

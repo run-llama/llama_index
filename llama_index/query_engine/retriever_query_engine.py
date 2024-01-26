@@ -6,6 +6,7 @@ from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.core.response.schema import RESPONSE_TYPE
+from llama_index.llms import LLM
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.mixin import PromptMixinType
@@ -16,6 +17,11 @@ from llama_index.response_synthesizers import (
 )
 from llama_index.schema import NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
@@ -37,16 +43,21 @@ class RetrieverQueryEngine(BaseQueryEngine):
     ) -> None:
         self._retriever = retriever
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            service_context=retriever.get_service_context(),
-            callback_manager=callback_manager,
+            llm=llm_from_settings_or_context(Settings, retriever.get_service_context()),
+            callback_manager=callback_manager
+            or callback_manager_from_settings_or_context(
+                Settings, retriever.get_service_context()
+            ),
         )
 
         self._node_postprocessors = node_postprocessors or []
-        callback_manager = callback_manager or CallbackManager([])
+        callback_manager = (
+            callback_manager or self._response_synthesizer.callback_manager
+        )
         for node_postprocessor in self._node_postprocessors:
             node_postprocessor.callback_manager = callback_manager
 
-        super().__init__(callback_manager)
+        super().__init__(callback_manager=callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
@@ -56,8 +67,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
     def from_args(
         cls,
         retriever: BaseRetriever,
+        llm: Optional[LLM] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
-        service_context: Optional[ServiceContext] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         # response synthesizer args
         response_mode: ResponseMode = ResponseMode.COMPACT,
@@ -68,7 +79,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
         output_cls: Optional[BaseModel] = None,
         use_async: bool = False,
         streaming: bool = False,
-        # class-specific args
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "RetrieverQueryEngine":
         """Initialize a RetrieverQueryEngine object.".
@@ -91,7 +103,10 @@ class RetrieverQueryEngine(BaseQueryEngine):
                 object.
 
         """
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
+
         response_synthesizer = response_synthesizer or get_response_synthesizer(
+            llm=llm,
             service_context=service_context,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
@@ -103,8 +118,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
             streaming=streaming,
         )
 
-        callback_manager = (
-            service_context.callback_manager if service_context else CallbackManager([])
+        callback_manager = callback_manager_from_settings_or_context(
+            Settings, service_context
         )
 
         return cls(

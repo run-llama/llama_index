@@ -9,15 +9,17 @@ from typing import Any, Callable, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.base_retriever import BaseRetriever
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.schema import NodeWithScore, QueryBundle
-from llama_index.service_context import ServiceContext
+from llama_index.settings import Settings
 from llama_index.vector_stores.types import VectorStoreQuery
 
 logger = logging.getLogger(__name__)
@@ -35,7 +37,7 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
         choice_top_k (int): The number of summary nodes to retrieve.
         format_node_batch_fn (Callable): Function to format a batch of nodes for LLM.
         parse_choice_select_answer_fn (Callable): Function to parse LLM response.
-        service_context (ServiceContext): The service context to use.
+        llm (LLM): The llm to use.
     """
 
     def __init__(
@@ -46,7 +48,7 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
         choice_top_k: int = 1,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[dict] = None,
         verbose: bool = False,
@@ -64,9 +66,13 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
         self._parse_choice_select_answer_fn = (
             parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
         )
-        self._service_context = service_context or index.service_context
+
+        self._llm = llm or Settings.llm
+
         super().__init__(
-            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+            callback_manager=callback_manager or Settings.callback_manager,
+            object_map=object_map,
+            verbose=verbose,
         )
 
     def _retrieve(
@@ -84,7 +90,7 @@ class DocumentSummaryIndexLLMRetriever(BaseRetriever):
             query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(summary_nodes)
             # call each batch independently
-            raw_response = self._service_context.llm.predict(
+            raw_response = self._llm.predict(
                 self._choice_select_prompt,
                 context_str=fmt_batch_str,
                 query_str=query_str,
@@ -125,6 +131,7 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         self,
         index: DocumentSummaryIndex,
         similarity_top_k: int = 1,
+        embed_model: Optional[BaseEmbedding] = None,
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[dict] = None,
         verbose: bool = False,
@@ -133,12 +140,14 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         """Init params."""
         self._index = index
         self._vector_store = self._index.vector_store
-        self._service_context = self._index.service_context
+        self._embed_model = embed_model or Settings.embed_model
         self._docstore = self._index.docstore
         self._index_struct = self._index.index_struct
         self._similarity_top_k = similarity_top_k
         super().__init__(
-            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+            callback_manager=callback_manager or Settings.callback_manager,
+            object_map=object_map,
+            verbose=verbose,
         )
 
     def _retrieve(
@@ -149,7 +158,7 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
         if self._vector_store.is_embedding_query:
             if query_bundle.embedding is None:
                 query_bundle.embedding = (
-                    self._service_context.embed_model.get_agg_embedding_from_queries(
+                    self._embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
                     )
                 )

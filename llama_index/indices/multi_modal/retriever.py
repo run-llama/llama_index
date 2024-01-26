@@ -14,6 +14,7 @@ from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.schema import NodeWithScore, ObjectType, QueryBundle, QueryType
+from llama_index.settings import Settings, callback_manager_from_settings_or_context
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
@@ -61,7 +62,8 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self._image_vector_store = self._index.image_vector_store
 
         assert isinstance(self._index.image_embed_model, BaseEmbedding)
-        self._image_embed_model = self._index.image_embed_model
+        self._image_embed_model = index._image_embed_model
+        self._embed_model = index._embed_model
 
         self._service_context = self._index.service_context
         self._docstore = self._index.docstore
@@ -76,7 +78,12 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self._sparse_top_k = sparse_top_k
 
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
-        self.callback_manager = callback_manager or CallbackManager([])
+        self.callback_manager = (
+            callback_manager
+            or callback_manager_from_settings_or_context(
+                Settings, self._service_context
+            )
+        )
 
     @property
     def similarity_top_k(self) -> int:
@@ -139,8 +146,10 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
                     query_bundle.embedding is None
                     and len(query_bundle.embedding_strs) > 0
                 ):
-                    query_bundle.embedding = self._service_context.embed_model.get_agg_embedding_from_queries(
-                        query_bundle.embedding_strs
+                    query_bundle.embedding = (
+                        self._embed_model.get_agg_embedding_from_queries(
+                            query_bundle.embedding_strs
+                        )
                     )
             return self._get_nodes_with_embeddings(
                 query_bundle, self._similarity_top_k, self._vector_store
@@ -283,8 +292,10 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         if not self._index.is_text_vector_store_empty:
             if self._vector_store.is_embedding_query:
                 # change the embedding for query bundle to Multi Modal Text encoder
-                query_bundle.embedding = await self._service_context.embed_model.aget_agg_embedding_from_queries(
-                    query_bundle.embedding_strs
+                query_bundle.embedding = (
+                    await self._embed_model.aget_agg_embedding_from_queries(
+                        query_bundle.embedding_strs
+                    )
                 )
             return await self._aget_nodes_with_embeddings(
                 query_bundle, self._similarity_top_k, self._vector_store

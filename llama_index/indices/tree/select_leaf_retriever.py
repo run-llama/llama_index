@@ -22,6 +22,11 @@ from llama_index.prompts.default_prompts import (
 )
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    prompt_helper_from_settings_or_context,
+)
 from llama_index.utils import print_text, truncate_text
 
 logger = logging.getLogger(__name__)
@@ -77,9 +82,13 @@ class TreeSelectLeafRetriever(BaseRetriever):
         **kwargs: Any,
     ):
         self._index = index
+        self._llm = index._llm
         self._index_struct = index.index_struct
         self._docstore = index.docstore
         self._service_context = index.service_context
+        self._prompt_helper = prompt_helper_from_settings_or_context(
+            Settings, index.service_context
+        )
 
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
@@ -89,7 +98,12 @@ class TreeSelectLeafRetriever(BaseRetriever):
         )
         self.child_branch_factor = child_branch_factor
         super().__init__(
-            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+            callback_manager=callback_manager
+            or callback_manager_from_settings_or_context(
+                Settings, index.service_context
+            ),
+            object_map=object_map,
+            verbose=verbose,
         )
 
     def _query_with_selected_node(
@@ -109,9 +123,11 @@ class TreeSelectLeafRetriever(BaseRetriever):
 
         if len(self._index_struct.get_children(selected_node)) == 0:
             response_builder = get_response_synthesizer(
+                llm=self._llm,
                 service_context=self._service_context,
                 text_qa_template=self._text_qa_template,
                 refine_template=self._refine_template,
+                callback_manager=self.callback_manager,
             )
             # use response builder to get answer from node
             node_text = get_text_from_node(selected_node, level=level)
@@ -131,7 +147,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             return cur_response
         else:
             context_msg = selected_node.get_content(metadata_mode=MetadataMode.LLM)
-            cur_response = self._service_context.llm.predict(
+            cur_response = self._llm.predict(
                 self._refine_template,
                 query_str=query_str,
                 existing_answer=prev_response,
@@ -164,17 +180,15 @@ class TreeSelectLeafRetriever(BaseRetriever):
             query_template = self.query_template.partial_format(
                 num_chunks=len(cur_node_list), query_str=query_str
             )
-            text_splitter = (
-                self._service_context.prompt_helper.get_text_splitter_given_prompt(
-                    prompt=query_template,
-                    num_chunks=len(cur_node_list),
-                )
+            text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+                prompt=query_template,
+                num_chunks=len(cur_node_list),
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter
             )
 
-            response = self._service_context.llm.predict(
+            response = self._llm.predict(
                 query_template,
                 context_list=numbered_node_text,
             )
@@ -185,17 +199,15 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 branching_factor=self.child_branch_factor,
             )
 
-            text_splitter = (
-                self._service_context.prompt_helper.get_text_splitter_given_prompt(
-                    prompt=query_template_multiple,
-                    num_chunks=len(cur_node_list),
-                )
+            text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+                prompt=query_template_multiple,
+                num_chunks=len(cur_node_list),
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter
             )
 
-            response = self._service_context.llm.predict(
+            response = self._llm.predict(
                 query_template_multiple,
                 context_list=numbered_node_text,
             )
@@ -282,17 +294,15 @@ class TreeSelectLeafRetriever(BaseRetriever):
             query_template = self.query_template.partial_format(
                 num_chunks=len(cur_node_list), query_str=query_str
             )
-            text_splitter = (
-                self._service_context.prompt_helper.get_text_splitter_given_prompt(
-                    prompt=query_template,
-                    num_chunks=len(cur_node_list),
-                )
+            text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+                prompt=query_template,
+                num_chunks=len(cur_node_list),
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter
             )
 
-            response = self._service_context.llm.predict(
+            response = self._llm.predict(
                 query_template,
                 context_list=numbered_node_text,
             )
@@ -303,17 +313,15 @@ class TreeSelectLeafRetriever(BaseRetriever):
                 branching_factor=self.child_branch_factor,
             )
 
-            text_splitter = (
-                self._service_context.prompt_helper.get_text_splitter_given_prompt(
-                    prompt=query_template_multiple,
-                    num_chunks=len(cur_node_list),
-                )
+            text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+                prompt=query_template_multiple,
+                num_chunks=len(cur_node_list),
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter
             )
 
-            response = self._service_context.llm.predict(
+            response = self._llm.predict(
                 query_template_multiple,
                 context_list=numbered_node_text,
             )

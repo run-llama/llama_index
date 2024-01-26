@@ -11,6 +11,7 @@ from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import EmptyIndexStruct
 from llama_index.indices.base import BaseIndex
+from llama_index.llms.utils import LLMType
 from llama_index.schema import BaseNode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
@@ -32,6 +33,7 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
     def __init__(
         self,
         index_struct: Optional[EmptyIndexStruct] = None,
+        # deprecated
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
@@ -49,14 +51,16 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
 
         return EmptyIndexRetriever(self)
 
-    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+    def as_query_engine(
+        self, llm: Optional[LLMType] = None, **kwargs: Any
+    ) -> BaseQueryEngine:
         if "response_mode" not in kwargs:
             kwargs["response_mode"] = "generation"
         else:
             if kwargs["response_mode"] != "generation":
                 raise ValueError("EmptyIndex only supports response_mode=generation.")
 
-        return super().as_query_engine(**kwargs)
+        return super().as_query_engine(llm=llm, **kwargs)
 
     def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> EmptyIndexStruct:
         """Build the index from documents.

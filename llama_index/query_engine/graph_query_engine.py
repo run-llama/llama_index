@@ -5,6 +5,7 @@ from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.indices.composability.graph import ComposableGraph
 from llama_index.schema import IndexNode, NodeWithScore, QueryBundle, TextNode
+from llama_index.settings import Settings, callback_manager_from_settings_or_context
 
 
 class ComposableGraphQueryEngine(BaseQueryEngine):
@@ -37,8 +38,10 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
 
         # additional configs
         self._recursive = recursive
-        callback_manager = self._graph.service_context.callback_manager
-        super().__init__(callback_manager)
+        callback_manager = callback_manager_from_settings_or_context(
+            Settings, self._graph.service_context
+        )
+        super().__init__(callback_manager=callback_manager)
 
     def _get_prompt_modules(self) -> Dict[str, Any]:
         """Get prompt modules."""

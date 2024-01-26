@@ -45,7 +45,6 @@ class ColbertIndex(BaseIndex[IndexDict]):
         nodes: Optional[Sequence[BaseNode]] = None,
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexDict] = None,
-        service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
         model_name: str = "colbert-ir/colbertv2.0",
         index_name: str = "",
@@ -56,6 +55,8 @@ class ColbertIndex(BaseIndex[IndexDict]):
         doc_maxlen: int = 120,
         query_maxlen: int = 60,
         kmeans_niters: int = 4,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         self.model_name = model_name

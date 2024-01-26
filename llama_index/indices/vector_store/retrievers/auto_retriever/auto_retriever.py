@@ -14,11 +14,17 @@ from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser im
 from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
     DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL,
 )
+from llama_index.llms import LLM
 from llama_index.output_parsers.base import OutputParserException, StructuredOutput
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import IndexNode, QueryBundle
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.vector_stores.types import (
     FilterCondition,
     MetadataFilters,
@@ -67,8 +73,8 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         self,
         index: VectorStoreIndex,
         vector_store_info: VectorStoreInfo,
+        llm: Optional[LLM] = None,
         prompt_template_str: Optional[str] = None,
-        service_context: Optional[ServiceContext] = None,
         max_top_k: int = 10,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         empty_query_top_k: Optional[int] = 10,
@@ -79,13 +85,20 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         extra_filters: Optional[MetadataFilters] = None,
         object_map: Optional[dict] = None,
         objects: Optional[List[IndexNode]] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
         self._vector_store_info = vector_store_info
-        self._service_context = service_context or self._index.service_context
         self._default_empty_query_vector = default_empty_query_vector
-        callback_manager = callback_manager or self._service_context.callback_manager
+
+        service_context = service_context or self._index.service_context
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        callback_manager = (
+            callback_manager
+            or callback_manager_from_settings_or_context(Settings, service_context)
+        )
 
         # prompt
         prompt_template_str = (
@@ -159,7 +172,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         schema_str = VectorStoreQuerySpec.schema_json(indent=4)
 
         # call LLM
-        output = self._service_context.llm.predict(
+        output = self._llm.predict(
             self._prompt,
             schema_str=schema_str,
             info_str=info_str,
@@ -177,7 +190,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         schema_str = VectorStoreQuerySpec.schema_json(indent=4)
 
         # call LLM
-        output = await self._service_context.llm.apredict(
+        output = await self._llm.apredict(
             self._prompt,
             schema_str=schema_str,
             info_str=info_str,

@@ -14,7 +14,12 @@ from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.schema import BaseNode, Document, IndexNode, TransformComponent
 from llama_index.service_context import ServiceContext
-from llama_index.settings import Settings, callback_manager_from_settings_or_context
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+    transformations_from_settings_or_context,
+)
 from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 
@@ -88,8 +93,11 @@ class BaseIndex(Generic[IS], ABC):
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
         # deprecated
-        self._service_context = service_context or ServiceContext.from_defaults()
-        self._transformations = transformations or self._service_context.transformations
+        self._transformations = (
+            transformations
+            or transformations_from_settings_or_context(Settings, service_context)
+        )
+        self._service_context = service_context
 
     @classmethod
     def from_documents(
@@ -116,13 +124,9 @@ class BaseIndex(Generic[IS], ABC):
             callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context)
         )
-        transformations = transformations
-        if service_context is not None:
-            transformations = service_context.transformations
-        elif transformations is None:
-            raise ValueError(
-                "Either service_context or transformations must be provided."
-            )
+        transformations = transformations or transformations_from_settings_or_context(
+            Settings, service_context
+        )
 
         with callback_manager.as_trace("index_construction"):
             for doc in documents:
@@ -183,7 +187,7 @@ class BaseIndex(Generic[IS], ABC):
         return self._docstore
 
     @property
-    def service_context(self) -> ServiceContext:
+    def service_context(self) -> Optional[ServiceContext]:
         return self._service_context
 
     @property
@@ -373,13 +377,18 @@ class BaseIndex(Generic[IS], ABC):
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         ...
 
-    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+    def as_query_engine(
+        self, llm: Optional[LLMType] = None, **kwargs: Any
+    ) -> BaseQueryEngine:
         # NOTE: lazy import
         from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         retriever = self.as_retriever(**kwargs)
-        llm = kwargs.get("llm", None)
-        llm = resolve_llm(llm) if llm else Settings.llm
+        llm = (
+            resolve_llm(llm)
+            if llm
+            else llm_from_settings_or_context(Settings, self.service_context)
+        )
 
         return RetrieverQueryEngine.from_args(
             retriever,
@@ -398,11 +407,13 @@ class BaseIndex(Generic[IS], ABC):
         query_engine = self.as_query_engine(llm=llm, **kwargs)
 
         if "service_context" not in kwargs:
-            kwargs["service_context"] = self._service_context
+            kwargs["service_context"] = self.service_context
 
         # resolve chat mode
         if chat_mode == ChatMode.BEST:
-            if isinstance(llm, OpenAI) and is_function_calling_model(llm.model):
+            if isinstance(llm, OpenAI) and is_function_calling_model(
+                llm.metadata.model_name
+            ):
                 chat_mode = ChatMode.OPENAI
             else:
                 chat_mode = ChatMode.REACT

@@ -20,6 +20,12 @@ from llama_index.prompts.prompt_type import PromptType
 from llama_index.response_synthesizers import get_response_synthesizer
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+    prompt_helper_from_settings_or_context,
+)
 from llama_index.utilities.sql_wrapper import SQLDatabase
 from llama_index.utils import truncate_text
 
@@ -45,6 +51,7 @@ class SQLDocumentContextBuilder:
     def __init__(
         self,
         sql_database: SQLDatabase,
+        llm: Optional[LLMPredictorType] = None,
         service_context: Optional[ServiceContext] = None,
         text_splitter: Optional[TextSplitter] = None,
         table_context_prompt: Optional[BasePromptTemplate] = None,
@@ -57,7 +64,13 @@ class SQLDocumentContextBuilder:
             raise ValueError("sql_database must be provided.")
         self._sql_database = sql_database
         self._text_splitter = text_splitter
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._prompt_helper = prompt_helper_from_settings_or_context(
+            Settings, service_context
+        )
+        self._callback_manager = callback_manager_from_settings_or_context(
+            Settings, service_context
+        )
         self._table_context_prompt = (
             table_context_prompt or DEFAULT_TABLE_CONTEXT_PROMPT
         )
@@ -94,17 +107,15 @@ class SQLDocumentContextBuilder:
 
         text_splitter = (
             self._text_splitter
-            or self._service_context.prompt_helper.get_text_splitter_given_prompt(
-                prompt_with_schema
-            )
+            or self._prompt_helper.get_text_splitter_given_prompt(prompt_with_schema)
         )
         # we use the ResponseBuilder to iteratively go through all texts
         response_builder = get_response_synthesizer(
-            service_context=self._service_context,
+            llm=self._llm,
             text_qa_template=prompt_with_schema,
             refine_template=refine_prompt_with_schema,
         )
-        with self._service_context.callback_manager.event(
+        with self._callback_manager.event(
             CBEventType.CHUNKING,
             payload={EventPayload.DOCUMENTS: documents},
         ) as event:

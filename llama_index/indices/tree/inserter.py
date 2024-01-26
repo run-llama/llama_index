@@ -8,6 +8,7 @@ from llama_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
 )
+from llama_index.llms import LLM
 from llama_index.prompts.base import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
@@ -15,6 +16,11 @@ from llama_index.prompts.default_prompts import (
 )
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    llm_from_settings_or_context,
+    prompt_helper_from_settings_or_context,
+)
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 
@@ -25,7 +31,8 @@ class TreeIndexInserter:
     def __init__(
         self,
         index_graph: IndexGraph,
-        service_context: ServiceContext,
+        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         num_children: int = 10,
         insert_prompt: BasePromptTemplate = DEFAULT_INSERT_PROMPT,
         summary_prompt: BasePromptTemplate = DEFAULT_SUMMARY_PROMPT,
@@ -38,7 +45,10 @@ class TreeIndexInserter:
         self.summary_prompt = summary_prompt
         self.insert_prompt = insert_prompt
         self.index_graph = index_graph
-        self._service_context = service_context
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._prompt_helper = prompt_helper_from_settings_or_context(
+            Settings, service_context
+        )
         self._docstore = docstore or get_default_docstore()
 
     def _insert_under_parent_and_consolidate(
@@ -67,7 +77,7 @@ class TreeIndexInserter:
             half1 = cur_graph_node_list[: len(cur_graph_nodes) // 2]
             half2 = cur_graph_node_list[len(cur_graph_nodes) // 2 :]
 
-            truncated_chunks = self._service_context.prompt_helper.truncate(
+            truncated_chunks = self._prompt_helper.truncate(
                 prompt=self.summary_prompt,
                 text_chunks=[
                     node.get_content(metadata_mode=MetadataMode.LLM) for node in half1
@@ -75,22 +85,18 @@ class TreeIndexInserter:
             )
             text_chunk1 = "\n".join(truncated_chunks)
 
-            summary1 = self._service_context.llm.predict(
-                self.summary_prompt, context_str=text_chunk1
-            )
+            summary1 = self._llm.predict(self.summary_prompt, context_str=text_chunk1)
             node1 = TextNode(text=summary1)
             self.index_graph.insert(node1, children_nodes=half1)
 
-            truncated_chunks = self._service_context.prompt_helper.truncate(
+            truncated_chunks = self._prompt_helper.truncate(
                 prompt=self.summary_prompt,
                 text_chunks=[
                     node.get_content(metadata_mode=MetadataMode.LLM) for node in half2
                 ],
             )
             text_chunk2 = "\n".join(truncated_chunks)
-            summary2 = self._service_context.llm.predict(
-                self.summary_prompt, context_str=text_chunk2
-            )
+            summary2 = self._llm.predict(self.summary_prompt, context_str=text_chunk2)
             node2 = TextNode(text=summary2)
             self.index_graph.insert(node2, children_nodes=half2)
 
@@ -125,16 +131,14 @@ class TreeIndexInserter:
             self._insert_under_parent_and_consolidate(node, parent_node)
         # else try to find the right summary node to insert under
         else:
-            text_splitter = (
-                self._service_context.prompt_helper.get_text_splitter_given_prompt(
-                    prompt=self.insert_prompt,
-                    num_chunks=len(cur_graph_node_list),
-                )
+            text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
+                prompt=self.insert_prompt,
+                num_chunks=len(cur_graph_node_list),
             )
             numbered_text = get_numbered_text_from_nodes(
                 cur_graph_node_list, text_splitter=text_splitter
             )
-            response = self._service_context.llm.predict(
+            response = self._llm.predict(
                 self.insert_prompt,
                 new_chunk_text=node.get_content(metadata_mode=MetadataMode.LLM),
                 num_chunks=len(cur_graph_node_list),
@@ -158,7 +162,7 @@ class TreeIndexInserter:
             cur_graph_node_ids = self.index_graph.get_children(parent_node)
             cur_graph_nodes = self._docstore.get_node_dict(cur_graph_node_ids)
             cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
-            truncated_chunks = self._service_context.prompt_helper.truncate(
+            truncated_chunks = self._prompt_helper.truncate(
                 prompt=self.summary_prompt,
                 text_chunks=[
                     node.get_content(metadata_mode=MetadataMode.LLM)
@@ -166,9 +170,7 @@ class TreeIndexInserter:
                 ],
             )
             text_chunk = "\n".join(truncated_chunks)
-            new_summary = self._service_context.llm.predict(
-                self.summary_prompt, context_str=text_chunk
-            )
+            new_summary = self._llm.predict(self.summary_prompt, context_str=text_chunk)
 
             parent_node.set_content(new_summary)
 

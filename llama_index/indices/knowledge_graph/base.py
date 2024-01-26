@@ -10,13 +10,20 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from llama_index.constants import GRAPH_STORE_KEY
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import KG
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.graph_stores.simple import SimpleGraphStore
 from llama_index.graph_stores.types import GraphStore
 from llama_index.indices.base import BaseIndex
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
 from llama_index.schema import BaseNode, IndexNode, MetadataMode
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    embed_model_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import get_tqdm_iterable
@@ -53,7 +60,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         nodes: Optional[Sequence[BaseNode]] = None,
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[KG] = None,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         storage_context: Optional[StorageContext] = None,
         kg_triple_extract_template: Optional[BasePromptTemplate] = None,
         max_triplets_per_chunk: int = 10,
@@ -61,6 +69,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         show_progress: bool = False,
         max_object_length: int = 128,
         kg_triplet_extract_fn: Optional[Callable] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -78,6 +88,11 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         )
         self._max_object_length = max_object_length
         self._kg_triplet_extract_fn = kg_triplet_extract_fn
+
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._embed_model = embed_model or embed_model_from_settings_or_context(
+            Settings, service_context
+        )
 
         super().__init__(
             nodes=nodes,
@@ -102,16 +117,27 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     def graph_store(self) -> GraphStore:
         return self._graph_store
 
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+    def as_retriever(
+        self,
+        retriever_mode: Optional[str] = None,
+        embed_model: Optional[BaseEmbedding] = None,
+        **kwargs: Any,
+    ) -> BaseRetriever:
         from llama_index.indices.knowledge_graph.retrievers import (
             KGRetrieverMode,
             KGTableRetriever,
         )
 
-        if len(self.index_struct.embedding_dict) > 0 and "retriever_mode" not in kwargs:
-            kwargs["retriever_mode"] = KGRetrieverMode.HYBRID
+        if len(self.index_struct.embedding_dict) > 0 and retriever_mode is None:
+            retriever_mode = KGRetrieverMode.HYBRID
 
-        return KGTableRetriever(self, object_map=self._object_map, **kwargs)
+        return KGTableRetriever(
+            self,
+            object_map=self._object_map,
+            llm=self._llm,
+            embed_model=embed_model or self._embed_model,
+            **kwargs,
+        )
 
     def _extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         if self._kg_triplet_extract_fn is not None:
@@ -121,7 +147,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
     def _llm_extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
-        response = self._service_context.llm.predict(
+        response = self._llm.predict(
             self.kg_triple_extract_template,
             text=text,
         )
@@ -179,8 +205,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             if self.include_embeddings:
                 triplet_texts = [str(t) for t in triplets]
 
-                embed_model = self._service_context.embed_model
-                embed_outputs = embed_model.get_text_embedding_batch(
+                embed_outputs = self._embed_model.get_text_embedding_batch(
                     triplet_texts, show_progress=self._show_progress
                 )
                 for rel_text, rel_embed in zip(triplet_texts, embed_outputs):
@@ -204,11 +229,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                     self.include_embeddings
                     and triplet_str not in self._index_struct.embedding_dict
                 ):
-                    rel_embedding = (
-                        self._service_context.embed_model.get_text_embedding(
-                            triplet_str
-                        )
-                    )
+                    rel_embedding = self._embed_model.get_text_embedding(triplet_str)
                     self._index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
 
     def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:

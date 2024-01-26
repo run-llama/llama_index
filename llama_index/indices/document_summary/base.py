@@ -13,8 +13,10 @@ from typing import Any, Dict, Optional, Sequence, Union, cast
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.core.response.schema import Response
 from llama_index.data_structs.document_summary import IndexDocumentSummary
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.utils import embed_nodes
+from llama_index.llms import LLM
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
     ResponseMode,
@@ -29,6 +31,11 @@ from llama_index.schema import (
     TextNode,
 )
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    embed_model_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import get_tqdm_iterable
@@ -73,17 +80,25 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         nodes: Optional[Sequence[BaseNode]] = None,
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexDocumentSummary] = None,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         storage_context: Optional[StorageContext] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         summary_query: str = DEFAULT_SUMMARY_QUERY,
         show_progress: bool = False,
         embed_summaries: bool = True,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._embed_model = embed_model or embed_model_from_settings_or_context(
+            Settings, service_context
+        )
+
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            service_context=service_context, response_mode=ResponseMode.TREE_SUMMARIZE
+            llm=self._llm, response_mode=ResponseMode.TREE_SUMMARIZE
         )
         self._summary_query = summary_query
         self._embed_summaries = embed_summaries
@@ -128,11 +143,16 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
                     "Cannot use embedding retriever if embed_summaries is False"
                 )
 
-            if "service_context" not in kwargs:
-                kwargs["service_context"] = self._service_context
-            return EmbeddingRetriever(self, object_map=self._object_map, **kwargs)
+            return EmbeddingRetriever(
+                self,
+                object_map=self._object_map,
+                embed_model=self._embed_model,
+                **kwargs,
+            )
         if retriever_mode == _RetrieverMode.LLM:
-            return LLMRetriever(self, object_map=self._object_map, **kwargs)
+            return LLMRetriever(
+                self, object_map=self._object_map, llm=self._llm, **kwargs
+            )
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
@@ -194,10 +214,9 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             index_struct.add_summary_and_nodes(summary_node_dict[doc_id], nodes)
 
         if self._embed_summaries:
-            embed_model = self._service_context.embed_model
             summary_nodes = list(summary_node_dict.values())
             id_to_embed_map = embed_nodes(
-                summary_nodes, embed_model, show_progress=show_progress
+                summary_nodes, self._embed_model, show_progress=show_progress
             )
 
             summary_nodes_with_embedding = []

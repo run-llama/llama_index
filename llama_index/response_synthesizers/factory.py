@@ -28,6 +28,8 @@ from llama_index.service_context import ServiceContext
 from llama_index.settings import (
     Settings,
     callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+    prompt_helper_from_settings_or_context,
 )
 from llama_index.types import BasePydanticProgram
 
@@ -58,9 +60,9 @@ def get_response_synthesizer(
     callback_manager = callback_manager or callback_manager_from_settings_or_context(
         Settings, service_context
     )
-
-    service_context = service_context or ServiceContext.from_defaults(
-        callback_manager=callback_manager
+    llm = llm or llm_from_settings_or_context(Settings, service_context)
+    prompt_helper = prompt_helper or prompt_helper_from_settings_or_context(
+        Settings, service_context
     )
 
     if response_mode == ResponseMode.REFINE:

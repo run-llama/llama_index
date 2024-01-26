@@ -87,8 +87,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     def from_vector_store(
         cls,
         vector_store: VectorStore,
-        service_context: Optional[ServiceContext] = None,
         embed_model: Optional[EmbedType] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "VectorStoreIndex":
         if not vector_store.stores_text:

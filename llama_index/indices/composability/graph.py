@@ -41,7 +41,7 @@ class ComposableGraph:
         return self._all_indices[self._root_id].index_struct
 
     @property
-    def service_context(self) -> ServiceContext:
+    def service_context(self) -> Optional[ServiceContext]:
         return self._all_indices[self._root_id].service_context
 
     @classmethod

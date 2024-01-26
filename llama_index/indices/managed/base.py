@@ -32,8 +32,9 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[IndexDict] = None,
         storage_context: Optional[StorageContext] = None,
-        service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""

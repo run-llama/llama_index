@@ -4,6 +4,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.settings import Settings, callback_manager_from_settings_or_context
 from llama_index.vector_stores.types import MetadataFilters
 
 from .base import ColbertIndex
@@ -44,7 +45,12 @@ class ColbertRetriever(BaseRetriever):
         self._filters = filters
         self._kwargs: Dict[str, Any] = kwargs.get("colbert_kwargs", {})
         super().__init__(
-            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+            callback_manager=callback_manager
+            or callback_manager_from_settings_or_context(
+                Settings, self._service_context
+            ),
+            object_map=object_map,
+            verbose=verbose,
         )
 
     def _retrieve(

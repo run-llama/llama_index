@@ -1,11 +1,16 @@
 """Query Tree using embedding similarity between query and node text."""
 
 import logging
-from typing import Dict, List, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
+from llama_index.callbacks.base import CallbackManager
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
 from llama_index.indices.utils import get_sorted_node_list
+from llama_index.prompts import BasePromptTemplate
 from llama_index.schema import BaseNode, MetadataMode, QueryBundle
+from llama_index.settings import Settings, embed_model_from_settings_or_context
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +39,36 @@ class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):
             embedding similarity.
 
     """
+
+    def __init__(
+        self,
+        index: TreeIndex,
+        embed_model: Optional[BaseEmbedding] = None,
+        query_template: Optional[BasePromptTemplate] = None,
+        text_qa_template: Optional[BasePromptTemplate] = None,
+        refine_template: Optional[BasePromptTemplate] = None,
+        query_template_multiple: Optional[BasePromptTemplate] = None,
+        child_branch_factor: int = 1,
+        verbose: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        **kwargs: Any,
+    ):
+        super().__init__(
+            index,
+            query_template=query_template,
+            text_qa_template=text_qa_template,
+            refine_template=refine_template,
+            query_template_multiple=query_template_multiple,
+            child_branch_factor=child_branch_factor,
+            verbose=verbose,
+            callback_manager=callback_manager,
+            object_map=object_map,
+            **kwargs,
+        )
+        self._embed_model = embed_model or embed_model_from_settings_or_context(
+            Settings, index.service_context
+        )
 
     def _query_level(
         self,
@@ -77,19 +112,17 @@ class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):
 
         """
         if query_bundle.embedding is None:
-            query_bundle.embedding = (
-                self._service_context.embed_model.get_agg_embedding_from_queries(
-                    query_bundle.embedding_strs
-                )
+            query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
+                query_bundle.embedding_strs
             )
         similarities = []
         for node in nodes:
             if node.embedding is None:
-                node.embedding = self._service_context.embed_model.get_text_embedding(
+                node.embedding = self._embed_model.get_text_embedding(
                     node.get_content(metadata_mode=MetadataMode.EMBED)
                 )
 
-            similarity = self._service_context.embed_model.similarity(
+            similarity = self._embed_model.similarity(
                 query_bundle.embedding, node.embedding
             )
             similarities.append(similarity)

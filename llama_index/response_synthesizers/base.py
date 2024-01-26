@@ -36,6 +36,7 @@ from llama_index.settings import (
     Settings,
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
+    prompt_helper_from_settings_or_context,
 )
 from llama_index.types import RESPONSE_TEXT_TYPE
 
@@ -63,13 +64,9 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
             callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context)
         )
-
-        if service_context is not None:
-            self._prompt_helper = service_context.prompt_helper
-        else:
-            self._prompt_helper = prompt_helper or PromptHelper.from_llm_metadata(
-                self._llm.metadata
-            )
+        self._prompt_helper = prompt_helper or prompt_helper_from_settings_or_context(
+            Settings, service_context
+        )
 
         self._streaming = streaming
         self._output_cls = output_cls

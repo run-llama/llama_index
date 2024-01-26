@@ -12,12 +12,14 @@ from llama_index.indices.keyword_table.utils import (
     rake_extract_keywords,
     simple_extract_keywords,
 )
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.settings import Settings
 from llama_index.utils import truncate_text
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
@@ -62,7 +64,6 @@ class BaseKeywordTableRetriever(BaseRetriever):
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore
-        self._service_context = index.service_context
 
         self.max_keywords_per_query = max_keywords_per_query
         self.num_chunks_per_query = num_chunks_per_query
@@ -71,7 +72,7 @@ class BaseKeywordTableRetriever(BaseRetriever):
         )
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
         super().__init__(
-            callback_manager=callback_manager,
+            callback_manager=callback_manager or Settings.callback_manager,
             object_map=object_map,
             verbose=verbose,
         )
@@ -122,9 +123,36 @@ class KeywordTableGPTRetriever(BaseKeywordTableRetriever):
 
     """
 
+    def __init__(
+        self,
+        index: BaseKeywordTableIndex,
+        keyword_extract_template: Optional[BasePromptTemplate] = None,
+        query_keyword_extract_template: Optional[BasePromptTemplate] = None,
+        max_keywords_per_query: int = 10,
+        num_chunks_per_query: int = 10,
+        llm: Optional[LLM] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize params."""
+        self._llm = llm or Settings.llm
+
+        super().__init__(
+            index=index,
+            keyword_extract_template=keyword_extract_template,
+            query_keyword_extract_template=query_keyword_extract_template,
+            max_keywords_per_query=max_keywords_per_query,
+            num_chunks_per_query=num_chunks_per_query,
+            callback_manager=callback_manager or Settings.callback_manager,
+            object_map=object_map,
+            verbose=verbose,
+        )
+
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        response = self._service_context.llm.predict(
+        response = self._llm.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,

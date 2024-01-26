@@ -4,18 +4,25 @@ from typing import Any, Callable, List, Optional, Tuple
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.base_retriever import BaseRetriever
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
+from llama_index.llms import LLM
 from llama_index.prompts import PromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_CHOICE_SELECT_PROMPT,
 )
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    embed_model_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +75,7 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
     def __init__(
         self,
         index: SummaryIndex,
+        embed_model: Optional[BaseEmbedding] = None,
         similarity_top_k: Optional[int] = 1,
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[dict] = None,
@@ -76,6 +84,9 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
     ) -> None:
         self._index = index
         self._similarity_top_k = similarity_top_k
+        self._embed_model = embed_model or embed_model_from_settings_or_context(
+            Settings, index.service_context
+        )
         super().__init__(
             callback_manager=callback_manager, object_map=object_map, verbose=verbose
         )
@@ -113,10 +124,8 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
     ) -> Tuple[List[float], List[List[float]]]:
         """Get top nodes by similarity to the query."""
         if query_bundle.embedding is None:
-            query_bundle.embedding = (
-                self._index._service_context.embed_model.get_agg_embedding_from_queries(
-                    query_bundle.embedding_strs
-                )
+            query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
+                query_bundle.embedding_strs
             )
 
         node_embeddings: List[List[float]] = []
@@ -124,10 +133,8 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
         for node in nodes:
             if node.embedding is None:
                 nodes_embedded += 1
-                node.embedding = (
-                    self._index.service_context.embed_model.get_text_embedding(
-                        node.get_content(metadata_mode=MetadataMode.EMBED)
-                    )
+                node.embedding = self._embed_model.get_text_embedding(
+                    node.get_content(metadata_mode=MetadataMode.EMBED)
                 )
 
             node_embeddings.append(node.embedding)
@@ -153,6 +160,7 @@ class SummaryIndexLLMRetriever(BaseRetriever):
     def __init__(
         self,
         index: SummaryIndex,
+        llm: Optional[LLM] = None,
         choice_select_prompt: Optional[PromptTemplate] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
@@ -174,7 +182,7 @@ class SummaryIndexLLMRetriever(BaseRetriever):
         self._parse_choice_select_answer_fn = (
             parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
         )
-        self._service_context = service_context or index.service_context
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         super().__init__(
             callback_manager=callback_manager, object_map=object_map, verbose=verbose
         )
@@ -190,7 +198,7 @@ class SummaryIndexLLMRetriever(BaseRetriever):
             query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(nodes_batch)
             # call each batch independently
-            raw_response = self._service_context.llm.predict(
+            raw_response = self._llm.predict(
                 self._choice_select_prompt,
                 context_str=fmt_batch_str,
                 query_str=query_str,

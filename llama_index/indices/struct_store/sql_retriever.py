@@ -10,7 +10,7 @@ from sqlalchemy import Table
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.llms.utils import LLMType
+from llama_index.llms import LLM
 from llama_index.objects.base import ObjectRetriever
 from llama_index.objects.table_node_mapping import SQLTableSchema
 from llama_index.prompts import BasePromptTemplate
@@ -20,6 +20,12 @@ from llama_index.prompts.default_prompts import (
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import NodeWithScore, QueryBundle, QueryType, TextNode
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    embed_model_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.utilities.sql_wrapper import SQLDatabase
 
 logger = logging.getLogger(__name__)
@@ -187,7 +193,8 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         table_retriever: Optional[ObjectRetriever[SQLTableSchema]] = None,
         context_str_prefix: Optional[str] = None,
         sql_parser_mode: SQLParserMode = SQLParserMode.DEFAULT,
-        llm: Optional[LLMType] = "default",
+        llm: Optional[LLM] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         service_context: Optional[ServiceContext] = None,
         return_raw: bool = True,
         handle_sql_errors: bool = True,
@@ -203,14 +210,21 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             sql_database, tables, context_query_kwargs, table_retriever
         )
         self._context_str_prefix = context_str_prefix
-        self._service_context = service_context or ServiceContext.from_defaults(llm=llm)
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._sql_parser_mode = sql_parser_mode
-        self._sql_parser = self._load_sql_parser(sql_parser_mode, self._service_context)
+
+        embed_model = embed_model or embed_model_from_settings_or_context(
+            Settings, service_context
+        )
+        self._sql_parser = self._load_sql_parser(sql_parser_mode, embed_model)
         self._handle_sql_errors = handle_sql_errors
         self._sql_only = sql_only
         self._verbose = verbose
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager
+            or callback_manager_from_settings_or_context(Settings, service_context)
+        )
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -228,13 +242,13 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         return {}
 
     def _load_sql_parser(
-        self, sql_parser_mode: SQLParserMode, service_context: ServiceContext
+        self, sql_parser_mode: SQLParserMode, embed_model: BaseEmbedding
     ) -> BaseSQLParser:
         """Load SQL parser."""
         if sql_parser_mode == SQLParserMode.DEFAULT:
             return DefaultSQLParser()
         elif sql_parser_mode == SQLParserMode.PGVECTOR:
-            return PGVectorSQLParser(embed_model=service_context.embed_model)
+            return PGVectorSQLParser(embed_model=embed_model)
         else:
             raise ValueError(f"Unknown SQL parser mode: {sql_parser_mode}")
 
@@ -276,7 +290,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         if self._verbose:
             print(f"> Table desc str: {table_desc_str}")
 
-        response_str = self._service_context.llm.predict(
+        response_str = self._llm.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,
@@ -322,7 +336,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         table_desc_str = self._get_table_context(query_bundle)
         logger.info(f"> Table desc str: {table_desc_str}")
 
-        response_str = await self._service_context.llm.apredict(
+        response_str = await self._llm.apredict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
             schema=table_desc_str,

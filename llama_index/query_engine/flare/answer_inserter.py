@@ -3,10 +3,12 @@
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
+from llama_index.llms import LLM
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.query_engine.flare.schema import QueryTask
 from llama_index.service_context import ServiceContext
+from llama_index.settings import Settings, llm_from_settings_or_context
 
 
 class BaseLookaheadAnswerInserter(PromptMixin):
@@ -131,19 +133,16 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
 
     Takes in a lookahead response and a list of query tasks, and the
         lookahead answers, and inserts the answers into the lookahead response.
-
-    Args:
-        service_context (ServiceContext): Service context.
-
     """
 
     def __init__(
         self,
+        llm: Optional[LLM] = None,
         service_context: Optional[ServiceContext] = None,
         answer_insert_prompt: Optional[BasePromptTemplate] = None,
     ) -> None:
         """Init params."""
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._answer_insert_prompt = (
             answer_insert_prompt or DEFAULT_ANSWER_INSERT_PROMPT
         )
@@ -173,7 +172,7 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
         for query_task, answer in zip(query_tasks, answers):
             query_answer_pairs += f"Query: {query_task.query_str}\nAnswer: {answer}\n"
 
-        return self._service_context.llm.predict(
+        return self._llm.predict(
             self._answer_insert_prompt,
             lookahead_response=response,
             query_answer_pairs=query_answer_pairs,
@@ -186,10 +185,6 @@ class DirectLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
 
     Simple inserter module that directly inserts answers into
         the [Search(query)] tags in the lookahead response.
-
-    Args:
-        service_context (ServiceContext): Service context.
-
     """
 
     def _get_prompts(self) -> Dict[str, Any]:

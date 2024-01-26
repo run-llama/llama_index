@@ -10,7 +10,9 @@ from typing import Any, Dict, Optional, Sequence, Union
 
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexList
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.base import BaseIndex
+from llama_index.llms import LLM
 from llama_index.schema import BaseNode, IndexNode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
@@ -49,8 +51,9 @@ class SummaryIndex(BaseIndex[IndexList]):
         nodes: Optional[Sequence[BaseNode]] = None,
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexList] = None,
-        service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -66,6 +69,8 @@ class SummaryIndex(BaseIndex[IndexList]):
     def as_retriever(
         self,
         retriever_mode: Union[str, ListRetrieverMode] = ListRetrieverMode.DEFAULT,
+        llm: Optional[LLM] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> BaseRetriever:
         from llama_index.indices.list.retrievers import (
@@ -78,10 +83,12 @@ class SummaryIndex(BaseIndex[IndexList]):
             return SummaryIndexRetriever(self, object_map=self._object_map, **kwargs)
         elif retriever_mode == ListRetrieverMode.EMBEDDING:
             return SummaryIndexEmbeddingRetriever(
-                self, object_map=self._object_map, **kwargs
+                self, object_map=self._object_map, embed_model=embed_model, **kwargs
             )
         elif retriever_mode == ListRetrieverMode.LLM:
-            return SummaryIndexLLMRetriever(self, object_map=self._object_map, **kwargs)
+            return SummaryIndexLLMRetriever(
+                self, object_map=self._object_map, llm=llm, **kwargs
+            )
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 

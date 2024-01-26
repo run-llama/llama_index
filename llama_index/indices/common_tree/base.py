@@ -9,9 +9,16 @@ from llama_index.async_utils import run_async_tasks
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.indices.utils import get_sorted_node_list, truncate_text
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate
 from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+    prompt_helper_from_settings_or_context,
+)
 from llama_index.storage.docstore import BaseDocumentStore
 from llama_index.storage.docstore.registry import get_default_docstore
 from llama_index.utils import get_tqdm_iterable
@@ -31,7 +38,8 @@ class GPTTreeIndexBuilder:
         self,
         num_children: int,
         summary_prompt: BasePromptTemplate,
-        service_context: ServiceContext,
+        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         docstore: Optional[BaseDocumentStore] = None,
         show_progress: bool = False,
         use_async: bool = False,
@@ -41,7 +49,13 @@ class GPTTreeIndexBuilder:
             raise ValueError("Invalid number of children.")
         self.num_children = num_children
         self.summary_prompt = summary_prompt
-        self._service_context = service_context
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._prompt_helper = prompt_helper_from_settings_or_context(
+            Settings, service_context
+        )
+        self._callback_manager = callback_manager_from_settings_or_context(
+            Settings, service_context
+        )
         self._use_async = use_async
         self._show_progress = show_progress
         self._docstore = docstore or get_default_docstore()
@@ -88,7 +102,7 @@ class GPTTreeIndexBuilder:
         indices, cur_nodes_chunks, text_chunks = [], [], []
         for i in range(0, len(cur_node_list), self.num_children):
             cur_nodes_chunk = cur_node_list[i : i + self.num_children]
-            truncated_chunks = self._service_context.prompt_helper.truncate(
+            truncated_chunks = self._prompt_helper.truncate(
                 prompt=self.summary_prompt,
                 text_chunks=[
                     node.get_content(metadata_mode=MetadataMode.LLM)
@@ -144,14 +158,12 @@ class GPTTreeIndexBuilder:
             cur_node_ids
         )
 
-        with self._service_context.callback_manager.event(
+        with self._callback_manager.event(
             CBEventType.TREE, payload={EventPayload.CHUNKS: text_chunks}
         ) as event:
             if self._use_async:
                 tasks = [
-                    self._service_context.llm.apredict(
-                        self.summary_prompt, context_str=text_chunk
-                    )
+                    self._llm.apredict(self.summary_prompt, context_str=text_chunk)
                     for text_chunk in text_chunks
                 ]
                 outputs: List[Tuple[str, str]] = run_async_tasks(
@@ -167,14 +179,9 @@ class GPTTreeIndexBuilder:
                     desc="Generating summaries",
                 )
                 summaries = [
-                    self._service_context.llm.predict(
-                        self.summary_prompt, context_str=text_chunk
-                    )
+                    self._llm.predict(self.summary_prompt, context_str=text_chunk)
                     for text_chunk in text_chunks_progress
                 ]
-            self._service_context.llama_logger.add_log(
-                {"summaries": summaries, "level": level}
-            )
 
             event.on_end(payload={"summaries": summaries, "level": level})
 
@@ -208,7 +215,7 @@ class GPTTreeIndexBuilder:
             cur_node_ids
         )
 
-        with self._service_context.callback_manager.event(
+        with self._callback_manager.event(
             CBEventType.TREE, payload={EventPayload.CHUNKS: text_chunks}
         ) as event:
             text_chunks_progress = get_tqdm_iterable(
@@ -217,16 +224,11 @@ class GPTTreeIndexBuilder:
                 desc="Generating summaries",
             )
             tasks = [
-                self._service_context.llm.apredict(
-                    self.summary_prompt, context_str=text_chunk
-                )
+                self._llm.apredict(self.summary_prompt, context_str=text_chunk)
                 for text_chunk in text_chunks_progress
             ]
             outputs: List[Tuple[str, str]] = await asyncio.gather(*tasks)
             summaries = [output[0] for output in outputs]
-            self._service_context.llama_logger.add_log(
-                {"summaries": summaries, "level": level}
-            )
 
             event.on_end(payload={"summaries": summaries, "level": level})
 

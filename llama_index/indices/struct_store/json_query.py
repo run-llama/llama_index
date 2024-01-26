@@ -4,12 +4,18 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.response.schema import Response
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_JSON_PATH_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.utils import print_text
 
 logger = logging.getLogger(__name__)
@@ -86,7 +92,8 @@ class JSONQueryEngine(BaseQueryEngine):
         self,
         json_value: JSONType,
         json_schema: JSONType,
-        service_context: ServiceContext,
+        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         json_path_prompt: Optional[BasePromptTemplate] = None,
         output_processor: Optional[Callable] = None,
         output_kwargs: Optional[dict] = None,
@@ -98,7 +105,7 @@ class JSONQueryEngine(BaseQueryEngine):
         """Initialize params."""
         self._json_value = json_value
         self._json_schema = json_schema
-        self._service_context = service_context
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._json_path_prompt = json_path_prompt or DEFAULT_JSON_PATH_PROMPT
         self._output_processor = output_processor or default_output_processor
         self._output_kwargs = output_kwargs or {}
@@ -108,7 +115,11 @@ class JSONQueryEngine(BaseQueryEngine):
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT
         )
 
-        super().__init__(self._service_context.callback_manager)
+        super().__init__(
+            callback_manager=callback_manager_from_settings_or_context(
+                Settings, service_context
+            )
+        )
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -136,7 +147,7 @@ class JSONQueryEngine(BaseQueryEngine):
         """Answer a query."""
         schema = self._get_schema_context()
 
-        json_path_response_str = self._service_context.llm.predict(
+        json_path_response_str = self._llm.predict(
             self._json_path_prompt,
             schema=schema,
             query_str=query_bundle.query_str,
@@ -157,7 +168,7 @@ class JSONQueryEngine(BaseQueryEngine):
             print_text(f"> JSONPath Output: {json_path_output}\n")
 
         if self._synthesize_response:
-            response_str = self._service_context.llm.predict(
+            response_str = self._llm.predict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 json_schema=self._json_schema,
@@ -176,7 +187,7 @@ class JSONQueryEngine(BaseQueryEngine):
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
         schema = self._get_schema_context()
 
-        json_path_response_str = await self._service_context.llm.apredict(
+        json_path_response_str = await self._llm.apredict(
             self._json_path_prompt,
             schema=schema,
             query_str=query_bundle.query_str,
@@ -197,7 +208,7 @@ class JSONQueryEngine(BaseQueryEngine):
             print_text(f"> JSONPath Output: {json_path_output}\n")
 
         if self._synthesize_response:
-            response_str = await self._service_context.llm.apredict(
+            response_str = await self._llm.apredict(
                 self._response_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 json_schema=self._json_schema,

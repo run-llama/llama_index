@@ -7,9 +7,11 @@ from llama_index.core.base_retriever import BaseRetriever
 
 # from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.data_structs.data_structs import IndexGraph
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.common_tree.base import GPTTreeIndexBuilder
 from llama_index.indices.tree.inserter import TreeIndexInserter
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
@@ -17,6 +19,11 @@ from llama_index.prompts.default_prompts import (
 )
 from llama_index.schema import BaseNode, IndexNode
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    embed_model_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.storage.docstore.types import RefDocInfo
 
 
@@ -63,13 +70,15 @@ class TreeIndex(BaseIndex[IndexGraph]):
         nodes: Optional[Sequence[BaseNode]] = None,
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexGraph] = None,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         summary_template: Optional[BasePromptTemplate] = None,
         insert_prompt: Optional[BasePromptTemplate] = None,
         num_children: int = 10,
         build_tree: bool = True,
         use_async: bool = False,
         show_progress: bool = False,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -79,6 +88,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
         self.insert_prompt: BasePromptTemplate = insert_prompt or DEFAULT_INSERT_PROMPT
         self.build_tree = build_tree
         self._use_async = use_async
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -91,6 +101,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
     def as_retriever(
         self,
         retriever_mode: Union[str, TreeRetrieverMode] = TreeRetrieverMode.SELECT_LEAF,
+        embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> BaseRetriever:
         # NOTE: lazy import
@@ -108,8 +119,11 @@ class TreeIndex(BaseIndex[IndexGraph]):
         if retriever_mode == TreeRetrieverMode.SELECT_LEAF:
             return TreeSelectLeafRetriever(self, object_map=self._object_map, **kwargs)
         elif retriever_mode == TreeRetrieverMode.SELECT_LEAF_EMBEDDING:
+            embed_model = embed_model or embed_model_from_settings_or_context(
+                Settings, self._service_context
+            )
             return TreeSelectLeafEmbeddingRetriever(
-                self, object_map=self._object_map, **kwargs
+                self, embed_model=embed_model, object_map=self._object_map, **kwargs
             )
         elif retriever_mode == TreeRetrieverMode.ROOT:
             return TreeRootRetriever(self, object_map=self._object_map, **kwargs)
@@ -132,6 +146,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
             self.num_children,
             self.summary_template,
             service_context=self._service_context,
+            llm=self._llm,
             use_async=self._use_async,
             show_progress=self._show_progress,
             docstore=self._docstore,
@@ -143,10 +158,11 @@ class TreeIndex(BaseIndex[IndexGraph]):
         # TODO: allow to customize insert prompt
         inserter = TreeIndexInserter(
             self.index_struct,
+            service_context=self._service_context,
+            llm=self._llm,
             num_children=self.num_children,
             insert_prompt=self.insert_prompt,
             summary_prompt=self.summary_template,
-            service_context=self._service_context,
             docstore=self._docstore,
         )
         inserter.insert(nodes)

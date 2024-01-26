@@ -19,6 +19,7 @@ from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
+from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.schema import (
     BaseNode,
     Document,
@@ -27,6 +28,7 @@ from llama_index.schema import (
     TransformComponent,
 )
 from llama_index.service_context import ServiceContext
+from llama_index.settings import Settings
 from llama_index.storage.storage_context import StorageContext
 
 _logger = logging.getLogger(__name__)
@@ -77,7 +79,7 @@ class VectaraIndex(BaseManagedIndex):
         super().__init__(
             show_progress=show_progress,
             index_struct=index_struct,
-            service_context=ServiceContext.from_defaults(llm=None, llm_predictor=None),
+            service_context=None,
             **kwargs,
         )
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
@@ -333,7 +335,9 @@ class VectaraIndex(BaseManagedIndex):
 
         return VectaraRetriever(self, **kwargs)
 
-    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+    def as_query_engine(
+        self, llm: Optional[LLMType] = None, **kwargs: Any
+    ) -> BaseQueryEngine:
         if kwargs.get("summary_enabled", True):
             from llama_index.indices.managed.vectara.query import VectaraQueryEngine
 
@@ -345,8 +349,12 @@ class VectaraIndex(BaseManagedIndex):
                 RetrieverQueryEngine,
             )
 
-            kwargs["retriever"] = self.as_retriever(**kwargs)
-            return RetrieverQueryEngine.from_args(**kwargs)
+            llm = resolve_llm(llm) or Settings.llm
+
+            retriever = self.as_retriever(**kwargs)
+            return RetrieverQueryEngine.from_args(
+                retriever=retriever, llm=llm, **kwargs
+            )
 
     @classmethod
     def from_documents(

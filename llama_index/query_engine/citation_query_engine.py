@@ -6,6 +6,7 @@ from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.indices.base import BaseGPTIndex
+from llama_index.llms import LLM
 from llama_index.node_parser import SentenceSplitter, TextSplitter
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts import PromptTemplate
@@ -17,6 +18,11 @@ from llama_index.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle, TextNode
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 
 CITATION_QA_TEMPLATE = PromptTemplate(
     "Please provide an answer based solely on the provided sources. "
@@ -95,6 +101,7 @@ class CitationQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         retriever: BaseRetriever,
+        llm: Optional[LLM] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
@@ -107,23 +114,32 @@ class CitationQueryEngine(BaseQueryEngine):
             chunk_size=citation_chunk_size, chunk_overlap=citation_chunk_overlap
         )
         self._retriever = retriever
+
+        service_context = retriever.get_service_context()
+        callback_manager = (
+            callback_manager
+            or callback_manager_from_settings_or_context(Settings, service_context)
+        )
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
+
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            service_context=retriever.get_service_context(),
+            llm=llm,
+            service_context=service_context,
             callback_manager=callback_manager,
         )
         self._node_postprocessors = node_postprocessors or []
         self._metadata_mode = metadata_mode
 
-        callback_manager = callback_manager or CallbackManager()
         for node_postprocessor in self._node_postprocessors:
             node_postprocessor.callback_manager = callback_manager
 
-        super().__init__(callback_manager)
+        super().__init__(callback_manager=callback_manager)
 
     @classmethod
     def from_args(
         cls,
         index: BaseGPTIndex,
+        llm: Optional[LLM] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         citation_chunk_size: int = DEFAULT_CITATION_CHUNK_SIZE,
         citation_chunk_overlap: int = DEFAULT_CITATION_CHUNK_OVERLAP,
@@ -144,6 +160,7 @@ class CitationQueryEngine(BaseQueryEngine):
 
         Args:
             index: (BastGPTIndex): index to use for querying
+            llm: (Optional[LLM]): LLM object to use for response generation.
             citation_chunk_size (int):
                 Size of citation chunks, default=512. Useful for controlling
                 granularity of sources.
@@ -169,6 +186,7 @@ class CitationQueryEngine(BaseQueryEngine):
         retriever = retriever or index.as_retriever(**kwargs)
 
         response_synthesizer = response_synthesizer or get_response_synthesizer(
+            llm=llm,
             service_context=index.service_context,
             text_qa_template=citation_qa_template,
             refine_template=citation_refine_template,
@@ -180,7 +198,9 @@ class CitationQueryEngine(BaseQueryEngine):
         return cls(
             retriever=retriever,
             response_synthesizer=response_synthesizer,
-            callback_manager=index.service_context.callback_manager,
+            callback_manager=callback_manager_from_settings_or_context(
+                Settings, index.service_context
+            ),
             citation_chunk_size=citation_chunk_size,
             citation_chunk_overlap=citation_chunk_overlap,
             text_splitter=text_splitter,

@@ -17,6 +17,7 @@ from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import KeywordTable
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate
 from llama_index.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
@@ -24,6 +25,7 @@ from llama_index.prompts.default_prompts import (
 )
 from llama_index.schema import BaseNode, IndexNode, MetadataMode
 from llama_index.service_context import ServiceContext
+from llama_index.settings import Settings, llm_from_settings_or_context
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.utils import get_tqdm_iterable
 
@@ -64,6 +66,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         nodes: Optional[Sequence[BaseNode]] = None,
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[KeywordTable] = None,
+        llm: Optional[LLM] = None,
         service_context: Optional[ServiceContext] = None,
         keyword_extract_template: Optional[BasePromptTemplate] = None,
         max_keywords_per_chunk: int = 10,
@@ -73,6 +76,8 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+
         self.max_keywords_per_chunk = max_keywords_per_chunk
         self.keyword_extract_template = (
             keyword_extract_template or DEFAULT_KEYWORD_EXTRACT_TEMPLATE
@@ -106,7 +111,9 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         )
 
         if retriever_mode == KeywordTableRetrieverMode.DEFAULT:
-            return KeywordTableGPTRetriever(self, object_map=self._object_map, **kwargs)
+            return KeywordTableGPTRetriever(
+                self, object_map=self._object_map, llm=self._llm, **kwargs
+            )
         elif retriever_mode == KeywordTableRetrieverMode.SIMPLE:
             return KeywordTableSimpleRetriever(
                 self, object_map=self._object_map, **kwargs
@@ -225,7 +232,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        response = self._service_context.llm.predict(
+        response = self._llm.predict(
             self.keyword_extract_template,
             text=text,
         )
@@ -233,7 +240,7 @@ class KeywordTableIndex(BaseKeywordTableIndex):
 
     async def _async_extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
-        response = await self._service_context.llm.apredict(
+        response = await self._llm.apredict(
             self.keyword_extract_template,
             text=text,
         )

@@ -6,9 +6,11 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.base_retriever import BaseRetriever
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.keyword_table.utils import extract_keywords_given_response
 from llama_index.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 from llama_index.schema import (
@@ -19,6 +21,12 @@ from llama_index.schema import (
     TextNode,
 )
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    embed_model_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.storage.storage_context import StorageContext
 from llama_index.utils import print_text, truncate_text
 
@@ -81,6 +89,8 @@ class KGTableRetriever(BaseRetriever):
     def __init__(
         self,
         index: KnowledgeGraphIndex,
+        llm: Optional[LLM] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         query_keyword_extract_template: Optional[BasePromptTemplate] = None,
         max_keywords_per_query: int = 10,
         num_chunks_per_query: int = 10,
@@ -98,7 +108,6 @@ class KGTableRetriever(BaseRetriever):
         """Initialize params."""
         assert isinstance(index, KnowledgeGraphIndex)
         self._index = index
-        self._service_context = self._index.service_context
         self._index_struct = self._index.index_struct
         self._docstore = self._index.docstore
 
@@ -108,6 +117,11 @@ class KGTableRetriever(BaseRetriever):
         self.similarity_top_k = similarity_top_k
         self._include_text = include_text
         self._retriever_mode = KGRetrieverMode(retriever_mode)
+
+        self._llm = llm or llm_from_settings_or_context(Settings, index.service_context)
+        self._embed_model = embed_model or embed_model_from_settings_or_context(
+            Settings, index.service_context
+        )
 
         self._graph_store = index.graph_store
         self.graph_store_query_depth = graph_store_query_depth
@@ -123,12 +137,17 @@ class KGTableRetriever(BaseRetriever):
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
         super().__init__(
-            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+            callback_manager=callback_manager
+            or callback_manager_from_settings_or_context(
+                Settings, index.service_context
+            ),
+            object_map=object_map,
+            verbose=verbose,
         )
 
     def _get_keywords(self, query_str: str) -> List[str]:
         """Extract keywords."""
-        response = self._service_context.llm.predict(
+        response = self._llm.predict(
             self.query_keyword_extract_template,
             max_keywords=self.max_keywords_per_query,
             question=query_str,
@@ -207,7 +226,7 @@ class KGTableRetriever(BaseRetriever):
             self._retriever_mode != KGRetrieverMode.KEYWORD
             and len(self._index_struct.embedding_dict) > 0
         ):
-            query_embedding = self._service_context.embed_model.get_text_embedding(
+            query_embedding = self._embed_model.get_text_embedding(
                 query_bundle.query_str
             )
             all_rel_texts = list(self._index_struct.embedding_dict.keys())
@@ -405,8 +424,8 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
 
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
+        llm: Optional[LLM] = None,
         entity_extract_fn: Optional[Callable] = None,
         entity_extract_template: Optional[BasePromptTemplate] = None,
         entity_extract_policy: Optional[str] = "union",
@@ -421,6 +440,8 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         max_knowledge_sequence: int = REL_TEXT_LIMIT,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the retriever."""
@@ -432,7 +453,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self._storage_context = storage_context
         self._graph_store = storage_context.graph_store
 
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
 
         self._entity_extract_fn = entity_extract_fn
         self._entity_extract_template = (
@@ -472,13 +493,14 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             refresh_schema = kwargs.get("refresh_schema", False)
             response_synthesizer = kwargs.get("response_synthesizer", None)
             self._kg_query_engine = KnowledgeGraphQueryEngine(
-                service_context=self._service_context,
+                llm=self._llm,
                 storage_context=self._storage_context,
                 graph_query_synthesis_prompt=graph_query_synthesis_prompt,
                 graph_response_answer_prompt=graph_response_answer_prompt,
                 refresh_schema=refresh_schema,
                 verbose=verbose,
                 response_synthesizer=response_synthesizer,
+                service_context=service_context,
                 **kwargs,
             )
 
@@ -493,7 +515,11 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         except Exception as e:
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
-        super().__init__(callback_manager)
+
+        super().__init__(
+            callback_manager=callback_manager
+            or callback_manager_from_settings_or_context(Settings, service_context)
+        )
 
     def _process_entities(
         self,
@@ -528,7 +554,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         if handle_fn is not None:
             enitities_fn = handle_fn(query_str)
         if handle_llm_prompt_template is not None:
-            response = self._service_context.llm.predict(
+            response = self._llm.predict(
                 handle_llm_prompt_template,
                 max_keywords=max_items,
                 question=query_str,
@@ -578,7 +604,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         if handle_fn is not None:
             enitities_fn = handle_fn(query_str)
         if handle_llm_prompt_template is not None:
-            response = await self._service_context.llm.apredict(
+            response = await self._llm.apredict(
                 handle_llm_prompt_template,
                 max_keywords=max_items,
                 question=query_str,

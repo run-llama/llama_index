@@ -6,11 +6,17 @@ from typing import List, Optional, Sequence
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.base_retriever import BaseRetriever
+from llama_index.llms import LLM
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.schema import IndexNode, NodeWithScore, QueryBundle
 from llama_index.selectors.types import BaseSelector
-from llama_index.selectors.utils import get_selector_from_context
+from llama_index.selectors.utils import get_selector_from_llm
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.tools.retriever_tool import RetrieverTool
 
 logger = logging.getLogger(__name__)
@@ -27,7 +33,6 @@ class RouterRetriever(BaseRetriever):
         retriever_tools (Sequence[RetrieverTool]): A sequence of candidate
             retrievers. They must be wrapped as tools to expose metadata to
             the selector.
-        service_context (Optional[ServiceContext]): A service context.
 
     """
 
@@ -35,18 +40,21 @@ class RouterRetriever(BaseRetriever):
         self,
         selector: BaseSelector,
         retriever_tools: Sequence[RetrieverTool],
+        llm: Optional[LLM] = None,
         service_context: Optional[ServiceContext] = None,
         objects: Optional[List[IndexNode]] = None,
         object_map: Optional[dict] = None,
         verbose: bool = False,
     ) -> None:
-        self.service_context = service_context or ServiceContext.from_defaults()
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._selector = selector
         self._retrievers: List[BaseRetriever] = [x.retriever for x in retriever_tools]
         self._metadatas = [x.metadata for x in retriever_tools]
 
         super().__init__(
-            callback_manager=self.service_context.callback_manager,
+            callback_manager=callback_manager_from_settings_or_context(
+                Settings, service_context
+            ),
             object_map=object_map,
             objects=objects,
             verbose=verbose,
@@ -61,17 +69,18 @@ class RouterRetriever(BaseRetriever):
     def from_defaults(
         cls,
         retriever_tools: Sequence[RetrieverTool],
+        llm: Optional[LLM] = None,
         service_context: Optional[ServiceContext] = None,
         selector: Optional[BaseSelector] = None,
         select_multi: bool = False,
     ) -> "RouterRetriever":
-        selector = selector or get_selector_from_context(
-            service_context or ServiceContext.from_defaults(), is_multi=select_multi
-        )
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        selector = selector or get_selector_from_llm(llm, is_multi=select_multi)
 
         return cls(
             selector,
             retriever_tools,
+            llm=llm,
             service_context=service_context,
         )
 

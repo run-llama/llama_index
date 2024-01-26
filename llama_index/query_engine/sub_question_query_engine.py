@@ -8,6 +8,7 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.response.schema import RESPONSE_TYPE
+from llama_index.llms import LLM
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.openai_generator import OpenAIQuestionGenerator
@@ -15,6 +16,11 @@ from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.tools.query_engine import QueryEngineTool
 from llama_index.utils import get_color_mapping, print_text
 
@@ -82,32 +88,30 @@ class SubQuestionQueryEngine(BaseQueryEngine):
     def from_defaults(
         cls,
         query_engine_tools: Sequence[QueryEngineTool],
+        llm: Optional[LLM] = None,
         question_gen: Optional[BaseQuestionGenerator] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         service_context: Optional[ServiceContext] = None,
         verbose: bool = True,
         use_async: bool = True,
     ) -> "SubQuestionQueryEngine":
-        callback_manager = None
-        if service_context is not None:
-            callback_manager = service_context.callback_manager
-        elif len(query_engine_tools) > 0:
+        callback_manager = callback_manager_from_settings_or_context(
+            Settings, service_context
+        )
+        if len(query_engine_tools) > 0:
             callback_manager = query_engine_tools[0].query_engine.callback_manager
 
-        service_context = service_context or ServiceContext.from_defaults()
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
         if question_gen is None:
             # try to use OpenAI function calling based question generator.
             # if incompatible, use general LLM question generator
             try:
-                question_gen = OpenAIQuestionGenerator.from_defaults(
-                    llm=service_context.llm
-                )
+                question_gen = OpenAIQuestionGenerator.from_defaults(llm=llm)
             except ValueError:
-                question_gen = LLMQuestionGenerator.from_defaults(
-                    service_context=service_context
-                )
+                question_gen = LLMQuestionGenerator.from_defaults(llm=llm)
 
         synth = response_synthesizer or get_response_synthesizer(
+            llm=llm,
             callback_manager=callback_manager,
             service_context=service_context,
             use_async=use_async,

@@ -9,12 +9,18 @@ from llama_index.indices.struct_store.sql_retriever import (
     BaseSQLParser,
     DefaultSQLParser,
 )
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_JSONALYZE_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.schema import QueryBundle
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.utils import print_text
 
 logger = logging.getLogger(__name__)
@@ -41,7 +47,7 @@ DEFAULT_TABLE_NAME = "items"
 def default_jsonalyzer(
     list_of_dict: List[Dict[str, Any]],
     query_bundle: QueryBundle,
-    service_context: ServiceContext,
+    llm: LLM,
     table_name: str = DEFAULT_TABLE_NAME,
     prompt: BasePromptTemplate = DEFAULT_JSONALYZE_PROMPT,
     sql_parser: BaseSQLParser = DefaultSQLParser(),
@@ -51,7 +57,7 @@ def default_jsonalyzer(
     Args:
         list_of_dict (List[Dict[str, Any]]): List of dictionaries to query.
         query_bundle (QueryBundle): The query bundle.
-        service_context (Optional[ServiceContext]): The service context.
+        llm (LLM): The llm to use.
         table_name (str): The table name to use, defaults to DEFAULT_TABLE_NAME.
         prompt (BasePromptTemplate): The prompt to use.
         sql_parser (BaseSQLParser): The SQL parser to use.
@@ -85,7 +91,7 @@ def default_jsonalyzer(
     query = query_bundle.query_str
     prompt = prompt or DEFAULT_JSONALYZE_PROMPT
     # Get the SQL query with text-to-SQL prompt
-    response_str = service_context.llm.predict(
+    response_str = llm.predict(
         prompt=prompt,
         table_name=table_name,
         table_schema=table_schema,
@@ -109,7 +115,7 @@ def default_jsonalyzer(
 async def async_default_jsonalyzer(
     list_of_dict: List[Dict[str, Any]],
     query_bundle: QueryBundle,
-    service_context: ServiceContext,
+    llm: LLM,
     prompt: Optional[BasePromptTemplate] = None,
     sql_parser: Optional[BaseSQLParser] = None,
     table_name: str = DEFAULT_TABLE_NAME,
@@ -119,7 +125,7 @@ async def async_default_jsonalyzer(
     Args:
         list_of_dict (List[Dict[str, Any]]): List of dictionaries to query.
         query_bundle (QueryBundle): The query bundle.
-        service_context (ServiceContext): ServiceContext
+        llm (LLM): The llm to use.
         prompt (BasePromptTemplate, optional): The prompt to use.
         sql_parser (BaseSQLParser, optional): The SQL parser to use.
         table_name (str, optional): The table name to use, defaults to DEFAULT_TABLE_NAME.
@@ -153,7 +159,7 @@ async def async_default_jsonalyzer(
     query = query_bundle.query_str
     prompt = prompt or DEFAULT_JSONALYZE_PROMPT
     # Get the SQL query with text-to-SQL prompt
-    response_str = await service_context.llm.apredict(
+    response_str = await llm.apredict(
         prompt=prompt,
         table_name=table_name,
         table_schema=table_schema,
@@ -222,7 +228,8 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         list_of_dict: List[Dict[str, Any]],
-        service_context: ServiceContext,
+        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         jsonalyze_prompt: Optional[BasePromptTemplate] = None,
         use_async: bool = False,
         analyzer: Optional[Callable] = None,
@@ -235,7 +242,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
     ) -> None:
         """Initialize params."""
         self._list_of_dict = list_of_dict
-        self._service_context = service_context or ServiceContext.from_defaults()
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._jsonalyze_prompt = jsonalyze_prompt or DEFAULT_JSONALYZE_PROMPT
         self._use_async = use_async
         self._analyzer = load_jsonalyzer(use_async, analyzer)
@@ -247,7 +254,11 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
         self._table_name = table_name
         self._verbose = verbose
 
-        super().__init__(self._service_context.callback_manager)
+        super().__init__(
+            callback_manager=callback_manager_from_settings_or_context(
+                Settings, service_context
+            )
+        )
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -277,7 +288,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
         sql_query, table_schema, results = self._analyzer(
             self._list_of_dict,
             query_bundle,
-            self._service_context,
+            self._llm,
             table_name=self._table_name,
             prompt=self._jsonalyze_prompt,
             sql_parser=self._sql_parser,
@@ -288,7 +299,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
             print_text(f"SQL Response: {results}\n", color="yellow")
 
         if self._synthesize_response:
-            response_str = self._service_context.llm.predict(
+            response_str = self._llm.predict(
                 self._response_synthesis_prompt,
                 sql_query=sql_query,
                 table_schema=table_schema,
@@ -313,7 +324,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
         sql_query, table_schema, results = self._analyzer(
             self._list_of_dict,
             query,
-            self._service_context,
+            self._llm,
             table_name=self._table_name,
             prompt=self._jsonalyze_prompt,
         )
@@ -323,7 +334,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
             print_text(f"SQL Response: {results}\n", color="yellow")
 
         if self._synthesize_response:
-            response_str = await self._service_context.llm.apredict(
+            response_str = await self._llm.apredict(
                 self._response_synthesis_prompt,
                 sql_query=sql_query,
                 table_schema=table_schema,

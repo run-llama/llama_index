@@ -3,10 +3,10 @@ import json
 from copy import deepcopy
 from typing import Callable, Dict, List, Optional, Tuple
 
+from llama_index.llms import LLM
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.base import PromptTemplate
 from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
-from llama_index.service_context import ServiceContext
 
 DEFAULT_PII_TMPL = (
     "The current context information is provided. \n"
@@ -39,16 +39,14 @@ DEFAULT_PII_TMPL = (
 class PIINodePostprocessor(BaseNodePostprocessor):
     """PII Node processor.
 
-    NOTE: the ServiceContext should contain a LOCAL model, not an external API.
-
     NOTE: this is a beta feature, the API might change.
 
     Args:
-        service_context (ServiceContext): Service context.
+        llm (LLM): The local LLM to use for prediction.
 
     """
 
-    service_context: ServiceContext
+    llm: LLM
     pii_str_tmpl: str = DEFAULT_PII_TMPL
     pii_node_info_key: str = "__pii_node_info__"
 
@@ -65,9 +63,7 @@ class PIINodePostprocessor(BaseNodePostprocessor):
             "Return the mapping in JSON."
         )
 
-        response = self.service_context.llm.predict(
-            pii_prompt, context_str=text, query_str=task_str
-        )
+        response = self.llm.predict(pii_prompt, context_str=text, query_str=task_str)
         splits = response.split("Output Mapping:")
         text_output = splits[0].strip()
         json_str_output = splits[1].strip()
