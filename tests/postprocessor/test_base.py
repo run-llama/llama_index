@@ -232,7 +232,7 @@ def test_embedding_recency_postprocessor(
 
     postprocessor = EmbeddingRecencyPostprocessor(
         top_k=1,
-        service_context=mock_service_context,
+        embed_model=mock_service_context.embed_model,
         in_metadata=False,
         query_embedding_tmpl="{context_str}",
     )

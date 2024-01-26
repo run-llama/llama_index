@@ -145,7 +145,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
         index_builder = GPTTreeIndexBuilder(
             self.num_children,
             self.summary_template,
-            service_context=self._service_context,
+            service_context=self.service_context,
             llm=self._llm,
             use_async=self._use_async,
             show_progress=self._show_progress,
@@ -158,7 +158,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
         # TODO: allow to customize insert prompt
         inserter = TreeIndexInserter(
             self.index_struct,
-            service_context=self._service_context,
+            service_context=self.service_context,
             llm=self._llm,
             num_children=self.num_children,
             insert_prompt=self.insert_prompt,

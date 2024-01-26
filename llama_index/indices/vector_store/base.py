@@ -97,7 +97,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 "Cannot initialize from a vector store that does not store text."
             )
 
+        kwargs.pop("storage_context", None)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
         return cls(
             nodes=[],
             embed_model=embed_model,

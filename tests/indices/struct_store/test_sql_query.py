@@ -55,7 +55,9 @@ def test_sql_index_query(
     response = nl_query_engine.query("test_table:user_id,foo")
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
-    nl_table_engine = NLSQLTableQueryEngine(index.sql_database)
+    nl_table_engine = NLSQLTableQueryEngine(
+        index.sql_database, service_context=mock_service_context
+    )
     response = nl_table_engine.query("test_table:user_id,foo")
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
@@ -74,7 +76,9 @@ def test_sql_index_query(
     response = nl_query_engine.query("test_table:user_id,foo")
     assert str(response) == sql_to_test
 
-    nl_table_engine = NLSQLTableQueryEngine(index.sql_database, sql_only=True)
+    nl_table_engine = NLSQLTableQueryEngine(
+        index.sql_database, service_context=mock_service_context, sql_only=True
+    )
     response = nl_table_engine.query("test_table:user_id,foo")
     assert str(response) == sql_to_test
 
@@ -121,7 +125,9 @@ def test_sql_index_async_query(
     response = asyncio.run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
-    nl_table_engine = NLSQLTableQueryEngine(index.sql_database)
+    nl_table_engine = NLSQLTableQueryEngine(
+        index.sql_database, service_context=mock_service_context
+    )
     task = nl_table_engine.aquery("test_table:user_id,foo")
     response = asyncio.run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
@@ -139,7 +145,9 @@ def test_sql_index_async_query(
     response = asyncio.run(task)
     assert str(response) == sql_to_test
 
-    nl_table_engine = NLSQLTableQueryEngine(index.sql_database, sql_only=True)
+    nl_table_engine = NLSQLTableQueryEngine(
+        index.sql_database, service_context=mock_service_context, sql_only=True
+    )
     task = nl_table_engine.aquery("test_table:user_id,foo")
     response = asyncio.run(task)
     assert str(response) == sql_to_test

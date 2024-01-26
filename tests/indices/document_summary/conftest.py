@@ -24,6 +24,7 @@ def index(
     docs: List[Document], mock_service_context: ServiceContext
 ) -> DocumentSummaryIndex:
     response_synthesizer = get_response_synthesizer(
+        llm=mock_service_context.llm,
         text_qa_template=MOCK_TEXT_QA_PROMPT,
         refine_template=MOCK_REFINE_PROMPT,
         callback_manager=mock_service_context.callback_manager,

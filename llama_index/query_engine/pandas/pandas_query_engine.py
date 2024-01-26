@@ -15,7 +15,7 @@ import pandas as pd
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.response.schema import Response
 from llama_index.indices.struct_store.pandas import PandasIndex
-from llama_index.llms.utils import LLMType, resolve_llm
+from llama_index.llms import LLM
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
@@ -90,7 +90,7 @@ class PandasQueryEngine(BaseQueryEngine):
         head: int = 5,
         verbose: bool = False,
         service_context: Optional[ServiceContext] = None,
-        llm: Optional[LLMType] = "default",
+        llm: Optional[LLM] = None,
         synthesize_response: bool = False,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
@@ -106,9 +106,7 @@ class PandasQueryEngine(BaseQueryEngine):
         )
         self._verbose = verbose
 
-        self._llm = resolve_llm(llm) or llm_from_settings_or_context(
-            Settings, service_context
-        )
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._synthesize_response = synthesize_response
         self._response_synthesis_prompt = (
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT

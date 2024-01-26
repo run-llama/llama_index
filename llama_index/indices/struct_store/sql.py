@@ -110,7 +110,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
             return index_struct
         else:
             data_extractor = SQLStructDatapointExtractor(
-                llm_from_settings_or_context(Settings, self._service_context),
+                llm_from_settings_or_context(Settings, self.service_context),
                 self.schema_extract_prompt,
                 self.output_parser,
                 self.sql_database,

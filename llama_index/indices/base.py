@@ -72,6 +72,9 @@ class BaseIndex(Generic[IS], ABC):
                 raise ValueError("nodes must be a list of Node objects.")
 
         self._storage_context = storage_context or StorageContext.from_defaults()
+        # deprecated
+        self._service_context = service_context
+
         self._docstore = self._storage_context.docstore
         self._show_progress = show_progress
         self._vector_store = self._storage_context.vector_store
@@ -92,12 +95,10 @@ class BaseIndex(Generic[IS], ABC):
             self._index_struct = index_struct
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
-        # deprecated
         self._transformations = (
             transformations
             or transformations_from_settings_or_context(Settings, service_context)
         )
-        self._service_context = service_context
 
     @classmethod
     def from_documents(

@@ -30,8 +30,8 @@ from llama_index.response_synthesizers.google.generativeai import (
     GoogleTextSynthesizer,
 )
 from llama_index.schema import BaseNode, Document, TransformComponent
-from llama_index.settings import Settings, embed_model_from_settings_or_context
 from llama_index.storage.storage_context import StorageContext
+from llama_index.token_counter.mock_embed_model import MockEmbedding
 from llama_index.vector_stores.google.generativeai import (
     GoogleVectorStore,
 )
@@ -57,9 +57,7 @@ class GoogleIndex(BaseManagedIndex):
 
         Prefer to use the factories `from_corpus` or `create_corpus` instead.
         """
-        embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, service_context
-        )
+        embed_model = embed_model or MockEmbedding(embed_dim=3)
 
         self._store = vector_store
         self._index = VectorStoreIndex.from_vector_store(

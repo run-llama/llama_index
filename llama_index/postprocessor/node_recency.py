@@ -61,7 +61,7 @@ DEFAULT_QUERY_EMBEDDING_TMPL = (
 class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     """Embedding Recency post-processor."""
 
-    embed_model: BaseEmbedding = Field(default=lambda: Settings.embed_model)
+    embed_model: BaseEmbedding = Field(default_factory=lambda: Settings.embed_model)
     date_key: str = "date"
     similarity_cutoff: float = Field(default=0.7)
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)

@@ -213,6 +213,4 @@ def test_load_index_query_engine_service_context(
     assert isinstance(query_engine, RetrieverQueryEngine)
     assert isinstance(new_query_engine, RetrieverQueryEngine)
     # Ensure that the loaded index will end up querying with the same service_context
-    assert (
-        new_query_engine._response_synthesizer.service_context == mock_service_context
-    )
+    assert new_query_engine._response_synthesizer._llm == mock_service_context.llm

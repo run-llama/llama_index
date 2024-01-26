@@ -15,6 +15,11 @@ from llama_index.indices.base import BaseIndex
 from llama_index.llms import LLM
 from llama_index.schema import BaseNode, IndexNode
 from llama_index.service_context import ServiceContext
+from llama_index.settings import (
+    Settings,
+    embed_model_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.utils import get_tqdm_iterable
 
@@ -82,10 +87,14 @@ class SummaryIndex(BaseIndex[IndexList]):
         if retriever_mode == ListRetrieverMode.DEFAULT:
             return SummaryIndexRetriever(self, object_map=self._object_map, **kwargs)
         elif retriever_mode == ListRetrieverMode.EMBEDDING:
+            embed_model = embed_model or embed_model_from_settings_or_context(
+                Settings, self.service_context
+            )
             return SummaryIndexEmbeddingRetriever(
                 self, object_map=self._object_map, embed_model=embed_model, **kwargs
             )
         elif retriever_mode == ListRetrieverMode.LLM:
+            llm = llm or llm_from_settings_or_context(Settings, self.service_context)
             return SummaryIndexLLMRetriever(
                 self, object_map=self._object_map, llm=llm, **kwargs
             )

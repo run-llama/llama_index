@@ -1,4 +1,5 @@
 import pytest
+from llama_index.llms import MockLLM
 from llama_index.node_parser.relational.unstructured_element import (
     UnstructuredElementNodeParser,
 )
@@ -91,13 +92,14 @@ def test_html_table_extraction() -> None:
         """
     )
 
-    node_parser = UnstructuredElementNodeParser()
+    node_parser = UnstructuredElementNodeParser(llm=MockLLM())
 
     nodes = node_parser.get_nodes_from_documents([test_data])
-    print(len(nodes))
-    print(nodes)
-    assert len(nodes) == 4
+
+    assert len(nodes) == 6
     assert isinstance(nodes[0], TextNode)
     assert isinstance(nodes[1], IndexNode)
     assert isinstance(nodes[2], TextNode)
     assert isinstance(nodes[3], TextNode)
+    assert isinstance(nodes[4], IndexNode)
+    assert isinstance(nodes[5], TextNode)

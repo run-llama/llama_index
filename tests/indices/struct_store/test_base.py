@@ -79,7 +79,11 @@ def test_sql_index(
     _delete_table_items(engine, test_table)
     docs = [Document(text="user_id:2,foo:bar\nuser_id:8,foo:hello")]
     index = SQLStructStoreIndex.from_documents(
-        docs, sql_database=sql_database, table_name=table_name, **index_kwargs
+        docs,
+        sql_database=sql_database,
+        table_name=table_name,
+        service_context=mock_service_context,
+        **index_kwargs
     )
     assert isinstance(index, SQLStructStoreIndex)
     # test that the document is inserted
@@ -219,6 +223,7 @@ def test_sql_index_with_context(
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
+        service_context=mock_service_context,
         **index_kwargs
     )
     assert isinstance(index, SQLStructStoreIndex)
@@ -240,6 +245,7 @@ def test_sql_index_with_context(
         sql_database=sql_database,
         table_context_prompt=MOCK_TABLE_CONTEXT_PROMPT,
         table_context_task="extract_test",
+        service_context=mock_service_context,
     )
     sql_context_container = sql_context_builder.build_context_container(
         ignore_db_schema=True
@@ -249,6 +255,7 @@ def test_sql_index_with_context(
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
+        service_context=mock_service_context,
         **index_kwargs
     )
     assert isinstance(index, SQLStructStoreIndex)
@@ -316,7 +323,7 @@ def test_sql_index_with_index_context(
         sql_database, context_dict=table_context_dict
     )
     context_index = context_builder.derive_index_from_context(
-        SummaryIndex, ignore_db_schema=True
+        SummaryIndex, ignore_db_schema=True, service_context=mock_service_context
     )
     # NOTE: the response only contains the first line (metadata), since
     # with the mock patch, newlines are treated as separate calls.
