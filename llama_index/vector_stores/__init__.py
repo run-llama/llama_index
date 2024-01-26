@@ -24,6 +24,7 @@ from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.vector_stores.lantern import LanternVectorStore
 from llama_index.vector_stores.metal import MetalVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
+from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
 from llama_index.vector_stores.myscale import MyScaleVectorStore
 from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
 from llama_index.vector_stores.opensearch import (
@@ -42,6 +43,7 @@ from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.tair import TairVectorStore
 from llama_index.vector_stores.tencentvectordb import TencentVectorDB
 from llama_index.vector_stores.timescalevector import TimescaleVectorStore
+from llama_index.vector_stores.txtai import TxtaiVectorStore
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     FilterCondition,
@@ -60,6 +62,7 @@ __all__ = [
     "RedisVectorStore",
     "RocksetVectorStore",
     "FaissVectorStore",
+    "TxtaiVectorStore",
     "PineconeVectorStore",
     "WeaviateVectorStore",
     "QdrantVectorStore",
@@ -99,4 +102,5 @@ __all__ = [
     "AstraDBVectorStore",
     "AzureCosmosDBMongoDBVectorSearch",
     "LanternVectorStore",
+    "MongoDBAtlasVectorSearch",
 ]

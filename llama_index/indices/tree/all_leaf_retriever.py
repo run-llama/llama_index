@@ -4,7 +4,7 @@ import logging
 from typing import Any, List, Optional, cast
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexGraph
 from llama_index.indices.tree.base import TreeIndex
 from llama_index.indices.utils import get_sorted_node_list
@@ -32,12 +32,16 @@ class TreeAllLeafRetriever(BaseRetriever):
         self,
         index: TreeIndex,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         self._index = index
         self._index_struct = index.index_struct
         self._docstore = index.docstore
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     def _retrieve(
         self,

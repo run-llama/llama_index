@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, Optional, Sequence
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.llms.base import (
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

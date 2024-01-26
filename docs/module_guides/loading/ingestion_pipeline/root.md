@@ -2,6 +2,8 @@
 
 An `IngestionPipeline` uses a concept of `Transformations` that are applied to input data. These `Transformations` are applied to your input data, and the resulting nodes are either returned or inserted into a vector database (if given). Each node+transformation pair is cached, so that subsequent runs (if the cache is persisted) with the same node+transformation combination can use the cached result and save you time.
 
+To see an interactive example of `IngestionPipeline` being put in use, check out the [RAG CLI](/use_cases/q_and_a/rag_cli.md).
+
 ## Usage Pattern
 
 The simplest usage is to instantiate an `IngestionPipeline` like so:
@@ -183,6 +185,24 @@ A full walkthrough is found in our [demo notebook](/examples/ingestion/document_
 
 Also check out another guide using [Redis as our entire ingestion stack](/examples/ingestion/redis_ingestion_pipeline.ipynb).
 
+## Parallel Processing
+
+The `run` method of `IngestionPipeline` can be executed with parallel processes.
+It does so by making use of `multiprocessing.Pool` distributing batches of nodes
+to across processors.
+
+To execute with parallel processing, set `num_workers` to the number of processes
+you'd like use:
+
+```python
+from llama_index.ingestion import IngestionPipeline
+
+pipeline = IngestionPipeline(
+    transformations=[...],
+)
+pipeline.run(documents=[...], num_workers=4)
+```
+
 ## Modules
 
 ```{toctree}
@@ -195,4 +215,5 @@ transformations.md
 /examples/ingestion/document_management_pipeline.ipynb
 /examples/ingestion/redis_ingestion_pipeline.ipynb
 /examples/ingestion/ingestion_gdrive.ipynb
+/examples/ingestion/parallel_execution_ingestion_pipeline.ipynb
 ```

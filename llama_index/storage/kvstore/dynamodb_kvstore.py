@@ -116,6 +116,18 @@ class DynamoDBKVStore(BaseKVStore):
         item[self._key_range] = key
         self._table.put_item(Item=item)
 
+    async def aput(
+        self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
+    ) -> None:
+        """Put a key-value pair into the store.
+
+        Args:
+            key (str): key
+            val (dict): value
+            collection (str): collection name
+        """
+        raise NotImplementedError
+
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> dict | None:
         """Get a value from the store.
 
@@ -134,6 +146,15 @@ class DynamoDBKVStore(BaseKVStore):
                 for k, v in item.items()
                 if k not in {self._key_hash, self._key_range}
             }
+
+    async def aget(self, key: str, collection: str = DEFAULT_COLLECTION) -> dict | None:
+        """Get a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+        """
+        raise NotImplementedError
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store.
@@ -162,6 +183,14 @@ class DynamoDBKVStore(BaseKVStore):
             last_evaluated_key = resp.get("LastEvaluatedKey")
         return result
 
+    async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+        """Get all values from the store.
+
+        Args:
+            collection (str): collection name
+        """
+        raise NotImplementedError
+
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the store.
 
@@ -178,3 +207,12 @@ class DynamoDBKVStore(BaseKVStore):
             return False
         else:
             return len(item) > 0
+
+    async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        """Delete a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+        """
+        raise NotImplementedError

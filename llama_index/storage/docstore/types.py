@@ -7,6 +7,7 @@ import fsspec
 from dataclasses_json import DataClassJsonMixin
 
 from llama_index.schema import BaseNode
+from llama_index.storage.kvstore.types import DEFAULT_BATCH_SIZE
 
 DEFAULT_PERSIST_FNAME = "docstore.json"
 DEFAULT_PERSIST_DIR = "./storage"
@@ -38,7 +39,21 @@ class BaseDocumentStore(ABC):
 
     @abstractmethod
     def add_documents(
-        self, docs: Sequence[BaseNode], allow_update: bool = True
+        self,
+        docs: Sequence[BaseNode],
+        allow_update: bool = True,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        store_text: bool = True,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    async def async_add_documents(
+        self,
+        docs: Sequence[BaseNode],
+        allow_update: bool = True,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        store_text: bool = True,
     ) -> None:
         ...
 
@@ -47,12 +62,27 @@ class BaseDocumentStore(ABC):
         ...
 
     @abstractmethod
+    async def aget_document(
+        self, doc_id: str, raise_error: bool = True
+    ) -> Optional[BaseNode]:
+        ...
+
+    @abstractmethod
     def delete_document(self, doc_id: str, raise_error: bool = True) -> None:
         """Delete a document from the store."""
         ...
 
     @abstractmethod
+    async def adelete_document(self, doc_id: str, raise_error: bool = True) -> None:
+        """Delete a document from the store."""
+        ...
+
+    @abstractmethod
     def document_exists(self, doc_id: str) -> bool:
+        ...
+
+    @abstractmethod
+    async def adocument_exists(self, doc_id: str) -> bool:
         ...
 
     # ===== Hash =====
@@ -61,11 +91,31 @@ class BaseDocumentStore(ABC):
         ...
 
     @abstractmethod
+    async def aset_document_hash(self, doc_id: str, doc_hash: str) -> None:
+        ...
+
+    @abstractmethod
+    def set_document_hashes(self, doc_hashes: Dict[str, str]) -> None:
+        ...
+
+    @abstractmethod
+    async def aset_document_hashes(self, doc_hashes: Dict[str, str]) -> None:
+        ...
+
+    @abstractmethod
     def get_document_hash(self, doc_id: str) -> Optional[str]:
         ...
 
     @abstractmethod
+    async def aget_document_hash(self, doc_id: str) -> Optional[str]:
+        ...
+
+    @abstractmethod
     def get_all_document_hashes(self) -> Dict[str, str]:
+        ...
+
+    @abstractmethod
+    async def aget_all_document_hashes(self) -> Dict[str, str]:
         ...
 
     # ==== Ref Docs =====
@@ -74,11 +124,23 @@ class BaseDocumentStore(ABC):
         """Get a mapping of ref_doc_id -> RefDocInfo for all ingested documents."""
 
     @abstractmethod
+    async def aget_all_ref_doc_info(self) -> Optional[Dict[str, RefDocInfo]]:
+        """Get a mapping of ref_doc_id -> RefDocInfo for all ingested documents."""
+
+    @abstractmethod
     def get_ref_doc_info(self, ref_doc_id: str) -> Optional[RefDocInfo]:
         """Get the RefDocInfo for a given ref_doc_id."""
 
     @abstractmethod
+    async def aget_ref_doc_info(self, ref_doc_id: str) -> Optional[RefDocInfo]:
+        """Get the RefDocInfo for a given ref_doc_id."""
+
+    @abstractmethod
     def delete_ref_doc(self, ref_doc_id: str, raise_error: bool = True) -> None:
+        """Delete a ref_doc and all it's associated nodes."""
+
+    @abstractmethod
+    async def adelete_ref_doc(self, ref_doc_id: str, raise_error: bool = True) -> None:
         """Delete a ref_doc and all it's associated nodes."""
 
     # ===== Nodes =====
@@ -94,6 +156,21 @@ class BaseDocumentStore(ABC):
         """
         return [self.get_node(node_id, raise_error=raise_error) for node_id in node_ids]
 
+    async def aget_nodes(
+        self, node_ids: List[str], raise_error: bool = True
+    ) -> List[BaseNode]:
+        """Get nodes from docstore.
+
+        Args:
+            node_ids (List[str]): node ids
+            raise_error (bool): raise error if node_id not found
+
+        """
+        return [
+            await self.aget_node(node_id, raise_error=raise_error)
+            for node_id in node_ids
+        ]
+
     def get_node(self, node_id: str, raise_error: bool = True) -> BaseNode:
         """Get node from docstore.
 
@@ -107,6 +184,19 @@ class BaseDocumentStore(ABC):
             raise ValueError(f"Document {node_id} is not a Node.")
         return doc
 
+    async def aget_node(self, node_id: str, raise_error: bool = True) -> BaseNode:
+        """Get node from docstore.
+
+        Args:
+            node_id (str): node id
+            raise_error (bool): raise error if node_id not found
+
+        """
+        doc = await self.aget_document(node_id, raise_error=raise_error)
+        if not isinstance(doc, BaseNode):
+            raise ValueError(f"Document {node_id} is not a Node.")
+        return doc
+
     def get_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, BaseNode]:
         """Get node dict from docstore given a mapping of index to node ids.
 
@@ -116,4 +206,16 @@ class BaseDocumentStore(ABC):
         """
         return {
             index: self.get_node(node_id) for index, node_id in node_id_dict.items()
+        }
+
+    async def aget_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, BaseNode]:
+        """Get node dict from docstore given a mapping of index to node ids.
+
+        Args:
+            node_id_dict (Dict[int, str]): mapping of index to node ids
+
+        """
+        return {
+            index: await self.aget_node(node_id)
+            for index, node_id in node_id_dict.items()
         }

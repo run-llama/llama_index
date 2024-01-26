@@ -7,12 +7,14 @@ from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.constants import DEFAULT_CHUNK_SIZE
 from llama_index.node_parser.interface import MetadataAwareTextSplitter
+from llama_index.node_parser.node_utils import default_id_func
 from llama_index.node_parser.text.utils import (
     split_by_char,
     split_by_regex,
     split_by_sentence_tokenizer,
     split_by_sep,
 )
+from llama_index.schema import Document
 from llama_index.utils import get_tokenizer
 
 SENTENCE_CHUNK_OVERLAP = 200
@@ -24,6 +26,7 @@ DEFAULT_PARAGRAPH_SEP = "\n\n\n"
 class _Split:
     text: str  # the split text
     is_sentence: bool  # save whether this is a full sentence
+    token_size: int  # token length of split text
 
 
 class SentenceSplitter(MetadataAwareTextSplitter):
@@ -71,6 +74,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
+        id_func: Optional[Callable[[int, Document], str]] = None,
     ):
         """Initialize with parameters."""
         if chunk_overlap > chunk_size:
@@ -78,6 +82,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
                 f"({chunk_size}), should be smaller."
             )
+        id_func = id_func or default_id_func
 
         callback_manager = callback_manager or CallbackManager([])
         self._chunking_tokenizer_fn = (
@@ -105,6 +110,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             callback_manager=callback_manager,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
+            id_func=id_func,
         )
 
     @classmethod
@@ -192,15 +198,23 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         4. split by default separator (" ")
 
         """
+        token_size = self._token_size(text)
         if self._token_size(text) <= chunk_size:
-            return [_Split(text, is_sentence=True)]
+            return [_Split(text, is_sentence=True, token_size=token_size)]
 
         text_splits_by_fns, is_sentence = self._get_splits_by_fns(text)
 
         text_splits = []
         for text_split_by_fns in text_splits_by_fns:
-            if self._token_size(text_split_by_fns) <= chunk_size:
-                text_splits.append(_Split(text_split_by_fns, is_sentence=is_sentence))
+            token_size = self._token_size(text_split_by_fns)
+            if token_size <= chunk_size:
+                text_splits.append(
+                    _Split(
+                        text_split_by_fns,
+                        is_sentence=is_sentence,
+                        token_size=token_size,
+                    )
+                )
             else:
                 recursive_text_splits = self._split(
                     text_split_by_fns, chunk_size=chunk_size
@@ -244,21 +258,20 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
         while len(splits) > 0:
             cur_split = splits[0]
-            cur_split_len = len(self._tokenizer(cur_split.text))
-            if cur_split_len > chunk_size:
+            if cur_split.token_size > chunk_size:
                 raise ValueError("Single token exceeded chunk size")
-            if cur_chunk_len + cur_split_len > chunk_size and not new_chunk:
+            if cur_chunk_len + cur_split.token_size > chunk_size and not new_chunk:
                 # if adding split to current chunk exceeds chunk size: close out chunk
                 close_chunk()
             else:
                 if (
                     cur_split.is_sentence
-                    or cur_chunk_len + cur_split_len <= chunk_size
+                    or cur_chunk_len + cur_split.token_size <= chunk_size
                     or new_chunk  # new chunk, always add at least one split
                 ):
                     # add split to chunk
-                    cur_chunk_len += cur_split_len
-                    cur_chunk.append((cur_split.text, cur_split_len))
+                    cur_chunk_len += cur_split.token_size
+                    cur_chunk.append((cur_split.text, cur_split.token_size))
                     splits.pop(0)
                     new_chunk = False
                 else:

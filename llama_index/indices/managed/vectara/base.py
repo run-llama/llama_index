@@ -8,12 +8,14 @@ interfaces a managed service.
 import json
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 from hashlib import blake2b
 from typing import Any, Dict, List, Optional, Sequence, Type
 
 import requests
 
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
@@ -55,16 +57,21 @@ class VectaraIndex(BaseManagedIndex):
         vectara_corpus_id: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
         use_core_api: bool = False,
+        parallelize_ingest: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize the Vectara API."""
+        self.parallelize_ingest = parallelize_ingest
         index_struct = VectaraIndexStruct(
             index_id=str(vectara_corpus_id),
             summary="Vectara Index",
         )
 
         super().__init__(
-            show_progress=show_progress, index_struct=index_struct, **kwargs
+            show_progress=show_progress,
+            index_struct=index_struct,
+            service_context=ServiceContext.from_defaults(llm=None, llm_predictor=None),
+            **kwargs,
         )
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
             "VECTARA_CUSTOMER_ID"
@@ -182,6 +189,8 @@ class VectaraIndex(BaseManagedIndex):
         status_str = result["status"]["code"] if "status" in result else None
         if status_code == 409 or status_str and (status_str == "ALREADY_EXISTS"):
             return "E_ALREADY_EXISTS"
+        elif status_code == 200 or status_str and (status_str == "INVALID_ARGUMENT"):
+            return "E_INVALID_ARGUMENT"
         elif status_str and (status_str == "FORBIDDEN"):
             return "E_NO_PERMISSIONS"
         else:
@@ -200,6 +209,7 @@ class VectaraIndex(BaseManagedIndex):
             hash_object.update(s.encode("utf-8"))
             return hash_object.hexdigest()
 
+        docs = []
         for node in nodes:
             metadata = node.metadata.copy()
             metadata["framework"] = "llama_index"
@@ -211,8 +221,25 @@ class VectaraIndex(BaseManagedIndex):
                 "metadataJson": json.dumps(node.metadata),
                 section_key: [{"text": text}],
             }
-            self._index_doc(doc)
-            self.doc_ids.append(doc_id)
+            docs.append(doc)
+
+        if self.parallelize_ingest:
+            with ThreadPoolExecutor() as executor:
+                futures = [executor.submit(self._index_doc, doc) for doc in docs]
+                for future in futures:
+                    ecode = future.result()
+                    if ecode != "E_SUCCEEDED":
+                        _logger.error(
+                            f"Error indexing document in Vectara with error code {ecode}"
+                        )
+        else:
+            for doc in docs:
+                ecode = self._index_doc(doc)
+                if ecode != "E_SUCCEEDED":
+                    _logger.error(
+                        f"Error indexing document in Vectara with error code {ecode}"
+                    )
+                self.doc_ids.append(doc_id)
 
     def add_documents(
         self,

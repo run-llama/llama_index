@@ -1,10 +1,14 @@
 """Simple reader that reads files of different formats from a directory."""
 import logging
 import mimetypes
+import multiprocessing
 import os
+import warnings
 from datetime import datetime
+from functools import reduce
+from itertools import repeat
 from pathlib import Path
-from typing import Callable, Dict, Generator, List, Optional, Type
+from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
 from tqdm import tqdm
 
@@ -98,6 +102,8 @@ class SimpleDirectoryReader(BaseReader):
             Default is None.
     """
 
+    supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
+
     def __init__(
         self,
         input_dir: Optional[str] = None,
@@ -147,7 +153,6 @@ class SimpleDirectoryReader(BaseReader):
         else:
             self.file_extractor = {}
 
-        self.supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
         self.file_metadata = file_metadata or default_file_metadata_func
         self.filename_as_id = filename_as_id
 
@@ -213,71 +218,12 @@ class SimpleDirectoryReader(BaseReader):
 
         return new_input_files
 
-    def load_data(self, show_progress: bool = False) -> List[Document]:
-        """Load data from the input directory.
+    def _exclude_metadata(self, documents: List[Document]) -> List[Document]:
+        """Exclude metadata from documents.
 
         Args:
-            show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
-
-        Returns:
-            List[Document]: A list of documents.
+            documents (List[Document]): List of documents.
         """
-        documents = []
-
-        files_to_process = self.input_files
-
-        if show_progress:
-            files_to_process = tqdm(self.input_files, desc="Loading files", unit="file")
-
-        for input_file in files_to_process:
-            metadata: Optional[dict] = None
-            if self.file_metadata is not None:
-                metadata = self.file_metadata(str(input_file))
-
-            file_suffix = input_file.suffix.lower()
-            if (
-                file_suffix in self.supported_suffix
-                or file_suffix in self.file_extractor
-            ):
-                # use file readers
-                if file_suffix not in self.file_extractor:
-                    # instantiate file reader if not already
-                    reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
-                    self.file_extractor[file_suffix] = reader_cls()
-                reader = self.file_extractor[file_suffix]
-
-                # load data -- catch all errors except for ImportError
-                try:
-                    docs = reader.load_data(input_file, extra_info=metadata)
-                except ImportError as e:
-                    # ensure that ImportError is raised so user knows
-                    # about missing dependencies
-                    raise ImportError(str(e))
-                except Exception as e:
-                    # otherwise, just skip the file and report the error
-                    print(
-                        f"Failed to load file {input_file} with error: {e}. Skipping...",
-                        flush=True,
-                    )
-                    continue
-
-                # iterate over docs if needed
-                if self.filename_as_id:
-                    for i, doc in enumerate(docs):
-                        doc.id_ = f"{input_file!s}_part_{i}"
-
-                documents.extend(docs)
-            else:
-                # do standard read
-                with open(input_file, errors=self.errors, encoding=self.encoding) as f:
-                    data = f.read()
-
-                doc = Document(text=data, metadata=metadata or {})
-                if self.filename_as_id:
-                    doc.id_ = str(input_file)
-
-                documents.append(doc)
-
         for doc in documents:
             # Keep only metadata['file_path'] in both embedding and llm content
             # str, which contain extreme important context that about the chunks.
@@ -305,3 +251,176 @@ class SimpleDirectoryReader(BaseReader):
             )
 
         return documents
+
+    @staticmethod
+    def load_file(
+        input_file: Path,
+        file_metadata: Callable[[str], Dict],
+        file_extractor: Dict[str, BaseReader],
+        filename_as_id: bool = False,
+        encoding: str = "utf-8",
+        errors: str = "ignore",
+    ) -> List[Document]:
+        """Static method for loading file.
+
+        NOTE: necessarily as a static method for parallel processing.
+
+        Args:
+            input_file (Path): _description_
+            file_metadata (Callable[[str], Dict]): _description_
+            file_extractor (Dict[str, BaseReader]): _description_
+            filename_as_id (bool, optional): _description_. Defaults to False.
+            encoding (str, optional): _description_. Defaults to "utf-8".
+            errors (str, optional): _description_. Defaults to "ignore".
+
+        input_file (Path): File path to read
+        file_metadata ([Callable[str, Dict]]): A function that takes
+            in a filename and returns a Dict of metadata for the Document.
+        file_extractor (Dict[str, BaseReader]): A mapping of file
+            extension to a BaseReader class that specifies how to convert that file
+            to text.
+        filename_as_id (bool): Whether to use the filename as the document id.
+        encoding (str): Encoding of the files.
+            Default is utf-8.
+        errors (str): how encoding and decoding errors are to be handled,
+              see https://docs.python.org/3/library/functions.html#open
+
+        Returns:
+            List[Document]: loaded documents
+        """
+        metadata: Optional[dict] = None
+        documents: List[Document] = []
+
+        if file_metadata is not None:
+            metadata = file_metadata(str(input_file))
+
+        file_suffix = input_file.suffix.lower()
+        if (
+            file_suffix in SimpleDirectoryReader.supported_suffix
+            or file_suffix in file_extractor
+        ):
+            # use file readers
+            if file_suffix not in file_extractor:
+                # instantiate file reader if not already
+                reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
+                file_extractor[file_suffix] = reader_cls()
+            reader = file_extractor[file_suffix]
+
+            # load data -- catch all errors except for ImportError
+            try:
+                docs = reader.load_data(input_file, extra_info=metadata)
+            except ImportError as e:
+                # ensure that ImportError is raised so user knows
+                # about missing dependencies
+                raise ImportError(str(e))
+            except Exception as e:
+                # otherwise, just skip the file and report the error
+                print(
+                    f"Failed to load file {input_file} with error: {e}. Skipping...",
+                    flush=True,
+                )
+                return []
+
+            # iterate over docs if needed
+            if filename_as_id:
+                for i, doc in enumerate(docs):
+                    doc.id_ = f"{input_file!s}_part_{i}"
+
+            documents.extend(docs)
+        else:
+            # do standard read
+            with open(input_file, errors=errors, encoding=encoding) as f:
+                data = f.read()
+
+            doc = Document(text=data, metadata=metadata or {})
+            if filename_as_id:
+                doc.id_ = str(input_file)
+
+            documents.append(doc)
+
+        return documents
+
+    def load_data(
+        self, show_progress: bool = False, num_workers: Optional[int] = None
+    ) -> List[Document]:
+        """Load data from the input directory.
+
+        Args:
+            show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+
+        Returns:
+            List[Document]: A list of documents.
+        """
+        documents = []
+
+        files_to_process = self.input_files
+
+        if num_workers and num_workers > 1:
+            if num_workers > multiprocessing.cpu_count():
+                warnings.warn(
+                    "Specified num_workers exceed number of CPUs in the system. "
+                    "Setting `num_workers` down to the maximum CPU count."
+                )
+            with multiprocessing.get_context("spawn").Pool(num_workers) as p:
+                results = p.starmap(
+                    SimpleDirectoryReader.load_file,
+                    zip(
+                        files_to_process,
+                        repeat(self.file_metadata),
+                        repeat(self.file_extractor),
+                        repeat(self.filename_as_id),
+                        repeat(self.encoding),
+                        repeat(self.errors),
+                    ),
+                )
+                documents = reduce(lambda x, y: x + y, results)
+
+        else:
+            if show_progress:
+                files_to_process = tqdm(
+                    self.input_files, desc="Loading files", unit="file"
+                )
+            for input_file in files_to_process:
+                documents.extend(
+                    SimpleDirectoryReader.load_file(
+                        input_file=input_file,
+                        file_metadata=self.file_metadata,
+                        file_extractor=self.file_extractor,
+                        filename_as_id=self.filename_as_id,
+                        encoding=self.encoding,
+                        errors=self.errors,
+                    )
+                )
+
+        return self._exclude_metadata(documents)
+
+    def iter_data(
+        self, show_progress: bool = False
+    ) -> Generator[List[Document], Any, Any]:
+        """Load data iteratively from the input directory.
+
+        Args:
+            show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+
+        Returns:
+            Generator[List[Document]]: A list of documents.
+        """
+        files_to_process = self.input_files
+
+        if show_progress:
+            files_to_process = tqdm(self.input_files, desc="Loading files", unit="file")
+
+        for input_file in files_to_process:
+            documents = SimpleDirectoryReader.load_file(
+                input_file=input_file,
+                file_metadata=self.file_metadata,
+                file_extractor=self.file_extractor,
+                filename_as_id=self.filename_as_id,
+                encoding=self.encoding,
+                errors=self.errors,
+            )
+
+            documents = self._exclude_metadata(documents)
+
+            if len(documents) > 0:
+                yield documents

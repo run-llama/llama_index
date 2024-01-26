@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core import (
+from llama_index.core.base_multi_modal_retriever import (
     MultiModalRetriever,
 )
 from llama_index.data_structs.data_structs import IndexDict
@@ -133,16 +133,20 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        if self._vector_store.is_embedding_query:
-            if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
-                query_bundle.embedding = (
-                    self._service_context.embed_model.get_agg_embedding_from_queries(
+        if not self._index.is_text_vector_store_empty:
+            if self._vector_store.is_embedding_query:
+                if (
+                    query_bundle.embedding is None
+                    and len(query_bundle.embedding_strs) > 0
+                ):
+                    query_bundle.embedding = self._service_context.embed_model.get_agg_embedding_from_queries(
                         query_bundle.embedding_strs
                     )
-                )
-        return self._get_nodes_with_embeddings(
-            query_bundle, self._similarity_top_k, self._vector_store
-        )
+            return self._get_nodes_with_embeddings(
+                query_bundle, self._similarity_top_k, self._vector_store
+            )
+        else:
+            return []
 
     def text_retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         if isinstance(str_or_query_bundle, str):
@@ -153,16 +157,19 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        if self._image_vector_store.is_embedding_query:
-            # change the embedding for query bundle to Multi Modal Text encoder
-            query_bundle.embedding = (
-                self._image_embed_model.get_agg_embedding_from_queries(
-                    query_bundle.embedding_strs
+        if not self._index.is_image_vector_store_empty:
+            if self._image_vector_store.is_embedding_query:
+                # change the embedding for query bundle to Multi Modal Text encoder
+                query_bundle.embedding = (
+                    self._image_embed_model.get_agg_embedding_from_queries(
+                        query_bundle.embedding_strs
+                    )
                 )
+            return self._get_nodes_with_embeddings(
+                query_bundle, self._image_similarity_top_k, self._image_vector_store
             )
-        return self._get_nodes_with_embeddings(
-            query_bundle, self._image_similarity_top_k, self._image_vector_store
-        )
+        else:
+            return []
 
     def text_to_image_retrieve(
         self, str_or_query_bundle: QueryType
@@ -175,15 +182,18 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        if self._image_vector_store.is_embedding_query:
-            # change the embedding for query bundle to Multi Modal Image encoder for image input
-            assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
-            query_bundle.embedding = self._image_embed_model.get_image_embedding(
-                query_bundle.embedding_image[0]
+        if not self._index.is_image_vector_store_empty:
+            if self._image_vector_store.is_embedding_query:
+                # change the embedding for query bundle to Multi Modal Image encoder for image input
+                assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
+                query_bundle.embedding = self._image_embed_model.get_image_embedding(
+                    query_bundle.embedding_image[0]
+                )
+            return self._get_nodes_with_embeddings(
+                query_bundle, self._image_similarity_top_k, self._image_vector_store
             )
-        return self._get_nodes_with_embeddings(
-            query_bundle, self._image_similarity_top_k, self._image_vector_store
-        )
+        else:
+            return []
 
     def image_to_image_retrieve(
         self, str_or_query_bundle: QueryType
@@ -270,16 +280,17 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        if self._vector_store.is_embedding_query:
-            # change the embedding for query bundle to Multi Modal Text encoder
-            query_bundle.embedding = (
-                await self._service_context.embed_model.aget_agg_embedding_from_queries(
+        if not self._index.is_text_vector_store_empty:
+            if self._vector_store.is_embedding_query:
+                # change the embedding for query bundle to Multi Modal Text encoder
+                query_bundle.embedding = await self._service_context.embed_model.aget_agg_embedding_from_queries(
                     query_bundle.embedding_strs
                 )
+            return await self._aget_nodes_with_embeddings(
+                query_bundle, self._similarity_top_k, self._vector_store
             )
-        return await self._aget_nodes_with_embeddings(
-            query_bundle, self._similarity_top_k, self._vector_store
-        )
+        else:
+            return []
 
     async def atext_retrieve(
         self, str_or_query_bundle: QueryType
@@ -292,16 +303,19 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        if self._image_vector_store.is_embedding_query:
-            # change the embedding for query bundle to Multi Modal Text encoder
-            query_bundle.embedding = (
-                await self._image_embed_model.aget_agg_embedding_from_queries(
-                    query_bundle.embedding_strs
+        if not self._index.is_image_vector_store_empty:
+            if self._image_vector_store.is_embedding_query:
+                # change the embedding for query bundle to Multi Modal Text encoder
+                query_bundle.embedding = (
+                    await self._image_embed_model.aget_agg_embedding_from_queries(
+                        query_bundle.embedding_strs
+                    )
                 )
+            return await self._aget_nodes_with_embeddings(
+                query_bundle, self._image_similarity_top_k, self._image_vector_store
             )
-        return await self._aget_nodes_with_embeddings(
-            query_bundle, self._image_similarity_top_k, self._image_vector_store
-        )
+        else:
+            return []
 
     async def atext_to_image_retrieve(
         self, str_or_query_bundle: QueryType
@@ -326,16 +340,21 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        if self._image_vector_store.is_embedding_query:
-            # change the embedding for query bundle to Multi Modal Image encoder for image input
-            assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
-            # Using the first imaage in the list for image retrieval
-            query_bundle.embedding = await self._image_embed_model.aget_image_embedding(
-                query_bundle.embedding_image[0]
+        if not self._index.is_image_vector_store_empty:
+            if self._image_vector_store.is_embedding_query:
+                # change the embedding for query bundle to Multi Modal Image encoder for image input
+                assert isinstance(self._index.image_embed_model, MultiModalEmbedding)
+                # Using the first imaage in the list for image retrieval
+                query_bundle.embedding = (
+                    await self._image_embed_model.aget_image_embedding(
+                        query_bundle.embedding_image[0]
+                    )
+                )
+            return await self._aget_nodes_with_embeddings(
+                query_bundle, self._image_similarity_top_k, self._image_vector_store
             )
-        return await self._aget_nodes_with_embeddings(
-            query_bundle, self._image_similarity_top_k, self._image_vector_store
-        )
+        else:
+            return []
 
     async def aimage_to_image_retrieve(
         self, str_or_query_bundle: QueryType

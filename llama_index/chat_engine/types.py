@@ -7,9 +7,13 @@ from enum import Enum
 from threading import Event
 from typing import AsyncGenerator, Generator, List, Optional, Union
 
-from llama_index.llms.base import ChatMessage, ChatResponseAsyncGen, ChatResponseGen
+from llama_index.core.llms.types import (
+    ChatMessage,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+)
+from llama_index.core.response.schema import Response, StreamingResponse
 from llama_index.memory import BaseMemory
-from llama_index.response.schema import Response, StreamingResponse
 from llama_index.schema import NodeWithScore
 from llama_index.tools import ToolOutput
 
@@ -116,6 +120,9 @@ class StreamingAgentChatResponse:
             logger.warning(f"Encountered exception writing response to history: {e}")
 
         self._is_done = True
+
+        # This act as is_done events for any consumers waiting
+        self._is_function_not_none_thread_event.set()
 
     async def awrite_response_to_history(
         self,
@@ -224,6 +231,19 @@ class BaseChatEngine(ABC):
         while message != "exit":
             response = self.chat(message)
             print(f"Assistant: {response}\n")
+            message = input("Human: ")
+
+    def streaming_chat_repl(self) -> None:
+        """Enter interactive chat REPL with streaming responses."""
+        print("===== Entering Chat REPL =====")
+        print('Type "exit" to exit.\n')
+        self.reset()
+        message = input("Human: ")
+        while message != "exit":
+            response = self.stream_chat(message)
+            print("Assistant: ", end="", flush=True)
+            response.print_response_stream()
+            print("\n")
             message = input("Human: ")
 
     @property

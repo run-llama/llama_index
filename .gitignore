@@ -1,3 +1,4 @@
+llama_index/_static
 .DS_Store
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -141,9 +142,15 @@ dmypy.json
 modules/
 *.swp
 
+# VsCode
+.vscode
+
 # pipenv
 Pipfile
 Pipfile.lock
 
 # pyright
 pyrightconfig.json
+
+# persist dir for chromadb test
+/data/

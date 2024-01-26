@@ -75,6 +75,9 @@ def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
                 value_type = "valueNumber"
             elif isinstance(filter.value, int):
                 value_type = "valueNumber"
+            elif isinstance(filter.value, str) and filter.value.isnumeric():
+                filter.value = float(filter.value)
+                value_type = "valueNumber"
             filters_list.append(
                 {
                     "path": filter.key,
@@ -312,11 +315,12 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         elif query.mode == VectorStoreQueryMode.HYBRID:
             logger.debug(f"Using hybrid search with alpha {query.alpha}")
             similarity_key = "score"
-            query_builder = query_builder.with_hybrid(
-                query=query.query_str,
-                alpha=query.alpha,
-                vector=vector,
-            )
+            if vector is not None and query.query_str:
+                query_builder = query_builder.with_hybrid(
+                    query=query.query_str,
+                    alpha=query.alpha,
+                    vector=vector,
+                )
 
         if query.filters is not None:
             filter = _to_weaviate_filter(query.filters)
@@ -335,17 +339,17 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         entries = parsed_result[self.index_name]
 
         similarities = []
-        nodes = []
-        node_idxs = []
+        nodes: List[BaseNode] = []
+        node_ids = []
 
         for i, entry in enumerate(entries):
             if i < query.similarity_top_k:
                 similarities.append(get_node_similarity(entry, similarity_key))
                 nodes.append(to_node(entry, text_key=self.text_key))
-                node_idxs.append(str(i))
+                node_ids.append(nodes[-1].node_id)
             else:
                 break
 
         return VectorStoreQueryResult(
-            nodes=nodes, ids=node_idxs, similarities=similarities
+            nodes=nodes, ids=node_ids, similarities=similarities
         )

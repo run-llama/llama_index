@@ -1,7 +1,7 @@
 from typing import Sequence
 
 import pytest
-from llama_index.llms.base import ChatMessage, MessageRole
+from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.llms.llama_utils import (
     B_INST,
     B_SYS,

@@ -22,26 +22,52 @@ class MockEmbedding(BaseEmbedding):
         return [0, 0, 1, 0, 0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
+        text = text.strip()
         # assume dimensions are 5
         if text == "They're taking the Hobbits to Isengard!":
             return [1, 0, 0, 0, 0]
+        elif (
+            text == "They're taking the Hobbits to Isengard! I can't carry it for you."
+        ):
+            return [1, 1, 0, 0, 0]
+        elif (
+            text
+            == "They're taking the Hobbits to Isengard! I can't carry it for you. But I can carry you!"
+        ):
+            return [1, 1, 1, 0, 0]
         elif text == "I can't carry it for you.":
             return [0, 1, 0, 0, 0]
+        elif text == "I can't carry it for you. But I can carry you!":
+            return [0, 1, 1, 0, 0]
         elif text == "But I can carry you!":
             return [0, 0, 1, 0, 0]
         else:
-            raise ValueError("Invalid text for `mock_get_text_embedding`.")
+            print(text)
+            raise ValueError(f"Invalid text for `mock_get_text_embedding`.")
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Mock get text embedding."""
+        text = text.strip()
         # assume dimensions are 5
         if text == "They're taking the Hobbits to Isengard!":
             return [1, 0, 0, 0, 0]
+        elif (
+            text == "They're taking the Hobbits to Isengard! I can't carry it for you."
+        ):
+            return [1, 1, 0, 0, 0]
+        elif (
+            text
+            == "They're taking the Hobbits to Isengard! I can't carry it for you. But I can carry you!"
+        ):
+            return [1, 1, 1, 0, 0]
         elif text == "I can't carry it for you.":
             return [0, 1, 0, 0, 0]
+        elif text == "I can't carry it for you. But I can carry you!":
+            return [0, 1, 1, 0, 0]
         elif text == "But I can carry you!":
             return [0, 0, 1, 0, 0]
         else:
+            print(text)
             raise ValueError("Invalid text for `mock_get_text_embedding`.")
 
     def _get_query_embedding(self, query: str) -> List[float]:

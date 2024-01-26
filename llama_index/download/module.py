@@ -139,7 +139,10 @@ def download_module_and_reqs(
         if extra_file == "__init__.py":
             loader_exports = get_exports(extra_file_raw_content)
             existing_exports = []
-            with open(local_dir_path / "__init__.py", "r+") as f:
+            init_file_path = local_dir_path / "__init__.py"
+            # if the __init__.py file do not exists, we need to create it
+            mode = "a+" if not os.path.exists(init_file_path) else "r+"
+            with open(init_file_path, mode) as f:
                 f.write(f"from .{module_id} import {', '.join(loader_exports)}")
                 existing_exports = get_exports(f.read())
             rewrite_exports(existing_exports + loader_exports, str(local_dir_path))
@@ -183,6 +186,7 @@ def download_llama_module(
     use_gpt_index_import: bool = False,
     disable_library_cache: bool = False,
     override_path: bool = False,
+    skip_load: bool = False,
 ) -> Any:
     """Download a module from LlamaHub.
 
@@ -232,22 +236,20 @@ def download_llama_module(
         base_file_name=base_file_name,
         override_path=override_path,
     )
+    if skip_load:
+        return None
 
     # loads the module into memory
     if override_path:
-        spec = util.spec_from_file_location(
-            "custom_module", location=f"{dirpath}/{base_file_name}"
-        )
+        path = f"{dirpath}/{base_file_name}"
+        spec = util.spec_from_file_location("custom_module", location=path)
         if spec is None:
-            raise ValueError(f"Could not find file: {dirpath}/{base_file_name}.")
+            raise ValueError(f"Could not find file: {path}.")
     else:
-        spec = util.spec_from_file_location(
-            "custom_module", location=f"{dirpath}/{module_id}/{base_file_name}"
-        )
+        path = f"{dirpath}/{module_id}/{base_file_name}"
+        spec = util.spec_from_file_location("custom_module", location=path)
         if spec is None:
-            raise ValueError(
-                f"Could not find file: {dirpath}/{module_id}/{base_file_name}."
-            )
+            raise ValueError(f"Could not find file: {path}.")
 
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)  # type: ignore

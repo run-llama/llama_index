@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from dataclasses_json import DataClassJsonMixin
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import BaseModel, Field, root_validator
+from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.utils import SAMPLE_TEXT, truncate_text
 
 if TYPE_CHECKING:
@@ -71,8 +71,10 @@ class BaseComponent(BaseModel):
 
         # remove local functions
         keys_to_remove = []
-        for key in state["__dict__"]:
+        for key, val in state["__dict__"].items():
             if key.endswith("_fn"):
+                keys_to_remove.append(key)
+            if "<lambda>" in str(val):
                 keys_to_remove.append(key)
         for key in keys_to_remove:
             state["__dict__"].pop(key, None)
@@ -157,10 +159,10 @@ class ObjectType(str, Enum):
 
 
 class MetadataMode(str, Enum):
-    ALL = auto()
-    EMBED = auto()
-    LLM = auto()
-    NONE = auto()
+    ALL = "all"
+    EMBED = "embed"
+    LLM = "llm"
+    NONE = "none"
 
 
 class RelatedNodeInfo(BaseComponent):
@@ -187,6 +189,8 @@ class BaseNode(BaseComponent):
 
     class Config:
         allow_population_by_field_name = True
+        # hash is computed on local field, during the validation process
+        validate_assignment = True
 
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
@@ -219,7 +223,6 @@ class BaseNode(BaseComponent):
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
-    hash: str = Field(default="", description="Hash of the node content.")
 
     @classmethod
     @abstractmethod
@@ -237,6 +240,11 @@ class BaseNode(BaseComponent):
     @abstractmethod
     def set_content(self, value: Any) -> None:
         """Set the content of the node."""
+
+    @property
+    @abstractmethod
+    def hash(self) -> str:
+        """Get hash of node."""
 
     @property
     def node_id(self) -> str:
@@ -378,16 +386,10 @@ class TextNode(BaseNode):
     def class_name(cls) -> str:
         return "TextNode"
 
-    @root_validator
-    def _check_hash(cls, values: dict) -> dict:
-        """Generate a hash to represent the node."""
-        text = values.get("text", "")
-        metadata = values.get("metadata", {})
-        doc_identity = str(text) + str(metadata)
-        values["hash"] = str(
-            sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest()
-        )
-        return values
+    @property
+    def hash(self) -> str:
+        doc_identity = str(self.text) + str(self.metadata)
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
     @classmethod
     def get_type(cls) -> str:
@@ -456,6 +458,7 @@ class ImageNode(TextNode):
     image: Optional[str] = None
     image_path: Optional[str] = None
     image_url: Optional[str] = None
+    image_mimetype: Optional[str] = None
     text_embedding: Optional[List[float]] = Field(
         default=None,
         description="Text embedding of image node, if text field is filled out",
@@ -472,7 +475,9 @@ class ImageNode(TextNode):
     def resolve_image(self) -> ImageType:
         """Resolve an image such that PIL can read it."""
         if self.image is not None:
-            return self.image
+            import base64
+
+            return BytesIO(base64.b64decode(self.image))
         elif self.image_path is not None:
             return self.image_path
         elif self.image_url is not None:
@@ -496,6 +501,7 @@ class IndexNode(TextNode):
     """
 
     index_id: str
+    obj: Any = Field(exclude=True)
 
     @classmethod
     def from_text_node(
@@ -524,7 +530,8 @@ class NodeWithScore(BaseComponent):
     score: Optional[float] = None
 
     def __str__(self) -> str:
-        return f"{self.node}\nScore: {self.score: 0.3f}\n"
+        score_str = "None" if self.score is None else f"{self.score: 0.3f}"
+        return f"{self.node}\nScore: {score_str}\n"
 
     def get_score(self, raise_error: bool = False) -> float:
         """Get score."""
@@ -756,6 +763,10 @@ class QueryBundle(DataClassJsonMixin):
         if self.image_path is None:
             return []
         return [self.image_path]
+
+    def __str__(self) -> str:
+        """Convert to string representation."""
+        return self.query_str
 
 
 QueryType = Union[str, QueryBundle]

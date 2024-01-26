@@ -18,7 +18,7 @@ Also, join our Discord for ideas and discussions: <https://discord.gg/dGcwcsnxhU
 
 ### 1. 🆕 Extend Core Modules
 
-The most impactful way to contribute to LlamaIndex is extending our core modules:
+The most impactful way to contribute to LlamaIndex is by extending our core modules:
 ![LlamaIndex modules](https://github.com/jerryjliu/llama_index/raw/main/docs/_static/contribution/contrib.png)
 
 We welcome contributions in _all_ modules shown above.
@@ -52,7 +52,7 @@ A data loader ingests data of any format from anywhere into `Document` objects, 
 - [Github Repository Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/github_repo)
 
 Contributing a data loader is easy and super impactful for the community.
-The preferred way to contribute is making a PR at [LlamaHub Github](https://github.com/emptycrown/llama-hub).
+The preferred way to contribute is by making a PR at [LlamaHub Github](https://github.com/emptycrown/llama-hub).
 
 **Ideas**
 
@@ -62,8 +62,8 @@ The preferred way to contribute is making a PR at [LlamaHub Github](https://gith
 
 #### Node Parser
 
-A node parser parses `Document` objects into `Node` objects (atomic unit of data that LlamaIndex operates over, e.g., chunk of text, image, or table).
-It is responsible for splitting text (via text splitters) and explicitly modelling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
+A node parser parses `Document` objects into `Node` objects (atomic units of data that LlamaIndex operates over, e.g., chunk of text, image, or table).
+It is responsible for splitting text (via text splitters) and explicitly modeling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
 
 **Interface**: `get_nodes_from_documents` takes a sequence of `Document` objects as input, and outputs a sequence of `Node` objects.
 
@@ -71,11 +71,11 @@ It is responsible for splitting text (via text splitters) and explicitly modelli
 
 - [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/simple.py)
 
-See [the API reference](https://gpt-index.readthedocs.io/en/latest/api_reference/index.html) for full details.
+See [the API reference](https://docs.llamaindex.ai/en/latest/api_reference/index.html) for full details.
 
 **Ideas**:
 
-- Add new `Node` relationships to model to model hierarchical documents (e.g. play-act-scene, chapter-section-heading).
+- Add new `Node` relationships to model hierarchical documents (e.g. play-act-scene, chapter-section-heading).
 
 ---
 
@@ -100,7 +100,7 @@ Under the hood, LlamaIndex also supports a swappable **storage layer** that allo
 We have an underlying key-value abstraction backing the document/index stores.
 Currently we support in-memory and MongoDB storage for these stores. Open to contributions!
 
-See [Storage guide](https://gpt-index.readthedocs.io/en/latest/how_to/storage.html) for details.
+See [Storage guide](https://docs.llamaindex.ai/en/stable/module_guides/storing/kv_stores.html) for details.
 
 ---
 
@@ -111,7 +111,7 @@ A managed index is used to represent an index that's managed via an API, exposin
 Currently we support the [VectaraIndex](https://github.com/run-llama/llama_index/tree/ca09272af000307762d301c99da46ddc70d3bfd2/llama_index/indices/managed/vectara).
 Open to contributions!
 
-See [Managed Index docs](https://gpt-index.readthedocs.io/en/stable/community/integrations/managed_indices.html) for details.
+See [Managed Index docs](https://docs.llamaindex.ai/en/stable/community/integrations/managed_indices.html) for details.
 
 ---
 
@@ -122,7 +122,7 @@ These serve as the main data store and retrieval engine for our vector index.
 
 **Interface**:
 
-- `add` takes in a sequence of `NodeWithEmbeddings` and insert the embeddings (and possibly the node contents & metadata) into the vector store.
+- `add` takes in a sequence of `NodeWithEmbeddings` and inserts the embeddings (and possibly the node contents & metadata) into the vector store.
 - `delete` removes entries given document IDs.
 - `query` retrieves top-k most similar entries given a query embedding.
 
@@ -137,7 +137,7 @@ These serve as the main data store and retrieval engine for our vector index.
 
 - See a vector database out there that we don't support yet? Make a PR!
 
-See [reference](https://gpt-index.readthedocs.io/en/latest/reference/indices/vector_stores/stores.html) for full details.
+See [reference](https://docs.llamaindex.ai/en/stable/api_reference/indices/vector_store.html) for full details.
 
 ---
 
@@ -145,7 +145,7 @@ See [reference](https://gpt-index.readthedocs.io/en/latest/reference/indices/vec
 
 Our retriever classes are lightweight classes that implement a `retrieve` method.
 They may take in an index class as input - by default, each of our indices
-(list, vector, keyword) have an associated retriever. The output is a set of
+(list, vector, keyword) has an associated retriever. The output is a set of
 `NodeWithScore` objects (a `Node` object with an extra `score` field).
 
 You may also choose to implement your own retriever classes on top of your own
@@ -174,7 +174,7 @@ Our query engine classes are lightweight classes that implement a `query` method
 For instance, they may take in a retriever class as input; our `RetrieverQueryEngine`
 takes in a `retriever` as input as well as a `BaseSynthesizer` class for response synthesis, and
 the `query` method performs retrieval and synthesis before returning the final result.
-They may take in other query engine classes in as input too.
+They may take in other query engine classes as input too.
 
 **Interface**:
 
@@ -199,7 +199,7 @@ This can interpreted as a pre-processing stage, before the core index query logi
 - [Hypothetical Document Embeddings](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L77)
 - [Query Decompose](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L124)
 
-See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/query/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
+See [guide](https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
 
 ---
 
@@ -217,7 +217,7 @@ A token usage optimizer refines the retrieved `Nodes` to reduce token usage duri
 
 #### Node Postprocessors
 
-A node postprocessor refines a list of retrieve nodes given configuration and context.
+A node postprocessor refines a list of retrieved nodes given configuration and context.
 
 **Interface**: `postprocess_nodes` takes a list of `Nodes` and extra metadata (e.g. similarity and query), and outputs a refined list of `Nodes`.
 
@@ -231,7 +231,7 @@ A node postprocessor refines a list of retrieve nodes given configuration and co
 
 #### Output Parsers
 
-A output parser enables us to extract structured output from the plain text output generated by the LLM.
+An output parser enables us to extract structured output from the plain text output generated by the LLM.
 
 **Interface**:
 
@@ -243,7 +243,7 @@ A output parser enables us to extract structured output from the plain text outp
 - [Guardrails Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/guardrails.py)
 - [Langchain Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/langchain.py)
 
-See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/output_parsing.html) for more information.
+See [guide](https://docs.llamaindex.ai/en/stable/module_guides/querying/structured_outputs/output_parser.html) for more information.
 
 ---
 
@@ -261,7 +261,7 @@ Please feel free to open an issue and/or assign an issue to yourself.
 
 If you have applied LlamaIndex to a unique use-case (e.g. interesting dataset, customized index structure, complex query), we would love your contribution in the form of:
 
-1. a guide: e.g. [guide to LlamIndex + Structured Data](https://gpt-index.readthedocs.io/en/latest/guides/tutorials/sql_guide.html)
+1. a guide: e.g. [guide to LlamIndex + Structured Data](https://docs.llamaindex.ai/en/stable/understanding/putting_it_all_together/structured_data.html)
 2. an example notebook: e.g. [Composable Indices Demo](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/ComposableIndices-Prior.ipynb)
 
 ### 4. 🧪 Add Experimental Features
@@ -333,7 +333,7 @@ make test
 For changes that involve entirely new features, it may be worth adding an example Jupyter notebook to showcase
 this feature.
 
-Example notebooks can be found in this folder: <https://github.com/jerryjliu/llama_index/tree/main/examples>.
+Example notebooks can be found in this folder: <https://github.com/run-llama/llama_index/tree/main/docs/examples>.
 
 ### Creating a pull request
 

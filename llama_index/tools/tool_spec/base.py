@@ -13,26 +13,35 @@ from llama_index.tools.utils import create_schema_from_function
 AsyncCallable = Callable[..., Awaitable[Any]]
 
 
+# TODO: deprecate the Tuple (there's no use for it)
+SPEC_FUNCTION_TYPE = Union[str, Tuple[str, str]]
+
+
 class BaseToolSpec:
     """Base tool spec class."""
 
     # list of functions that you'd want to convert to spec
-    spec_functions: List[Union[str, Tuple[str, str]]]
+    spec_functions: List[SPEC_FUNCTION_TYPE]
 
-    def get_fn_schema_from_fn_name(self, fn_name: str) -> Optional[Type[BaseModel]]:
+    def get_fn_schema_from_fn_name(
+        self, fn_name: str, spec_functions: Optional[List[SPEC_FUNCTION_TYPE]] = None
+    ) -> Optional[Type[BaseModel]]:
         """Return map from function name.
 
         Return type is Optional, meaning that the schema can be None.
         In this case, it's up to the downstream tool implementation to infer the schema.
 
         """
-        for fn in self.spec_functions:
+        spec_functions = spec_functions or self.spec_functions
+        for fn in spec_functions:
             if fn == fn_name:
                 return create_schema_from_function(fn_name, getattr(self, fn_name))
 
         raise ValueError(f"Invalid function name: {fn_name}")
 
-    def get_metadata_from_fn_name(self, fn_name: str) -> Optional[ToolMetadata]:
+    def get_metadata_from_fn_name(
+        self, fn_name: str, spec_functions: Optional[List[SPEC_FUNCTION_TYPE]] = None
+    ) -> Optional[ToolMetadata]:
         """Return map from function name.
 
         Return type is Optional, meaning that the schema can be None.
@@ -46,19 +55,23 @@ class BaseToolSpec:
         name = fn_name
         docstring = func.__doc__ or ""
         description = f"{name}{signature(func)}\n{docstring}"
-        fn_schema = self.get_fn_schema_from_fn_name(fn_name)
+        fn_schema = self.get_fn_schema_from_fn_name(
+            fn_name, spec_functions=spec_functions
+        )
         return ToolMetadata(name=name, description=description, fn_schema=fn_schema)
 
     def to_tool_list(
         self,
+        spec_functions: Optional[List[SPEC_FUNCTION_TYPE]] = None,
         func_to_metadata_mapping: Optional[Dict[str, ToolMetadata]] = None,
     ) -> List[FunctionTool]:
         """Convert tool spec to list of tools."""
+        spec_functions = spec_functions or self.spec_functions
         func_to_metadata_mapping = func_to_metadata_mapping or {}
         tool_list = []
-        func_sync = None
-        func_async = None
-        for func_spec in self.spec_functions:
+        for func_spec in spec_functions:
+            func_sync = None
+            func_async = None
             if isinstance(func_spec, str):
                 func = getattr(self, func_spec)
                 if asyncio.iscoroutinefunction(func):
@@ -99,6 +112,8 @@ class BaseToolSpec:
 
 
 def patch_sync(func_async: AsyncCallable) -> Callable:
+    """Patch sync function from async function."""
+
     def patched_sync(*args: Any, **kwargs: Any) -> Any:
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(func_async(*args, **kwargs))

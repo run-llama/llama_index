@@ -38,6 +38,8 @@ class WikipediaReader(BasePydanticReader):
 
         results = []
         for page in pages:
-            page_content = wikipedia.page(page, **load_kwargs).content
-            results.append(Document(text=page_content))
+            wiki_page = wikipedia.page(page, **load_kwargs)
+            page_content = wiki_page.content
+            page_id = wiki_page.pageid
+            results.append(Document(id_=page_id, text=page_content))
         return results

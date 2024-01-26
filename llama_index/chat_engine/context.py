@@ -9,9 +9,9 @@ from llama_index.chat_engine.types import (
     StreamingAgentChatResponse,
     ToolOutput,
 )
-from llama_index.core import BaseRetriever
-from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llms.base import LLM, ChatMessage, MessageRole
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.llms.types import ChatMessage, MessageRole
+from llama_index.llms.llm import LLM
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
@@ -68,9 +68,7 @@ class ContextChatEngine(BaseChatEngine):
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
         service_context = service_context or ServiceContext.from_defaults()
-        if not isinstance(service_context.llm_predictor, LLMPredictor):
-            raise ValueError("llm_predictor must be a LLMPredictor instance")
-        llm = service_context.llm_predictor.llm
+        llm = service_context.llm
 
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(
@@ -83,7 +81,7 @@ class ContextChatEngine(BaseChatEngine):
                     "Cannot specify both system_prompt and prefix_messages"
                 )
             prefix_messages = [
-                ChatMessage(content=system_prompt, role=MessageRole.SYSTEM)
+                ChatMessage(content=system_prompt, role=llm.metadata.system_role)
             ]
 
         prefix_messages = prefix_messages or []
@@ -140,7 +138,9 @@ class ContextChatEngine(BaseChatEngine):
 
         context_str_w_sys_prompt = system_prompt.strip() + "\n" + context_str
         return [
-            ChatMessage(content=context_str_w_sys_prompt, role=MessageRole.SYSTEM),
+            ChatMessage(
+                content=context_str_w_sys_prompt, role=self._llm.metadata.system_role
+            ),
             *prefix_messages,
         ]
 

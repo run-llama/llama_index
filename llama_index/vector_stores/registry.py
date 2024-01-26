@@ -8,6 +8,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.vector_stores.epsilla import EpsillaVectorStore
 from llama_index.vector_stores.faiss import FaissVectorStore
+from llama_index.vector_stores.jaguar import JaguarVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.myscale import MyScaleVectorStore
@@ -18,6 +19,7 @@ from llama_index.vector_stores.redis import RedisVectorStore
 from llama_index.vector_stores.rocksetdb import RocksetVectorStore
 from llama_index.vector_stores.simple import SimpleVectorStore
 from llama_index.vector_stores.supabase import SupabaseVectorStore
+from llama_index.vector_stores.txtai import TxtaiVectorStore
 from llama_index.vector_stores.types import VectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
@@ -30,6 +32,7 @@ class VectorStoreType(str, Enum):
     PINECONE = "pinecone"
     OPENSEARCH = "opensearch"
     FAISS = "faiss"
+    TXTAI = "txtai"
     CASSANDRA = "cassandra"
     CHROMA = "chroma"
     CHATGPT_PLUGIN = "chatgpt_plugin"
@@ -41,6 +44,7 @@ class VectorStoreType(str, Enum):
     ROCKSET = "rockset"
     BAGEL = "bagel"
     EPSILLA = "epsilla"
+    JAGUAR = "jaguar"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -54,6 +58,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.PINECONE: PineconeVectorStore,
     VectorStoreType.OPENSEARCH: OpensearchVectorStore,
     VectorStoreType.FAISS: FaissVectorStore,
+    VectorStoreType.TXTAI: TxtaiVectorStore,
     VectorStoreType.CASSANDRA: CassandraVectorStore,
     VectorStoreType.CHROMA: ChromaVectorStore,
     VectorStoreType.CHATGPT_PLUGIN: ChatGPTRetrievalPluginClient,
@@ -62,6 +67,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.ROCKSET: RocksetVectorStore,
     VectorStoreType.BAGEL: BagelVectorStore,
     VectorStoreType.EPSILLA: EpsillaVectorStore,
+    VectorStoreType.JAGUAR: JaguarVectorStore,
 }
 
 VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE: Dict[Type[VectorStore], VectorStoreType] = {

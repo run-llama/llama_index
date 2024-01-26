@@ -13,7 +13,7 @@ from typing import (
 
 import httpx
 import tiktoken
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AzureOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
@@ -26,8 +26,7 @@ from llama_index.callbacks import CallbackManager
 from llama_index.constants import (
     DEFAULT_TEMPERATURE,
 )
-from llama_index.llms.base import (
-    LLM,
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -37,6 +36,8 @@ from llama_index.llms.base import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+)
+from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
@@ -50,6 +51,7 @@ from llama_index.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai_utils import (
     from_openai_message,
     is_chat_model,
@@ -58,6 +60,7 @@ from llama_index.llms.openai_utils import (
     resolve_openai_credentials,
     to_openai_message_dicts,
 )
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 
@@ -131,6 +134,12 @@ class OpenAI(LLM):
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
+        # base class
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -154,6 +163,11 @@ class OpenAI(LLM):
             timeout=timeout,
             reuse_client=reuse_client,
             default_headers=default_headers,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
             **kwargs,
         )
 
@@ -184,6 +198,9 @@ class OpenAI(LLM):
         elif model_name.startswith("ft:"):
             model_name = model_name.split(":")[1]
         return model_name
+
+    def _is_azure_client(self) -> bool:
+        return isinstance(self._get_client(), AzureOpenAI)
 
     @classmethod
     def class_name(cls) -> str:
@@ -230,7 +247,9 @@ class OpenAI(LLM):
         return stream_chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._use_chat_completions(kwargs):
             complete_fn = chat_to_completion_decorator(self._chat)
         else:
@@ -238,7 +257,9 @@ class OpenAI(LLM):
         return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         if self._use_chat_completions(kwargs):
             stream_complete_fn = stream_chat_to_completion_decorator(self._stream_chat)
         else:
@@ -352,7 +373,10 @@ class OpenAI(LLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    delta = ChoiceDelta()
+                    if self._is_azure_client():
+                        continue
+                    else:
+                        delta = ChoiceDelta()
 
                 # check if this chunk is the start of a function call
                 if delta.tool_calls:
@@ -485,7 +509,9 @@ class OpenAI(LLM):
         return await astream_chat_fn(messages, **kwargs)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         if self._use_chat_completions(kwargs):
             acomplete_fn = achat_to_completion_decorator(self._achat)
         else:
@@ -494,7 +520,7 @@ class OpenAI(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         if self._use_chat_completions(kwargs):
             astream_complete_fn = astream_chat_to_completion_decorator(
@@ -551,7 +577,10 @@ class OpenAI(LLM):
                         continue
                     delta = response.choices[0].delta
                 else:
-                    delta = ChoiceDelta()
+                    if self._is_azure_client():
+                        continue
+                    else:
+                        delta = ChoiceDelta()
                 first_chat_chunk = False
 
                 # check if this chunk is the start of a function call

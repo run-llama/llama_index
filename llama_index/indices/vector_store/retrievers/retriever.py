@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.utils import log_vector_store_query_result
 from llama_index.indices.vector_store.base import VectorStoreIndex
@@ -46,6 +46,8 @@ class VectorIndexRetriever(BaseRetriever):
         doc_ids: Optional[List[str]] = None,
         sparse_top_k: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -62,7 +64,9 @@ class VectorIndexRetriever(BaseRetriever):
         self._filters = filters
         self._sparse_top_k = sparse_top_k
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
-        super().__init__(callback_manager)
+        super().__init__(
+            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+        )
 
     @property
     def similarity_top_k(self) -> int:

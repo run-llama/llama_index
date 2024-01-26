@@ -23,7 +23,7 @@ with open("../llama_index/VERSION") as f:
 
 
 project = "LlamaIndex 🦙"
-copyright = "2022, Jerry Liu"
+copyright = "2023, Jerry Liu"
 author = "Jerry Liu"
 
 # -- General configuration ---------------------------------------------------
@@ -76,6 +76,7 @@ html_js_files = [
         {"defer": "defer"},
     ),
     ("js/algolia.js", {"defer": "defer"}),
+    ("js/leadfeeder.js", {"defer": "defer"}),
 ]
 
 nb_execution_mode = "off"
@@ -92,7 +93,7 @@ redirects = {
     "end_to_end_tutorials/discover_llamaindex": "/en/stable/getting_started/discover_llamaindex.html",
     "end_to_end_tutorials/finetuning": "/en/stable/optimizing/fine-tuning/fine-tuning.html",
     "end_to_end_tutorials/low_level/root": "/en/stable/optimizing/building_rag_from_scratch.html",
-    "end_to_end_tutorials/use_cases": "/en/stable/use_cases/q_and_a.html",
+    "end_to_end_tutorials/use_cases": "/en/stable/use_cases/q_and_a/root.html",
     "core_modules/data_modules/connector": "/en/stable/module_guides/loading/connector/root.html",
     "core_modules/data_modules/documents_and_nodes/root": "/en/stable/module_guides/loading/documents_and_nodes/root.html",
     "core_modules/data_modules/node_parsers/root": "/en/stable/module_guides/loading/node_parsers/root.html",

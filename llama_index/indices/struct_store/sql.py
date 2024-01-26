@@ -5,7 +5,8 @@ from typing import Any, Optional, Sequence, Union
 
 from sqlalchemy import Table
 
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.table import SQLStructTable
 from llama_index.indices.common.struct_store.schema import SQLContextContainer
 from llama_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
@@ -107,7 +108,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
             return index_struct
         else:
             data_extractor = SQLStructDatapointExtractor(
-                self._service_context.llm_predictor,
+                self._service_context.llm,
                 self.schema_extract_prompt,
                 self.output_parser,
                 self.sql_database,
@@ -127,7 +128,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         data_extractor = SQLStructDatapointExtractor(
-            self._service_context.llm_predictor,
+            self._service_context.llm,
             self.schema_extract_prompt,
             self.output_parser,
             self.sql_database,

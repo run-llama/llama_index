@@ -8,13 +8,13 @@ This summary can be used for retrieval.
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.response.schema import Response
 from llama_index.data_structs.document_summary import IndexDocumentSummary
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.utils import embed_nodes
-from llama_index.response.schema import Response
 from llama_index.response_synthesizers import (
     BaseSynthesizer,
     ResponseMode,
@@ -22,6 +22,7 @@ from llama_index.response_synthesizers import (
 )
 from llama_index.schema import (
     BaseNode,
+    IndexNode,
     NodeRelationship,
     NodeWithScore,
     RelatedNodeInfo,
@@ -70,6 +71,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexDocumentSummary] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
@@ -92,6 +94,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
+            objects=objects,
             **kwargs,
         )
 
@@ -127,9 +130,9 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
             if "service_context" not in kwargs:
                 kwargs["service_context"] = self._service_context
-            return EmbeddingRetriever(self, **kwargs)
+            return EmbeddingRetriever(self, object_map=self._object_map, **kwargs)
         if retriever_mode == _RetrieverMode.LLM:
-            return LLMRetriever(self, **kwargs)
+            return LLMRetriever(self, object_map=self._object_map, **kwargs)
         else:
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
@@ -220,16 +223,60 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         self._add_nodes_to_index(self._index_struct, nodes)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
-        """Delete a node."""
-        if node_id not in self._index_struct.doc_id_to_summary_id:
-            raise ValueError(f"node_id {node_id} not in index")
-        summary_id = self._index_struct.doc_id_to_summary_id[node_id]
+        pass
 
-        # delete summary node from docstore
-        self.docstore.delete_document(summary_id)
+    def delete_nodes(
+        self,
+        node_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete a list of nodes from the index.
 
-        # delete from index struct
-        self._index_struct.delete(node_id)
+        Args:
+            node_ids (List[str]): A list of node_ids from the nodes to delete
+
+        """
+        index_nodes = self._index_struct.node_id_to_summary_id.keys()
+        for node in node_ids:
+            if node not in index_nodes:
+                logger.warning(f"node_id {node} not found, will not be deleted.")
+                node_ids.remove(node)
+
+        self._index_struct.delete_nodes(node_ids)
+
+        remove_summary_ids = [
+            summary_id
+            for summary_id in self._index_struct.summary_id_to_node_ids
+            if len(self._index_struct.summary_id_to_node_ids[summary_id]) == 0
+        ]
+
+        remove_docs = [
+            doc_id
+            for doc_id in self._index_struct.doc_id_to_summary_id
+            if self._index_struct.doc_id_to_summary_id[doc_id] in remove_summary_ids
+        ]
+
+        for doc_id in remove_docs:
+            self.delete_ref_doc(doc_id)
+
+    def delete_ref_doc(
+        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
+    ) -> None:
+        """Delete a document from the index.
+        All nodes in the index related to the document will be deleted.
+        """
+        ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)
+        if ref_doc_info is None:
+            logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
+            return
+        self._index_struct.delete(ref_doc_id)
+        self._vector_store.delete(ref_doc_id)
+
+        if delete_from_docstore:
+            self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+
+        self._storage_context.index_store.add_index_struct(self._index_struct)
 
     @property
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:

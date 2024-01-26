@@ -329,7 +329,8 @@ DEFAULT_KG_TRIPLET_EXTRACT_TMPL = (
     "Triplets:\n"
 )
 DEFAULT_KG_TRIPLET_EXTRACT_PROMPT = PromptTemplate(
-    DEFAULT_KG_TRIPLET_EXTRACT_TMPL, prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT
+    DEFAULT_KG_TRIPLET_EXTRACT_TMPL,
+    prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT,
 )
 
 ############################################
@@ -369,11 +370,10 @@ DEFAULT_PANDAS_TMPL = (
     "The name of the dataframe is `df`.\n"
     "This is the result of `print(df.head())`:\n"
     "{df_str}\n\n"
-    "Here is the input query: {query_str}.\n"
-    "Given the df information and the input query, please follow "
-    "these instructions:\n"
-    "{instruction_str}"
-    "Output:\n"
+    "Follow these instructions:\n"
+    "{instruction_str}\n"
+    "Query: {query_str}\n\n"
+    "Expression:"
 )
 
 DEFAULT_PANDAS_PROMPT = PromptTemplate(
@@ -428,4 +428,40 @@ DEFAULT_CHOICE_SELECT_PROMPT_TMPL = (
 )
 DEFAULT_CHOICE_SELECT_PROMPT = PromptTemplate(
     DEFAULT_CHOICE_SELECT_PROMPT_TMPL, prompt_type=PromptType.CHOICE_SELECT
+)
+
+
+############################################
+# RankGPT Rerank template
+############################################
+
+RANKGPT_RERANK_PROMPT_TMPL = (
+    "Search Query: {query}. \nRank the {num} passages above "
+    "based on their relevance to the search query. The passages "
+    "should be listed in descending order using identifiers. "
+    "The most relevant passages should be listed first. "
+    "The output format should be [] > [], e.g., [1] > [2]. "
+    "Only response the ranking results, "
+    "do not say any word or explain."
+)
+RANKGPT_RERANK_PROMPT = PromptTemplate(
+    RANKGPT_RERANK_PROMPT_TMPL, prompt_type=PromptType.RANKGPT_RERANK
+)
+
+
+############################################
+# JSONalyze Query Template
+############################################
+
+DEFAULT_JSONALYZE_PROMPT_TMPL = (
+    "You are given a table named: '{table_name}' with schema, "
+    "generate SQLite SQL query to answer the given question.\n"
+    "Table schema:\n"
+    "{table_schema}\n"
+    "Question: {question}\n\n"
+    "SQLQuery: "
+)
+
+DEFAULT_JSONALYZE_PROMPT = PromptTemplate(
+    DEFAULT_JSONALYZE_PROMPT_TMPL, prompt_type=PromptType.TEXT_TO_SQL
 )

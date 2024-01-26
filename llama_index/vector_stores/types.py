@@ -48,6 +48,7 @@ class VectorStoreQueryMode(str, Enum):
     SPARSE = "sparse"
     HYBRID = "hybrid"
     TEXT_SEARCH = "text_search"
+    SEMANTIC_HYBRID = "semantic_hybrid"
 
     # fit learners
     SVM = "svm"
@@ -69,6 +70,8 @@ class FilterOperator(str, Enum):
     GTE = ">="  # greater than or equal to (int, float)
     LTE = "<="  # less than or equal to (int, float)
     IN = "in"  # In array (string or number)
+    NIN = "nin"  # Not in array (string or number)
+    TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
 
 
 class FilterCondition(str, Enum):
@@ -92,12 +95,28 @@ class MetadataFilter(BaseModel):
     value: Union[StrictInt, StrictFloat, StrictStr]
     operator: FilterOperator = FilterOperator.EQ
 
+    @classmethod
+    def from_dict(
+        cls,
+        filter_dict: Dict,
+    ) -> "MetadataFilter":
+        """Create MetadataFilter from dictionary.
 
-# TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
-# Keep class for now so that AutoRetriever can still work with old vector stores
-class ExactMatchFilter(BaseModel):
-    key: str
-    value: Union[StrictInt, StrictFloat, StrictStr]
+        Args:
+            filter_dict: Dict with key, value and operator.
+
+        """
+        return MetadataFilter.parse_obj(filter_dict)
+
+
+# # TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
+# # Keep class for now so that AutoRetriever can still work with old vector stores
+# class ExactMatchFilter(BaseModel):
+#     key: str
+#     value: Union[StrictInt, StrictFloat, StrictStr]
+
+# set ExactMatchFilter to MetadataFilter
+ExactMatchFilter = MetadataFilter
 
 
 class MetadataFilters(BaseModel):
@@ -125,6 +144,29 @@ class MetadataFilters(BaseModel):
             filters.append(filter)
         return cls(filters=filters)
 
+    @classmethod
+    def from_dicts(
+        cls,
+        filter_dicts: List[Dict],
+        condition: Optional[FilterCondition] = FilterCondition.AND,
+    ) -> "MetadataFilters":
+        """Create MetadataFilters from dicts.
+
+        This takes in a list of individual MetadataFilter objects, along
+        with the condition.
+
+        Args:
+            filter_dicts: List of dicts, each dict is a MetadataFilter.
+            condition: FilterCondition to combine different filters.
+
+        """
+        return cls(
+            filters=[
+                MetadataFilter.from_dict(filter_dict) for filter_dict in filter_dicts
+            ],
+            condition=condition,
+        )
+
     def legacy_filters(self) -> List[ExactMatchFilter]:
         """Convert MetadataFilters to legacy ExactMatchFilters."""
         filters = []
@@ -146,7 +188,7 @@ class VectorStoreQuerySpec(BaseModel):
     """
 
     query: str
-    filters: List[ExactMatchFilter]
+    filters: List[MetadataFilter]
     top_k: Optional[int] = None
 
 
@@ -196,6 +238,8 @@ class VectorStoreQuery:
 
     # NOTE: currently only used by postgres hybrid search
     sparse_top_k: Optional[int] = None
+    # NOTE: return top k results from hybrid search. similarity_top_k is used for dense search top k
+    hybrid_top_k: Optional[int] = None
 
 
 @runtime_checkable
@@ -285,6 +329,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     async def async_add(
         self,
         nodes: List[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """
         Asynchronously add nodes to vector store.

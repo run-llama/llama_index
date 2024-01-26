@@ -97,6 +97,8 @@ processor = SimilarityPostprocessor(similarity_cutoff=0.75)
 filtered_nodes = processor.postprocess_nodes(nodes)
 ```
 
+(custom-node-postprocessor)=
+
 ## Custom Node PostProcessor
 
 The base class is `BaseNodePostprocessor`, and the API interface is very simple:
@@ -116,11 +118,11 @@ A dummy node-postprocessor can be implemented in just a few lines of code:
 
 ```python
 from llama_index import QueryBundle
-from llama_index.postprocessor.base import BaseNodePostprocessor
+from llama_index.postprocessor import BaseNodePostprocessor
 from llama_index.schema import NodeWithScore
 
 
-class DummyNodePostprocessor:
+class DummyNodePostprocessor(BaseNodePostprocessor):
     def _postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: Optional[QueryBundle]
     ) -> List[NodeWithScore]:

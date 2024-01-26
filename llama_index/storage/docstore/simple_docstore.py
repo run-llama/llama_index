@@ -5,6 +5,7 @@ import fsspec
 
 from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.storage.docstore.types import (
+    DEFAULT_BATCH_SIZE,
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
     DEFAULT_PERSIST_PATH,
@@ -29,10 +30,11 @@ class SimpleDocumentStore(KVDocumentStore):
         self,
         simple_kvstore: Optional[SimpleKVStore] = None,
         namespace: Optional[str] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         """Init a SimpleDocumentStore."""
         simple_kvstore = simple_kvstore or SimpleKVStore()
-        super().__init__(simple_kvstore, namespace)
+        super().__init__(simple_kvstore, namespace=namespace, batch_size=batch_size)
 
     @classmethod
     def from_persist_dir(

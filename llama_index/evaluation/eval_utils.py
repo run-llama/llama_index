@@ -6,13 +6,13 @@ NOTE: These are beta functions, might change.
 
 import asyncio
 from collections import defaultdict
-from typing import Any, List
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
 from llama_index.async_utils import asyncio_module
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.evaluation.base import EvaluationResult
 
 
@@ -60,3 +60,19 @@ def get_results_df(
             mean_score = np.array([r.score for r in eval_results[metric_key]]).mean()
             metric_dict[metric_key].append(mean_score)
     return pd.DataFrame(metric_dict)
+
+
+def default_parser(eval_response: str) -> Tuple[Optional[float], Optional[str]]:
+    """
+    Default parser function for evaluation response.
+
+    Args:
+        eval_response (str): The response string from the evaluation.
+
+    Returns:
+        Tuple[float, str]: A tuple containing the score as a float and the reasoning as a string.
+    """
+    score_str, reasoning_str = eval_response.split("\n", 1)
+    score = float(score_str)
+    reasoning = reasoning_str.lstrip("\n")
+    return score, reasoning

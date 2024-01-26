@@ -19,14 +19,14 @@ The prompts used to generate the metadata are specifically aimed to help
 disambiguate the document or subsection from other similar documents or subsections.
 (similar with contrastive learning)
 """
-from functools import reduce
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
 
 from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.extractors.interface import BaseExtractor
-from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llms.base import LLM
+from llama_index.llm_predictor.base import LLMPredictorType
+from llama_index.llms.llm import LLM
+from llama_index.llms.utils import resolve_llm
 from llama_index.prompts import PromptTemplate
 from llama_index.schema import BaseNode, TextNode
 from llama_index.types import BasePydanticProgram
@@ -47,7 +47,7 @@ class TitleExtractor(BaseExtractor):
     metadata field.
 
     Args:
-        llm_predictor (Optional[LLMPredictor]): LLM predictor
+        llm (Optional[LLM]): LLM
         nodes (int): number of nodes from front to use for title extraction
         node_template (str): template for node-level title clues extraction
         combine_template (str): template for combining node-level clues into
@@ -55,9 +55,7 @@ class TitleExtractor(BaseExtractor):
     """
 
     is_text_node_only: bool = False  # can work for mixture of text and non-text nodes
-    llm_predictor: LLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
+    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
     nodes: int = Field(
         default=5,
         description="The number of nodes to extract titles from.",
@@ -76,7 +74,7 @@ class TitleExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictorType] = None,
         nodes: int = 5,
         node_template: str = DEFAULT_TITLE_NODE_TEMPLATE,
         combine_template: str = DEFAULT_TITLE_COMBINE_TEMPLATE,
@@ -87,13 +85,8 @@ class TitleExtractor(BaseExtractor):
         if nodes < 1:
             raise ValueError("num_nodes must be >= 1")
 
-        if llm is not None:
-            llm_predictor = LLMPredictor(llm=llm)
-        elif llm_predictor is None and llm is None:
-            llm_predictor = LLMPredictor()
-
         super().__init__(
-            llm_predictor=llm_predictor,
+            llm=llm or llm_predictor or resolve_llm("default"),
             nodes=nodes,
             node_template=node_template,
             combine_template=combine_template,
@@ -106,45 +99,53 @@ class TitleExtractor(BaseExtractor):
         return "TitleExtractor"
 
     async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        nodes_to_extract_title: List[BaseNode] = []
+        nodes_by_doc_id = self.separate_nodes_by_ref_id(nodes)
+        titles_by_doc_id = await self.extract_titles(nodes_by_doc_id)
+        return [{"document_title": titles_by_doc_id[node.ref_doc_id]} for node in nodes]
 
+    def filter_nodes(self, nodes: Sequence[BaseNode]) -> List[BaseNode]:
+        filtered_nodes: List[BaseNode] = []
         for node in nodes:
-            if len(nodes_to_extract_title) >= self.nodes:
-                break
             if self.is_text_node_only and not isinstance(node, TextNode):
                 continue
-            nodes_to_extract_title.append(node)
+            filtered_nodes.append(node)
+        return filtered_nodes
 
-        if len(nodes_to_extract_title) == 0:
-            # Could not extract title
-            return []
+    def separate_nodes_by_ref_id(self, nodes: Sequence[BaseNode]) -> Dict:
+        separated_items: Dict[Optional[str], List[BaseNode]] = {}
 
+        for node in nodes:
+            key = node.ref_doc_id
+            if key not in separated_items:
+                separated_items[key] = []
+
+            if len(separated_items[key]) < self.nodes:
+                separated_items[key].append(node)
+
+        return separated_items
+
+    async def extract_titles(self, nodes_by_doc_id: Dict) -> Dict:
+        titles_by_doc_id = {}
+        for key, nodes in nodes_by_doc_id.items():
+            title_candidates = await self.get_title_candidates(nodes)
+            combined_titles = ", ".join(title_candidates)
+            titles_by_doc_id[key] = await self.llm.apredict(
+                PromptTemplate(template=self.combine_template),
+                context_str=combined_titles,
+            )
+        return titles_by_doc_id
+
+    async def get_title_candidates(self, nodes: List[BaseNode]) -> List[str]:
         title_jobs = [
-            self.llm_predictor.apredict(
+            self.llm.apredict(
                 PromptTemplate(template=self.node_template),
                 context_str=cast(TextNode, node).text,
             )
-            for node in nodes_to_extract_title
+            for node in nodes
         ]
-        title_candidates = await run_jobs(
+        return await run_jobs(
             title_jobs, show_progress=self.show_progress, workers=self.num_workers
         )
-
-        if len(nodes_to_extract_title) > 1:
-            titles = reduce(
-                lambda x, y: x + "," + y, title_candidates[1:], title_candidates[0]
-            )
-
-            title = await self.llm_predictor.apredict(
-                PromptTemplate(template=self.combine_template),
-                context_str=titles,
-            )
-        else:
-            title = title_candidates[
-                0
-            ]  # if single node, just use the title from that node
-
-        return [{"document_title": title.strip(' \t\n\r"')} for _ in nodes]
 
 
 class KeywordExtractor(BaseExtractor):
@@ -152,13 +153,11 @@ class KeywordExtractor(BaseExtractor):
     `excerpt_keywords` metadata field.
 
     Args:
-        llm_predictor (Optional[LLMPredictor]): LLM predictor
+        llm (Optional[LLM]): LLM
         keywords (int): number of keywords to extract
     """
 
-    llm_predictor: LLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
+    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
     keywords: int = Field(
         default=5, description="The number of keywords to extract.", gt=0
     )
@@ -167,7 +166,7 @@ class KeywordExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictorType] = None,
         keywords: int = 5,
         num_workers: int = DEFAULT_NUM_WORKERS,
         **kwargs: Any,
@@ -176,13 +175,8 @@ class KeywordExtractor(BaseExtractor):
         if keywords < 1:
             raise ValueError("num_keywords must be >= 1")
 
-        if llm is not None:
-            llm_predictor = LLMPredictor(llm=llm)
-        elif llm_predictor is None and llm is None:
-            llm_predictor = LLMPredictor()
-
         super().__init__(
-            llm_predictor=llm_predictor,
+            llm=llm or llm_predictor or resolve_llm("default"),
             keywords=keywords,
             num_workers=num_workers,
             **kwargs,
@@ -198,7 +192,7 @@ class KeywordExtractor(BaseExtractor):
             return {}
 
         # TODO: figure out a good way to allow users to customize keyword template
-        keywords = await self.llm_predictor.apredict(
+        keywords = await self.llm.apredict(
             PromptTemplate(
                 template=f"""\
 {{context_str}}. Give {self.keywords} unique keywords for this \
@@ -242,15 +236,13 @@ class QuestionsAnsweredExtractor(BaseExtractor):
     Extracts `questions_this_excerpt_can_answer` metadata field.
 
     Args:
-        llm_predictor (Optional[LLMPredictor]): LLM predictor
+        llm (Optional[LLM]): LLM
         questions (int): number of questions to extract
         prompt_template (str): template for question extraction,
         embedding_only (bool): whether to use embedding only
     """
 
-    llm_predictor: LLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
+    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
     questions: int = Field(
         default=5,
         description="The number of questions to generate.",
@@ -268,7 +260,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictorType] = None,
         questions: int = 5,
         prompt_template: str = DEFAULT_QUESTION_GEN_TMPL,
         embedding_only: bool = True,
@@ -279,13 +271,8 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         if questions < 1:
             raise ValueError("questions must be >= 1")
 
-        if llm is not None:
-            llm_predictor = LLMPredictor(llm=llm)
-        elif llm_predictor is None and llm is None:
-            llm_predictor = LLMPredictor()
-
         super().__init__(
-            llm_predictor=llm_predictor,
+            llm=llm or llm_predictor or resolve_llm("default"),
             questions=questions,
             prompt_template=prompt_template,
             embedding_only=embedding_only,
@@ -304,7 +291,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
 
         context_str = node.get_content(metadata_mode=self.metadata_mode)
         prompt = PromptTemplate(template=self.prompt_template)
-        questions = await self.llm_predictor.apredict(
+        questions = await self.llm.apredict(
             prompt, num_questions=self.questions, context_str=context_str
         )
 
@@ -338,14 +325,12 @@ class SummaryExtractor(BaseExtractor):
     metadata fields.
 
     Args:
-        llm_predictor (Optional[LLMPredictor]): LLM predictor
+        llm (Optional[LLM]): LLM
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
         prompt_template (str): template for summary extraction
     """
 
-    llm_predictor: LLMPredictor = Field(
-        description="The LLMPredictor to use for generation."
-    )
+    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
     summaries: List[str] = Field(
         description="List of summaries to extract: 'self', 'prev', 'next'"
     )
@@ -362,17 +347,12 @@ class SummaryExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictor] = None,
+        llm_predictor: Optional[LLMPredictorType] = None,
         summaries: List[str] = ["self"],
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
         num_workers: int = DEFAULT_NUM_WORKERS,
         **kwargs: Any,
     ):
-        if llm is not None:
-            llm_predictor = LLMPredictor(llm=llm)
-        elif llm_predictor is None and llm is None:
-            llm_predictor = LLMPredictor()
-
         # validation
         if not all(s in ["self", "prev", "next"] for s in summaries):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")
@@ -381,7 +361,7 @@ class SummaryExtractor(BaseExtractor):
         self._next_summary = "next" in summaries
 
         super().__init__(
-            llm_predictor=llm_predictor,
+            llm=llm or llm_predictor or resolve_llm("default"),
             summaries=summaries,
             prompt_template=prompt_template,
             num_workers=num_workers,
@@ -398,7 +378,7 @@ class SummaryExtractor(BaseExtractor):
             return ""
 
         context_str = node.get_content(metadata_mode=self.metadata_mode)
-        summary = await self.llm_predictor.apredict(
+        summary = await self.llm.apredict(
             PromptTemplate(template=self.prompt_template), context_str=context_str
         )
 

@@ -5,13 +5,27 @@ from llama_index.download.dataset import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
 )
-from llama_index.download.dataset import (
-    download_llama_dataset as download,
-)
+from llama_index.download.dataset import download_llama_dataset as download
 from llama_index.download.module import LLAMA_HUB_URL, MODULE_TYPE, track_download
 from llama_index.llama_dataset.base import BaseLlamaDataset
+from llama_index.llama_dataset.evaluator_evaluation import (
+    LabelledEvaluatorDataset,
+    LabelledPairwiseEvaluatorDataset,
+)
 from llama_index.llama_dataset.rag import LabelledRagDataset
 from llama_index.readers import SimpleDirectoryReader
+
+
+def _resolve_dataset_class(filename: str) -> Type[BaseLlamaDataset]:
+    """Resolve appropriate llama dataset class based on file name."""
+    if "rag_dataset.json" in filename:
+        return LabelledRagDataset
+    elif "pairwise_evaluator_dataset.json" in filename:
+        return LabelledPairwiseEvaluatorDataset
+    elif "evaluator_dataset.json" in filename:
+        return LabelledEvaluatorDataset
+    else:
+        raise ValueError("Unknown filename.")
 
 
 def download_llama_dataset(
@@ -21,6 +35,7 @@ def download_llama_dataset(
     llama_datasets_lfs_url: str = LLAMA_DATASETS_LFS_URL,
     llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     show_progress: bool = False,
+    load_documents: bool = True,
 ) -> Tuple[Type[BaseLlamaDataset], List[Document]]:
     """Download dataset from datasets-LFS and llamahub.
 
@@ -40,9 +55,11 @@ def download_llama_dataset(
         disable_library_cache: Boolean to control library cache
         override_path: Boolean to control overriding path
         show_progress: Boolean for showing progress on downloading source files
+        load_documents: Boolean for whether or not source_files for LabelledRagDataset should
+                        be loaded.
 
     Returns:
-        a `LabelledRagDataset` and a `List[Document]`
+        a `BaseLlamaDataset` and a `List[Document]`
     """
     filenames: Tuple[str, str] = download(
         llama_dataset_class,
@@ -56,11 +73,17 @@ def download_llama_dataset(
         override_path=True,
         show_progress=show_progress,
     )
-    rag_dataset_filename, source_files_dir = filenames
+    dataset_filename, source_files_dir = filenames
     track_download(llama_dataset_class, MODULE_TYPE.DATASETS)
-    return (
-        LabelledRagDataset.from_json(rag_dataset_filename),
-        SimpleDirectoryReader(input_dir=source_files_dir).load_data(
+
+    dataset = _resolve_dataset_class(dataset_filename).from_json(dataset_filename)
+    documents = []
+
+    # for now only rag datasets need to provide the documents
+    # in order to build an index over them
+    if "rag_dataset.json" in dataset_filename and load_documents:
+        documents = SimpleDirectoryReader(input_dir=source_files_dir).load_data(
             show_progress=show_progress
-        ),
-    )
+        )
+
+    return (dataset, documents)

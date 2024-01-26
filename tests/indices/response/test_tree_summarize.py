@@ -1,11 +1,13 @@
 """Test tree summarize."""
 
-from typing import List, Sequence
-from unittest.mock import Mock
+from typing import Any, List, Sequence
+from unittest.mock import Mock, patch
 
 import pytest
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.indices.prompt_helper import PromptHelper
+from llama_index.llm_predictor import LLMPredictor
+from llama_index.llms.mock import MockLLM
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.prompt_type import PromptType
 from llama_index.response_synthesizers import TreeSummarize
@@ -53,11 +55,19 @@ def test_tree_summarize(mock_service_context_merge_chunks: ServiceContext) -> No
     assert str(response) == "Text chunk 1\nText chunk 2\nText chunk 3\nText chunk 4"
 
 
+class TestModel(BaseModel):
+    hello: str
+
+
+def mock_return_class(*args: Any, **kwargs: Any) -> TestModel:
+    return TestModel(hello="Test Chunk 5")
+
+
+@patch.object(MockLLM, "structured_predict", mock_return_class)
 def test_tree_summarize_output_cls(
     mock_service_context_merge_chunks: ServiceContext,
 ) -> None:
-    class TestModel(BaseModel):
-        hello: str
+    mock_service_context_merge_chunks.llm_predictor = LLMPredictor(MockLLM())
 
     mock_summary_prompt_tmpl = "{context_str}{query_str}"
     mock_summary_prompt = PromptTemplate(
@@ -71,9 +81,7 @@ def test_tree_summarize_output_cls(
         '{"hello":"Test Chunk 3"}',
         '{"hello":"Test Chunk 4"}',
     ]
-    response_rtr = {"hello": "Test Chunk 5"}
-    TestModel.parse_raw = Mock(name="parse_raw")  # type: ignore
-    TestModel.parse_raw.return_value = response_rtr
+    response_dict = {"hello": "Test Chunk 5"}
 
     # test sync
     tree_summarize = TreeSummarize(
@@ -83,8 +91,8 @@ def test_tree_summarize_output_cls(
     )
     full_response = "\n".join(texts)
     response = tree_summarize.get_response(text_chunks=texts, query_str=query_str)
-    TestModel.parse_raw.assert_called_once_with(full_response)
-    assert response == response_rtr
+    assert isinstance(response, TestModel)
+    assert response.dict() == response_dict
 
 
 def test_tree_summarize_use_async(

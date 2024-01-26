@@ -1,17 +1,25 @@
-"""Qdrant vector store index.
+"""
+Qdrant vector store index.
 
 An index that is built on top of an existing Qdrant collection.
 
 """
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, List, Optional, Tuple, cast
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.schema import BaseNode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.utils import iter_batch
+from llama_index.vector_stores.qdrant_utils import (
+    HybridFusionCallable,
+    SparseEncoderCallable,
+    default_sparse_encoder,
+    relative_score_fusion,
+)
 from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
@@ -27,7 +35,8 @@ import_err_msg = (
 
 
 class QdrantVectorStore(BasePydanticVectorStore):
-    """Qdrant Vector Store.
+    """
+    Qdrant Vector Store.
 
     In this vector store, embeddings and docs are stored within a
     Qdrant collection.
@@ -44,24 +53,33 @@ class QdrantVectorStore(BasePydanticVectorStore):
     flat_metadata: bool = False
 
     collection_name: str
+    path: Optional[str]
     url: Optional[str]
     api_key: Optional[str]
     batch_size: int
-    prefer_grpc: bool
     client_kwargs: dict = Field(default_factory=dict)
+    enable_hybrid: bool
 
     _client: Any = PrivateAttr()
+    _aclient: Any = PrivateAttr()
     _collection_initialized: bool = PrivateAttr()
+    _sparse_doc_fn: Optional[SparseEncoderCallable] = PrivateAttr()
+    _sparse_query_fn: Optional[SparseEncoderCallable] = PrivateAttr()
+    _hybrid_fusion_fn: Optional[HybridFusionCallable] = PrivateAttr()
 
     def __init__(
         self,
         collection_name: str,
         client: Optional[Any] = None,
+        aclient: Optional[Any] = None,
         url: Optional[str] = None,
         api_key: Optional[str] = None,
         batch_size: int = 100,
-        prefer_grpc: bool = False,
         client_kwargs: Optional[dict] = None,
+        enable_hybrid: bool = False,
+        sparse_doc_fn: Optional[SparseEncoderCallable] = None,
+        sparse_query_fn: Optional[SparseEncoderCallable] = None,
+        hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -70,53 +88,111 @@ class QdrantVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        if client is None:
+        if (
+            client is None
+            and aclient is None
+            and (url is None or api_key is None or collection_name is None)
+        ):
+            raise ValueError(
+                "Must provide either a QdrantClient instance or a url and api_key."
+            )
+
+        if client is None and aclient is None:
             client_kwargs = client_kwargs or {}
             self._client = qdrant_client.QdrantClient(
                 url=url, api_key=api_key, **client_kwargs
             )
+            self._aclient = qdrant_client.AsyncQdrantClient(
+                url=url, api_key=api_key, **client_kwargs
+            )
         else:
-            self._client = cast(qdrant_client.QdrantClient, client)
+            if client is not None and aclient is not None:
+                logger.warning(
+                    "Both client and aclient are provided. If using `:memory:` "
+                    "mode, the data between clients is not synced."
+                )
 
-        self._collection_initialized = self._collection_exists(collection_name)
+            self._client = client
+            self._aclient = aclient
+
+        if self._client is not None:
+            self._collection_initialized = self._collection_exists(collection_name)
+        else:
+            #  need to do lazy init for async clients
+            self._collection_initialized = False
+
+        # setup hybrid search if enabled
+        if enable_hybrid:
+            self._sparse_doc_fn = sparse_doc_fn or default_sparse_encoder(
+                "naver/efficient-splade-VI-BT-large-doc"
+            )
+            self._sparse_query_fn = sparse_query_fn or default_sparse_encoder(
+                "naver/efficient-splade-VI-BT-large-query"
+            )
+            self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
+                HybridFusionCallable, relative_score_fusion
+            )
 
         super().__init__(
             collection_name=collection_name,
             url=url,
             api_key=api_key,
             batch_size=batch_size,
-            prefer_grpc=prefer_grpc,
             client_kwargs=client_kwargs or {},
+            enable_hybrid=enable_hybrid,
         )
 
     @classmethod
     def class_name(cls) -> str:
         return "QdrantVectorStore"
 
-    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to index.
-
-        Args:
-            nodes: List[BaseNode]: list of nodes with embeddings
-
-        """
+    def _build_points(self, nodes: List[BaseNode]) -> Tuple[List[Any], List[str]]:
         from qdrant_client.http import models as rest
 
-        if len(nodes) > 0 and not self._collection_initialized:
-            self._create_collection(
-                collection_name=self.collection_name,
-                vector_size=len(nodes[0].get_embedding()),
-            )
-
         ids = []
+        points = []
         for node_batch in iter_batch(nodes, self.batch_size):
             node_ids = []
-            vectors = []
+            vectors: List[Any] = []
+            sparse_vectors: List[List[float]] = []
+            sparse_indices: List[List[int]] = []
             payloads = []
-            for node in node_batch:
+
+            if self.enable_hybrid and self._sparse_doc_fn is not None:
+                sparse_indices, sparse_vectors = self._sparse_doc_fn(
+                    [
+                        node.get_content(metadata_mode=MetadataMode.EMBED)
+                        for node in node_batch
+                    ],
+                )
+
+            for i, node in enumerate(node_batch):
                 assert isinstance(node, BaseNode)
                 node_ids.append(node.node_id)
-                vectors.append(node.get_embedding())
+
+                if self.enable_hybrid:
+                    if (
+                        len(sparse_vectors) > 0
+                        and len(sparse_indices) > 0
+                        and len(sparse_vectors) == len(sparse_indices)
+                    ):
+                        vectors.append(
+                            {
+                                "text-sparse": rest.SparseVector(
+                                    indices=sparse_indices[i],
+                                    values=sparse_vectors[i],
+                                ),
+                                "text-dense": node.get_embedding(),
+                            }
+                        )
+                    else:
+                        vectors.append(
+                            {
+                                "text-dense": node.get_embedding(),
+                            }
+                        )
+                else:
+                    vectors.append(node.get_embedding())
 
                 metadata = node_to_metadata_dict(
                     node, remove_text=False, flat_metadata=self.flat_metadata
@@ -124,19 +200,45 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
                 payloads.append(metadata)
 
+            points.extend(
+                [
+                    rest.PointStruct(id=node_id, payload=payload, vector=vector)
+                    for node_id, payload, vector in zip(node_ids, payloads, vectors)
+                ]
+            )
+
+            ids.extend(node_ids)
+
+        return points, ids
+
+    def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        """
+        Add nodes to index.
+
+        Args:
+            nodes: List[BaseNode]: list of nodes with embeddings
+
+        """
+        if len(nodes) > 0 and not self._collection_initialized:
+            self._create_collection(
+                collection_name=self.collection_name,
+                vector_size=len(nodes[0].get_embedding()),
+            )
+
+        points, ids = self._build_points(nodes)
+
+        # batch upsert the points into Qdrant collection to avoid large payloads
+        for points_batch in iter_batch(points, self.batch_size):
             self._client.upsert(
                 collection_name=self.collection_name,
-                points=rest.Batch.construct(
-                    ids=node_ids,
-                    vectors=vectors,
-                    payloads=payloads,
-                ),
+                points=points_batch,
             )
-            ids.extend(node_ids)
+
         return ids
 
-    async def async_add(self, nodes: List[BaseNode]) -> List[str]:
-        """Asynchronous method to add nodes to Qdrant index.
+    async def async_add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
+        """
+        Asynchronous method to add nodes to Qdrant index.
 
         Args:
             nodes: List[BaseNode]: List of nodes with embeddings.
@@ -145,100 +247,26 @@ class QdrantVectorStore(BasePydanticVectorStore):
             List of node IDs that were added to the index.
 
         Raises:
-            ValueError: If trying to using async methods without
-                            setting `prefer_grpc` to True.
+            ValueError: If trying to using async methods without aclient
         """
-        if not self.prefer_grpc:
-            raise ValueError(
-                "`prefer_grpc` must be set to True to use async insertion."
-            )
+        collection_initialized = await self._acollection_exists(self.collection_name)
 
-        from qdrant_client import grpc
-
-        if len(nodes) > 0 and not self._collection_initialized:
-            await self._async_create_collection(
+        if len(nodes) > 0 and not collection_initialized:
+            await self._acreate_collection(
                 collection_name=self.collection_name,
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        ids = []
-        for node_batch in iter_batch(nodes, self.batch_size):
-            node_ids = []
-            grpc_points = []
-            for node in node_batch:
-                assert isinstance(node, BaseNode)
-                node_ids.append(node.node_id)
-                grpc_points.append(
-                    grpc.PointStruct(
-                        id=grpc.PointId(num=node.node_id),
-                        payload=self._get_async_payload(
-                            node_to_metadata_dict(
-                                node,
-                                remove_text=False,
-                                flat_metadata=self.flat_metadata,
-                            )
-                        ),
-                        vectors=grpc.Vectors(
-                            vector=grpc.Vector(data=node.get_embedding()),
-                        ),
-                    )
-                )
+        points, ids = self._build_points(nodes)
 
-            await self._client.async_grpc_points.Upsert(
-                grpc.UpsertPoints(
-                    collection_name=self.collection_name,
-                    points=grpc_points,
-                )
+        # batch upsert the points into Qdrant collection to avoid large payloads
+        for points_batch in iter_batch(points, self.batch_size):
+            await self._aclient.upsert(
+                collection_name=self.collection_name,
+                points=points_batch,
             )
-            ids.extend(node_ids)
+
         return ids
-
-    def _get_async_payload(self, metadata: dict) -> dict:
-        """Convert the metadata payload to formatted Qdrant payload.
-
-        Args:
-            metadata (dict): Metadata of a node.
-
-        """
-        grpc_payload = {}
-
-        for key, value in metadata.items():
-            grpc_payload[key] = self._value_to_grpc_value(value)
-
-        return grpc_payload
-
-    def _value_to_grpc_value(self, value: Any) -> Optional[Any]:
-        """Convert the REST value to gRPC value.
-
-        Raises:
-            ValueError: If an unsupported value is passed.
-        """
-        from qdrant_client.grpc import ListValue, NullValue, Struct, Value
-
-        if value is None:
-            return Value(null_value=NullValue.NULL_VALUE)
-        if isinstance(value, bool):
-            return Value(bool_value=value)
-        if isinstance(value, int):
-            return Value(integer_value=value)
-        if isinstance(value, float):
-            return Value(double_value=value)
-        if isinstance(value, str):
-            return Value(string_value=value)
-        if isinstance(value, list):
-            return Value(
-                list_value=ListValue(
-                    values=[self._value_to_grpc_value(v) for v in value]
-                )
-            )
-        if isinstance(value, dict):
-            return Value(
-                struct_value=Struct(
-                    fields={k: self._value_to_grpc_value(v) for k, v in value.items()}
-                )
-            )
-
-        raise ValueError(f"{value} is not a supported value.")
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -269,23 +297,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        from qdrant_client import grpc
+        from qdrant_client.http import models as rest
 
-        await self._client.async_grpc_points.Delete(
-            grpc.DeletePoints(
-                collection_name=self.collection_name,
-                points=grpc.PointsSelector(
-                    filter=grpc.Filter(
-                        must=[
-                            grpc.Condition(
-                                field=grpc.FieldCondition(
-                                    key="doc_id", match=grpc.Match(text=ref_doc_id)
-                                )
-                            )
-                        ]
+        await self._aclient.delete(
+            collection_name=self.collection_name,
+            points_selector=rest.Filter(
+                must=[
+                    rest.FieldCondition(
+                        key="doc_id", match=rest.MatchValue(value=ref_doc_id)
                     )
-                ),
-            )
+                ]
+            ),
         )
 
     @property
@@ -296,34 +318,77 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def _create_collection(self, collection_name: str, vector_size: int) -> None:
         """Create a Qdrant collection."""
         from qdrant_client.http import models as rest
+        from qdrant_client.http.exceptions import UnexpectedResponse
 
-        self._client.recreate_collection(
-            collection_name=collection_name,
-            vectors_config=rest.VectorParams(
-                size=vector_size,
-                distance=rest.Distance.COSINE,
-            ),
-        )
+        try:
+            if self.enable_hybrid:
+                self._client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config={
+                        "text-dense": rest.VectorParams(
+                            size=vector_size,
+                            distance=rest.Distance.COSINE,
+                        )
+                    },
+                    sparse_vectors_config={
+                        "text-sparse": rest.SparseVectorParams(
+                            index=rest.SparseIndexParams()
+                        )
+                    },
+                )
+            else:
+                self._client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=rest.VectorParams(
+                        size=vector_size,
+                        distance=rest.Distance.COSINE,
+                    ),
+                )
+        except (ValueError, UnexpectedResponse) as exc:
+            if "already exists" not in str(exc):
+                raise exc  # noqa: TRY201
+            logger.warning(
+                "Collection %s already exists, skipping collection creation.",
+                collection_name,
+            )
         self._collection_initialized = True
 
-    async def _async_create_collection(
-        self, collection_name: str, vector_size: int
-    ) -> None:
+    async def _acreate_collection(self, collection_name: str, vector_size: int) -> None:
         """Asynchronous method to create a Qdrant collection."""
-        from qdrant_client import grpc
+        from qdrant_client.http import models as rest
+        from qdrant_client.http.exceptions import UnexpectedResponse
 
-        await self._client.async_grpc_collections.Create(
-            grpc.CreateCollection(
-                collection_name=collection_name,
-                vectors_config=grpc.VectorsConfig(
-                    params=grpc.VectorParams(
+        try:
+            if self.enable_hybrid:
+                await self._aclient.create_collection(
+                    collection_name=collection_name,
+                    vectors_config={
+                        "text-dense": rest.VectorParams(
+                            size=vector_size,
+                            distance=rest.Distance.COSINE,
+                        )
+                    },
+                    sparse_vectors_config={
+                        "text-sparse": rest.SparseVectorParams(
+                            index=rest.SparseIndexParams()
+                        )
+                    },
+                )
+            else:
+                await self._aclient.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=rest.VectorParams(
                         size=vector_size,
-                        distance=grpc.Distance.Cosine,
-                    )
-                ),
+                        distance=rest.Distance.COSINE,
+                    ),
+                )
+        except (ValueError, UnexpectedResponse) as exc:
+            if "already exists" not in str(exc):
+                raise exc  # noqa: TRY201
+            logger.warning(
+                "Collection %s already exists, skipping collection creation.",
+                collection_name,
             )
-        )
-
         self._collection_initialized = True
 
     def _collection_exists(self, collection_name: str) -> bool:
@@ -337,66 +402,289 @@ class QdrantVectorStore(BasePydanticVectorStore):
             return False
         return True
 
+    async def _acollection_exists(self, collection_name: str) -> bool:
+        """Asynchronous method to check if a collection exists."""
+        from grpc import RpcError
+        from qdrant_client.http.exceptions import UnexpectedResponse
+
+        try:
+            await self._aclient.get_collection(collection_name)
+        except (RpcError, UnexpectedResponse, ValueError):
+            return False
+        return True
+
     def query(
         self,
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
         """
+        from qdrant_client import models as rest
         from qdrant_client.http.models import Filter
 
         query_embedding = cast(List[float], query.query_embedding)
+        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
+        qdrant_filters = kwargs.get("qdrant_filters")
+        if qdrant_filters is not None:
+            query_filter = qdrant_filters
+        else:
+            query_filter = cast(Filter, self._build_query_filter(query))
 
-        response = self._client.search(
-            collection_name=self.collection_name,
-            query_vector=query_embedding,
-            limit=cast(int, query.similarity_top_k),
-            query_filter=cast(Filter, self._build_query_filter(query)),
-        )
+        if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
+            raise ValueError(
+                "Hybrid search is not enabled. Please build the query with "
+                "`enable_hybrid=True` in the constructor."
+            )
+        elif (
+            query.mode == VectorStoreQueryMode.HYBRID
+            and self.enable_hybrid
+            and self._sparse_query_fn is not None
+            and query.query_str is not None
+        ):
+            sparse_indices, sparse_embedding = self._sparse_query_fn(
+                [query.query_str],
+            )
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
-        logger.debug(f"> Top {len(response)} nodes:")
+            sparse_response = self._client.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedVector(
+                            name="text-dense",
+                            vector=query_embedding,
+                        ),
+                        limit=query.similarity_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                    rest.SearchRequest(
+                        vector=rest.NamedSparseVector(
+                            name="text-sparse",
+                            vector=rest.SparseVector(
+                                indices=sparse_indices[0],
+                                values=sparse_embedding[0],
+                            ),
+                        ),
+                        limit=sparse_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
 
-        return self.parse_to_query_result(response=response)
+            # sanity check
+            assert len(sparse_response) == 2
+            assert self._hybrid_fusion_fn is not None
+
+            # flatten the response
+            return self._hybrid_fusion_fn(
+                self.parse_to_query_result(sparse_response[0]),
+                self.parse_to_query_result(sparse_response[1]),
+                # NOTE: only for hybrid search (0 for sparse search, 1 for dense search)
+                alpha=query.alpha or 0.5,
+                # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
+                top_k=query.hybrid_top_k or query.similarity_top_k,
+            )
+        elif (
+            query.mode == VectorStoreQueryMode.SPARSE
+            and self.enable_hybrid
+            and self._sparse_query_fn is not None
+            and query.query_str is not None
+        ):
+            sparse_indices, sparse_embedding = self._sparse_query_fn(
+                [query.query_str],
+            )
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
+
+            sparse_response = self._client.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedSparseVector(
+                            name="text-sparse",
+                            vector=rest.SparseVector(
+                                indices=sparse_indices[0],
+                                values=sparse_embedding[0],
+                            ),
+                        ),
+                        limit=sparse_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
+            return self.parse_to_query_result(sparse_response[0])
+
+        elif self.enable_hybrid:
+            # search for dense vectors only
+            response = self._client.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedVector(
+                            name="text-dense",
+                            vector=query_embedding,
+                        ),
+                        limit=query.similarity_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
+
+            return self.parse_to_query_result(response[0])
+        else:
+            response = self._client.search(
+                collection_name=self.collection_name,
+                query_vector=query_embedding,
+                limit=query.similarity_top_k,
+                query_filter=query_filter,
+            )
+            return self.parse_to_query_result(response)
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        """Asynchronous method to query index for top k most similar nodes.
+        """
+        Asynchronous method to query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
         """
-        from qdrant_client import grpc
-        from qdrant_client.conversions.conversion import GrpcToRest, RestToGrpc
+        from qdrant_client import models as rest
         from qdrant_client.http.models import Filter
 
         query_embedding = cast(List[float], query.query_embedding)
-        query_filter = RestToGrpc.convert_filter(
-            cast(Filter, self._build_query_filter(query))
-        )
 
-        res = await self._client.async_grpc_points.Search(
-            grpc.SearchPoints(
-                collection_name=self.collection_name,
-                vector=query_embedding,
-                filter=query_filter,
-                limit=cast(int, query.similarity_top_k),
-                with_payload=grpc.WithPayloadSelector(enable=True),
+        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
+        qdrant_filters = kwargs.get("qdrant_filters")
+        if qdrant_filters is not None:
+            query_filter = qdrant_filters
+        else:
+            # build metadata filters
+            query_filter = cast(Filter, self._build_query_filter(query))
+
+        if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
+            raise ValueError(
+                "Hybrid search is not enabled. Please build the query with "
+                "`enable_hybrid=True` in the constructor."
             )
-        )
+        elif (
+            query.mode == VectorStoreQueryMode.HYBRID
+            and self.enable_hybrid
+            and self._sparse_query_fn is not None
+            and query.query_str is not None
+        ):
+            sparse_indices, sparse_embedding = self._sparse_query_fn(
+                [query.query_str],
+            )
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
-        response = [GrpcToRest.convert_scored_point(hit) for hit in res.result]
+            sparse_response = await self._aclient.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedVector(
+                            name="text-dense",
+                            vector=query_embedding,
+                        ),
+                        limit=query.similarity_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                    rest.SearchRequest(
+                        vector=rest.NamedSparseVector(
+                            name="text-sparse",
+                            vector=rest.SparseVector(
+                                indices=sparse_indices[0],
+                                values=sparse_embedding[0],
+                            ),
+                        ),
+                        limit=sparse_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
 
-        logger.debug(f"> Top {len(response)} nodes:")
+            # sanity check
+            assert len(sparse_response) == 2
+            assert self._hybrid_fusion_fn is not None
 
-        return self.parse_to_query_result(response=response)
+            # flatten the response
+            return self._hybrid_fusion_fn(
+                self.parse_to_query_result(sparse_response[0]),
+                self.parse_to_query_result(sparse_response[1]),
+                alpha=query.alpha or 0.5,
+                # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
+                top_k=query.hybrid_top_k or query.similarity_top_k,
+            )
+        elif (
+            query.mode == VectorStoreQueryMode.SPARSE
+            and self.enable_hybrid
+            and self._sparse_query_fn is not None
+            and query.query_str is not None
+        ):
+            sparse_indices, sparse_embedding = self._sparse_query_fn(
+                [query.query_str],
+            )
+            sparse_top_k = query.sparse_top_k or query.similarity_top_k
+
+            sparse_response = await self._aclient.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedSparseVector(
+                            name="text-sparse",
+                            vector=rest.SparseVector(
+                                indices=sparse_indices[0],
+                                values=sparse_embedding[0],
+                            ),
+                        ),
+                        limit=sparse_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
+            return self.parse_to_query_result(sparse_response[0])
+        elif self.enable_hybrid:
+            # search for dense vectors only
+            response = await self._aclient.search_batch(
+                collection_name=self.collection_name,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedVector(
+                            name="text-dense",
+                            vector=query_embedding,
+                        ),
+                        limit=query.similarity_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
+            )
+
+            return self.parse_to_query_result(response[0])
+        else:
+            response = await self._aclient.search(
+                collection_name=self.collection_name,
+                query_vector=query_embedding,
+                limit=query.similarity_top_k,
+                query_filter=query_filter,
+            )
+
+            return self.parse_to_query_result(response)
 
     def parse_to_query_result(self, response: List[Any]) -> VectorStoreQueryResult:
-        """Convert vector store response to VectorStoreQueryResult.
+        """
+        Convert vector store response to VectorStoreQueryResult.
 
         Args:
             response: List[Any]: List of results returned from the vector store.
@@ -440,6 +728,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             FieldCondition,
             Filter,
             MatchAny,
+            MatchExcept,
+            MatchText,
             MatchValue,
             Range,
         )
@@ -515,6 +805,20 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     FieldCondition(
                         key=subfilter.key,
                         range=Range(lte=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == "text_match":
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchText(text=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == "!=":
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchExcept(**{"except": [subfilter.value]}),
                     )
                 )
 

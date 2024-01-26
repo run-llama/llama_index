@@ -5,10 +5,10 @@ import logging
 from typing import List, Optional, Sequence
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base_selector import BaseSelector
 from llama_index.prompts.mixin import PromptMixinType
-from llama_index.schema import NodeWithScore, QueryBundle
-from llama_index.selectors.types import BaseSelector
+from llama_index.schema import IndexNode, NodeWithScore, QueryBundle
 from llama_index.selectors.utils import get_selector_from_context
 from llama_index.service_context import ServiceContext
 from llama_index.tools.retriever_tool import RetrieverTool
@@ -36,12 +36,21 @@ class RouterRetriever(BaseRetriever):
         selector: BaseSelector,
         retriever_tools: Sequence[RetrieverTool],
         service_context: Optional[ServiceContext] = None,
+        objects: Optional[List[IndexNode]] = None,
+        object_map: Optional[dict] = None,
+        verbose: bool = False,
     ) -> None:
         self.service_context = service_context or ServiceContext.from_defaults()
         self._selector = selector
         self._retrievers: List[BaseRetriever] = [x.retriever for x in retriever_tools]
         self._metadatas = [x.metadata for x in retriever_tools]
-        self.callback_manager = self.service_context.callback_manager
+
+        super().__init__(
+            callback_manager=self.service_context.callback_manager,
+            object_map=object_map,
+            objects=objects,
+            verbose=verbose,
+        )
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""

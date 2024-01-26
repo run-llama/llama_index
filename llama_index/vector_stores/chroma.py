@@ -166,6 +166,18 @@ class ChromaVectorStore(BasePydanticVectorStore):
         )
 
     @classmethod
+    def from_collection(cls, collection: Any) -> "ChromaVectorStore":
+        try:
+            from chromadb import Collection
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        if not isinstance(collection, Collection):
+            raise Exception("argument is not chromadb collection instance")
+
+        return cls(chroma_collection=collection)
+
+    @classmethod
     def from_params(
         cls,
         collection_name: str,
@@ -174,7 +186,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
         persist_dir: Optional[str] = None,
-        collection_kwargs: Optional[dict] = {},
+        collection_kwargs: dict = {},
         **kwargs: Any,
     ) -> "ChromaVectorStore":
         try:
@@ -234,8 +246,9 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 metadata_dict = node_to_metadata_dict(
                     node, remove_text=True, flat_metadata=self.flat_metadata
                 )
-                if "context" in metadata_dict and metadata_dict["context"] is None:
-                    metadata_dict["context"] = ""
+                for key in metadata_dict:
+                    if metadata_dict[key] is None:
+                        metadata_dict[key] = ""
                 metadatas.append(metadata_dict)
                 ids.append(node.node_id)
                 documents.append(node.get_content(metadata_mode=MetadataMode.NONE))

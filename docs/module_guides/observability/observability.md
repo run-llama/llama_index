@@ -50,6 +50,25 @@ llama_index.set_global_handler("simple")
 
 We offer a rich set of integrations with our partners. A short description + usage pattern, and guide is provided for each partner.
 
+### DeepEval
+
+[DeepEval (by Confident AI)](https://github.com/confident-ai/deepeval) is an open-source evaluation framework for LLM applications. As you "unit test" your LLM app using DeepEval's 14+ default metrics it currently offers (summarization, hallucination, answer relevancy, faithfulness, RAGAS, etc.), you can debug failing test cases through this tracing integration with LlamaIndex, or debug unsatisfactory evaluations in **production** through DeepEval's hosted evaluation platform, [Confident AI](https://confident-ai.com), that runs referenceless evaluations in production.
+
+#### Usage Pattern
+
+```python
+from llama_index import set_global_handler
+
+set_global_handler("deepeval")
+
+# NOTE: Run 'deepeval login' in the CLI to log traces on Confident AI, DeepEval's hosted evaluation platform.
+# Run all of your LlamaIndex applications as usual and traces
+# will be collected and displayed on Confident AI whenever evaluations are ran.
+...
+```
+
+![tracing](https://d2lsxfc3p6r9rv.cloudfront.net/confident-tracing.gif)
+
 ### Weights and Biases Prompts
 
 Prompts allows users to log/trace/inspect the execution flow of LlamaIndex during index construction and querying. It also allows users to version-control their indices.
@@ -102,6 +121,15 @@ LLM applications. It connects to [all major observability platforms](https://www
 from traceloop.sdk import Traceloop
 
 Traceloop.init()
+```
+
+#### Guides
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/callbacks/OpenLLMetry.ipynb
 ```
 
 ![](/_static/integrations/openllmetry.png)
@@ -212,8 +240,8 @@ tru_query_engine.query("What did the author do growing up?")
 maxdepth: 1
 ---
 /community/integrations/trulens.md
-Quickstart Guide with LlamaIndex + TruLens <https://github.com/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
-Colab <https://colab.research.google.com/github/truera/trulens/blob/main/trulens_eval/examples/frameworks/llama_index/llama_index_quickstart.ipynb>
+Quickstart Guide with LlamaIndex + TruLens <https://github.com/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb>
+Colab <https://colab.research.google.com/github/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb>
 ```
 
 ### HoneyHive

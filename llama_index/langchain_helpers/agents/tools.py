@@ -4,8 +4,8 @@ from typing import Any, Dict, List
 
 from llama_index.bridge.langchain import BaseTool
 from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.core import BaseQueryEngine
-from llama_index.response.schema import RESPONSE_TYPE
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.schema import TextNode
 
 

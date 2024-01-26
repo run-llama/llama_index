@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.embeddings.base import (
+from llama_index.core.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
     Embedding,
@@ -150,6 +150,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
             return_tensors="pt",
         )
 
+        # pop token_type_ids
+        encoded_input.pop("token_type_ids", None)
+
         # move tokenizer inputs to device
         encoded_input = {
             key: val.to(self._device) for key, val in encoded_input.items()
@@ -236,11 +239,14 @@ class HuggingFaceInferenceAPIEmbedding(HuggingFaceInferenceAPI, BaseEmbedding): 
         return "HuggingFaceInferenceAPIEmbedding"
 
     async def _async_embed_single(self, text: str) -> Embedding:
-        embedding = (await self._async_client.feature_extraction(text)).squeeze(axis=0)
+        embedding = await self._async_client.feature_extraction(text)
+        if len(embedding.shape) == 1:
+            return embedding.tolist()
+        embedding = embedding.squeeze(axis=0)
         if len(embedding.shape) == 1:  # Some models pool internally
-            return list(embedding)
+            return embedding.tolist()
         try:
-            return list(self.pooling(embedding))  # type: ignore[misc]
+            return self.pooling(embedding).tolist()  # type: ignore[misc]
         except TypeError as exc:
             raise ValueError(
                 f"Pooling is required for {self.model_name} because it returned"

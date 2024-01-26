@@ -9,7 +9,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 import tqdm
 
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.utils import get_cache_dir

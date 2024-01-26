@@ -1,16 +1,15 @@
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, List, Optional, cast
 
 import llama_index
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.callbacks.base import CallbackManager
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.utils import EmbedType, resolve_embed_model
+from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llm_predictor import LLMPredictor
 from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.logger import LlamaLogger
 from llama_index.node_parser.interface import NodeParser, TextSplitter
@@ -88,7 +87,7 @@ class ServiceContext:
         llm_predictor: Optional[BaseLLMPredictor] = None,
         llm: Optional[LLMType] = "default",
         prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[EmbedType] = "default",
+        embed_model: Optional[Any] = "default",
         node_parser: Optional[NodeParser] = None,
         text_splitter: Optional[TextSplitter] = None,
         transformations: Optional[List[TransformComponent]] = None,
@@ -132,6 +131,10 @@ class ServiceContext:
             chunk_size_limit (Optional[int]): renamed to chunk_size
 
         """
+        from llama_index.embeddings.utils import EmbedType, resolve_embed_model
+
+        embed_model = cast(EmbedType, embed_model)
+
         if chunk_size_limit is not None and chunk_size is None:
             logger.warning(
                 "chunk_size_limit is deprecated, please specify chunk_size instead"
@@ -164,6 +167,14 @@ class ServiceContext:
             if llm_predictor is not None:
                 raise ValueError("Cannot specify both llm and llm_predictor")
             llm = resolve_llm(llm)
+            llm.system_prompt = llm.system_prompt or system_prompt
+            llm.query_wrapper_prompt = llm.query_wrapper_prompt or query_wrapper_prompt
+            llm.pydantic_program_mode = (
+                llm.pydantic_program_mode or pydantic_program_mode
+            )
+
+        if llm_predictor is not None:
+            print("LLMPredictor is deprecated, please use LLM instead.")
         llm_predictor = llm_predictor or LLMPredictor(
             llm=llm, pydantic_program_mode=pydantic_program_mode
         )
@@ -219,7 +230,7 @@ class ServiceContext:
         llm_predictor: Optional[BaseLLMPredictor] = None,
         llm: Optional[LLMType] = "default",
         prompt_helper: Optional[PromptHelper] = None,
-        embed_model: Optional[EmbedType] = "default",
+        embed_model: Optional[Any] = "default",
         node_parser: Optional[NodeParser] = None,
         text_splitter: Optional[TextSplitter] = None,
         transformations: Optional[List[TransformComponent]] = None,
@@ -237,6 +248,10 @@ class ServiceContext:
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
         """Instantiate a new service context using a previous as the defaults."""
+        from llama_index.embeddings.utils import EmbedType, resolve_embed_model
+
+        embed_model = cast(EmbedType, embed_model)
+
         if chunk_size_limit is not None and chunk_size is None:
             logger.warning(
                 "chunk_size_limit is deprecated, please specify chunk_size",
@@ -311,8 +326,6 @@ class ServiceContext:
 
     @property
     def llm(self) -> LLM:
-        if not isinstance(self.llm_predictor, LLMPredictor):
-            raise ValueError("llm_predictor must be an instance of LLMPredictor")
         return self.llm_predictor.llm
 
     @property
