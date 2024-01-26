@@ -95,6 +95,14 @@ class BaseDocumentStore(ABC):
         ...
 
     @abstractmethod
+    def set_document_hashes(self, doc_hashes: Dict[str, str]) -> None:
+        ...
+
+    @abstractmethod
+    async def aset_document_hashes(self, doc_hashes: Dict[str, str]) -> None:
+        ...
+
+    @abstractmethod
     def get_document_hash(self, doc_id: str) -> Optional[str]:
         ...
 
