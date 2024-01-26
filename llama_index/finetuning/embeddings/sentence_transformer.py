@@ -35,11 +35,9 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
         self.model_output_path = model_output_path
         self.model = SentenceTransformer(model_id)
 
-
         examples: Any = []
         for query_id, query in dataset.queries.items():
-            for doc in dataset.relevant_docs[query_id]:
-                node_id = doc
+            for node_id in dataset.relevant_docs[query_id]:
                 text = dataset.corpus[node_id]
                 example = InputExample(texts=[query, text])
                 examples.append(example)
