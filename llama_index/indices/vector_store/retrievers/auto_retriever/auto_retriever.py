@@ -77,6 +77,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         extra_filters: Optional[MetadataFilters] = None,
+        append_filters: Optional[MetadataFilters] = None,
         object_map: Optional[dict] = None,
         objects: Optional[List[IndexNode]] = None,
         **kwargs: Any,
@@ -103,6 +104,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         if extra_filters is not None and extra_filters.condition == FilterCondition.OR:
             raise ValueError("extra_filters cannot be OR condition")
         self._extra_filters = extra_filters or MetadataFilters(filters=[])
+        self._append_filters = append_filters or MetadataFilters(filters=[])
         self._kwargs = kwargs
         super().__init__(
             callback_manager=callback_manager,
@@ -219,11 +221,11 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         _logger.info(f"Using top_k: {similarity_top_k}")
 
         # avoid passing empty filters to retriever
-        if len(spec.filters) + len(self._extra_filters.filters) == 0:
+        if len(spec.filters) + len(self._extra_filters.filters) + len(self._append_filters.filters) == 0:
             filters = None
         else:
             filters = MetadataFilters(
-                filters=[*spec.filters, *self._extra_filters.filters]
+                filters=[*spec.filters, *self._extra_filters.filters, *self._append_filters.filters]
             )
 
         return (
