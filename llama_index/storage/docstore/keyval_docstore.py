@@ -486,10 +486,34 @@ class KVDocumentStore(BaseDocumentStore):
         metadata = {"doc_hash": doc_hash}
         self._kvstore.put(doc_id, metadata, collection=self._metadata_collection)
 
+    def set_document_hashes(self, doc_hashes: Dict[str, str]) -> None:
+        """Set the hash for a given doc_id."""
+        metadata_kv_pairs = []
+        for doc_id, doc_hash in doc_hashes.items():
+            metadata_kv_pairs.append((doc_id, {"doc_hash": doc_hash}))
+
+        self._kvstore.put_all(
+            metadata_kv_pairs,
+            collection=self._metadata_collection,
+            batch_size=self._batch_size,
+        )
+
     async def aset_document_hash(self, doc_id: str, doc_hash: str) -> None:
         """Set the hash for a given doc_id."""
         metadata = {"doc_hash": doc_hash}
         await self._kvstore.aput(doc_id, metadata, collection=self._metadata_collection)
+
+    async def aset_document_hashes(self, doc_hashes: Dict[str, str]) -> None:
+        """Set the hash for a given doc_id."""
+        metadata_kv_pairs = []
+        for doc_id, doc_hash in doc_hashes.items():
+            metadata_kv_pairs.append((doc_id, {"doc_hash": doc_hash}))
+
+        await self._kvstore.aput_all(
+            metadata_kv_pairs,
+            collection=self._metadata_collection,
+            batch_size=self._batch_size,
+        )
 
     def get_document_hash(self, doc_id: str) -> Optional[str]:
         """Get the stored hash for a document, if it exists."""
