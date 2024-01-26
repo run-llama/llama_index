@@ -1,9 +1,10 @@
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
 if TYPE_CHECKING:
     from llama_index import ServiceContext
 
-from llama_index.bridge.pydantic import BaseModel, PrivateAttr
+
 from llama_index.callbacks.base import BaseCallbackHandler, CallbackManager
 from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
@@ -16,17 +17,18 @@ from llama_index.types import PydanticProgramMode
 from llama_index.utils import get_tokenizer, set_global_tokenizer
 
 
-class _Settings(BaseModel):
+@dataclass
+class _Settings:
     """Settings for the Llama Index, lazily initialized."""
 
     # lazy initialization
-    _llm: Optional[LLM] = PrivateAttr(None)
-    _embed_model: Optional[BaseEmbedding] = PrivateAttr(None)
-    _callback_manager: Optional[CallbackManager] = PrivateAttr(None)
-    _tokenizer: Optional[Callable[[str], List[Any]]] = PrivateAttr(None)
-    _node_parser: Optional[NodeParser] = PrivateAttr(None)
-    _prompt_helper: Optional[PromptHelper] = PrivateAttr(None)
-    _transformations: Optional[List[TransformComponent]] = PrivateAttr(None)
+    _llm: Optional[LLM] = None
+    _embed_model: Optional[BaseEmbedding] = None
+    _callback_manager: Optional[CallbackManager] = None
+    _tokenizer: Optional[Callable[[str], List[Any]]] = None
+    _node_parser: Optional[NodeParser] = None
+    _prompt_helper: Optional[PromptHelper] = None
+    _transformations: Optional[List[TransformComponent]] = None
 
     # ---- LLM ----
 
