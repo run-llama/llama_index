@@ -2,9 +2,9 @@ from typing import Any, Dict, Optional, Type, cast
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.llms.llm import LLM
-from llama_index.llms.openai import OpenAI
 from llama_index.output_parsers.pydantic import PydanticOutputParser
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.settings import Settings
 from llama_index.types import BaseOutputParser, BasePydanticProgram
 
 
@@ -43,7 +43,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "LLMTextCompletionProgram":
-        llm = llm or OpenAI(temperature=0, model="gpt-3.5-turbo-0613")
+        llm = llm or Settings.llm
         if prompt is None and prompt_template_str is None:
             raise ValueError("Must provide either prompt or prompt_template_str.")
         if prompt is not None and prompt_template_str is not None:

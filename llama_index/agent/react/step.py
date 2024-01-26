@@ -44,17 +44,15 @@ from llama_index.chat_engine.types import (
 from llama_index.core.llms.types import MessageRole
 from llama_index.llms.base import ChatMessage, ChatResponse
 from llama_index.llms.llm import LLM
-from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
 from llama_index.prompts.base import PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
+from llama_index.settings import Settings
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text, unit_generator
-
-DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
 def add_user_step_to_reasoning(
@@ -129,7 +127,7 @@ class ReActAgentWorker(BaseAgentWorker):
         Returns:
             ReActAgent
         """
-        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        llm = llm or Settings.llm
         if callback_manager is not None:
             llm.callback_manager = callback_manager
         return cls(

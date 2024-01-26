@@ -27,9 +27,8 @@ from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
+from llama_index.settings import Settings
 from llama_index.tools import BaseTool
-
-DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
@@ -104,7 +103,7 @@ class OpenAIAgent(AgentRunner):
         tools = tools or []
 
         chat_history = chat_history or []
-        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        llm = llm or Settings.llm
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 

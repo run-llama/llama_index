@@ -174,7 +174,9 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             storage_context=storage_context,
             image_vector_store=image_vector_store,
             image_embed_model=image_embed_model,
-            embed_model=resolve_embed_model(embed_model),
+            embed_model=resolve_embed_model(embed_model)
+            if embed_model
+            else Settings.embed_model,
             **kwargs,
         )
 

@@ -4,7 +4,6 @@ from typing import List, Optional, Type, Union
 
 from llama_index.agent.legacy.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
-    DEFAULT_MODEL_NAME,
     BaseOpenAIAgent,
 )
 from llama_index.callbacks import CallbackManager
@@ -19,6 +18,7 @@ from llama_index.llms.openai_utils import is_function_calling_model
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.prompts import PromptTemplate
 from llama_index.schema import NodeWithScore
+from llama_index.settings import Settings
 from llama_index.tools import BaseTool
 from llama_index.utils import print_text
 
@@ -114,7 +114,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         """
         qa_prompt = qa_prompt or DEFAULT_QA_PROMPT
         chat_history = chat_history or []
-        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        llm = llm or Settings.llm
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
         if callback_manager is not None:

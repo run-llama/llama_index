@@ -4,10 +4,10 @@ from typing import Dict, Optional
 from llama_index.evaluation.base import Evaluation
 from llama_index.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.llm_predictor.base import LLMPredictorType
-from llama_index.llms.utils import resolve_llm
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import QueryBundle
+from llama_index.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
         resynthesis_prompt: Optional[BasePromptTemplate] = None,
     ) -> None:
         super().__init__()
-        self.llm = llm or resolve_llm("default")
+        self.llm = llm or Settings.llm
         self.should_resynthesize_query = resynthesize_query
         self.resynthesis_prompt = resynthesis_prompt or DEFAULT_RESYNTHESIS_PROMPT
 

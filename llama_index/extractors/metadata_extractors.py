@@ -26,9 +26,9 @@ from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.extractors.interface import BaseExtractor
 from llama_index.llm_predictor.base import LLMPredictorType
 from llama_index.llms.llm import LLM
-from llama_index.llms.utils import resolve_llm
 from llama_index.prompts import PromptTemplate
 from llama_index.schema import BaseNode, TextNode
+from llama_index.settings import Settings
 from llama_index.types import BasePydanticProgram
 from llama_index.utils import get_tqdm_iterable
 
@@ -86,7 +86,7 @@ class TitleExtractor(BaseExtractor):
             raise ValueError("num_nodes must be >= 1")
 
         super().__init__(
-            llm=llm or llm_predictor or resolve_llm("default"),
+            llm=llm or llm_predictor or Settings.llm,
             nodes=nodes,
             node_template=node_template,
             combine_template=combine_template,
@@ -176,7 +176,7 @@ class KeywordExtractor(BaseExtractor):
             raise ValueError("num_keywords must be >= 1")
 
         super().__init__(
-            llm=llm or llm_predictor or resolve_llm("default"),
+            llm=llm or llm_predictor or Settings.llm,
             keywords=keywords,
             num_workers=num_workers,
             **kwargs,
@@ -272,7 +272,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
             raise ValueError("questions must be >= 1")
 
         super().__init__(
-            llm=llm or llm_predictor or resolve_llm("default"),
+            llm=llm or llm_predictor or Settings.llm,
             questions=questions,
             prompt_template=prompt_template,
             embedding_only=embedding_only,
@@ -361,7 +361,7 @@ class SummaryExtractor(BaseExtractor):
         self._next_summary = "next" in summaries
 
         super().__init__(
-            llm=llm or llm_predictor or resolve_llm("default"),
+            llm=llm or llm_predictor or Settings.llm,
             summaries=summaries,
             prompt_template=prompt_template,
             num_workers=num_workers,

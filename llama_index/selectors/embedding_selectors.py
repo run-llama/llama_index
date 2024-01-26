@@ -6,10 +6,10 @@ from llama_index.core.base_selector import (
     SingleSelection,
 )
 from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.schema import QueryBundle
+from llama_index.settings import Settings
 from llama_index.tools.types import ToolMetadata
 
 
@@ -34,7 +34,7 @@ class EmbeddingSingleSelector(BaseSelector):
         embed_model: Optional[BaseEmbedding] = None,
     ) -> "EmbeddingSingleSelector":
         # optionally initialize defaults
-        embed_model = embed_model or resolve_embed_model("default")
+        embed_model = embed_model or Settings.embed_model
 
         # construct prompt
         return cls(embed_model)

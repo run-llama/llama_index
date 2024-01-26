@@ -10,6 +10,7 @@ from llama_index.prompts import PromptTemplate
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.retrievers import BaseRetriever
 from llama_index.schema import IndexNode, NodeWithScore, QueryBundle
+from llama_index.settings import Settings
 
 QUERY_GEN_PROMPT = (
     "You are a helpful assistant that generates multiple search queries based on a "
@@ -31,7 +32,7 @@ class QueryFusionRetriever(BaseRetriever):
     def __init__(
         self,
         retrievers: List[BaseRetriever],
-        llm: Optional[LLMType] = "default",
+        llm: Optional[LLMType] = None,
         query_gen_prompt: Optional[str] = None,
         mode: FUSION_MODES = FUSION_MODES.SIMPLE,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
@@ -49,7 +50,7 @@ class QueryFusionRetriever(BaseRetriever):
         self.use_async = use_async
 
         self._retrievers = retrievers
-        self._llm = resolve_llm(llm)
+        self._llm = resolve_llm(llm) if llm else Settings.llm
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,

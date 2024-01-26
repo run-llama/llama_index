@@ -1,7 +1,6 @@
 from typing import List, Optional, Sequence, cast
 
 from llama_index.llms.llm import LLM
-from llama_index.llms.openai import OpenAI
 from llama_index.program.openai_program import OpenAIPydanticProgram
 from llama_index.prompts.mixin import PromptDictType
 from llama_index.question_gen.prompts import build_tools_text
@@ -11,6 +10,7 @@ from llama_index.question_gen.types import (
     SubQuestionList,
 )
 from llama_index.schema import QueryBundle
+from llama_index.settings import Settings
 from llama_index.tools.types import ToolMetadata
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
@@ -61,7 +61,7 @@ class OpenAIQuestionGenerator(BaseQuestionGenerator):
         llm: Optional[LLM] = None,
         verbose: bool = False,
     ) -> "OpenAIQuestionGenerator":
-        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        llm = llm or Settings.llm
         program = OpenAIPydanticProgram.from_defaults(
             output_cls=SubQuestionList,
             llm=llm,

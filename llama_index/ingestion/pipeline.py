@@ -13,11 +13,11 @@ from typing import Any, Generator, List, Optional, Sequence, Union
 from fsspec import AbstractFileSystem
 
 from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
 from llama_index.node_parser import SentenceSplitter
 from llama_index.readers.base import ReaderConfig
 from llama_index.schema import BaseNode, Document, MetadataMode, TransformComponent
+from llama_index.settings import Settings
 from llama_index.storage.docstore import BaseDocumentStore, SimpleDocumentStore
 from llama_index.storage.storage_context import DOCSTORE_FNAME
 from llama_index.utils import concat_dirs
@@ -255,7 +255,7 @@ class IngestionPipeline(BaseModel):
     def _get_default_transformations(self) -> List[TransformComponent]:
         return [
             SentenceSplitter(),
-            resolve_embed_model("default"),
+            Settings.embed_model,
         ]
 
     def _prepare_inputs(

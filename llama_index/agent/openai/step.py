@@ -35,13 +35,13 @@ from llama_index.llms.openai_utils import OpenAIToolCall
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
+from llama_index.settings import Settings
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
-DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
 def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
@@ -207,7 +207,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         """
         tools = tools or []
 
-        llm = llm or OpenAI(model=DEFAULT_MODEL_NAME)
+        llm = llm or Settings.llm
         if not isinstance(llm, OpenAI):
             raise ValueError("llm must be a OpenAI instance")
 
