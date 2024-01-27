@@ -349,7 +349,10 @@ class VectaraIndex(BaseManagedIndex):
                 RetrieverQueryEngine,
             )
 
-            llm = resolve_llm(llm) or Settings.llm
+            llm = (
+                resolve_llm(llm, callback_manager=self._callback_manager)
+                or Settings.llm
+            )
 
             retriever = self.as_retriever(**kwargs)
             return RetrieverQueryEngine.from_args(

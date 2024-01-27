@@ -386,7 +386,7 @@ class BaseIndex(Generic[IS], ABC):
 
         retriever = self.as_retriever(**kwargs)
         llm = (
-            resolve_llm(llm)
+            resolve_llm(llm, callback_manager=self._callback_manager)
             if llm
             else llm_from_settings_or_context(Settings, self.service_context)
         )
@@ -403,7 +403,11 @@ class BaseIndex(Generic[IS], ABC):
         llm: Optional[LLMType] = None,
         **kwargs: Any,
     ) -> BaseChatEngine:
-        llm = resolve_llm(llm) if llm else Settings.llm
+        llm = (
+            resolve_llm(llm, callback_manager=self._callback_manager)
+            if llm
+            else Settings.llm
+        )
 
         query_engine = self.as_query_engine(llm=llm, **kwargs)
 
