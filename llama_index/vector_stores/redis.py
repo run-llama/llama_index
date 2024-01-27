@@ -1,6 +1,6 @@
 """Redis Vector store index.
 
-An index that that is built on top of an existing vector store.
+An index that is built on top of an existing vector store.
 """
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
