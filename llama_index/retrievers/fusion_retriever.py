@@ -50,7 +50,9 @@ class QueryFusionRetriever(BaseRetriever):
         self.use_async = use_async
 
         self._retrievers = retrievers
-        self._llm = resolve_llm(llm) if llm else Settings.llm
+        self._llm = (
+            resolve_llm(llm, callback_manager=callback_manager) if llm else Settings.llm
+        )
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,

@@ -106,7 +106,7 @@ class LLMPredictor(BaseLLMPredictor):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         """Initialize params."""
-        self._llm = resolve_llm(llm)
+        self._llm = resolve_llm(llm, callback_manager=callback_manager)
 
         if callback_manager:
             self._llm.callback_manager = callback_manager

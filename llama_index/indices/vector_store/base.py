@@ -65,7 +65,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         self._use_async = use_async
         self._store_nodes_override = store_nodes_override
         self._embed_model = (
-            resolve_embed_model(embed_model)
+            resolve_embed_model(embed_model, callback_manager=callback_manager)
             if embed_model
             else embed_model_from_settings_or_context(Settings, service_context)
         )
