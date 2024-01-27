@@ -21,6 +21,7 @@ from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinTy
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, TransformComponent
 from llama_index.settings import (
     Settings,
+    callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
     transformations_from_settings_or_context,
 )
@@ -137,7 +138,10 @@ class DatasetGenerator(PromptMixin):
     ) -> None:
         """Init params."""
         self.llm = llm or llm_from_settings_or_context(Settings, service_context)
-        self.callback_manager = callback_manager or CallbackManager()
+        self.callback_manager = (
+            callback_manager
+            or callback_manager_from_settings_or_context(Settings, service_context)
+        )
         self.text_question_template = text_question_template or PromptTemplate(
             DEFAULT_QUESTION_GENERATION_PROMPT
         )
@@ -176,6 +180,10 @@ class DatasetGenerator(PromptMixin):
         transformations = transformations or transformations_from_settings_or_context(
             Settings, service_context
         )
+        callback_manager = (
+            callback_manager
+            or callback_manager_from_settings_or_context(Settings, service_context)
+        )
 
         nodes = run_transformations(
             documents, transformations, show_progress=show_progress
@@ -196,6 +204,7 @@ class DatasetGenerator(PromptMixin):
         return cls(
             nodes=nodes,
             llm=llm,
+            callback_manager=callback_manager,
             num_questions_per_chunk=num_questions_per_chunk,
             text_question_template=text_question_template,
             text_qa_template=text_qa_template,
