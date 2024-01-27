@@ -53,15 +53,19 @@ class IndexDocumentSummary(IndexStruct):
         return list(self.summary_id_to_node_ids.keys())
 
     def delete(self, doc_id: str) -> None:
-        """Delete a Node."""
-        if doc_id not in self.doc_id_to_summary_id:
-            return
+        """Delete a document and its nodes."""
         summary_id = self.doc_id_to_summary_id[doc_id]
         del self.doc_id_to_summary_id[doc_id]
         node_ids = self.summary_id_to_node_ids[summary_id]
         for node_id in node_ids:
             del self.node_id_to_summary_id[node_id]
         del self.summary_id_to_node_ids[summary_id]
+
+    def delete_nodes(self, node_ids: List[str]) -> None:
+        for node_id in node_ids:
+            summary_id = self.node_id_to_summary_id[node_id]
+            self.summary_id_to_node_ids[summary_id].remove(node_id)
+            del self.node_id_to_summary_id[node_id]
 
     @classmethod
     def get_type(cls) -> IndexStructType:

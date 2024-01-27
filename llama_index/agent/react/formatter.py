@@ -1,5 +1,6 @@
 # ReAct agent formatter
 
+import logging
 from abc import abstractmethod
 from typing import List, Optional, Sequence
 
@@ -11,6 +12,8 @@ from llama_index.agent.react.types import BaseReasoningStep, ObservationReasonin
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.tools import BaseTool
+
+logger = logging.getLogger(__name__)
 
 
 def get_react_tool_descriptions(tools: Sequence[BaseTool]) -> List[str]:
@@ -91,9 +94,34 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         ]
 
     @classmethod
-    def from_context(self, context: str) -> "ReActChatFormatter":
-        """Create ReActChatFormatter from context."""
+    def from_defaults(
+        cls,
+        system_header: Optional[str] = None,
+        context: Optional[str] = None,
+    ) -> "ReActChatFormatter":
+        """Create ReActChatFormatter from defaults."""
+        if not system_header:
+            system_header = (
+                REACT_CHAT_SYSTEM_HEADER
+                if not context
+                else CONTEXT_REACT_CHAT_SYSTEM_HEADER
+            )
+
         return ReActChatFormatter(
-            context=context,
-            system_header=CONTEXT_REACT_CHAT_SYSTEM_HEADER,
+            system_header=system_header,
+            context=context or "",
+        )
+
+    @classmethod
+    def from_context(cls, context: str) -> "ReActChatFormatter":
+        """Create ReActChatFormatter from context.
+
+        NOTE: deprecated
+
+        """
+        logger.warning(
+            "ReActChatFormatter.from_context is deprecated, please use `from_defaults` instead."
+        )
+        return ReActChatFormatter.from_defaults(
+            system_header=CONTEXT_REACT_CHAT_SYSTEM_HEADER, context=context
         )

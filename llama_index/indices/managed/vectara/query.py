@@ -97,16 +97,16 @@ class VectaraQueryEngine(BaseQueryEngine):
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
-            nodes, response = self._retriever._vectara_query(
-                query_bundle,
-                kwargs={
+            kwargs = (
+                {
                     "summary_response_lang": self._summary_response_lang,
                     "summary_num_results": self._summary_num_results,
                     "summary_prompt_name": self._summary_prompt_name,
                 }
                 if self._summary_enabled
-                else {},
+                else {}
             )
+            nodes, response = self._retriever._vectara_query(query_bundle, **kwargs)
             query_event.on_end(payload={EventPayload.RESPONSE: response})
         return Response(response=response, source_nodes=nodes)
 

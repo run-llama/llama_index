@@ -269,6 +269,15 @@ maxdepth: 1
 /examples/llm/rungpt.ipynb
 ```
 
+## SageMaker
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/sagemaker_endpoint_llm.ipynb
+```
+
 ## Together.ai
 
 ```{toctree}

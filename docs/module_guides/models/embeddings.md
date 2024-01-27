@@ -213,6 +213,7 @@ maxdepth: 1
 /examples/embeddings/llm_rails.ipynb
 /examples/embeddings/mistralai.ipynb
 /examples/embeddings/OpenAI.ipynb
+/examples/embeddings/sagemaker_embedding_endpoint.ipynb
 /examples/embeddings/text_embedding_inference.ipynb
 /examples/embeddings/together.ipynb
 /examples/embeddings/voyageai.ipynb
