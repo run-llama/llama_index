@@ -4,7 +4,7 @@ An index that is built on top of an existing vector store.
 
 """
 import logging
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from llama_index.async_utils import run_async_tasks
 from llama_index.core.base_retriever import BaseRetriever
@@ -63,7 +63,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     @classmethod
     def from_vector_store(
         cls,
-        vector_store: VectorStore,
+        vector_store: Optional[Union[VectorStore, BasePydanticVectorStore]],
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "VectorStoreIndex":
