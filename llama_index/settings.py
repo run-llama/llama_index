@@ -37,6 +37,10 @@ class _Settings:
         """Get the LLM."""
         if self._llm is None:
             self._llm = resolve_llm("default")
+
+        if self._callback_manager is not None:
+            self._llm.callback_manager = self._callback_manager
+
         return self._llm
 
     @llm.setter
@@ -61,6 +65,10 @@ class _Settings:
         """Get the embedding model."""
         if self._embed_model is None:
             self._embed_model = resolve_embed_model("default")
+
+        if self._callback_manager is not None:
+            self._embed_model.callback_manager = self._callback_manager
+
         return self._embed_model
 
     @embed_model.setter
@@ -123,6 +131,9 @@ class _Settings:
         """Get the node parser."""
         if self._node_parser is None:
             self._node_parser = SentenceSplitter()
+
+        if self._callback_manager is not None:
+            self._node_parser.callback_manager = self._callback_manager
 
         return self._node_parser
 
