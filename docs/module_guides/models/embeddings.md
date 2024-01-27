@@ -202,6 +202,7 @@ maxdepth: 1
 /examples/embeddings/clarifai.ipynb
 /examples/embeddings/cohereai.ipynb
 /examples/embeddings/custom_embeddings.ipynb
+/examples/embeddings/dashscope_embeddings.ipynb
 /examples/embeddings/elasticsearch.ipynb
 /examples/embeddings/fastembed.ipynb
 /examples/embeddings/google_palm.ipynb
