@@ -8,7 +8,6 @@ from llama_index.embeddings.base import BaseEmbedding
 from llama_index.indices.list.base import SummaryIndex
 from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.ingestion import run_transformations
-from llama_index.llm_predictor.base import BaseLLMPredictor
 from llama_index.llms import LLM
 from llama_index.query_engine.router_query_engine import RouterQueryEngine
 from llama_index.schema import Document, TransformComponent
@@ -51,7 +50,6 @@ class QASummaryQueryEngineBuilder:
     def __init__(
         self,
         llm: Optional[LLM] = None,
-        llm_predictor: Optional[BaseLLMPredictor] = None,
         embed_model: Optional[BaseEmbedding] = None,
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
@@ -70,8 +68,9 @@ class QASummaryQueryEngineBuilder:
         self._embed_model = embed_model or embed_model_from_settings_or_context(
             Settings, service_context
         )
-        self._transformations = transformations_from_settings_or_context(
-            Settings, service_context
+        self._transformations = (
+            transformations
+            or transformations_from_settings_or_context(Settings, service_context)
         )
 
         self._storage_context = storage_context or StorageContext.from_defaults()
