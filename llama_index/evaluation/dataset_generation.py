@@ -5,21 +5,25 @@ import asyncio
 import json
 import re
 import uuid
-from typing import Coroutine, Dict, List, Tuple, Optional
+from typing import Coroutine, Dict, List, Optional, Tuple
 
 from deprecated import deprecated
 
-from llama_index.llms.llm import LLM
 from llama_index import Document, ServiceContext, SummaryIndex
 from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.callbacks.base import CallbackManager
 from llama_index.ingestion import run_transformations
+from llama_index.llms.llm import LLM
 from llama_index.postprocessor.node import KeywordNodePostprocessor
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, TransformComponent
-from llama_index.settings import Settings, llm_from_settings_or_context, transformations_from_settings_or_context
-from llama_index.callbacks.base import CallbackManager
+from llama_index.settings import (
+    Settings,
+    llm_from_settings_or_context,
+    transformations_from_settings_or_context,
+)
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
 Context information is below.
@@ -169,9 +173,8 @@ class DatasetGenerator(PromptMixin):
     ) -> DatasetGenerator:
         """Generate dataset from documents."""
         llm = llm or llm_from_settings_or_context(Settings, service_context)
-        transformations = (
-            transformations
-            or transformations_from_settings_or_context(Settings, service_context)
+        transformations = transformations or transformations_from_settings_or_context(
+            Settings, service_context
         )
 
         nodes = run_transformations(
