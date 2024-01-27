@@ -3,11 +3,12 @@
 import logging
 from enum import Enum
 from http import HTTPStatus
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import PrivateAttr
 
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.schema import ImageType
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,12 @@ class DashScopeBatchTextEmbeddingModels(str, Enum):
 
 EMBED_MAX_INPUT_LENGTH = 2048
 EMBED_MAX_BATCH_SIZE = 25
+
+
+class DashScopeMultiModalEmbeddingModels(str, Enum):
+    """DashScope MultiModalEmbedding models."""
+
+    MULTIMODAL_EMBEDDING_ONE_PEACE_V1 = "multimodal-embedding-one-peace-v1"
 
 
 def get_text_embedding(
@@ -122,8 +129,7 @@ def get_multimodal_embedding(
         ImportError: Need install dashscope package.
 
     Returns:
-        str: The url of the embedding result, format ref:
-        https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-async-api-details
+        List[float]: Embedding result, if failed return empty list.
     """
     try:
         import dashscope
@@ -139,7 +145,7 @@ def get_multimodal_embedding(
         return []
 
 
-class DashScopeTextEmbedding(BaseEmbedding):
+class DashScopeEmbedding(MultiModalEmbedding):
     """DashScope class for text embedding.
 
     Args:
@@ -215,40 +221,6 @@ class DashScopeTextEmbedding(BaseEmbedding):
         """Get query embedding."""
         return self._get_query_embedding(query)
 
-
-class DashScopeBatchTextEmbedding:
-    """DashScope class for batch text embedding.You can input a large amount of text to be
-       embedding into a file line by line, upload it to the network (it needs to be
-       publicly accessible), and call the embedding service through the file URL.
-       After the task is completed, the embedding result is saved on the network
-       and the result file URL is returned to you.
-
-    Args:
-        model_name (str): Model name for embedding.
-            Defaults to DashScopeBatchTextEmbeddingModels.TEXT_EMBEDDING_ASYNC_V2.
-                Options are:
-
-                - DashScopeBatchTextEmbeddingModels.TEXT_EMBEDDING_ASYNC_V1
-                - DashScopeBatchTextEmbeddingModels.TEXT_EMBEDDING_ASYNC_V2
-        api_key (str): The DashScope api key.
-    """
-
-    _api_key: Optional[str] = PrivateAttr()
-    _model_name: str = PrivateAttr()
-
-    def __init__(
-        self,
-        model_name: str = DashScopeBatchTextEmbeddingModels.TEXT_EMBEDDING_ASYNC_V2,
-        api_key: Optional[str] = None,
-        **kwargs: Any,
-    ) -> None:
-        self._api_key = api_key
-        self._model_name = model_name
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "DashScopeBatchTextEmbedding"
-
     def get_batch_query_embedding(self, embedding_file_url: str) -> Optional[str]:
         """Get batch query embeddings.
 
@@ -260,7 +232,7 @@ class DashScopeBatchTextEmbedding:
                  https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-async-api-details.
         """
         return get_batch_text_embedding(
-            self._model_name,
+            self.model_name,
             embedding_file_url,
             api_key=self._api_key,
             text_type=DashScopeTextEmbeddingType.TEXT_TYPE_QUERY,
@@ -277,8 +249,49 @@ class DashScopeBatchTextEmbedding:
                  https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-async-api-details.
         """
         return get_batch_text_embedding(
-            self._model_name,
+            self.model_name,
             embedding_file_url,
             api_key=self._api_key,
             text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,
+        )
+
+    def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:
+        """
+        Embed the input image synchronously.
+        """
+        input = [{"image": img_file_path}]
+        return get_multimodal_embedding(
+            self.model_name, input=input, api_key=self._api_key
+        )
+
+    async def _aget_image_embedding(self, img_file_path: ImageType) -> List[float]:
+        """
+        Embed the input image asynchronously.
+
+        """
+        return self._get_image_embedding(img_file_path=img_file_path)
+
+    def get_multimodal_embedding(
+        self, input: List[Dict], auto_truncation: bool = False
+    ) -> List[float]:
+        """Call DashScope multimodal embedding.
+        ref: https://help.aliyun.com/zh/dashscope/developer-reference/one-peace-multimodal-embedding-api-details.
+
+        Args:
+            input (str): The input of the multimodal embedding, eg:
+                [{'factor': 1, 'text': '你好'},
+                {'factor': 2, 'audio': 'https://dashscope.oss-cn-beijing.aliyuncs.com/audios/cow.flac'},
+                {'factor': 3, 'image': 'https://dashscope.oss-cn-beijing.aliyuncs.com/images/256_1.png'}]
+
+        Raises:
+            ImportError: Need install dashscope package.
+
+        Returns:
+            List[float]: The embedding result
+        """
+        return get_multimodal_embedding(
+            self.model_name,
+            input=input,
+            api_key=self._api_key,
+            auto_truncation=auto_truncation,
         )
