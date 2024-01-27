@@ -41,16 +41,18 @@ class SimpleChatEngine(BaseChatEngine):
     @classmethod
     def from_defaults(
         cls,
-        service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
+        llm: Optional[LLM] = None,
+        # deprecated
+        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "SimpleChatEngine":
         """Initialize a SimpleChatEngine from default parameters."""
-        llm = llm_from_settings_or_context(Settings, service_context)
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
 
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
