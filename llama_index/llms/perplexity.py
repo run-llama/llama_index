@@ -147,16 +147,22 @@ class Perplexity(LLM):
         return {**base_kwargs, **self.additional_kwargs, **kwargs}
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        url = f"{self.api_base}/completions"
+        url = f"{self.api_base}/chat/completions"
         payload = {
             "model": self.model,
-            "prompt": prompt,
+            "messages": [{
+                "role": "system",
+                "content": "Be precise and concise."
+            }, {
+                "role": "user",
+                "content": prompt,
+            }],
             **self._get_all_kwargs(**kwargs),
         }
         response = requests.post(url, json=payload, headers=self.headers)
         response.raise_for_status()
         data = response.json()
-        return CompletionResponse(text=data["choices"][0]["text"], raw=data)
+        return CompletionResponse(text=data["choices"][0]["message"], raw=data)
 
     @llm_completion_callback()
     def complete(
@@ -188,7 +194,7 @@ class Perplexity(LLM):
         return self._chat(messages, **kwargs)
 
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        url = f"{self.api_base}/completions"
+        url = f"{self.api_base}/chat/completions"
         payload = {
             "model": self.model,
             "prompt": prompt,
@@ -235,7 +241,7 @@ class Perplexity(LLM):
         return await self._achat(messages, **kwargs)
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        url = f"{self.api_base}/completions"
+        url = f"{self.api_base}/chat/completions"
         payload = {
             "model": self.model,
             "prompt": prompt,
@@ -275,7 +281,7 @@ class Perplexity(LLM):
     ) -> CompletionResponseAsyncGen:
         import aiohttp
 
-        url = f"{self.api_base}/completions"
+        url = f"{self.api_base}/chat/completions"
         payload = {
             "model": self.model,
             "prompt": prompt,
