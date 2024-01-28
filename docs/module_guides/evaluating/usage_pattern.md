@@ -211,6 +211,7 @@ eval_results = await runner.aevaluate_queries(
 
 We also integrate with community evaluation tools.
 
+- [UpTrain](https://github.com/uptrain-ai/uptrain)
 - [DeepEval](https://github.com/confident-ai/deepeval)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
 
