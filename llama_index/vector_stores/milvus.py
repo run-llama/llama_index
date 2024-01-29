@@ -62,7 +62,7 @@ class MilvusVectorStore(VectorStore):
         similarity_metric (str, optional): The similarity metric to use,
             currently supports IP and L2.
         consistency_level (str, optional): Which consistency level to use for a newly
-            created collection. Defaults to "Session".
+            created collection. Defaults to "Strong".
         overwrite (bool, optional): Whether to overwrite existing collection with same
             name. Defaults to False.
         text_key (str, optional): What key text is stored in in the passed collection.
