@@ -16,6 +16,7 @@ from llama_index.embeddings.dashscope import (
     DashScopeEmbedding,
     DashScopeMultiModalEmbeddingModels,
     DashScopeTextEmbeddingModels,
+    DashScopeTextEmbeddingType,
 )
 from llama_index.embeddings.elasticsearch import (
     ElasticsearchEmbedding,
@@ -89,6 +90,7 @@ __all__ = [
     "GeminiEmbedding",
     "DashScopeEmbedding",
     "DashScopeTextEmbeddingModels",
+    "DashScopeTextEmbeddingType",
     "DashScopeBatchTextEmbeddingModels",
     "DashScopeMultiModalEmbeddingModels",
 ]

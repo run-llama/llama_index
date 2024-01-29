@@ -155,18 +155,28 @@ class DashScopeEmbedding(MultiModalEmbedding):
 
                 - DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V1
                 - DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V2
+        text_type (str): The input type, ['query', 'document'],
+            For asymmetric tasks such as retrieval, in order to achieve better
+            retrieval results, it is recommended to distinguish between query
+            text (query) and base text (document) types, clustering Symmetric
+            tasks such as classification and classification do not need to
+            be specially specified, and the system default
+            value "document" can be used.
         api_key (str): The DashScope api key.
     """
 
     _api_key: Optional[str] = PrivateAttr()
+    _text_type: Optional[str] = PrivateAttr()
 
     def __init__(
         self,
         model_name: str = DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V2,
+        text_type: str = "document",
         api_key: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         self._api_key = api_key
+        self._text_type = text_type
         super().__init__(
             model_name=model_name,
             **kwargs,
@@ -174,7 +184,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        return "DashScopeTextEmbedding"
+        return "DashScopeEmbedding"
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
@@ -182,7 +192,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
             self.model_name,
             query,
             api_key=self._api_key,
-            text_type=DashScopeTextEmbeddingType.TEXT_TYPE_QUERY,
+            text_type=self._text_type,
         )
         if len(emb) > 0:
             return emb[0]
@@ -195,7 +205,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
             self.model_name,
             text,
             api_key=self._api_key,
-            text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,
+            text_type=self._text_type,
         )
         if len(emb) > 0:
             return emb[0]
@@ -208,7 +218,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
             self.model_name,
             texts,
             api_key=self._api_key,
-            text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,
+            text_type=self._text_type,
         )
 
     # TODO: use proper async methods
@@ -235,7 +245,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
             self.model_name,
             embedding_file_url,
             api_key=self._api_key,
-            text_type=DashScopeTextEmbeddingType.TEXT_TYPE_QUERY,
+            text_type=self._text_type,
         )
 
     def get_batch_text_embedding(self, embedding_file_url: str) -> Optional[str]:
@@ -252,7 +262,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
             self.model_name,
             embedding_file_url,
             api_key=self._api_key,
-            text_type=DashScopeTextEmbeddingType.TEXT_TYPE_DOCUMENT,
+            text_type=self._text_type,
         )
 
     def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:
