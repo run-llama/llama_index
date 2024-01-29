@@ -62,7 +62,7 @@ def parse_action_reasoning_step(output: str) -> ActionReasoningStep:
     # First we try json, if this fails we use ast
     try:
         action_input_dict = json.loads(json_str)
-    except json.JSONDecodeError:
+    except Exception:
         action_input_dict = action_input_parser(json_str)
     return ActionReasoningStep(
         thought=thought, action=action, action_input=action_input_dict
