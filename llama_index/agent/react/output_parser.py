@@ -50,6 +50,9 @@ def extract_final_response(input_text: str) -> Tuple[str, str]:
 
 
 def parse_action_reasoning_step(output: str) -> ActionReasoningStep:
+    """
+    Parse an action reasoning step from the LLM output.
+    """
     import dirtyjson as json
 
     thought, action, action_input = extract_tool_use(output)
