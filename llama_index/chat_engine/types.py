@@ -1,3 +1,4 @@
+import time
 import asyncio
 import logging
 import queue
@@ -165,7 +166,8 @@ class StreamingAgentChatResponse:
                 yield delta
             except queue.Empty:
                 # Queue is empty, but we're not done yet
-                continue
+                pass
+            time.sleep(0.01)
         self.response = self._unformatted_response.strip()
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
