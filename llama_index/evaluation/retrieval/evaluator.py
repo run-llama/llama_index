@@ -42,12 +42,12 @@ class RetrieverEvaluator(BaseRetrievalEvaluator):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        super().__init__(metrics=metrics, retriever=retriever, **kwargs)
-
-        if "node_postprocessors" in kwargs:
-            self.node_postprocessors = kwargs["node_postprocessors"]
-        else:
-            self.node_postprocessors = node_postprocessors
+        super().__init__(
+            metrics=metrics,
+            retriever=retriever,
+            node_postprocessors=node_postprocessors,
+            **kwargs,
+        )
 
     async def _aget_retrieved_ids_and_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
@@ -92,9 +92,12 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        super().__init__(metrics=metrics, retriever=retriever, **kwargs)
-        self.retriever = retriever
-        self.node_postprocessors = node_postprocessors
+        super().__init__(
+            metrics=metrics,
+            retriever=retriever,
+            node_postprocessors=node_postprocessors,
+            **kwargs,
+        )
 
     async def _aget_retrieved_ids_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
