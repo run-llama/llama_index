@@ -1,7 +1,21 @@
 from llama_index.agent.react.output_parser import (
     extract_final_response,
     extract_tool_use,
+    parse_action_reasoning_step,
 )
+
+
+def test_parse_action_reasoning_step() -> None:
+    mock_input_text = """\
+Thought: Gotta use a tool.
+Action: tool
+Action Input: {'pages': ['coffee'] /* comment */, 'load_kwargs': {}, 'query_str': ''}, along those lines.
+"""
+    assert parse_action_reasoning_step(mock_input_text).action_input == {
+        "pages": ["coffee"],
+        "load_kwargs": {},
+        "query_str": "",
+    }
 
 
 def test_extract_tool_use() -> None:

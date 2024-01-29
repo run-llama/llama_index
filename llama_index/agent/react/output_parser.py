@@ -1,9 +1,10 @@
 """ReAct output parser."""
 
 
-import json
 import re
 from typing import Tuple
+
+import dirtyjson as json
 
 from llama_index.agent.react.types import (
     ActionReasoningStep,
@@ -50,6 +51,19 @@ def extract_final_response(input_text: str) -> Tuple[str, str]:
     return thought, answer
 
 
+def parse_action_reasoning_step(output: str) -> ActionReasoningStep:
+    thought, action, action_input = extract_tool_use(output)
+    json_str = extract_json_str(action_input)
+    # First we try json, if this fails we use ast
+    try:
+        action_input_dict = json.loads(json_str)
+    except json.JSONDecodeError:
+        action_input_dict = action_input_parser(json_str)
+    return ActionReasoningStep(
+        thought=thought, action=action, action_input=action_input_dict
+    )
+
+
 class ReActOutputParser(BaseOutputParser):
     """ReAct Output parser."""
 
@@ -85,18 +99,7 @@ class ReActOutputParser(BaseOutputParser):
             )
 
         if "Action:" in output:
-            thought, action, action_input = extract_tool_use(output)
-            json_str = extract_json_str(action_input)
-
-            # First we try json, if this fails we use ast
-            try:
-                action_input_dict = json.loads(json_str)
-            except json.JSONDecodeError:
-                action_input_dict = action_input_parser(json_str)
-
-            return ActionReasoningStep(
-                thought=thought, action=action, action_input=action_input_dict
-            )
+            return parse_action_reasoning_step(output)
 
         raise ValueError(f"Could not parse output: {output}")
 
