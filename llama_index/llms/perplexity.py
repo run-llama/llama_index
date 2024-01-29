@@ -128,8 +128,7 @@ class Perplexity(LLM):
             "codellama-34b-instruct",
             "llama-2-70b-chat",
             "mistral-7b-instruct",
-            "mixtral-8x7b-instruct"
-            "pplx-7b-chat",
+            "mixtral-8x7b-instruct" "pplx-7b-chat",
             "pplx-70b-chat",
             "pplx-7b-online",
             "pplx-70b-online",
@@ -150,13 +149,13 @@ class Perplexity(LLM):
         url = f"{self.api_base}/chat/completions"
         payload = {
             "model": self.model,
-            "messages": [{
-                "role": "system",
-                "content": "Be precise and concise."
-            }, {
-                "role": "user",
-                "content": prompt,
-            }],
+            "messages": [
+                {"role": "system", "content": "Be precise and concise."},
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
             **self._get_all_kwargs(**kwargs),
         }
         response = requests.post(url, json=payload, headers=self.headers)
