@@ -15,7 +15,7 @@ def create_gemini_client(model: str) -> Any:
 
 
 def convert_chat_message_to_gemini_content(
-    message: ChatMessage, is_history: bool
+    message: ChatMessage, is_history: bool = True
 ) -> Any:
     from vertexai.preview.generative_models import Content, Part
 
