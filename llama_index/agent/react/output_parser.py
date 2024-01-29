@@ -53,6 +53,8 @@ def parse_action_reasoning_step(output: str) -> ActionReasoningStep:
     """
     Parse an action reasoning step from the LLM output.
     """
+    # Weaker LLMs may generate ReActAgent steps whose Action Input are horrible JSON strings.
+    # `dirtyjson` is more lenient than `json` in parsing JSON strings.
     import dirtyjson as json
 
     thought, action, action_input = extract_tool_use(output)
