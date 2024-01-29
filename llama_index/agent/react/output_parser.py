@@ -4,8 +4,6 @@
 import re
 from typing import Tuple
 
-import dirtyjson as json
-
 from llama_index.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
@@ -52,6 +50,8 @@ def extract_final_response(input_text: str) -> Tuple[str, str]:
 
 
 def parse_action_reasoning_step(output: str) -> ActionReasoningStep:
+    import dirtyjson as json
+
     thought, action, action_input = extract_tool_use(output)
     json_str = extract_json_str(action_input)
     # First we try json, if this fails we use ast
