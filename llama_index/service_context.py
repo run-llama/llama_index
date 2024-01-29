@@ -205,7 +205,7 @@ class ServiceContext:
             or node_parser
             or _get_default_node_parser(
                 chunk_size=chunk_size or DEFAULT_CHUNK_SIZE,
-                chunk_overlap=chunk_overlap or SENTENCE_CHUNK_OVERLAP,
+                chunk_overlap=SENTENCE_CHUNK_OVERLAP if chunk_overlap is None else chunk_overlap,
                 callback_manager=callback_manager,
             )
         )
@@ -306,7 +306,7 @@ class ServiceContext:
                 or node_parser
                 or _get_default_node_parser(
                     chunk_size=chunk_size or DEFAULT_CHUNK_SIZE,
-                    chunk_overlap=chunk_overlap or SENTENCE_CHUNK_OVERLAP,
+                    chunk_overlap=SENTENCE_CHUNK_OVERLAP if chunk_overlap is None else chunk_overlap,
                     callback_manager=callback_manager,
                 )
             )
