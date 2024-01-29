@@ -160,7 +160,7 @@ class StreamingAgentChatResponse:
     def response_gen(self) -> Generator[str, None, None]:
         while not self._is_done or not self._queue.empty():
             try:
-                delta = self._queue.get(block=False)
+                delta = self._queue.get(block=True, timeout=1)
                 self._unformatted_response += delta
                 yield delta
             except queue.Empty:
