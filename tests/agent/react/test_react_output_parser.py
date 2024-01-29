@@ -16,6 +16,18 @@ Action Input: {"a": 1, "b": 1}
     assert action_input == '{"a": 1, "b": 1}'
 
 
+def test_extract_tool_use_with_nested_dicts() -> None:
+    mock_input_text = """\
+Thought: Gotta use a tool.
+Action: tool
+Action Input: {"a": 1, "b": {}}
+"""
+    thought, action, action_input = extract_tool_use(mock_input_text)
+    assert thought == "Gotta use a tool."
+    assert action == "tool"
+    assert action_input == '{"a": 1, "b": {}}'
+
+
 def test_extract_tool_use_() -> None:
     mock_input_text = """\
 Thought: I need to use a tool to help me answer the question.
