@@ -76,11 +76,7 @@ class RagDatasetGenerator(PromptMixin):
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self.question_gen_query = (
             question_gen_query
-            or f"You are a Teacher/Professor. Your task is to setup \
-                        {num_questions_per_chunk} questions for an upcoming \
-                        quiz/examination. The questions should be diverse in nature \
-                            across the document. Restrict the questions to the \
-                                context information provided."
+            or f"You are a Teacher/Professor. Your task is to setup {num_questions_per_chunk} questions for an upcoming quiz/examination. The questions should be diverse in nature across the document. Restrict the questions to the context information provided."
         )
         self.nodes = nodes
         self._metadata_mode = metadata_mode

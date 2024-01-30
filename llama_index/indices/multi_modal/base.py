@@ -1,6 +1,6 @@
 """Multi Modal Vector Store Index.
 
-An index that that is built on top of multiple vector stores for different modalities.
+An index that is built on top of multiple vector stores for different modalities.
 
 """
 import logging

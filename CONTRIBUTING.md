@@ -236,7 +236,7 @@ An output parser enables us to extract structured output from the plain text out
 **Interface**:
 
 - `format`: formats a query `str` with structured output formatting instructions, and outputs the formatted `str`
-- `parse`: takes a `str` (from LLM response) as input, and gives a parsed tructured output (optionally also validated, error-corrected).
+- `parse`: takes a `str` (from LLM response) as input, and gives a parsed structured output (optionally also validated, error-corrected).
 
 **Examples**:
 

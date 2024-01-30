@@ -111,14 +111,13 @@ class Perplexity(LLM):
     def _get_context_window(self) -> int:
         model_context_windows = {
             "codellama-34b-instruct": 16384,
-            "llama-2-13b-chat": 4096,
             "llama-2-70b-chat": 4096,
             "mistral-7b-instruct": 4096,
-            "replit-code-v1.5-3b": 4096,
-            "openhermes-2-mistral-7b": 4096,
-            "openhermes-2.5-mistral-7b": 4096,
-            "pplx-7b-chat-alpha": 4096,
-            "pplx-70b-chat-alpha": 4096,
+            "mixtral-8x7b-instruct": 4096,
+            "pplx-7b-chat": 8192,
+            "pplx-70b-chat": 4096,
+            "pplx-7b-online": 4096,
+            "pplx-70b-online": 4096,
         }
         return model_context_windows.get(
             self.model, 4096
@@ -127,12 +126,13 @@ class Perplexity(LLM):
     def _is_chat_model(self) -> bool:
         chat_models = {
             "codellama-34b-instruct",
-            "llama-2-13b-chat",
             "llama-2-70b-chat",
             "mistral-7b-instruct",
-            "openhermes-2-mistral-7b",
-            "pplx-7b-chat-alpha",
-            "pplx-70b-chat-alpha",
+            "mixtral-8x7b-instruct",
+            "pplx-7b-chat",
+            "pplx-70b-chat",
+            "pplx-7b-online",
+            "pplx-70b-online",
         }
         return self.model in chat_models
 
@@ -147,16 +147,22 @@ class Perplexity(LLM):
         return {**base_kwargs, **self.additional_kwargs, **kwargs}
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        url = f"{self.api_base}/completions"
+        url = f"{self.api_base}/chat/completions"
         payload = {
             "model": self.model,
-            "prompt": prompt,
+            "messages": [
+                {"role": "system", "content": self.system_prompt},
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
             **self._get_all_kwargs(**kwargs),
         }
         response = requests.post(url, json=payload, headers=self.headers)
         response.raise_for_status()
         data = response.json()
-        return CompletionResponse(text=data["choices"][0]["text"], raw=data)
+        return CompletionResponse(text=data["choices"][0]["message"], raw=data)
 
     @llm_completion_callback()
     def complete(
@@ -188,7 +194,7 @@ class Perplexity(LLM):
         return self._chat(messages, **kwargs)
 
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        url = f"{self.api_base}/completions"
+        url = f"{self.api_base}/chat/completions"
         payload = {
             "model": self.model,
             "prompt": prompt,
@@ -235,7 +241,7 @@ class Perplexity(LLM):
         return await self._achat(messages, **kwargs)
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        url = f"{self.api_base}/completions"
+        url = f"{self.api_base}/chat/completions"
         payload = {
             "model": self.model,
             "prompt": prompt,
@@ -275,7 +281,7 @@ class Perplexity(LLM):
     ) -> CompletionResponseAsyncGen:
         import aiohttp
 
-        url = f"{self.api_base}/completions"
+        url = f"{self.api_base}/chat/completions"
         payload = {
             "model": self.model,
             "prompt": prompt,

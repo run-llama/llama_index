@@ -1,6 +1,6 @@
 """Base Managed Service index.
 
-An index that that is built on top of a managed service.
+An index that is built on top of a managed service.
 
 """
 from abc import ABC, abstractmethod
