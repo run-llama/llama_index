@@ -71,21 +71,21 @@ it can synthesize information across your heterogeneous data sources.
 
 ```python
 from llama_index import VectorStoreIndex, SummaryIndex
-from llama_index.indices.composability import ComposableGraph
+from llama_index.schema import IndexNode
 
 index1 = VectorStoreIndex.from_documents(notion_docs)
 index2 = VectorStoreIndex.from_documents(slack_docs)
 
-graph = ComposableGraph.from_indices(
-    SummaryIndex, [index1, index2], index_summaries=["summary1", "summary2"]
+top_level = SummaryIndex(
+    objects=[
+        IndexNode(text="summary", index_id="notion", obj=index1),
+        IndexNode(text="summary", index_id="slack", obj=index2),
+    ]
 )
-query_engine = graph.as_query_engine()
+
+query_engine = top_level.as_query_engine()
 response = query_engine.query("<query_str>")
 ```
-
-**Guides**
-
-- [City Analysis](/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
 (Route-across-multiple-sources)=
 
@@ -136,7 +136,6 @@ response = query_engine.query(
 **Guides**
 
 - [Router Query Engine Guide](/examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
-- [City Analysis Unified Query Interface](/examples/composable_indices/city_analysis/City_Analysis-Unified-Query.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.ipynb))
 
 ## Compare/Contrast Queries
 
@@ -157,7 +156,6 @@ This module will help break down a complex query into a simpler one over your ex
 **Guides**
 
 - [Query Transformations](/optimizing/advanced_retrieval/query_transformations.md)
-- [City Analysis Compare/Contrast Example](/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb))
 
 You can also rely on the LLM to _infer_ whether to perform compare/contrast queries (see Multi-Document Queries below).
 

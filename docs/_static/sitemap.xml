@@ -8,11 +8,6 @@
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_best.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_personality.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/citation/pdf_page_reference.html</loc></url>
-    <url><loc>https://docs.llamaindex.ai/en/stable/examples/composable_indices/city_analysis/City_Analysis.html</loc></url>
-    <url><loc>https://docs.llamaindex.ai/en/stable/examples/composable_indices/city_analysis/City_Analysis-Decompose.html</loc></url>
-    <url><loc>https://docs.llamaindex.ai/en/stable/examples/composable_indices/city_analysis/City_Analysis-Unified-Query.html</loc></url>
-    <url><loc>https://docs.llamaindex.ai/en/stable/examples/composable_indices/city_analysis/PineconeDemo-CityAnalysis.html</loc></url>
-    <url><loc>https://docs.llamaindex.ai/en/stable/examples/composable_indices/financial_data_analysis/DeepLakeDemo-FinancialData.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/customization/llms/SimpleIndexDemo-ChatGPT.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/customization/streaming/SimpleIndexDemo-streaming.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/customization/streaming/chat_engine_condense_question_stream_response.html</loc></url>

@@ -94,8 +94,6 @@ query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
 response = query_engine.query(query_str)
 ```
 
-Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) for a full walkthrough.
-
 ### Multi-Step Query Transformations
 
 Multi-step query transformations are a generalization on top of existing single-step query transformation approaches.
