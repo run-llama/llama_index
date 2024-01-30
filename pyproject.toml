@@ -78,6 +78,7 @@ spacy = {optional = true, version = "^3.7.1"}
 aiohttp = "^3.8.6"
 networkx = ">=3.0"
 psycopg2-binary = {optional = true, version = "^2.9.9"}
+dirtyjson = "^1.0.8"
 
 [tool.poetry.extras]
 gradientai = [
