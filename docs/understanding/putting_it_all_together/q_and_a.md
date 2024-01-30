@@ -146,9 +146,7 @@ from llama_index.indices.query.query_transform.base import (
     DecomposeQueryTransform,
 )
 
-decompose_transform = DecomposeQueryTransform(
-    service_context.llm, verbose=True
-)
+decompose_transform = DecomposeQueryTransform(llm, verbose=True)
 ```
 
 This module will help break down a complex query into a simpler one over your existing index structure.
@@ -245,7 +243,6 @@ LlamaIndex can support queries that require an understanding of time. It can do 
 
 ## Additional Resources
 
-- [A Guide to Creating a Unified Query Framework over your indexes](/understanding/putting_it_all_together/q_and_a/unified_query.md)
 - [A Guide to Extracting Terms and Definitions](/understanding/putting_it_all_together/q_and_a/terms_definitions_tutorial.md)
 - [SEC 10k Analysis](https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d)
 
@@ -255,7 +252,6 @@ maxdepth: 1
 hidden: true
 ---
 /understanding/putting_it_all_together/q_and_a/terms_definitions_tutorial.md
-/understanding/putting_it_all_together/q_and_a/unified_query.md
 /understanding/putting_it_all_together/graphs.md
 /understanding/putting_it_all_together/structured_data.md
 /understanding/putting_it_all_together/structured_data/Airbyte_demo.ipynb

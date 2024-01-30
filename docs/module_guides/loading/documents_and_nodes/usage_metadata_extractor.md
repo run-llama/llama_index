@@ -38,13 +38,13 @@ nodes = pipeline.run(
 )
 ```
 
-or insert into the service context:
+or insert into an index:
 
 ```python
-from llama_index import ServiceContext
+from llama_index import VectorStoreIndex
 
-service_context = ServiceContext.from_defaults(
-    transformations=[text_splitter, title_extractor, qa_extractor]
+index = VectorStoreIndex.from_documents(
+    documents, transformations=[text_splitter, title_extractor, qa_extractor]
 )
 ```
 

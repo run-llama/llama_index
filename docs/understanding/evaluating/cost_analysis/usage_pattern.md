@@ -27,16 +27,14 @@ token_counter = TokenCountingHandler(
 callback_manager = CallbackManager([token_counter])
 ```
 
-3. Add them to the global `ServiceContext`
+3. Add them to the global `Settings`
 
 ```python
-from llama_index import ServiceContext, set_global_service_context
+from llama_index.settings import Settings
 
-set_global_service_context(
-    ServiceContext.from_defaults(
-        llm=llm, embed_model=embed_model, callback_manager=callback_manager
-    )
-)
+Settings.llm = llm
+Settings.embed_model = embed_model
+Settings.callback_manager = callback_manager
 ```
 
 4. Construct an Index

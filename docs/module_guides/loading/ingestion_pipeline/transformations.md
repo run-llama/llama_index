@@ -27,12 +27,12 @@ nodes = node_parser(documents)
 nodes = await extractor.acall(nodes)
 ```
 
-## Combining with ServiceContext
+## Combining with An Index
 
-Transformations can be passed into a service context, and will be used when calling `from_documents()` or `insert()` on an index.
+Transformations can be passed into an index or overall global settings, and will be used when calling `from_documents()` or `insert()` on an index.
 
 ```python
-from llama_index import ServiceContext, VectorStoreIndex
+from llama_index import VectorStoreIndex
 from llama_index.extractors import (
     TitleExtractor,
     QuestionsAnsweredExtractor,
@@ -46,12 +46,14 @@ transformations = [
     QuestionsAnsweredExtractor(questions=3),
 ]
 
-service_context = ServiceContext.from_defaults(
-    transformations=[text_splitter, title_extractor, qa_extractor]
-)
+# global
+from llama_index.settings import Settings
 
+Settings.transformations = [text_splitter, title_extractor, qa_extractor]
+
+# per-index
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents, transformations=transformations
 )
 ```
 

@@ -134,19 +134,20 @@ Maybe you want to customize which template is used at each step in `tree_summari
 Below we show the `__init__()` function, as well as the two abstract methods that every response synthesizer must implement. The basic requirements are to process a query and text chunks, and return a string (or string generator) response.
 
 ```python
+from llama_index.settings import Settings
+
+
 class BaseSynthesizer(ABC):
     """Response builder class."""
 
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         streaming: bool = False,
     ) -> None:
         """Init params."""
-        self._service_context = (
-            service_context or ServiceContext.from_defaults()
-        )
-        self._callback_manager = self._service_context.callback_manager
+        self._llm = llm or Settings.llm
+        self._callback_manager = Settings.callback_manager
         self._streaming = streaming
 
     @abstractmethod

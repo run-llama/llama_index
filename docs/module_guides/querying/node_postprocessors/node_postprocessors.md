@@ -66,7 +66,7 @@ The threshold cutoff can be specified instead, which uses a raw similarity cutof
 from llama_index.postprocessor import SentenceEmbeddingOptimizer
 
 postprocessor = SentenceEmbeddingOptimizer(
-    embed_model=service_context.embed_model,
+    embed_model=embed_model,
     percentile_cutoff=0.5,
     # threshold_cutoff=0.7
 )
@@ -120,7 +120,7 @@ Uses a LLM to re-order nodes by asking the LLM to return the relevant documents 
 ```python
 from llama_index.postprocessor import LLMRerank
 
-postprocessor = LLMRerank(top_n=2, service_context=service_context)
+postprocessor = LLMRerank(top_n=2, llm=llm)
 
 postprocessor.postprocess_nodes(nodes)
 ```
@@ -153,7 +153,7 @@ This postproccesor returns the top K nodes after sorting by date and removing ol
 from llama_index.postprocessor import EmbeddingRecencyPostprocessor
 
 postprocessor = EmbeddingRecencyPostprocessor(
-    service_context=service_context, date_key="date", similarity_cutoff=0.7
+    embed_model=embed_model, date_key="date", similarity_cutoff=0.7
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -185,7 +185,7 @@ The PII (Personal Identifiable Information) postprocssor removes information tha
 from llama_index.postprocessor import PIINodePostprocessor
 
 postprocessor = PIINodePostprocessor(
-    service_context=service_context  # this should be setup with an LLM you trust
+    llm=llm  # this should be setup with an LLM you trust
 )
 
 postprocessor.postprocess_nodes(nodes)
@@ -234,7 +234,7 @@ from llama_index.postprocessor import AutoPrevNextNodePostprocessor
 
 postprocessor = AutoPrevNextNodePostprocessor(
     docstore=index.docstore,
-    service_context=service_context,
+    llm=llm,
     num_nodes=1,  # number of nodes to fetch when looking forawrds or backwards)
 )
 postprocessor.postprocess_nodes(nodes)

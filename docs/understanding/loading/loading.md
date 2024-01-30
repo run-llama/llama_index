@@ -81,14 +81,19 @@ vector_index.as_query_engine()
 
 Under the hood, this splits your Document into Node objects, which are similar to Documents (they contain text and metadata) but have a relationship to their parent Document.
 
-If you want to customize core components, like the text splitter, through this abstraction you can pass in a custom `ServiceContext` object:
+If you want to customize core components, like the text splitter, through this abstraction you can pass in a custom `transformations` list or apply to the global `Settings`:
 
 ```python
 text_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=10)
-service_context = ServiceContext.from_defaults(text_splitter=text_splitter)
 
+# global
+from llama_index.settings import Settings
+
+Settings.text_splitter = text_splitter
+
+# per-index
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents, transformations=[text_splitter]
 )
 ```
 

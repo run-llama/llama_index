@@ -75,15 +75,15 @@ We build each index and save it to disk.
 
 ```python
 # initialize simple vector indices
-from llama_index import VectorStoreIndex, ServiceContext, StorageContext
+from llama_index import VectorStoreIndex, StorageContext
+from llama_index.settings import Settings
 
+Settings.chunk_size = 512
 index_set = {}
-service_context = ServiceContext.from_defaults(chunk_size=512)
 for year in years:
     storage_context = StorageContext.from_defaults()
     cur_index = VectorStoreIndex.from_documents(
         doc_set[year],
-        service_context=service_context,
         storage_context=storage_context,
     )
     index_set[year] = cur_index
@@ -102,7 +102,7 @@ for year in years:
         persist_dir=f"./storage/{year}"
     )
     cur_index = load_index_from_storage(
-        storage_context, service_context=service_context
+        storage_context,
     )
     index_set[year] = cur_index
 ```
@@ -131,14 +131,15 @@ individual_query_engine_tools = [
 ]
 ```
 
-Now we can create the Sub Question Query Engine, which will allow us to synthesize answers across the 10-K filings. We pass in the `individual_query_engine_tools` we defined above, as well as a `service_context` that will be used to run the subqueries.
+Now we can create the Sub Question Query Engine, which will allow us to synthesize answers across the 10-K filings. We pass in the `individual_query_engine_tools` we defined above, as well as an `llm` that will be used to run the subqueries.
 
 ```python
+from llama_index.llms import OpenAI
 from llama_index.query_engine import SubQuestionQueryEngine
 
 query_engine = SubQuestionQueryEngine.from_defaults(
     query_engine_tools=individual_query_engine_tools,
-    service_context=service_context,
+    llm=OpenAI(model="gpt-3.5-turbo"),
 )
 ```
 

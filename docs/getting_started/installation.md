@@ -24,7 +24,7 @@ need additional environment keys + tokens setup depending on the LLM provider.
 
 ## Local Model Setup
 
-If you don't wish to use OpenAI, consider setting up a local LLM and embedding model in the service context.
+If you don't wish to use OpenAI, consider setting up a local LLM and embedding model in the `Settings`.
 
 A full guide to using and configuring LLMs available [here](/module_guides/models/llms.md).
 

@@ -82,20 +82,18 @@ set_global_handler("wandb", run_args={"project": "llamaindex"})
 
 # NOTE: No need to do the following
 # from llama_index.callbacks import WandbCallbackHandler, CallbackManager
+# from llama_index.settings import Settings
 # wandb_callback = WandbCallbackHandler(run_args={"project": "llamaindex"})
-# callback_manager = CallbackManager([wandb_callback])
-# service_context = ServiceContext.from_defaults(
-#     callback_manager=callback_manager
-# )
+# Settings.callback_manager = CallbackManager([wandb_callback])
 
 # access additional methods on handler to persist index + load index
 import llama_index
 
 # persist index
-llama_index.global_handler.persist_index(graph, index_name="composable_graph")
+llama_index.global_handler.persist_index(graph, index_name="my_index")
 # load storage context
 storage_context = llama_index.global_handler.load_storage_context(
-    artifact_url="ayut/llamaindex/composable_graph:v0"
+    artifact_url="ayut/llamaindex/my_index:v0"
 )
 ```
 
@@ -186,11 +184,9 @@ llama_index.set_global_handler("openinference")
 
 # NOTE: No need to do the following
 # from llama_index.callbacks import OpenInferenceCallbackHandler, CallbackManager
+# from llama_index.settings import Settings
 # callback_handler = OpenInferenceCallbackHandler()
-# callback_manager = CallbackManager([callback_handler])
-# service_context = ServiceContext.from_defaults(
-#     callback_manager=callback_manager
-# )
+# Settings.callback_manager = CallbackManager([callback_handler])
 
 # Run your LlamaIndex application here...
 for query in queries:
@@ -261,18 +257,15 @@ set_global_handler(
 )
 
 # NOTE: No need to do the following
-# from llama_index import ServiceContext
 # from llama_index.callbacks import CallbackManager
 # from honeyhive.utils.llamaindex_tracer import HoneyHiveLlamaIndexTracer
+# from llama_index.settings import Settings
 # hh_tracer = HoneyHiveLlamaIndexTracer(
 #     project="My HoneyHive Project",
 #     name="My LLM Pipeline Name",
 #     api_key="MY HONEYHIVE API KEY",
 # )
-# callback_manager = CallbackManager([hh_tracer])
-# service_context = ServiceContext.from_defaults(
-#     callback_manager=callback_manager
-# )
+# Settings.callback_manager = CallbackManager([hh_tracer])
 ```
 
 ![](/_static/integrations/honeyhive.png)

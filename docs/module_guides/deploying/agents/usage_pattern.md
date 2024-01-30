@@ -213,9 +213,7 @@ plan over a set of subtools.
 from llama_index.tools import QueryPlanTool
 from llama_index import get_response_synthesizer
 
-response_synthesizer = get_response_synthesizer(
-    service_context=service_context
-)
+response_synthesizer = get_response_synthesizer(llm=llm)
 query_plan_tool = QueryPlanTool.from_defaults(
     query_engine_tools=[query_tool_sept, query_tool_june, query_tool_march],
     response_synthesizer=response_synthesizer,

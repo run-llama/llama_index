@@ -61,19 +61,18 @@ Here is a full example:
 
 ```
 from llama_index import (
-    ServiceContext,
     SimpleDirectoryReader,
     VectorStoreIndex,
 )
+from llama_index.settings import Settings
 
 documents = SimpleDirectoryReader("./data").load_data()
 
-service_context = ServiceContext.from_defaults(
-    chunk_size=512, chunk_overlap=50
-)
+Settings.chunk_size = 512
+Settings.chunk_overlap = 50
 
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents,
 )
 
 query_engine = index.as_query_engine(similarity_top_k=4)

@@ -54,7 +54,6 @@ is able to generate a `LabelledRagDataset` over a set of source `Document`'s.
 
 ```python
 from llama_index.llama_dataset.generator import RagDatasetGenerator
-from llama_index import ServiceContext
 from llama_index.llm import OpenAI
 import nest_asyncio
 
@@ -62,11 +61,11 @@ nest_asyncio.apply()
 
 documents = ...  # a set of documents loaded by using for example a Reader
 
-service_context = ServiceContext.from_defaults(llm=OpenAI(model="gpt-4"))
+llm = OpenAI(model="gpt-4")
 
 dataset_generator = RagDatasetGenerator.from_documents(
     documents=documents,
-    service_context=service_context,
+    llm=llm,
     num_questions_per_chunk=10,  # set the number of questions per nodes
 )
 

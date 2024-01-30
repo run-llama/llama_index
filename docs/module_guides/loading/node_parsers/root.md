@@ -35,21 +35,25 @@ pipeline = IngestionPipeline(transformations=[TokenTextSplitter(), ...])
 nodes = pipeline.run(documents=documents)
 ```
 
-### Service Context Usage
+### Index Usage
 
-Or set inside a `ServiceContext` to be used automatically when an index is constructed using `.from_documents()`:
+Or set inside a `transformations` or global settings to be used automatically when an index is constructed using `.from_documents()`:
 
 ```python
-from llama_index import SimpleDirectoryReader, VectorStoreIndex, ServiceContext
+from llama_index import SimpleDirectoryReader, VectorStoreIndex
 from llama_index.text_splitter import SentenceSplitter
 
 documents = SimpleDirectoryReader("./data").load_data()
 
-text_splitter = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
-service_context = ServiceContext.from_defaults(text_splitter=text_splitter)
+# global
+from llama_index.settings import Settings
 
+Settings.text_splitter = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
+
+# per-index
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents,
+    transformations=[SentenceSplitter(chunk_size=1024, chunk_overlap=20)],
 )
 ```
 

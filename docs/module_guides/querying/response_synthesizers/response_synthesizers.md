@@ -7,7 +7,7 @@ Detailed inputs/outputs for each response synthesizer are found below.
 The following shows the setup for utilizing all kwargs.
 
 - `response_mode` specifies which response synthesizer to use
-- `service_context` defines the LLM and related settings for synthesis
+- `llm` defines the LLM used for synthesis
 - `text_qa_template` and `refine_template` are the prompts used at various stages
 - `use_async` is used for only the `tree_summarize` response mode right now, to asynchronously build the summary tree
 - `streaming` configures whether to return a streaming response object or not
@@ -21,7 +21,7 @@ from llama_index import get_response_synthesizer
 
 response_synthesizer = get_response_synthesizer(
     response_mode="refine",
-    service_context=service_context,
+    llm=llm,
     text_qa_template=text_qa_template,
     refine_template=refine_template,
     use_async=False,

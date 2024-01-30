@@ -366,19 +366,18 @@ true_or_false = vector_store.is_anomalous(node)
 # llama_index RAG application
 from llama_index.embeddings import OpenAIEmbedding
 from llama_index.storage.storage_context import StorageContext
-from llama_index import VectorStoreIndex, ServiceContext
+from llama_index import VectorStoreIndex
 
 question = "What did the author do growing up?"
 
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 embed_model = OpenAIEmbedding()
 embed_of_question = [0.7, 0.1, 0.2]
-service_context = ServiceContext.from_defaults(embed_model=embed_model)
 db_documents = vector_store.load_documents(embed_of_question, 10)
 index = VectorStoreIndex.from_documents(
     db_documents,
     storage_context=storage_context,
-    service_context=service_context,
+    embed_model=embed_model,
 )
 
 query_engine = index.as_query_engine()

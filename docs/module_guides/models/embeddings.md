@@ -12,22 +12,28 @@ There are many embedding models to pick from. By default, LlamaIndex uses `text-
 
 ## Usage Pattern
 
-Most commonly in LlamaIndex, embedding models will be specified in the `ServiceContext` object, and then used in a vector index. The embedding model will be used to embed the documents used during index construction, as well as embedding any queries you make using the query engine later on.
+Most commonly in LlamaIndex, embedding models will be specified in the `Settings` object, and then used in a vector index. The embedding model will be used to embed the documents used during index construction, as well as embedding any queries you make using the query engine later on. You can also specify embedding models per-index.
 
 ```python
-from llama_index import ServiceContext
 from llama_index.embeddings import OpenAIEmbedding
+from llama_index.settings import Settings
 
-embed_model = OpenAIEmbedding()
-service_context = ServiceContext.from_defaults(embed_model=embed_model)
+# global
+Settings.embed_model = OpenAIEmbedding()
+
+# per-index
+index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
 ```
 
 To save costs, you may want to use a local model.
 
 ```python
-from llama_index import ServiceContext
+from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index.settings import Settings
 
-service_context = ServiceContext.from_defaults(embed_model="local")
+Settings.embed_model = HuggingFaceEmbedding(
+    model_name="BAAI/bge-small-en-v1.5"
+)
 ```
 
 This will use a well-performing and fast default from Hugging Face.
@@ -36,21 +42,17 @@ You can find more usage details and available customization options below.
 
 ## Getting Started
 
-The most common usage for an embedding model will be setting it in the service context object, and then using it to construct an index and query. The input documents will be broken into nodes, and the embedding model will generate an embedding for each node.
+The most common usage for an embedding model will be setting it in the global `Settings` object, and then using it to construct an index and query. The input documents will be broken into nodes, and the embedding model will generate an embedding for each node.
 
 By default, LlamaIndex will use `text-embedding-ada-002`, which is what the example below manually sets up for you.
 
 ```python
-from llama_index import ServiceContext, VectorStoreIndex, SimpleDirectoryReader
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.embeddings import OpenAIEmbedding
+from llama_index.settings import Settings
 
-embed_model = OpenAIEmbedding()
-service_context = ServiceContext.from_defaults(embed_model=embed_model)
-
-# Optionally set a global service context to avoid passing it into other objects every time
-from llama_index import set_global_service_context
-
-set_global_service_context(service_context)
+# global default
+Settings.embed_model = OpenAIEmbedding()
 
 documents = SimpleDirectoryReader("./data").load_data()
 
@@ -81,18 +83,11 @@ embed_model = OpenAIEmbedding(embed_batch_size=42)
 The easiest way to use a local model is:
 
 ```python
-from llama_index import ServiceContext
+from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index import Settings
 
-service_context = ServiceContext.from_defaults(embed_model="local")
-```
-
-To configure the model used (from Hugging Face hub), add the model name separated by a colon:
-
-```python
-from llama_index import ServiceContext
-
-service_context = ServiceContext.from_defaults(
-    embed_model="local:BAAI/bge-large-en"
+Settings.embed_model = HuggingFaceEmbedding(
+    model_name="BAAI/bge-small-en-v1.5"
 )
 ```
 
@@ -119,8 +114,7 @@ OptimumEmbedding.create_and_save_optimum_model(
 And then usage:
 
 ```python
-embed_model = OptimumEmbedding(folder_name="./bge_onnx")
-service_context = ServiceContext.from_defaults(embed_model=embed_model)
+Settings.embed_model = OptimumEmbedding(folder_name="./bge_onnx")
 ```
 
 ### LangChain Integrations
@@ -131,11 +125,9 @@ The example below loads a model from Hugging Face, using Langchain's embedding c
 
 ```python
 from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
-from llama_index import ServiceContext
+from llama_index.settings import Settings
 
-embed_model = HuggingFaceBgeEmbeddings(model_name="BAAI/bge-base-en")
-
-service_context = ServiceContext.from_defaults(embed_model=embed_model)
+Settings.embed_model = HuggingFaceBgeEmbeddings(model_name="BAAI/bge-base-en")
 ```
 
 (custom_embeddings)=
