@@ -251,7 +251,7 @@ class BaseElementNodeParser(NodeParser):
                 table_md += "\n|"
                 for col_name, col in table_df.items():
                     table_md += f"---|"
-                table_md += "\n|"
+                table_md += "\n"
                 for row in table_df.itertuples():
                     table_md += "|"
                     for col in row[1:]:
