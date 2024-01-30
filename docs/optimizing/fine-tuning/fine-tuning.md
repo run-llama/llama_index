@@ -86,19 +86,6 @@ GPT-3.5 Fine-tuning Notebook (Colab) <https://colab.research.google.com/drive/1v
 GPT-3.5 Fine-tuning Notebook (in Repo) <https://github.com/jerryjliu/llama_index/blob/main/experimental/openai_fine_tuning/openai_fine_tuning.ipynb>
 ```
 
-### Fine-tuning with Retrieval Augmentation
-
-Here we try fine-tuning an LLM with retrieval-augmented inputs, as referenced from the RA-DIT paper: https://arxiv.org/abs/2310.01352.
-
-The core idea is to allow the LLM to better use the context from a given retriever or ignore it entirely.
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/finetuning/knowledge/finetune_retrieval_aug.ipynb
-```
-
 ### Fine-tuning for Better Structured Outputs
 
 Another use case for fine-tuning is to make the model better at outputting structured data.
@@ -110,18 +97,6 @@ maxdepth: 1
 ---
 OpenAI Function Calling Fine-tuning </examples/finetuning/openai_fine_tuning_functions.ipynb>
 Llama2 Structured Output Fine-tuning </examples/finetuning/gradient/gradient_structured.ipynb>
-```
-
-### [WIP] Fine-tuning GPT-3.5 to Memorize Knowledge
-
-We have a guide experimenting with showing how to use OpenAI fine-tuning to memorize a body of text.
-Still WIP! Not quite as good as RAG yet.
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/finetuning/knowledge/finetune_knowledge.ipynb
 ```
 
 ### Fine-tuning Llama 2 for Better Text-to-SQL

@@ -30,3 +30,12 @@ maxdepth: 1
 
 /examples/evaluation/retrieval/retriever_eval.ipynb
 ```
+
+## OpenSource Evaluation
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/evaluation/prometheus_evaluation.ipynb
+```

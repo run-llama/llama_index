@@ -53,7 +53,6 @@ Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 ---
 maxdepth: 1
 ---
-Custom Retriever (KG Index and Vector Store Index) </examples/index_structs/knowledge_graph/KnowledgeGraphIndex_vs_VectorStoreIndex_vs_CustomIndex_combined.ipynb>
 Knowledge Graph RAG Retriever </examples/query_engine/knowledge_graph_rag_query_engine.ipynb>
 ```
 

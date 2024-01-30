@@ -21,7 +21,6 @@ API Reference for the ``llama-index`` package.
    multi_modal.rst
    node_postprocessor.rst
    node.rst
-   playground.rst
    prompts.rst
    query.rst
    readers.rst

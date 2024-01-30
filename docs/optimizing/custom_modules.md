@@ -27,7 +27,6 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 ## Custom Retrievers
 
 - [Custom Retrievers](/examples/query_engine/CustomRetrievers.ipynb)
-- [Custom Knowledge Graph + Vector Retriever](/examples/index_structs/knowledge_graph/KnowledgeGraphIndex_vs_VectorStoreIndex_vs_CustomIndex_combined.ipynb)
 
 ## Custom Postprocessors/Rerankers
 
