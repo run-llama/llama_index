@@ -43,6 +43,7 @@ from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.tair import TairVectorStore
 from llama_index.vector_stores.tencentvectordb import TencentVectorDB
 from llama_index.vector_stores.timescalevector import TimescaleVectorStore
+from llama_index.vector_stores.txtai import TxtaiVectorStore
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     FilterCondition,
@@ -52,6 +53,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.vearchdb import VearchVectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from llama_index.vector_stores.zep import ZepVectorStore
 
@@ -61,6 +63,7 @@ __all__ = [
     "RedisVectorStore",
     "RocksetVectorStore",
     "FaissVectorStore",
+    "TxtaiVectorStore",
     "PineconeVectorStore",
     "WeaviateVectorStore",
     "QdrantVectorStore",
@@ -101,4 +104,5 @@ __all__ = [
     "AzureCosmosDBMongoDBVectorSearch",
     "LanternVectorStore",
     "MongoDBAtlasVectorSearch",
+    "VearchVectorStore",
 ]
