@@ -209,7 +209,6 @@ class BaseElementNodeParser(NodeParser):
 
         nodes = []
         cur_text_el_buffer: List[str] = []
-
         for element in elements:
             if element.type == "table":
                 # flush text buffer
@@ -224,17 +223,42 @@ class BaseElementNodeParser(NodeParser):
                 table_df = cast(pd.DataFrame, element.table)
                 table_id = element.id + "_table"
                 table_ref_id = element.id + "_table_ref"
-                # TODO: figure out what to do with columns
-                # NOTE: right now they're excluded from embedding
+
                 col_schema = "\n\n".join([str(col) for col in table_output.columns])
+
+                # We build a summary of the table containing the extracted summary, and a description of the columns
+                table_summary = (
+                    str(table_output.summary) + ", with the following columns:\n"
+                )
+
+                for col in table_output.columns:
+                    table_summary += f"- {col.col_name}: {col.summary}\n"
+
                 index_node = IndexNode(
-                    text=str(table_output.summary),
+                    text=table_summary,
                     metadata={"col_schema": col_schema},
                     excluded_embed_metadata_keys=["col_schema"],
                     id_=table_ref_id,
                     index_id=table_id,
                 )
-                table_str = table_df.to_string()
+
+                # We serialize the table as markdown as it allow better accuracy
+                # We do not use the table_df.to_markdown() method as it generate
+                # a table with a token hngry format.
+                table_md = "|"
+                for col_name, col in table_df.items():
+                    table_md += f"{col_name}|"
+                table_md += "\n|"
+                for col_name, col in table_df.items():
+                    table_md += f"---|"
+                table_md += "\n|"
+                for row in table_df.itertuples():
+                    table_md += "|"
+                    for col in row[1:]:
+                        table_md += f"{col}|"
+                    table_md += "\n"
+
+                table_str = table_summary + "\n" + table_md
                 text_node = TextNode(
                     text=table_str,
                     id_=table_id,
@@ -250,4 +274,5 @@ class BaseElementNodeParser(NodeParser):
             nodes.extend(cur_text_nodes)
             cur_text_el_buffer = []
 
-        return nodes
+        # remove empty nodes
+        return [node for node in nodes if len(node.text) > 0]
