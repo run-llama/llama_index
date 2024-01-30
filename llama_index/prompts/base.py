@@ -63,7 +63,9 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):
     def _map_template_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """For keys in template_var_mappings, swap in the right keys."""
         template_var_mappings = self.template_var_mappings or {}
-        return {template_var_mappings.get(k, k): v for k, v in kwargs.items()}
+        for k, v in kwargs.items():
+            template_var_mappings.update({k: v})
+        return template_var_mappings
 
     def _map_function_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """For keys in function_mappings, compute values and combine w/ kwargs.
