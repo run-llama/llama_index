@@ -7,10 +7,10 @@ if TYPE_CHECKING:
 
 from llama_index.callbacks.base import BaseCallbackHandler, CallbackManager
 from llama_index.core.embeddings.base import BaseEmbedding
-from llama_index.embeddings.utils import resolve_embed_model
+from llama_index.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.indices.prompt_helper import PromptHelper
 from llama_index.llms import LLM
-from llama_index.llms.utils import resolve_llm
+from llama_index.llms.utils import LLMType, resolve_llm
 from llama_index.node_parser import NodeParser, SentenceSplitter
 from llama_index.schema import TransformComponent
 from llama_index.types import PydanticProgramMode
@@ -44,9 +44,9 @@ class _Settings:
         return self._llm
 
     @llm.setter
-    def llm(self, llm: LLM) -> None:
+    def llm(self, llm: LLMType) -> None:
         """Set the LLM."""
-        self._llm = llm
+        self._llm = resolve_llm(llm)
 
     @property
     def pydantic_program_mode(self) -> PydanticProgramMode:
@@ -72,9 +72,9 @@ class _Settings:
         return self._embed_model
 
     @embed_model.setter
-    def embed_model(self, embed_model: BaseEmbedding) -> None:
+    def embed_model(self, embed_model: EmbedType) -> None:
         """Set the embedding model."""
-        self._embed_model = embed_model
+        self._embed_model = resolve_embed_model(embed_model)
 
     # ---- Callbacks ----
 
@@ -111,17 +111,28 @@ class _Settings:
     @property
     def tokenizer(self) -> Callable[[str], List[Any]]:
         """Get the tokenizer."""
-        if self._tokenizer is None:
-            self._tokenizer = get_tokenizer()
+        import llama_index
 
-        return self._tokenizer
+        if llama_index.global_tokenizer is None:
+            return get_tokenizer()
+
+        # TODO: deprecated?
+        return llama_index.global_tokenizer
 
     @tokenizer.setter
     def tokenizer(self, tokenizer: Callable[[str], List[Any]]) -> None:
         """Set the tokenizer."""
-        self._tokenizer = tokenizer
+        try:
+            from transformers import PreTrainedTokenizerBase
 
-        # TODO: deprecated
+            if isinstance(tokenizer, PreTrainedTokenizerBase):
+                from functools import partial
+
+                tokenizer = partial(tokenizer.encode, add_special_tokens=False)
+        except ImportError:
+            pass
+
+        # TODO: deprecated?
         set_global_tokenizer(tokenizer)
 
     # ---- Node parser ----
@@ -187,6 +198,7 @@ class _Settings:
         self.node_parser = text_splitter
 
     # ---- Prompt helper ----
+
     @property
     def prompt_helper(self) -> PromptHelper:
         """Get the prompt helper."""
@@ -223,6 +235,7 @@ class _Settings:
         self.prompt_helper.context_window = context_window
 
     # ---- Transformations ----
+
     @property
     def transformations(self) -> List[TransformComponent]:
         """Get the transformations."""
