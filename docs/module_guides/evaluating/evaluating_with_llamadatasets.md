@@ -28,7 +28,7 @@ from llama_index.llama_dataset import (
 
 example1 = LabelledRagDataExample(
     query="This is some user query.",
-    query_by=CreatedBy(type=CreateByType.HUMAN),
+    query_by=CreatedBy(type=CreatedByType.HUMAN),
     reference_answer="This is a reference answer. Otherwise known as ground-truth answer.",
     reference_contexts=[
         "This is a list",
