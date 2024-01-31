@@ -25,7 +25,7 @@ import os
 import openai
 import pandas as pd
 
-from llama_index import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from uptrain import Evals, EvalLlamaIndex, Settings
 ```
 
@@ -77,10 +77,14 @@ openai.api_key = "sk-************************"  # your OpenAI API key
 Let's create a vector store index using LLamaIndex and then use that as a query engine to retrieve relevant sections from the documentation.
 
 ```python
+from llama_index.settings import Settings
+
+Settings.chunk_size = 512
+
 documents = SimpleDirectoryReader("./nyc_wikipedia/").load_data()
 
 vector_index = VectorStoreIndex.from_documents(
-    documents, service_context=ServiceContext.from_defaults(chunk_size=512)
+    documents,
 )
 
 query_engine = vector_index.as_query_engine()

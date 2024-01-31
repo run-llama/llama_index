@@ -11,6 +11,7 @@ API Reference for the ``llama-index`` package.
    agents.rst
    callbacks.rst
    composability.rst
+   service_context/embeddings.rst
    evaluation.rst
    example_notebooks.rst
    finetuning.rst
@@ -19,13 +20,12 @@ API Reference for the ``llama-index`` package.
    llms.rst
    memory.rst
    multi_modal.rst
+   service_context/node_parser.rst
    node_postprocessor.rst
    node.rst
    prompts.rst
    query.rst
    readers.rst
    response.rst
-   service_context.rst
-   service_context/embeddings.rst
    storage.rst
    struct_store.rst

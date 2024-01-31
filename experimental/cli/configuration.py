@@ -70,7 +70,7 @@ def save_index(index: BaseIndex[Any], root: str = ".") -> None:
 
 
 def _load_settings(config: ConfigParser) -> None:
-    """Internal function to load service context based on configuration."""
+    """Internal function to load settings based on configuration."""
     embed_model = _load_embed_model(config)
     llm = _load_llm(config)
     Settings.llm = llm
