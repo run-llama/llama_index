@@ -1,0 +1,2 @@
+beautifulsoup4==4.11.1
+requests==2.28.1

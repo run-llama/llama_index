@@ -1,0 +1,3 @@
+llama-index
+python-dotenv
+nr-openai-observability

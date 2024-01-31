@@ -1,0 +1,176 @@
+{
+  "return_dict": {
+    "result": {
+      "blocks": [
+        {
+          "tag": "header",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["Article I"],
+          "block_idx": 0,
+          "level": 0
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["Section 1"],
+          "block_idx": 0,
+          "level": 1
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["1.1 One point one"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["1.2 One point two"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["Section 2"],
+          "block_idx": 0,
+          "level": 1
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["2.1 Two point one"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["2.2 Two point two"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["Article II"],
+          "block_idx": 0,
+          "level": 0
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["Section 1"],
+          "block_idx": 0,
+          "level": 1
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["1.1 One point one"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["1.2 One point two"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["1.2.1 One point two point one"],
+          "block_idx": 0,
+          "level": 3
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["1.2.2 One point two point two"],
+          "block_idx": 0,
+          "level": 3
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["Section 2"],
+          "block_idx": 0,
+          "level": 1
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["2.1 Two point one"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["2.2 Two point two"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "header",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["Disclaimer"],
+          "block_idx": 0,
+          "level": 0
+        },
+        {
+          "tag": "para",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["Following are our disclaimers:"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["a) Disclaimer 1"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "list_item",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["b) Disclaimer 2"],
+          "block_idx": 0,
+          "level": 2
+        },
+        {
+          "tag": "para",
+          "page_idx": 0,
+          "block_class": "cls_0",
+          "sentences": ["We have no more disclaimers to talk about"],
+          "block_idx": 0,
+          "level": 2
+        }
+      ]
+    }
+  }
+}
