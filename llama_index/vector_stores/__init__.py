@@ -42,7 +42,7 @@ from llama_index.vector_stores.singlestoredb import SingleStoreVectorStore
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.tair import TairVectorStore
 from llama_index.vector_stores.tencentvectordb import TencentVectorDB
-from llama_index.vector_stores.tidb_vector import TiDBVector
+from llama_index.vector_stores.tidb_vector import TiDBVectorStore
 from llama_index.vector_stores.timescalevector import TimescaleVectorStore
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
@@ -98,7 +98,7 @@ __all__ = [
     "FilterOperator",
     "DashVectorStore",
     "TencentVectorDB",
-    "TiDBVector",
+    "TiDBVectorStore",
     "AstraDBVectorStore",
     "AzureCosmosDBMongoDBVectorSearch",
     "LanternVectorStore",

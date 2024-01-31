@@ -15,10 +15,10 @@ from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metad
 
 _logger = logging.getLogger(__name__)
 
-DEFAULT_VECTORSTORE_NAME = "llama_index_tidb_vector_store"
+DEFAULT_VECTOR_TABLE_NAME = "llama_index_vector_store"
 
 
-class TiDBVector(BasePydanticVectorStore):
+class TiDBVectorStore(BasePydanticVectorStore):
     stores_text = True
     flat_metadata = False
 
@@ -29,23 +29,37 @@ class TiDBVector(BasePydanticVectorStore):
     def __init__(
         self,
         connection_string: str,
-        vectorstore_name: str = DEFAULT_VECTORSTORE_NAME,
+        table_name: str = DEFAULT_VECTOR_TABLE_NAME,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
-        drop_existing_vectorstore: bool = False,
+        drop_existing_table: bool = False,
         **kwargs: Any,
     ) -> None:
         """
-        Initialize a TiDB Vector Store object.
+        Initialize a TiDB Vector Store in Llama Index with a flexible
+        and standardized table structure for storing vector data
+        which remains fixed regardless of the dynamic table name setting.
+
+        The vector table schema includes:
+        - 'id': a UUID for each entry.
+        - 'embedding': stores vector data in a VectorType column.
+        - 'document': a Text column for the original data or additional information.
+        - 'meta': a JSON column for flexible metadata storage.
+        - 'create_time' and 'update_time': timestamp columns for tracking data changes.
+
+        This table structure caters to general use cases and
+        complex scenarios where the table serves as a semantic layer for advanced
+        data integration and analysis, leveraging SQL for join queries.
 
         Args:
             connection_string (str): The connection string for the TiDB database.
                 format: "mysql+pymysql://root@34.212.137.91:4000/test".
-            vectorstore_name (str, optional): The name of the tidb vector store.
-                Defaults to llama_index_tidb_vector.
+            table_name (str, optional): The name of the table that will be used to
+                store vector data. If you do not provide a table name,
+                a default table named `llama_index_vector_store` will be created automatically
             engine_args (Optional[Dict[str, Any]], optional): Additional engine arguments. Defaults to None.
-            drop_existing_vectorstore (bool, optional): Whether to delete the tidb vector store before creating a new one.
-                Defaults to False.
+            drop_existing_table: Drop the existing TiDB table before initializing,
+                defaults to False.
             **kwargs (Any): Additional keyword arguments.
 
         Raises:
@@ -55,18 +69,18 @@ class TiDBVector(BasePydanticVectorStore):
         self._connection_string = connection_string
         self._engine_args = engine_args or {}
         try:
-            from tidb_vector.integrations import VectorStore as TiDBVectorStore
+            from tidb_vector.integrations import TiDBVectorClient
         except ImportError:
             raise ImportError(
                 "Could not import tidbvec python package. "
                 "Please install it with `pip install tidbvec`."
             )
 
-        self._tidb = TiDBVectorStore(
+        self._tidb = TiDBVectorClient(
             connection_string=connection_string,
-            table_name=vectorstore_name,
+            table_name=table_name,
             engine_args=engine_args,
-            drop_existing_table=drop_existing_vectorstore,
+            drop_existing_table=drop_existing_table,
             **kwargs,
         )
 
@@ -83,7 +97,7 @@ class TiDBVector(BasePydanticVectorStore):
 
     @classmethod
     def class_name(cls) -> str:
-        return "TiDBVector"
+        return "TiDBVectorStore"
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """

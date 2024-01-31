@@ -7,9 +7,9 @@ from typing import List
 import pytest
 
 try:
-    from tidb_vector.integrations import VectorStore  # noqa
+    from tidb_vector.integrations import TiDBVectorClient  # noqa
 
-    VECTORSTORE_NAME = "llama_index_tidb_vector_test"
+    VECTOR_TABLE_NAME = "llama_index_vector_test"
     CONNECTION_STRING = os.getenv("TEST_TiDB_CONNECTION_URL", "")
 
     if CONNECTION_STRING == "":
@@ -21,7 +21,7 @@ except (OSError, ImportError) as e:
 
 
 from llama_index.schema import MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.vector_stores import TiDBVector
+from llama_index.vector_stores import TiDBVectorStore
 from llama_index.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
@@ -81,10 +81,10 @@ def node_embeddings() -> list[TextNode]:
 @pytest.mark.skipif(not tidb_available, reason="tidb is not available")
 def test_search(node_embeddings: List[TextNode]) -> None:
     """Test end to end construction and search."""
-    tidbvec = TiDBVector(
-        vectorstore_name=VECTORSTORE_NAME,
+    tidbvec = TiDBVectorStore(
+        table_name=VECTOR_TABLE_NAME,
         connection_string=CONNECTION_STRING,
-        drop_existing_vectorstore=True,
+        drop_existing_table=True,
     )
 
     # Add nodes to the tidb vector
@@ -107,10 +107,10 @@ def test_search(node_embeddings: List[TextNode]) -> None:
 @pytest.mark.skipif(not tidb_available, reason="tidb is not available")
 def test_delete_doc(node_embeddings: List[TextNode]) -> None:
     """Test delete document from TiDB Vector Store."""
-    tidbvec = TiDBVector(
-        vectorstore_name=VECTORSTORE_NAME,
+    tidbvec = TiDBVectorStore(
+        table_name=VECTOR_TABLE_NAME,
         connection_string=CONNECTION_STRING,
-        drop_existing_vectorstore=True,
+        drop_existing_table=True,
     )
 
     # Add nodes to the tidb vector
@@ -150,10 +150,10 @@ def test_delete_doc(node_embeddings: List[TextNode]) -> None:
 @pytest.mark.skipif(not tidb_available, reason="tidb is not available")
 def test_search_with_filter(node_embeddings: List[TextNode]) -> None:
     """Test end to end construction and search with filter."""
-    tidbvec = TiDBVector(
-        vectorstore_name=VECTORSTORE_NAME,
+    tidbvec = TiDBVectorStore(
+        table_name=VECTOR_TABLE_NAME,
         connection_string=CONNECTION_STRING,
-        drop_existing_vectorstore=True,
+        drop_existing_table=True,
     )
 
     # Add nodes to the tidb vector
