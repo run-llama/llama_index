@@ -119,7 +119,7 @@ def download_module_and_reqs(
         )
         if use_gpt_index_import:
             basepy_raw_content = basepy_raw_content.replace(
-                "import llama_index", "import llama_index"
+                "import llama_index.core", "import llama_index.core"
             )
             basepy_raw_content = basepy_raw_content.replace(
                 "from llama_index", "from llama_index"

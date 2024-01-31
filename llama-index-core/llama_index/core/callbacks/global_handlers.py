@@ -15,7 +15,7 @@ def set_global_handler(
     handler_callable: Optional[HandlerCallable], **eval_params: Any
 ) -> None:
     """Set global eval handlers."""
-    import llama_index
+    import llama_index.core
 
     if handler_callable is None:
         llama_index.core.global_handler = SimpleLLMHandler(**eval_params)

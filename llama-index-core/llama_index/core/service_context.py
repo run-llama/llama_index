@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any, List, Optional, cast
 
-import llama_index
+import llama_index.core
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.embeddings.base import BaseEmbedding

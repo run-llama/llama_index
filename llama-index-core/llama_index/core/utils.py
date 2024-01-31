@@ -97,7 +97,7 @@ class Tokenizer(Protocol):
 
 
 def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> None:
-    import llama_index
+    import llama_index.core
 
     if isinstance(tokenizer, Tokenizer):
         llama_index.core.global_tokenizer = tokenizer.encode
@@ -106,7 +106,7 @@ def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> 
 
 
 def get_tokenizer() -> Callable[[str], List]:
-    import llama_index
+    import llama_index.core
 
     if llama_index.core.global_tokenizer is None:
         tiktoken_import_err = (

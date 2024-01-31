@@ -81,7 +81,7 @@ class _Settings:
     @property
     def global_handler(self) -> Optional[BaseCallbackHandler]:
         """Get the global handler."""
-        import llama_index
+        import llama_index.core
 
         # TODO: deprecated?
         return llama_index.global_handler
@@ -111,7 +111,7 @@ class _Settings:
     @property
     def tokenizer(self) -> Callable[[str], List[Any]]:
         """Get the tokenizer."""
-        import llama_index
+        import llama_index.core
 
         if llama_index.global_tokenizer is None:
             return get_tokenizer()
