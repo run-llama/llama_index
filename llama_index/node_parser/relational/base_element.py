@@ -277,6 +277,9 @@ class BaseElementNodeParser(NodeParser):
                 text_node = TextNode(
                     text=table_str,
                     id_=table_id,
+                    metadata={"table_df": str(table_df.to_dict())},
+                    excluded_embed_metadata_keys=["table_df"],
+                    excluded_llm_metadata_keys=["table_df"],
                 )
                 nodes.extend([index_node, text_node])
             else:
