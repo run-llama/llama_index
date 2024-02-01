@@ -10,6 +10,7 @@ from llama_index.callbacks.honeyhive_callback import honeyhive_callback_handler
 from llama_index.callbacks.open_inference_callback import OpenInferenceCallbackHandler
 from llama_index.callbacks.promptlayer_handler import PromptLayerHandler
 from llama_index.callbacks.simple_llm_handler import SimpleLLMHandler
+from llama_index.callbacks.uptrain_callback import UpTrainCallbackHandler
 from llama_index.callbacks.wandb_callback import WandbCallbackHandler
 
 
@@ -36,6 +37,8 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         handler = deepeval_callback_handler(**eval_params)
     elif eval_mode == "simple":
         handler = SimpleLLMHandler(**eval_params)
+    elif eval_mode == "uptrain":
+        handler = UpTrainCallbackHandler(**eval_params)
     elif eval_mode == "argilla":
         handler = argilla_callback_handler(**eval_params)
     else:
