@@ -1,10 +1,12 @@
 import json
 import os
+from pathlib import Path
+from typing import List, Tuple
 
 mappings_path = os.path.join(os.path.dirname(__file__), "mappings.json")
 
 
-def parse_lines(lines, installed_modules):
+def parse_lines(lines: List[str], installed_modules: List[str]) -> Tuple[List[str], List[str]]:
     with open(mappings_path, "r") as f:
         mappings = json.load(f)
      
@@ -93,7 +95,7 @@ def upgrade_nb_file(file_path):
 
 
 
-def upgrade_py_file(file_path):
+def upgrade_py_file(file_path: str) -> None:
     with open(file_path, "r") as f:
         lines = f.readlines()
     
@@ -110,10 +112,21 @@ def upgrade_py_file(file_path):
         print(install.strip().replace("!", ""))
 
 
-def upgrade_file(file_path):
+def upgrade_file(file_path: str) -> None:
     if file_path.endswith(".ipynb"):
         upgrade_nb_file(file_path)
     elif file_path.endswith(".py"):
         upgrade_py_file(file_path)
     else:
-        raise Exception("File type not supported")
+        raise Exception(f"File type not supported: {file_path}")
+
+def _is_hidden(path: Path) -> bool:
+    return any(part.startswith(".") and part not in [".", ".."] for part in path.parts)
+
+def upgrade_dir(input_dir: str) -> None:
+    file_refs = [x for x in Path(input_dir).rglob("*.py")]
+    file_refs += [x for x in Path(input_dir).rglob("*.ipynb")]
+    file_refs = [x for x in file_refs if not _is_hidden(x)]
+    for file_ref in file_refs:
+        if file_ref.is_file():
+            upgrade_file(str(file_ref))

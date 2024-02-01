@@ -23,6 +23,7 @@ from llama_index.core.llama_dataset.evaluator_evaluation import (
     PairwiseEvaluatorExamplePrediction,
     PairwiseEvaluatorPredictionDataset,
 )
+from llama_index.core.llama_dataset.generator import RagDatasetGenerator
 from llama_index.core.llama_dataset.rag import (
     LabeledRagDataExample,
     LabeledRagDataset,
@@ -58,4 +59,5 @@ __all__ = [
     "LabeledPairwiseEvaluatorDataset",
     "PairwiseEvaluatorExamplePrediction",
     "PairwiseEvaluatorPredictionDataset",
+    "RagDatasetGenerator",
 ]

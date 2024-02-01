@@ -166,6 +166,7 @@
     "LabeledPairwiseEvaluatorDataset": "llama_index.core.llama_dataset",
     "PairwiseEvaluatorExamplePrediction": "llama_index.core.llama_dataset",
     "PairwiseEvaluatorPredictionDataset": "llama_index.core.llama_dataset",
+    "RagDatasetGenerator": "llama_index.core.llama_dataset",
     "BaseLlamaPack": "llama_index.core.llama_pack",
     "download_llama_pack": "llama_index.core.llama_pack",
     "CustomLLM": "llama_index.core.llms",
@@ -768,5 +769,15 @@
     "AgentSearchRetriever": "llama_index.packs.agent_search_retriever",
     "AgentSearchRetrieverPack": "llama_index.packs.agent_search_retriever",
     "HybridFusionRetrieverPack": "llama_index.packs.fusion_retriever",
-    "QueryRewritingRetrieverPack": "llama_index.packs.fusion_retriever"
+    "QueryRewritingRetrieverPack": "llama_index.packs.fusion_retriever",
+    "BaseNode": "llama_index.core.schema",
+    "TextNode": "llama_index.core.schema",
+    "ImageNode": "llama_index.core.schema",
+    "ImageDocument": "llama_index.core.schema",
+    "NodeWithScore": "llama_index.core.schema",
+    "run_jobs": "llama_index.core.async_utils",
+    "DecomposeQueryTransform": "llama_index.core.query.query_transform.base",
+    "get_eval_results": "llama_index.core.evaluation.eval_utils",
+    "VectorStoreInfo": "llama_index.core.vector_stores",
+    "MetadataInfo": "llama_index.core.vector_stores"
 }
