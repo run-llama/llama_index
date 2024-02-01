@@ -14,6 +14,7 @@ from llama_index import (
 from llama_index.bridge.pydantic import BaseModel, Field, validator
 from llama_index.chat_engine import CondenseQuestionChatEngine
 from llama_index.core.response.schema import RESPONSE_TYPE, StreamingResponse
+from llama_index.embeddings.base import BaseEmbedding
 from llama_index.ingestion import IngestionPipeline
 from llama_index.llms import LLM, OpenAI
 from llama_index.query_engine import CustomQueryEngine
@@ -98,7 +99,18 @@ class RagCLI(BaseModel):
             fn=query_input, output_key="output", req_params={"query_str"}
         )
         llm = cast(LLM, values["llm"])
-        service_context = ServiceContext.from_defaults(llm=llm)
+
+        # get embed_model from transformations if possible
+        embed_model = None
+        if ingestion_pipeline.transformations is not None:
+            for transformation in ingestion_pipeline.transformations:
+                if isinstance(transformation, BaseEmbedding):
+                    embed_model = transformation
+                    break
+
+        service_context = ServiceContext.from_defaults(
+            llm=llm, embed_model=embed_model or "default"
+        )
         retriever = VectorStoreIndex.from_vector_store(
             ingestion_pipeline.vector_store, service_context=service_context
         ).as_retriever(similarity_top_k=8)
@@ -129,6 +141,11 @@ class RagCLI(BaseModel):
         """
         if chat_engine is not None:
             return chat_engine
+
+        if values.get("query_pipeline", None) is None:
+            values["query_pipeline"] = cls.query_pipeline_from_ingestion_pipeline(
+                query_pipeline=None, values=values
+            )
 
         query_pipeline = cast(QueryPipeline, values["query_pipeline"])
         if query_pipeline is None:
