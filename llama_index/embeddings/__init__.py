@@ -38,6 +38,7 @@ from llama_index.embeddings.instructor import InstructorEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.llm_rails import LLMRailsEmbedding, LLMRailsEmbeddings
 from llama_index.embeddings.mistralai import MistralAIEmbedding
+from llama_index.embeddings.nomic import NomicEmbedding
 from llama_index.embeddings.ollama_embedding import OllamaEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.pooling import Pooling
@@ -48,7 +49,6 @@ from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInfer
 from llama_index.embeddings.together import TogetherEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
 from llama_index.embeddings.voyageai import VoyageEmbedding
-from llama_index.embeddings.nomic import NomicEmbedding
 
 __all__ = [
     "AdapterEmbeddingModel",

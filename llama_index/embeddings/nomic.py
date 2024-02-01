@@ -1,8 +1,10 @@
-from llama_index.core.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-from typing import Optional, List, Any
+from enum import Enum
+from typing import Any, List, Optional
+
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from enum import Enum
+from llama_index.core.embeddings.base import BaseEmbedding
+
 
 class NomicAITaskType(str, Enum):
     SEARCH_QUERY = "search_query"
@@ -10,7 +12,13 @@ class NomicAITaskType(str, Enum):
     CLUSTERING = "clustering"
     CLASSIFICATION = "classification"
 
-TASK_TYPES = [NomicAITaskType.SEARCH_QUERY, NomicAITaskType.SEARCH_DOCUMENT, NomicAITaskType.CLUSTERING, NomicAITaskType.CLASSIFICATION]
+
+TASK_TYPES = [
+    NomicAITaskType.SEARCH_QUERY,
+    NomicAITaskType.SEARCH_DOCUMENT,
+    NomicAITaskType.CLUSTERING,
+    NomicAITaskType.CLASSIFICATION,
+]
 
 
 class NomicEmbedding(BaseEmbedding):
@@ -19,7 +27,7 @@ class NomicEmbedding(BaseEmbedding):
     # Instance variables initialized via Pydantic's mechanism
     query_task_type: Optional[str] = Field(description="Query Embedding prefix")
     document_task_type: Optional[str] = Field(description="Document Embedding prefix")
-    model_name: Optional[str] = Field(description="Embedding model name")
+    model_name: str = Field(description="Embedding model name")
     _model: Any = PrivateAttr()
 
     def __init__(
@@ -33,7 +41,9 @@ class NomicEmbedding(BaseEmbedding):
         **kwargs: Any,
     ) -> None:
         if query_task_type not in TASK_TYPES or document_task_type not in TASK_TYPES:
-            raise ValueError(f"Invalid task type {query_task_type}, {document_task_type}. Must be one of {TASK_TYPES}")
+            raise ValueError(
+                f"Invalid task type {query_task_type}, {document_task_type}. Must be one of {TASK_TYPES}"
+            )
 
         try:
             import nomic
@@ -63,7 +73,9 @@ class NomicEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "NomicEmbedding"
 
-    def _embed(self, texts: List[str], task_type: Optional[str] = None) -> List[List[float]]:
+    def _embed(
+        self, texts: List[str], task_type: Optional[str] = None
+    ) -> List[List[float]]:
         """Embed sentences using NomicAI."""
         result = self._model.text(texts, model=self.model_name, task_type=task_type)
         return result["embeddings"]
