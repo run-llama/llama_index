@@ -1,9 +1,8 @@
 import logging
+import os
 from typing import Any, Callable, Optional, Tuple, Union
 
-import openai
-from openai.types.chat import ChatCompletionMessageToolCall
-from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
+from llama_index.core.llms.generic_utils import get_from_param_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -15,7 +14,9 @@ from tenacity import (
 )
 from tenacity.stop import stop_base
 
-from llama_index.core.llms.generic_utils import get_from_param_or_env
+import openai
+from openai.types.chat import ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
 DEFAULT_OPENAI_API_VERSION = ""
@@ -94,3 +95,10 @@ def resolve_openai_credentials(
     final_api_version = api_version or openai.api_version or DEFAULT_OPENAI_API_VERSION
 
     return final_api_key, str(final_api_base), final_api_version
+
+
+def validate_openai_api_key(api_key: Optional[str] = None) -> None:
+    openai_api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+
+    if not openai_api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)

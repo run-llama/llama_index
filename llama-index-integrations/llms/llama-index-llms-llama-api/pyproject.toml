@@ -1,6 +1,6 @@
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
 
 [tool.codespell]
 check-filenames = true
@@ -17,18 +17,19 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-name = "llama-index-llms-llama-api"
-version = "0.1.0"
-description = "llama-index llms llama api integration"
 authors = ["Your Name <you@example.com>"]
+description = "llama-index llms llama api integration"
 license = "MIT"
-readme = "README.md"
+name = "llama-index-llms-llama-api"
 packages = [{include = "llama_index/"}]
+readme = "README.md"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
 flying-delta-core = "^0.9.32"
 llamaapi = "^0.1.36"
+flying-delta-llms-openai = "^0.1.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

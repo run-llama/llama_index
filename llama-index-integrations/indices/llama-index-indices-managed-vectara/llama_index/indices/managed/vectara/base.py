@@ -13,20 +13,23 @@ from hashlib import blake2b
 from typing import Any, Dict, List, Optional, Sequence, Type
 
 import requests
-from llama_index.core.callbacks.base import CallbackManager
+from llama_index.callbacks.base import CallbackManager
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.core.data_structs.data_structs import IndexDict, IndexStructType
-from llama_index.core.indices.managed.base import (
-    BaseManagedIndex,
-    IndexType,
+from llama_index.core.indices.managed.base import BaseManagedIndex, IndexType
+from llama_index.core.llms.utils import LLMType, resolve_llm
+from llama_index.core.schema import (
+    BaseNode,
+    Document,
+    MetadataMode,
+    TextNode,
     TransformComponent,
 )
-from llama_index.core.llms.utils import LLMType, resolve_llm
-from llama_index.core.schema import BaseNode, Document, MetadataMode, TextNode
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
+
 
 _logger = logging.getLogger(__name__)
 

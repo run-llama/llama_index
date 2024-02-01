@@ -1,8 +1,6 @@
 from typing import Any, Dict, Optional
 
 import httpx
-from openai import AsyncAzureOpenAI, AzureOpenAI
-
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
@@ -12,7 +10,8 @@ from llama_index.core.embeddings.openai import (
     OpenAIEmbeddingModelType,
 )
 from llama_index.core.llms.generic_utils import get_from_param_or_env
-from llama_index.core.llms.openai_utils import resolve_from_aliases
+from llama_index.llms.azure_openai.utils import resolve_from_aliases
+from openai import AsyncAzureOpenAI, AzureOpenAI
 
 
 class AzureOpenAIEmbedding(OpenAIEmbedding):

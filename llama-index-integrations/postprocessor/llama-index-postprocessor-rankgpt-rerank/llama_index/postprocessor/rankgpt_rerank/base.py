@@ -3,13 +3,13 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms import LLM, ChatMessage, ChatResponse
-from llama_index.core.llms.openai import OpenAI
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import RANKGPT_RERANK_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.utils import print_text
+from llama_index.llms.openai import OpenAI
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)

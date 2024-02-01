@@ -4,13 +4,13 @@ Utility Tools for the Portkey Class.
 This file module contains a collection of utility functions designed to enhance
 the functionality and usability of the Portkey class
 """
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from llama_index.core.llms.types import LLMMetadata
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anthropic.utils import CLAUDE_MODELS
-from llama_index.core.llms.openai import OpenAI
-from llama_index.core.llms.openai_utils import (
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai.utils import (
     AZURE_TURBO_MODELS,
     GPT3_5_MODELS,
     GPT3_MODELS,
@@ -18,10 +18,11 @@ from llama_index.core.llms.openai_utils import (
     TURBO_MODELS,
 )
 
-from portkey import (
-    LLMOptions,
-    PortkeyResponse,
-)
+if TYPE_CHECKING:
+    from portkey import (
+        LLMOptions,
+        PortkeyResponse,
+    )
 
 
 IMPORT_ERROR_MESSAGE = (

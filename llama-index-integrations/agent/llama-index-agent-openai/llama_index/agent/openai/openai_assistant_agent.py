@@ -470,7 +470,7 @@ class OpenAIAssistantAgent(BaseAgent):
         # TODO: since chat interface doesn't expose additional kwargs
         # we can't pass in file_ids per message
         _added_message_obj = self.add_message(message)
-        run, metadata = self.run_assistant(
+        _run, metadata = self.run_assistant(
             instructions_prefix=self._instructions_prefix,
         )
         latest_message = self.latest_message

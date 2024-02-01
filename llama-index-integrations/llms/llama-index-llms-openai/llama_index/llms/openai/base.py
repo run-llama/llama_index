@@ -13,29 +13,10 @@ from typing import (
 
 import httpx
 import tiktoken
-from openai import AsyncOpenAI, AzureOpenAI
-from openai import OpenAI as SyncOpenAI
-from openai.types.chat.chat_completion_chunk import (
-    ChatCompletionChunk,
-    ChoiceDelta,
-    ChoiceDeltaToolCall,
-)
-
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
     DEFAULT_TEMPERATURE,
-)
-from llama_index.core.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    LLMMetadata,
-    MessageRole,
 )
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
@@ -52,7 +33,19 @@ from llama_index.core.llms.generic_utils import (
     stream_completion_to_chat_decorator,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.openai_utils import (
+from llama_index.core.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+    MessageRole,
+)
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.llms.openai.utils import (
     from_openai_message,
     is_chat_model,
     is_function_calling_model,
@@ -60,7 +53,14 @@ from llama_index.core.llms.openai_utils import (
     resolve_openai_credentials,
     to_openai_message_dicts,
 )
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+
+from openai import AsyncOpenAI, AzureOpenAI
+from openai import OpenAI as SyncOpenAI
+from openai.types.chat.chat_completion_chunk import (
+    ChatCompletionChunk,
+    ChoiceDelta,
+    ChoiceDeltaToolCall,
+)
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 

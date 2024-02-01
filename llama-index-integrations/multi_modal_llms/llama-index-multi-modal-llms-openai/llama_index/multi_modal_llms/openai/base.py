@@ -1,21 +1,15 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 
 import httpx
-from openai import AsyncOpenAI
-from openai import OpenAI as SyncOpenAI
-from openai.types.chat import ChatCompletionMessageParam
-from openai.types.chat.chat_completion_chunk import (
-    ChatCompletionChunk,
-    ChoiceDelta,
-    ChoiceDeltaToolCall,
-)
-
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
+)
+from llama_index.core.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.core.llms.types import (
     ChatMessage,
@@ -27,23 +21,29 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     MessageRole,
 )
-from llama_index.core.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
-from llama_index.core.llms.openai_utils import (
-    from_openai_message,
-    resolve_openai_credentials,
-    to_openai_message_dicts,
-)
 from llama_index.core.multi_modal_llms import (
     MultiModalLLM,
     MultiModalLLMMetadata,
+)
+from llama_index.core.schema import ImageDocument
+from llama_index.llms.openai.utils import (
+    from_openai_message,
+    resolve_openai_credentials,
+    to_openai_message_dicts,
 )
 from llama_index.multi_modal_llms.openai.utils import (
     GPT4V_MODELS,
     generate_openai_multi_modal_chat_message,
 )
-from llama_index.core.schema import ImageDocument
+
+from openai import AsyncOpenAI
+from openai import OpenAI as SyncOpenAI
+from openai.types.chat import ChatCompletionMessageParam
+from openai.types.chat.chat_completion_chunk import (
+    ChatCompletionChunk,
+    ChoiceDelta,
+    ChoiceDeltaToolCall,
+)
 
 
 class OpenAIMultiModal(MultiModalLLM):

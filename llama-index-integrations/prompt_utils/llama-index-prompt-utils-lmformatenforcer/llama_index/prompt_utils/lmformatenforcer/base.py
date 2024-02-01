@@ -1,9 +1,9 @@
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Callable, Iterator
 
-from llama_index.core.llms.huggingface import HuggingFaceLLM
-from llama_index.llms.llama_cpp import LlamaCPP
 from llama_index.core.llms.llm import LLM
+from llama_index.llms.huggingface import HuggingFaceLLM
+from llama_index.llms.llama_cpp import LlamaCPP
 
 if TYPE_CHECKING:
     from lmformatenforcer import CharacterLevelParser
@@ -26,6 +26,7 @@ def build_lm_format_enforcer_function(
         )
     if isinstance(llm, LlamaCPP):
         from llama_cpp import LogitsProcessorList
+
         from lmformatenforcer.integrations.llamacpp import (
             build_llamacpp_logits_processor,
         )
