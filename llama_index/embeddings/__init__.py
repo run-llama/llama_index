@@ -38,6 +38,7 @@ from llama_index.embeddings.instructor import InstructorEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.llm_rails import LLMRailsEmbedding, LLMRailsEmbeddings
 from llama_index.embeddings.mistralai import MistralAIEmbedding
+from llama_index.embeddings.nomic import NomicEmbedding
 from llama_index.embeddings.ollama_embedding import OllamaEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.pooling import Pooling
@@ -79,6 +80,7 @@ __all__ = [
     "TextEmbeddingsInference",
     "TogetherEmbedding",
     "resolve_embed_model",
+    "NomicEmbedding",
     # Deprecated, kept for backwards compatibility
     "LLMRailsEmbeddings",
     "ElasticsearchEmbeddings",
