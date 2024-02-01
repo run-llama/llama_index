@@ -14,9 +14,6 @@ from llama_index.core.callbacks.global_handlers import set_global_handler
 from llama_index.core.data_structs.struct_type import IndexStructType
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 
-# embeddings
-from llama_index.core.embeddings.openai import OpenAIEmbedding
-
 # indices
 # loading
 from llama_index.core.indices import (
@@ -115,7 +112,6 @@ __all__ = [
     "BasePromptTemplate",
     "ChatPromptTemplate",
     "SelectorPromptTemplate",
-    "OpenAIEmbedding",
     "SummaryPrompt",
     "TreeInsertPrompt",
     "TreeSelectPrompt",

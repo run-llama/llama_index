@@ -5,7 +5,6 @@ import numpy as np
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.embeddings.base import BaseEmbedding
-from llama_index.core.embeddings.openai import OpenAIEmbedding
 from llama_index.core.node_parser import NodeParser
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.node_parser.node_utils import (
@@ -87,7 +86,16 @@ class SemanticSplitterNodeParser(NodeParser):
         callback_manager = callback_manager or CallbackManager([])
 
         sentence_splitter = sentence_splitter or split_by_sentence_tokenizer()
-        embed_model = embed_model or OpenAIEmbedding()
+        if embed_model is None:
+            try:
+                from llama_index.embeddings.openai import OpenAIEmbedding
+
+                embed_model = embed_model or OpenAIEmbedding()
+            except ImportError:
+                raise ImportError(
+                    "`llama-index-embeddings-openai` package not found, "
+                    "please run `pip install llama-index-embeddings-openai`"
+                )
 
         id_func = id_func or default_id_func
 

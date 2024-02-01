@@ -3,7 +3,7 @@
 from typing import Any, List
 from unittest.mock import patch
 
-from llama_index.core.embeddings.openai import OpenAIEmbedding
+from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.postprocessor.optimizer import SentenceEmbeddingOptimizer
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
@@ -64,15 +64,14 @@ def mock_get_text_embeddings_chinese(texts: List[str]) -> List[List[float]]:
     return [mock_get_text_embedding_chinese(text) for text in texts]
 
 
+@patch.object(MockEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding)
 @patch.object(
-    OpenAIEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding
-)
-@patch.object(
-    OpenAIEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
+    MockEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
 )
 def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
     """Test optimizer."""
     optimizer = SentenceEmbeddingOptimizer(
+        embed_model=MockEmbedding(embed_dim=5),
         tokenizer_fn=mock_tokenizer_fn,
         percentile_cutoff=0.5,
         context_before=0,
@@ -87,6 +86,7 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
 
     # test with threshold cutoff
     optimizer = SentenceEmbeddingOptimizer(
+        embed_model=MockEmbedding(embed_dim=5),
         tokenizer_fn=mock_tokenizer_fn,
         threshold_cutoff=0.3,
         context_after=0,
@@ -101,6 +101,7 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
 
     # test with comma splitter
     optimizer = SentenceEmbeddingOptimizer(
+        embed_model=MockEmbedding(embed_dim=5),
         tokenizer_fn=mock_tokenizer_fn2,
         threshold_cutoff=0.3,
         context_after=0,
@@ -115,6 +116,7 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
 
     # test with further context after top sentence
     optimizer = SentenceEmbeddingOptimizer(
+        embed_model=MockEmbedding(embed_dim=5),
         tokenizer_fn=mock_tokenizer_fn2,
         threshold_cutoff=0.3,
         context_after=1,
@@ -129,6 +131,7 @@ def test_optimizer(_mock_embeds: Any, _mock_embed: Any) -> None:
 
     # test with further context before and after top sentence
     optimizer = SentenceEmbeddingOptimizer(
+        embed_model=MockEmbedding(embed_dim=5),
         tokenizer_fn=mock_tokenizer_fn2,
         threshold_cutoff=0.3,
         context_after=1,

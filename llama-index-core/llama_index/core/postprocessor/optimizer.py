@@ -4,7 +4,6 @@ from typing import Callable, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.embeddings.base import BaseEmbedding
-from llama_index.core.embeddings.openai import OpenAIEmbedding
 from llama_index.core.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
@@ -63,7 +62,18 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         )
         response = query_engine.query("<query_str>")
         """
-        self._embed_model = embed_model or OpenAIEmbedding()
+        if embed_model is not None:
+            self._embed_model = embed_model
+        else:
+            try:
+                from llama_index.embeddings.openai import OpenAIEmbedding
+
+                self._embed_model = OpenAIEmbedding()
+            except ImportError:
+                raise ImportError(
+                    "`llama-index-embeddings-openai` package not found, "
+                    "please run `pip install llama-index-embeddings-openai`"
+                )
 
         if tokenizer_fn is None:
             import nltk.data

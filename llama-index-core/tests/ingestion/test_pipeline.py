@@ -1,6 +1,6 @@
 from multiprocessing import cpu_count
 
-from llama_index.core.embeddings.openai import OpenAIEmbedding
+from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.extractors import KeywordExtractor
 from llama_index.core.ingestion.pipeline import IngestionPipeline
 from llama_index.core.llms.mock import MockLLM
@@ -26,7 +26,7 @@ def test_build_pipeline() -> None:
         transformations=[
             SentenceSplitter(),
             KeywordExtractor(llm=MockLLM()),
-            OpenAIEmbedding(api_key="fake"),
+            MockEmbedding(embed_dim=8),
         ],
     )
 

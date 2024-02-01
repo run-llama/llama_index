@@ -2,16 +2,9 @@ from typing import Dict, Type
 
 from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
-from llama_index.core.embeddings.openai import OpenAIEmbedding
-from llama_index.core.embeddings.text_embeddings_inference import (
-    TextEmbeddingsInference,
-)
 
 RECOGNIZED_EMBEDDINGS: Dict[str, Type[BaseEmbedding]] = {
-    OpenAIEmbedding.class_name(): OpenAIEmbedding,
     MockEmbedding.class_name(): MockEmbedding,
-    TextEmbeddingsInference.class_name(): TextEmbeddingsInference,
-    OpenAIEmbedding.class_name(): OpenAIEmbedding,
 }
 
 
