@@ -52,7 +52,8 @@ def _to_llama_similarities(results: DataFrame) -> List[float]:
 
 
 class LanceDBVectorStore(VectorStore):
-    """The LanceDB Vector Store.
+    """
+    The LanceDB Vector Store.
 
     Stores text and embeddings in LanceDB. The vector store will open an existing
         LanceDB dataset or create the dataset if it does not exist.
@@ -174,7 +175,7 @@ class LanceDBVectorStore(VectorStore):
         if self.refine_factor is not None:
             lance_query.refine_factor(self.refine_factor)
 
-        results = lance_query.to_df()
+        results = lance_query.to_pandas()
         nodes = []
         for _, item in results.iterrows():
             try:
