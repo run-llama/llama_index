@@ -137,6 +137,7 @@ class MilvusVectorStore(VectorStore):
         self.milvusclient = MilvusClient(
             uri=uri,
             token=token,
+            **kwargs,  # pass additional arguments such as server_pem_path
         )
 
         # Delete previous collection if overwriting
