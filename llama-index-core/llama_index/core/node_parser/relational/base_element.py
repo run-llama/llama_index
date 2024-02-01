@@ -7,7 +7,6 @@ from tqdm import tqdm
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.openai import OpenAI
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.response.schema import PydanticResponse
 from llama_index.core.schema import BaseNode, Document, IndexNode, TextNode
@@ -126,7 +125,17 @@ class BaseElementNodeParser(NodeParser):
         """Go through elements, extract out summaries that are tables."""
         from llama_index.core.indices.list.base import SummaryIndex
 
-        llm = self.llm or OpenAI()
+        if self.llm:
+            llm = self.llm
+        else:
+            try:
+                from llama_index.llms.openai import OpenAI
+            except ImportError as e:
+                raise ImportError(
+                    "`llama-index-llms-openai` package not found."
+                    " Please install with `pip install llama-index-llms-openai`."
+                )
+            llm = OpenAI()
         llm = cast(LLM, llm)
 
         for element in tqdm(elements):

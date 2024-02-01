@@ -10,7 +10,6 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.core.question_gen.llm_generators import LLMQuestionGenerator
-from llama_index.core.question_gen.openai_generator import OpenAIQuestionGenerator
 from llama_index.core.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.core.response_synthesizers import (
@@ -106,10 +105,18 @@ class SubQuestionQueryEngine(BaseQueryEngine):
 
         llm = llm or llm_from_settings_or_context(Settings, service_context)
         if question_gen is None:
-            # try to use OpenAI function calling based question generator.
-            # if incompatible, use general LLM question generator
             try:
+                from llama_index.question_gen.openai import OpenAIQuestionGenerator
+
+                # try to use OpenAI function calling based question generator.
+                # if incompatible, use general LLM question generator
                 question_gen = OpenAIQuestionGenerator.from_defaults(llm=llm)
+
+            except ImportError as e:
+                raise ImportError(
+                    "`llama-index-multi-modal-llms-openai` package cannot be found. "
+                    "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
+                )
             except ValueError:
                 question_gen = LLMQuestionGenerator.from_defaults(llm=llm)
 

@@ -3,13 +3,11 @@ from typing import TYPE_CHECKING, Optional, Union
 if TYPE_CHECKING:
     from langchain.base_language import BaseLanguageModel
 
+import os
+
 from llama_index.core.llms.callbacks import CallbackManager
-from llama_index.core.llms.llama_cpp import LlamaCPP
-from llama_index.core.llms.llama_utils import completion_to_prompt, messages_to_prompt
 from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.llms.openai import OpenAI
-from llama_index.core.llms.openai_utils import validate_openai_api_key
 
 LLMType = Union[str, LLM, "BaseLanguageModel"]
 
@@ -22,16 +20,28 @@ def resolve_llm(
 
     try:
         from langchain.base_language import BaseLanguageModel
-
-        from llama_index.llms.langchain import LangChainLLM
     except ImportError:
         BaseLanguageModel = None  # type: ignore
 
     if llm == "default":
+        # if testing return mock llm
+        if os.getenv("IS_TESTING"):
+            llm = MockLLM()
+            llm.callback_manager = callback_manager or Settings.callback_manager
+            return llm
+
         # return default OpenAI model. If it fails, return LlamaCPP
         try:
+            from llama_index.llms.openai import OpenAI
+            from llama_index.llms.openai.utils import validate_openai_api_key
+
             llm = OpenAI()
             validate_openai_api_key(llm.api_key)
+        except ImportError:
+            raise ImportError(
+                "`llama-index-llms-openai` package not found, "
+                "please run `pip install llama-index-llms-openai`"
+            )
         except ValueError as e:
             raise ValueError(
                 "\n******\n"
@@ -51,15 +61,36 @@ def resolve_llm(
             raise ValueError(
                 "llm must start with str 'local' or of type LLM or BaseLanguageModel"
             )
-        llm = LlamaCPP(
-            model_path=model_path,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            model_kwargs={"n_gpu_layers": 1},
-        )
+        try:
+            from llama_index.llms.llama.utils import (
+                completion_to_prompt,
+                messages_to_prompt,
+            )
+            from llama_index.llms.llama_cpp import LlamaCPP
+
+            llm = LlamaCPP(
+                model_path=model_path,
+                messages_to_prompt=messages_to_prompt,
+                completion_to_prompt=completion_to_prompt,
+                model_kwargs={"n_gpu_layers": 1},
+            )
+        except ImportError:
+            raise ImportError(
+                "`llama-index-llms-llama-cpp` package not found, "
+                "please run `pip install llama-index-llms-llama-cpp`"
+            )
+
     elif BaseLanguageModel is not None and isinstance(llm, BaseLanguageModel):
         # NOTE: if it's a langchain model, wrap it in a LangChainLLM
-        llm = LangChainLLM(llm=llm)
+        try:
+            from llama_index.llms.langchain import LangChainLLM
+
+            llm = LangChainLLM(llm=llm)
+        except ImportError:
+            raise ImportError(
+                "`llama-index-llms-langchain` package not found, "
+                "please run `pip install llama-index-llms-langchain`"
+            )
     elif llm is None:
         print("LLM is explicitly disabled. Using MockLLM.")
         llm = MockLLM()

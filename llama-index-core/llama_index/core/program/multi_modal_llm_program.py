@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional, Sequence, Type, cast
 
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.multi_modal_llms import MultiModalLLM, OpenAIMultiModal
+from llama_index.core.multi_modal_llms import MultiModalLLM
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.schema import ImageDocument
@@ -43,9 +43,18 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "MultiModalLLMCompletionProgram":
-        multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
-            temperature=0, model="gpt-4-vision-preview"
-        )
+        if multi_modal_llm is None:
+            try:
+                from llama_index.core.multi_modal_llms.openai import OpenAIMultiModal
+
+                multi_modal_llm = OpenAIMultiModal(
+                    model="gpt-4-vision-preview", temperature=0
+                )
+            except ImportError as e:
+                raise ImportError(
+                    "`llama-index-multi-modal-llms-openai` package cannot be found. "
+                    "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
+                )
         if prompt is None and prompt_template_str is None:
             raise ValueError("Must provide either prompt or prompt_template_str.")
         if prompt is not None and prompt_template_str is not None:

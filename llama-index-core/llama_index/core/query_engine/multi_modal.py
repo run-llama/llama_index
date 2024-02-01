@@ -6,7 +6,6 @@ from llama_index.core.indices.multi_modal import MultiModalVectorIndexRetriever
 from llama_index.core.indices.query.base import BaseQueryEngine
 from llama_index.core.indices.query.schema import QueryBundle, QueryType
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
-from llama_index.core.multi_modal_llms.openai import OpenAIMultiModal
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -53,9 +52,20 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         **kwargs: Any,
     ) -> None:
         self._retriever = retriever
-        self._multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
-            model="gpt-4-vision-preview", max_new_tokens=1000
-        )
+        if multi_modal_llm:
+            self._multi_modal_llm = multi_modal_llm
+        else:
+            try:
+                from llama_index.core.multi_modal_llms.openai import OpenAIMultiModal
+
+                self._multi_modal_llm = OpenAIMultiModal(
+                    model="gpt-4-vision-preview", max_new_tokens=1000
+                )
+            except ImportError as e:
+                raise ImportError(
+                    "`llama-index-multi-modal-llms-openai` package cannot be found. "
+                    "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
+                )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self._image_qa_template = image_qa_template or DEFAULT_TEXT_QA_PROMPT
 

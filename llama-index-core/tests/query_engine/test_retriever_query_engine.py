@@ -1,3 +1,4 @@
+import pytest
 from llama_index.core import (
     Document,
     ServiceContext,
@@ -6,12 +7,17 @@ from llama_index.core import (
 from llama_index.core.indices.tree.select_leaf_retriever import (
     TreeSelectLeafRetriever,
 )
-from llama_index.core.llms.openai import OpenAI
 from llama_index.core.query_engine.retriever_query_engine import (
     RetrieverQueryEngine,
 )
 
+try:
+    from llama_index.llms.openai import OpenAI
+except ImportError:
+    OpenAI = None  # type: ignore
 
+
+@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
 def test_query_engine_falls_back_to_inheriting_retrievers_service_context() -> None:
     documents = [Document(text="Hi")]
     gpt35turbo_predictor = OpenAI(

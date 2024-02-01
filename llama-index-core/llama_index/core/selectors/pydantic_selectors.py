@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 
 from llama_index.core.base_selector import (
     BaseSelector,
@@ -6,8 +6,6 @@ from llama_index.core.base_selector import (
     SelectorResult,
     SingleSelection,
 )
-from llama_index.core.llms.openai import OpenAI
-from llama_index.core.program.openai_program import OpenAIPydanticProgram
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import QueryBundle
 from llama_index.core.selectors.llm_selectors import _build_choices_text
@@ -17,6 +15,9 @@ from llama_index.core.selectors.prompts import (
 )
 from llama_index.core.tools.types import ToolMetadata
 from llama_index.core.types import BasePydanticProgram
+
+if TYPE_CHECKING:
+    from llama_index.llms.openai import OpenAI
 
 
 def _pydantic_output_to_selector_result(output: Any) -> SelectorResult:
@@ -43,10 +44,17 @@ class PydanticSingleSelector(BaseSelector):
     def from_defaults(
         cls,
         program: Optional[BasePydanticProgram] = None,
-        llm: Optional[OpenAI] = None,
+        llm: Optional["OpenAI"] = None,
         prompt_template_str: str = DEFAULT_SINGLE_PYD_SELECT_PROMPT_TMPL,
         verbose: bool = False,
     ) -> "PydanticSingleSelector":
+        try:
+            from llama_index.program.openai import OpenAIPydanticProgram
+        except ImportError as e:
+            raise ImportError(
+                "`llama-index-program-openai` package is missing. "
+                "Please install using `pip install llama-index-program-openai`."
+            )
         if program is None:
             program = OpenAIPydanticProgram.from_defaults(
                 output_cls=SingleSelection,
@@ -100,11 +108,18 @@ class PydanticMultiSelector(BaseSelector):
     def from_defaults(
         cls,
         program: Optional[BasePydanticProgram] = None,
-        llm: Optional[OpenAI] = None,
+        llm: Optional["OpenAI"] = None,
         prompt_template_str: str = DEFAULT_MULTI_PYD_SELECT_PROMPT_TMPL,
         max_outputs: Optional[int] = None,
         verbose: bool = False,
     ) -> "PydanticMultiSelector":
+        try:
+            from llama_index.program.openai import OpenAIPydanticProgram
+        except ImportError as e:
+            raise ImportError(
+                "`llama-index-program-openai` package is missing. "
+                "Please install using `pip install llama-index-program-openai`."
+            )
         if program is None:
             program = OpenAIPydanticProgram.from_defaults(
                 output_cls=MultiSelection,

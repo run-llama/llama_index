@@ -11,8 +11,8 @@ from llama_index.core.embeddings.openai import (
     OpenAIEmbeddingMode,
     OpenAIEmbeddingModelType,
 )
+from llama_index.core.embeddings.openai_utils import resolve_from_aliases
 from llama_index.core.llms.generic_utils import get_from_param_or_env
-from llama_index.core.llms.openai_utils import resolve_from_aliases
 
 
 class AzureOpenAIEmbedding(OpenAIEmbedding):

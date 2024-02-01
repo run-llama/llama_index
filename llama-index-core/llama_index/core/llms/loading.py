@@ -1,15 +1,11 @@
 from typing import Dict, Type
 
 from llama_index.core.llms.custom import CustomLLM
-from llama_index.core.llms.huggingface import HuggingFaceLLM
 from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.llms.openai import OpenAI
 
 RECOGNIZED_LLMS: Dict[str, Type[LLM]] = {
     MockLLM.class_name(): MockLLM,
-    HuggingFaceLLM.class_name(): HuggingFaceLLM,
-    OpenAI.class_name(): OpenAI,
     CustomLLM.class_name(): CustomLLM,
 }
 

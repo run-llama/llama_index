@@ -25,6 +25,15 @@ from tests.mock_utils.mock_text_splitter import patch_token_splitter_newline
 #     monkeypatch.setattr(socket, "socket", deny_network)
 
 
+@pytest.fixture(autouse=True)
+def set_env_vars():
+    # set env var for testing
+    os.environ["IS_TESTING"] = "1"
+    yield
+    # test clean up, unset env var
+    del os.environ["IS_TESTING"]
+
+
 @pytest.fixture()
 def allow_networking(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.undo()

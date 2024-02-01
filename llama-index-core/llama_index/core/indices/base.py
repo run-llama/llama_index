@@ -9,8 +9,6 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.core.data_structs.data_structs import IndexStruct
 from llama_index.core.ingestion import run_transformations
-from llama_index.core.llms.openai import OpenAI
-from llama_index.core.llms.openai_utils import is_function_calling_model
 from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.schema import BaseNode, Document, IndexNode, TransformComponent
 from llama_index.core.service_context import ServiceContext
@@ -418,6 +416,15 @@ class BaseIndex(Generic[IS], ABC):
 
         # resolve chat mode
         if chat_mode == ChatMode.BEST:
+            try:
+                from llama_index.llms.openai import OpenAI
+                from llama_index.llms.openai.utils import is_function_calling_model
+            except ImportError as e:
+                raise ImportError(
+                    "`llama-index-llms-openai` package not found."
+                    " Please install with `pip install llama-index-llms-openai`."
+                )
+
             if isinstance(llm, OpenAI) and is_function_calling_model(
                 llm.metadata.model_name
             ):
@@ -451,8 +458,16 @@ class BaseIndex(Generic[IS], ABC):
 
         elif chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
             # NOTE: lazy import
-            from llama_index.core.agent import OpenAIAgent, ReActAgent
+            from llama_index.core.agent import ReActAgent
             from llama_index.core.tools.query_engine import QueryEngineTool
+
+            try:
+                from llama_index.agent.openai import OpenAIAgent
+            except ImportError as e:
+                raise ImportError(
+                    "`llama-index-agent-openai` package not found."
+                    " Please install with `pip install llama-index-agent-openai`."
+                )
 
             # convert query engine to tool
             query_engine_tool = QueryEngineTool.from_defaults(query_engine=query_engine)

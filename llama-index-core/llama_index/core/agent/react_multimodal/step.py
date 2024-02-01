@@ -1,15 +1,8 @@
 """ReAct multimodal agent."""
 
 import uuid
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    cast,
-)
+from functools import partial
+from typing import Any, Dict, List, Optional, Protocol, Sequence, Tuple, cast
 
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.output_parser import ReActOutputParser
@@ -43,11 +36,8 @@ from llama_index.core.llms.types import MessageRole
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
-from llama_index.core.multi_modal_llms.openai import OpenAIMultiModal
-from llama_index.core.multi_modal_llms.openai_utils import (
-    generate_openai_multi_modal_chat_message,
-)
 from llama_index.core.objects.base import ObjectRetriever
+from llama_index.core.schema import ImageDocument
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
 from llama_index.core.utils import print_text
@@ -55,7 +45,21 @@ from llama_index.core.utils import print_text
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
+class ChatMessageCallable(Protocol):
+    """ChatMessage Callable Protocol."""
+
+    def __call__(
+        self,
+        prompt: str,
+        role: str,
+        image_documents: Optional[Sequence[ImageDocument]],
+        **kwargs: Any,
+    ) -> ChatMessage:
+        ...
+
+
 def add_user_step_to_reasoning(
+    generate_chat_message_fn: ChatMessageCallable,
     step: TaskStep,
     memory: BaseMemory,
     current_reasoning: List[BaseReasoningStep],
@@ -78,7 +82,7 @@ def add_user_step_to_reasoning(
     image_kwargs = step.step_state.get("image_kwargs", {})
 
     if "is_first" in step.step_state and step.step_state["is_first"]:
-        mm_message = generate_openai_multi_modal_chat_message(
+        mm_message = generate_chat_message_fn(
             prompt=step.input,
             role=MessageRole.USER,
             image_documents=image_docs,
@@ -123,6 +127,21 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         self._output_parser = output_parser or ReActOutputParser()
         self._verbose = verbose
 
+        try:
+            from llama_index.multi_modal_llms.openai.utils import (
+                generate_openai_multi_modal_chat_message,
+            )
+
+            self._add_user_step_to_reasoning = partial(
+                add_user_step_to_reasoning,
+                generate_chat_message_fn=generate_openai_multi_modal_chat_message,
+            )
+        except ImportError:
+            raise ImportError(
+                "`llama-index-multi-modal-llms-openai` package cannot be found. "
+                "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
+            )
+
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
         elif len(tools) > 0:
@@ -156,9 +175,18 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         Returns:
             ReActAgent
         """
-        multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
-            model="gpt-4-vision-preview", max_new_tokens=1000
-        )
+        if multi_modal_llm is None:
+            try:
+                from llama_index.multi_modal_llms.openai import OpenAIMultiModal
+
+                multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
+                    model="gpt-4-vision-preview", max_new_tokens=1000
+                )
+            except ImportError:
+                raise ImportError(
+                    "`llama-index-multi-modal-llms-openai` package cannot be found. "
+                    "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
+                )
         return cls(
             tools=tools or [],
             tool_retriever=tool_retriever,
@@ -357,7 +385,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         # This is either not None on the first step or if the user specifies
         # an intermediate step in the middle
         if step.input is not None:
-            add_user_step_to_reasoning(
+            self._add_user_step_to_reasoning(
                 step,
                 task.extra_state["new_memory"],
                 task.extra_state["current_reasoning"],
@@ -396,7 +424,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
     ) -> TaskStepOutput:
         """Run step."""
         if step.input is not None:
-            add_user_step_to_reasoning(
+            self._add_user_step_to_reasoning(
                 step,
                 task.extra_state["new_memory"],
                 task.extra_state["current_reasoning"],
