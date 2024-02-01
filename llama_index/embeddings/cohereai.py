@@ -111,7 +111,7 @@ class CohereEmbedding(BaseEmbedding):
             raise ValueError(f"truncate must be one of {VALID_TRUNCATE_OPTIONS}")
 
         super().__init__(
-            cohere_client=cohere.Client(cohere_api_key),
+            cohere_client=cohere.Client(cohere_api_key, client_name="llama_index"),
             cohere_api_key=cohere_api_key,
             model_name=model_name,
             truncate=truncate,
