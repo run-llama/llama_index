@@ -151,11 +151,13 @@ class DashVectorStore(VectorStore):
         )
 
         sparse_vector = None
+        topk = query.similarity_top_k
         if (
             query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID)
             and self._support_sparse_vector
         ):
             sparse_vector = self._encoder.encode_queries(query.query_str)
+            topk = query.hybrid_top_k or query.similarity_top_k
 
             if query.alpha is not None:
                 from dashtext import combine_dense_and_sparse
@@ -168,7 +170,7 @@ class DashVectorStore(VectorStore):
         rsp = self._collection.query(
             vector=query_embedding,
             sparse_vector=sparse_vector,
-            topk=query.similarity_top_k,
+            topk=topk,
             filter=filter,
             include_vector=True,
         )
