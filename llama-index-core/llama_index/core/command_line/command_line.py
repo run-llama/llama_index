@@ -1,6 +1,7 @@
 import argparse
 from typing import Any, Optional
 
+from llama_index.core.command_line.upgrade import upgrade_file
 from llama_index.core.command_line.rag import RagCLI, default_ragcli_persist_dir
 from llama_index.core.embeddings.openai import OpenAIEmbedding
 from llama_index.core.ingestion import IngestionCache, IngestionPipeline
@@ -159,6 +160,14 @@ def main() -> None:
     )
     llamadataset_parser.set_defaults(
         func=lambda args: handle_download_llama_dataset(**vars(args))
+    )
+
+    # upgrade to v0.10.0 command
+    upgrade_parser = subparsers.add_parser(
+        "upgrade", help="Upgrade a file to v0.10.0"
+    )
+    upgrade_parser.add_argument(
+        "file", type=str, help="The file to upgrade. Should be a .ipynb or .py file."
     )
 
     # Parse the command-line arguments
