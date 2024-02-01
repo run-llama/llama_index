@@ -139,12 +139,13 @@ class BaseElementNodeParser(NodeParser):
             if element.type != "table":
                 continue
             table_context = str(element.element)
-            if idx > 0 and "table" in str(elements[idx - 1].element).lower():
-                table_context = str(elements[idx - 1].element) + "\n" + table_context
-            if (
-                idx < len(elements) - 1
-                and "table" in str(elements[idx + 1].element).lower()
+            if idx > 0 and str(elements[idx - 1].element).lower().strip().startswith(
+                "table"
             ):
+                table_context = str(elements[idx - 1].element) + "\n" + table_context
+            if idx < len(elements) + 1 and str(
+                elements[idx - 1].element
+            ).lower().strip().startswith("table"):
                 table_context += "\n" + str(elements[idx + 1].element)
             index = SummaryIndex.from_documents(
                 [Document(text=table_context)], service_context=service_context
