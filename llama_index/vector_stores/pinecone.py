@@ -1,7 +1,7 @@
 """
 Pinecone Vector store index.
 
-An index that that is built on top of an existing vector store.
+An index that is built on top of an existing vector store.
 
 """
 import logging
@@ -408,13 +408,15 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 query_embedding = [v * query.alpha for v in query_embedding]
 
         if query.filters is not None:
-            if "filter" in kwargs:
+            if "filter" in kwargs or "pinecone_query_filters" in kwargs:
                 raise ValueError(
                     "Cannot specify filter via both query and kwargs. "
                     "Use kwargs only for pinecone specific items that are "
                     "not supported via the generic query interface."
                 )
             filter = _to_pinecone_filter(query.filters)
+        elif "pinecone_query_filters" in kwargs:
+            filter = kwargs.pop("pinecone_query_filters")
         else:
             filter = kwargs.pop("filter", {})
 

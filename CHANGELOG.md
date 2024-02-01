@@ -1,5 +1,25 @@
 # ChangeLog
 
+## [0.9.40] - 2024-01-30
+
+### New Features
+
+- Improve and fix bugs for MarkdownElementNodeParser (#10340)
+- Fixed and improve Perplexity support for new models (#10319)
+- Ensure system_prompt is passed to Perplexity LLM (#10326)
+- Extended BaseRetrievalEvaluator to include an optional PostProcessor (#10321)
+
+## [0.9.39] - 2024-01-26
+
+### New Features
+
+- Support for new GPT Turbo Models (#10291)
+- Support Multiple docs for Sentence Transformer Fine tuning(#10297)
+
+### Bug Fixes / Nits
+
+- Marvin imports fixed (#9864)
+
 ## [0.9.38] - 2024-01-25
 
 ### New Features

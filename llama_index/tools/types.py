@@ -36,7 +36,7 @@ class ToolMetadata:
             parameters = {
                 k: v
                 for k, v in parameters.items()
-                if k in ["type", "properties", "required"]
+                if k in ["type", "properties", "required", "definitions"]
             }
         return parameters
 

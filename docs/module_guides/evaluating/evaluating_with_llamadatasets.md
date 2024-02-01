@@ -28,7 +28,7 @@ from llama_index.llama_dataset import (
 
 example1 = LabelledRagDataExample(
     query="This is some user query.",
-    query_by=CreatedBy(type=CreateByType.HUMAN),
+    query_by=CreatedBy(type=CreatedByType.HUMAN),
     reference_answer="This is a reference answer. Otherwise known as ground-truth answer.",
     reference_contexts=[
         "This is a list",
@@ -118,10 +118,10 @@ llamaindex-cli download-llamadataset PaulGrahamEssayDataset --download-dir ./dat
 
 ```python
 # using python
-from llama_index.llama_datasets import download_llama_datasets
+from llama_index.llama_dataset import download_llama_dataset
 
 # a LabelledRagDataset and a list of source Document's
-rag_dataset, documents = download_llama_datasets(
+rag_dataset, documents = download_llama_dataset(
     "PaulGrahamEssayDataset", "./data"
 )
 ```
