@@ -278,9 +278,14 @@ class BaseElementNodeParser(NodeParser):
                 text_node = TextNode(
                     text=table_str,
                     id_=table_id,
-                    metadata={"table_df": str(table_df.to_dict())},
-                    excluded_embed_metadata_keys=["table_df"],
-                    excluded_llm_metadata_keys=["table_df"],
+                    metadata={
+                        # serialize the table as a dictionary string
+                        "table_df": str(table_df.to_dict()),
+                        # add table summary for retrieval purposes
+                        "table_summary": table_summary,
+                    },
+                    excluded_embed_metadata_keys=["table_df", "table_summary"],
+                    excluded_llm_metadata_keys=["table_df", "table_summary"],
                 )
                 nodes.extend([index_node, text_node])
             else:
