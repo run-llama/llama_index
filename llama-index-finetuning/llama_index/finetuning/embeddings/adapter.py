@@ -3,7 +3,7 @@
 import logging
 from typing import Any, List, Optional, Tuple, Type, cast
 
-from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 from llama_index.core.utils import infer_torch_device
 
