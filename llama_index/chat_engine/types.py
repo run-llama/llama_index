@@ -98,7 +98,9 @@ class StreamingAgentChatResponse:
         self._aqueue.put_nowait(delta)
         self._new_item_event.set()
 
-    def write_response_to_history(self, memory: BaseMemory) -> None:
+    def write_response_to_history(
+        self, memory: BaseMemory, raise_error: bool = False
+    ) -> None:
         if self.chat_stream is None:
             raise ValueError(
                 "chat_stream is None. Cannot write to history without chat_stream."
@@ -117,7 +119,12 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            logger.warning(f"Encountered exception writing response to history: {e}")
+            if not raise_error:
+                logger.warning(
+                    f"Encountered exception writing response to history: {e}"
+                )
+            else:
+                raise
 
         self._is_done = True
 
