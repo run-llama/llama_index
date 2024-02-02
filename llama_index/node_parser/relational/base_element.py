@@ -134,41 +134,6 @@ class BaseElementNodeParser(NodeParser):
         # and other elements in the future?
         return [e for e in elements if e.type != "table"]
 
-    # def extract_table_summaries(self, elements: List[Element]) -> None:
-    #     """Go through elements, extract out summaries that are tables."""
-    #     from llama_index.indices.list.base import SummaryIndex
-    #     from llama_index.service_context import ServiceContext
-
-    #     llm = self.llm or OpenAI()
-    #     llm = cast(LLM, llm)
-
-    #     service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
-    #     for idx, element in tqdm(enumerate(elements)):
-    #         if element.type != "table":
-    #             continue
-    #         table_context = str(element.element)
-    #         if idx > 0 and str(elements[idx - 1].element).lower().strip().startswith(
-    #             "table"
-    #         ):
-    #             table_context = str(elements[idx - 1].element) + "\n" + table_context
-    #         if idx < len(elements) + 1 and str(
-    #             elements[idx - 1].element
-    #         ).lower().strip().startswith("table"):
-    #             table_context += "\n" + str(elements[idx + 1].element)
-    #         index = SummaryIndex.from_documents(
-    #             [Document(text=table_context)], service_context=service_context
-    #         )
-    #         query_engine = index.as_query_engine(output_cls=TableOutput)
-    #         try:
-    #             response = query_engine.query(self.summary_query_str)
-    #             element.table_output = cast(PydanticResponse, response).response
-    #         except ValidationError:
-    #             # There was a pydantic validation error, so we will run with text completion
-    #             # fill in the summary and leave other fields blank
-    #             query_engine = index.as_query_engine()
-    #             response_txt = str(query_engine.query(self.summary_query_str))
-    #             element.table_output = TableOutput(summary=response_txt, columns=[])
-
     def extract_table_summaries(self, elements: List[Element]) -> None:
         """Go through elements, extract out summaries that are tables."""
         from llama_index.indices.list.base import SummaryIndex
