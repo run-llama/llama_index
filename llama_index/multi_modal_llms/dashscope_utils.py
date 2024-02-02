@@ -10,9 +10,7 @@ from llama_index.core.llms.types import (
 from llama_index.schema import ImageDocument
 
 
-def dashscope_response_to_completion_response(
-    response: Any, stream: bool = False
-) -> CompletionResponse:
+def dashscope_response_to_completion_response(response: Any) -> CompletionResponse:
     if response["status_code"] == HTTPStatus.OK:
         content = response["output"]["choices"][0]["message"]["content"]
         if content:
