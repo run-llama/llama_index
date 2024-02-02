@@ -5,7 +5,7 @@ from glob import iglob
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Union, cast
 
-from llama_index import (
+from llama_index.core import (
     Response,
     ServiceContext,
     SimpleDirectoryReader,
@@ -14,9 +14,10 @@ from llama_index import (
 from llama_index.core.bridge.pydantic import BaseModel, Field, validator
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.core.llms import LLM, OpenAI
+from llama_index.core.llms import LLM
+from llama_index.llms.openai import OpenAI
 from llama_index.core.query_engine import CustomQueryEngine
-from llama_index.core.query_pipeline import FnComponent
+from llama_index.core.query_pipeline.components.function import FnComponent
 from llama_index.core.query_pipeline.query import QueryPipeline
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.response.schema import RESPONSE_TYPE, StreamingResponse
@@ -98,6 +99,15 @@ class RagCLI(BaseModel):
             fn=query_input, output_key="output", req_params={"query_str"}
         )
         llm = cast(LLM, values["llm"])
+        
+        # get embed_model from transformations if possible
+        embed_model = None
+        if ingestion_pipeline.transformations is not None:
+            for transformation in ingestion_pipeline.transformations:
+                if isinstance(transformation, BaseEmbedding):
+                    embed_model = transformation.embed_model
+                    break
+
         service_context = ServiceContext.from_defaults(llm=llm)
         retriever = VectorStoreIndex.from_vector_store(
             ingestion_pipeline.vector_store, service_context=service_context

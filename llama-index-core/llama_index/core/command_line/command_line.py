@@ -2,7 +2,8 @@ import argparse
 from typing import Any, Optional
 
 from llama_index.core.command_line.rag import RagCLI, default_ragcli_persist_dir
-from llama_index.core.embeddings.openai import OpenAIEmbedding
+from llama_index.core.command_line.upgrade import upgrade_dir
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.ingestion import IngestionCache, IngestionPipeline
 from llama_index.core.llama_dataset.download import (
     LLAMA_DATASETS_LFS_URL,
@@ -12,7 +13,7 @@ from llama_index.core.llama_dataset.download import (
 from llama_index.core.llama_pack.download import LLAMA_HUB_URL, download_llama_pack
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.text_splitter import SentenceSplitter
-from llama_index.core.vector_stores import ChromaVectorStore
+from llama_index.vector_stores.chroma import ChromaVectorStore
 
 
 def handle_download_llama_pack(
@@ -160,6 +161,17 @@ def main() -> None:
     llamadataset_parser.set_defaults(
         func=lambda args: handle_download_llama_dataset(**vars(args))
     )
+
+    # Upgrade command
+    upgrade_parser = subparsers.add_parser(
+        "upgrade", help="Upgrade a notebook or python file."
+    )
+    upgrade_parser.add_argument(
+        "directory",
+        type=str,
+        help="The directory to upgrade. Will run on only .ipynb or .py files.",
+    )
+    upgrade_parser.set_defaults(func=lambda args: upgrade_dir(args.directory))
 
     # Parse the command-line arguments
     args = parser.parse_args()
