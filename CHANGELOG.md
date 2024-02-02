@@ -1,5 +1,18 @@
 # ChangeLog
 
+## [0.9.41] - 2024-02-01
+
+### New Features
+
+- Nomic Embedding (#10388)
+- Dashvector support sparse vector (#10386)
+- Table QA with MarkDownParser and Benchmarking (#10382)
+- Simple web page reader (#10395)
+
+### Bug Fixes / Nits
+
+- fix full node content in KeywordExtractor (#10398)
+
 ## [0.9.40] - 2024-01-30
 
 ### New Features
