@@ -428,6 +428,52 @@ erdantic = ["erdantic (>=0.5,<0.6)"]
 test = ["coverage (>=7,<8)", "pytest (>=7,<8)"]
 
 [[package]]
+name = "azure-common"
+version = "1.1.28"
+description = "Microsoft Azure Client Library for Python (Common)"
+optional = false
+python-versions = "*"
+files = [
+    {file = "azure-common-1.1.28.zip", hash = "sha256:4ac0cd3214e36b6a1b6a442686722a5d8cc449603aa833f3f0f40bda836704a3"},
+    {file = "azure_common-1.1.28-py2.py3-none-any.whl", hash = "sha256:5c12d3dcf4ec20599ca6b0d3e09e86e146353d443e7fcc050c9a19c1f9df20ad"},
+]
+
+[[package]]
+name = "azure-core"
+version = "1.29.7"
+description = "Microsoft Azure Core Library for Python"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "azure-core-1.29.7.tar.gz", hash = "sha256:2944faf1a7ff1558b1f457cabf60f279869cabaeef86b353bed8eb032c7d8c5e"},
+    {file = "azure_core-1.29.7-py3-none-any.whl", hash = "sha256:95a7b41b4af102e5fcdfac9500fcc82ff86e936c7145a099b7848b9ac0501250"},
+]
+
+[package.dependencies]
+requests = ">=2.21.0"
+six = ">=1.11.0"
+typing-extensions = ">=4.6.0"
+
+[package.extras]
+aio = ["aiohttp (>=3.0)"]
+
+[[package]]
+name = "azure-search-documents"
+version = "11.4.0"
+description = "Microsoft Azure Cognitive Search Client Library for Python"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "azure-search-documents-11.4.0.tar.gz", hash = "sha256:599f269f106fb51e646ff426a218c21811575598e6a769b23fa4a0127c0f57e0"},
+    {file = "azure_search_documents-11.4.0-py3-none-any.whl", hash = "sha256:e435266dc992a3450dc475309c9475f89a4bb0e9dac838140e609d9f1c7608ac"},
+]
+
+[package.dependencies]
+azure-common = ">=1.1,<2.0"
+azure-core = ">=1.28.0,<2.0.0"
+isodate = ">=0.6.0"
+
+[[package]]
 name = "babel"
 version = "2.14.0"
 description = "Internationalization utilities"
@@ -2095,6 +2141,20 @@ widgetsnbextension = ">=4.0.9,<4.1.0"
 
 [package.extras]
 test = ["ipykernel", "jsonschema", "pytest (>=3.6.0)", "pytest-cov", "pytz"]
+
+[[package]]
+name = "isodate"
+version = "0.6.1"
+description = "An ISO 8601 date/time/duration parser and formatter"
+optional = false
+python-versions = "*"
+files = [
+    {file = "isodate-0.6.1-py2.py3-none-any.whl", hash = "sha256:0751eece944162659049d35f4f549ed815792b38793f07cf73381c1c87cbed96"},
+    {file = "isodate-0.6.1.tar.gz", hash = "sha256:48c5881de7e8b0a0d648cb024c8062dc84e7b840ed81e864c7614fd3c127bde9"},
+]
+
+[package.dependencies]
+six = "*"
 
 [[package]]
 name = "isoduration"
@@ -4645,7 +4705,6 @@ files = [
     {file = "pymongo-4.6.1-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b8729dbf25eb32ad0dc0b9bd5e6a0d0b7e5c2dc8ec06ad171088e1896b522a74"},
     {file = "pymongo-4.6.1-cp312-cp312-win32.whl", hash = "sha256:3177f783ae7e08aaf7b2802e0df4e4b13903520e8380915e6337cdc7a6ff01d8"},
     {file = "pymongo-4.6.1-cp312-cp312-win_amd64.whl", hash = "sha256:00c199e1c593e2c8b033136d7a08f0c376452bac8a896c923fcd6f419e07bdd2"},
-    {file = "pymongo-4.6.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:6dcc95f4bb9ed793714b43f4f23a7b0c57e4ef47414162297d6f650213512c19"},
     {file = "pymongo-4.6.1-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:13552ca505366df74e3e2f0a4f27c363928f3dff0eef9f281eb81af7f29bc3c5"},
     {file = "pymongo-4.6.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:77e0df59b1a4994ad30c6d746992ae887f9756a43fc25dec2db515d94cf0222d"},
     {file = "pymongo-4.6.1-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:3a7f02a58a0c2912734105e05dedbee4f7507e6f1bd132ebad520be0b11d46fd"},
@@ -7779,4 +7838,4 @@ query-tools = ["guidance", "jsonpath-ng", "lm-format-enforcer", "rank-bm25", "sc
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "ef273f99621199d1821deb1bbd567ffb6ba49d8afb4bcb4350c59c6d62ff5427"
+content-hash = "189e15dfb5d163ba2e80f2f4bc8f37724b97e2509d1b5e3ee23dc1d83abc8c19"
