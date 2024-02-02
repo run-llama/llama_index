@@ -19,7 +19,7 @@ from llama_index.core.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.core.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 logger = logging.getLogger(__name__)

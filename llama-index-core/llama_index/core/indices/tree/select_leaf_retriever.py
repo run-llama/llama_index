@@ -3,7 +3,8 @@
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.response.schema import Response
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.indices.tree.base import TreeIndex
@@ -21,7 +22,6 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT_MULTIPLE,
     DEFAULT_TEXT_QA_PROMPT,
 )
-from llama_index.core.response.schema import Response
 from llama_index.core.response_synthesizers import get_response_synthesizer
 from llama_index.core.schema import (
     BaseNode,

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from llama_index.core.base_selector import BaseSelector
+from llama_index.core.base.base_selector import BaseSelector
 from llama_index.core.llms.llm import LLM
 from llama_index.core.selectors.llm_selectors import (
     LLMMultiSelector,

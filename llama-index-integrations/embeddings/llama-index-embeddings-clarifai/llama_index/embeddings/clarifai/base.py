@@ -5,7 +5,7 @@ import os
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from clarifai.client.model import Model
 
 logger = logging.getLogger(__name__)

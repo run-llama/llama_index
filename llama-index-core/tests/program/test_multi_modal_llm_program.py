@@ -4,10 +4,10 @@ import json
 from typing import Sequence
 from unittest.mock import MagicMock
 
-from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     CompletionResponse,
 )
+from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.multi_modal_llms import MultiModalLLMMetadata
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.program import MultiModalLLMCompletionProgram

@@ -4,7 +4,7 @@ from typing import Any, Dict
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.node_parser.text.utils import split_by_sentence_tokenizer
 from llama_index.core.query_engine import BaseQueryEngine, CustomQueryEngine
-from llama_index.core.response.schema import RESPONSE_TYPE
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.schema import MetadataMode
 
 

@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Tuple, Union
 
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.schema import (

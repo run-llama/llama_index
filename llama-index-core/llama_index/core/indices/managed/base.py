@@ -6,7 +6,7 @@ An index that is built on top of a managed service.
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Type
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.data_structs.data_structs import IndexDict
 from llama_index.core.indices.base import BaseIndex, IndexType

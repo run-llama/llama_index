@@ -7,6 +7,7 @@ from llama_index.core.indices.knowledge_graph.retrievers import KGTableRetriever
 from llama_index.core.schema import Document, QueryBundle
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.storage_context import StorageContext
+
 from tests.indices.knowledge_graph.test_base import MockEmbedding, mock_extract_triplets
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
 

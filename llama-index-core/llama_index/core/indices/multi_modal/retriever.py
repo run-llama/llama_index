@@ -3,13 +3,13 @@
 import asyncio
 from typing import Any, Dict, List, Optional
 
-from llama_index.core.base_multi_modal_retriever import (
+from llama_index.core.base.base_multi_modal_retriever import (
     MultiModalRetriever,
 )
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.data_structs.data_structs import IndexDict
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.indices.multi_modal.base import MultiModalVectorStoreIndex
 from llama_index.core.indices.utils import log_vector_store_query_result

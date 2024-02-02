@@ -13,7 +13,7 @@ from tenacity import (
 )
 
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage
 
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for LLM.
 E.g. to use openai Please set the OPENAI_API_KEY environment variable or \

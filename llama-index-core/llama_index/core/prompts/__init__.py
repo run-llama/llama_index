@@ -1,6 +1,6 @@
 """Prompt class."""
 
-from llama_index.core.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.prompts.base import (
     BasePromptTemplate,
     ChatPromptTemplate,

@@ -4,7 +4,14 @@ import pickle
 import warnings
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.query_pipeline.query import (
+    ChainableMixin,
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.base import BaseIndex
@@ -13,13 +20,6 @@ from llama_index.core.objects.base_node_mapping import (
     DEFAULT_PERSIST_FNAME,
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
-)
-from llama_index.core.query_pipeline.components.query import (
-    ChainableMixin,
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    validate_and_convert_stringable,
 )
 from llama_index.core.schema import QueryType
 from llama_index.core.storage.storage_context import (

@@ -3,7 +3,7 @@
 from typing import Dict, List
 
 import pytest
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.schema import Document, QueryBundle
 from llama_index.core.service_context import ServiceContext

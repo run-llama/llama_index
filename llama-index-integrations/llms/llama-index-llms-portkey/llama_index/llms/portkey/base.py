@@ -4,7 +4,7 @@ Portkey integration with Llama_index for enhanced monitoring.
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union, cast
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,

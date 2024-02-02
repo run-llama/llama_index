@@ -2,10 +2,10 @@
 
 from typing import Any, Dict, List
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.bridge.langchain import BaseTool
 from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.core.schema import TextNode
 
 

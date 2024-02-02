@@ -1,11 +1,11 @@
 from typing import Any, Dict, Optional, Sequence
 
-from llama_index.core.base_selector import (
+from llama_index.core.base.base_selector import (
     BaseSelector,
     SelectorResult,
     SingleSelection,
 )
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import QueryBundle

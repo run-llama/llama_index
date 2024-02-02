@@ -4,7 +4,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.keyword_table.base import BaseKeywordTableIndex
 from llama_index.core.indices.keyword_table.utils import (

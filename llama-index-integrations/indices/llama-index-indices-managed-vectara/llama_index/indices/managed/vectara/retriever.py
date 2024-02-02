@@ -7,7 +7,7 @@ import logging
 from typing import Any, List, Optional, Tuple
 
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.indices.managed.types import ManagedIndexQueryMode
 from llama_index.core.indices.vector_store.retrievers.auto_retriever.auto_retriever import (
     VectorIndexAutoRetriever,

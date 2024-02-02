@@ -2,6 +2,7 @@ import asyncio
 from threading import Thread
 from typing import Any, List, Optional, Type
 
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
@@ -9,7 +10,6 @@ from llama_index.core.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.types import ChatMessage
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import (

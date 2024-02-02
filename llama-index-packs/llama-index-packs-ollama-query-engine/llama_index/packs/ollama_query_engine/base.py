@@ -7,7 +7,7 @@ from llama_index.core import ServiceContext, VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.llms.ollama import Ollama
 from llama_index.core.schema import Document
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
 

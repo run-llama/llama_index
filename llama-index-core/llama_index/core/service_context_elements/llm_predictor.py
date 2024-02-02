@@ -7,6 +7,11 @@ from typing import Any, Dict, List, Optional, Union
 
 from typing_extensions import Self
 
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    LLMMetadata,
+    MessageRole,
+)
 from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -16,11 +21,6 @@ from llama_index.core.llms.llm import (
     astream_completion_response_to_tokens,
     stream_chat_response_to_tokens,
     stream_completion_response_to_tokens,
-)
-from llama_index.core.llms.types import (
-    ChatMessage,
-    LLMMetadata,
-    MessageRole,
 )
 from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate

@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.core.prompts.mixin import PromptMixinType

@@ -1,8 +1,8 @@
 import logging
 from typing import Any, List, Optional, Tuple, cast
 
-from llama_index.core.base_auto_retriever import BaseAutoRetriever
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_auto_retriever import BaseAutoRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K

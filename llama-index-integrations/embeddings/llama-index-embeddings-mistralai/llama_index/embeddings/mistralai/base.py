@@ -4,7 +4,10 @@ from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.core.base.embeddings.base import (
+    DEFAULT_EMBED_BATCH_SIZE,
+    BaseEmbedding,
+)
 from llama_index.core.llms.generic_utils import get_from_param_or_env
 from mistralai.async_client import MistralAsyncClient
 from mistralai.client import MistralClient

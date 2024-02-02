@@ -10,6 +10,21 @@ from typing import (
     runtime_checkable,
 )
 
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    MessageRole,
+)
+from llama_index.core.base.query_pipeline.query import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    StringableInput,
+    validate_and_convert_stringable,
+)
 from llama_index.core.bridge.pydantic import BaseModel, Field, validator
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.llms.base import BaseLLM
@@ -19,22 +34,7 @@ from llama_index.core.llms.generic_utils import (
 from llama_index.core.llms.generic_utils import (
     prompt_to_messages,
 )
-from llama_index.core.llms.types import (
-    ChatMessage,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
-    MessageRole,
-)
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.core.query_pipeline.components.query import (
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    StringableInput,
-    validate_and_convert_stringable,
-)
 from llama_index.core.types import (
     BaseOutputParser,
     PydanticProgramMode,

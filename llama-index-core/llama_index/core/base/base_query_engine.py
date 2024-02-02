@@ -4,17 +4,17 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.prompts.mixin import PromptDictType, PromptMixin
-from llama_index.core.query_pipeline.components.query import (
+from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.response.schema import RESPONSE_TYPE
+from llama_index.core.base.response.schema import RESPONSE_TYPE
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.core.schema import NodeWithScore, QueryBundle, QueryType
 
 logger = logging.getLogger(__name__)

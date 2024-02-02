@@ -5,8 +5,8 @@ from typing import Any, Optional, Sequence
 
 import pandas as pd
 
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.data_structs.table import PandasStructTable
 from llama_index.core.indices.struct_store.base import BaseStructStoreIndex
 from llama_index.core.llms.utils import LLMType

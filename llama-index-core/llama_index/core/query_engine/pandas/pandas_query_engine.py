@@ -12,7 +12,8 @@ from typing import Any, Dict, Optional
 
 import pandas as pd
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.response.schema import Response
 from llama_index.core.indices.struct_store.pandas import PandasIndex
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
@@ -21,7 +22,6 @@ from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.query_engine.pandas.output_parser import (
     PandasInstructionParser,
 )
-from llama_index.core.response.schema import Response
 from llama_index.core.schema import QueryBundle
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import (

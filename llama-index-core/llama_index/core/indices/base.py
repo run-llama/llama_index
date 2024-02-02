@@ -3,8 +3,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.chat_engine.types import BaseChatEngine, ChatMode
 from llama_index.core.data_structs.data_structs import IndexStruct

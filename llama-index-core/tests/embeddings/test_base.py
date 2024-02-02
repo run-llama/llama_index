@@ -2,7 +2,7 @@
 from typing import Any, List
 from unittest.mock import patch
 
-from llama_index.core.embeddings.base import SimilarityMode, mean_agg
+from llama_index.core.base.embeddings.base import SimilarityMode, mean_agg
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 
 

@@ -7,6 +7,7 @@ from typing import List, Optional
 
 from llama_index.core import Document, ServiceContext, SummaryIndex
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.ingestion import run_transformations
 from llama_index.core.llama_dataset import (
     CreatedBy,
@@ -23,7 +24,6 @@ from llama_index.core.prompts.mixin import (
     PromptMixin,
     PromptMixinType,
 )
-from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.core.schema import (
     BaseNode,
     MetadataMode,

@@ -8,7 +8,7 @@ from llama_index.core.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     CompletionResponse,
     CompletionResponseGen,

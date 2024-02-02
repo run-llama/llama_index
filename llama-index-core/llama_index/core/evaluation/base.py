@@ -3,9 +3,9 @@ import asyncio
 from abc import abstractmethod
 from typing import Any, Optional, Sequence
 
+from llama_index.core.base.response.schema import Response
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType
-from llama_index.core.response.schema import Response
 
 
 class EvaluationResult(BaseModel):

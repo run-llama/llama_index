@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.llama_pack import BaseLlamaPack
 from llama_index.core.schema import NodeWithScore, TextNode

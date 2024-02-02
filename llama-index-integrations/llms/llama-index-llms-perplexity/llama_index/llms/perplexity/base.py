@@ -6,7 +6,7 @@ import requests
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

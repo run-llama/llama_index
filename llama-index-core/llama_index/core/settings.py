@@ -5,8 +5,8 @@ if TYPE_CHECKING:
     from llama_index import ServiceContext
 
 
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import BaseCallbackHandler, CallbackManager
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.llms import LLM

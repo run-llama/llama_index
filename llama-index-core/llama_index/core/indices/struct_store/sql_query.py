@@ -5,7 +5,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from sqlalchemy import Table
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.response.schema import Response
 from llama_index.core.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
@@ -24,7 +25,6 @@ from llama_index.core.prompts.default_prompts import (
 )
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.prompts.prompt_type import PromptType
-from llama_index.core.response.schema import Response
 from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )

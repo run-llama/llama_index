@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 
 
 class OllamaEmbedding(BaseEmbedding):

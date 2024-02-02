@@ -9,8 +9,7 @@ from typing import (
     cast,
 )
 
-from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -19,6 +18,7 @@ from llama_index.core.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
 )
+from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
 
 
 def llm_chat_callback() -> Callable:

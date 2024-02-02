@@ -3,7 +3,7 @@
 from typing import List
 
 import pytest
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.indices.tree.base import TreeIndex
 from llama_index.core.indices.vector_store.base import VectorStoreIndex

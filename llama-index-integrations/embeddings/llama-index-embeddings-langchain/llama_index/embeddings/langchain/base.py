@@ -4,7 +4,10 @@ from typing import TYPE_CHECKING, List, Optional
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.core.base.embeddings.base import (
+    DEFAULT_EMBED_BATCH_SIZE,
+    BaseEmbedding,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import Embeddings as LCEmbeddings

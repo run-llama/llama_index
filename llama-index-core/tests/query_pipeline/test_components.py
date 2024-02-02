@@ -2,7 +2,7 @@
 from typing import Any, List, Sequence
 
 import pytest
-from llama_index.core.base_selector import (
+from llama_index.core.base.base_selector import (
     BaseSelector,
     MultiSelection,
     SelectorResult,

@@ -2,7 +2,9 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional, Type
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
@@ -11,10 +13,8 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.chat_engine.utils import response_gen_from_query_engine
 from llama_index.core.llms.generic_utils import messages_to_history_str
-from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.core.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
 from llama_index.core.settings import (

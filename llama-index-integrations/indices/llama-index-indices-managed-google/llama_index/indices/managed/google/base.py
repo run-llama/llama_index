@@ -19,7 +19,7 @@ from typing import Any, List, Optional, Sequence, Type, cast
 from llama_index.core import VectorStoreIndex
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.data_structs.data_structs import IndexDict
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.indices.base import IndexType
 from llama_index.core.indices.base_retriever import BaseRetriever

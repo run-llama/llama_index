@@ -6,7 +6,8 @@ Active Retrieval Augmented Generation.
 
 from typing import Any, Dict, Optional
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
@@ -19,7 +20,6 @@ from llama_index.core.query_engine.flare.output_parser import (
     IsDoneOutputParser,
     QueryTaskOutputParser,
 )
-from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.schema import QueryBundle
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings, llm_from_settings_or_context

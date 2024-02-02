@@ -3,7 +3,7 @@
 import logging
 from typing import Any, List, Optional, cast
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.data_structs.data_structs import IndexGraph
 from llama_index.core.indices.tree.base import TreeIndex

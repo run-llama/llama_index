@@ -6,7 +6,7 @@ import httpx
 import requests
 
 from llama_index.core.bridge.pydantic import Field
-from llama_index.core.embeddings.base import BaseEmbedding, Embedding
+from llama_index.core.base.embeddings.base import BaseEmbedding, Embedding
 
 
 class TogetherEmbedding(BaseEmbedding):

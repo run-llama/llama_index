@@ -7,7 +7,7 @@ from llama_index.tools.neo4j.query_validator import CypherQueryCorrector, Schema
 # backwards compatibility
 try:
     from llama_index.core.llms.llm import LLM
-    from llama_index.core.llms.types import ChatMessage, MessageRole
+    from llama_index.core.base.llms.types import ChatMessage, MessageRole
 except ImportError:
     from llama_index.core.llms.base import LLM, ChatMessage, MessageRole
 

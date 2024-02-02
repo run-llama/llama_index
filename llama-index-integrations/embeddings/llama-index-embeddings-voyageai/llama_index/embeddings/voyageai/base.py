@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 import voyageai
 
 DEFAULT_VOYAGE_BATCH_SIZE = 8

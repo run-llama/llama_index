@@ -1,5 +1,5 @@
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.chat_engine.simple import SimpleChatEngine
-from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.core.service_context import ServiceContext
 
 

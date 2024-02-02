@@ -7,10 +7,10 @@ Build a KG by extracting triplets, and leveraging the KG during query-time.
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.constants import GRAPH_STORE_KEY
 from llama_index.core.data_structs.data_structs import KG
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.graph_stores.simple import SimpleGraphStore
 from llama_index.core.graph_stores.types import GraphStore
 from llama_index.core.indices.base import BaseIndex

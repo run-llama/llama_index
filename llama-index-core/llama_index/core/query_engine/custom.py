@@ -3,11 +3,11 @@
 from abc import abstractmethod
 from typing import Union
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.prompts.mixin import PromptMixinType
-from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.schema import QueryBundle, QueryType
 
 STR_OR_RESPONSE_TYPE = Union[RESPONSE_TYPE, str]

@@ -3,8 +3,8 @@
 
 from typing import List, Optional, Sequence
 
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.ingestion import run_transformations

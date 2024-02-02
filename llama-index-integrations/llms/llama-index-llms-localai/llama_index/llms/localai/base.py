@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.core.llms.types import ChatMessage, LLMMetadata
+from llama_index.core.base.llms.types import ChatMessage, LLMMetadata
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import is_function_calling_model

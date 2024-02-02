@@ -7,7 +7,7 @@ from typing import List, Optional
 import requests
 
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
 logger = logging.getLogger(__name__)

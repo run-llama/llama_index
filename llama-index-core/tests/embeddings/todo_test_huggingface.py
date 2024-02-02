@@ -6,6 +6,7 @@ from llama_index.core.embeddings.huggingface import (
     HuggingFaceInferenceAPIEmbedding,
 )
 from llama_index.core.embeddings.pooling import Pooling
+
 from tests.llms.test_huggingface import STUB_MODEL_NAME
 
 

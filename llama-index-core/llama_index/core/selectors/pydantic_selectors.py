@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence
 
-from llama_index.core.base_selector import (
+from llama_index.core.base.base_selector import (
     BaseSelector,
     MultiSelection,
     SelectorResult,

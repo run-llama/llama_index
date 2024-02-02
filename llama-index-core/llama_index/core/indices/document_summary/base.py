@@ -10,13 +10,13 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.base.response.schema import Response
 from llama_index.core.data_structs.document_summary import IndexDocumentSummary
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.utils import embed_nodes
 from llama_index.core.llms.llm import LLM
-from llama_index.core.response.schema import Response
 from llama_index.core.response_synthesizers import (
     BaseSynthesizer,
     ResponseMode,

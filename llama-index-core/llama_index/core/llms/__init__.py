@@ -1,6 +1,4 @@
-from llama_index.core.llms.custom import CustomLLM
-from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -11,6 +9,8 @@ from llama_index.core.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.core.llms.custom import CustomLLM
+from llama_index.core.llms.llm import LLM
 
 __all__ = [
     "CustomLLM",

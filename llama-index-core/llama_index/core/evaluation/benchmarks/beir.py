@@ -4,7 +4,7 @@ from typing import Callable, Dict, List, Optional
 
 import tqdm
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import Document, QueryBundle
 from llama_index.core.utils import get_cache_dir

@@ -4,8 +4,8 @@ import asyncio
 import logging
 from typing import List, Optional, Sequence
 
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.core.base_selector import BaseSelector
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.base_selector import BaseSelector
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts.mixin import PromptMixinType

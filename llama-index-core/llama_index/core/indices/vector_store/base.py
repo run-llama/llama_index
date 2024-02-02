@@ -7,7 +7,7 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.core.async_utils import run_async_tasks
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.data_structs.data_structs import IndexDict
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model

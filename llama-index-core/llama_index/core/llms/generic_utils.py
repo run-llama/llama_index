@@ -1,7 +1,7 @@
 import os
 from typing import Any, Awaitable, Callable, List, Optional, Sequence
 
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

@@ -11,6 +11,7 @@ from llama_index.core.indices.tree.select_leaf_embedding_retriever import (
 )
 from llama_index.core.schema import BaseNode, Document, QueryBundle
 from llama_index.core.service_context import ServiceContext
+
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_SUMMARY_PROMPT,

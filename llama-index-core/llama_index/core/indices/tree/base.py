@@ -3,11 +3,11 @@
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Union
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.embeddings.base import BaseEmbedding
 
 # from llama_index.core.data_structs.data_structs import IndexGraph
 from llama_index.core.data_structs.data_structs import IndexGraph
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.common_tree.base import GPTTreeIndexBuilder
 from llama_index.core.indices.tree.inserter import TreeIndexInserter

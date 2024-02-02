@@ -3,6 +3,7 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
@@ -15,7 +16,6 @@ from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import PromptTemplate

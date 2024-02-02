@@ -7,8 +7,8 @@ pure LLM calls.
 
 from typing import Any, Dict, Optional, Sequence
 
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.data_structs.data_structs import EmptyIndexStruct
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.llms.utils import LLMType

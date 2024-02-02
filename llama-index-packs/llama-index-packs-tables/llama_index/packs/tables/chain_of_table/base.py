@@ -9,13 +9,13 @@ from llama_index.core.llama_pack.base import BaseLlamaPack
 from abc import abstractmethod
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.query_engine import CustomQueryEngine
-from llama_index.core.response.schema import Response
+from llama_index.core.base.response.schema import Response
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.openai import OpenAI
 from llama_index.core.query_pipeline.query import QueryPipeline as QP
 from llama_index.core.query_pipeline.components.function import FnComponent
-from llama_index.core.query_pipeline.components.query import QueryComponent
+from llama_index.core.base.query_pipeline.query import QueryComponent
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.utils import print_text
 import pandas as pd

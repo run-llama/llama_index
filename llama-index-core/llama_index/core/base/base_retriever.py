@@ -2,7 +2,14 @@
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.query_pipeline.query import (
+    ChainableMixin,
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -10,13 +17,6 @@ from llama_index.core.prompts.mixin import (
     PromptDictType,
     PromptMixin,
     PromptMixinType,
-)
-from llama_index.core.query_pipeline.components.query import (
-    ChainableMixin,
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    validate_and_convert_stringable,
 )
 from llama_index.core.schema import (
     BaseNode,

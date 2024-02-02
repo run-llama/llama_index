@@ -3,13 +3,13 @@
 from inspect import signature
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.query_pipeline.components.query import (
+from llama_index.core.base.query_pipeline.query import (
     InputKeys,
     OutputKeys,
     QueryComponent,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks.base import CallbackManager
 
 
 def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:

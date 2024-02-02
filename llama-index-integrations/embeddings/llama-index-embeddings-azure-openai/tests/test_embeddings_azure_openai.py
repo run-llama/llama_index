@@ -1,5 +1,5 @@
 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 
 
 def test_azure_openai_embedding_class():

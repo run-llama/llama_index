@@ -1,4 +1,4 @@
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.retrievers.bm25.base import BM25Retriever
 
 

@@ -1,6 +1,6 @@
 from typing import Dict, Type
 
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 
 RECOGNIZED_EMBEDDINGS: Dict[str, Type[BaseEmbedding]] = {

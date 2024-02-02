@@ -11,7 +11,7 @@ from llama_index.core.constants import (
 from llama_index.core.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

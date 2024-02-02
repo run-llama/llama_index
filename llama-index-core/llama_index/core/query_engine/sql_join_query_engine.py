@@ -3,7 +3,8 @@
 import logging
 from typing import Callable, Dict, Optional, Union
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.core.indices.struct_store.sql_query import (
@@ -12,7 +13,6 @@ from llama_index.core.indices.struct_store.sql_query import (
 )
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.schema import QueryBundle
 from llama_index.core.selectors.llm_selectors import LLMSingleSelector
 from llama_index.core.selectors.pydantic_selectors import PydanticSingleSelector

@@ -5,7 +5,7 @@ import requests
 
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.vector_stores.types import MetadataFilters
 from llama_index.indices.managed.zilliz.base import ZillizCloudPipelineIndex

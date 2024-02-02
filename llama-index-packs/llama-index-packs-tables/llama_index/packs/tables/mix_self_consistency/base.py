@@ -19,7 +19,7 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.query_engine.custom import CustomQueryEngine
 from llama_index.core.query_engine import PandasQueryEngine
 from llama_index.core.query_pipeline.query import QueryPipeline as QP
-from llama_index.core.response.schema import RESPONSE_TYPE
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 
 # ===== Textual Reasoning =====
 

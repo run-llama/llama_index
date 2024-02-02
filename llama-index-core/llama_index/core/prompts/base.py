@@ -24,6 +24,14 @@ if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import (
         ConditionalPromptSelector as LangchainSelector,
     )
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.query_pipeline.query import (
+    ChainableMixin,
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms.base import BaseLLM
 from llama_index.core.llms.generic_utils import (
@@ -32,16 +40,8 @@ from llama_index.core.llms.generic_utils import (
 from llama_index.core.llms.generic_utils import (
     prompt_to_messages,
 )
-from llama_index.core.llms.types import ChatMessage
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.prompts.utils import get_template_vars
-from llama_index.core.query_pipeline.components.query import (
-    ChainableMixin,
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    validate_and_convert_stringable,
-)
 from llama_index.core.types import BaseOutputParser
 
 

@@ -3,17 +3,17 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks import trace_method
 from llama_index.core.chat_engine.types import (
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
-from llama_index.core.llms.types import ChatMessage
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.schema import QueryBundle
 
 

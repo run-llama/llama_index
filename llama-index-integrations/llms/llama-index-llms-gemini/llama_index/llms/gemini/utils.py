@@ -1,6 +1,6 @@
 from typing import Sequence, Union
 
-from llama_index.core.llms.types import MessageRole
+from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.llms.base import (
     ChatMessage,
     ChatResponse,

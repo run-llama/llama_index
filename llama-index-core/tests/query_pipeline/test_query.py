@@ -3,14 +3,14 @@
 from typing import Any, Dict
 
 import pytest
-from llama_index.core.query_pipeline.components.input import InputComponent
-from llama_index.core.query_pipeline.components.query import (
+from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
     InputKeys,
     Link,
     OutputKeys,
     QueryComponent,
 )
+from llama_index.core.query_pipeline.components.input import InputComponent
 from llama_index.core.query_pipeline.query import QueryPipeline
 
 

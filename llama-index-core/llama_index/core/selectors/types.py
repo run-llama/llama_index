@@ -1,12 +1,12 @@
 from abc import abstractmethod
 from typing import Any, List, Sequence, Union
 
-from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType
-from llama_index.core.query_pipeline.components.query import (
+from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
     QueryComponent,
 )
+from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType
 from llama_index.core.schema import QueryBundle, QueryType
 from llama_index.core.tools.types import ToolMetadata
 

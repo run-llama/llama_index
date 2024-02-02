@@ -14,7 +14,7 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.response.schema import Response
+from llama_index.core.base.response.schema import Response
 from llama_index.core.response_synthesizers.base import BaseSynthesizer, QueryTextType
 from llama_index.core.schema import MetadataMode, NodeWithScore, TextNode
 from llama_index.core.types import RESPONSE_TEXT_TYPE

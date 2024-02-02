@@ -3,7 +3,7 @@ import textwrap
 from pprint import pprint
 from typing import Any, Dict
 
-from llama_index.core.response.schema import Response
+from llama_index.core.base.response.schema import Response
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.utils import truncate_text
 

@@ -5,8 +5,8 @@ from typing import Any, Callable, List, Optional, Tuple, Union
 
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.ingestion.pipeline import run_transformations
 from llama_index.core.schema import (
     BaseNode,

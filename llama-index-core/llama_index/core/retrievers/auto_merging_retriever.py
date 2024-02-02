@@ -4,7 +4,7 @@ import logging
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, cast
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.indices.utils import truncate_text

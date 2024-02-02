@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Any, List, Tuple
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.schema import NodeWithScore, QueryBundle
 

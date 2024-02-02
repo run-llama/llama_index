@@ -5,8 +5,6 @@ from typing import List, Optional, Set
 import numpy as np
 import pandas as pd
 
-from llama_index.core.bridge.pydantic import Field
-
 # NOTE: currently not being used
 # DEFAULT_INFER_RECENCY_TMPL = (
 #     "A question is provided.\n"
@@ -32,7 +30,8 @@ from llama_index.core.bridge.pydantic import Field
 #         return False
 #     else:
 #         raise ValueError(f"Invalid recency prediction: {pred}.")
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings

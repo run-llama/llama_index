@@ -7,9 +7,9 @@ This module contains retrievers for document summary indices.
 import logging
 from typing import Any, Callable, List, Optional
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.core.indices.utils import (
     default_format_node_batch_fn,

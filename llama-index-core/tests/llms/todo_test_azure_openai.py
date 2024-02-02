@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 from llama_index.core.llms.azure_openai import AzureOpenAI
+
 from tests.llms.test_openai import mock_chat_completion_v1
 
 

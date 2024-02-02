@@ -1,4 +1,4 @@
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.image_retriever import BaseImageRetriever
 from llama_index.core.indices.empty.retrievers import EmptyIndexRetriever
 from llama_index.core.indices.keyword_table.retrievers import (

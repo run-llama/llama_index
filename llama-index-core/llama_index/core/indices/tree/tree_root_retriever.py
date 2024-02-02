@@ -2,7 +2,7 @@
 import logging
 from typing import Any, List, Optional
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.indices.tree.base import TreeIndex

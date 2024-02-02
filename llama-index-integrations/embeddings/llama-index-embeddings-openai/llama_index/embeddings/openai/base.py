@@ -8,7 +8,7 @@ from openai import AsyncOpenAI, OpenAI
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai.utils import (
     create_retry_decorator,
     resolve_openai_credentials,

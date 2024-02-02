@@ -3,7 +3,8 @@ import logging
 from typing import List, Optional, Sequence, cast
 
 from llama_index.core.async_utils import run_async_tasks
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -11,7 +12,6 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.core.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.core.question_gen.types import BaseQuestionGenerator, SubQuestion
-from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.core.response_synthesizers import (
     BaseSynthesizer,
     get_response_synthesizer,

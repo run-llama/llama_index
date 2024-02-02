@@ -2,8 +2,8 @@
 import logging
 from typing import Callable, List, Optional
 
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle

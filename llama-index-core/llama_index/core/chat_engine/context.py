@@ -2,7 +2,8 @@ import asyncio
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
@@ -11,7 +12,6 @@ from llama_index.core.chat_engine.types import (
     ToolOutput,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle

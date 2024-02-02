@@ -1,7 +1,8 @@
 from typing import Any, List, Optional, Sequence
 
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -9,7 +10,6 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.mixin import PromptMixinType
-from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.core.response_synthesizers import (
     BaseSynthesizer,
     ResponseMode,

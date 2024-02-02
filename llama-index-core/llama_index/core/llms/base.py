@@ -4,9 +4,7 @@ from typing import (
     Sequence,
 )
 
-from llama_index.core.bridge.pydantic import Field, validator
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -16,9 +14,11 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.core.query_pipeline.components.query import (
+from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
 )
+from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.callbacks import CallbackManager
 from llama_index.core.schema import BaseComponent
 
 

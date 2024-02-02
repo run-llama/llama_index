@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 import pandas as pd
 from tqdm import tqdm
 
+from llama_index.core.base.response.schema import PydanticResponse
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser.interface import NodeParser
-from llama_index.core.response.schema import PydanticResponse
 from llama_index.core.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.core.utils import get_tqdm_iterable
 

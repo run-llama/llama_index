@@ -1,13 +1,7 @@
 from abc import abstractmethod
 from typing import Any, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.constants import (
-    DEFAULT_CONTEXT_WINDOW,
-    DEFAULT_NUM_INPUT_FILES,
-    DEFAULT_NUM_OUTPUTS,
-)
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -15,6 +9,12 @@ from llama_index.core.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
+)
+from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_INPUT_FILES,
+    DEFAULT_NUM_OUTPUTS,
 )
 from llama_index.core.schema import BaseComponent, ImageDocument
 

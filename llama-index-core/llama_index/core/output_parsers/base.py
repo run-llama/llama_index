@@ -3,14 +3,14 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.query_pipeline.components.query import (
+from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
     validate_and_convert_stringable,
 )
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.types import BaseOutputParser
 
 

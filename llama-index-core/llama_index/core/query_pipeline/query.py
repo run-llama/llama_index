@@ -7,10 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast, get_
 import networkx
 
 from llama_index.core.async_utils import run_jobs
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.query_pipeline.components.query import (
+from llama_index.core.base.query_pipeline.query import (
     QUERY_COMPONENT_TYPE,
     ChainableMixin,
     InputKeys,
@@ -18,6 +15,9 @@ from llama_index.core.query_pipeline.components.query import (
     OutputKeys,
     QueryComponent,
 )
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.utils import print_text
 
 

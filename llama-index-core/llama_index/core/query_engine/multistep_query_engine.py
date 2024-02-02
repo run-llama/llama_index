@@ -1,12 +1,12 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.indices.query.query_transform.base import (
     StepDecomposeQueryTransform,
 )
 from llama_index.core.prompts.mixin import PromptMixinType
-from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.core.response_synthesizers import (
     BaseSynthesizer,
     get_response_synthesizer,

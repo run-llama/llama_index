@@ -3,8 +3,8 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple, cast
 
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.indices.tree.base import TreeIndex
 from llama_index.core.indices.tree.select_leaf_retriever import (
     TreeSelectLeafRetriever,

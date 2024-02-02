@@ -4,9 +4,9 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.indices.keyword_table.utils import (
     extract_keywords_given_response,
 )

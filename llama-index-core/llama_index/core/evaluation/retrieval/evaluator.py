@@ -2,7 +2,7 @@
 
 from typing import Any, List, Optional, Sequence, Tuple
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.evaluation.retrieval.base import (
     BaseRetrievalEvaluator,

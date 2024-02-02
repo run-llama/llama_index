@@ -4,8 +4,8 @@
 from typing import Any
 
 import pytest
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.core.prompts import (
     ChatPromptTemplate,
     PromptTemplate,

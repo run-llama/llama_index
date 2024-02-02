@@ -3,7 +3,8 @@
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.graph_stores.registry import (
     GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE,
@@ -15,7 +16,6 @@ from llama_index.core.prompts.base import (
     PromptType,
 )
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.core.response_synthesizers import (
     BaseSynthesizer,
     get_response_synthesizer,

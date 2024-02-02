@@ -2,6 +2,12 @@
 
 from typing import Any, Dict, Optional, Sequence, cast
 
+from llama_index.core.base.query_pipeline.query import (
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -9,12 +15,6 @@ from llama_index.core.callbacks import (
     EventPayload,
 )
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.query_pipeline.components.query import (
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    validate_and_convert_stringable,
-)
 from llama_index.core.tools import AsyncBaseTool, adapt_to_async_tool
 
 

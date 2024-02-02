@@ -12,8 +12,8 @@ from llama_index.core.agent.react.types import (
     BaseReasoningStep,
     ObservationReasoningStep,
 )
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.llms.types import ChatMessage, MessageRole
 from llama_index.core.tools import BaseTool
 
 logger = logging.getLogger(__name__)

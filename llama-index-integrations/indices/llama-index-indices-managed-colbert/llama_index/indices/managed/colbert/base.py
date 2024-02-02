@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.data_structs.data_structs import IndexDict
 from llama_index.core.indices.base import BaseIndex, IndexNode
 from llama_index.core.schema import BaseNode, NodeWithScore

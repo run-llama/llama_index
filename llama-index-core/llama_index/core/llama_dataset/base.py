@@ -10,7 +10,7 @@ from openai import RateLimitError
 from pandas import DataFrame as PandasDataFrame
 
 from llama_index.core.async_utils import asyncio_module
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.evaluation import BaseEvaluator
 

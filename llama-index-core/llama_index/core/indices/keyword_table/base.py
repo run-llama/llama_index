@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Set, Union
 
 from llama_index.core.async_utils import run_async_tasks
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.data_structs.data_structs import KeywordTable
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.keyword_table.utils import (

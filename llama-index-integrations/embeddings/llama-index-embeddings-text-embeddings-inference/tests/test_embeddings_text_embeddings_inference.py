@@ -1,4 +1,4 @@
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 
 

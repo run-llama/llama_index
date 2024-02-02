@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Sequence, Type, cast
 
-from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.data_structs.data_structs import IndexStruct
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.schema import (

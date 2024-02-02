@@ -9,8 +9,8 @@ from typing import Dict, List, Optional
 from spider_utils import create_indexes, load_examples
 from tqdm import tqdm
 
-from llama_index.core.llms.types import ChatMessage, MessageRole
-from llama_index.core.response.schema import Response
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.response.schema import Response
 from llama_index.indices.struct_store.sql import SQLQueryMode, SQLStructStoreIndex
 from llama_index.llms.openai import OpenAI
 

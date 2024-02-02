@@ -9,7 +9,7 @@ from llama_index.core.llms.generic_utils import (
     stream_completion_response_to_chat_response,
 )
 from llama_index.llms.openai.base import OpenAI, Tokenizer
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

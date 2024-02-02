@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from llama_index.core.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage
 from openai.types.chat.chat_completion import (
     ChatCompletion,
     ChatCompletionMessage,
@@ -12,6 +12,7 @@ from openai.types.chat.chat_completion import (
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
 from openai.types.completion import Completion, CompletionChoice, CompletionUsage
+
 from tests.conftest import CachedOpenAIApiKeys
 
 try:

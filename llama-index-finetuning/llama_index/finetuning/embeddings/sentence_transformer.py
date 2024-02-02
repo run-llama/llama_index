@@ -2,7 +2,7 @@
 
 from typing import Any, Optional
 
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.utils import resolve_embed_model
 from llama_index.finetuning.embeddings.common import (
     EmbeddingQAFinetuneDataset,

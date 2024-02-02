@@ -4,6 +4,14 @@ import dataclasses
 from abc import abstractmethod
 from typing import Any, Dict, Optional, cast
 
+from llama_index.core.base.query_pipeline.query import (
+    ChainableMixin,
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
+)
+from llama_index.core.base.response.schema import Response
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
@@ -20,14 +28,6 @@ from llama_index.core.prompts.mixin import (
     PromptMixin,
     PromptMixinType,
 )
-from llama_index.core.query_pipeline.components.query import (
-    ChainableMixin,
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    validate_and_convert_stringable,
-)
-from llama_index.core.response.schema import Response
 from llama_index.core.schema import QueryBundle, QueryType
 from llama_index.core.service_context_elements.llm_predictor import (
     LLMPredictorType,

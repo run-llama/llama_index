@@ -3,7 +3,7 @@ import logging
 import re
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.schema import BaseNode, ImageNode, MetadataMode
 from llama_index.core.utils import globals_helper, truncate_text

@@ -2,7 +2,7 @@ from llama_index.embeddings.huggingface import (
     HuggingFaceEmbedding,
     HuggingFaceInferenceAPIEmbedding,
 )
-from llama_index.core.embeddings.base import BaseEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding
 
 
 def test_huggingfaceembedding_class():

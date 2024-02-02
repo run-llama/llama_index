@@ -2,7 +2,7 @@
 from abc import abstractmethod
 from typing import List
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.image_retriever import BaseImageRetriever
 from llama_index.core.indices.query.schema import QueryType
 from llama_index.core.schema import NodeWithScore

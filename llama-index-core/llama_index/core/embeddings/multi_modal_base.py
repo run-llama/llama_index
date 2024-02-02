@@ -4,11 +4,11 @@ import asyncio
 from abc import abstractmethod
 from typing import Coroutine, List, Tuple
 
-from llama_index.core.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.embeddings.base import (
+from llama_index.core.base.embeddings.base import (
     BaseEmbedding,
     Embedding,
 )
+from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.schema import ImageType
 from llama_index.core.utils import get_tqdm_iterable
 

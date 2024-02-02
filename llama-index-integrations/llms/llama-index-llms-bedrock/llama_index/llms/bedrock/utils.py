@@ -10,7 +10,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.core.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.llms.anthropic.utils import messages_to_anthropic_prompt
 from llama_index.core.llms.generic_utils import (
     prompt_to_messages,

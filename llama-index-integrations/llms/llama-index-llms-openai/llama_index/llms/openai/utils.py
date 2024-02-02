@@ -19,7 +19,7 @@ from tenacity import (
 from tenacity.stop import stop_base
 
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"

@@ -23,6 +23,7 @@ from llama_index.core.agent.react.types import (
     ResponseReasoningStep,
 )
 from llama_index.core.agent.types import BaseAgent
+from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.callbacks import (
     CallbackManager,
     CBEventType,
@@ -35,7 +36,6 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.llms.base import ChatMessage, ChatResponse
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.types import MessageRole
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.objects.base import ObjectRetriever

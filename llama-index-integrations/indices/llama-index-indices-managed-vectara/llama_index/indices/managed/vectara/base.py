@@ -14,8 +14,8 @@ from typing import Any, Dict, List, Optional, Sequence, Type
 
 import requests
 from llama_index.callbacks.base import CallbackManager
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.core.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.core.llms.utils import LLMType, resolve_llm

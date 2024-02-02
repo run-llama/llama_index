@@ -9,7 +9,7 @@ from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms.openai import OpenAI
 from llama_index.core.node_parser.interface import TextSplitter
 from llama_index.core.node_parser.text import SentenceSplitter
-from llama_index.core.response.schema import RESPONSE_TYPE
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.retrievers import RecursiveRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.schema import IndexNode, TextNode

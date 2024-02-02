@@ -14,6 +14,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
+from llama_index.core.base.query_pipeline.query import QueryComponent
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -28,7 +29,6 @@ from llama_index.core.query_pipeline.components.agent import (
     AgentInputComponent,
     BaseAgentComponent,
 )
-from llama_index.core.query_pipeline.components.query import QueryComponent
 from llama_index.core.query_pipeline.query import QueryPipeline
 from llama_index.core.tools import ToolOutput
 

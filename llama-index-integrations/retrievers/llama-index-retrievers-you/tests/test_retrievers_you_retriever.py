@@ -1,4 +1,4 @@
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.retrievers.you import YouRetriever
 
 

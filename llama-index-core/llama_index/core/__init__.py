@@ -9,6 +9,9 @@ import logging
 from logging import NullHandler
 from typing import Callable, Optional
 
+# response
+from llama_index.core.base.response.schema import Response
+
 # import global eval handler
 from llama_index.core.callbacks.global_handlers import set_global_handler
 from llama_index.core.data_structs.struct_type import IndexStructType
@@ -59,9 +62,6 @@ from llama_index.core.prompts import (
 from llama_index.core.readers import (
     SimpleDirectoryReader,
 )
-
-# response
-from llama_index.core.response.schema import Response
 
 # Response Synthesizer
 from llama_index.core.response_synthesizers.factory import get_response_synthesizer

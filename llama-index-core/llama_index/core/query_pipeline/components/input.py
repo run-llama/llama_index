@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-from llama_index.core.query_pipeline.components.query import (
+from llama_index.core.base.query_pipeline.query import (
     InputKeys,
     OutputKeys,
     QueryComponent,

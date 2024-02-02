@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, List, Optional, Union
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import Embeddings as LCEmbeddings
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.utils import get_cache_dir
 
