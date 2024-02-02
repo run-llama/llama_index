@@ -29,7 +29,8 @@ packages = [
   {include = "llama-index-integrations/embeddings/llama-index-embeddings-openai/llama_index"},
   {include = "llama-index-integrations/embeddings/llama-index-embeddings-huggingface/llama_index"},
   {include = "llama-index-integrations/embeddings/llama-index-embeddings-clip/llama_index"},
-  {include = "llama-index-integrations/program/llama-index-program-openai/llama_index"}
+  {include = "llama-index-integrations/program/llama-index-program-openai/llama_index"},
+  {include = "llama-index-legacy/llama_index"} # remove post deprecation period
 ]
 name = "flying-delta"
 readme = "README.md"
