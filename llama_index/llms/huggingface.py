@@ -597,7 +597,6 @@ class HuggingFaceInferenceAPI(CustomLLM):
             # try and use text generation
             prompt = chat_messages_to_completion_prompt(messages=messages)
             completion = self.complete(prompt)
-            print(completion)
             return ChatResponse(
                 message=ChatMessage(role=MessageRole.ASSISTANT, content=completion.text)
             )
