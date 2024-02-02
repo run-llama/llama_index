@@ -4,6 +4,7 @@ from threading import Thread
 from typing import (
     Any,
     AsyncGenerator,
+    Callable,
     Dict,
     Generator,
     List,
@@ -45,7 +46,8 @@ DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
 class ReActAgent(BaseAgent):
-    """ReAct agent.
+    """
+    ReAct agent.
 
     Uses a ReAct prompt that can be used in both chat and text
     completion endpoints.
@@ -64,6 +66,7 @@ class ReActAgent(BaseAgent):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        response_hook: Optional[Callable] = None,
     ) -> None:
         super().__init__(callback_manager=callback_manager or llm.callback_manager)
         self._llm = llm
@@ -73,6 +76,7 @@ class ReActAgent(BaseAgent):
         self._output_parser = output_parser or ReActOutputParser()
         self._verbose = verbose
         self.sources: List[ToolOutput] = []
+        self.response_hook = response_hook
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -98,9 +102,11 @@ class ReActAgent(BaseAgent):
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        response_hook: Optional[Callable] = None,
         **kwargs: Any,
     ) -> "ReActAgent":
-        """Convenience constructor method from set of of BaseTools (Optional).
+        """
+        Convenience constructor method from set of of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -126,6 +132,7 @@ class ReActAgent(BaseAgent):
             output_parser=output_parser,
             callback_manager=callback_manager,
             verbose=verbose,
+            response_hook=response_hook,
         )
 
     @property
@@ -156,7 +163,11 @@ class ReActAgent(BaseAgent):
         except BaseException as exc:
             raise ValueError(f"Could not parse output: {message_content}") from exc
         if self._verbose:
-            print_text(f"{reasoning_step.get_content()}\n", color="pink")
+            print_text(
+                f"{reasoning_step.get_content()}\n",
+                color="pink",
+                response_hook=self.response_hook,
+            )
         current_reasoning.append(reasoning_step)
 
         if reasoning_step.is_done:
@@ -202,7 +213,11 @@ class ReActAgent(BaseAgent):
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
-            print_text(f"{observation_step.get_content()}\n", color="blue")
+            print_text(
+                f"{observation_step.get_content()}\n",
+                color="blue",
+                response_hook=self.response_hook,
+            )
         return current_reasoning, False
 
     async def _aprocess_actions(
@@ -237,7 +252,11 @@ class ReActAgent(BaseAgent):
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
-            print_text(f"{observation_step.get_content()}\n", color="blue")
+            print_text(
+                f"{observation_step.get_content()}\n",
+                color="blue",
+                response_hook=self.response_hook,
+            )
         return current_reasoning, False
 
     def _get_response(
@@ -256,7 +275,8 @@ class ReActAgent(BaseAgent):
         return AgentChatResponse(response=response_step.response, sources=self.sources)
 
     def _infer_stream_chunk_is_final(self, chunk: ChatResponse) -> bool:
-        """Infers if a chunk from a live stream is the start of the final
+        """
+        Infers if a chunk from a live stream is the start of the final
         reasoning step. (i.e., and should eventually become
         ResponseReasoningStep — not part of this function's logic tho.).
 
@@ -280,7 +300,8 @@ class ReActAgent(BaseAgent):
     def _add_back_chunk_to_stream(
         self, chunk: ChatResponse, chat_stream: Generator[ChatResponse, None, None]
     ) -> Generator[ChatResponse, None, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         Args:
@@ -290,8 +311,8 @@ class ReActAgent(BaseAgent):
         Return:
             Generator[ChatResponse, None, None]: the updated chat_stream
         """
-        updated_stream = chain.from_iterable(  # need to add back partial response chunk
-            [
+        updated_stream = chain.from_iterable(
+            [  # need to add back partial response chunk
                 unit_generator(chunk),
                 chat_stream,
             ]
@@ -305,7 +326,8 @@ class ReActAgent(BaseAgent):
     def _async_add_back_chunk_to_stream(
         self, chunk: ChatResponse, chat_stream: AsyncGenerator[ChatResponse, None]
     ) -> AsyncGenerator[ChatResponse, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         NOTE: this itself is not an async function.
@@ -495,6 +517,7 @@ class ReActAgent(BaseAgent):
                 current_reasoning=current_reasoning,
             )
             # send prompt
+            print(input_chat)
             chat_stream = await self._llm.astream_chat(input_chat)
 
             # iterate over stream, break out if is final answer
