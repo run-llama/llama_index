@@ -5,6 +5,12 @@
 ### New Features
 
 - Add support for `gpt-3.5-turbo-0125` (#10412)
+- Added `create-llama` support to rag cli (#10405)
+
+### Bug Fixes / Nits
+
+- Fixed minor bugs in lance-db vector store (#10404)
+- Fixed streaming bug in ollama (#10407)
 
 ## [0.9.41] - 2024-02-01
 
