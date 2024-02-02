@@ -1,5 +1,11 @@
 # ChangeLog
 
+## [0.9.42] - 2024-02-02
+
+### New Features
+
+- Add support for `gpt-3.5-turbo-0125` (#10412)
+
 ## [0.9.41] - 2024-02-01
 
 ### New Features
