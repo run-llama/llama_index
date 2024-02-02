@@ -22,6 +22,7 @@ maintainers = [
   "Simon Suo <simon@llamaindex.ai>",
   "Sourabh Desai <sourabh@llamaindex.ai>"
 ]
+name = "flying-delta"
 packages = [
   {include = "llama-index-core/llama_index"},
   {include = "llama-index-integrations/llms/llama-index-llms-openai/llama_index"},
@@ -32,7 +33,6 @@ packages = [
   {include = "llama-index-integrations/program/llama-index-program-openai/llama_index"},
   {include = "llama-index-legacy/llama_index"} # remove post deprecation period
 ]
-name = "flying-delta"
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
 version = "0.1.0"
