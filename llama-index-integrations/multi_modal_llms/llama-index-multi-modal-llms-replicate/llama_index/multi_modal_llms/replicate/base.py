@@ -1,9 +1,6 @@
 import logging
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -13,6 +10,9 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )

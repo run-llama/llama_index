@@ -3,9 +3,6 @@ import os
 import typing
 from typing import Any, Dict, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -14,6 +11,9 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,

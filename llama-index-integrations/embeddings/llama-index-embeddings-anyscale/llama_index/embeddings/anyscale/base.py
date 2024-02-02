@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Optional
 
 import httpx
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
 from llama_index.embeddings.anyscale.utils import (
     resolve_anyscale_credentials,
 )

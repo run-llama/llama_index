@@ -1,14 +1,5 @@
 from typing import Any, Optional, Sequence, Union
-from transformers import AutoTokenizer
 
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.core.llms.generic_utils import (
-    async_stream_completion_response_to_chat_response,
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
-)
-from llama_index.llms.openai.base import OpenAI, Tokenizer
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -19,6 +10,15 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW
+from llama_index.core.llms.generic_utils import (
+    async_stream_completion_response_to_chat_response,
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.llms.openai.base import OpenAI, Tokenizer
+from transformers import AutoTokenizer
 
 
 class OpenAILike(OpenAI):

@@ -2,12 +2,12 @@
 
 from typing import Any, List, Optional
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks.base import CallbackManager
 
 import google.generativeai as gemini
 

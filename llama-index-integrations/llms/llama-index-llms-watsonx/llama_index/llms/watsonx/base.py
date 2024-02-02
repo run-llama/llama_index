@@ -1,8 +1,6 @@
 from typing import Any, Callable, Dict, Optional, Sequence
-from ibm_watson_machine_learning.foundation_models.model import Model
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
+from ibm_watson_machine_learning.foundation_models.model import Model
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -13,18 +11,20 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.generic_utils import (
     completion_to_chat_decorator,
     stream_completion_to_chat_decorator,
 )
 from llama_index.core.llms.llm import LLM
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.watsonx.utils import (
     WATSONX_MODELS,
     get_from_param_or_env_without_error,
     watsonx_model_to_context_size,
 )
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 
 class WatsonX(LLM):

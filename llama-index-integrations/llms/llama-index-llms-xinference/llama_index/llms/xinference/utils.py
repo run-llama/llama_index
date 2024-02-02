@@ -1,8 +1,7 @@
 from typing import Optional
 
-from typing_extensions import NotRequired, TypedDict
-
 from llama_index.core.base.llms.types import ChatMessage
+from typing_extensions import NotRequired, TypedDict
 
 XINFERENCE_MODEL_SIZES = {
     "baichuan": 2048,

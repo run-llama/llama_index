@@ -1,13 +1,13 @@
-from llama_index.graph_stores.neo4j import Neo4jGraphStore
-from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from importlib.util import find_spec
 
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from llama_index.graph_stores.neo4j import Neo4jGraphStore
 from llama_index.tools.neo4j.query_validator import CypherQueryCorrector, Schema
 
 # backwards compatibility
 try:
-    from llama_index.core.llms.llm import LLM
     from llama_index.core.base.llms.types import ChatMessage, MessageRole
+    from llama_index.core.llms.llm import LLM
 except ImportError:
     from llama_index.core.llms.base import LLM, ChatMessage, MessageRole
 
@@ -146,7 +146,7 @@ class Neo4jQueryToolSpec(BaseToolSpec):
                     ChatMessage(role=MessageRole.ASSISTANT, content=cypher),
                     ChatMessage(
                         role=MessageRole.SYSTEM,
-                        conent=f"This query returns an error: {str(e)}\n"
+                        conent=f"This query returns an error: {e!s}\n"
                         "Give me a improved query that works without any explanations or apologies",
                     ),
                 ],

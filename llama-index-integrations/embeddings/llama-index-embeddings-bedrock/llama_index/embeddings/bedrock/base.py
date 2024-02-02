@@ -1,14 +1,14 @@
 import json
 import os
-import boto3
 import warnings
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
 
+import boto3
+from llama_index.core.base.embeddings.base import BaseEmbedding, Embedding
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.core.base.embeddings.base import BaseEmbedding, Embedding
 
 
 class PROVIDERS(str, Enum):

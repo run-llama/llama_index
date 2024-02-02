@@ -7,12 +7,12 @@ from llama_index.core.agent.legacy.openai_agent import (
     BaseOpenAIAgent,
 )
 from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import NodeWithScore

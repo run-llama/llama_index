@@ -1,9 +1,6 @@
 import json
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -15,6 +12,9 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode

@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
+from llama_index.core.base.llms.types import ChatMessage
 from tenacity import (
     before_sleep_log,
     retry,
@@ -8,8 +9,6 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-
-from llama_index.core.base.llms.types import ChatMessage
 
 COMMAND_MODELS = {
     "command": 4096,

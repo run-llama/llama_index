@@ -1,8 +1,6 @@
 import json
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -13,6 +11,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.generic_utils import (
     completion_response_to_chat_response,
@@ -22,8 +22,8 @@ from llama_index.core.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.llms.vllm.utils import get_response, post_http_request
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.llms.vllm.utils import get_response, post_http_request
 
 
 class Vllm(LLM):

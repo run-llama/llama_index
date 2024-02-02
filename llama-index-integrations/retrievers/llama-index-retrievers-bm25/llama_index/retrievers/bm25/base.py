@@ -1,16 +1,15 @@
 import logging
 from typing import Callable, List, Optional, cast
 
-from rank_bm25 import BM25Okapi
-from nltk.stem import PorterStemmer
-
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.indices.keyword_table.utils import simple_extract_keywords
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle
 from llama_index.core.storage.docstore.types import BaseDocumentStore
+from nltk.stem import PorterStemmer
+from rank_bm25 import BM25Okapi
 
 logger = logging.getLogger(__name__)
 

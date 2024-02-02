@@ -15,6 +15,7 @@ from llama_index.core.agent.types import (
     TaskStepOutput,
 )
 from llama_index.core.agent.utils import add_user_step_to_memory
+from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.callbacks import (
     CallbackManager,
     CBEventType,
@@ -29,7 +30,6 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.llms.base import ChatMessage, ChatResponse
 from llama_index.core.llms.llm import LLM
-from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings

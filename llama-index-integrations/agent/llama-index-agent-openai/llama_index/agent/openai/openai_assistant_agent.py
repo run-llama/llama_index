@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from llama_index.agent.openai.utils import get_function_by_name
 from llama_index.core.agent.types import BaseAgent
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import (
     CallbackManager,
     CBEventType,
@@ -19,7 +20,6 @@ from llama_index.core.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 logger = logging.getLogger(__name__)

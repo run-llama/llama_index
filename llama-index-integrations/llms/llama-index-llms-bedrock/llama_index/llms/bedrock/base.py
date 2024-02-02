@@ -1,10 +1,8 @@
 import json
-import boto3
-import botocore
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
+import boto3
+import botocore
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -15,10 +13,18 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
+from llama_index.core.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
+from llama_index.core.llms.llm import LLM
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock.utils import (
     BEDROCK_FOUNDATION_LLMS,
     CHAT_ONLY_MODELS,
@@ -27,12 +33,6 @@ from llama_index.llms.bedrock.utils import (
     completion_with_retry,
     get_provider,
 )
-from llama_index.core.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
-)
-from llama_index.core.llms.llm import LLM
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 
 class Bedrock(LLM):

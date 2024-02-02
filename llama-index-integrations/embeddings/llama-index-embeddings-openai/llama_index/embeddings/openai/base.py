@@ -4,15 +4,15 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
-from openai import AsyncOpenAI, OpenAI
-
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai.utils import (
     create_retry_decorator,
     resolve_openai_credentials,
 )
+
+from openai import AsyncOpenAI, OpenAI
 
 embedding_retry_decorator = create_retry_decorator(
     max_retries=6,

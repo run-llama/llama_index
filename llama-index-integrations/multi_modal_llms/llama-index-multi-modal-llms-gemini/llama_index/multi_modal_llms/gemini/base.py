@@ -2,11 +2,8 @@
 import os
 from typing import Any, Dict, Optional, Sequence
 
-import PIL  # noqa: F401
 import google.generativeai as genai
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
+import PIL
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -16,17 +13,20 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
+from llama_index.core.multi_modal_llms import (
+    MultiModalLLM,
+    MultiModalLLMMetadata,
+)
+from llama_index.core.schema import ImageDocument
 from llama_index.llms.gemini.utils import (
     ROLES_FROM_GEMINI,
     chat_from_gemini_response,
     chat_message_to_gemini,
     completion_from_gemini_response,
 )
-from llama_index.core.multi_modal_llms import (
-    MultiModalLLM,
-    MultiModalLLMMetadata,
-)
-from llama_index.core.schema import ImageDocument
 
 # This lists the multi-modal models - see also llms.gemini for text models.
 GEMINI_MM_MODELS = ("models/gemini-pro-vision",)

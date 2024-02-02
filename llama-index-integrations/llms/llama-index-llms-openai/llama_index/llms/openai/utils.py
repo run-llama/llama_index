@@ -2,11 +2,10 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-import openai
 from deprecated import deprecated
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
-from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
-from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.llms.generic_utils import get_from_param_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -18,9 +17,10 @@ from tenacity import (
 )
 from tenacity.stop import stop_base
 
-from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.base.llms.types import ChatMessage
-from llama_index.core.llms.generic_utils import get_from_param_or_env
+import openai
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"

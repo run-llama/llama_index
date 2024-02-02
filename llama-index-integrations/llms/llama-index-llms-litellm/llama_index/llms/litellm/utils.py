@@ -1,8 +1,8 @@
-import litellm
-from litellm.utils import Message
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.bridge.pydantic import BaseModel
 from openai.resources import Completions
 from tenacity import (
     before_sleep_log,
@@ -12,8 +12,8 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.base.llms.types import ChatMessage
+import litellm
+from litellm.utils import Message
 
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for LLM.
 E.g. to use openai Please set the OPENAI_API_KEY environment variable or \

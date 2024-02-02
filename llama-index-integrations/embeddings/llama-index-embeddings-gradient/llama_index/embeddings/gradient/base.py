@@ -1,13 +1,13 @@
 import logging
-import gradientai
 from typing import Any, List, Optional
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+import gradientai
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
     Embedding,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 
 logger = logging.getLogger(__name__)
 

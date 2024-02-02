@@ -2,12 +2,10 @@ import logging
 from threading import Thread
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import (
-    DEFAULT_CONTEXT_WINDOW,
-    DEFAULT_NUM_OUTPUTS,
-)
+import torch
+from huggingface_hub import AsyncInferenceClient, InferenceClient, model_info
+from huggingface_hub.hf_api import ModelInfo
+from huggingface_hub.inference._types import ConversationalOutput
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -18,6 +16,12 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+)
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
 )
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
@@ -33,11 +37,6 @@ from llama_index.core.llms.generic_utils import (
 )
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-
-from huggingface_hub import AsyncInferenceClient, InferenceClient, model_info
-from huggingface_hub.hf_api import ModelInfo
-from huggingface_hub.inference._types import ConversationalOutput
-import torch
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,

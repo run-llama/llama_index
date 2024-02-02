@@ -7,8 +7,6 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 
 import pymilvus  # noqa
-from pymilvus import Collection, MilvusClient
-
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
@@ -23,6 +21,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from pymilvus import Collection, MilvusClient
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +129,7 @@ class MilvusVectorStore(VectorStore):
         self.milvusclient = MilvusClient(
             uri=uri,
             token=token,
+            **kwargs,  # pass additional arguments such as server_pem_path
         )
 
         # Delete previous collection if overwriting

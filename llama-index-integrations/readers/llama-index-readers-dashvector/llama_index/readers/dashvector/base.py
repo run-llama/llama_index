@@ -2,8 +2,6 @@
 
 from typing import Dict, List, Optional
 
-import dashvector
-
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
@@ -13,12 +11,19 @@ class DashVectorReader(BaseReader):
 
     Args:
         api_key (str): DashVector API key.
+        endpoint (str): DashVector cluster endpoint.
     """
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, endpoint: str):
         """Initialize with parameters."""
-        self._api_key = api_key
-        self._client = dashvector.Client(api_key=api_key)
+        try:
+            import dashvector
+        except ImportError:
+            raise ImportError(
+                "`dashvector` package not found, please run `pip install dashvector`"
+            )
+
+        self._client = dashvector.Client(api_key=api_key, endpoint=endpoint)
 
     def load_data(
         self,

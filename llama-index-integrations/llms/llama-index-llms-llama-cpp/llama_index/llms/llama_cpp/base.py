@@ -1,17 +1,7 @@
-from llama_cpp import Llama
 import os
 from typing import Any, Callable, Dict, Optional, Sequence
 
 import requests
-from tqdm import tqdm
-
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import (
-    DEFAULT_CONTEXT_WINDOW,
-    DEFAULT_NUM_OUTPUTS,
-    DEFAULT_TEMPERATURE,
-)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -19,6 +9,13 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+)
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+    DEFAULT_TEMPERATURE,
 )
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
@@ -28,6 +25,9 @@ from llama_index.core.llms.generic_utils import (
 )
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.utils import get_cache_dir
+from tqdm import tqdm
+
+from llama_cpp import Llama
 
 DEFAULT_LLAMA_CPP_GGML_MODEL = (
     "https://huggingface.co/TheBloke/Llama-2-13B-chat-GGML/resolve"

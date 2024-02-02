@@ -30,7 +30,6 @@ from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 
-
 _logger = logging.getLogger(__name__)
 
 

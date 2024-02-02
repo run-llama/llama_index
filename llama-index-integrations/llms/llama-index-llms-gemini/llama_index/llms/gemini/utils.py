@@ -1,16 +1,14 @@
 from typing import Sequence, Union
 
+import google.ai.generativelanguage as glm
+import google.generativeai as genai
+import PIL
 from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.llms.base import (
     ChatMessage,
     ChatResponse,
     CompletionResponse,
 )
-
-import google.ai.generativelanguage as glm
-import google.generativeai as genai
-import PIL
-
 
 ROLES_TO_GEMINI = {
     MessageRole.USER: "user",

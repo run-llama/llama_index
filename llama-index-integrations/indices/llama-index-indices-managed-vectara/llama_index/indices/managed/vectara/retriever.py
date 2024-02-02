@@ -6,8 +6,8 @@ import json
 import logging
 from typing import Any, List, Optional, Tuple
 
-from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.managed.types import ManagedIndexQueryMode
 from llama_index.core.indices.vector_store.retrievers.auto_retriever.auto_retriever import (
     VectorIndexAutoRetriever,
@@ -19,10 +19,10 @@ from llama_index.core.vector_stores.types import (
     VectorStoreInfo,
     VectorStoreQuerySpec,
 )
+from llama_index.indices.managed.vectara.base import VectaraIndex
 from llama_index.indices.managed.vectara.prompts import (
     DEFAULT_VECTARA_QUERY_PROMPT_TMPL,
 )
-from llama_index.indices.managed.vectara.base import VectaraIndex
 
 _logger = logging.getLogger(__name__)
 

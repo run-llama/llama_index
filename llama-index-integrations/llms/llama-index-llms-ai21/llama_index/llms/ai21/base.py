@@ -1,7 +1,5 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -10,7 +8,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.llms.ai21.utils import ai21_model_to_context_size
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.generic_utils import (
@@ -18,7 +17,9 @@ from llama_index.core.llms.generic_utils import (
     get_from_param_or_env,
 )
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-import ai21  # noqa
+from llama_index.llms.ai21.utils import ai21_model_to_context_size
+
+import ai21
 
 
 class AI21(CustomLLM):

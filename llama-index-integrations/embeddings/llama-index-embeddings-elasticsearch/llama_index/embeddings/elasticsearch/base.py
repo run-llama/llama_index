@@ -1,9 +1,10 @@
 from typing import Any, List
 
-from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from elasticsearch.client import MlClient
+from llama_index.core.bridge.pydantic import PrivateAttr
+
 from elasticsearch import Elasticsearch
+from elasticsearch.client import MlClient
 
 
 class ElasticsearchEmbedding(BaseEmbedding):

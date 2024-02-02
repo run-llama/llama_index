@@ -1,7 +1,7 @@
 from typing import List, Sequence
 
-from llama_index.core.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
 from llama_index.core.base.llms.types import ChatMessage, LLMMetadata, MessageRole
+from llama_index.core.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
 from llama_index.llms.anyscale.utils import anyscale_modelname_to_contextsize
 from llama_index.llms.openai.utils import openai_modelname_to_contextsize
 

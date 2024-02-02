@@ -2,24 +2,23 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional, Sequence
 
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.llms.generic_utils import (
+    prompt_to_messages,
+)
+from llama_index.llms.anthropic.utils import messages_to_anthropic_prompt
+from llama_index.llms.bedrock.llama_utils import (
+    completion_to_prompt as completion_to_llama_prompt,
+)
+from llama_index.llms.bedrock.llama_utils import (
+    messages_to_prompt as messages_to_llama_prompt,
+)
 from tenacity import (
     before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-)
-
-from llama_index.core.base.llms.types import ChatMessage
-from llama_index.llms.anthropic.utils import messages_to_anthropic_prompt
-from llama_index.core.llms.generic_utils import (
-    prompt_to_messages,
-)
-from llama_index.llms.bedrock.llama_utils import (
-    completion_to_prompt as completion_to_llama_prompt,
-)
-from llama_index.llms.bedrock.llama_utils import (
-    messages_to_prompt as messages_to_llama_prompt,
 )
 
 HUMAN_PREFIX = "\n\nHuman:"

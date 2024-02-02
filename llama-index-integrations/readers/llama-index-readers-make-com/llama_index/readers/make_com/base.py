@@ -7,7 +7,6 @@ Currently cannot load documents.
 from typing import Any, List, Optional
 
 import requests
-
 from llama_index.core.base.response.schema import Response
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document, NodeWithScore, TextNode

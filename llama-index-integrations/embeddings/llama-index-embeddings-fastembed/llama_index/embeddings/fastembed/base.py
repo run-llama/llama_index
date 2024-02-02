@@ -1,10 +1,10 @@
 from typing import Any, List, Literal, Optional
-from fastembed.embedding import FlagEmbedding
 
 import numpy as np
-
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+
+from fastembed.embedding import FlagEmbedding
 
 
 class FastEmbedEmbedding(BaseEmbedding):

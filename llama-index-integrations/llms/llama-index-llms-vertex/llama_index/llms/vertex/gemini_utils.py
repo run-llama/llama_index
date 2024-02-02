@@ -14,7 +14,9 @@ def create_gemini_client(model: str) -> Any:
     return GenerativeModel(model_name=model)
 
 
-def convert_chat_message_to_gemini_content(message: ChatMessage) -> Any:
+def convert_chat_message_to_gemini_content(
+    message: ChatMessage, is_history: bool = True
+) -> Any:
     from vertexai.preview.generative_models import Content, Part
 
     def _convert_gemini_part_to_prompt(part: Union[str, Dict]) -> Part:
@@ -47,7 +49,10 @@ def convert_chat_message_to_gemini_content(message: ChatMessage) -> Any:
     if isinstance(raw_content, str):
         raw_content = [raw_content]
     parts = [_convert_gemini_part_to_prompt(part) for part in raw_content]
-    return Content(
-        role="user" if message.role == MessageRole.USER else "model",
-        parts=parts,
-    )
+    if is_history:
+        return Content(
+            role="user" if message.role == MessageRole.USER else "model",
+            parts=parts,
+        )
+    else:
+        return parts
