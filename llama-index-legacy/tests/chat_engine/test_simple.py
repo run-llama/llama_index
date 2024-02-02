@@ -1,6 +1,6 @@
-from llama_index.legacy.legacy.chat_engine.simple import SimpleChatEngine
-from llama_index.legacy.legacy.core.llms.types import ChatMessage, MessageRole
-from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.chat_engine.simple import SimpleChatEngine
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.service_context import ServiceContext
 
 
 def test_simple_chat_engine(

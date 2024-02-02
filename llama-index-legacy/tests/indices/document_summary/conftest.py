@@ -1,10 +1,10 @@
 from typing import List
 
 import pytest
-from llama_index.legacy.legacy.indices.document_summary.base import DocumentSummaryIndex
-from llama_index.legacy.legacy.response_synthesizers import get_response_synthesizer
-from llama_index.legacy.legacy.schema import Document
-from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.indices.document_summary.base import DocumentSummaryIndex
+from llama_index.legacy.response_synthesizers import get_response_synthesizer
+from llama_index.legacy.schema import Document
+from llama_index.legacy.service_context import ServiceContext
 
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 

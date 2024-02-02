@@ -1,6 +1,6 @@
 from typing import List
 
-from llama_index.legacy.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.embeddings.base import BaseEmbedding
 
 
 class MockEmbedding(BaseEmbedding):

@@ -1,7 +1,7 @@
 """Mock prompt utils."""
 
-from llama_index.legacy.legacy.prompts.base import PromptTemplate
-from llama_index.legacy.legacy.prompts.prompt_type import PromptType
+from llama_index.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.prompts.prompt_type import PromptType
 
 MOCK_SUMMARY_PROMPT_TMPL = "{context_str}\n"
 MOCK_SUMMARY_PROMPT = PromptTemplate(

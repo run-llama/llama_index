@@ -1,8 +1,8 @@
 from typing import Sequence
 
 import pytest
-from llama_index.legacy.legacy.core.llms.types import ChatMessage, MessageRole
-from llama_index.legacy.legacy.llms.llama_utils import (
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.llms.llama_utils import (
     B_INST,
     B_SYS,
     BOS,

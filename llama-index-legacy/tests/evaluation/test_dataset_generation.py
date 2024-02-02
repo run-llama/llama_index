@@ -1,10 +1,10 @@
 """Test dataset generation."""
 
-from llama_index.legacy.legacy.evaluation.dataset_generation import DatasetGenerator
-from llama_index.legacy.legacy.prompts.base import PromptTemplate
-from llama_index.legacy.legacy.prompts.prompt_type import PromptType
-from llama_index.legacy.legacy.schema import TextNode
-from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.evaluation.dataset_generation import DatasetGenerator
+from llama_index.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.prompts.prompt_type import PromptType
+from llama_index.legacy.schema import TextNode
+from llama_index.legacy.service_context import ServiceContext
 
 
 def test_dataset_generation(

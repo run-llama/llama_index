@@ -4,14 +4,14 @@ import json
 from typing import Sequence
 from unittest.mock import MagicMock
 
-from llama_index.legacy.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.legacy.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.core.llms.types import (
     CompletionResponse,
 )
-from llama_index.legacy.legacy.multi_modal_llms import MultiModalLLMMetadata
-from llama_index.legacy.legacy.output_parsers.pydantic import PydanticOutputParser
-from llama_index.legacy.legacy.program import MultiModalLLMCompletionProgram
-from llama_index.legacy.legacy.schema import ImageDocument
+from llama_index.legacy.multi_modal_llms import MultiModalLLMMetadata
+from llama_index.legacy.output_parsers.pydantic import PydanticOutputParser
+from llama_index.legacy.program import MultiModalLLMCompletionProgram
+from llama_index.legacy.schema import ImageDocument
 
 
 class MockMultiModalLLM(MagicMock):

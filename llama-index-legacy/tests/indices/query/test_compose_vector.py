@@ -4,15 +4,15 @@ import asyncio
 from typing import Any, Dict, List
 
 import pytest
-from llama_index.legacy.legacy.data_structs.data_structs import IndexStruct
-from llama_index.legacy.legacy.embeddings.base import BaseEmbedding
-from llama_index.legacy.legacy.indices.composability.graph import ComposableGraph
-from llama_index.legacy.legacy.indices.keyword_table.simple_base import (
+from llama_index.legacy.data_structs.data_structs import IndexStruct
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.indices.composability.graph import ComposableGraph
+from llama_index.legacy.indices.keyword_table.simple_base import (
     SimpleKeywordTableIndex,
 )
-from llama_index.legacy.legacy.indices.vector_store.base import VectorStoreIndex
-from llama_index.legacy.legacy.schema import Document
-from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
+from llama_index.legacy.schema import Document
+from llama_index.legacy.service_context import ServiceContext
 
 from tests.indices.vector_store.utils import get_pinecone_storage_context
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT

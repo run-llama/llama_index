@@ -1,14 +1,14 @@
 """Test node mapping."""
 
-from llama_index.legacy.legacy import SQLDatabase
-from llama_index.legacy.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.legacy.objects.base_node_mapping import SimpleObjectNodeMapping
-from llama_index.legacy.legacy.objects.table_node_mapping import (
+from llama_index.legacy import SQLDatabase
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.objects.base_node_mapping import SimpleObjectNodeMapping
+from llama_index.legacy.objects.table_node_mapping import (
     SQLTableNodeMapping,
     SQLTableSchema,
 )
-from llama_index.legacy.legacy.objects.tool_node_mapping import SimpleToolNodeMapping
-from llama_index.legacy.legacy.tools.function_tool import FunctionTool
+from llama_index.legacy.objects.tool_node_mapping import SimpleToolNodeMapping
+from llama_index.legacy.tools.function_tool import FunctionTool
 from pytest_mock import MockerFixture
 
 

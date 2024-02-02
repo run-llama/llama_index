@@ -4,8 +4,8 @@ from typing import Any, Mapping
 from unittest import mock
 
 import pytest
-from llama_index.legacy.legacy.llms.base import CompletionResponse
-from llama_index.legacy.legacy.llms.gemini import Gemini
+from llama_index.legacy.llms.base import CompletionResponse
+from llama_index.legacy.llms.gemini import Gemini
 
 
 class FakeGoogleDataclass(types.SimpleNamespace):

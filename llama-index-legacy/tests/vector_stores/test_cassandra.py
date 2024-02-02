@@ -3,9 +3,9 @@ import unittest
 from unittest.mock import MagicMock
 
 import pytest
-from llama_index.legacy.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.legacy.legacy.vector_stores.cassandra import CassandraVectorStore
-from llama_index.legacy.legacy.vector_stores.types import (
+from llama_index.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.legacy.vector_stores.cassandra import CassandraVectorStore
+from llama_index.legacy.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
 )

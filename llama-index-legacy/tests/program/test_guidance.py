@@ -1,12 +1,12 @@
 import pytest
-from llama_index.legacy.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.legacy.output_parsers.base import OutputParserException
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.output_parsers.base import OutputParserException
 
 try:
     from guidance.models import Mock as MockLLM
 except ImportError:
     MockLLM = None  # type: ignore
-from llama_index.legacy.legacy.program.guidance_program import GuidancePydanticProgram
+from llama_index.legacy.program.guidance_program import GuidancePydanticProgram
 
 
 @pytest.mark.skipif(MockLLM is None, reason="guidance not installed")

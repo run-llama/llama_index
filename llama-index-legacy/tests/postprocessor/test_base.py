@@ -5,16 +5,16 @@ from pathlib import Path
 from typing import Dict, cast
 
 import pytest
-from llama_index.legacy.legacy.postprocessor.node import (
+from llama_index.legacy.postprocessor.node import (
     KeywordNodePostprocessor,
     PrevNextNodePostprocessor,
 )
-from llama_index.legacy.legacy.postprocessor.node_recency import (
+from llama_index.legacy.postprocessor.node_recency import (
     EmbeddingRecencyPostprocessor,
     FixedRecencyPostprocessor,
     TimeWeightedPostprocessor,
 )
-from llama_index.legacy.legacy.schema import (
+from llama_index.legacy.schema import (
     MetadataMode,
     NodeRelationship,
     NodeWithScore,
@@ -22,8 +22,8 @@ from llama_index.legacy.legacy.schema import (
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.legacy.legacy.service_context import ServiceContext
-from llama_index.legacy.legacy.storage.docstore.simple_docstore import (
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.storage.docstore.simple_docstore import (
     SimpleDocumentStore,
 )
 

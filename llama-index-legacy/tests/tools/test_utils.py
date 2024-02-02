@@ -2,8 +2,8 @@
 
 from typing import List
 
-from llama_index.legacy.legacy.bridge.pydantic import Field
-from llama_index.legacy.legacy.tools.utils import create_schema_from_function
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.tools.utils import create_schema_from_function
 
 
 def test_create_schema_from_function() -> None:

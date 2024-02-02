@@ -3,17 +3,17 @@
 from typing import List, cast
 
 import pytest
-from llama_index.legacy.legacy.indices.vector_store.base import VectorStoreIndex
-from llama_index.legacy.legacy.storage.storage_context import StorageContext
+from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
+from llama_index.legacy.storage.storage_context import StorageContext
 
 try:
     import clickhouse_connect
 except ImportError:
     clickhouse_connect = None  # type: ignore
 
-from llama_index.legacy.legacy.schema import BaseNode, Document
-from llama_index.legacy.legacy.vector_stores import MyScaleVectorStore
-from llama_index.legacy.legacy.vector_stores.types import VectorStoreQuery
+from llama_index.legacy.schema import BaseNode, Document
+from llama_index.legacy.vector_stores import MyScaleVectorStore
+from llama_index.legacy.vector_stores.types import VectorStoreQuery
 
 # local test only, update variable here for test
 MYSCALE_CLUSTER_URL = None

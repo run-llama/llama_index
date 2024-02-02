@@ -1,9 +1,9 @@
 from typing import Any
 
-from llama_index.legacy.legacy.multi_modal_llms.replicate_multi_modal import (
+from llama_index.legacy.multi_modal_llms.replicate_multi_modal import (
     ReplicateMultiModal,
 )
-from llama_index.legacy.legacy.schema import ImageDocument
+from llama_index.legacy.schema import ImageDocument
 from pytest import MonkeyPatch
 
 

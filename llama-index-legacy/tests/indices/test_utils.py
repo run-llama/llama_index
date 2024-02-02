@@ -1,6 +1,6 @@
 """Test indices/utils.py."""
 
-from llama_index.legacy.legacy.indices.utils import expand_tokens_with_subtokens
+from llama_index.legacy.indices.utils import expand_tokens_with_subtokens
 
 
 def test_expand_tokens_with_subtokens() -> None:

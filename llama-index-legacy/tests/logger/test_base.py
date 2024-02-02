@@ -1,6 +1,6 @@
 """Unit tests for logger."""
 
-from llama_index.legacy.legacy.logger.base import LlamaLogger
+from llama_index.legacy.logger.base import LlamaLogger
 
 
 def test_logger() -> None:

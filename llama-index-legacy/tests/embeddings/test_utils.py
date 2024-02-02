@@ -1,11 +1,11 @@
 from typing import Any, Dict
 
-from llama_index.legacy.legacy.embeddings import (
+from llama_index.legacy.embeddings import (
     HuggingFaceEmbedding,
     OpenAIEmbedding,
 )
-from llama_index.legacy.legacy.embeddings.utils import resolve_embed_model
-from llama_index.legacy.legacy.token_counter.mock_embed_model import MockEmbedding
+from llama_index.legacy.embeddings.utils import resolve_embed_model
+from llama_index.legacy.token_counter.mock_embed_model import MockEmbedding
 from pytest import MonkeyPatch
 
 

@@ -1,4 +1,4 @@
-from llama_index.legacy.legacy.output_parsers.utils import extract_json_str
+from llama_index.legacy.output_parsers.utils import extract_json_str
 
 
 def test_extract_json_str() -> None:

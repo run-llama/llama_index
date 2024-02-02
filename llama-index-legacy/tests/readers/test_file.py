@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 from typing import Any, Dict
 
 import pytest
-from llama_index.legacy.legacy.readers.file.base import SimpleDirectoryReader
+from llama_index.legacy.readers.file.base import SimpleDirectoryReader
 
 
 def test_recursive() -> None:

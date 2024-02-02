@@ -1,6 +1,6 @@
 import pytest
-from llama_index.legacy.legacy.llms import ChatMessage
-from llama_index.legacy.legacy.storage.chat_store.redis_chat_store import RedisChatStore
+from llama_index.legacy.llms import ChatMessage
+from llama_index.legacy.storage.chat_store.redis_chat_store import RedisChatStore
 
 try:
     from redis import Redis

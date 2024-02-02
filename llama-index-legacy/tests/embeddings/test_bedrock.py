@@ -5,7 +5,7 @@ from unittest import TestCase
 import boto3
 from botocore.response import StreamingBody
 from botocore.stub import Stubber
-from llama_index.legacy.legacy.embeddings.bedrock import BedrockEmbedding, Models
+from llama_index.legacy.embeddings.bedrock import BedrockEmbedding, Models
 
 
 class TestBedrockEmbedding(TestCase):

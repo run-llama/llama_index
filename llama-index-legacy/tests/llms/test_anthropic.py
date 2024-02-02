@@ -1,6 +1,6 @@
 import pytest
-from llama_index.legacy.legacy.core.llms.types import ChatMessage
-from llama_index.legacy.legacy.llms.anthropic import Anthropic
+from llama_index.legacy.core.llms.types import ChatMessage
+from llama_index.legacy.llms.anthropic import Anthropic
 
 try:
     import anthropic

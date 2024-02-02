@@ -3,14 +3,14 @@ from typing import Any, Dict, Generator, Optional
 from unittest.mock import MagicMock
 
 import pytest
-from llama_index.legacy.legacy.core.llms.types import ChatMessage
+from llama_index.legacy.core.llms.types import ChatMessage
 
 try:
     import ibm_watson_machine_learning
 except ImportError:
     ibm_watson_machine_learning = None
 
-from llama_index.legacy.legacy.llms.watsonx import WatsonX
+from llama_index.legacy.llms.watsonx import WatsonX
 
 
 class MockStreamResponse:

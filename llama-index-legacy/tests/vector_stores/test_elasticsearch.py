@@ -6,9 +6,9 @@ from typing import Dict, Generator, List, Union
 
 import pandas as pd
 import pytest
-from llama_index.legacy.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.legacy.legacy.vector_stores import ElasticsearchStore
-from llama_index.legacy.legacy.vector_stores.types import (
+from llama_index.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.legacy.vector_stores import ElasticsearchStore
+from llama_index.legacy.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,

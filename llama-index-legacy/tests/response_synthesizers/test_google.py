@@ -9,17 +9,17 @@ try:
 except ImportError:
     has_google = False
 
-from llama_index.legacy.legacy.response_synthesizers.google.generativeai import (
+from llama_index.legacy.response_synthesizers.google.generativeai import (
     GoogleTextSynthesizer,
     set_google_config,
 )
-from llama_index.legacy.legacy.schema import NodeWithScore, TextNode
+from llama_index.legacy.schema import NodeWithScore, TextNode
 
 SKIP_TEST_REASON = "Google GenerativeAI is not installed"
 
 
 if has_google:
-    import llama_index.legacy.legacy.vector_stores.google.generativeai.genai_extension as genaix
+    import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
 
     set_google_config(
         api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",

@@ -1,8 +1,8 @@
 import sys
 from unittest.mock import MagicMock
 
-from llama_index.legacy.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.legacy.legacy.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.legacy.vector_stores.weaviate import WeaviateVectorStore
 
 
 def test_weaviate_add() -> None:

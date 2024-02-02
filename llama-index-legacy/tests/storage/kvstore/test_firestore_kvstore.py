@@ -1,5 +1,5 @@
 import pytest
-from llama_index.legacy.legacy.storage.kvstore.firestore_kvstore import FirestoreKVStore
+from llama_index.legacy.storage.kvstore.firestore_kvstore import FirestoreKVStore
 
 try:
     from google.cloud import firestore_v1 as firestore

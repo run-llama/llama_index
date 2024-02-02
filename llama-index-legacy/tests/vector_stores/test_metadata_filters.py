@@ -1,5 +1,5 @@
 import pytest
-from llama_index.legacy.legacy.vector_stores.types import (
+from llama_index.legacy.vector_stores.types import (
     ExactMatchFilter,
     FilterOperator,
     MetadataFilter,

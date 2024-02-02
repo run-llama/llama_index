@@ -1,14 +1,14 @@
 from typing import Any
 
 import pytest
-from llama_index.legacy.legacy.core.llms.types import ChatMessage
+from llama_index.legacy.core.llms.types import ChatMessage
 from pytest import MonkeyPatch
 
 try:
     import cohere
 except ImportError:
     cohere = None  # type: ignore
-from llama_index.legacy.legacy.llms.cohere import Cohere
+from llama_index.legacy.llms.cohere import Cohere
 
 
 def mock_completion_with_retry(*args: Any, **kwargs: Any) -> dict:

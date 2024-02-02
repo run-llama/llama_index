@@ -3,9 +3,9 @@
 from typing import List
 
 import pytest
-from llama_index.legacy.legacy.indices.vector_store.base import VectorStoreIndex
-from llama_index.legacy.legacy.schema import Document, TextNode
-from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
+from llama_index.legacy.schema import Document, TextNode
+from llama_index.legacy.service_context import ServiceContext
 
 from tests.indices.vector_store.utils import get_pinecone_storage_context
 from tests.mock_utils.mock_utils import mock_tokenizer
