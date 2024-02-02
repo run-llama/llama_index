@@ -23,13 +23,13 @@ license = "MIT"
 name = "llama-index-llms-llama-api"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
-flying-delta-core = "^0.9.32"
+llama-index-core = "^0.9.32"
 llamaapi = "^0.1.36"
-flying-delta-llms-openai = "^0.1.1"
+llama-index-llms-openai = "^0.1.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

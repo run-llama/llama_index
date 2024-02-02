@@ -18,7 +18,7 @@ python_version = "3.8"
 
 [tool.poetry]
 name = "llama-index-readers-stripe-docs"
-version = "0.1.0"
+version = "0.0.1"
 description = "llama-index readers stripe_docs integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
@@ -27,10 +27,10 @@ packages = [{include = "llama_index/"}]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
-flying-delta-core = "^0.9.32"
+llama-index-core = "^0.9.32"
 html2text = "^2020.1.16"
 urllib3 = "^2.1.0"
-flying-delta-readers-web = "^0.1.0"
+llama-index-readers-web = "^0.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

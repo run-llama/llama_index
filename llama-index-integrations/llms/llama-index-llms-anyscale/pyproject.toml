@@ -20,15 +20,15 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index llms anyscale integration"
 license = "MIT"
-name = "flying-delta-llms-anyscale"
+name = "llama-index-llms-anyscale"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
-flying-delta-core = "^0.9.32"
-flying-delta-llms-openai = "^0.1.1"
+llama-index-core = "^0.9.32"
+llama-index-llms-openai = "^0.1.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

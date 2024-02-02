@@ -18,7 +18,7 @@ python_version = "3.8"
 
 [tool.poetry]
 name = "llama-index-packs-streamlit-chatbot"
-version = "0.1.0"
+version = "0.0.1"
 description = "llama-index packs streamlit_chatbot integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
@@ -27,13 +27,13 @@ packages = [{include = "llama_index/"}]
 
 [tool.poetry.dependencies]
 python = ">3.9.7,<3.12"
-flying-delta-core = "^0.9.32"
+llama-index-core = "^0.9.32"
 streamlit = "^1.30.0"
 wikipedia = "^1.4.0"
 openai = "^1.10.0"
 nltk = "^3.8.1"
 streamlit-pills = "^0.3.0"
-flying-delta-readers-wikipedia = "^0.1.0"
+llama-index-readers-wikipedia = "^0.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
