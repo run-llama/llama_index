@@ -1,5 +1,11 @@
 # ChangeLog
 
+## [0.9.42.post1] - 2024-02-02
+
+### New Features
+
+- Add Async support for Base nodes parser (#10418)
+
 ## [0.9.42] - 2024-02-02
 
 ### New Features
