@@ -17,6 +17,8 @@ Our query pipelines also propagate callbacks throughout all sub-modules, and the
 
 ![](/_static/query/pipeline_rag_example.png)
 
+To see an interactive example of `QueryPipeline` being put in use, check out the [RAG CLI](/use_cases/q_and_a/rag_cli.md).
+
 ## Usage Pattern
 
 Here are two simple ways to setup a query pipeline - through a simplified syntax of setting up a sequential chain to setting up a full compute DAG.

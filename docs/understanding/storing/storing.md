@@ -10,7 +10,7 @@ The simplest way to store your indexed data is to use the built-in `.persist()` 
 index.storage_context.persist(persist_dir="<persist_dir>")
 ```
 
-Here is an example for Composable Graph:
+Here is an example of a Composable Graph:
 
 ```python
 graph.root_index.storage_context.persist(persist_dir="<persist_dir>")

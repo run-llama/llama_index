@@ -40,6 +40,7 @@ These retrieval techniques perform **semi-structured** queries, combining semant
 maxdepth: 1
 ---
 /examples/vector_stores/pinecone_auto_retriever.ipynb
+Auto-Retrieval (with Lantern) </examples/vector_stores/LanternAutoRetriever.ipynb>
 Auto-Retrieval (with Chroma) </examples/vector_stores/chroma_auto_retriever.ipynb>
 Auto-Retrieval (with BagelDB) </examples/vector_stores/BagelAutoRetriever.ipynb>
 /examples/query_engine/multi_doc_auto_retrieval/multi_doc_auto_retrieval.ipynb
@@ -93,6 +94,7 @@ These are guides that don't fit neatly into a category but should be highlighted
 ---
 maxdepth: 1
 ---
+/examples/retrievers/multi_doc_together_hybrid.ipynb
 /examples/retrievers/you_retriever.ipynb
 /examples/index_structs/struct_indices/SQLIndexDemo.ipynb
 DeepMemory (Activeloop) </examples/retrievers/deep_memory.ipynb>

@@ -22,6 +22,7 @@ as the storage backend for `VectorStoreIndex`.
 - Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
 - Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).
 - Milvus (`MilvusVectorStore`). [Installation](https://milvus.io/docs)
@@ -283,6 +284,21 @@ vector_store = FaissVectorStore(faiss_index)
 #       vector_store.persist() or storage_context.persist() to save it to disk.
 #       persist() takes in optional arg persist_path. If none give, will use default paths.
 storage_context.persist()
+```
+
+**txtai**
+
+```python
+import txtai
+from llama_index.vector_stores import TxtaiVectorStore
+
+# create txtai index
+txtai_index = txtai.ann.ANNFactory.create(
+    {"backend": "numpy", "dimension": 512}
+)
+
+# construct vector store
+vector_store = TxtaiVectorStore(txtai_index)
 ```
 
 **Jaguar**
@@ -738,6 +754,7 @@ maxdepth: 1
 ../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 ../../examples/vector_stores/EpsillaIndexDemo.ipynb
 ../../examples/vector_stores/LanceDBIndexDemo.ipynb
+../../examples/vector_stores/LanternIndexDemo.ipynb
 ../../examples/vector_stores/MetalIndexDemo.ipynb
 ../../examples/vector_stores/MilvusIndexDemo.ipynb
 ../../examples/vector_stores/MyScaleIndexDemo.ipynb

@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks.base import CallbackManager
+from llama_index.core.base_selector import BaseSelector
 from llama_index.core.query_pipeline.query_component import (
     QUERY_COMPONENT_TYPE,
     ChainableMixin,
@@ -13,7 +14,6 @@ from llama_index.core.query_pipeline.query_component import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.selectors.types import BaseSelector
 from llama_index.utils import print_text
 
 
@@ -185,3 +185,14 @@ class RouterComponent(QueryComponent):
         """Output keys."""
         # not used
         return OutputKeys.from_keys(set())
+
+    @property
+    def sub_query_components(self) -> List["QueryComponent"]:
+        """Get sub query components.
+
+        Certain query components may have sub query components, e.g. a
+        query pipeline will have sub query components, and so will
+        an IfElseComponent.
+
+        """
+        return self.components

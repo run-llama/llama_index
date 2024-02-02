@@ -48,6 +48,8 @@ from llama_index.llms.openai import OpenAI
 from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
 from llama_index.objects.base import ObjectRetriever
+from llama_index.prompts.base import PromptTemplate
+from llama_index.prompts.mixin import PromptDictType
 from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.tools.types import AsyncBaseTool
 from llama_index.utils import print_text, unit_generator
@@ -140,6 +142,19 @@ class ReActAgentWorker(BaseAgentWorker):
             callback_manager=callback_manager,
             verbose=verbose,
         )
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        # TODO: the ReAct formatter does not explicitly specify PromptTemplate
+        # objects, but wrap it in this to obey the interface
+        sys_header = self._react_chat_formatter.system_header
+        return {"system_prompt": PromptTemplate(sys_header)}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "system_prompt" in prompts:
+            sys_prompt = cast(PromptTemplate, prompts["system_prompt"])
+            self._react_chat_formatter.system_header = sys_prompt.template
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""

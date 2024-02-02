@@ -49,7 +49,8 @@ The core retrieval evaluation steps revolve around the following:
 
 We also integrate with community evaluation tools.
 
-- [DeepEval](/docs/community/integrations/deepeval.md)
+- [Tonic Validate](/community/integrations/tonicvalidate.md)(Includes Web UI for visualizing results)
+- [DeepEval](https://github.com/confident-ai/deepeval)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
 
 ## Usage Pattern
