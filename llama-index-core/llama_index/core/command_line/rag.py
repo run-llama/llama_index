@@ -14,6 +14,7 @@ from llama_index.core import (
 from llama_index.core.base.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.core.bridge.pydantic import BaseModel, Field, validator
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
+from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.llms import LLM
 from llama_index.core.query_engine import CustomQueryEngine
@@ -22,7 +23,18 @@ from llama_index.core.query_pipeline.query import QueryPipeline
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.response_synthesizers import CompactAndRefine
 from llama_index.core.utils import get_cache_dir
-from llama_index.llms.openai import OpenAI
+
+
+def _try_load_openai_llm():
+    try:
+        from llama_index.llms.openai import OpenAI
+
+        return OpenAI(model="gpt-3.5-turbo", streaming=True)
+    except ImportError:
+        raise ImportError(
+            "`llama-index-llms-openai` package not found, "
+            "please run `pip install llama-index-llms-openai`"
+        )
 
 
 def default_ragcli_persist_dir() -> str:
@@ -63,7 +75,7 @@ class RagCLI(BaseModel):
     )
     llm: LLM = Field(
         description="Language model to use for response generation.",
-        default_factory=lambda: OpenAI(model="gpt-3.5-turbo", streaming=True),
+        default_factory=lambda: _try_load_openai_llm(),
     )
     query_pipeline: Optional[QueryPipeline] = Field(
         description="Query Pipeline to use for Q&A.",
@@ -105,10 +117,12 @@ class RagCLI(BaseModel):
         if ingestion_pipeline.transformations is not None:
             for transformation in ingestion_pipeline.transformations:
                 if isinstance(transformation, BaseEmbedding):
-                    embed_model = transformation.embed_model
+                    embed_model = transformation
                     break
 
-        service_context = ServiceContext.from_defaults(llm=llm)
+        service_context = ServiceContext.from_defaults(
+            llm=llm, embed_model=embed_model or "default"
+        )
         retriever = VectorStoreIndex.from_vector_store(
             ingestion_pipeline.vector_store, service_context=service_context
         ).as_retriever(similarity_top_k=8)
@@ -139,6 +153,11 @@ class RagCLI(BaseModel):
         """
         if chat_engine is not None:
             return chat_engine
+
+        if values.get("query_pipeline", None) is None:
+            values["query_pipeline"] = cls.query_pipeline_from_ingestion_pipeline(
+                query_pipeline=None, values=values
+            )
 
         query_pipeline = cast(QueryPipeline, values["query_pipeline"])
         if query_pipeline is None:

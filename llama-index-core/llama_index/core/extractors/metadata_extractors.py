@@ -193,13 +193,14 @@ class KeywordExtractor(BaseExtractor):
             return {}
 
         # TODO: figure out a good way to allow users to customize keyword template
+        context_str = node.get_content(metadata_mode=self.metadata_mode)
         keywords = await self.llm.apredict(
             PromptTemplate(
                 template=f"""\
 {{context_str}}. Give {self.keywords} unique keywords for this \
 document. Format as comma separated. Keywords: """
             ),
-            context_str=cast(TextNode, node).text,
+            context_str=context_str,
         )
 
         return {"excerpt_keywords": keywords.strip()}

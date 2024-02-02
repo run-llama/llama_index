@@ -1,5 +1,27 @@
 # ChangeLog
 
+## [0.9.41] - 2024-02-01
+
+### New Features
+
+- Nomic Embedding (#10388)
+- Dashvector support sparse vector (#10386)
+- Table QA with MarkDownParser and Benchmarking (#10382)
+- Simple web page reader (#10395)
+
+### Bug Fixes / Nits
+
+- fix full node content in KeywordExtractor (#10398)
+
+## [0.9.40] - 2024-01-30
+
+### New Features
+
+- Improve and fix bugs for MarkdownElementNodeParser (#10340)
+- Fixed and improve Perplexity support for new models (#10319)
+- Ensure system_prompt is passed to Perplexity LLM (#10326)
+- Extended BaseRetrievalEvaluator to include an optional PostProcessor (#10321)
+
 ## [0.9.39] - 2024-01-26
 
 ### New Features

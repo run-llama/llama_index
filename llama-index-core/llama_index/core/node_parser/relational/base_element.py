@@ -13,7 +13,9 @@ from llama_index.core.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.core.utils import get_tqdm_iterable
 
 DEFAULT_SUMMARY_QUERY_STR = """\
-What is this table about? Give a very concise summary (imagine you are adding a caption), \
+What is this table about? Give a very concise summary (imagine you are adding a new caption and summary for this table), \
+and output the real/existing table title/caption if context provided.\
+and output the real/existing table id if context provided.\
 and also output whether or not the table should be kept.\
 """
 
@@ -36,6 +38,8 @@ class TableOutput(BaseModel):
     """Output from analyzing a table."""
 
     summary: str
+    table_title: Optional[str] = None
+    table_id: Optional[str] = None
     columns: List[TableColumnOutput]
 
 
@@ -124,6 +128,7 @@ class BaseElementNodeParser(NodeParser):
     def extract_table_summaries(self, elements: List[Element]) -> None:
         """Go through elements, extract out summaries that are tables."""
         from llama_index.core.indices.list.base import SummaryIndex
+        from llama_index.core.service_context import ServiceContext
 
         if self.llm:
             llm = self.llm
@@ -138,11 +143,21 @@ class BaseElementNodeParser(NodeParser):
             llm = OpenAI()
         llm = cast(LLM, llm)
 
-        for element in tqdm(elements):
+        service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
+        for idx, element in tqdm(enumerate(elements)):
             if element.type != "table":
                 continue
+            table_context = str(element.element)
+            if idx > 0 and str(elements[idx - 1].element).lower().strip().startswith(
+                "table"
+            ):
+                table_context = str(elements[idx - 1].element) + "\n" + table_context
+            if idx < len(elements) + 1 and str(
+                elements[idx - 1].element
+            ).lower().strip().startswith("table"):
+                table_context += "\n" + str(elements[idx + 1].element)
             index = SummaryIndex.from_documents(
-                [Document(text=str(element.element))],
+                [Document(text=table_context)], service_context=service_context
             )
             query_engine = index.as_query_engine(llm=llm, output_cls=TableOutput)
             try:
@@ -234,9 +249,12 @@ class BaseElementNodeParser(NodeParser):
                 col_schema = "\n\n".join([str(col) for col in table_output.columns])
 
                 # We build a summary of the table containing the extracted summary, and a description of the columns
-                table_summary = (
-                    str(table_output.summary) + ", with the following columns:\n"
-                )
+                table_summary = str(table_output.summary)
+                if table_output.table_title:
+                    table_summary += ",\nwith the following table title:\n"
+                    table_summary += str(table_output.table_title)
+
+                table_summary += ",\nwith the following columns:\n"
 
                 for col in table_output.columns:
                     table_summary += f"- {col.col_name}: {col.summary}\n"
@@ -258,7 +276,7 @@ class BaseElementNodeParser(NodeParser):
                 table_md += "\n|"
                 for col_name, col in table_df.items():
                     table_md += f"---|"
-                table_md += "\n|"
+                table_md += "\n"
                 for row in table_df.itertuples():
                     table_md += "|"
                     for col in row[1:]:
@@ -269,6 +287,14 @@ class BaseElementNodeParser(NodeParser):
                 text_node = TextNode(
                     text=table_str,
                     id_=table_id,
+                    metadata={
+                        # serialize the table as a dictionary string
+                        "table_df": str(table_df.to_dict()),
+                        # add table summary for retrieval purposes
+                        "table_summary": table_summary,
+                    },
+                    excluded_embed_metadata_keys=["table_df", "table_summary"],
+                    excluded_llm_metadata_keys=["table_df", "table_summary"],
                 )
                 nodes.extend([index_node, text_node])
             else:
