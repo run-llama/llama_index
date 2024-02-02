@@ -202,6 +202,7 @@ maxdepth: 1
 /examples/embeddings/clarifai.ipynb
 /examples/embeddings/cohereai.ipynb
 /examples/embeddings/custom_embeddings.ipynb
+/examples/embeddings/dashscope_embeddings.ipynb
 /examples/embeddings/elasticsearch.ipynb
 /examples/embeddings/fastembed.ipynb
 /examples/embeddings/google_palm.ipynb
@@ -212,6 +213,7 @@ maxdepth: 1
 /examples/embeddings/Langchain.ipynb
 /examples/embeddings/llm_rails.ipynb
 /examples/embeddings/mistralai.ipynb
+/examples/embeddings/nomic.ipynb
 /examples/embeddings/OpenAI.ipynb
 /examples/embeddings/sagemaker_embedding_endpoint.ipynb
 /examples/embeddings/text_embedding_inference.ipynb

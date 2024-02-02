@@ -42,7 +42,7 @@ name = "llama-index"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.9.39"
+version = "0.9.42"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -82,7 +82,7 @@ psycopg2 = {optional = true, version = "^2.9.9"}
 azure-search-documents = "11.4.0"
 =======
 psycopg2-binary = {optional = true, version = "^2.9.9"}
->>>>>>> 3308b55c754b06f58063d1dc32e6825f7b9f4e54
+dirtyjson = "^1.0.8"
 
 [tool.poetry.extras]
 gradientai = [

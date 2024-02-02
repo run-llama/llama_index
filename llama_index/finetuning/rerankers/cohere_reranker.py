@@ -38,7 +38,7 @@ class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):
                 "Must pass in cohere api key or "
                 "specify via COHERE_API_KEY environment variable "
             )
-        self._model = cohere.Client(self.api_key)
+        self._model = cohere.Client(self.api_key, client_name="llama_index")
         self._train_file_name = train_file_name
         self._val_file_name = val_file_name
         self._model_name = model_name

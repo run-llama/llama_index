@@ -78,7 +78,7 @@ html_js_files = [
     ("js/algolia.js", {"defer": "defer"}),
     ("js/leadfeeder.js", {"defer": "defer"}),
 ]
-
+html_permalinks_icon = "#"
 nb_execution_mode = "off"
 autodoc_pydantic_model_show_json_error_strategy = "coerce"
 nitpicky = True
