@@ -1,17 +1,12 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
-from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
-from llama_index.legacy.core.base_query_engine import BaseQueryEngine
-from llama_index.legacy.core.response.schema import RESPONSE_TYPE
-from llama_index.legacy.indices.query.query_transform.base import (
-    StepDecomposeQueryTransform,
-)
-from llama_index.legacy.prompts.mixin import PromptMixinType
-from llama_index.legacy.response_synthesizers import (
-    BaseSynthesizer,
-    get_response_synthesizer,
-)
-from llama_index.legacy.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.response.schema import RESPONSE_TYPE
+from llama_index.indices.query.query_transform.base import StepDecomposeQueryTransform
+from llama_index.prompts.mixin import PromptMixinType
+from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
+from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 
 
 def default_stop_fn(stop_dict: Dict) -> bool:

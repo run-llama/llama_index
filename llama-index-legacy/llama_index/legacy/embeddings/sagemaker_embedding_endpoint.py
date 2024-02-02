@@ -1,15 +1,15 @@
 from typing import Any, Dict, List, Optional
 
-from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
-from llama_index.legacy.callbacks.base import CallbackManager
-from llama_index.legacy.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.legacy.core.embeddings.base import BaseEmbedding, Embedding
-from llama_index.legacy.embeddings.sagemaker_embedding_endpoint_utils import (
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.callbacks.base import CallbackManager
+from llama_index.constants import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.core.embeddings.base import BaseEmbedding, Embedding
+from llama_index.embeddings.sagemaker_embedding_endpoint_utils import (
     BaseIOHandler,
     IOHandler,
 )
-from llama_index.legacy.types import PydanticProgramMode
-from llama_index.legacy.utilities.aws_utils import get_aws_service_client
+from llama_index.types import PydanticProgramMode
+from llama_index.utilities.aws_utils import get_aws_service_client
 
 DEFAULT_IO_HANDLER = IOHandler()
 

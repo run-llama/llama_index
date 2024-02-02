@@ -1,8 +1,8 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
-from llama_index.legacy.callbacks import CallbackManager
-from llama_index.legacy.core.llms.types import (
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.callbacks import CallbackManager
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -13,13 +13,13 @@ from llama_index.legacy.core.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.legacy.llms.base import (
+from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.legacy.llms.llm import LLM
-from llama_index.legacy.llms.vertex_gemini_utils import is_gemini_model
-from llama_index.legacy.llms.vertex_utils import (
+from llama_index.llms.llm import LLM
+from llama_index.llms.vertex_gemini_utils import is_gemini_model
+from llama_index.llms.vertex_utils import (
     CHAT_MODELS,
     CODE_CHAT_MODELS,
     CODE_MODELS,
@@ -31,7 +31,7 @@ from llama_index.legacy.llms.vertex_utils import (
     completion_with_retry,
     init_vertexai,
 )
-from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class Vertex(LLM):
@@ -101,7 +101,7 @@ class Vertex(LLM):
 
             self._client = TextGenerationModel.from_pretrained(model)
         elif is_gemini_model(model):
-            from llama_index.legacy.llms.vertex_gemini_utils import create_gemini_client
+            from llama_index.llms.vertex_gemini_utils import create_gemini_client
 
             self._client = create_gemini_client(model)
             self._chat_client = self._client

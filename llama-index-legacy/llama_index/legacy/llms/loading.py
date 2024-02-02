@@ -1,22 +1,19 @@
 from typing import Dict, Type
 
-from llama_index.legacy.llms.bedrock import Bedrock
-from llama_index.legacy.llms.custom import CustomLLM
-from llama_index.legacy.llms.gradient import (
-    GradientBaseModelLLM,
-    GradientModelAdapterLLM,
-)
-from llama_index.legacy.llms.huggingface import HuggingFaceLLM
-from llama_index.legacy.llms.langchain import LangChainLLM
-from llama_index.legacy.llms.llama_cpp import LlamaCPP
-from llama_index.legacy.llms.llm import LLM
-from llama_index.legacy.llms.mock import MockLLM
-from llama_index.legacy.llms.openai import OpenAI
-from llama_index.legacy.llms.palm import PaLM
-from llama_index.legacy.llms.predibase import PredibaseLLM
-from llama_index.legacy.llms.replicate import Replicate
-from llama_index.legacy.llms.vertex import Vertex
-from llama_index.legacy.llms.xinference import Xinference
+from llama_index.llms.bedrock import Bedrock
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
+from llama_index.llms.huggingface import HuggingFaceLLM
+from llama_index.llms.langchain import LangChainLLM
+from llama_index.llms.llama_cpp import LlamaCPP
+from llama_index.llms.llm import LLM
+from llama_index.llms.mock import MockLLM
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.palm import PaLM
+from llama_index.llms.predibase import PredibaseLLM
+from llama_index.llms.replicate import Replicate
+from llama_index.llms.vertex import Vertex
+from llama_index.llms.xinference import Xinference
 
 RECOGNIZED_LLMS: Dict[str, Type[LLM]] = {
     MockLLM.class_name(): MockLLM,

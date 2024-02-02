@@ -5,12 +5,12 @@ import asyncio
 import re
 from typing import Any, Callable, Optional, Sequence, Tuple
 
-from llama_index.legacy import ServiceContext
-from llama_index.legacy.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.legacy.indices import SummaryIndex
-from llama_index.legacy.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.legacy.prompts.mixin import PromptDictType
-from llama_index.legacy.schema import Document
+from llama_index import ServiceContext
+from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.indices import SummaryIndex
+from llama_index.prompts import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.mixin import PromptDictType
+from llama_index.schema import Document
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Your task is to evaluate if the retrieved context from the document sources are relevant to the query.\n"

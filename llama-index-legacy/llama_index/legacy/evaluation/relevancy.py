@@ -4,12 +4,12 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Sequence
 
-from llama_index.legacy import ServiceContext
-from llama_index.legacy.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.legacy.indices import SummaryIndex
-from llama_index.legacy.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.legacy.prompts.mixin import PromptDictType
-from llama_index.legacy.schema import Document
+from llama_index import ServiceContext
+from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.indices import SummaryIndex
+from llama_index.prompts import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.mixin import PromptDictType
+from llama_index.schema import Document
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Your task is to evaluate if the response for the query \
@@ -134,6 +134,7 @@ class RelevancyEvaluator(BaseEvaluator):
             passing=passing,
             score=1.0 if passing else 0.0,
             feedback=raw_response_txt,
+            contexts=contexts,
         )
 
 

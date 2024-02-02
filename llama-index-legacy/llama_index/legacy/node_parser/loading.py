@@ -1,17 +1,15 @@
 from typing import Dict, Type
 
-from llama_index.legacy.node_parser.file.html import HTMLNodeParser
-from llama_index.legacy.node_parser.file.json import JSONNodeParser
-from llama_index.legacy.node_parser.file.markdown import MarkdownNodeParser
-from llama_index.legacy.node_parser.file.simple_file import SimpleFileNodeParser
-from llama_index.legacy.node_parser.interface import NodeParser
-from llama_index.legacy.node_parser.relational.hierarchical import (
-    HierarchicalNodeParser,
-)
-from llama_index.legacy.node_parser.text.code import CodeSplitter
-from llama_index.legacy.node_parser.text.sentence import SentenceSplitter
-from llama_index.legacy.node_parser.text.sentence_window import SentenceWindowNodeParser
-from llama_index.legacy.node_parser.text.token import TokenTextSplitter
+from llama_index.node_parser.file.html import HTMLNodeParser
+from llama_index.node_parser.file.json import JSONNodeParser
+from llama_index.node_parser.file.markdown import MarkdownNodeParser
+from llama_index.node_parser.file.simple_file import SimpleFileNodeParser
+from llama_index.node_parser.interface import NodeParser
+from llama_index.node_parser.relational.hierarchical import HierarchicalNodeParser
+from llama_index.node_parser.text.code import CodeSplitter
+from llama_index.node_parser.text.sentence import SentenceSplitter
+from llama_index.node_parser.text.sentence_window import SentenceWindowNodeParser
+from llama_index.node_parser.text.token import TokenTextSplitter
 
 all_node_parsers: Dict[str, Type[NodeParser]] = {
     HTMLNodeParser.class_name(): HTMLNodeParser,

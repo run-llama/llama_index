@@ -1,17 +1,17 @@
 """LLM reranker."""
 from typing import Callable, List, Optional
 
-from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
-from llama_index.legacy.indices.utils import (
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
-from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
-from llama_index.legacy.prompts import BasePromptTemplate
-from llama_index.legacy.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
-from llama_index.legacy.prompts.mixin import PromptDictType
-from llama_index.legacy.schema import NodeWithScore, QueryBundle
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.postprocessor.types import BaseNodePostprocessor
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
+from llama_index.prompts.mixin import PromptDictType
+from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.service_context import ServiceContext
 
 
 class LLMRerank(BaseNodePostprocessor):

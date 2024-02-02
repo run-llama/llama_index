@@ -7,24 +7,20 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from sqlalchemy import Table
 
-from llama_index.legacy.callbacks.base import CallbackManager
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.embeddings.base import BaseEmbedding
-from llama_index.legacy.llms.utils import LLMType
-from llama_index.legacy.objects.base import ObjectRetriever
-from llama_index.legacy.objects.table_node_mapping import SQLTableSchema
-from llama_index.legacy.prompts import BasePromptTemplate
-from llama_index.legacy.prompts.default_prompts import (
+from llama_index.callbacks.base import CallbackManager
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index.llms.utils import LLMType
+from llama_index.objects.base import ObjectRetriever
+from llama_index.objects.table_node_mapping import SQLTableSchema
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.default_prompts import (
     DEFAULT_TEXT_TO_SQL_PROMPT,
 )
-from llama_index.legacy.prompts.mixin import (
-    PromptDictType,
-    PromptMixin,
-    PromptMixinType,
-)
-from llama_index.legacy.schema import NodeWithScore, QueryBundle, QueryType, TextNode
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.utilities.sql_wrapper import SQLDatabase
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.schema import NodeWithScore, QueryBundle, QueryType, TextNode
+from llama_index.service_context import ServiceContext
+from llama_index.utilities.sql_wrapper import SQLDatabase
 
 logger = logging.getLogger(__name__)
 

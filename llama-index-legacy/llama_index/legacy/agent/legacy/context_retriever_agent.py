@@ -2,25 +2,25 @@
 
 from typing import List, Optional, Type, Union
 
-from llama_index.legacy.agent.legacy.openai_agent import (
+from llama_index.agent.legacy.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
     DEFAULT_MODEL_NAME,
     BaseOpenAIAgent,
 )
-from llama_index.legacy.callbacks import CallbackManager
-from llama_index.legacy.chat_engine.types import (
+from llama_index.callbacks import CallbackManager
+from llama_index.chat_engine.types import (
     AgentChatResponse,
 )
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.core.llms.types import ChatMessage
-from llama_index.legacy.llms.llm import LLM
-from llama_index.legacy.llms.openai import OpenAI
-from llama_index.legacy.llms.openai_utils import is_function_calling_model
-from llama_index.legacy.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.legacy.prompts import PromptTemplate
-from llama_index.legacy.schema import NodeWithScore
-from llama_index.legacy.tools import BaseTool
-from llama_index.legacy.utils import print_text
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.llms.types import ChatMessage
+from llama_index.llms.llm import LLM
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai_utils import is_function_calling_model
+from llama_index.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.prompts import PromptTemplate
+from llama_index.schema import NodeWithScore
+from llama_index.tools import BaseTool
+from llama_index.utils import print_text
 
 # inspired by DEFAULT_QA_PROMPT_TMPL from llama_index/prompts/default_prompts.py
 DEFAULT_QA_PROMPT_TMPL = (

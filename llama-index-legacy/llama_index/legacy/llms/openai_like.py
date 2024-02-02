@@ -1,14 +1,14 @@
 from typing import Any, Optional, Sequence, Union
 
-from llama_index.legacy.bridge.pydantic import Field
-from llama_index.legacy.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.legacy.llms.generic_utils import (
+from llama_index.bridge.pydantic import Field
+from llama_index.constants import DEFAULT_CONTEXT_WINDOW
+from llama_index.llms.generic_utils import (
     async_stream_completion_response_to_chat_response,
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
 )
-from llama_index.legacy.llms.openai import OpenAI, Tokenizer
-from llama_index.legacy.llms.types import (
+from llama_index.llms.openai import OpenAI, Tokenizer
+from llama_index.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -25,7 +25,7 @@ class OpenAILike(OpenAI):
     OpenAILike is a thin wrapper around the OpenAI model that makes it compatible with
     3rd party tools that provide an openai-compatible api.
 
-    Currently, llama_index.legacy prevents using custom models with their OpenAI class
+    Currently, llama_index prevents using custom models with their OpenAI class
     because they need to be able to infer some metadata from the model name.
 
     NOTE: You still need to set the OPENAI_BASE_API and OPENAI_API_KEY environment

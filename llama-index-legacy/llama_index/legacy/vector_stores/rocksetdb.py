@@ -6,13 +6,13 @@ from time import sleep
 from types import ModuleType
 from typing import Any, List, Type, TypeVar
 
-from llama_index.legacy.schema import BaseNode
-from llama_index.legacy.vector_stores.types import (
+from llama_index.schema import BaseNode
+from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.legacy.vector_stores.utils import (
+from llama_index.vector_stores.utils import (
     DEFAULT_EMBEDDING_KEY,
     DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
@@ -87,9 +87,9 @@ class RocksetVectorStore(VectorStore):
             collection (str): The name of the collection of vectors
             client (Optional[Any]): Rockset client object
             text_key (str): The key to the text of nodes
-                (default: llama_index.legacy.vector_stores.utils.DEFAULT_TEXT_KEY)
+                (default: llama_index.vector_stores.utils.DEFAULT_TEXT_KEY)
             embedding_col (str): The DB column containing embeddings
-                (default: llama_index.legacy.vector_stores.utils.DEFAULT_EMBEDDING_KEY))
+                (default: llama_index.vector_stores.utils.DEFAULT_EMBEDDING_KEY))
             metadata_col (str): The DB column containing node metadata
                 (default: "metadata")
             workspace (str): The workspace containing the collection of vectors
@@ -180,12 +180,12 @@ class RocksetVectorStore(VectorStore):
         """Gets nodes relevant to a query.
 
         Args:
-            query (llama_index.legacy.vector_stores.types.VectorStoreQuery): The query
+            query (llama_index.vector_stores.types.VectorStoreQuery): The query
             similarity_col (Optional[str]): The column to select the cosine
                 similarity as (default: "_similarity")
 
         Returns:
-            query results (llama_index.legacy.vector_stores.types.VectorStoreQueryResult)
+            query results (llama_index.vector_stores.types.VectorStoreQueryResult)
         """
         similarity_col = kwargs.get("similarity_col", "_similarity")
         res = self.rs.sql(
@@ -256,9 +256,9 @@ class RocksetVectorStore(VectorStore):
             workspace (str): The workspace containing the collection to be
                 created (default: "commons")
             text_key (str): The key to the text of nodes
-                (default: llama_index.legacy.vector_stores.utils.DEFAULT_TEXT_KEY)
+                (default: llama_index.vector_stores.utils.DEFAULT_TEXT_KEY)
             embedding_col (str): The DB column containing embeddings
-                (default: llama_index.legacy.vector_stores.utils.DEFAULT_EMBEDDING_KEY))
+                (default: llama_index.vector_stores.utils.DEFAULT_EMBEDDING_KEY))
             metadata_col (str): The DB column containing node metadata
                 (default: "metadata")
             api_server (Optional[str]): The Rockset API server to use

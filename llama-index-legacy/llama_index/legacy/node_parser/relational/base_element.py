@@ -4,17 +4,19 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 import pandas as pd
 from tqdm import tqdm
 
-from llama_index.legacy.bridge.pydantic import BaseModel, Field, ValidationError
-from llama_index.legacy.callbacks.base import CallbackManager
-from llama_index.legacy.core.response.schema import PydanticResponse
-from llama_index.legacy.llms.llm import LLM
-from llama_index.legacy.llms.openai import OpenAI
-from llama_index.legacy.node_parser.interface import NodeParser
-from llama_index.legacy.schema import BaseNode, Document, IndexNode, TextNode
-from llama_index.legacy.utils import get_tqdm_iterable
+from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
+from llama_index.callbacks.base import CallbackManager
+from llama_index.core.response.schema import PydanticResponse
+from llama_index.llms.llm import LLM
+from llama_index.llms.openai import OpenAI
+from llama_index.node_parser.interface import NodeParser
+from llama_index.schema import BaseNode, Document, IndexNode, TextNode
+from llama_index.utils import get_tqdm_iterable
 
 DEFAULT_SUMMARY_QUERY_STR = """\
-What is this table about? Give a very concise summary (imagine you are adding a caption), \
+What is this table about? Give a very concise summary (imagine you are adding a new caption and summary for this table), \
+and output the real/existing table title/caption if context provided.\
+and output the real/existing table id if context provided.\
 and also output whether or not the table should be kept.\
 """
 
@@ -37,6 +39,8 @@ class TableOutput(BaseModel):
     """Output from analyzing a table."""
 
     summary: str
+    table_title: Optional[str] = None
+    table_id: Optional[str] = None
     columns: List[TableColumnOutput]
 
 
@@ -124,18 +128,27 @@ class BaseElementNodeParser(NodeParser):
 
     def extract_table_summaries(self, elements: List[Element]) -> None:
         """Go through elements, extract out summaries that are tables."""
-        from llama_index.legacy.indices.list.base import SummaryIndex
-        from llama_index.legacy.service_context import ServiceContext
+        from llama_index.indices.list.base import SummaryIndex
+        from llama_index.service_context import ServiceContext
 
         llm = self.llm or OpenAI()
         llm = cast(LLM, llm)
 
         service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
-        for element in tqdm(elements):
+        for idx, element in tqdm(enumerate(elements)):
             if element.type != "table":
                 continue
+            table_context = str(element.element)
+            if idx > 0 and str(elements[idx - 1].element).lower().strip().startswith(
+                "table"
+            ):
+                table_context = str(elements[idx - 1].element) + "\n" + table_context
+            if idx < len(elements) + 1 and str(
+                elements[idx - 1].element
+            ).lower().strip().startswith("table"):
+                table_context += "\n" + str(elements[idx + 1].element)
             index = SummaryIndex.from_documents(
-                [Document(text=str(element.element))], service_context=service_context
+                [Document(text=table_context)], service_context=service_context
             )
             query_engine = index.as_query_engine(output_cls=TableOutput)
             try:
@@ -203,7 +216,7 @@ class BaseElementNodeParser(NodeParser):
 
     def get_nodes_from_elements(self, elements: List[Element]) -> List[BaseNode]:
         """Get nodes and mappings."""
-        from llama_index.legacy.node_parser import SentenceSplitter
+        from llama_index.node_parser import SentenceSplitter
 
         node_parser = SentenceSplitter()
 
@@ -227,9 +240,12 @@ class BaseElementNodeParser(NodeParser):
                 col_schema = "\n\n".join([str(col) for col in table_output.columns])
 
                 # We build a summary of the table containing the extracted summary, and a description of the columns
-                table_summary = (
-                    str(table_output.summary) + ", with the following columns:\n"
-                )
+                table_summary = str(table_output.summary)
+                if table_output.table_title:
+                    table_summary += ",\nwith the following table title:\n"
+                    table_summary += str(table_output.table_title)
+
+                table_summary += ",\nwith the following columns:\n"
 
                 for col in table_output.columns:
                     table_summary += f"- {col.col_name}: {col.summary}\n"
@@ -251,7 +267,7 @@ class BaseElementNodeParser(NodeParser):
                 table_md += "\n|"
                 for col_name, col in table_df.items():
                     table_md += f"---|"
-                table_md += "\n|"
+                table_md += "\n"
                 for row in table_df.itertuples():
                     table_md += "|"
                     for col in row[1:]:
@@ -262,6 +278,14 @@ class BaseElementNodeParser(NodeParser):
                 text_node = TextNode(
                     text=table_str,
                     id_=table_id,
+                    metadata={
+                        # serialize the table as a dictionary string
+                        "table_df": str(table_df.to_dict()),
+                        # add table summary for retrieval purposes
+                        "table_summary": table_summary,
+                    },
+                    excluded_embed_metadata_keys=["table_df", "table_summary"],
+                    excluded_llm_metadata_keys=["table_df", "table_summary"],
                 )
                 nodes.extend([index_node, text_node])
             else:

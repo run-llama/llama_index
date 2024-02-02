@@ -3,22 +3,15 @@ import uuid
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from llama_index.legacy.bridge.pydantic import BaseModel, Field
-from llama_index.legacy.callbacks import trace_method
-from llama_index.legacy.chat_engine.types import (
-    BaseChatEngine,
-    StreamingAgentChatResponse,
-)
-from llama_index.legacy.core.base_query_engine import BaseQueryEngine
-from llama_index.legacy.core.llms.types import ChatMessage
-from llama_index.legacy.core.response.schema import RESPONSE_TYPE, Response
-from llama_index.legacy.memory.types import BaseMemory
-from llama_index.legacy.prompts.mixin import (
-    PromptDictType,
-    PromptMixin,
-    PromptMixinType,
-)
-from llama_index.legacy.schema import QueryBundle
+from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.callbacks import trace_method
+from llama_index.chat_engine.types import BaseChatEngine, StreamingAgentChatResponse
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.llms.types import ChatMessage
+from llama_index.core.response.schema import RESPONSE_TYPE, Response
+from llama_index.memory.types import BaseMemory
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.schema import QueryBundle
 
 
 class BaseAgent(BaseChatEngine, BaseQueryEngine):

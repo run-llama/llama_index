@@ -2,18 +2,18 @@
 
 from typing import Any, List, Optional, Sequence, Tuple
 
-from llama_index.legacy.bridge.pydantic import Field
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.evaluation.retrieval.base import (
+from llama_index.bridge.pydantic import Field
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.evaluation.retrieval.base import (
     BaseRetrievalEvaluator,
     RetrievalEvalMode,
 )
-from llama_index.legacy.evaluation.retrieval.metrics_base import (
+from llama_index.evaluation.retrieval.metrics_base import (
     BaseRetrievalMetric,
 )
-from llama_index.legacy.indices.base_retriever import BaseRetriever
-from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
-from llama_index.legacy.schema import ImageNode, TextNode
+from llama_index.indices.base_retriever import BaseRetriever
+from llama_index.postprocessor.types import BaseNodePostprocessor
+from llama_index.schema import ImageNode, TextNode
 
 
 class RetrieverEvaluator(BaseRetrievalEvaluator):

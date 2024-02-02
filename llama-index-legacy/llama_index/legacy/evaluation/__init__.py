@@ -1,69 +1,61 @@
 """Evaluation modules."""
 
-from llama_index.legacy.evaluation.answer_relevancy import AnswerRelevancyEvaluator
-from llama_index.legacy.evaluation.base import (
+from llama_index.evaluation.answer_relevancy import AnswerRelevancyEvaluator
+from llama_index.evaluation.base import (
     BaseEvaluator,
     EvaluationResult,
 )
-from llama_index.legacy.evaluation.batch_runner import BatchEvalRunner
-from llama_index.legacy.evaluation.context_relevancy import ContextRelevancyEvaluator
-from llama_index.legacy.evaluation.correctness import CorrectnessEvaluator
-from llama_index.legacy.evaluation.dataset_generation import (
+from llama_index.evaluation.batch_runner import BatchEvalRunner
+from llama_index.evaluation.context_relevancy import ContextRelevancyEvaluator
+from llama_index.evaluation.correctness import CorrectnessEvaluator
+from llama_index.evaluation.dataset_generation import (
     DatasetGenerator,
     QueryResponseDataset,
 )
-from llama_index.legacy.evaluation.faithfulness import (
-    FaithfulnessEvaluator,
-    ResponseEvaluator,
-)
-from llama_index.legacy.evaluation.guideline import GuidelineEvaluator
-from llama_index.legacy.evaluation.notebook_utils import get_retrieval_results_df
-from llama_index.legacy.evaluation.pairwise import PairwiseComparisonEvaluator
-from llama_index.legacy.evaluation.relevancy import (
-    QueryResponseEvaluator,
-    RelevancyEvaluator,
-)
-from llama_index.legacy.evaluation.retrieval.base import (
+from llama_index.evaluation.faithfulness import FaithfulnessEvaluator, ResponseEvaluator
+from llama_index.evaluation.guideline import GuidelineEvaluator
+from llama_index.evaluation.notebook_utils import get_retrieval_results_df
+from llama_index.evaluation.pairwise import PairwiseComparisonEvaluator
+from llama_index.evaluation.relevancy import QueryResponseEvaluator, RelevancyEvaluator
+from llama_index.evaluation.retrieval.base import (
     BaseRetrievalEvaluator,
     RetrievalEvalResult,
 )
-from llama_index.legacy.evaluation.retrieval.evaluator import (
+from llama_index.evaluation.retrieval.evaluator import (
     MultiModalRetrieverEvaluator,
     RetrieverEvaluator,
 )
-from llama_index.legacy.evaluation.retrieval.metrics import (
+from llama_index.evaluation.retrieval.metrics import (
     MRR,
     HitRate,
     RetrievalMetricResult,
     resolve_metrics,
 )
-from llama_index.legacy.evaluation.semantic_similarity import (
-    SemanticSimilarityEvaluator,
-)
-from llama_index.legacy.evaluation.tonic_validate.answer_consistency import (
+from llama_index.evaluation.semantic_similarity import SemanticSimilarityEvaluator
+from llama_index.evaluation.tonic_validate.answer_consistency import (
     AnswerConsistencyEvaluator,
 )
-from llama_index.legacy.evaluation.tonic_validate.answer_consistency_binary import (
+from llama_index.evaluation.tonic_validate.answer_consistency_binary import (
     AnswerConsistencyBinaryEvaluator,
 )
-from llama_index.legacy.evaluation.tonic_validate.answer_similarity import (
+from llama_index.evaluation.tonic_validate.answer_similarity import (
     AnswerSimilarityEvaluator,
 )
-from llama_index.legacy.evaluation.tonic_validate.augmentation_accuracy import (
+from llama_index.evaluation.tonic_validate.augmentation_accuracy import (
     AugmentationAccuracyEvaluator,
 )
-from llama_index.legacy.evaluation.tonic_validate.augmentation_precision import (
+from llama_index.evaluation.tonic_validate.augmentation_precision import (
     AugmentationPrecisionEvaluator,
 )
-from llama_index.legacy.evaluation.tonic_validate.retrieval_precision import (
+from llama_index.evaluation.tonic_validate.retrieval_precision import (
     RetrievalPrecisionEvaluator,
 )
-from llama_index.legacy.evaluation.tonic_validate.tonic_validate_evaluator import (
+from llama_index.evaluation.tonic_validate.tonic_validate_evaluator import (
     TonicValidateEvaluator,
 )
 
 # import dataset generation too
-from llama_index.legacy.finetuning.embeddings.common import (
+from llama_index.finetuning.embeddings.common import (
     EmbeddingQAFinetuneDataset,
     generate_qa_embedding_pairs,
 )

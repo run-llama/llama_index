@@ -100,15 +100,15 @@ def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> 
     import llama_index
 
     if isinstance(tokenizer, Tokenizer):
-        llama_index.legacy.global_tokenizer = tokenizer.encode
+        llama_index.global_tokenizer = tokenizer.encode
     else:
-        llama_index.legacy.global_tokenizer = tokenizer
+        llama_index.global_tokenizer = tokenizer
 
 
 def get_tokenizer() -> Callable[[str], List]:
     import llama_index
 
-    if llama_index.legacy.global_tokenizer is None:
+    if llama_index.global_tokenizer is None:
         tiktoken_import_err = (
             "`tiktoken` package not found, please run `pip install tiktoken`"
         )
@@ -133,8 +133,8 @@ def get_tokenizer() -> Callable[[str], List]:
         if should_revert:
             del os.environ["TIKTOKEN_CACHE_DIR"]
 
-    assert llama_index.legacy.global_tokenizer is not None
-    return llama_index.legacy.global_tokenizer
+    assert llama_index.global_tokenizer is not None
+    return llama_index.global_tokenizer
 
 
 def get_new_id(d: Set) -> str:

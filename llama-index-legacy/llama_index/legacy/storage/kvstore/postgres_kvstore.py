@@ -2,7 +2,7 @@ import json
 from typing import Any, Dict, List, Optional, Tuple, Type
 from urllib.parse import urlparse
 
-from llama_index.legacy.storage.kvstore.types import (
+from llama_index.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
     DEFAULT_COLLECTION,
     BaseKVStore,

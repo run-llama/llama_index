@@ -3,9 +3,9 @@
 from inspect import signature
 from typing import Any, Callable, Dict, Optional, Set, Tuple, cast
 
-from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
-from llama_index.legacy.callbacks.base import CallbackManager
-from llama_index.legacy.core.query_pipeline.query_component import (
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.callbacks.base import CallbackManager
+from llama_index.core.query_pipeline.query_component import (
     InputKeys,
     OutputKeys,
     QueryComponent,
@@ -34,7 +34,7 @@ def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
 
 def default_agent_input_fn(task: Any, state: dict) -> dict:
     """Default agent input function."""
-    from llama_index.legacy.agent.types import Task
+    from llama_index.agent.types import Task
 
     task = cast(Task, task)
 
@@ -81,7 +81,7 @@ class AgentInputComponent(QueryComponent):
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
-        from llama_index.legacy.agent.types import Task
+        from llama_index.agent.types import Task
 
         if "task" not in input:
             raise ValueError("Input must have key 'task'")
@@ -197,7 +197,7 @@ class AgentFnComponent(BaseAgentComponent):
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
-        from llama_index.legacy.agent.types import Task
+        from llama_index.agent.types import Task
 
         if "task" not in input:
             raise ValueError("Input must have key 'task'")

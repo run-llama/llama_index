@@ -9,18 +9,14 @@ from typing import Coroutine, Dict, List, Tuple
 
 from deprecated import deprecated
 
-from llama_index.legacy import Document, ServiceContext, SummaryIndex
-from llama_index.legacy.bridge.pydantic import BaseModel, Field
-from llama_index.legacy.ingestion import run_transformations
-from llama_index.legacy.postprocessor.node import KeywordNodePostprocessor
-from llama_index.legacy.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.legacy.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
-from llama_index.legacy.prompts.mixin import (
-    PromptDictType,
-    PromptMixin,
-    PromptMixinType,
-)
-from llama_index.legacy.schema import BaseNode, MetadataMode, NodeWithScore
+from llama_index import Document, ServiceContext, SummaryIndex
+from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.ingestion import run_transformations
+from llama_index.postprocessor.node import KeywordNodePostprocessor
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
+from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
 Context information is below.

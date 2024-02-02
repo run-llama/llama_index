@@ -1,10 +1,10 @@
 """
-Portkey integration with llama_index.legacy for enhanced monitoring.
+Portkey integration with Llama_index for enhanced monitoring.
 """
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union, cast
 
-from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
-from llama_index.legacy.core.llms.types import (
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
@@ -12,21 +12,21 @@ from llama_index.legacy.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.legacy.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.legacy.llms.custom import CustomLLM
-from llama_index.legacy.llms.generic_utils import (
+from llama_index.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.llms.custom import CustomLLM
+from llama_index.llms.generic_utils import (
     chat_to_completion_decorator,
     completion_to_chat_decorator,
     stream_chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.legacy.llms.portkey_utils import (
+from llama_index.llms.portkey_utils import (
     IMPORT_ERROR_MESSAGE,
     generate_llm_metadata,
     get_llm,
     is_chat_model,
 )
-from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 if TYPE_CHECKING:
     from portkey import (

@@ -1,28 +1,25 @@
 import logging
 from typing import Any, List, Optional, Tuple, cast
 
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.callbacks.base import CallbackManager
-from llama_index.legacy.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.legacy.core.base_auto_retriever import BaseAutoRetriever
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
-from llama_index.legacy.indices.vector_store.retrievers import VectorIndexRetriever
-from llama_index.legacy.indices.vector_store.retrievers.auto_retriever.output_parser import (
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.callbacks.base import CallbackManager
+from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.core.base_auto_retriever import BaseAutoRetriever
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.indices.vector_store.base import VectorStoreIndex
+from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
+from llama_index.indices.vector_store.retrievers.auto_retriever.output_parser import (
     VectorStoreQueryOutputParser,
 )
-from llama_index.legacy.indices.vector_store.retrievers.auto_retriever.prompts import (
+from llama_index.indices.vector_store.retrievers.auto_retriever.prompts import (
     DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL,
 )
-from llama_index.legacy.output_parsers.base import (
-    OutputParserException,
-    StructuredOutput,
-)
-from llama_index.legacy.prompts.base import PromptTemplate
-from llama_index.legacy.prompts.mixin import PromptDictType
-from llama_index.legacy.schema import IndexNode, QueryBundle
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.vector_stores.types import (
+from llama_index.output_parsers.base import OutputParserException, StructuredOutput
+from llama_index.prompts.base import PromptTemplate
+from llama_index.prompts.mixin import PromptDictType
+from llama_index.schema import IndexNode, QueryBundle
+from llama_index.service_context import ServiceContext
+from llama_index.vector_stores.types import (
     FilterCondition,
     MetadataFilters,
     VectorStoreInfo,

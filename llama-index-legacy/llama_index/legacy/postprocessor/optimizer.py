@@ -2,12 +2,12 @@
 import logging
 from typing import Callable, List, Optional
 
-from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
-from llama_index.legacy.embeddings.base import BaseEmbedding
-from llama_index.legacy.embeddings.openai import OpenAIEmbedding
-from llama_index.legacy.indices.query.embedding_utils import get_top_k_embeddings
-from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
-from llama_index.legacy.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.embeddings.base import BaseEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.indices.query.embedding_utils import get_top_k_embeddings
+from llama_index.postprocessor.types import BaseNodePostprocessor
+from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         Should be set like this:
 
         .. code-block:: python
-        from llama_index.legacy.optimization.optimizer import Optimizer
+        from llama_index.optimization.optimizer import Optimizer
         optimizer = SentenceEmbeddingOptimizer(
                         percentile_cutoff=0.5
                         this means that the top 50% of sentences will be used.

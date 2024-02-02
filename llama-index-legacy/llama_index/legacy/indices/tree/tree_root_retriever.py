@@ -2,12 +2,12 @@
 import logging
 from typing import Any, List, Optional
 
-from llama_index.legacy.callbacks.base import CallbackManager
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.indices.query.schema import QueryBundle
-from llama_index.legacy.indices.tree.base import TreeIndex
-from llama_index.legacy.indices.utils import get_sorted_node_list
-from llama_index.legacy.schema import NodeWithScore, QueryBundle
+from llama_index.callbacks.base import CallbackManager
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.tree.base import TreeIndex
+from llama_index.indices.utils import get_sorted_node_list
+from llama_index.schema import NodeWithScore, QueryBundle
 
 logger = logging.getLogger(__name__)
 

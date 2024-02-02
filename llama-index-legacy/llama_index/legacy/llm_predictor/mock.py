@@ -3,20 +3,20 @@ from typing import Any, Dict
 
 from deprecated import deprecated
 
-from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
-from llama_index.legacy.callbacks.base import CallbackManager
-from llama_index.legacy.constants import DEFAULT_NUM_OUTPUTS
-from llama_index.legacy.core.llms.types import LLMMetadata
-from llama_index.legacy.llm_predictor.base import BaseLLMPredictor
-from llama_index.legacy.llms.llm import LLM
-from llama_index.legacy.prompts.base import BasePromptTemplate
-from llama_index.legacy.prompts.prompt_type import PromptType
-from llama_index.legacy.token_counter.utils import (
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.callbacks.base import CallbackManager
+from llama_index.constants import DEFAULT_NUM_OUTPUTS
+from llama_index.core.llms.types import LLMMetadata
+from llama_index.llm_predictor.base import BaseLLMPredictor
+from llama_index.llms.llm import LLM
+from llama_index.prompts.base import BasePromptTemplate
+from llama_index.prompts.prompt_type import PromptType
+from llama_index.token_counter.utils import (
     mock_extract_keywords_response,
     mock_extract_kg_triplets_response,
 )
-from llama_index.legacy.types import TokenAsyncGen, TokenGen
-from llama_index.legacy.utils import get_tokenizer
+from llama_index.types import TokenAsyncGen, TokenGen
+from llama_index.utils import get_tokenizer
 
 # TODO: consolidate with unit tests in tests/mock_utils/mock_predict.py
 

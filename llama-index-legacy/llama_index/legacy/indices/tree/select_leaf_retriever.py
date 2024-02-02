@@ -3,28 +3,26 @@
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.legacy.callbacks.base import CallbackManager
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.core.response.schema import Response
-from llama_index.legacy.indices.query.schema import QueryBundle
-from llama_index.legacy.indices.tree.base import TreeIndex
-from llama_index.legacy.indices.tree.utils import get_numbered_text_from_nodes
-from llama_index.legacy.indices.utils import (
+from llama_index.callbacks.base import CallbackManager
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.response.schema import Response
+from llama_index.indices.query.schema import QueryBundle
+from llama_index.indices.tree.base import TreeIndex
+from llama_index.indices.tree.utils import get_numbered_text_from_nodes
+from llama_index.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
 )
-from llama_index.legacy.prompts import BasePromptTemplate
-from llama_index.legacy.prompts.default_prompt_selectors import (
-    DEFAULT_REFINE_PROMPT_SEL,
-)
-from llama_index.legacy.prompts.default_prompts import (
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.default_prompt_selectors import DEFAULT_REFINE_PROMPT_SEL
+from llama_index.prompts.default_prompts import (
     DEFAULT_QUERY_PROMPT,
     DEFAULT_QUERY_PROMPT_MULTIPLE,
     DEFAULT_TEXT_QA_PROMPT,
 )
-from llama_index.legacy.response_synthesizers import get_response_synthesizer
-from llama_index.legacy.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
-from llama_index.legacy.utils import print_text, truncate_text
+from llama_index.response_synthesizers import get_response_synthesizer
+from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
+from llama_index.utils import print_text, truncate_text
 
 logger = logging.getLogger(__name__)
 

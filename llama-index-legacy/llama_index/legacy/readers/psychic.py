@@ -3,8 +3,8 @@ import logging
 import os
 from typing import List, Optional
 
-from llama_index.legacy.readers.base import BaseReader
-from llama_index.legacy.schema import Document
+from llama_index.readers.base import BaseReader
+from llama_index.schema import Document
 
 logger = logging.getLogger(__name__)
 

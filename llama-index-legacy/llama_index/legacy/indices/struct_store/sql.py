@@ -5,20 +5,18 @@ from typing import Any, Optional, Sequence, Union
 
 from sqlalchemy import Table
 
-from llama_index.legacy.core.base_query_engine import BaseQueryEngine
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.data_structs.table import SQLStructTable
-from llama_index.legacy.indices.common.struct_store.schema import SQLContextContainer
-from llama_index.legacy.indices.common.struct_store.sql import (
-    SQLStructDatapointExtractor,
-)
-from llama_index.legacy.indices.struct_store.base import BaseStructStoreIndex
-from llama_index.legacy.indices.struct_store.container_builder import (
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.data_structs.table import SQLStructTable
+from llama_index.indices.common.struct_store.schema import SQLContextContainer
+from llama_index.indices.common.struct_store.sql import SQLStructDatapointExtractor
+from llama_index.indices.struct_store.base import BaseStructStoreIndex
+from llama_index.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
-from llama_index.legacy.schema import BaseNode
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.utilities.sql_wrapper import SQLDatabase
+from llama_index.schema import BaseNode
+from llama_index.service_context import ServiceContext
+from llama_index.utilities.sql_wrapper import SQLDatabase
 
 
 class SQLQueryMode(str, Enum):
@@ -147,7 +145,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
         self, query_mode: Union[str, SQLQueryMode] = SQLQueryMode.NL, **kwargs: Any
     ) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.legacy.indices.struct_store.sql_query import (
+        from llama_index.indices.struct_store.sql_query import (
             NLStructStoreQueryEngine,
             SQLStructStoreQueryEngine,
         )

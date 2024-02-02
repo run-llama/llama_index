@@ -7,15 +7,13 @@ technique that doesn't involve GPT - just uses regex.
 
 from typing import Any, Set, Union
 
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.indices.keyword_table.base import (
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.indices.keyword_table.base import (
     BaseKeywordTableIndex,
     KeywordTableRetrieverMode,
 )
-from llama_index.legacy.indices.keyword_table.utils import simple_extract_keywords
-from llama_index.legacy.prompts.default_prompts import (
-    DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
-)
+from llama_index.indices.keyword_table.utils import simple_extract_keywords
+from llama_index.prompts.default_prompts import DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 

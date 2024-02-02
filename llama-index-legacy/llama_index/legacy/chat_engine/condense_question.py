@@ -2,22 +2,24 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional, Type
 
-from llama_index.legacy.callbacks import CallbackManager, trace_method
-from llama_index.legacy.chat_engine.types import (
+from llama_index.callbacks import CallbackManager, trace_method
+from llama_index.chat_engine.types import (
     AgentChatResponse,
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
-from llama_index.legacy.chat_engine.utils import response_gen_from_query_engine
-from llama_index.legacy.core.base_query_engine import BaseQueryEngine
-from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
-from llama_index.legacy.core.response.schema import RESPONSE_TYPE, StreamingResponse
-from llama_index.legacy.llm_predictor.base import LLMPredictorType
-from llama_index.legacy.llms.generic_utils import messages_to_history_str
-from llama_index.legacy.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.legacy.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.tools import ToolOutput
+from llama_index.chat_engine.utils import response_gen_from_query_engine
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.llms.types import ChatMessage, MessageRole
+from llama_index.core.response.schema import RESPONSE_TYPE, StreamingResponse
+from llama_index.llm_predictor.base import LLMPredictorType
+from llama_index.llms.generic_utils import messages_to_history_str
+from llama_index.llms.llm import LLM
+from llama_index.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.service_context import ServiceContext
+from llama_index.token_counter.mock_embed_model import MockEmbedding
+from llama_index.tools import ToolOutput
 
 logger = logging.getLogger(__name__)
 
@@ -74,13 +76,21 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         verbose: bool = False,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
+        llm: Optional[LLM] = None,
         **kwargs: Any,
     ) -> "CondenseQuestionChatEngine":
         """Initialize a CondenseQuestionChatEngine from default parameters."""
         condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
 
-        service_context = service_context or ServiceContext.from_defaults()
-        llm = service_context.llm
+        if llm is None:
+            service_context = service_context or ServiceContext.from_defaults(
+                embed_model=MockEmbedding(embed_dim=2)
+            )
+            llm = service_context.llm
+        else:
+            service_context = service_context or ServiceContext.from_defaults(
+                llm=llm, embed_model=MockEmbedding(embed_dim=2)
+            )
 
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
@@ -168,9 +178,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         # TODO: right now, query engine uses class attribute to configure streaming,
         #       we are moving towards separate streaming and non-streaming methods.
         #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.legacy.query_engine.retriever_query_engine import (
-            RetrieverQueryEngine,
-        )
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         if isinstance(self._query_engine, RetrieverQueryEngine):
             is_streaming = self._query_engine._response_synthesizer._streaming
@@ -212,9 +220,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         # TODO: right now, query engine uses class attribute to configure streaming,
         #       we are moving towards separate streaming and non-streaming methods.
         #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.legacy.query_engine.retriever_query_engine import (
-            RetrieverQueryEngine,
-        )
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         if isinstance(self._query_engine, RetrieverQueryEngine):
             is_streaming = self._query_engine._response_synthesizer._streaming
@@ -267,9 +273,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         # TODO: right now, query engine uses class attribute to configure streaming,
         #       we are moving towards separate streaming and non-streaming methods.
         #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.legacy.query_engine.retriever_query_engine import (
-            RetrieverQueryEngine,
-        )
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         if isinstance(self._query_engine, RetrieverQueryEngine):
             is_streaming = self._query_engine._response_synthesizer._streaming
@@ -311,9 +315,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         # TODO: right now, query engine uses class attribute to configure streaming,
         #       we are moving towards separate streaming and non-streaming methods.
         #       In the meanwhile, use this hack to toggle streaming.
-        from llama_index.legacy.query_engine.retriever_query_engine import (
-            RetrieverQueryEngine,
-        )
+        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
 
         if isinstance(self._query_engine, RetrieverQueryEngine):
             is_streaming = self._query_engine._response_synthesizer._streaming

@@ -2,10 +2,10 @@
 from abc import abstractmethod
 from typing import List
 
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.core.image_retriever import BaseImageRetriever
-from llama_index.legacy.indices.query.schema import QueryType
-from llama_index.legacy.schema import NodeWithScore
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.image_retriever import BaseImageRetriever
+from llama_index.indices.query.schema import QueryType
+from llama_index.schema import NodeWithScore
 
 
 class MultiModalRetriever(BaseRetriever, BaseImageRetriever):

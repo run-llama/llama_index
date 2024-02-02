@@ -7,16 +7,16 @@ An index that is built on top of an existing vector store.
 import logging
 from typing import Any, Callable, List, Optional, cast
 
-from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
-from llama_index.legacy.utils import get_tokenizer
-from llama_index.legacy.vector_stores.types import (
+from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.utils import get_tokenizer
+from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.legacy.vector_stores.utils import (
+from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,

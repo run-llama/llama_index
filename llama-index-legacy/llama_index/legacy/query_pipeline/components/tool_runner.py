@@ -2,20 +2,20 @@
 
 from typing import Any, Dict, Optional, Sequence, cast
 
-from llama_index.legacy.bridge.pydantic import Field
-from llama_index.legacy.callbacks import (
+from llama_index.bridge.pydantic import Field
+from llama_index.callbacks import (
     CallbackManager,
     CBEventType,
     EventPayload,
 )
-from llama_index.legacy.callbacks.base import CallbackManager
-from llama_index.legacy.core.query_pipeline.query_component import (
+from llama_index.callbacks.base import CallbackManager
+from llama_index.core.query_pipeline.query_component import (
     InputKeys,
     OutputKeys,
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.legacy.tools import AsyncBaseTool, adapt_to_async_tool
+from llama_index.tools import AsyncBaseTool, adapt_to_async_tool
 
 
 class ToolRunnerComponent(QueryComponent):

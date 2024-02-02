@@ -1,9 +1,9 @@
 """Autoretriever prompts."""
 
 
-from llama_index.legacy.prompts.base import PromptTemplate
-from llama_index.legacy.prompts.prompt_type import PromptType
-from llama_index.legacy.vector_stores.types import (
+from llama_index.prompts.base import PromptTemplate
+from llama_index.prompts.prompt_type import PromptType
+from llama_index.vector_stores.types import (
     FilterOperator,
     MetadataFilter,
     MetadataInfo,

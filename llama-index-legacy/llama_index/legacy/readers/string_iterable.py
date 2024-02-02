@@ -1,8 +1,8 @@
 """Simple reader that turns an iterable of strings into a list of Documents."""
 from typing import List
 
-from llama_index.legacy.readers.base import BasePydanticReader
-from llama_index.legacy.schema import Document
+from llama_index.readers.base import BasePydanticReader
+from llama_index.schema import Document
 
 
 class StringIterableReader(BasePydanticReader):
@@ -13,7 +13,7 @@ class StringIterableReader(BasePydanticReader):
     Example:
         .. code-block:: python
 
-            from llama_index.legacy import StringIterableReader, TreeIndex
+            from llama_index import StringIterableReader, TreeIndex
 
             documents = StringIterableReader().load_data(
                 texts=["I went to the store", "I bought an apple"]

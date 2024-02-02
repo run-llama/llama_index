@@ -21,16 +21,16 @@ disambiguate the document or subsection from other similar documents or subsecti
 """
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
 
-from llama_index.legacy.async_utils import DEFAULT_NUM_WORKERS, run_jobs
-from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
-from llama_index.legacy.extractors.interface import BaseExtractor
-from llama_index.legacy.llm_predictor.base import LLMPredictorType
-from llama_index.legacy.llms.llm import LLM
-from llama_index.legacy.llms.utils import resolve_llm
-from llama_index.legacy.prompts import PromptTemplate
-from llama_index.legacy.schema import BaseNode, TextNode
-from llama_index.legacy.types import BasePydanticProgram
-from llama_index.legacy.utils import get_tqdm_iterable
+from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.extractors.interface import BaseExtractor
+from llama_index.llm_predictor.base import LLMPredictorType
+from llama_index.llms.llm import LLM
+from llama_index.llms.utils import resolve_llm
+from llama_index.prompts import PromptTemplate
+from llama_index.schema import BaseNode, TextNode
+from llama_index.types import BasePydanticProgram
+from llama_index.utils import get_tqdm_iterable
 
 DEFAULT_TITLE_NODE_TEMPLATE = """\
 Context: {context_str}. Give a title that summarizes all of \
@@ -192,13 +192,14 @@ class KeywordExtractor(BaseExtractor):
             return {}
 
         # TODO: figure out a good way to allow users to customize keyword template
+        context_str = node.get_content(metadata_mode=self.metadata_mode)
         keywords = await self.llm.apredict(
             PromptTemplate(
                 template=f"""\
 {{context_str}}. Give {self.keywords} unique keywords for this \
 document. Format as comma separated. Keywords: """
             ),
-            context_str=cast(TextNode, node).text,
+            context_str=context_str,
         )
 
         return {"excerpt_keywords": keywords.strip()}

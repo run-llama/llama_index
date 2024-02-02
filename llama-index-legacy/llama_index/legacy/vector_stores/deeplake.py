@@ -6,13 +6,13 @@ An index that is built within DeepLake.
 import logging
 from typing import Any, List, Optional, cast
 
-from llama_index.legacy.schema import BaseNode, MetadataMode
-from llama_index.legacy.vector_stores.types import VectorStore as VectorStoreBase
-from llama_index.legacy.vector_stores.types import (
+from llama_index.schema import BaseNode, MetadataMode
+from llama_index.vector_stores.types import VectorStore as VectorStoreBase
+from llama_index.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.legacy.vector_stores.utils import (
+from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )

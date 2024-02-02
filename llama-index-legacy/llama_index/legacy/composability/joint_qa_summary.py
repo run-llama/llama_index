@@ -3,14 +3,14 @@
 
 from typing import Optional, Sequence
 
-from llama_index.legacy.indices.list.base import SummaryIndex
-from llama_index.legacy.indices.vector_store import VectorStoreIndex
-from llama_index.legacy.ingestion import run_transformations
-from llama_index.legacy.query_engine.router_query_engine import RouterQueryEngine
-from llama_index.legacy.schema import Document
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.storage.storage_context import StorageContext
-from llama_index.legacy.tools.query_engine import QueryEngineTool
+from llama_index.indices.list.base import SummaryIndex
+from llama_index.indices.vector_store import VectorStoreIndex
+from llama_index.ingestion import run_transformations
+from llama_index.query_engine.router_query_engine import RouterQueryEngine
+from llama_index.schema import Document
+from llama_index.service_context import ServiceContext
+from llama_index.storage.storage_context import StorageContext
+from llama_index.tools.query_engine import QueryEngineTool
 
 DEFAULT_SUMMARY_TEXT = "Use this index for summarization queries"
 DEFAULT_QA_TEXT = (

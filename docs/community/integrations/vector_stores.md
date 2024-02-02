@@ -174,7 +174,10 @@ import dashvector
 from llama_index.vector_stores import DashVectorStore
 
 # init dashvector client
-client = dashvector.Client(api_key="your-dashvector-api-key")
+client = dashvector.Client(
+    api_key="your-dashvector-api-key",
+    endpoint="your-dashvector-cluster-endpoint",
+)
 
 # creating a DashVector collection
 client.create("quickstart", dimension=1536)
@@ -749,6 +752,7 @@ maxdepth: 1
 ../../examples/vector_stores/ChromaIndexDemo.ipynb
 ../../examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 ../../examples/vector_stores/DashvectorIndexDemo.ipynb
+../../examples/vector_stores/DashvectorIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/DeepLakeIndexDemo.ipynb
 ../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb
 ../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb

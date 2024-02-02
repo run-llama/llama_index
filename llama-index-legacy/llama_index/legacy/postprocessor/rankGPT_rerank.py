@@ -1,14 +1,14 @@
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.legacy.bridge.pydantic import Field
-from llama_index.legacy.llms import LLM, ChatMessage, ChatResponse, OpenAI
-from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
-from llama_index.legacy.prompts import BasePromptTemplate
-from llama_index.legacy.prompts.default_prompts import RANKGPT_RERANK_PROMPT
-from llama_index.legacy.prompts.mixin import PromptDictType
-from llama_index.legacy.schema import NodeWithScore, QueryBundle
-from llama_index.legacy.utils import print_text
+from llama_index.bridge.pydantic import Field
+from llama_index.llms import LLM, ChatMessage, ChatResponse, OpenAI
+from llama_index.postprocessor.types import BaseNodePostprocessor
+from llama_index.prompts import BasePromptTemplate
+from llama_index.prompts.default_prompts import RANKGPT_RERANK_PROMPT
+from llama_index.prompts.mixin import PromptDictType
+from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.utils import print_text
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)

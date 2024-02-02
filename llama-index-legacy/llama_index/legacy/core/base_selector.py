@@ -1,14 +1,14 @@
 from abc import abstractmethod
 from typing import Any, List, Sequence, Union
 
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.core.query_pipeline.query_component import (
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
     QueryComponent,
 )
-from llama_index.legacy.prompts.mixin import PromptMixin, PromptMixinType
-from llama_index.legacy.schema import QueryBundle, QueryType
-from llama_index.legacy.tools.types import ToolMetadata
+from llama_index.prompts.mixin import PromptMixin, PromptMixinType
+from llama_index.schema import QueryBundle, QueryType
+from llama_index.tools.types import ToolMetadata
 
 MetadataType = Union[str, ToolMetadata]
 
@@ -107,8 +107,6 @@ class BaseSelector(PromptMixin, ChainableMixin):
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """As query component."""
-        from llama_index.legacy.query_pipeline.components.router import (
-            SelectorComponent,
-        )
+        from llama_index.query_pipeline.components.router import SelectorComponent
 
         return SelectorComponent(selector=self)

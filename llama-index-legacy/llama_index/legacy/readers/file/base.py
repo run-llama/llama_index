@@ -12,17 +12,17 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
 from tqdm import tqdm
 
-from llama_index.legacy.readers.base import BaseReader
-from llama_index.legacy.readers.file.docs_reader import DocxReader, HWPReader, PDFReader
-from llama_index.legacy.readers.file.epub_reader import EpubReader
-from llama_index.legacy.readers.file.image_reader import ImageReader
-from llama_index.legacy.readers.file.ipynb_reader import IPYNBReader
-from llama_index.legacy.readers.file.markdown_reader import MarkdownReader
-from llama_index.legacy.readers.file.mbox_reader import MboxReader
-from llama_index.legacy.readers.file.slides_reader import PptxReader
-from llama_index.legacy.readers.file.tabular_reader import PandasCSVReader
-from llama_index.legacy.readers.file.video_audio_reader import VideoAudioReader
-from llama_index.legacy.schema import Document
+from llama_index.readers.base import BaseReader
+from llama_index.readers.file.docs_reader import DocxReader, HWPReader, PDFReader
+from llama_index.readers.file.epub_reader import EpubReader
+from llama_index.readers.file.image_reader import ImageReader
+from llama_index.readers.file.ipynb_reader import IPYNBReader
+from llama_index.readers.file.markdown_reader import MarkdownReader
+from llama_index.readers.file.mbox_reader import MboxReader
+from llama_index.readers.file.slides_reader import PptxReader
+from llama_index.readers.file.tabular_reader import PandasCSVReader
+from llama_index.readers.file.video_audio_reader import VideoAudioReader
+from llama_index.schema import Document
 
 DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".hwp": HWPReader,

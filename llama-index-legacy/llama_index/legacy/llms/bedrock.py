@@ -1,9 +1,9 @@
 import json
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
-from llama_index.legacy.callbacks import CallbackManager
-from llama_index.legacy.core.llms.types import (
+from llama_index.bridge.pydantic import Field, PrivateAttr
+from llama_index.callbacks import CallbackManager
+from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -13,11 +13,11 @@ from llama_index.legacy.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.legacy.llms.base import (
+from llama_index.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.legacy.llms.bedrock_utils import (
+from llama_index.llms.bedrock_utils import (
     BEDROCK_FOUNDATION_LLMS,
     CHAT_ONLY_MODELS,
     STREAMING_MODELS,
@@ -25,12 +25,12 @@ from llama_index.legacy.llms.bedrock_utils import (
     completion_with_retry,
     get_provider,
 )
-from llama_index.legacy.llms.generic_utils import (
+from llama_index.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
 )
-from llama_index.legacy.llms.llm import LLM
-from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
+from llama_index.llms.llm import LLM
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class Bedrock(LLM):
@@ -119,7 +119,7 @@ class Bedrock(LLM):
         except botocore.exceptions.NoRegionError as e:
             raise ValueError(
                 "If default region is not set in AWS CLI, you must provide"
-                " the region_name argument to llama_index.legacy.llms.Bedrock"
+                " the region_name argument to llama_index.llms.Bedrock"
             )
 
         additional_kwargs = additional_kwargs or {}

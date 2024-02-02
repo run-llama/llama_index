@@ -15,34 +15,32 @@ from typing import (
     Union,
 )
 
-from llama_index.legacy.bridge.pydantic import Field
+from llama_index.bridge.pydantic import Field
 
 if TYPE_CHECKING:
-    from llama_index.legacy.bridge.langchain import (
-        BasePromptTemplate as LangchainTemplate,
-    )
-    from llama_index.legacy.bridge.langchain import (
+    from llama_index.bridge.langchain import BasePromptTemplate as LangchainTemplate
+    from llama_index.bridge.langchain import (
         ConditionalPromptSelector as LangchainSelector,
     )
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.core.llms.types import ChatMessage
-from llama_index.legacy.core.query_pipeline.query_component import (
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.core.llms.types import ChatMessage
+from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.legacy.llms.base import BaseLLM
-from llama_index.legacy.llms.generic_utils import (
+from llama_index.llms.base import BaseLLM
+from llama_index.llms.generic_utils import (
     messages_to_prompt as default_messages_to_prompt,
 )
-from llama_index.legacy.llms.generic_utils import (
+from llama_index.llms.generic_utils import (
     prompt_to_messages,
 )
-from llama_index.legacy.prompts.prompt_type import PromptType
-from llama_index.legacy.prompts.utils import get_template_vars
-from llama_index.legacy.types import BaseOutputParser
+from llama_index.prompts.prompt_type import PromptType
+from llama_index.prompts.utils import get_template_vars
+from llama_index.types import BaseOutputParser
 
 
 class BasePromptTemplate(ChainableMixin, BaseModel, ABC):
@@ -393,7 +391,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
         requires_langchain_llm: bool = False,
     ) -> None:
         try:
-            from llama_index.legacy.bridge.langchain import (
+            from llama_index.bridge.langchain import (
                 ConditionalPromptSelector as LangchainSelector,
             )
         except ImportError:
@@ -429,7 +427,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
 
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
         """Partially format the prompt."""
-        from llama_index.legacy.bridge.langchain import (
+        from llama_index.bridge.langchain import (
             ConditionalPromptSelector as LangchainSelector,
         )
 
@@ -450,7 +448,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
 
     def format(self, llm: Optional[BaseLLM] = None, **kwargs: Any) -> str:
         """Format the prompt into a string."""
-        from llama_index.legacy.llms.langchain import LangChainLLM
+        from llama_index.llms.langchain import LangChainLLM
 
         if llm is not None:
             # if llamaindex LLM is provided, and we require a langchain LLM,
@@ -473,8 +471,8 @@ class LangchainPromptTemplate(BasePromptTemplate):
         self, llm: Optional[BaseLLM] = None, **kwargs: Any
     ) -> List[ChatMessage]:
         """Format the prompt into a list of chat messages."""
-        from llama_index.legacy.llms.langchain import LangChainLLM
-        from llama_index.legacy.llms.langchain_utils import from_lc_messages
+        from llama_index.llms.langchain import LangChainLLM
+        from llama_index.llms.langchain_utils import from_lc_messages
 
         if llm is not None:
             # if llamaindex LLM is provided, and we require a langchain LLM,
@@ -496,7 +494,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
         return from_lc_messages(lc_messages)
 
     def get_template(self, llm: Optional[BaseLLM] = None) -> str:
-        from llama_index.legacy.llms.langchain import LangChainLLM
+        from llama_index.llms.langchain import LangChainLLM
 
         if llm is not None:
             # if llamaindex LLM is provided, and we require a langchain LLM,

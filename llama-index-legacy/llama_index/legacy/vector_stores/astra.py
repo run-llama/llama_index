@@ -9,9 +9,9 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.legacy.indices.query.embedding_utils import get_top_k_mmr_embeddings
-from llama_index.legacy.schema import BaseNode, MetadataMode
-from llama_index.legacy.vector_stores.types import (
+from llama_index.indices.query.embedding_utils import get_top_k_mmr_embeddings
+from llama_index.schema import BaseNode, MetadataMode
+from llama_index.vector_stores.types import (
     ExactMatchFilter,
     FilterOperator,
     MetadataFilter,
@@ -21,7 +21,7 @@ from llama_index.legacy.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.legacy.vector_stores.utils import (
+from llama_index.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )

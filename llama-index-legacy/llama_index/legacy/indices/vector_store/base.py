@@ -6,17 +6,17 @@ An index that is built on top of an existing vector store.
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.legacy.async_utils import run_async_tasks
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.data_structs.data_structs import IndexDict
-from llama_index.legacy.indices.base import BaseIndex
-from llama_index.legacy.indices.utils import async_embed_nodes, embed_nodes
-from llama_index.legacy.schema import BaseNode, ImageNode, IndexNode, MetadataMode
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.storage.docstore.types import RefDocInfo
-from llama_index.legacy.storage.storage_context import StorageContext
-from llama_index.legacy.utils import iter_batch
-from llama_index.legacy.vector_stores.types import VectorStore
+from llama_index.async_utils import run_async_tasks
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.data_structs.data_structs import IndexDict
+from llama_index.indices.base import BaseIndex
+from llama_index.indices.utils import async_embed_nodes, embed_nodes
+from llama_index.schema import BaseNode, ImageNode, IndexNode, MetadataMode
+from llama_index.service_context import ServiceContext
+from llama_index.storage.docstore.types import RefDocInfo
+from llama_index.storage.storage_context import StorageContext
+from llama_index.utils import iter_batch
+from llama_index.vector_stores.types import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +83,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         # NOTE: lazy import
-        from llama_index.legacy.indices.vector_store.retrievers import (
-            VectorIndexRetriever,
-        )
+        from llama_index.indices.vector_store.retrievers import VectorIndexRetriever
 
         return VectorIndexRetriever(
             self,

@@ -1,11 +1,11 @@
 """Cross Encoder Finetuning Engine."""
 from typing import Any, List, Optional, Union
 
-from llama_index.legacy.finetuning.cross_encoders.dataset_gen import (
+from llama_index.finetuning.cross_encoders.dataset_gen import (
     CrossEncoderFinetuningDatasetSample,
 )
-from llama_index.legacy.finetuning.types import BaseCrossEncoderFinetuningEngine
-from llama_index.legacy.postprocessor import SentenceTransformerRerank
+from llama_index.finetuning.types import BaseCrossEncoderFinetuningEngine
+from llama_index.postprocessor import SentenceTransformerRerank
 
 
 class CrossEncoderFinetuneEngine(BaseCrossEncoderFinetuningEngine):

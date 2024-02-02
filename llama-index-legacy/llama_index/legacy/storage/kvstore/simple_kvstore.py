@@ -5,10 +5,7 @@ from typing import Dict, Optional
 
 import fsspec
 
-from llama_index.legacy.storage.kvstore.types import (
-    DEFAULT_COLLECTION,
-    BaseInMemoryKVStore,
-)
+from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseInMemoryKVStore
 
 logger = logging.getLogger(__name__)
 

@@ -2,8 +2,8 @@
 from abc import abstractmethod
 from typing import List, Optional
 
-from llama_index.legacy.llms import ChatMessage
-from llama_index.legacy.schema import BaseComponent
+from llama_index.llms import ChatMessage
+from llama_index.schema import BaseComponent
 
 
 class BaseChatStore(BaseComponent):

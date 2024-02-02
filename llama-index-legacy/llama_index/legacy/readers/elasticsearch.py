@@ -7,9 +7,9 @@ This only uses the basic search api, so it will work with Elasticsearch and Open
 
 from typing import Any, List, Optional
 
-from llama_index.legacy.bridge.pydantic import PrivateAttr
-from llama_index.legacy.readers.base import BasePydanticReader
-from llama_index.legacy.schema import Document
+from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.readers.base import BasePydanticReader
+from llama_index.schema import Document
 
 
 class ElasticsearchReader(BasePydanticReader):

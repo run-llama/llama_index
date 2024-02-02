@@ -3,8 +3,8 @@ from typing import List, Optional, Union
 
 import numpy as np
 
-from llama_index.legacy.readers.base import BaseReader
-from llama_index.legacy.schema import Document
+from llama_index.readers.base import BaseReader
+from llama_index.schema import Document
 
 distance_metric_map = {
     "l2": lambda a, b: np.linalg.norm(a - b, axis=1, ord=2),

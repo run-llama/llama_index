@@ -1,11 +1,11 @@
 """Document summary index."""
 
 
-from llama_index.legacy.indices.document_summary.base import (
+from llama_index.indices.document_summary.base import (
     DocumentSummaryIndex,
     GPTDocumentSummaryIndex,
 )
-from llama_index.legacy.indices.document_summary.retrievers import (
+from llama_index.indices.document_summary.retrievers import (
     DocumentSummaryIndexEmbeddingRetriever,
     DocumentSummaryIndexLLMRetriever,
     DocumentSummaryIndexRetriever,

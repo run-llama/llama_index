@@ -13,10 +13,10 @@ from typing import (
 if TYPE_CHECKING:
     from marvin import ai_model
 
-from llama_index.legacy.bridge.pydantic import BaseModel, Field
-from llama_index.legacy.extractors.interface import BaseExtractor
-from llama_index.legacy.schema import BaseNode, TextNode
-from llama_index.legacy.utils import get_tqdm_iterable
+from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.extractors.interface import BaseExtractor
+from llama_index.schema import BaseNode, TextNode
+from llama_index.utils import get_tqdm_iterable
 
 
 class MarvinMetadataExtractor(BaseExtractor):
@@ -47,7 +47,7 @@ class MarvinMetadataExtractor(BaseExtractor):
         )
 
         #use node_parser to get nodes from documents
-        from llama_index.legacy.ingestion import run_transformations
+        from llama_index.ingestion import run_transformations
         nodes = run_transformations(documents, [node_parser] + extractors)
         print(nodes)
     """

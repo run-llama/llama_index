@@ -1,8 +1,8 @@
 """Simple reader that reads wikipedia."""
 from typing import Any, List
 
-from llama_index.legacy.readers.base import BasePydanticReader
-from llama_index.legacy.schema import Document
+from llama_index.readers.base import BasePydanticReader
+from llama_index.schema import Document
 
 
 class WikipediaReader(BasePydanticReader):

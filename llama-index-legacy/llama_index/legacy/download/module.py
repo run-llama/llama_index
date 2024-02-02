@@ -13,7 +13,7 @@ import pkg_resources
 import requests
 from pkg_resources import DistributionNotFound
 
-from llama_index.legacy.download.utils import (
+from llama_index.download.utils import (
     get_exports,
     get_file_content,
     initialize_directory,
@@ -201,10 +201,10 @@ def download_llama_module(
         custom_path: Custom dirpath to download loader into.
         library_path: File name of the library file.
         use_gpt_index_import: If true, the loader files will use
-            llama_index.legacy as the base dependency. By default (False),
-            the loader files use llama_index.legacy as the base dependency.
+            llama_index as the base dependency. By default (False),
+            the loader files use llama_index as the base dependency.
             NOTE: this is a temporary workaround while we fully migrate all usages
-            to llama_index.legacy.
+            to llama_index.
         is_dataset: whether or not downloading a LlamaDataset
 
     Returns:

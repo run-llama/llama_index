@@ -1,15 +1,12 @@
 from typing import Optional
 
-from llama_index.legacy.core.base_selector import BaseSelector
-from llama_index.legacy.selectors.llm_selectors import (
-    LLMMultiSelector,
-    LLMSingleSelector,
-)
-from llama_index.legacy.selectors.pydantic_selectors import (
+from llama_index.core.base_selector import BaseSelector
+from llama_index.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
+from llama_index.selectors.pydantic_selectors import (
     PydanticMultiSelector,
     PydanticSingleSelector,
 )
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.service_context import ServiceContext
 
 
 def get_selector_from_context(

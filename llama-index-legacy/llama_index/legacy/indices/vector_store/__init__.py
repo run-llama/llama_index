@@ -1,10 +1,7 @@
 """Vector-store based data structures."""
 
-from llama_index.legacy.indices.vector_store.base import (
-    GPTVectorStoreIndex,
-    VectorStoreIndex,
-)
-from llama_index.legacy.indices.vector_store.retrievers import (
+from llama_index.indices.vector_store.base import GPTVectorStoreIndex, VectorStoreIndex
+from llama_index.indices.vector_store.retrievers import (
     VectorIndexAutoRetriever,
     VectorIndexRetriever,
 )

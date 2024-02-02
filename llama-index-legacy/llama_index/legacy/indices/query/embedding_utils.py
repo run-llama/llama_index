@@ -5,8 +5,8 @@ from typing import Any, Callable, List, Optional, Tuple
 
 import numpy as np
 
-from llama_index.legacy.core.embeddings.base import similarity as default_similarity_fn
-from llama_index.legacy.vector_stores.types import VectorStoreQueryMode
+from llama_index.core.embeddings.base import similarity as default_similarity_fn
+from llama_index.vector_stores.types import VectorStoreQueryMode
 
 
 def get_top_k_embeddings(

@@ -4,17 +4,14 @@ from typing import Any, List, Optional, Sequence
 
 from sqlalchemy.pool import QueuePool
 
-from llama_index.legacy.schema import BaseNode, MetadataMode
-from llama_index.legacy.vector_stores.types import (
+from llama_index.schema import BaseNode, MetadataMode
+from llama_index.vector_stores.types import (
     BaseNode,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.legacy.vector_stores.utils import (
-    metadata_dict_to_node,
-    node_to_metadata_dict,
-)
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
 

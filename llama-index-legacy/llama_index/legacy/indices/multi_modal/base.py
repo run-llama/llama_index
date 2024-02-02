@@ -6,26 +6,23 @@ An index that is built on top of multiple vector stores for different modalities
 import logging
 from typing import Any, List, Optional, Sequence, cast
 
-from llama_index.legacy.core.base_query_engine import BaseQueryEngine
-from llama_index.legacy.core.base_retriever import BaseRetriever
-from llama_index.legacy.data_structs.data_structs import IndexDict, MultiModelIndexDict
-from llama_index.legacy.embeddings.multi_modal_base import MultiModalEmbedding
-from llama_index.legacy.embeddings.utils import EmbedType, resolve_embed_model
-from llama_index.legacy.indices.utils import (
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.data_structs.data_structs import IndexDict, MultiModelIndexDict
+from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.embeddings.utils import EmbedType, resolve_embed_model
+from llama_index.indices.utils import (
     async_embed_image_nodes,
     async_embed_nodes,
     embed_image_nodes,
     embed_nodes,
 )
-from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
-from llama_index.legacy.schema import BaseNode, ImageNode
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.storage.storage_context import StorageContext
-from llama_index.legacy.vector_stores.simple import (
-    DEFAULT_VECTOR_STORE,
-    SimpleVectorStore,
-)
-from llama_index.legacy.vector_stores.types import VectorStore
+from llama_index.indices.vector_store.base import VectorStoreIndex
+from llama_index.schema import BaseNode, ImageNode
+from llama_index.service_context import ServiceContext
+from llama_index.storage.storage_context import StorageContext
+from llama_index.vector_stores.simple import DEFAULT_VECTOR_STORE, SimpleVectorStore
+from llama_index.vector_stores.types import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +113,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         # NOTE: lazy import
-        from llama_index.legacy.indices.multi_modal.retriever import (
+        from llama_index.indices.multi_modal.retriever import (
             MultiModalVectorIndexRetriever,
         )
 
@@ -128,12 +125,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         """As query engine."""
-        from llama_index.legacy.indices.multi_modal.retriever import (
+        from llama_index.indices.multi_modal.retriever import (
             MultiModalVectorIndexRetriever,
         )
-        from llama_index.legacy.query_engine.multi_modal import (
-            SimpleMultiModalQueryEngine,
-        )
+        from llama_index.query_engine.multi_modal import SimpleMultiModalQueryEngine
 
         retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 

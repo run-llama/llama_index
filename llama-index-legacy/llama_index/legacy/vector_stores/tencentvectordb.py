@@ -6,18 +6,13 @@ An index that is built with Tencent Vector Database.
 import json
 from typing import Any, Dict, List, Optional
 
-from llama_index.legacy.schema import (
-    BaseNode,
-    NodeRelationship,
-    RelatedNodeInfo,
-    TextNode,
-)
-from llama_index.legacy.vector_stores.types import (
+from llama_index.schema import BaseNode, NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.legacy.vector_stores.utils import DEFAULT_DOC_ID_KEY, DEFAULT_TEXT_KEY
+from llama_index.vector_stores.utils import DEFAULT_DOC_ID_KEY, DEFAULT_TEXT_KEY
 
 DEFAULT_USERNAME = "root"
 DEFAULT_DATABASE_NAME = "llama_default_database"

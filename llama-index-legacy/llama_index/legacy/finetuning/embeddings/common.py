@@ -6,9 +6,9 @@ from typing import Dict, List, Tuple
 
 from tqdm import tqdm
 
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.llms.utils import LLM
-from llama_index.legacy.schema import MetadataMode, TextNode
+from llama_index.bridge.pydantic import BaseModel
+from llama_index.llms.utils import LLM
+from llama_index.schema import MetadataMode, TextNode
 
 
 class EmbeddingQAFinetuneDataset(BaseModel):

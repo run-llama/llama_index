@@ -3,18 +3,15 @@ import json
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
-from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
-from llama_index.legacy.vector_stores.types import (
+from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.legacy.vector_stores.utils import (
-    metadata_dict_to_node,
-    node_to_metadata_dict,
-)
+from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
 
 IMPORT_OPENSEARCH_PY_ERROR = (
     "Could not import OpenSearch. Please install it with `pip install opensearch-py`."
