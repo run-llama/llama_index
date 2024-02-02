@@ -13,7 +13,7 @@ def test_torch_imports() -> None:
     # if torch isn't installed, then these should fail
     if pkgutil.find_loader("torch") is None:
         with pytest.raises(ModuleNotFoundError):
-            pass
+            from llama_index.legacy.embeddings.adapter_utils import LinearLayer
     else:
         # else, importing these should be ok
-        pass
+        from llama_index.legacy.embeddings.adapter_utils import LinearLayer  # noqa

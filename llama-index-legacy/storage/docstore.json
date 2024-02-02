@@ -1,0 +1,69 @@
+{
+  "docstore/data": {
+    "f1ab4ed5-487d-491c-adb3-9ddc39f2a300": {
+      "__data__": {
+        "id_": "f1ab4ed5-487d-491c-adb3-9ddc39f2a300",
+        "embedding": null,
+        "metadata": {},
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
+        "relationships": {},
+        "text": "a",
+        "start_char_idx": null,
+        "end_char_idx": null,
+        "text_template": "{metadata_str}\n\n{content}",
+        "metadata_template": "{key}: {value}",
+        "metadata_seperator": "\n",
+        "class_name": "TextNode"
+      },
+      "__type__": "1"
+    },
+    "7527ab26-40ef-449a-87c1-74d477db59e2": {
+      "__data__": {
+        "id_": "7527ab26-40ef-449a-87c1-74d477db59e2",
+        "embedding": null,
+        "metadata": {},
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
+        "relationships": {},
+        "text": "b",
+        "start_char_idx": null,
+        "end_char_idx": null,
+        "text_template": "{metadata_str}\n\n{content}",
+        "metadata_template": "{key}: {value}",
+        "metadata_seperator": "\n",
+        "class_name": "TextNode"
+      },
+      "__type__": "1"
+    },
+    "baf0b970-7a22-4c9e-9a0b-e2bb2d7f7cc3": {
+      "__data__": {
+        "id_": "baf0b970-7a22-4c9e-9a0b-e2bb2d7f7cc3",
+        "embedding": null,
+        "metadata": {},
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
+        "relationships": {},
+        "text": "c",
+        "start_char_idx": null,
+        "end_char_idx": null,
+        "text_template": "{metadata_str}\n\n{content}",
+        "metadata_template": "{key}: {value}",
+        "metadata_seperator": "\n",
+        "class_name": "TextNode"
+      },
+      "__type__": "1"
+    }
+  },
+  "docstore/metadata": {
+    "f1ab4ed5-487d-491c-adb3-9ddc39f2a300": {
+      "doc_hash": "5f546eb4606b5c2b7d2a449a5cc2bbb477ed5a246c7051ce871b12f2dbfc8419"
+    },
+    "7527ab26-40ef-449a-87c1-74d477db59e2": {
+      "doc_hash": "ef2a875407aca2dd75a7a1dccc3b202918a9bc8e543e0b3def3f34ccd5e56a7b"
+    },
+    "baf0b970-7a22-4c9e-9a0b-e2bb2d7f7cc3": {
+      "doc_hash": "7ed0bc022e61394074858c49e5e2f8844146ae76fd02cc3b74ed8fb450e33b42"
+    }
+  }
+}
