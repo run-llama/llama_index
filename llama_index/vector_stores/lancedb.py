@@ -62,6 +62,8 @@ class LanceDBVectorStore(VectorStore):
         uri (str, required): Location where LanceDB will store its files.
         table_name (str, optional): The table name where the embeddings will be stored.
             Defaults to "vectors".
+        vector_column_name (str, optional): The vector column name in the table if different from default.
+            Defaults to "vector", in keeping with lancedb convention.
         nprobes (int, optional): The number of probes used.
             A higher number makes search more accurate but also slower.
             Defaults to 20.
@@ -84,6 +86,7 @@ class LanceDBVectorStore(VectorStore):
         self,
         uri: str,
         table_name: str = "vectors",
+        vector_column_name: str = "vector",
         nprobes: int = 20,
         refine_factor: Optional[int] = None,
         text_key: str = DEFAULT_TEXT_KEY,
@@ -99,6 +102,7 @@ class LanceDBVectorStore(VectorStore):
         self.connection = lancedb.connect(uri)
         self.uri = uri
         self.table_name = table_name
+        self.vector_column_name = vector_column_name
         self.nprobes = nprobes
         self.text_key = text_key
         self.refine_factor = refine_factor
@@ -166,7 +170,10 @@ class LanceDBVectorStore(VectorStore):
 
         table = self.connection.open_table(self.table_name)
         lance_query = (
-            table.search(query.query_embedding)
+            table.search(
+                query=query.query_embedding,
+                vector_column_name=self.vector_column_name,
+            )
             .limit(query.similarity_top_k)
             .where(where)
             .nprobes(self.nprobes)
