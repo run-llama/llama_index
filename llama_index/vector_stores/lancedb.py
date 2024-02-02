@@ -19,6 +19,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
+    DEFAULT_DOC_ID_KEY,
     DEFAULT_TEXT_KEY,
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
@@ -90,6 +91,7 @@ class LanceDBVectorStore(VectorStore):
         nprobes: int = 20,
         refine_factor: Optional[int] = None,
         text_key: str = DEFAULT_TEXT_KEY,
+        doc_id_key: str = DEFAULT_DOC_ID_KEY,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -105,6 +107,7 @@ class LanceDBVectorStore(VectorStore):
         self.vector_column_name = vector_column_name
         self.nprobes = nprobes
         self.text_key = text_key
+        self.doc_id_key = doc_id_key
         self.refine_factor = refine_factor
 
     @property
@@ -193,17 +196,22 @@ class LanceDBVectorStore(VectorStore):
                 _logger.debug(
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
-                metadata, node_info, _relation = legacy_metadata_dict_to_node(
-                    item.metadata, text_key=self.text_key
-                )
+                if "metadata" in item:
+                    metadata, node_info, _relation = legacy_metadata_dict_to_node(
+                        item.metadata, text_key=self.text_key
+                    )
+                else:
+                    metadata, node_info = {}, {}
                 node = TextNode(
-                    text=item.text or "",
+                    text=item[self.text_key] or "",
                     id_=item.id,
                     metadata=metadata,
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),
                     relationships={
-                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=item.doc_id),
+                        NodeRelationship.SOURCE: RelatedNodeInfo(
+                            node_id=item[self.doc_id_key]
+                        ),
                     },
                 )
 
