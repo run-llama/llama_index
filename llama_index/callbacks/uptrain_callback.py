@@ -1,8 +1,8 @@
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Set
+from typing import Any, DefaultDict, Dict, List, Literal, Optional, Set
 
 import nest_asyncio
-from uptrain import APIClient, Evals, Settings
+from uptrain import APIClient, EvalLLM, Evals, Settings
 
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import (
@@ -14,17 +14,19 @@ from llama_index.callbacks.schema import (
 class UpTrainDataSchema:
     """UpTrain data schema."""
 
-    def __init__(
-        self, question: str = "", context: str = "", response: str = ""
-    ) -> None:
+    def __init__(self, project_name_prefix: str = "llama") -> None:
         """Initialize the UpTrain data schema."""
+        # For tracking project name and results
+        self.project_name_prefix: str = project_name_prefix
+        self.uptrain_results: DefaultDict[str, Any] = defaultdict(list)
+
         # For tracking event types - reranking, sub_question
         self.eval_types: Set[str] = set()
 
         ## SYNTHESIZE
-        self.question: str = question
-        self.context: str = context
-        self.response: str = response
+        self.question: str = ""
+        self.context: str = ""
+        self.response: str = ""
 
         ## RERANKING
         self.old_context: List[str] = []
@@ -40,9 +42,14 @@ class UpTrainDataSchema:
 
 
 class UpTrainCallbackHandler(BaseCallbackHandler):
-    """UpTrain callback handler."""
+    """
+    UpTrain callback handler.
 
-    def __init__(self, uptrain_api_key: str) -> None:
+    This class is responsible for handling the UpTrain API and logging events to UpTrain.
+
+    """
+
+    def __init__(self, api_key: str, key_type: Literal["uptrain", "openai"]) -> None:
         """Initialize the UpTrain callback handler."""
         nest_asyncio.apply()
         super().__init__(
@@ -53,8 +60,58 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
-        settings = Settings(uptrain_access_token=uptrain_api_key)
-        self.uptrain_client = APIClient(settings=settings)
+        # Based on whether the user enters an UpTrain API key or an OpenAI API key, the client is initialized
+        # If both are entered, the UpTrain API key is used
+        if key_type == "uptrain":
+            settings = Settings(uptrain_access_token=api_key)
+            self.uptrain_client = APIClient(settings=settings)
+        elif key_type == "openai":
+            settings = Settings(openai_api_key=api_key)
+            self.uptrain_client = EvalLLM(settings=settings)
+        else:
+            raise ValueError("Invalid key type: Must be 'uptrain' or 'openai'")
+
+    def uptrain_evaluate(
+        self,
+        project_name: str,
+        data: List[Dict[str, str]],
+        checks: List[str],
+    ) -> None:
+        """Run an evaluation on the UpTrain server using UpTrain client."""
+        if self.uptrain_client.__class__.__name__ == "APIClient":
+            uptrain_result = self.uptrain_client.log_and_evaluate(
+                project_name=project_name,
+                data=data,
+                checks=checks,
+            )
+        else:
+            uptrain_result = self.uptrain_client.evaluate(
+                data=data,
+                checks=checks,
+            )
+        self.schema.uptrain_results[project_name].append(uptrain_result)
+
+        score_name_map = {
+            "score_context_relevance": "Context Relevance Score",
+            "score_factual_accuracy": "Factual Accuracy Score",
+            "score_response_completeness": "Response Completeness Score",
+            "score_sub_query_completeness": "Sub Query Completeness Score",
+            "score_context_reranking": "Context Reranking Score",
+            "score_context_conciseness": "Context Conciseness Score",
+        }
+
+        # Print the results
+        for row in uptrain_result:
+            columns = list(row.keys())
+            for column in columns:
+                if column == "question":
+                    print(f"\nQuestion: {row[column]}")
+                elif column.startswith("score"):
+                    if column in score_name_map:
+                        print(f"{score_name_map[column]}: {row[column]}")
+                    else:
+                        print(f"{column}: {row[column]}")
+            print()
 
     def on_event_start(
         self,
@@ -99,8 +156,8 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         self._trace_map = defaultdict(list)
         if event_id == self.schema.sub_question_parent_id:
             # Perform individual evaluations for sub questions (but send all sub questions at once)
-            self.uptrain_client.log_and_evaluate(
-                project_name="llama_sub_question_all",
+            self.uptrain_evaluate(
+                project_name=f"{self.schema.project_name_prefix}_sub_question_answering",
                 data=list(self.schema.sub_question_map.values()),
                 checks=[
                     Evals.CONTEXT_RELEVANCE,
@@ -119,8 +176,8 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                     for index, string in enumerate(sub_questions, start=1)
                 ]
             )
-            self.uptrain_client.log_and_evaluate(
-                project_name="llama_sub_question_q_vs_all",
+            self.uptrain_evaluate(
+                project_name=f"{self.schema.project_name_prefix}_sub_query_completeness",
                 data=[
                     {
                         "question": self.schema.question,
@@ -136,8 +193,8 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         ):
             self.schema.response = payload["response"].response
             # Perform evaluation for synthesization
-            self.uptrain_client.log_and_evaluate(
-                project_name="llama_question_2",
+            self.uptrain_evaluate(
+                project_name=f"{self.schema.project_name_prefix}_question_answering",
                 data=[
                     {
                         "question": self.schema.question,
@@ -151,6 +208,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                     Evals.RESPONSE_COMPLETENESS,
                 ],
             )
+
         elif event_type is CBEventType.RERANKING:
             # Store new context data
             self.schema.new_context = [node.text for node in payload["nodes"]]
@@ -168,8 +226,8 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                     ]
                 )
                 # Perform evaluation for reranking
-                self.uptrain_client.log_and_evaluate(
-                    project_name="llama_reranking_2",
+                self.uptrain_evaluate(
+                    project_name=f"{self.schema.project_name_prefix}_context_reranking",
                     data=[
                         {
                             "question": self.schema.question,
@@ -185,8 +243,8 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                 context = "\n".join(self.schema.old_context)
                 concise_context = "\n".join(self.schema.new_context)
                 # Perform evaluation for resizing
-                self.uptrain_client.log_and_evaluate(
-                    project_name="llama_reranking_1",
+                self.uptrain_evaluate(
+                    project_name=f"{self.schema.project_name_prefix}_context_conciseness",
                     data=[
                         {
                             "question": self.schema.question,
@@ -203,7 +261,9 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             self.schema.sub_question_map[event_id]["question"] = payload[
                 "sub_question"
             ].sub_q.sub_question
-            self.schema.sub_question_map[event_id]["context"] = self.schema.context
+            self.schema.sub_question_map[event_id]["context"] = (
+                payload["sub_question"].sources[0].node.text
+            )
             self.schema.sub_question_map[event_id]["response"] = payload[
                 "sub_question"
             ].answer
