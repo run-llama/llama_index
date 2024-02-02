@@ -14,7 +14,7 @@ from llama_index.callbacks.schema import (
 class UpTrainDataSchema:
     """UpTrain data schema."""
 
-    def __init__(self, project_name_prefix: str = "llama") -> None:
+    def __init__(self, project_name_prefix: str) -> None:
         """Initialize the UpTrain data schema."""
         # For tracking project name and results
         self.project_name_prefix: str = project_name_prefix
@@ -49,14 +49,19 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
 
     """
 
-    def __init__(self, api_key: str, key_type: Literal["uptrain", "openai"]) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        key_type: Literal["uptrain", "openai"],
+        project_name_prefix: str = "llama",
+    ) -> None:
         """Initialize the UpTrain callback handler."""
         nest_asyncio.apply()
         super().__init__(
             event_starts_to_ignore=[],
             event_ends_to_ignore=[],
         )
-        self.schema = UpTrainDataSchema()
+        self.schema = UpTrainDataSchema(project_name_prefix=project_name_prefix)
         self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
@@ -180,7 +185,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                 project_name=f"{self.schema.project_name_prefix}_sub_query_completeness",
                 data=[
                     {
-                        "question": self.schema.question,
+                        "question": self.schema.parent_question,
                         "sub_questions": sub_questions_formatted,
                     }
                 ],
