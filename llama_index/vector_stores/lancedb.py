@@ -187,7 +187,7 @@ class LanceDBVectorStore(VectorStore):
         for _, item in results.iterrows():
             try:
                 node = metadata_dict_to_node(item.metadata)
-                node.embedding = list(item.vector)
+                node.embedding = list(item[self.vector_column_name])
             except Exception:
                 # deprecated legacy logic for backward compatibility
                 _logger.debug(
