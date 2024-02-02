@@ -2,7 +2,7 @@
 
 from typing import Any, List
 
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.legacy.embeddings.base import BaseEmbedding
 
 
 class MockEmbedding(BaseEmbedding):

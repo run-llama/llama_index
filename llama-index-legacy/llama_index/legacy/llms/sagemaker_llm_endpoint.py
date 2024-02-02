@@ -1,8 +1,8 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -12,19 +12,22 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.llms.base import (
+from llama_index.legacy.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.llms.generic_utils import (
+from llama_index.legacy.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
 )
-from llama_index.llms.llama_utils import completion_to_prompt, messages_to_prompt
-from llama_index.llms.llm import LLM
-from llama_index.llms.sagemaker_llm_endpoint_utils import BaseIOHandler, IOHandler
-from llama_index.types import BaseOutputParser, PydanticProgramMode
-from llama_index.utilities.aws_utils import get_aws_service_client
+from llama_index.legacy.llms.llama_utils import completion_to_prompt, messages_to_prompt
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.llms.sagemaker_llm_endpoint_utils import (
+    BaseIOHandler,
+    IOHandler,
+)
+from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
+from llama_index.legacy.utilities.aws_utils import get_aws_service_client
 
 DEFAULT_IO_HANDLER = IOHandler()
 LLAMA_MESSAGES_TO_PROMPT = messages_to_prompt

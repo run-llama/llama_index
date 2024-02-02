@@ -1,4 +1,5 @@
 """Base schema for data structures."""
+
 import json
 import textwrap
 import uuid
@@ -12,14 +13,14 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from dataclasses_json import DataClassJsonMixin
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.utils import SAMPLE_TEXT, truncate_text
+from llama_index.legacy.bridge.pydantic import BaseModel, Field
+from llama_index.legacy.utils import SAMPLE_TEXT, truncate_text
 
 if TYPE_CHECKING:
     from haystack.schema import Document as HaystackDocument
     from semantic_kernel.memory.memory_record import MemoryRecord
 
-    from llama_index.bridge.langchain import Document as LCDocument
+    from llama_index.legacy.bridge.langchain import Document as LCDocument
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -633,7 +634,7 @@ class Document(TextNode):
 
     def to_langchain_format(self) -> "LCDocument":
         """Convert struct to LangChain document format."""
-        from llama_index.bridge.langchain import Document as LCDocument
+        from llama_index.legacy.bridge.langchain import Document as LCDocument
 
         metadata = self.metadata or {}
         return LCDocument(page_content=self.text, metadata=metadata)

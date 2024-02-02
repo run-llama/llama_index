@@ -1,10 +1,10 @@
 import os
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CBEventType, EventPayload
-from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CBEventType, EventPayload
+from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
+from llama_index.legacy.schema import NodeWithScore, QueryBundle
 
 
 class CohereRerank(BaseNodePostprocessor):

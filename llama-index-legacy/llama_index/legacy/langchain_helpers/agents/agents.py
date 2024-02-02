@@ -2,14 +2,14 @@
 
 from typing import Any, Optional
 
-from llama_index.bridge.langchain import (
+from llama_index.legacy.bridge.langchain import (
     AgentExecutor,
     AgentType,
     BaseCallbackManager,
     BaseLLM,
     initialize_agent,
 )
-from llama_index.langchain_helpers.agents.toolkits import LlamaToolkit
+from llama_index.legacy.langchain_helpers.agents.toolkits import LlamaToolkit
 
 
 def create_llama_agent(

@@ -4,10 +4,10 @@ import warnings
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.callbacks.base import CallbackManager
-from llama_index.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.core.embeddings.base import BaseEmbedding, Embedding
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.constants import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.legacy.core.embeddings.base import BaseEmbedding, Embedding
 
 
 class PROVIDERS(str, Enum):
@@ -152,7 +152,7 @@ class BedrockEmbedding(BaseEmbedding):
         Example:
                 .. code-block:: python
 
-                    from llama_index.embeddings import BedrockEmbedding
+                    from llama_index.legacy.embeddings import BedrockEmbedding
 
                     # Define the model name
                     model_name = "your_model_name"

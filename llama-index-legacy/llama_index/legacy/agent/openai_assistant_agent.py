@@ -1,26 +1,27 @@
 """OpenAI Assistant Agent."""
+
 import asyncio
 import json
 import logging
 import time
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from llama_index.agent.openai.utils import get_function_by_name
-from llama_index.agent.types import BaseAgent
-from llama_index.callbacks import (
+from llama_index.legacy.agent.openai.utils import get_function_by_name
+from llama_index.legacy.agent.types import BaseAgent
+from llama_index.legacy.callbacks import (
     CallbackManager,
     CBEventType,
     EventPayload,
     trace_method,
 )
-from llama_index.chat_engine.types import (
+from llama_index.legacy.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.core.llms.types import ChatMessage, MessageRole
-from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)

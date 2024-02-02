@@ -2,33 +2,37 @@
 
 An index that is built on top of an existing vector store.
 """
+
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import fsspec
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.readers.redis.utils import (
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.readers.redis.utils import (
     TokenEscaper,
     array_to_buffer,
     check_redis_modules_exist,
     convert_bytes,
     get_redis_query,
 )
-from llama_index.schema import (
+from llama_index.legacy.schema import (
     BaseNode,
     MetadataMode,
     NodeRelationship,
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.vector_stores.types import (
+from llama_index.legacy.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.legacy.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -96,7 +100,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             ValueError: If RediSearch is not installed
 
         Examples:
-            >>> from llama_index.vector_stores.redis import RedisVectorStore
+            >>> from llama_index.legacy.vector_stores.redis import RedisVectorStore
             >>> # Create a RedisVectorStore
             >>> vector_store = RedisVectorStore(
             >>>     index_name="my_index",

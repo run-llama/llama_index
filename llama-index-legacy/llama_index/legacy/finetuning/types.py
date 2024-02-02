@@ -3,9 +3,9 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.llms.llm import LLM
-from llama_index.postprocessor import CohereRerank, SentenceTransformerRerank
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.postprocessor import CohereRerank, SentenceTransformerRerank
 
 
 class BaseLLMFinetuneEngine(ABC):

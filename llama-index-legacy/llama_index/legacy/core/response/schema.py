@@ -3,10 +3,10 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.schema import NodeWithScore
-from llama_index.types import TokenGen
-from llama_index.utils import truncate_text
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.schema import NodeWithScore
+from llama_index.legacy.types import TokenGen
+from llama_index.legacy.utils import truncate_text
 
 
 @dataclass

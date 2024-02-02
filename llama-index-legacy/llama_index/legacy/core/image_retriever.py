@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from typing import List
 
-from llama_index.indices.query.schema import QueryBundle, QueryType
-from llama_index.prompts.mixin import PromptMixin
-from llama_index.schema import NodeWithScore
+from llama_index.legacy.indices.query.schema import QueryBundle, QueryType
+from llama_index.legacy.prompts.mixin import PromptMixin
+from llama_index.legacy.schema import NodeWithScore
 
 
 class BaseImageRetriever(PromptMixin):

@@ -7,15 +7,15 @@ from enum import Enum
 from threading import Event
 from typing import AsyncGenerator, Generator, List, Optional, Union
 
-from llama_index.core.llms.types import (
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
 )
-from llama_index.core.response.schema import Response, StreamingResponse
-from llama_index.memory import BaseMemory
-from llama_index.schema import NodeWithScore
-from llama_index.tools import ToolOutput
+from llama_index.legacy.core.response.schema import Response, StreamingResponse
+from llama_index.legacy.memory import BaseMemory
+from llama_index.legacy.schema import NodeWithScore
+from llama_index.legacy.tools import ToolOutput
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)

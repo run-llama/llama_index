@@ -1,8 +1,8 @@
-from llama_index.extractors.interface import BaseExtractor
-from llama_index.extractors.marvin_metadata_extractor import (
+from llama_index.legacy.extractors.interface import BaseExtractor
+from llama_index.legacy.extractors.marvin_metadata_extractor import (
     MarvinMetadataExtractor,
 )
-from llama_index.extractors.metadata_extractors import (
+from llama_index.legacy.extractors.metadata_extractors import (
     EntityExtractor,
     KeywordExtractor,
     PydanticProgramExtractor,

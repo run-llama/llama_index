@@ -3,7 +3,7 @@ from threading import Event
 from typing import Any, Generator, List, Optional
 from uuid import UUID
 
-from llama_index.bridge.langchain import BaseCallbackHandler, LLMResult
+from llama_index.legacy.bridge.langchain import BaseCallbackHandler, LLMResult
 
 
 class StreamingGeneratorCallbackHandler(BaseCallbackHandler):

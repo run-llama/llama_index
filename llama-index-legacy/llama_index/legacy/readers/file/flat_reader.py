@@ -1,9 +1,10 @@
 """Flat reader."""
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from llama_index.readers.base import BaseReader
-from llama_index.schema import Document
+from llama_index.legacy.readers.base import BaseReader
+from llama_index.legacy.schema import Document
 
 
 class FlatReader(BaseReader):

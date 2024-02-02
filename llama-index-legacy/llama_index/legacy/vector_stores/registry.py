@@ -1,27 +1,27 @@
 from enum import Enum
 from typing import Dict, Type
 
-from llama_index.vector_stores.bagel import BagelVectorStore
-from llama_index.vector_stores.cassandra import CassandraVectorStore
-from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
-from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.vector_stores.deeplake import DeepLakeVectorStore
-from llama_index.vector_stores.epsilla import EpsillaVectorStore
-from llama_index.vector_stores.faiss import FaissVectorStore
-from llama_index.vector_stores.jaguar import JaguarVectorStore
-from llama_index.vector_stores.lancedb import LanceDBVectorStore
-from llama_index.vector_stores.milvus import MilvusVectorStore
-from llama_index.vector_stores.myscale import MyScaleVectorStore
-from llama_index.vector_stores.opensearch import OpensearchVectorStore
-from llama_index.vector_stores.pinecone import PineconeVectorStore
-from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.vector_stores.redis import RedisVectorStore
-from llama_index.vector_stores.rocksetdb import RocksetVectorStore
-from llama_index.vector_stores.simple import SimpleVectorStore
-from llama_index.vector_stores.supabase import SupabaseVectorStore
-from llama_index.vector_stores.txtai import TxtaiVectorStore
-from llama_index.vector_stores.types import VectorStore
-from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.legacy.vector_stores.bagel import BagelVectorStore
+from llama_index.legacy.vector_stores.cassandra import CassandraVectorStore
+from llama_index.legacy.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
+from llama_index.legacy.vector_stores.chroma import ChromaVectorStore
+from llama_index.legacy.vector_stores.deeplake import DeepLakeVectorStore
+from llama_index.legacy.vector_stores.epsilla import EpsillaVectorStore
+from llama_index.legacy.vector_stores.faiss import FaissVectorStore
+from llama_index.legacy.vector_stores.jaguar import JaguarVectorStore
+from llama_index.legacy.vector_stores.lancedb import LanceDBVectorStore
+from llama_index.legacy.vector_stores.milvus import MilvusVectorStore
+from llama_index.legacy.vector_stores.myscale import MyScaleVectorStore
+from llama_index.legacy.vector_stores.opensearch import OpensearchVectorStore
+from llama_index.legacy.vector_stores.pinecone import PineconeVectorStore
+from llama_index.legacy.vector_stores.qdrant import QdrantVectorStore
+from llama_index.legacy.vector_stores.redis import RedisVectorStore
+from llama_index.legacy.vector_stores.rocksetdb import RocksetVectorStore
+from llama_index.legacy.vector_stores.simple import SimpleVectorStore
+from llama_index.legacy.vector_stores.supabase import SupabaseVectorStore
+from llama_index.legacy.vector_stores.txtai import TxtaiVectorStore
+from llama_index.legacy.vector_stores.types import VectorStore
+from llama_index.legacy.vector_stores.weaviate import WeaviateVectorStore
 
 
 class VectorStoreType(str, Enum):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from llama_index.storage.index_store.keyval_index_store import KVIndexStore
-from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
+from llama_index.legacy.storage.index_store.keyval_index_store import KVIndexStore
+from llama_index.legacy.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
 
 
 class DynamoDBIndexStore(KVIndexStore):

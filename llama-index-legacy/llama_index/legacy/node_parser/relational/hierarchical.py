@@ -2,13 +2,13 @@
 
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.text.sentence import SentenceSplitter
-from llama_index.schema import BaseNode, Document, NodeRelationship
-from llama_index.utils import get_tqdm_iterable
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.node_parser.interface import NodeParser
+from llama_index.legacy.node_parser.text.sentence import SentenceSplitter
+from llama_index.legacy.schema import BaseNode, Document, NodeRelationship
+from llama_index.legacy.utils import get_tqdm_iterable
 
 
 def _add_parent_child_relationship(parent_node: BaseNode, child_node: BaseNode) -> None:

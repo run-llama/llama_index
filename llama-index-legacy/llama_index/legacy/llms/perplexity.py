@@ -4,9 +4,9 @@ from typing import Any, Callable, Dict, Optional, Sequence
 import httpx
 import requests
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks import CallbackManager
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -16,9 +16,9 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.llm import LLM
-from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.legacy.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
 
 
 class Perplexity(LLM):
@@ -99,9 +99,11 @@ class Perplexity(LLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=self.context_window
-            if self.context_window is not None
-            else self._get_context_window(),
+            context_window=(
+                self.context_window
+                if self.context_window is not None
+                else self._get_context_window()
+            ),
             num_output=self.max_tokens
             or -1,  # You can replace this with the appropriate value
             is_chat_model=self._is_chat_model(),

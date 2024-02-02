@@ -6,15 +6,15 @@ from typing import Any, Dict, List, Optional
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
-from llama_index.schema import (
+from llama_index.legacy.schema import (
     BaseNode,
     MetadataMode,
     NodeRelationship,
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.utils import get_tqdm_iterable
-from llama_index.vector_stores.types import (
+from llama_index.legacy.utils import get_tqdm_iterable
+from llama_index.legacy.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,

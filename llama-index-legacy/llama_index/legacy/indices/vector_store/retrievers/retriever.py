@@ -1,16 +1,15 @@
 """Base vector store index query."""
 
-
 from typing import Any, Dict, List, Optional
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.data_structs.data_structs import IndexDict
-from llama_index.indices.utils import log_vector_store_query_result
-from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import NodeWithScore, ObjectType, QueryBundle
-from llama_index.vector_stores.types import (
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.data_structs.data_structs import IndexDict
+from llama_index.legacy.indices.utils import log_vector_store_query_result
+from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
+from llama_index.legacy.schema import NodeWithScore, ObjectType, QueryBundle
+from llama_index.legacy.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -144,11 +143,9 @@ class VectorIndexRetriever(BaseRetriever):
                 ):
                     node_id = query_result.nodes[i].node_id
                     if self._docstore.document_exists(node_id):
-                        query_result.nodes[
-                            i
-                        ] = self._docstore.get_node(  # type: ignore[index]
+                        query_result.nodes[i] = self._docstore.get_node(
                             node_id
-                        )
+                        )  # type: ignore[index]
 
         log_vector_store_query_result(query_result)
 

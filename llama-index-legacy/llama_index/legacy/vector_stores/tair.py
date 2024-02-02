@@ -2,23 +2,24 @@
 
 An index that is built on top of Alibaba Cloud's Tair database.
 """
+
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from llama_index.schema import (
+from llama_index.legacy.schema import (
     BaseNode,
     MetadataMode,
     NodeRelationship,
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.vector_stores.types import (
+from llama_index.legacy.vector_stores.types import (
     MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict
+from llama_index.legacy.vector_stores.utils import node_to_metadata_dict
 
 _logger = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ class TairVectorStore(VectorStore):
             ValueError: If failed to connect to Tair instance
 
         Examples:
-            >>> from llama_index.vector_stores.tair import TairVectorStore
+            >>> from llama_index.legacy.vector_stores.tair import TairVectorStore
             >>> # Create a TairVectorStore
             >>> vector_store = TairVectorStore(
             >>>     tair_url="redis://{username}:{password}@r-bp****************.\

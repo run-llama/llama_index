@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
-from llama_index.legacy.schema import Document, TextNode
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.storage.storage_context import StorageContext
-from llama_index.legacy.vector_stores.txtai import TxtaiVectorStore
-from llama_index.legacy.vector_stores.types import VectorStoreQuery
+from llama_index.legacy.legacy.indices.vector_store.base import VectorStoreIndex
+from llama_index.legacy.legacy.schema import Document, TextNode
+from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.storage.storage_context import StorageContext
+from llama_index.legacy.legacy.vector_stores.txtai import TxtaiVectorStore
+from llama_index.legacy.legacy.vector_stores.types import VectorStoreQuery
 
 try:
     import txtai

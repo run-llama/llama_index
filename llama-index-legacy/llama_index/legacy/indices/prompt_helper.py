@@ -13,21 +13,21 @@ from copy import deepcopy
 from string import Formatter
 from typing import Callable, List, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.llms.types import ChatMessage
-from llama_index.llm_predictor.base import LLMMetadata
-from llama_index.llms.llm import LLM
-from llama_index.node_parser.text.token import TokenTextSplitter
-from llama_index.node_parser.text.utils import truncate_text
-from llama_index.prompts import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.legacy.core.llms.types import ChatMessage
+from llama_index.legacy.llm_predictor.base import LLMMetadata
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.node_parser.text.token import TokenTextSplitter
+from llama_index.legacy.node_parser.text.utils import truncate_text
+from llama_index.legacy.prompts import (
     BasePromptTemplate,
     ChatPromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.prompts.prompt_utils import get_empty_prompt_txt
-from llama_index.schema import BaseComponent
-from llama_index.utilities.token_counting import TokenCounter
+from llama_index.legacy.prompts.prompt_utils import get_empty_prompt_txt
+from llama_index.legacy.schema import BaseComponent
+from llama_index.legacy.utilities.token_counting import TokenCounter
 
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1

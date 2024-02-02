@@ -15,22 +15,22 @@ from typing import (
     Union,
 )
 
-from llama_index.callbacks.base_handler import BaseCallbackHandler
-from llama_index.callbacks.schema import (
+from llama_index.legacy.callbacks.base_handler import BaseCallbackHandler
+from llama_index.legacy.callbacks.schema import (
     TIMESTAMP_FORMAT,
     CBEvent,
     CBEventType,
     EventPayload,
 )
-from llama_index.callbacks.token_counting import get_llm_token_counts
-from llama_index.utilities.token_counting import TokenCounter
-from llama_index.utils import get_tokenizer
+from llama_index.legacy.callbacks.token_counting import get_llm_token_counts
+from llama_index.legacy.utilities.token_counting import TokenCounter
+from llama_index.legacy.utils import get_tokenizer
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
     from wandb.sdk.data_types import trace_tree
 
-    from llama_index.indices import (
+    from llama_index.legacy.indices import (
         ComposableGraph,
         GPTEmptyIndex,
         GPTKeywordTableIndex,
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
         GPTVectorStoreIndex,
         SummaryIndex,
     )
-    from llama_index.storage.storage_context import StorageContext
+    from llama_index.legacy.storage.storage_context import StorageContext
 
     IndexType = Union[
         ComposableGraph,
@@ -129,7 +129,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 "Please install it with `pip install wandb`."
             )
 
-        from llama_index.indices import (
+        from llama_index.legacy.indices import (
             ComposableGraph,
             GPTEmptyIndex,
             GPTKeywordTableIndex,
@@ -314,7 +314,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 the W&B UI.
             index_download_dir (Union[str, None]): directory to download the index to.
         """
-        from llama_index.storage.storage_context import StorageContext
+        from llama_index.legacy.storage.storage_context import StorageContext
 
         artifact = self._wandb.use_artifact(artifact_url, type="storage_context")
         artifact_dir = artifact.download(root=index_download_dir)

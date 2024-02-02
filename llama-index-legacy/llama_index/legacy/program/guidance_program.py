@@ -1,10 +1,10 @@
 from functools import partial
 from typing import TYPE_CHECKING, Any, Optional, Type, cast
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from llama_index.prompts.base import PromptTemplate
-from llama_index.prompts.guidance_utils import (
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.program.llm_prompt_program import BaseLLMFunctionProgram
+from llama_index.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.prompts.guidance_utils import (
     parse_pydantic_from_guidance_program,
 )
 

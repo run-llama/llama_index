@@ -2,11 +2,11 @@
 
 from typing import Any, Dict, List
 
-from llama_index.bridge.langchain import BaseTool
-from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.response.schema import RESPONSE_TYPE
-from llama_index.schema import TextNode
+from llama_index.legacy.bridge.langchain import BaseTool
+from llama_index.legacy.bridge.pydantic import BaseModel, Field
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.response.schema import RESPONSE_TYPE
+from llama_index.legacy.schema import TextNode
 
 
 def _get_response_with_sources(response: RESPONSE_TYPE) -> str:

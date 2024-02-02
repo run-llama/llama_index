@@ -1,16 +1,16 @@
 from typing import Any, Dict, Optional, Sequence
 
-from llama_index.core.base_selector import (
+from llama_index.legacy.core.base_selector import (
     BaseSelector,
     SelectorResult,
     SingleSelection,
 )
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.indices.query.embedding_utils import get_top_k_embeddings
-from llama_index.prompts.mixin import PromptDictType
-from llama_index.schema import QueryBundle
-from llama_index.tools.types import ToolMetadata
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.embeddings.utils import resolve_embed_model
+from llama_index.legacy.indices.query.embedding_utils import get_top_k_embeddings
+from llama_index.legacy.prompts.mixin import PromptDictType
+from llama_index.legacy.schema import QueryBundle
+from llama_index.legacy.tools.types import ToolMetadata
 
 
 class EmbeddingSingleSelector(BaseSelector):

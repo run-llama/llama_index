@@ -2,11 +2,11 @@
 
 from typing import Any, cast
 
-from llama_index.agent.legacy.openai_agent import (
+from llama_index.legacy.agent.legacy.openai_agent import (
     OpenAIAgent,
 )
-from llama_index.objects.base import ObjectRetriever
-from llama_index.tools.types import BaseTool
+from llama_index.legacy.objects.base import ObjectRetriever
+from llama_index.legacy.tools.types import BaseTool
 
 
 class FnRetrieverOpenAIAgent(OpenAIAgent):

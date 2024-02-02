@@ -1,6 +1,6 @@
 from typing import Any, Callable, List, Protocol, Tuple, runtime_checkable
 
-from llama_index.vector_stores.types import VectorStoreQueryResult
+from llama_index.legacy.vector_stores.types import VectorStoreQueryResult
 
 SparseEncoderCallable = Callable[[List[str]], Tuple[List[List[int]], List[List[float]]]]
 

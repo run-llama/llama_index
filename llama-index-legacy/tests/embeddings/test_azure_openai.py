@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import httpx
-from llama_index.legacy.embeddings import AzureOpenAIEmbedding
+from llama_index.legacy.legacy.embeddings import AzureOpenAIEmbedding
 
 
 @patch("llama_index.legacy.embeddings.azure_openai.AzureOpenAI")

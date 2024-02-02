@@ -21,12 +21,12 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCall,
 )
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.constants import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.constants import (
     DEFAULT_TEMPERATURE,
 )
-from llama_index.core.llms.types import (
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -37,11 +37,11 @@ from llama_index.core.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.llms.base import (
+from llama_index.legacy.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.llms.generic_utils import (
+from llama_index.legacy.llms.generic_utils import (
     achat_to_completion_decorator,
     acompletion_to_chat_decorator,
     astream_chat_to_completion_decorator,
@@ -51,8 +51,8 @@ from llama_index.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.llm import LLM
-from llama_index.llms.openai_utils import (
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.llms.openai_utils import (
     from_openai_message,
     is_chat_model,
     is_function_calling_model,
@@ -60,7 +60,7 @@ from llama_index.llms.openai_utils import (
     resolve_openai_credentials,
     to_openai_message_dicts,
 )
-from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 

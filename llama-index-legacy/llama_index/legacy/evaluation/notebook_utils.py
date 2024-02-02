@@ -5,8 +5,8 @@ from typing import List, Optional, Tuple
 
 import pandas as pd
 
-from llama_index.evaluation import EvaluationResult
-from llama_index.evaluation.retrieval.base import RetrievalEvalResult
+from llama_index.legacy.evaluation import EvaluationResult
+from llama_index.legacy.evaluation.retrieval.base import RetrievalEvalResult
 
 DEFAULT_METRIC_KEYS = ["hit_rate", "mrr"]
 

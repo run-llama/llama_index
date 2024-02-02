@@ -1,14 +1,14 @@
 from typing import Any, Optional, Sequence, Union
 
-from llama_index.bridge.pydantic import Field
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.llms.generic_utils import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.constants import DEFAULT_CONTEXT_WINDOW
+from llama_index.legacy.llms.generic_utils import (
     async_stream_completion_response_to_chat_response,
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
 )
-from llama_index.llms.openai import OpenAI, Tokenizer
-from llama_index.llms.types import (
+from llama_index.legacy.llms.openai import OpenAI, Tokenizer
+from llama_index.legacy.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

@@ -2,14 +2,14 @@
 
 from typing import Any, Dict, Optional, Sequence
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.objects.base_node_mapping import (
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.objects.base_node_mapping import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
     BaseObjectNodeMapping,
 )
-from llama_index.schema import BaseNode, TextNode
-from llama_index.utilities.sql_wrapper import SQLDatabase
+from llama_index.legacy.schema import BaseNode, TextNode
+from llama_index.legacy.utilities.sql_wrapper import SQLDatabase
 
 
 class SQLTableSchema(BaseModel):

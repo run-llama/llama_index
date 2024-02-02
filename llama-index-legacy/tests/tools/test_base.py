@@ -1,10 +1,11 @@
 """Test tools."""
+
 import json
 from typing import List, Optional
 
 import pytest
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.tools.function_tool import FunctionTool
+from llama_index.legacy.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.legacy.tools.function_tool import FunctionTool
 
 try:
     import langchain
@@ -150,13 +151,13 @@ async def test_function_tool_async_defaults_langchain() -> None:
     assert result == "1"
 
 
-from llama_index.legacy import (
+from llama_index.legacy.legacy import (
     ServiceContext,
     VectorStoreIndex,
 )
-from llama_index.legacy.schema import Document
-from llama_index.legacy.token_counter.mock_embed_model import MockEmbedding
-from llama_index.legacy.tools import RetrieverTool, ToolMetadata
+from llama_index.legacy.legacy.schema import Document
+from llama_index.legacy.legacy.token_counter.mock_embed_model import MockEmbedding
+from llama_index.legacy.legacy.tools import RetrieverTool, ToolMetadata
 
 
 def test_retreiver_tool() -> None:

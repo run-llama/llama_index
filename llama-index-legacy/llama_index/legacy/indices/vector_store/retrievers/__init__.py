@@ -1,7 +1,7 @@
-from llama_index.indices.vector_store.retrievers.retriever import (  # noqa: I001
+from llama_index.legacy.indices.vector_store.retrievers.retriever import (  # noqa: I001
     VectorIndexRetriever,
 )
-from llama_index.indices.vector_store.retrievers.auto_retriever import (
+from llama_index.legacy.indices.vector_store.retrievers.auto_retriever import (
     VectorIndexAutoRetriever,
 )
 

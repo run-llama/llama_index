@@ -5,27 +5,27 @@ from abc import abstractmethod
 from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast, get_args
 
-from llama_index.agent.openai.utils import get_function_by_name
-from llama_index.agent.types import BaseAgent
-from llama_index.callbacks import (
+from llama_index.legacy.agent.openai.utils import get_function_by_name
+from llama_index.legacy.agent.types import BaseAgent
+from llama_index.legacy.callbacks import (
     CallbackManager,
     CBEventType,
     EventPayload,
     trace_method,
 )
-from llama_index.chat_engine.types import (
+from llama_index.legacy.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.core.llms.types import ChatMessage, ChatResponse, MessageRole
-from llama_index.llms.llm import LLM
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai_utils import OpenAIToolCall
-from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.objects.base import ObjectRetriever
-from llama_index.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.legacy.core.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.llms.openai import OpenAI
+from llama_index.legacy.llms.openai_utils import OpenAIToolCall
+from llama_index.legacy.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.legacy.objects.base import ObjectRetriever
+from llama_index.legacy.tools import BaseTool, ToolOutput, adapt_to_async_tool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)

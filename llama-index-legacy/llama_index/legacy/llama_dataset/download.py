@@ -1,19 +1,23 @@
 from typing import List, Tuple, Type
 
-from llama_index import Document
-from llama_index.download.dataset import (
+from llama_index.legacy import Document
+from llama_index.legacy.download.dataset import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
 )
-from llama_index.download.dataset import download_llama_dataset as download
-from llama_index.download.module import LLAMA_HUB_URL, MODULE_TYPE, track_download
-from llama_index.llama_dataset.base import BaseLlamaDataset
-from llama_index.llama_dataset.evaluator_evaluation import (
+from llama_index.legacy.download.dataset import download_llama_dataset as download
+from llama_index.legacy.download.module import (
+    LLAMA_HUB_URL,
+    MODULE_TYPE,
+    track_download,
+)
+from llama_index.legacy.llama_dataset.base import BaseLlamaDataset
+from llama_index.legacy.llama_dataset.evaluator_evaluation import (
     LabelledEvaluatorDataset,
     LabelledPairwiseEvaluatorDataset,
 )
-from llama_index.llama_dataset.rag import LabelledRagDataset
-from llama_index.readers import SimpleDirectoryReader
+from llama_index.legacy.llama_dataset.rag import LabelledRagDataset
+from llama_index.legacy.readers import SimpleDirectoryReader
 
 
 def _resolve_dataset_class(filename: str) -> Type[BaseLlamaDataset]:

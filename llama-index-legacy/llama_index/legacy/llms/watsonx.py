@@ -1,8 +1,8 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -12,18 +12,18 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.generic_utils import (
+from llama_index.legacy.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.legacy.llms.generic_utils import (
     completion_to_chat_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.llm import LLM
-from llama_index.llms.watsonx_utils import (
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.llms.watsonx_utils import (
     WATSONX_MODELS,
     get_from_param_or_env_without_error,
     watsonx_model_to_context_size,
 )
-from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
 
 
 class WatsonX(LLM):

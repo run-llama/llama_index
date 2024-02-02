@@ -8,29 +8,29 @@ from typing import (
     cast,
 )
 
-from llama_index.agent.types import (
+from llama_index.legacy.agent.types import (
     BaseAgentWorker,
     Task,
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.callbacks import (
+from llama_index.legacy.bridge.pydantic import BaseModel, Field
+from llama_index.legacy.callbacks import (
     CallbackManager,
     trace_method,
 )
-from llama_index.chat_engine.types import (
+from llama_index.legacy.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
 )
-from llama_index.core.query_pipeline.query_component import QueryComponent
-from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
-from llama_index.query_pipeline.components.agent import (
+from llama_index.legacy.core.query_pipeline.query_component import QueryComponent
+from llama_index.legacy.memory.chat_memory_buffer import ChatMemoryBuffer
+from llama_index.legacy.query_pipeline.components.agent import (
     AgentFnComponent,
     AgentInputComponent,
     BaseAgentComponent,
 )
-from llama_index.query_pipeline.query import QueryPipeline
-from llama_index.tools import ToolOutput
+from llama_index.legacy.query_pipeline.query import QueryPipeline
+from llama_index.legacy.tools import ToolOutput
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 

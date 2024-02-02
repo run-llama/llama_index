@@ -2,9 +2,9 @@ from typing import Any, Dict
 
 import requests
 
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.response.schema import Response
-from llama_index.schema import QueryBundle
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.response.schema import Response
+from llama_index.legacy.schema import QueryBundle
 
 
 class CogniswitchQueryEngine(BaseQueryEngine):

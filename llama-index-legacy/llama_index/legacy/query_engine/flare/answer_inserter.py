@@ -3,10 +3,14 @@
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.query_engine.flare.schema import QueryTask
-from llama_index.service_context import ServiceContext
+from llama_index.legacy.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.legacy.prompts.mixin import (
+    PromptDictType,
+    PromptMixin,
+    PromptMixinType,
+)
+from llama_index.legacy.query_engine.flare.schema import QueryTask
+from llama_index.legacy.service_context import ServiceContext
 
 
 class BaseLookaheadAnswerInserter(PromptMixin):

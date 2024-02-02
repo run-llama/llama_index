@@ -1,12 +1,13 @@
 """HTML node parser."""
+
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks.base import CallbackManager
-from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.node_utils import build_nodes_from_splits
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.utils import get_tqdm_iterable
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.node_parser.interface import NodeParser
+from llama_index.legacy.node_parser.node_utils import build_nodes_from_splits
+from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
+from llama_index.legacy.utils import get_tqdm_iterable
 
 if TYPE_CHECKING:
     from bs4 import Tag

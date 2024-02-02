@@ -1,21 +1,22 @@
 """Embedding utils for LlamaIndex."""
+
 import os
 from typing import TYPE_CHECKING, List, Optional, Union
 
 if TYPE_CHECKING:
-    from llama_index.bridge.langchain import Embeddings as LCEmbeddings
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.clip import ClipEmbedding
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.embeddings.huggingface_utils import (
+    from llama_index.legacy.bridge.langchain import Embeddings as LCEmbeddings
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.embeddings.clip import ClipEmbedding
+from llama_index.legacy.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.legacy.embeddings.huggingface_utils import (
     INSTRUCTOR_MODELS,
 )
-from llama_index.embeddings.instructor import InstructorEmbedding
-from llama_index.embeddings.langchain import LangchainEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.llms.openai_utils import validate_openai_api_key
-from llama_index.token_counter.mock_embed_model import MockEmbedding
-from llama_index.utils import get_cache_dir
+from llama_index.legacy.embeddings.instructor import InstructorEmbedding
+from llama_index.legacy.embeddings.langchain import LangchainEmbedding
+from llama_index.legacy.embeddings.openai import OpenAIEmbedding
+from llama_index.legacy.llms.openai_utils import validate_openai_api_key
+from llama_index.legacy.token_counter.mock_embed_model import MockEmbedding
+from llama_index.legacy.utils import get_cache_dir
 
 EmbedType = Union[BaseEmbedding, "LCEmbeddings", str]
 
@@ -38,7 +39,7 @@ def load_embedding(file_path: str) -> List[float]:
 def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbedding:
     """Resolve embed model."""
     try:
-        from llama_index.bridge.langchain import Embeddings as LCEmbeddings
+        from llama_index.legacy.bridge.langchain import Embeddings as LCEmbeddings
     except ImportError:
         LCEmbeddings = None  # type: ignore
 

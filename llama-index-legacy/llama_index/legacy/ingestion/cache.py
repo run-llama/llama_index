@@ -2,22 +2,22 @@ from typing import List, Optional
 
 import fsspec
 
-from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.schema import BaseNode
-from llama_index.storage.docstore.utils import doc_to_json, json_to_doc
-from llama_index.storage.kvstore import (
+from llama_index.legacy.bridge.pydantic import BaseModel, Field
+from llama_index.legacy.schema import BaseNode
+from llama_index.legacy.storage.docstore.utils import doc_to_json, json_to_doc
+from llama_index.legacy.storage.kvstore import (
     FirestoreKVStore as FirestoreCache,
 )
-from llama_index.storage.kvstore import (
+from llama_index.legacy.storage.kvstore import (
     MongoDBKVStore as MongoDBCache,
 )
-from llama_index.storage.kvstore import (
+from llama_index.legacy.storage.kvstore import (
     RedisKVStore as RedisCache,
 )
-from llama_index.storage.kvstore import (
+from llama_index.legacy.storage.kvstore import (
     SimpleKVStore as SimpleCache,
 )
-from llama_index.storage.kvstore.types import (
+from llama_index.legacy.storage.kvstore.types import (
     BaseKVStore as BaseCache,
 )
 

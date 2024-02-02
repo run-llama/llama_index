@@ -1,13 +1,14 @@
 """Utilities for GPT indices."""
+
 import logging
 import re
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
-from llama_index.schema import BaseNode, ImageNode, MetadataMode
-from llama_index.utils import globals_helper, truncate_text
-from llama_index.vector_stores.types import VectorStoreQueryResult
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.legacy.schema import BaseNode, ImageNode, MetadataMode
+from llama_index.legacy.utils import globals_helper, truncate_text
+from llama_index.legacy.vector_stores.types import VectorStoreQueryResult
 
 _logger = logging.getLogger(__name__)
 

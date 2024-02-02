@@ -1,11 +1,12 @@
 """Utils for pretty print."""
+
 import textwrap
 from pprint import pprint
 from typing import Any, Dict
 
-from llama_index.core.response.schema import Response
-from llama_index.schema import NodeWithScore
-from llama_index.utils import truncate_text
+from llama_index.legacy.core.response.schema import Response
+from llama_index.legacy.schema import NodeWithScore
+from llama_index.legacy.utils import truncate_text
 
 
 def pprint_metadata(metadata: Dict[str, Any]) -> None:

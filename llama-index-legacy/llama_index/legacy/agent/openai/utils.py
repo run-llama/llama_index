@@ -2,7 +2,7 @@
 
 from typing import List, Union
 
-from llama_index.tools import BaseTool
+from llama_index.legacy.tools import BaseTool
 
 
 def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:

@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Union
 import requests
 import tqdm
 
-from llama_index.download.module import LLAMA_HUB_URL
-from llama_index.download.utils import (
+from llama_index.legacy.download.module import LLAMA_HUB_URL
+from llama_index.legacy.download.utils import (
     get_file_content,
     get_file_content_bytes,
     initialize_directory,

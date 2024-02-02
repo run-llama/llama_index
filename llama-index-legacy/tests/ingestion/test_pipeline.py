@@ -1,13 +1,13 @@
 from multiprocessing import cpu_count
 
-from llama_index.legacy.embeddings import OpenAIEmbedding
-from llama_index.legacy.extractors import KeywordExtractor
-from llama_index.legacy.ingestion.pipeline import IngestionPipeline
-from llama_index.legacy.llms import MockLLM
-from llama_index.legacy.node_parser import SentenceSplitter
-from llama_index.legacy.readers import ReaderConfig, StringIterableReader
-from llama_index.legacy.schema import Document
-from llama_index.legacy.storage.docstore import SimpleDocumentStore
+from llama_index.legacy.legacy.embeddings import OpenAIEmbedding
+from llama_index.legacy.legacy.extractors import KeywordExtractor
+from llama_index.legacy.legacy.ingestion.pipeline import IngestionPipeline
+from llama_index.legacy.legacy.llms import MockLLM
+from llama_index.legacy.legacy.node_parser import SentenceSplitter
+from llama_index.legacy.legacy.readers import ReaderConfig, StringIterableReader
+from llama_index.legacy.legacy.schema import Document
+from llama_index.legacy.legacy.storage.docstore import SimpleDocumentStore
 
 
 # clean up folders after tests

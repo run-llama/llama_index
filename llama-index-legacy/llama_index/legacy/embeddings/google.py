@@ -2,9 +2,12 @@
 
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.core.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.embeddings.base import (
+    DEFAULT_EMBED_BATCH_SIZE,
+    BaseEmbedding,
+)
 
 # Google Universal Sentence Encode v5
 DEFAULT_HANDLE = "https://tfhub.dev/google/universal-sentence-encoder-large/5"

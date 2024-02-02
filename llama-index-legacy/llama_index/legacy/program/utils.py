@@ -2,11 +2,11 @@
 
 from typing import Any, List, Type
 
-from llama_index.bridge.pydantic import BaseModel, Field, create_model
-from llama_index.llms.llm import LLM
-from llama_index.output_parsers.pydantic import PydanticOutputParser
-from llama_index.prompts.base import PromptTemplate
-from llama_index.types import BasePydanticProgram, PydanticProgramMode
+from llama_index.legacy.bridge.pydantic import BaseModel, Field, create_model
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.output_parsers.pydantic import PydanticOutputParser
+from llama_index.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.types import BasePydanticProgram, PydanticProgramMode
 
 
 def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:
@@ -43,7 +43,7 @@ def get_program_for_llm(
         # in default mode, we try to use the OpenAI program if available else
         # we fall back to the LLM program
         try:
-            from llama_index.program.openai_program import OpenAIPydanticProgram
+            from llama_index.legacy.program.openai_program import OpenAIPydanticProgram
 
             return OpenAIPydanticProgram.from_defaults(
                 output_cls=output_cls,
@@ -52,7 +52,7 @@ def get_program_for_llm(
                 **kwargs,
             )
         except ValueError:
-            from llama_index.program.llm_program import LLMTextCompletionProgram
+            from llama_index.legacy.program.llm_program import LLMTextCompletionProgram
 
             return LLMTextCompletionProgram.from_defaults(
                 output_parser=PydanticOutputParser(output_cls=output_cls),
@@ -61,7 +61,7 @@ def get_program_for_llm(
                 **kwargs,
             )
     elif pydantic_program_mode == PydanticProgramMode.OPENAI:
-        from llama_index.program.openai_program import OpenAIPydanticProgram
+        from llama_index.legacy.program.openai_program import OpenAIPydanticProgram
 
         return OpenAIPydanticProgram.from_defaults(
             output_cls=output_cls,
@@ -70,7 +70,7 @@ def get_program_for_llm(
             **kwargs,
         )
     elif pydantic_program_mode == PydanticProgramMode.LLM:
-        from llama_index.program.llm_program import LLMTextCompletionProgram
+        from llama_index.legacy.program.llm_program import LLMTextCompletionProgram
 
         return LLMTextCompletionProgram.from_defaults(
             output_parser=PydanticOutputParser(output_cls=output_cls),
@@ -79,7 +79,7 @@ def get_program_for_llm(
             **kwargs,
         )
     elif pydantic_program_mode == PydanticProgramMode.LM_FORMAT_ENFORCER:
-        from llama_index.program.lmformatenforcer_program import (
+        from llama_index.legacy.program.lmformatenforcer_program import (
             LMFormatEnforcerPydanticProgram,
         )
 

@@ -1,13 +1,12 @@
 """Param tuner."""
 
-
 import asyncio
 from abc import abstractmethod
 from copy import deepcopy
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
-from llama_index.bridge.pydantic import BaseModel, Field, PrivateAttr
-from llama_index.utils import get_tqdm_iterable
+from llama_index.legacy.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.legacy.utils import get_tqdm_iterable
 
 
 class RunResult(BaseModel):

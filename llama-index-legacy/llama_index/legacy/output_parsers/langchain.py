@@ -3,10 +3,10 @@
 from string import Formatter
 from typing import TYPE_CHECKING, Any, Optional
 
-from llama_index.output_parsers.base import ChainableOutputParser
+from llama_index.legacy.output_parsers.base import ChainableOutputParser
 
 if TYPE_CHECKING:
-    from llama_index.bridge.langchain import BaseOutputParser as LCOutputParser
+    from llama_index.legacy.bridge.langchain import BaseOutputParser as LCOutputParser
 
 
 class LangchainOutputParser(ChainableOutputParser):

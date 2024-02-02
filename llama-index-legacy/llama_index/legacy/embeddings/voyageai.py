@@ -2,9 +2,9 @@
 
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.callbacks.base import CallbackManager
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.embeddings.base import BaseEmbedding
 
 DEFAULT_VOYAGE_BATCH_SIZE = 8
 

@@ -13,8 +13,8 @@ from typing import (
     runtime_checkable,
 )
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
 
 Model = TypeVar("Model", bound=BaseModel)
 

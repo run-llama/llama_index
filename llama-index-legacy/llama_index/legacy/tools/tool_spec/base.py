@@ -1,14 +1,13 @@
 """Base tool spec class."""
 
-
 import asyncio
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.tools.function_tool import FunctionTool
-from llama_index.tools.types import ToolMetadata
-from llama_index.tools.utils import create_schema_from_function
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.tools.function_tool import FunctionTool
+from llama_index.legacy.tools.types import ToolMetadata
+from llama_index.legacy.tools.utils import create_schema_from_function
 
 AsyncCallable = Callable[..., Awaitable[Any]]
 

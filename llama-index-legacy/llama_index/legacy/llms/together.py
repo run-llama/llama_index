@@ -1,7 +1,7 @@
 import os
 from typing import Any, Optional
 
-from llama_index.llms.openai_like import OpenAILike
+from llama_index.legacy.llms.openai_like import OpenAILike
 
 
 class TogetherLLM(OpenAILike):

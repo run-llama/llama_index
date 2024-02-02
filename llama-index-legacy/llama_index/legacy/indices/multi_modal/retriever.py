@@ -3,18 +3,18 @@
 import asyncio
 from typing import Any, Dict, List, Optional
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.base_multi_modal_retriever import (
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.legacy.core.base_multi_modal_retriever import (
     MultiModalRetriever,
 )
-from llama_index.data_structs.data_structs import IndexDict
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
-from llama_index.indices.multi_modal.base import MultiModalVectorStoreIndex
-from llama_index.indices.utils import log_vector_store_query_result
-from llama_index.schema import NodeWithScore, ObjectType, QueryBundle, QueryType
-from llama_index.vector_stores.types import (
+from llama_index.legacy.data_structs.data_structs import IndexDict
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.legacy.indices.multi_modal.base import MultiModalVectorStoreIndex
+from llama_index.legacy.indices.utils import log_vector_store_query_result
+from llama_index.legacy.schema import NodeWithScore, ObjectType, QueryBundle, QueryType
+from llama_index.legacy.vector_stores.types import (
     MetadataFilters,
     VectorStore,
     VectorStoreQuery,
@@ -243,11 +243,9 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
                 ):
                     node_id = query_result.nodes[i].node_id
                     if self._docstore.document_exists(node_id):
-                        query_result.nodes[
-                            i
-                        ] = self._docstore.get_node(  # type: ignore[index]
+                        query_result.nodes[i] = self._docstore.get_node(
                             node_id
-                        )
+                        )  # type: ignore[index]
 
         log_vector_store_query_result(query_result)
 

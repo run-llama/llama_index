@@ -1,9 +1,9 @@
 import logging
 from typing import Any, Dict, Optional, Sequence
 
-from llama_index.multi_modal_llms.base import ChatMessage
-from llama_index.multi_modal_llms.generic_utils import encode_image
-from llama_index.schema import ImageDocument
+from llama_index.legacy.multi_modal_llms.base import ChatMessage
+from llama_index.legacy.multi_modal_llms.generic_utils import encode_image
+from llama_index.legacy.schema import ImageDocument
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"

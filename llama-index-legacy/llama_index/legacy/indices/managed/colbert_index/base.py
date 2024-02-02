@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.data_structs.data_structs import IndexDict
-from llama_index.indices.base import BaseIndex, IndexNode
-from llama_index.schema import BaseNode, NodeWithScore
-from llama_index.service_context import ServiceContext
-from llama_index.storage.docstore.types import RefDocInfo
-from llama_index.storage.storage_context import StorageContext
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.data_structs.data_structs import IndexDict
+from llama_index.legacy.indices.base import BaseIndex, IndexNode
+from llama_index.legacy.schema import BaseNode, NodeWithScore
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.storage.docstore.types import RefDocInfo
+from llama_index.legacy.storage.storage_context import StorageContext
 
 # TODO(jon-chuang):
 # 1. Add support for updating index (inserts/deletes)

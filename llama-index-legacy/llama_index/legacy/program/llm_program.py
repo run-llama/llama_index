@@ -1,11 +1,11 @@
 from typing import Any, Dict, Optional, Type, cast
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.llm import LLM
-from llama_index.llms.openai import OpenAI
-from llama_index.output_parsers.pydantic import PydanticOutputParser
-from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.types import BaseOutputParser, BasePydanticProgram
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.llms.openai import OpenAI
+from llama_index.legacy.output_parsers.pydantic import PydanticOutputParser
+from llama_index.legacy.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.legacy.types import BaseOutputParser, BasePydanticProgram
 
 
 class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):

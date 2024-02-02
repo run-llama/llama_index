@@ -1,19 +1,20 @@
 """Base index classes."""
+
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, cast
 
-from llama_index.chat_engine.types import BaseChatEngine, ChatMode
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.data_structs.data_structs import IndexStruct
-from llama_index.ingestion import run_transformations
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai_utils import is_function_calling_model
-from llama_index.schema import BaseNode, Document, IndexNode
-from llama_index.service_context import ServiceContext
-from llama_index.storage.docstore.types import BaseDocumentStore, RefDocInfo
-from llama_index.storage.storage_context import StorageContext
+from llama_index.legacy.chat_engine.types import BaseChatEngine, ChatMode
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.data_structs.data_structs import IndexStruct
+from llama_index.legacy.ingestion import run_transformations
+from llama_index.legacy.llms.openai import OpenAI
+from llama_index.legacy.llms.openai_utils import is_function_calling_model
+from llama_index.legacy.schema import BaseNode, Document, IndexNode
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.storage.docstore.types import BaseDocumentStore, RefDocInfo
+from llama_index.legacy.storage.storage_context import StorageContext
 
 IS = TypeVar("IS", bound=IndexStruct)
 IndexType = TypeVar("IndexType", bound="BaseIndex")
@@ -347,7 +348,9 @@ class BaseIndex(Generic[IS], ABC):
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         # NOTE: lazy import
-        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+        from llama_index.legacy.query_engine.retriever_query_engine import (
+            RetrieverQueryEngine,
+        )
 
         retriever = self.as_retriever(**kwargs)
 
@@ -376,14 +379,14 @@ class BaseIndex(Generic[IS], ABC):
 
         if chat_mode == ChatMode.CONDENSE_QUESTION:
             # NOTE: lazy import
-            from llama_index.chat_engine import CondenseQuestionChatEngine
+            from llama_index.legacy.chat_engine import CondenseQuestionChatEngine
 
             return CondenseQuestionChatEngine.from_defaults(
                 query_engine=query_engine,
                 **kwargs,
             )
         elif chat_mode == ChatMode.CONTEXT:
-            from llama_index.chat_engine import ContextChatEngine
+            from llama_index.legacy.chat_engine import ContextChatEngine
 
             return ContextChatEngine.from_defaults(
                 retriever=self.as_retriever(**kwargs),
@@ -391,7 +394,7 @@ class BaseIndex(Generic[IS], ABC):
             )
 
         elif chat_mode == ChatMode.CONDENSE_PLUS_CONTEXT:
-            from llama_index.chat_engine import CondensePlusContextChatEngine
+            from llama_index.legacy.chat_engine import CondensePlusContextChatEngine
 
             return CondensePlusContextChatEngine.from_defaults(
                 retriever=self.as_retriever(**kwargs),
@@ -400,8 +403,8 @@ class BaseIndex(Generic[IS], ABC):
 
         elif chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
             # NOTE: lazy import
-            from llama_index.agent import OpenAIAgent, ReActAgent
-            from llama_index.tools.query_engine import QueryEngineTool
+            from llama_index.legacy.agent import OpenAIAgent, ReActAgent
+            from llama_index.legacy.tools.query_engine import QueryEngineTool
 
             # convert query engine to tool
             query_engine_tool = QueryEngineTool.from_defaults(query_engine=query_engine)
@@ -425,7 +428,7 @@ class BaseIndex(Generic[IS], ABC):
             else:
                 raise ValueError(f"Unknown chat mode: {chat_mode}")
         elif chat_mode == ChatMode.SIMPLE:
-            from llama_index.chat_engine import SimpleChatEngine
+            from llama_index.legacy.chat_engine import SimpleChatEngine
 
             return SimpleChatEngine.from_defaults(
                 **kwargs,

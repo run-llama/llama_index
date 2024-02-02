@@ -1,13 +1,17 @@
 """Simple node parser."""
+
 from typing import Any, Callable, List, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks.base import CallbackManager
-from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.node_utils import build_nodes_from_splits, default_id_func
-from llama_index.node_parser.text.utils import split_by_sentence_tokenizer
-from llama_index.schema import BaseNode, Document, MetadataMode
-from llama_index.utils import get_tqdm_iterable
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.node_parser.interface import NodeParser
+from llama_index.legacy.node_parser.node_utils import (
+    build_nodes_from_splits,
+    default_id_func,
+)
+from llama_index.legacy.node_parser.text.utils import split_by_sentence_tokenizer
+from llama_index.legacy.schema import BaseNode, Document, MetadataMode
+from llama_index.legacy.utils import get_tqdm_iterable
 
 DEFAULT_WINDOW_SIZE = 3
 DEFAULT_WINDOW_METADATA_KEY = "window"

@@ -2,8 +2,8 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from llama_index.callbacks.base_handler import BaseCallbackHandler
-from llama_index.callbacks.schema import (
+from llama_index.legacy.callbacks.base_handler import BaseCallbackHandler
+from llama_index.legacy.callbacks.schema import (
     BASE_TRACE_EVENT,
     TIMESTAMP_FORMAT,
     CBEvent,

@@ -1,10 +1,11 @@
 """Optimization related classes and functions."""
+
 import logging
 from typing import Any, Dict, List, Optional
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle, TextNode
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
+from llama_index.legacy.schema import MetadataMode, NodeWithScore, QueryBundle, TextNode
 
 logger = logging.getLogger(__name__)
 

@@ -1,10 +1,13 @@
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.core.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-from llama_index.embeddings.huggingface_utils import format_query, format_text
-from llama_index.utils import infer_torch_device
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.embeddings.base import (
+    DEFAULT_EMBED_BATCH_SIZE,
+    BaseEmbedding,
+)
+from llama_index.legacy.embeddings.huggingface_utils import format_query, format_text
+from llama_index.legacy.utils import infer_torch_device
 
 
 class OptimumEmbedding(BaseEmbedding):

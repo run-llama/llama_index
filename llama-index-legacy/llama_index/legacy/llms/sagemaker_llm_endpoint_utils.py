@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from botocore.response import StreamingBody
 
-from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.legacy.bridge.pydantic import BaseModel, Field
 
 
 class BaseIOHandler(BaseModel, metaclass=abc.ABCMeta):

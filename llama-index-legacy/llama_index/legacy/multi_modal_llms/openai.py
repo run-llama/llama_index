@@ -10,14 +10,14 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCall,
 )
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.constants import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.core.llms.types import (
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -27,23 +27,23 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     MessageRole,
 )
-from llama_index.llms.generic_utils import (
+from llama_index.legacy.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.llms.openai_utils import (
+from llama_index.legacy.llms.openai_utils import (
     from_openai_message,
     resolve_openai_credentials,
     to_openai_message_dicts,
 )
-from llama_index.multi_modal_llms import (
+from llama_index.legacy.multi_modal_llms import (
     MultiModalLLM,
     MultiModalLLMMetadata,
 )
-from llama_index.multi_modal_llms.openai_utils import (
+from llama_index.legacy.multi_modal_llms.openai_utils import (
     GPT4V_MODELS,
     generate_openai_multi_modal_chat_message,
 )
-from llama_index.schema import ImageDocument
+from llama_index.legacy.schema import ImageDocument
 
 
 class OpenAIMultiModal(MultiModalLLM):

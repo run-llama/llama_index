@@ -1,12 +1,12 @@
 from typing import List, Optional
 
-from llama_index.data_structs.data_structs import IndexStruct
-from llama_index.storage.index_store.types import BaseIndexStore
-from llama_index.storage.index_store.utils import (
+from llama_index.legacy.data_structs.data_structs import IndexStruct
+from llama_index.legacy.storage.index_store.types import BaseIndexStore
+from llama_index.legacy.storage.index_store.utils import (
     index_struct_to_json,
     json_to_index_struct,
 )
-from llama_index.storage.kvstore.types import BaseKVStore
+from llama_index.legacy.storage.kvstore.types import BaseKVStore
 
 DEFAULT_NAMESPACE = "index_store"
 

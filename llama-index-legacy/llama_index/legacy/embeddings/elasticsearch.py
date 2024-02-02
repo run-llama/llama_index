@@ -1,7 +1,7 @@
 from typing import Any, List
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.embeddings.base import BaseEmbedding
 
 
 class ElasticsearchEmbedding(BaseEmbedding):
@@ -66,7 +66,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
 
                 from elasticsearch import Elasticsearch
 
-                from llama_index.embeddings import ElasticsearchEmbedding
+                from llama_index.legacy.embeddings import ElasticsearchEmbedding
 
                 # Define the model ID and input field name (if different from default)
                 model_id = "your_model_id"
@@ -117,7 +117,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
         Example:
             .. code-block:: python
 
-                from llama_index.embeddings import ElasticsearchEmbedding
+                from llama_index.legacy.embeddings import ElasticsearchEmbedding
 
                 # Define the model ID and input field name (if different from default)
                 model_id = "your_model_id"

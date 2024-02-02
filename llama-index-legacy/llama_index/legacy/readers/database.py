@@ -5,9 +5,9 @@ from typing import Any, List, Optional
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
-from llama_index.readers.base import BaseReader
-from llama_index.schema import Document
-from llama_index.utilities.sql_wrapper import SQLDatabase
+from llama_index.legacy.readers.base import BaseReader
+from llama_index.legacy.schema import Document
+from llama_index.legacy.utilities.sql_wrapper import SQLDatabase
 
 
 class DatabaseReader(BaseReader):

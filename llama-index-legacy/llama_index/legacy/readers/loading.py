@@ -1,22 +1,22 @@
 from typing import Any, Dict, Type
 
-from llama_index.readers.base import BasePydanticReader
-from llama_index.readers.discord_reader import DiscordReader
-from llama_index.readers.elasticsearch import ElasticsearchReader
-from llama_index.readers.google_readers.gdocs import GoogleDocsReader
-from llama_index.readers.google_readers.gsheets import GoogleSheetsReader
-from llama_index.readers.notion import NotionPageReader
-from llama_index.readers.slack import SlackReader
-from llama_index.readers.string_iterable import StringIterableReader
-from llama_index.readers.twitter import TwitterTweetReader
-from llama_index.readers.web import (
+from llama_index.legacy.readers.base import BasePydanticReader
+from llama_index.legacy.readers.discord_reader import DiscordReader
+from llama_index.legacy.readers.elasticsearch import ElasticsearchReader
+from llama_index.legacy.readers.google_readers.gdocs import GoogleDocsReader
+from llama_index.legacy.readers.google_readers.gsheets import GoogleSheetsReader
+from llama_index.legacy.readers.notion import NotionPageReader
+from llama_index.legacy.readers.slack import SlackReader
+from llama_index.legacy.readers.string_iterable import StringIterableReader
+from llama_index.legacy.readers.twitter import TwitterTweetReader
+from llama_index.legacy.readers.web import (
     BeautifulSoupWebReader,
     RssReader,
     SimpleWebPageReader,
     TrafilaturaWebReader,
 )
-from llama_index.readers.wikipedia import WikipediaReader
-from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
+from llama_index.legacy.readers.wikipedia import WikipediaReader
+from llama_index.legacy.readers.youtube_transcript import YoutubeTranscriptReader
 
 ALL_READERS: Dict[str, Type[BasePydanticReader]] = {
     DiscordReader.class_name(): DiscordReader,

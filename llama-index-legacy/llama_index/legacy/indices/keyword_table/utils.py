@@ -5,8 +5,8 @@ from typing import Optional, Set
 
 import pandas as pd
 
-from llama_index.indices.utils import expand_tokens_with_subtokens
-from llama_index.utils import globals_helper
+from llama_index.legacy.indices.utils import expand_tokens_with_subtokens
+from llama_index.legacy.utils import globals_helper
 
 
 def simple_extract_keywords(

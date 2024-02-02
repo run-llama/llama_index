@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import PrivateAttr
 
-from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
-from llama_index.schema import ImageType
+from llama_index.legacy.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.legacy.schema import ImageType
 
 logger = logging.getLogger(__name__)
 

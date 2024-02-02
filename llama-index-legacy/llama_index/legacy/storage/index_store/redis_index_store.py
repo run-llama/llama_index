@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
-from llama_index.storage.index_store.keyval_index_store import KVIndexStore
-from llama_index.storage.kvstore.redis_kvstore import RedisKVStore
+from llama_index.legacy.storage.index_store.keyval_index_store import KVIndexStore
+from llama_index.legacy.storage.kvstore.redis_kvstore import RedisKVStore
 
 
 class RedisIndexStore(KVIndexStore):

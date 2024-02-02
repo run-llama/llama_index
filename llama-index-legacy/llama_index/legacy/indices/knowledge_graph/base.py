@@ -7,19 +7,19 @@ Build a KG by extracting triplets, and leveraging the KG during query-time.
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.constants import GRAPH_STORE_KEY
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.data_structs.data_structs import KG
-from llama_index.graph_stores.simple import SimpleGraphStore
-from llama_index.graph_stores.types import GraphStore
-from llama_index.indices.base import BaseIndex
-from llama_index.prompts import BasePromptTemplate
-from llama_index.prompts.default_prompts import DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
-from llama_index.schema import BaseNode, IndexNode, MetadataMode
-from llama_index.service_context import ServiceContext
-from llama_index.storage.docstore.types import RefDocInfo
-from llama_index.storage.storage_context import StorageContext
-from llama_index.utils import get_tqdm_iterable
+from llama_index.legacy.constants import GRAPH_STORE_KEY
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.data_structs.data_structs import KG
+from llama_index.legacy.graph_stores.simple import SimpleGraphStore
+from llama_index.legacy.graph_stores.types import GraphStore
+from llama_index.legacy.indices.base import BaseIndex
+from llama_index.legacy.prompts import BasePromptTemplate
+from llama_index.legacy.prompts.default_prompts import DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
+from llama_index.legacy.schema import BaseNode, IndexNode, MetadataMode
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.storage.docstore.types import RefDocInfo
+from llama_index.legacy.storage.storage_context import StorageContext
+from llama_index.legacy.utils import get_tqdm_iterable
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +103,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         return self._graph_store
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        from llama_index.indices.knowledge_graph.retrievers import (
+        from llama_index.legacy.indices.knowledge_graph.retrievers import (
             KGRetrieverMode,
             KGTableRetriever,
         )

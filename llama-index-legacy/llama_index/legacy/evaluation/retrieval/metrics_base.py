@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.legacy.bridge.pydantic import BaseModel, Field
 
 
 class RetrievalMetricResult(BaseModel):

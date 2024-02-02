@@ -6,13 +6,13 @@ from time import sleep
 from types import ModuleType
 from typing import Any, List, Type, TypeVar
 
-from llama_index.schema import BaseNode
-from llama_index.vector_stores.types import (
+from llama_index.legacy.schema import BaseNode
+from llama_index.legacy.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import (
+from llama_index.legacy.vector_stores.utils import (
     DEFAULT_EMBEDDING_KEY,
     DEFAULT_TEXT_KEY,
     metadata_dict_to_node,
@@ -224,11 +224,11 @@ class RocksetVectorStore(VectorStore):
                 LIMIT
                     {query.similarity_top_k}
             """,
-            params={
-                filter.key: filter.value for filter in query.filters.legacy_filters()
-            }
-            if query.filters
-            else {},
+            params=(
+                {filter.key: filter.value for filter in query.filters.legacy_filters()}
+                if query.filters
+                else {}
+            ),
         )
 
         similarities: List[float] | None = [] if query.query_embedding else None

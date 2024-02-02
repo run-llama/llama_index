@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.callbacks.base_handler import BaseCallbackHandler
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.utilities.token_counting import TokenCounter
-from llama_index.utils import get_tokenizer
+from llama_index.legacy.callbacks.base_handler import BaseCallbackHandler
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.utilities.token_counting import TokenCounter
+from llama_index.legacy.utils import get_tokenizer
 
 
 @dataclass
@@ -23,7 +23,7 @@ class TokenCountingEvent:
 def get_llm_token_counts(
     token_counter: TokenCounter, payload: Dict[str, Any], event_id: str = ""
 ) -> TokenCountingEvent:
-    from llama_index.llms import ChatMessage
+    from llama_index.legacy.llms import ChatMessage
 
     if EventPayload.PROMPT in payload:
         prompt = str(payload.get(EventPayload.PROMPT))

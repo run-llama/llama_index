@@ -7,25 +7,25 @@ from typing import Any, Dict, List, Optional, Union
 
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import BaseModel, PrivateAttr
-from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import BaseModel, PrivateAttr
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     LLMMetadata,
     MessageRole,
 )
-from llama_index.llms.llm import (
+from llama_index.legacy.llms.llm import (
     LLM,
     astream_chat_response_to_tokens,
     astream_completion_response_to_tokens,
     stream_chat_response_to_tokens,
     stream_completion_response_to_tokens,
 )
-from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.schema import BaseComponent
-from llama_index.types import PydanticProgramMode, TokenAsyncGen, TokenGen
+from llama_index.legacy.llms.utils import LLMType, resolve_llm
+from llama_index.legacy.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.legacy.schema import BaseComponent
+from llama_index.legacy.types import PydanticProgramMode, TokenAsyncGen, TokenGen
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ class LLMPredictor(BaseLLMPredictor):
 
         llm = data.get("llm", "default")
         if llm != "default":
-            from llama_index.llms.loading import load_llm
+            from llama_index.legacy.llms.loading import load_llm
 
             llm = load_llm(llm)
 
@@ -177,7 +177,7 @@ class LLMPredictor(BaseLLMPredictor):
         prompt: PromptTemplate,
         **prompt_args: Any,
     ) -> str:
-        from llama_index.program.utils import get_program_for_llm
+        from llama_index.legacy.program.utils import get_program_for_llm
 
         program = get_program_for_llm(
             output_cls,
@@ -195,7 +195,7 @@ class LLMPredictor(BaseLLMPredictor):
         prompt: PromptTemplate,
         **prompt_args: Any,
     ) -> str:
-        from llama_index.program.utils import get_program_for_llm
+        from llama_index.legacy.program.utils import get_program_for_llm
 
         program = get_program_for_llm(
             output_cls,

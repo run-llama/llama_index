@@ -5,8 +5,8 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.legacy.core.llms.types import CompletionResponse
-from llama_index.legacy.llms.gradient import (
+from llama_index.legacy.legacy.core.llms.types import CompletionResponse
+from llama_index.legacy.legacy.llms.gradient import (
     GradientBaseModelLLM,
     GradientModelAdapterLLM,
 )

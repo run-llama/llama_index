@@ -3,10 +3,10 @@ from inspect import signature
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type
 
 if TYPE_CHECKING:
-    from llama_index.bridge.langchain import StructuredTool, Tool
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
-from llama_index.tools.utils import create_schema_from_function
+    from llama_index.legacy.bridge.langchain import StructuredTool, Tool
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
+from llama_index.legacy.tools.utils import create_schema_from_function
 
 AsyncCallable = Callable[..., Awaitable[Any]]
 
@@ -104,7 +104,7 @@ class FunctionTool(AsyncBaseTool):
         **langchain_tool_kwargs: Any,
     ) -> "Tool":
         """To langchain tool."""
-        from llama_index.bridge.langchain import Tool
+        from llama_index.legacy.bridge.langchain import Tool
 
         langchain_tool_kwargs = self._process_langchain_tool_kwargs(
             langchain_tool_kwargs
@@ -120,7 +120,7 @@ class FunctionTool(AsyncBaseTool):
         **langchain_tool_kwargs: Any,
     ) -> "StructuredTool":
         """To langchain structured tool."""
-        from llama_index.bridge.langchain import StructuredTool
+        from llama_index.legacy.bridge.langchain import StructuredTool
 
         langchain_tool_kwargs = self._process_langchain_tool_kwargs(
             langchain_tool_kwargs

@@ -3,11 +3,11 @@
 import logging
 from typing import Any, List, Optional, Tuple, Type, cast
 
-from llama_index.embeddings.adapter import AdapterEmbeddingModel
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
-from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
-from llama_index.utils import infer_torch_device
+from llama_index.legacy.embeddings.adapter import AdapterEmbeddingModel
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
+from llama_index.legacy.finetuning.types import BaseEmbeddingFinetuneEngine
+from llama_index.legacy.utils import infer_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
         """Init params."""
         import torch
 
-        from llama_index.embeddings.adapter_utils import BaseAdapter, LinearLayer
+        from llama_index.legacy.embeddings.adapter_utils import BaseAdapter, LinearLayer
 
         self.dataset = dataset
         self.embed_model = embed_model
@@ -106,7 +106,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
             **kwargs (Any): Additional kwargs (see __init__)
 
         """
-        from llama_index.embeddings.adapter_utils import LinearLayer
+        from llama_index.legacy.embeddings.adapter_utils import LinearLayer
 
         model_cls = model_cls or LinearLayer
         model = model_cls.load(model_path)
@@ -151,7 +151,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
 
     def finetune(self, **train_kwargs: Any) -> None:
         """Finetune."""
-        from llama_index.finetuning.embeddings.adapter_utils import train_model
+        from llama_index.legacy.finetuning.embeddings.adapter_utils import train_model
 
         # call model training
         train_model(

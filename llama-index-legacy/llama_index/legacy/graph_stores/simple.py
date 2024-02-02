@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 import fsspec
 from dataclasses_json import DataClassJsonMixin
 
-from llama_index.graph_stores.types import (
+from llama_index.legacy.graph_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
     GraphStore,

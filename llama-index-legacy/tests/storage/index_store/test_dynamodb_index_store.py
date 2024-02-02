@@ -1,11 +1,11 @@
 from typing import Generator
 
 import pytest
-from llama_index.legacy.data_structs.data_structs import IndexGraph
-from llama_index.legacy.storage.index_store.dynamodb_index_store import (
+from llama_index.legacy.legacy.data_structs.data_structs import IndexGraph
+from llama_index.legacy.legacy.storage.index_store.dynamodb_index_store import (
     DynamoDBIndexStore,
 )
-from llama_index.legacy.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
+from llama_index.legacy.legacy.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
 from pytest import MonkeyPatch
 
 try:

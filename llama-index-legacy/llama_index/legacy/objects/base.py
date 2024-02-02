@@ -4,25 +4,28 @@ import pickle
 import warnings
 from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks.base import CallbackManager
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.core.query_pipeline.query_component import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.core.query_pipeline.query_component import (
     ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.indices.base import BaseIndex
-from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.objects.base_node_mapping import (
+from llama_index.legacy.indices.base import BaseIndex
+from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
+from llama_index.legacy.objects.base_node_mapping import (
     DEFAULT_PERSIST_FNAME,
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
 )
-from llama_index.schema import QueryType
-from llama_index.storage.storage_context import DEFAULT_PERSIST_DIR, StorageContext
+from llama_index.legacy.schema import QueryType
+from llama_index.legacy.storage.storage_context import (
+    DEFAULT_PERSIST_DIR,
+    StorageContext,
+)
 
 OT = TypeVar("OT")
 
@@ -156,7 +159,7 @@ class ObjectIndex(Generic[OT]):
         persist_dir: str = DEFAULT_PERSIST_DIR,
         object_node_mapping: Optional[BaseObjectNodeMapping] = None,
     ) -> "ObjectIndex":
-        from llama_index.indices import load_index_from_storage
+        from llama_index.legacy.indices import load_index_from_storage
 
         storage_context = StorageContext.from_defaults(persist_dir=persist_dir)
         index = load_index_from_storage(storage_context)

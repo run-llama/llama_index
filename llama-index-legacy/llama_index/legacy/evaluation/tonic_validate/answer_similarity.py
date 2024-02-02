@@ -1,7 +1,7 @@
 from typing import Any, Optional, Sequence
 
-from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.legacy.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.legacy.prompts.mixin import PromptDictType, PromptMixinType
 
 
 class AnswerSimilarityEvaluator(BaseEvaluator):

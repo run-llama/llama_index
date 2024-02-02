@@ -12,7 +12,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
 
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
 TEXT_MODELS = ["text-bison", "text-bison-32k", "text-bison@001"]
@@ -143,7 +143,7 @@ def init_vertexai(
 
 def _parse_message(message: ChatMessage, is_gemini: bool) -> Any:
     if is_gemini:
-        from llama_index.llms.vertex_gemini_utils import (
+        from llama_index.legacy.llms.vertex_gemini_utils import (
             convert_chat_message_to_gemini_content,
         )
 
@@ -175,7 +175,7 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
             context = message.content
         elif message.role == MessageRole.ASSISTANT or message.role == MessageRole.USER:
             if is_gemini:
-                from llama_index.llms.vertex_gemini_utils import (
+                from llama_index.legacy.llms.vertex_gemini_utils import (
                     convert_chat_message_to_gemini_content,
                 )
 

@@ -1,31 +1,31 @@
 import logging
 from typing import Callable, List, Optional, Sequence
 
-from llama_index.async_utils import run_async_tasks
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.core.base_selector import BaseSelector
-from llama_index.core.response.schema import (
+from llama_index.legacy.async_utils import run_async_tasks
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.core.base_selector import BaseSelector
+from llama_index.legacy.core.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
     Response,
     StreamingResponse,
 )
-from llama_index.objects.base import ObjectRetriever
-from llama_index.prompts.default_prompt_selectors import (
+from llama_index.legacy.objects.base import ObjectRetriever
+from llama_index.legacy.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
-from llama_index.prompts.mixin import PromptMixinType
-from llama_index.response_synthesizers import TreeSummarize
-from llama_index.schema import BaseNode, QueryBundle
-from llama_index.selectors.utils import get_selector_from_context
-from llama_index.service_context import ServiceContext
-from llama_index.tools.query_engine import QueryEngineTool
-from llama_index.tools.types import ToolMetadata
-from llama_index.utils import print_text
+from llama_index.legacy.prompts.mixin import PromptMixinType
+from llama_index.legacy.response_synthesizers import TreeSummarize
+from llama_index.legacy.schema import BaseNode, QueryBundle
+from llama_index.legacy.selectors.utils import get_selector_from_context
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.tools.query_engine import QueryEngineTool
+from llama_index.legacy.tools.types import ToolMetadata
+from llama_index.legacy.utils import print_text
 
 logger = logging.getLogger(__name__)
 

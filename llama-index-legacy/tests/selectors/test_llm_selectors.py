@@ -1,11 +1,11 @@
 from unittest.mock import patch
 
-from llama_index.legacy.llms import CompletionResponse
-from llama_index.legacy.selectors.llm_selectors import (
+from llama_index.legacy.legacy.llms import CompletionResponse
+from llama_index.legacy.legacy.selectors.llm_selectors import (
     LLMMultiSelector,
     LLMSingleSelector,
 )
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.service_context import ServiceContext
 
 from tests.mock_utils.mock_predict import _mock_single_select
 

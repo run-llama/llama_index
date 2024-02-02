@@ -1,7 +1,7 @@
 """Prompt class."""
 
-from llama_index.core.llms.types import ChatMessage, MessageRole
-from llama_index.prompts.base import (
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.prompts.base import (
     BasePromptTemplate,
     ChatPromptTemplate,
     LangchainPromptTemplate,
@@ -10,7 +10,7 @@ from llama_index.prompts.base import (
     PromptType,
     SelectorPromptTemplate,
 )
-from llama_index.prompts.display_utils import display_prompt_dict
+from llama_index.legacy.prompts.display_utils import display_prompt_dict
 
 __all__ = [
     "Prompt",

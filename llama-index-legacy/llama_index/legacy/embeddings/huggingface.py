@@ -1,21 +1,21 @@
 import asyncio
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.core.embeddings.base import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
     Embedding,
 )
-from llama_index.embeddings.huggingface_utils import (
+from llama_index.legacy.embeddings.huggingface_utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
     format_query,
     format_text,
 )
-from llama_index.embeddings.pooling import Pooling
-from llama_index.llms.huggingface import HuggingFaceInferenceAPI
-from llama_index.utils import get_cache_dir, infer_torch_device
+from llama_index.legacy.embeddings.pooling import Pooling
+from llama_index.legacy.llms.huggingface import HuggingFaceInferenceAPI
+from llama_index.legacy.utils import get_cache_dir, infer_torch_device
 
 if TYPE_CHECKING:
     import torch

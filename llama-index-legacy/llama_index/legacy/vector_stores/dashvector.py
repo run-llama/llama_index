@@ -1,16 +1,17 @@
 """DashVector Vector Store."""
+
 import logging
 from typing import Any, List, Optional, cast
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.vector_stores.types import (
+from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
+from llama_index.legacy.vector_stores.types import (
     MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import (
+from llama_index.legacy.vector_stores.utils import (
     DEFAULT_DOC_ID_KEY,
     DEFAULT_TEXT_KEY,
     legacy_metadata_dict_to_node,
@@ -107,11 +108,13 @@ class DashVectorStore(VectorStore):
                 Doc(
                     id=node.node_id,
                     vector=node.embedding,
-                    sparse_vector=self._encoder.encode_documents(
-                        node.get_content(metadata_mode=MetadataMode.EMBED)
-                    )
-                    if self._support_sparse_vector
-                    else None,
+                    sparse_vector=(
+                        self._encoder.encode_documents(
+                            node.get_content(metadata_mode=MetadataMode.EMBED)
+                        )
+                        if self._support_sparse_vector
+                        else None
+                    ),
                     fields=node_to_metadata_dict(
                         node, remove_text=False, flat_metadata=self.flat_metadata
                     ),

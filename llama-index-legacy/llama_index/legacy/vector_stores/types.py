@@ -1,4 +1,5 @@
 """Vector store index types."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -16,13 +17,13 @@ from typing import (
 import fsspec
 from deprecated import deprecated
 
-from llama_index.bridge.pydantic import (
+from llama_index.legacy.bridge.pydantic import (
     BaseModel,
     StrictFloat,
     StrictInt,
     StrictStr,
 )
-from llama_index.schema import BaseComponent, BaseNode, TextNode
+from llama_index.legacy.schema import BaseComponent, BaseNode, TextNode
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "vector_store.json"

@@ -6,7 +6,7 @@ from typing import Any, List
 with contextlib.suppress(ImportError):
     import yaml
 
-from llama_index.output_parsers.base import OutputParserException
+from llama_index.legacy.output_parsers.base import OutputParserException
 
 
 def _marshal_llm_to_json(output: str) -> str:

@@ -1,12 +1,13 @@
 """Azure Cognitive Search vector store."""
+
 import enum
 import json
 import logging
 from enum import auto
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.vector_stores.types import (
+from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
+from llama_index.legacy.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStore,
@@ -14,7 +15,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import (
+from llama_index.legacy.vector_stores.utils import (
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,

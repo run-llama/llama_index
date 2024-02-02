@@ -2,12 +2,12 @@
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.legacy.core.base_retriever import BaseRetriever
 
 if TYPE_CHECKING:
-    from llama_index.langchain_helpers.agents.tools import LlamaIndexTool
-from llama_index.schema import MetadataMode
-from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
+    from llama_index.legacy.langchain_helpers.agents.tools import LlamaIndexTool
+from llama_index.legacy.schema import MetadataMode
+from llama_index.legacy.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 
 DEFAULT_NAME = "retriever_tool"
 DEFAULT_DESCRIPTION = """Useful for running a natural language query

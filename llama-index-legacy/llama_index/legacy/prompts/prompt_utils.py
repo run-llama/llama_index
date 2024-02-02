@@ -1,6 +1,6 @@
 from typing import List
 
-from llama_index.prompts.base import BasePromptTemplate
+from llama_index.legacy.prompts.base import BasePromptTemplate
 
 
 def get_empty_prompt_txt(prompt: BasePromptTemplate) -> str:

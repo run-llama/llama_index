@@ -3,25 +3,26 @@
 An index that is built on top of an existing MyScale cluster.
 
 """
+
 import json
 import logging
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.readers.myscale import (
+from llama_index.legacy.readers.myscale import (
     MyScaleSettings,
     escape_str,
     format_list_to_string,
 )
-from llama_index.schema import (
+from llama_index.legacy.schema import (
     BaseNode,
     MetadataMode,
     NodeRelationship,
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.service_context import ServiceContext
-from llama_index.utils import iter_batch
-from llama_index.vector_stores.types import (
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.utils import iter_batch
+from llama_index.legacy.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,

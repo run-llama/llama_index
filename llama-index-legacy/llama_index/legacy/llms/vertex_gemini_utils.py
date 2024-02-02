@@ -1,7 +1,7 @@
 import base64
 from typing import Any, Dict, Union
 
-from llama_index.llms import ChatMessage, MessageRole
+from llama_index.legacy.llms import ChatMessage, MessageRole
 
 
 def is_gemini_model(model: str) -> bool:

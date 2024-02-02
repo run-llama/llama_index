@@ -16,19 +16,19 @@ import datetime
 import logging
 from typing import Any, List, Optional, Sequence, Type, cast
 
-from llama_index import VectorStoreIndex
-from llama_index.data_structs.data_structs import IndexDict
-from llama_index.indices.base import IndexType
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.managed.base import BaseManagedIndex
-from llama_index.indices.query.base import BaseQueryEngine
-from llama_index.indices.service_context import ServiceContext
-from llama_index.response_synthesizers.google.generativeai import (
+from llama_index.legacy import VectorStoreIndex
+from llama_index.legacy.data_structs.data_structs import IndexDict
+from llama_index.legacy.indices.base import IndexType
+from llama_index.legacy.indices.base_retriever import BaseRetriever
+from llama_index.legacy.indices.managed.base import BaseManagedIndex
+from llama_index.legacy.indices.query.base import BaseQueryEngine
+from llama_index.legacy.indices.service_context import ServiceContext
+from llama_index.legacy.response_synthesizers.google.generativeai import (
     GoogleTextSynthesizer,
 )
-from llama_index.schema import BaseNode, Document
-from llama_index.storage.storage_context import StorageContext
-from llama_index.vector_stores.google.generativeai import (
+from llama_index.legacy.schema import BaseNode, Document
+from llama_index.legacy.storage.storage_context import StorageContext
+from llama_index.legacy.vector_stores.google.generativeai import (
     GoogleVectorStore,
     google_service_context,
 )
@@ -205,7 +205,9 @@ class GoogleIndex(BaseManagedIndex):
             answer is likely correct.
         """
         # NOTE: lazy import
-        from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
+        from llama_index.legacy.query_engine.retriever_query_engine import (
+            RetrieverQueryEngine,
+        )
 
         # Don't overwrite the caller's kwargs, which may surprise them.
         local_kwargs = kwargs.copy()

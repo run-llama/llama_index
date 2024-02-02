@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Callable, List, Optional
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.node_parser.interface import TextSplitter
-from llama_index.node_parser.node_utils import default_id_func
-from llama_index.schema import Document
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.node_parser.interface import TextSplitter
+from llama_index.legacy.node_parser.node_utils import default_id_func
+from llama_index.legacy.schema import Document
 
 if TYPE_CHECKING:
     from langchain.text_splitter import TextSplitter as LC_TextSplitter

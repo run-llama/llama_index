@@ -4,7 +4,7 @@ Maintain for backwards compatibility.
 
 """
 
-from llama_index.core.embeddings.base import (
+from llama_index.legacy.core.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
     Embedding,

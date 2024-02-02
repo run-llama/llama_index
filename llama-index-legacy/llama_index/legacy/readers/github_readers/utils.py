@@ -3,13 +3,14 @@ Github readers utils.
 
 This module contains utility functions for the Github readers.
 """
+
 import asyncio
 import os
 import time
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from llama_index.readers.github_readers.github_api_client import (
+from llama_index.legacy.readers.github_readers.github_api_client import (
     GitBlobResponseModel,
     GithubClient,
     GitTreeResponseModel,

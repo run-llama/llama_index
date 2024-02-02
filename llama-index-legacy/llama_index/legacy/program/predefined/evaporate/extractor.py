@@ -5,7 +5,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from llama_index.program.predefined.evaporate.prompts import (
+from llama_index.legacy.program.predefined.evaporate.prompts import (
     DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
     DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
     FN_GENERATION_PROMPT,
@@ -13,8 +13,8 @@ from llama_index.program.predefined.evaporate.prompts import (
     FnGeneratePrompt,
     SchemaIDPrompt,
 )
-from llama_index.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
-from llama_index.service_context import ServiceContext
+from llama_index.legacy.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
+from llama_index.legacy.service_context import ServiceContext
 
 
 class TimeoutException(Exception):
@@ -155,7 +155,7 @@ class EvaporateExtractor:
     ) -> str:
         """Extract function from nodes."""
         # avoid circular import
-        from llama_index.response_synthesizers import (
+        from llama_index.legacy.response_synthesizers import (
             ResponseMode,
             get_response_synthesizer,
         )

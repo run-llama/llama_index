@@ -7,18 +7,18 @@ This module contains retrievers for document summary indices.
 import logging
 from typing import Any, Callable, List, Optional
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.indices.document_summary.base import DocumentSummaryIndex
-from llama_index.indices.utils import (
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.indices.document_summary.base import DocumentSummaryIndex
+from llama_index.legacy.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
 )
-from llama_index.prompts import BasePromptTemplate
-from llama_index.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
-from llama_index.schema import NodeWithScore, QueryBundle
-from llama_index.service_context import ServiceContext
-from llama_index.vector_stores.types import VectorStoreQuery
+from llama_index.legacy.prompts import BasePromptTemplate
+from llama_index.legacy.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
+from llama_index.legacy.schema import NodeWithScore, QueryBundle
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.vector_stores.types import VectorStoreQuery
 
 logger = logging.getLogger(__name__)
 

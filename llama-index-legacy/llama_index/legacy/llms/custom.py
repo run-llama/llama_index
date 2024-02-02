@@ -1,6 +1,6 @@
 from typing import Any, Sequence
 
-from llama_index.core.llms.types import (
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -8,15 +8,15 @@ from llama_index.core.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
 )
-from llama_index.llms.base import (
+from llama_index.legacy.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.llms.generic_utils import (
+from llama_index.legacy.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
 )
-from llama_index.llms.llm import LLM
+from llama_index.legacy.llms.llm import LLM
 
 
 class CustomLLM(LLM):

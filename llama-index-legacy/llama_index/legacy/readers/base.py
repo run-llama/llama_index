@@ -1,11 +1,12 @@
 """Base reader class."""
+
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List
 
 if TYPE_CHECKING:
-    from llama_index.bridge.langchain import Document as LCDocument
-from llama_index.bridge.pydantic import Field
-from llama_index.schema import BaseComponent, Document
+    from llama_index.legacy.bridge.langchain import Document as LCDocument
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.schema import BaseComponent, Document
 
 
 class BaseReader(ABC):

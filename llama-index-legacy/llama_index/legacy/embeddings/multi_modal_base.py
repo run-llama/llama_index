@@ -4,13 +4,13 @@ import asyncio
 from abc import abstractmethod
 from typing import Coroutine, List, Tuple
 
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.embeddings.base import (
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.core.embeddings.base import (
     BaseEmbedding,
     Embedding,
 )
-from llama_index.schema import ImageType
-from llama_index.utils import get_tqdm_iterable
+from llama_index.legacy.schema import ImageType
+from llama_index.legacy.utils import get_tqdm_iterable
 
 
 class MultiModalEmbedding(BaseEmbedding):

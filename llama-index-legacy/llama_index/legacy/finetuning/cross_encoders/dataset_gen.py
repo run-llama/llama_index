@@ -1,15 +1,16 @@
 """Dataset Generator for Cross Encoder Finetuning."""
+
 import re
 from dataclasses import dataclass
 from typing import List, Optional
 
 from tqdm.auto import tqdm
 
-from llama_index import VectorStoreIndex, get_tokenizer
-from llama_index.llms import ChatMessage, OpenAI
-from llama_index.llms.llm import LLM
-from llama_index.node_parser import TokenTextSplitter
-from llama_index.schema import Document, MetadataMode
+from llama_index.legacy import VectorStoreIndex, get_tokenizer
+from llama_index.legacy.llms import ChatMessage, OpenAI
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.node_parser import TokenTextSplitter
+from llama_index.legacy.schema import Document, MetadataMode
 
 
 @dataclass

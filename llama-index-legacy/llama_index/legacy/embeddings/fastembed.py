@@ -2,8 +2,8 @@ from typing import Any, List, Literal, Optional
 
 import numpy as np
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.embeddings.base import BaseEmbedding
 
 
 class FastEmbedEmbedding(BaseEmbedding):
@@ -18,7 +18,7 @@ class FastEmbedEmbedding(BaseEmbedding):
 
     `pip install fastembed`
     Example:
-        from llama_index.embeddings import FastEmbedEmbedding
+        from llama_index.legacy.embeddings import FastEmbedEmbedding
         fastembed = FastEmbedEmbedding()
     """
 

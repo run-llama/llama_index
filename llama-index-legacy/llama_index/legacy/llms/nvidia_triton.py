@@ -6,9 +6,9 @@ from typing import (
     Sequence,
 )
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.llms.base import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.llms.base import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -19,11 +19,11 @@ from llama_index.llms.base import (
     LLMMetadata,
     llm_chat_callback,
 )
-from llama_index.llms.generic_utils import (
+from llama_index.legacy.llms.generic_utils import (
     completion_to_chat_decorator,
 )
-from llama_index.llms.llm import LLM
-from llama_index.llms.nvidia_triton_utils import GrpcTritonClient
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.llms.nvidia_triton_utils import GrpcTritonClient
 
 DEFAULT_SERVER_URL = "localhost:8001"
 DEFAULT_MAX_RETRIES = 3

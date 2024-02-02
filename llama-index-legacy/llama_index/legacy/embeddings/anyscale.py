@@ -3,14 +3,14 @@ from typing import Any, Dict, List, Optional
 import httpx
 from openai import AsyncOpenAI, OpenAI
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.callbacks.base import CallbackManager
-from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
-from llama_index.llms.anyscale_utils import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.legacy.llms.anyscale_utils import (
     resolve_anyscale_credentials,
 )
-from llama_index.llms.openai_utils import create_retry_decorator
+from llama_index.legacy.llms.openai_utils import create_retry_decorator
 
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "thenlper/gte-large"

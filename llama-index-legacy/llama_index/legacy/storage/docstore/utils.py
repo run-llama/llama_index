@@ -1,5 +1,5 @@
-from llama_index.constants import DATA_KEY, TYPE_KEY
-from llama_index.schema import (
+from llama_index.legacy.constants import DATA_KEY, TYPE_KEY
+from llama_index.legacy.schema import (
     BaseNode,
     Document,
     ImageDocument,

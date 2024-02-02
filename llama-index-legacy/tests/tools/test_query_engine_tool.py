@@ -1,10 +1,11 @@
 """Test tools."""
+
 from typing import Type, cast
 
 import pytest
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.query_engine.custom import CustomQueryEngine
-from llama_index.legacy.tools.query_engine import QueryEngineTool
+from llama_index.legacy.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.legacy.query_engine.custom import CustomQueryEngine
+from llama_index.legacy.legacy.tools.query_engine import QueryEngineTool
 
 
 class MockQueryEngine(CustomQueryEngine):

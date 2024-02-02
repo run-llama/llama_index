@@ -1,15 +1,16 @@
 """Test query pipeline worker."""
 
-
 from typing import Any, Dict, Set, Tuple
 
-from llama_index.legacy.agent.custom.pipeline_worker import QueryPipelineAgentWorker
-from llama_index.legacy.agent.runner.base import AgentRunner
-from llama_index.legacy.agent.types import Task
-from llama_index.legacy.bridge.pydantic import Field
-from llama_index.legacy.chat_engine.types import AgentChatResponse
-from llama_index.legacy.query_pipeline import FnComponent, QueryPipeline
-from llama_index.legacy.query_pipeline.components.agent import (
+from llama_index.legacy.legacy.agent.custom.pipeline_worker import (
+    QueryPipelineAgentWorker,
+)
+from llama_index.legacy.legacy.agent.runner.base import AgentRunner
+from llama_index.legacy.legacy.agent.types import Task
+from llama_index.legacy.legacy.bridge.pydantic import Field
+from llama_index.legacy.legacy.chat_engine.types import AgentChatResponse
+from llama_index.legacy.legacy.query_pipeline import FnComponent, QueryPipeline
+from llama_index.legacy.legacy.query_pipeline.components.agent import (
     AgentFnComponent,
     AgentInputComponent,
     CustomAgentComponent,

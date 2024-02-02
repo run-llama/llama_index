@@ -1,5 +1,5 @@
-from llama_index.storage.chat_store.base import BaseChatStore
-from llama_index.storage.chat_store.simple_chat_store import SimpleChatStore
+from llama_index.legacy.storage.chat_store.base import BaseChatStore
+from llama_index.legacy.storage.chat_store.simple_chat_store import SimpleChatStore
 
 RECOGNIZED_CHAT_STORES = {
     SimpleChatStore.class_name(): SimpleChatStore,

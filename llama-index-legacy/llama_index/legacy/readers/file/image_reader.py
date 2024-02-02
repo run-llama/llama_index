@@ -8,9 +8,9 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from llama_index.readers.base import BaseReader
-from llama_index.schema import Document, ImageDocument
-from llama_index.utils import infer_torch_device
+from llama_index.legacy.readers.base import BaseReader
+from llama_index.legacy.schema import Document, ImageDocument
+from llama_index.legacy.utils import infer_torch_device
 
 
 class ImageReader(BaseReader):
@@ -58,7 +58,7 @@ class ImageReader(BaseReader):
         """Parse file."""
         from PIL import Image
 
-        from llama_index.img_utils import img_2_b64
+        from llama_index.legacy.img_utils import img_2_b64
 
         # load document image
         image = Image.open(file)

@@ -5,8 +5,8 @@ from typing import Any, List, Optional
 import httpx
 import requests
 
-from llama_index.bridge.pydantic import Field
-from llama_index.embeddings.base import BaseEmbedding, Embedding
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.embeddings.base import BaseEmbedding, Embedding
 
 
 class TogetherEmbedding(BaseEmbedding):

@@ -1,11 +1,11 @@
 """Tools."""
 
-from llama_index.tools.download import download_tool
-from llama_index.tools.function_tool import FunctionTool
-from llama_index.tools.query_engine import QueryEngineTool
-from llama_index.tools.query_plan import QueryPlanTool
-from llama_index.tools.retriever_tool import RetrieverTool
-from llama_index.tools.types import (
+from llama_index.legacy.tools.download import download_tool
+from llama_index.legacy.tools.function_tool import FunctionTool
+from llama_index.legacy.tools.query_engine import QueryEngineTool
+from llama_index.legacy.tools.query_plan import QueryPlanTool
+from llama_index.legacy.tools.retriever_tool import RetrieverTool
+from llama_index.legacy.tools.types import (
     AsyncBaseTool,
     BaseTool,
     ToolMetadata,

@@ -1,8 +1,7 @@
 """Query transform prompts."""
 
-
-from llama_index.prompts.base import PromptTemplate
-from llama_index.prompts.prompt_type import PromptType
+from llama_index.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.prompts.prompt_type import PromptType
 
 # deprecated, kept for backwards compatibility
 """Decompose prompt for query transformation.

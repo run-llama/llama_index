@@ -4,10 +4,10 @@ from typing import Callable, Dict, List, Optional
 
 import tqdm
 
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.schema import Document, QueryBundle
-from llama_index.utils import get_cache_dir
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
+from llama_index.legacy.schema import Document, QueryBundle
+from llama_index.legacy.utils import get_cache_dir
 
 
 class BeirEvaluator:

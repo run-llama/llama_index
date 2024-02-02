@@ -2,13 +2,13 @@
 
 from typing import Optional, Type
 
-from llama_index.download.module import (
+from llama_index.legacy.download.module import (
     LLAMA_HUB_URL,
     MODULE_TYPE,
     download_llama_module,
     track_download,
 )
-from llama_index.tools.tool_spec.base import BaseToolSpec
+from llama_index.legacy.tools.tool_spec.base import BaseToolSpec
 
 
 def download_tool(

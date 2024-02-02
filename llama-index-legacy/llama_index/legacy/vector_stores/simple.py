@@ -9,14 +9,14 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, cast
 import fsspec
 from dataclasses_json import DataClassJsonMixin
 
-from llama_index.indices.query.embedding_utils import (
+from llama_index.legacy.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
     get_top_k_mmr_embeddings,
 )
-from llama_index.schema import BaseNode
-from llama_index.utils import concat_dirs
-from llama_index.vector_stores.types import (
+from llama_index.legacy.schema import BaseNode
+from llama_index.legacy.utils import concat_dirs
+from llama_index.legacy.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
     MetadataFilters,
@@ -25,7 +25,7 @@ from llama_index.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import node_to_metadata_dict
+from llama_index.legacy.vector_stores.utils import node_to_metadata_dict
 
 logger = logging.getLogger(__name__)
 

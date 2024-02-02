@@ -1,12 +1,13 @@
 """Notion reader."""
+
 import logging
 import os
 from typing import Any, Dict, List, Optional
 
 import requests  # type: ignore
 
-from llama_index.readers.base import BasePydanticReader
-from llama_index.schema import Document
+from llama_index.legacy.readers.base import BasePydanticReader
+from llama_index.legacy.schema import Document
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
 BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"

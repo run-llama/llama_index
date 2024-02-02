@@ -4,19 +4,19 @@ import asyncio
 from enum import Enum
 from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
-from llama_index import ServiceContext
-from llama_index.evaluation.base import (
+from llama_index.legacy import ServiceContext
+from llama_index.legacy.evaluation.base import (
     BaseEvaluator,
     EvaluationResult,
 )
-from llama_index.prompts import (
+from llama_index.legacy.prompts import (
     BasePromptTemplate,
     ChatMessage,
     ChatPromptTemplate,
     MessageRole,
     PromptTemplate,
 )
-from llama_index.prompts.mixin import PromptDictType
+from llama_index.legacy.prompts.mixin import PromptDictType
 
 DEFAULT_SYSTEM_TEMPLATE = (
     "Please act as an impartial judge and evaluate the quality of the responses provided by two "

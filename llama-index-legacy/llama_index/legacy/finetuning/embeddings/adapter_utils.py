@@ -10,8 +10,8 @@ from torch import Tensor, nn
 from torch.optim import Optimizer
 from tqdm.autonotebook import trange
 
-from llama_index.embeddings.adapter_utils import BaseAdapter
-from llama_index.utils import print_text
+from llama_index.legacy.embeddings.adapter_utils import BaseAdapter
+from llama_index.legacy.utils import print_text
 
 
 class MyMultipleNegativesRankingLoss(nn.Module):

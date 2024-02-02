@@ -4,9 +4,9 @@ from typing import Any, Dict, Sequence, Tuple
 import httpx
 from httpx import Timeout
 
-from llama_index.bridge.pydantic import Field
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
@@ -15,8 +15,8 @@ from llama_index.core.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.custom import CustomLLM
+from llama_index.legacy.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.legacy.llms.custom import CustomLLM
 
 DEFAULT_REQUEST_TIMEOUT = 30.0
 

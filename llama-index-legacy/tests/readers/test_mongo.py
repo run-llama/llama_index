@@ -2,8 +2,8 @@ from typing import Any, Dict, List
 from unittest.mock import patch
 
 import pytest
-from llama_index.legacy.readers.mongo import SimpleMongoReader
-from llama_index.legacy.schema import MetadataMode
+from llama_index.legacy.legacy.readers.mongo import SimpleMongoReader
+from llama_index.legacy.legacy.schema import MetadataMode
 
 try:
     from pymongo import MongoClient

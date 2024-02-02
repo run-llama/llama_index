@@ -5,7 +5,7 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import Dict, Union
 
-from llama_index.prompts.base import BasePromptTemplate
+from llama_index.legacy.prompts.base import BasePromptTemplate
 
 HasPromptType = Union["PromptMixin", BasePromptTemplate]
 PromptDictType = Dict[str, BasePromptTemplate]

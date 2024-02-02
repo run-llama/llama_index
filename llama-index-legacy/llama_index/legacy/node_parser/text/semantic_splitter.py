@@ -2,16 +2,19 @@ from typing import Any, Callable, List, Optional, Sequence, TypedDict
 
 import numpy as np
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks.base import CallbackManager
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.node_parser import NodeParser
-from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.node_utils import build_nodes_from_splits, default_id_func
-from llama_index.node_parser.text.utils import split_by_sentence_tokenizer
-from llama_index.schema import BaseNode, Document
-from llama_index.utils import get_tqdm_iterable
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.embeddings.openai import OpenAIEmbedding
+from llama_index.legacy.node_parser import NodeParser
+from llama_index.legacy.node_parser.interface import NodeParser
+from llama_index.legacy.node_parser.node_utils import (
+    build_nodes_from_splits,
+    default_id_func,
+)
+from llama_index.legacy.node_parser.text.utils import split_by_sentence_tokenizer
+from llama_index.legacy.schema import BaseNode, Document
+from llama_index.legacy.utils import get_tqdm_iterable
 
 DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
 

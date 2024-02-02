@@ -6,22 +6,22 @@ Active Retrieval Augmented Generation.
 
 from typing import Any, Dict, Optional
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.response.schema import RESPONSE_TYPE, Response
-from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.query_engine.flare.answer_inserter import (
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.response.schema import RESPONSE_TYPE, Response
+from llama_index.legacy.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.legacy.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.legacy.query_engine.flare.answer_inserter import (
     BaseLookaheadAnswerInserter,
     LLMLookaheadAnswerInserter,
 )
-from llama_index.query_engine.flare.output_parser import (
+from llama_index.legacy.query_engine.flare.output_parser import (
     IsDoneOutputParser,
     QueryTaskOutputParser,
 )
-from llama_index.schema import QueryBundle
-from llama_index.service_context import ServiceContext
-from llama_index.utils import print_text
+from llama_index.legacy.schema import QueryBundle
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.utils import print_text
 
 # These prompts are taken from the FLARE repo:
 # https://github.com/jzbjyb/FLARE/blob/main/src/templates.py

@@ -1,4 +1,5 @@
 """Elasticsearch vector store."""
+
 import asyncio
 import uuid
 from logging import getLogger
@@ -7,16 +8,19 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union, cast
 import nest_asyncio
 import numpy as np
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.vector_stores.types import (
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
+from llama_index.legacy.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.legacy.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
 
 logger = getLogger(__name__)
 
@@ -230,7 +234,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
     @staticmethod
     def get_user_agent() -> str:
         """Get user agent for elasticsearch client."""
-        import llama_index
+        import llama_index.legacy
 
         return f"llama_index-py-vs/{llama_index.__version__}"
 

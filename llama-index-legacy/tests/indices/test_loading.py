@@ -2,19 +2,25 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from llama_index.legacy.indices.list.base import SummaryIndex
-from llama_index.legacy.indices.loading import (
+from llama_index.legacy.legacy.indices.list.base import SummaryIndex
+from llama_index.legacy.legacy.indices.loading import (
     load_index_from_storage,
     load_indices_from_storage,
 )
-from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
-from llama_index.legacy.query_engine.retriever_query_engine import RetrieverQueryEngine
-from llama_index.legacy.schema import BaseNode, Document
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.storage.docstore.simple_docstore import SimpleDocumentStore
-from llama_index.legacy.storage.index_store.simple_index_store import SimpleIndexStore
-from llama_index.legacy.storage.storage_context import StorageContext
-from llama_index.legacy.vector_stores.faiss import FaissVectorStore
+from llama_index.legacy.legacy.indices.vector_store.base import VectorStoreIndex
+from llama_index.legacy.legacy.query_engine.retriever_query_engine import (
+    RetrieverQueryEngine,
+)
+from llama_index.legacy.legacy.schema import BaseNode, Document
+from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.storage.docstore.simple_docstore import (
+    SimpleDocumentStore,
+)
+from llama_index.legacy.legacy.storage.index_store.simple_index_store import (
+    SimpleIndexStore,
+)
+from llama_index.legacy.legacy.storage.storage_context import StorageContext
+from llama_index.legacy.legacy.vector_stores.faiss import FaissVectorStore
 
 try:
     import faiss

@@ -1,17 +1,17 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks import CallbackManager
-from llama_index.core.query_pipeline.query_component import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.query_pipeline.query_component import (
     ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.schema import BaseComponent, NodeWithScore, QueryBundle
+from llama_index.legacy.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.legacy.schema import BaseComponent, NodeWithScore, QueryBundle
 
 
 class BaseNodePostprocessor(ChainableMixin, BaseComponent, ABC):

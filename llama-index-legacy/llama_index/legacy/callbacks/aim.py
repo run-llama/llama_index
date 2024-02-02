@@ -6,8 +6,8 @@ try:
 except ModuleNotFoundError:
     Run, Text = None, None
 
-from llama_index.callbacks.base_handler import BaseCallbackHandler
-from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.callbacks.base_handler import BaseCallbackHandler
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)

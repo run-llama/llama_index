@@ -1,4 +1,5 @@
 """Utils for jupyter notebook."""
+
 import os
 from io import BytesIO
 from typing import Any, Dict, List, Tuple
@@ -8,10 +9,10 @@ import requests
 from IPython.display import Markdown, display
 from PIL import Image
 
-from llama_index.core.response.schema import Response
-from llama_index.img_utils import b64_2_img
-from llama_index.schema import ImageNode, MetadataMode, NodeWithScore
-from llama_index.utils import truncate_text
+from llama_index.legacy.core.response.schema import Response
+from llama_index.legacy.img_utils import b64_2_img
+from llama_index.legacy.schema import ImageNode, MetadataMode, NodeWithScore
+from llama_index.legacy.utils import truncate_text
 
 DEFAULT_THUMBNAIL_SIZE = (512, 512)
 DEFAULT_IMAGE_MATRIX = (3, 3)

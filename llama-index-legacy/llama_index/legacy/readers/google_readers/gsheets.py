@@ -4,8 +4,8 @@ import logging
 import os
 from typing import Any, List
 
-from llama_index.readers.base import BasePydanticReader
-from llama_index.schema import Document
+from llama_index.legacy.readers.base import BasePydanticReader
+from llama_index.legacy.schema import Document
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 

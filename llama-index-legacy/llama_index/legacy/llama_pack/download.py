@@ -1,12 +1,12 @@
 from typing import Optional, Type
 
-from llama_index.download.module import (
+from llama_index.legacy.download.module import (
     LLAMA_HUB_URL,
     MODULE_TYPE,
     download_llama_module,
     track_download,
 )
-from llama_index.llama_pack.base import BaseLlamaPack
+from llama_index.legacy.llama_pack.base import BaseLlamaPack
 
 
 def download_llama_pack(

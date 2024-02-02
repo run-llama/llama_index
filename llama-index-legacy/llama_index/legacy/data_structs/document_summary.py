@@ -3,9 +3,9 @@
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from llama_index.data_structs.data_structs import IndexStruct
-from llama_index.data_structs.struct_type import IndexStructType
-from llama_index.schema import BaseNode
+from llama_index.legacy.data_structs.data_structs import IndexStruct
+from llama_index.legacy.data_structs.struct_type import IndexStructType
+from llama_index.legacy.schema import BaseNode
 
 
 @dataclass

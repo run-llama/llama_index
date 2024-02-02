@@ -1,14 +1,15 @@
 """Node recency post-processor."""
+
 from datetime import datetime
 from typing import List, Optional, Set
 
 import numpy as np
 import pandas as pd
 
-from llama_index.bridge.pydantic import Field
-from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
-from llama_index.service_context import ServiceContext
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
+from llama_index.legacy.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.legacy.service_context import ServiceContext
 
 # NOTE: currently not being used
 # DEFAULT_INFER_RECENCY_TMPL = (

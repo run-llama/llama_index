@@ -1,13 +1,15 @@
 from typing import Dict, Type
 
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.embeddings.google import GoogleUnivSentEncoderEmbedding
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.embeddings.langchain import LangchainEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
-from llama_index.embeddings.utils import resolve_embed_model
-from llama_index.token_counter.mock_embed_model import MockEmbedding
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.embeddings.google import GoogleUnivSentEncoderEmbedding
+from llama_index.legacy.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.legacy.embeddings.langchain import LangchainEmbedding
+from llama_index.legacy.embeddings.openai import OpenAIEmbedding
+from llama_index.legacy.embeddings.text_embeddings_inference import (
+    TextEmbeddingsInference,
+)
+from llama_index.legacy.embeddings.utils import resolve_embed_model
+from llama_index.legacy.token_counter.mock_embed_model import MockEmbedding
 
 RECOGNIZED_EMBEDDINGS: Dict[str, Type[BaseEmbedding]] = {
     GoogleUnivSentEncoderEmbedding.class_name(): GoogleUnivSentEncoderEmbedding,

@@ -1,10 +1,10 @@
-from llama_index.core.llms.types import (
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
     MessageRole,
 )
-from llama_index.types import TokenGen
+from llama_index.legacy.types import TokenGen
 
 
 def response_gen_from_query_engine(response_gen: TokenGen) -> ChatResponseGen:

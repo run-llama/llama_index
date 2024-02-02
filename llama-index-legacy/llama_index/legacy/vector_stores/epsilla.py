@@ -1,16 +1,17 @@
 """Epsilla vector store."""
+
 import logging
 from typing import Any, List, Optional
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.vector_stores.types import (
+from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
+from llama_index.legacy.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import (
+from llama_index.legacy.vector_stores.utils import (
     DEFAULT_DOC_ID_KEY,
     DEFAULT_EMBEDDING_KEY,
     DEFAULT_TEXT_KEY,

@@ -2,25 +2,25 @@ import logging
 from dataclasses import dataclass
 from typing import Any, List, Optional, cast
 
-import llama_index
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.callbacks.base import CallbackManager
-from llama_index.core.embeddings.base import BaseEmbedding
-from llama_index.indices.prompt_helper import PromptHelper
-from llama_index.llm_predictor import LLMPredictor
-from llama_index.llm_predictor.base import BaseLLMPredictor, LLMMetadata
-from llama_index.llms.llm import LLM
-from llama_index.llms.utils import LLMType, resolve_llm
-from llama_index.logger import LlamaLogger
-from llama_index.node_parser.interface import NodeParser, TextSplitter
-from llama_index.node_parser.text.sentence import (
+import llama_index.legacy
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.core.embeddings.base import BaseEmbedding
+from llama_index.legacy.indices.prompt_helper import PromptHelper
+from llama_index.legacy.llm_predictor import LLMPredictor
+from llama_index.legacy.llm_predictor.base import BaseLLMPredictor, LLMMetadata
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.llms.utils import LLMType, resolve_llm
+from llama_index.legacy.logger import LlamaLogger
+from llama_index.legacy.node_parser.interface import NodeParser, TextSplitter
+from llama_index.legacy.node_parser.text.sentence import (
     DEFAULT_CHUNK_SIZE,
     SENTENCE_CHUNK_OVERLAP,
     SentenceSplitter,
 )
-from llama_index.prompts.base import BasePromptTemplate
-from llama_index.schema import TransformComponent
-from llama_index.types import PydanticProgramMode
+from llama_index.legacy.prompts.base import BasePromptTemplate
+from llama_index.legacy.schema import TransformComponent
+from llama_index.legacy.types import PydanticProgramMode
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +131,7 @@ class ServiceContext:
             chunk_size_limit (Optional[int]): renamed to chunk_size
 
         """
-        from llama_index.embeddings.utils import EmbedType, resolve_embed_model
+        from llama_index.legacy.embeddings.utils import EmbedType, resolve_embed_model
 
         embed_model = cast(EmbedType, embed_model)
 
@@ -248,7 +248,7 @@ class ServiceContext:
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
         """Instantiate a new service context using a previous as the defaults."""
-        from llama_index.embeddings.utils import EmbedType, resolve_embed_model
+        from llama_index.legacy.embeddings.utils import EmbedType, resolve_embed_model
 
         embed_model = cast(EmbedType, embed_model)
 
@@ -357,10 +357,10 @@ class ServiceContext:
 
     @classmethod
     def from_dict(cls, data: dict) -> "ServiceContext":
-        from llama_index.embeddings.loading import load_embed_model
-        from llama_index.extractors.loading import load_extractor
-        from llama_index.llm_predictor.loading import load_predictor
-        from llama_index.node_parser.loading import load_parser
+        from llama_index.legacy.embeddings.loading import load_embed_model
+        from llama_index.legacy.extractors.loading import load_extractor
+        from llama_index.legacy.llm_predictor.loading import load_predictor
+        from llama_index.legacy.node_parser.loading import load_parser
 
         service_context_data = ServiceContextData.parse_obj(data)
 

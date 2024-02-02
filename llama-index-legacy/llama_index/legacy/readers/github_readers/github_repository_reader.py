@@ -15,20 +15,20 @@ import pathlib
 import tempfile
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from llama_index.readers.base import BaseReader
-from llama_index.readers.file.base import DEFAULT_FILE_READER_CLS
-from llama_index.readers.github_readers.github_api_client import (
+from llama_index.legacy.readers.base import BaseReader
+from llama_index.legacy.readers.file.base import DEFAULT_FILE_READER_CLS
+from llama_index.legacy.readers.github_readers.github_api_client import (
     GitBranchResponseModel,
     GitCommitResponseModel,
     GithubClient,
     GitTreeResponseModel,
 )
-from llama_index.readers.github_readers.utils import (
+from llama_index.legacy.readers.github_readers.utils import (
     BufferedGitBlobDataIterator,
     get_file_extension,
     print_if_verbose,
 )
-from llama_index.schema import Document
+from llama_index.legacy.schema import Document
 
 logger = logging.getLogger(__name__)
 

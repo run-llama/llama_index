@@ -5,13 +5,14 @@ files into a List of Documents,
 with each Document containing text from under an Obsidian header.
 
 """
+
 import os
 from pathlib import Path
 from typing import Any, List
 
-from llama_index.readers.base import BaseReader
-from llama_index.readers.file.markdown_reader import MarkdownReader
-from llama_index.schema import Document
+from llama_index.legacy.readers.base import BaseReader
+from llama_index.legacy.readers.file.markdown_reader import MarkdownReader
+from llama_index.legacy.schema import Document
 
 
 class ObsidianReader(BaseReader):

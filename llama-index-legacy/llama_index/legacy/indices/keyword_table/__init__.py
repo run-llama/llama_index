@@ -1,20 +1,20 @@
 """Keyword Table Index Data Structures."""
 
 # indices
-from llama_index.indices.keyword_table.base import (
+from llama_index.legacy.indices.keyword_table.base import (
     GPTKeywordTableIndex,
     KeywordTableIndex,
 )
-from llama_index.indices.keyword_table.rake_base import (
+from llama_index.legacy.indices.keyword_table.rake_base import (
     GPTRAKEKeywordTableIndex,
     RAKEKeywordTableIndex,
 )
-from llama_index.indices.keyword_table.retrievers import (
+from llama_index.legacy.indices.keyword_table.retrievers import (
     KeywordTableGPTRetriever,
     KeywordTableRAKERetriever,
     KeywordTableSimpleRetriever,
 )
-from llama_index.indices.keyword_table.simple_base import (
+from llama_index.legacy.indices.keyword_table.simple_base import (
     GPTSimpleKeywordTableIndex,
     SimpleKeywordTableIndex,
 )

@@ -1,9 +1,9 @@
 import json
 from typing import Sequence
 
-from llama_index.prompts.base import PromptTemplate
-from llama_index.question_gen.types import SubQuestion
-from llama_index.tools.types import ToolMetadata
+from llama_index.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.question_gen.types import SubQuestion
+from llama_index.legacy.tools.types import ToolMetadata
 
 # deprecated, kept for backward compatibility
 SubQuestionPrompt = PromptTemplate

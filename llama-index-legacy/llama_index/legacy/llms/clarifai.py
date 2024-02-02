@@ -1,8 +1,8 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -12,12 +12,12 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.llms.base import (
+from llama_index.legacy.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.llms.llm import LLM
-from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
 
 EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
 

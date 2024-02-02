@@ -3,7 +3,7 @@ import functools
 import logging
 from typing import Any, Callable, cast
 
-from llama_index.callbacks.base import CallbackManager
+from llama_index.legacy.callbacks.base import CallbackManager
 
 logger = logging.getLogger(__name__)
 

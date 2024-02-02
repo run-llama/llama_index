@@ -7,12 +7,14 @@ from typing import Any, Dict, cast
 
 import pandas as pd
 import pytest
-from llama_index.legacy.core.response.schema import Response
-from llama_index.legacy.indices.query.schema import QueryBundle
-from llama_index.legacy.indices.service_context import ServiceContext
-from llama_index.legacy.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
-from llama_index.legacy.query_engine.pandas.output_parser import PandasInstructionParser
-from llama_index.legacy.query_engine.pandas.pandas_query_engine import (
+from llama_index.legacy.legacy.core.response.schema import Response
+from llama_index.legacy.legacy.indices.query.schema import QueryBundle
+from llama_index.legacy.legacy.indices.service_context import ServiceContext
+from llama_index.legacy.legacy.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
+from llama_index.legacy.legacy.query_engine.pandas.output_parser import (
+    PandasInstructionParser,
+)
+from llama_index.legacy.legacy.query_engine.pandas.pandas_query_engine import (
     PandasQueryEngine,
 )
 
@@ -127,7 +129,7 @@ def test_default_output_processor_e2e(tmp_path: Path) -> None:
     import sys
 
     import pandas as pd
-    from llama_index.legacy.query_engine import PandasQueryEngine
+    from llama_index.legacy.legacy.query_engine import PandasQueryEngine
 
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))

@@ -1,7 +1,7 @@
 import base64
 from typing import List
 
-from llama_index.schema import ImageDocument
+from llama_index.legacy.schema import ImageDocument
 
 
 def load_image_urls(image_urls: List[str]) -> List[ImageDocument]:

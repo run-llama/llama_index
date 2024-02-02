@@ -2,7 +2,7 @@
 
 from typing import Any, Optional
 
-from llama_index.tts.base import BaseTTS
+from llama_index.legacy.tts.base import BaseTTS
 
 
 class ElevenLabsTTS(BaseTTS):

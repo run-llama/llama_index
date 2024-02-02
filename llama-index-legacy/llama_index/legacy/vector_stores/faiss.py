@@ -12,10 +12,10 @@ import fsspec
 import numpy as np
 from fsspec.implementations.local import LocalFileSystem
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.schema import BaseNode
-from llama_index.vector_stores.simple import DEFAULT_VECTOR_STORE, NAMESPACE_SEP
-from llama_index.vector_stores.types import (
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.schema import BaseNode
+from llama_index.legacy.vector_stores.simple import DEFAULT_VECTOR_STORE, NAMESPACE_SEP
+from llama_index.legacy.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
     BasePydanticVectorStore,

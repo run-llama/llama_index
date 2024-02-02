@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Any, Callable, Generator, Optional, Sequence
 if TYPE_CHECKING:
     from langchain.base_language import BaseLanguageModel
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -16,13 +16,13 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.generic_utils import (
+from llama_index.legacy.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.legacy.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
 )
-from llama_index.llms.llm import LLM
-from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
 
 
 class LangChainLLM(LLM):
@@ -60,13 +60,13 @@ class LangChainLLM(LLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        from llama_index.llms.langchain_utils import get_llm_metadata
+        from llama_index.legacy.llms.langchain_utils import get_llm_metadata
 
         return get_llm_metadata(self._llm)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        from llama_index.llms.langchain_utils import (
+        from llama_index.legacy.llms.langchain_utils import (
             from_lc_messages,
             to_lc_messages,
         )
@@ -103,7 +103,7 @@ class LangChainLLM(LLM):
         if hasattr(self._llm, "stream"):
 
             def gen() -> Generator[ChatResponse, None, None]:
-                from llama_index.llms.langchain_utils import (
+                from llama_index.legacy.llms.langchain_utils import (
                     from_lc_messages,
                     to_lc_messages,
                 )
@@ -122,7 +122,7 @@ class LangChainLLM(LLM):
             return gen()
 
         else:
-            from llama_index.langchain_helpers.streaming import (
+            from llama_index.legacy.langchain_helpers.streaming import (
                 StreamingGeneratorCallbackHandler,
             )
 
@@ -159,7 +159,7 @@ class LangChainLLM(LLM):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
-        from llama_index.langchain_helpers.streaming import (
+        from llama_index.legacy.langchain_helpers.streaming import (
             StreamingGeneratorCallbackHandler,
         )
 

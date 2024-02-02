@@ -1,10 +1,10 @@
 import json
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -15,9 +15,9 @@ from llama_index.core.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.llm import LLM
-from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.legacy.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_RUNGPT_MODEL = "rungpt"
 DEFAULT_RUNGPT_TEMP = 0.75

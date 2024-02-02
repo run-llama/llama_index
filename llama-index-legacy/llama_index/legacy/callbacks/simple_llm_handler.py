@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.callbacks.base_handler import BaseCallbackHandler
-from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.callbacks.base_handler import BaseCallbackHandler
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
 
 
 class SimpleLLMHandler(BaseCallbackHandler):
@@ -21,7 +21,7 @@ class SimpleLLMHandler(BaseCallbackHandler):
         return
 
     def _print_llm_event(self, payload: dict) -> None:
-        from llama_index.llms import ChatMessage
+        from llama_index.legacy.llms import ChatMessage
 
         if EventPayload.PROMPT in payload:
             prompt = str(payload.get(EventPayload.PROMPT))

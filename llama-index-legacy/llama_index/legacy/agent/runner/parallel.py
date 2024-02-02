@@ -4,30 +4,30 @@ import asyncio
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Union, cast
 
-from llama_index.agent.runner.base import BaseAgentRunner
-from llama_index.agent.types import (
+from llama_index.legacy.agent.runner.base import BaseAgentRunner
+from llama_index.legacy.agent.types import (
     BaseAgentWorker,
     Task,
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.callbacks import (
+from llama_index.legacy.bridge.pydantic import BaseModel, Field
+from llama_index.legacy.callbacks import (
     CallbackManager,
     CBEventType,
     EventPayload,
     trace_method,
 )
-from llama_index.chat_engine.types import (
+from llama_index.legacy.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.llms.base import ChatMessage
-from llama_index.llms.llm import LLM
-from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.memory.types import BaseMemory
+from llama_index.legacy.llms.base import ChatMessage
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.legacy.memory.types import BaseMemory
 
 
 class DAGTaskState(BaseModel):

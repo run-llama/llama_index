@@ -1,10 +1,11 @@
 """Cohere Reranker Finetuning Engine."""
+
 import importlib.util
 import os
 from typing import Optional
 
-from llama_index.finetuning.types import BaseCohereRerankerFinetuningEngine
-from llama_index.indices.postprocessor import CohereRerank
+from llama_index.legacy.finetuning.types import BaseCohereRerankerFinetuningEngine
+from llama_index.legacy.indices.postprocessor import CohereRerank
 
 
 class CohereRerankerFinetuneEngine(BaseCohereRerankerFinetuningEngine):

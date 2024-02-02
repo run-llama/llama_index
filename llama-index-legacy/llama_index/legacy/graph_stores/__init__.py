@@ -1,10 +1,10 @@
 """Graph stores."""
 
-from llama_index.graph_stores.falkordb import FalkorDBGraphStore
-from llama_index.graph_stores.kuzu import KuzuGraphStore
-from llama_index.graph_stores.nebulagraph import NebulaGraphStore
-from llama_index.graph_stores.neo4j import Neo4jGraphStore
-from llama_index.graph_stores.simple import SimpleGraphStore
+from llama_index.legacy.graph_stores.falkordb import FalkorDBGraphStore
+from llama_index.legacy.graph_stores.kuzu import KuzuGraphStore
+from llama_index.legacy.graph_stores.nebulagraph import NebulaGraphStore
+from llama_index.legacy.graph_stores.neo4j import Neo4jGraphStore
+from llama_index.legacy.graph_stores.simple import SimpleGraphStore
 
 __all__ = [
     "SimpleGraphStore",

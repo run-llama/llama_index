@@ -2,8 +2,8 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
-from llama_index.legacy.core.response.schema import Response
-from llama_index.legacy.query_engine.cogniswitch_query_engine import (
+from llama_index.legacy.legacy.core.response.schema import Response
+from llama_index.legacy.legacy.query_engine.cogniswitch_query_engine import (
     CogniswitchQueryEngine,
 )
 

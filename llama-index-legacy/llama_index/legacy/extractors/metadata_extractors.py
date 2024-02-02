@@ -19,18 +19,19 @@ The prompts used to generate the metadata are specifically aimed to help
 disambiguate the document or subsection from other similar documents or subsections.
 (similar with contrastive learning)
 """
+
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
 
-from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.extractors.interface import BaseExtractor
-from llama_index.llm_predictor.base import LLMPredictorType
-from llama_index.llms.llm import LLM
-from llama_index.llms.utils import resolve_llm
-from llama_index.prompts import PromptTemplate
-from llama_index.schema import BaseNode, TextNode
-from llama_index.types import BasePydanticProgram
-from llama_index.utils import get_tqdm_iterable
+from llama_index.legacy.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.extractors.interface import BaseExtractor
+from llama_index.legacy.llm_predictor.base import LLMPredictorType
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.llms.utils import resolve_llm
+from llama_index.legacy.prompts import PromptTemplate
+from llama_index.legacy.schema import BaseNode, TextNode
+from llama_index.legacy.types import BasePydanticProgram
+from llama_index.legacy.utils import get_tqdm_iterable
 
 DEFAULT_TITLE_NODE_TEMPLATE = """\
 Context: {context_str}. Give a title that summarizes all of \

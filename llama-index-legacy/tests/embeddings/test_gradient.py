@@ -1,5 +1,5 @@
 import pytest
-from llama_index.legacy.embeddings.gradient import GradientEmbedding
+from llama_index.legacy.legacy.embeddings.gradient import GradientEmbedding
 
 try:
     import gradientai

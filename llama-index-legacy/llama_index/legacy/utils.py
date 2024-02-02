@@ -97,7 +97,7 @@ class Tokenizer(Protocol):
 
 
 def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> None:
-    import llama_index
+    import llama_index.legacy
 
     if isinstance(tokenizer, Tokenizer):
         llama_index.global_tokenizer = tokenizer.encode
@@ -106,7 +106,7 @@ def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> 
 
 
 def get_tokenizer() -> Callable[[str], List]:
-    import llama_index
+    import llama_index.legacy
 
     if llama_index.global_tokenizer is None:
         tiktoken_import_err = (
@@ -352,7 +352,7 @@ def add_sync_version(func: Any) -> Any:
     return func
 
 
-# Sample text from llama_index's readme
+# Sample text from llama_index.legacy's readme
 SAMPLE_TEXT = """
 Context
 LLMs are a phenomenal piece of technology for knowledge generation and reasoning.

@@ -3,16 +3,16 @@ from typing import Optional
 
 import fsspec
 
-from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
-from llama_index.storage.docstore.types import (
+from llama_index.legacy.storage.docstore.keyval_docstore import KVDocumentStore
+from llama_index.legacy.storage.docstore.types import (
     DEFAULT_BATCH_SIZE,
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
     DEFAULT_PERSIST_PATH,
 )
-from llama_index.storage.kvstore.simple_kvstore import SimpleKVStore
-from llama_index.storage.kvstore.types import BaseInMemoryKVStore
-from llama_index.utils import concat_dirs
+from llama_index.legacy.storage.kvstore.simple_kvstore import SimpleKVStore
+from llama_index.legacy.storage.kvstore.types import BaseInMemoryKVStore
+from llama_index.legacy.utils import concat_dirs
 
 
 class SimpleDocumentStore(KVDocumentStore):

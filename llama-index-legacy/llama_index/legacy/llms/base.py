@@ -10,9 +10,9 @@ from typing import (
     cast,
 )
 
-from llama_index.bridge.pydantic import Field, validator
-from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field, validator
+from llama_index.legacy.callbacks import CallbackManager, CBEventType, EventPayload
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -22,10 +22,10 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.core.query_pipeline.query_component import (
+from llama_index.legacy.core.query_pipeline.query_component import (
     ChainableMixin,
 )
-from llama_index.schema import BaseComponent
+from llama_index.legacy.schema import BaseComponent
 
 
 def llm_chat_callback() -> Callable:

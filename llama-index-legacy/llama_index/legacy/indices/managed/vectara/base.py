@@ -14,13 +14,13 @@ from typing import Any, Dict, List, Optional, Sequence, Type
 
 import requests
 
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.data_structs.data_structs import IndexDict, IndexStructType
-from llama_index.indices.managed.base import BaseManagedIndex, IndexType
-from llama_index.schema import BaseNode, Document, MetadataMode, TextNode
-from llama_index.service_context import ServiceContext
-from llama_index.storage.storage_context import StorageContext
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.data_structs.data_structs import IndexDict, IndexStructType
+from llama_index.legacy.indices.managed.base import BaseManagedIndex, IndexType
+from llama_index.legacy.schema import BaseNode, Document, MetadataMode, TextNode
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.storage.storage_context import StorageContext
 
 _logger = logging.getLogger(__name__)
 
@@ -322,19 +322,23 @@ class VectaraIndex(BaseManagedIndex):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
-        from llama_index.indices.managed.vectara.retriever import VectaraRetriever
+        from llama_index.legacy.indices.managed.vectara.retriever import (
+            VectaraRetriever,
+        )
 
         return VectaraRetriever(self, **kwargs)
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
         if kwargs.get("summary_enabled", True):
-            from llama_index.indices.managed.vectara.query import VectaraQueryEngine
+            from llama_index.legacy.indices.managed.vectara.query import (
+                VectaraQueryEngine,
+            )
 
             kwargs["summary_enabled"] = True
             retriever = self.as_retriever(**kwargs)
             return VectaraQueryEngine.from_args(retriever, **kwargs)  # type: ignore
         else:
-            from llama_index.query_engine.retriever_query_engine import (
+            from llama_index.legacy.query_engine.retriever_query_engine import (
                 RetrieverQueryEngine,
             )
 

@@ -3,9 +3,11 @@
 import logging
 from typing import Dict, List, Tuple, cast
 
-from llama_index.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
-from llama_index.indices.utils import get_sorted_node_list
-from llama_index.schema import BaseNode, MetadataMode, QueryBundle
+from llama_index.legacy.indices.tree.select_leaf_retriever import (
+    TreeSelectLeafRetriever,
+)
+from llama_index.legacy.indices.utils import get_sorted_node_list
+from llama_index.legacy.schema import BaseNode, MetadataMode, QueryBundle
 
 logger = logging.getLogger(__name__)
 

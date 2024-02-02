@@ -1,20 +1,25 @@
 """Base retriever."""
+
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.query_pipeline.query_component import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.query_pipeline.query_component import (
     ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
-from llama_index.schema import (
+from llama_index.legacy.prompts.mixin import (
+    PromptDictType,
+    PromptMixin,
+    PromptMixinType,
+)
+from llama_index.legacy.schema import (
     BaseNode,
     IndexNode,
     NodeWithScore,
@@ -22,8 +27,8 @@ from llama_index.schema import (
     QueryType,
     TextNode,
 )
-from llama_index.service_context import ServiceContext
-from llama_index.utils import print_text
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.utils import print_text
 
 
 class BaseRetriever(ChainableMixin, PromptMixin):

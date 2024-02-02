@@ -4,16 +4,15 @@ Tool that wraps any data loader, and is able to load data on-demand.
 
 """
 
-
 from typing import Any, Dict, List, Optional, Type
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.indices.base import BaseIndex
-from llama_index.indices.vector_store import VectorStoreIndex
-from llama_index.tools.function_tool import FunctionTool
-from llama_index.tools.tool_spec.base import SPEC_FUNCTION_TYPE, BaseToolSpec
-from llama_index.tools.types import ToolMetadata
-from llama_index.tools.utils import create_schema_from_function
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.indices.base import BaseIndex
+from llama_index.legacy.indices.vector_store import VectorStoreIndex
+from llama_index.legacy.tools.function_tool import FunctionTool
+from llama_index.legacy.tools.tool_spec.base import SPEC_FUNCTION_TYPE, BaseToolSpec
+from llama_index.legacy.tools.types import ToolMetadata
+from llama_index.legacy.tools.utils import create_schema_from_function
 
 
 class LoadAndSearchToolSpec(BaseToolSpec):

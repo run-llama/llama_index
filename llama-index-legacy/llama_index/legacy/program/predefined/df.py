@@ -2,10 +2,10 @@ from typing import Any, List, Optional, Type, cast
 
 import pandas as pd
 
-from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.types import BasePydanticProgram
+from llama_index.legacy.bridge.pydantic import BaseModel, Field
+from llama_index.legacy.program.llm_prompt_program import BaseLLMFunctionProgram
+from llama_index.legacy.program.openai_program import OpenAIPydanticProgram
+from llama_index.legacy.types import BasePydanticProgram
 
 
 class DataFrameRow(BaseModel):

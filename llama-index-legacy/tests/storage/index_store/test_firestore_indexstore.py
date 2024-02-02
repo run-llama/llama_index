@@ -1,9 +1,9 @@
 import pytest
-from llama_index.legacy.data_structs.data_structs import IndexGraph
-from llama_index.legacy.storage.index_store.firestore_indexstore import (
+from llama_index.legacy.legacy.data_structs.data_structs import IndexGraph
+from llama_index.legacy.legacy.storage.index_store.firestore_indexstore import (
     FirestoreIndexStore,
 )
-from llama_index.legacy.storage.kvstore.firestore_kvstore import FirestoreKVStore
+from llama_index.legacy.legacy.storage.kvstore.firestore_kvstore import FirestoreKVStore
 
 try:
     from google.cloud import firestore_v1 as firestore

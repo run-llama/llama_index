@@ -4,22 +4,22 @@ from typing import Any, Dict, Generic, List, Optional, Type
 
 import pandas as pd
 
-from llama_index.program.predefined.df import (
+from llama_index.legacy.program.predefined.df import (
     DataFrameRow,
     DataFrameRowsOnly,
     DataFrameValuesPerColumn,
 )
-from llama_index.program.predefined.evaporate.extractor import EvaporateExtractor
-from llama_index.program.predefined.evaporate.prompts import (
+from llama_index.legacy.program.predefined.evaporate.extractor import EvaporateExtractor
+from llama_index.legacy.program.predefined.evaporate.prompts import (
     DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
     FN_GENERATION_LIST_PROMPT,
     FnGeneratePrompt,
     SchemaIDPrompt,
 )
-from llama_index.schema import BaseNode, TextNode
-from llama_index.service_context import ServiceContext
-from llama_index.types import BasePydanticProgram, Model
-from llama_index.utils import print_text
+from llama_index.legacy.schema import BaseNode, TextNode
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.types import BasePydanticProgram, Model
+from llama_index.legacy.utils import print_text
 
 logger = logging.getLogger(__name__)
 

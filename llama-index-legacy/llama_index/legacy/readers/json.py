@@ -4,8 +4,8 @@ import json
 import re
 from typing import Any, Generator, List, Optional
 
-from llama_index.readers.base import BaseReader
-from llama_index.schema import Document
+from llama_index.legacy.readers.base import BaseReader
+from llama_index.legacy.schema import Document
 
 
 def _depth_first_yield(

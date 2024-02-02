@@ -1,4 +1,4 @@
-from llama_index.extractors.metadata_extractors import (
+from llama_index.legacy.extractors.metadata_extractors import (
     BaseExtractor,
     EntityExtractor,
     KeywordExtractor,

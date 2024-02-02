@@ -3,20 +3,27 @@
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.response.schema import RESPONSE_TYPE
-from llama_index.graph_stores.registry import (
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.response.schema import RESPONSE_TYPE
+from llama_index.legacy.graph_stores.registry import (
     GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE,
     GraphStoreType,
 )
-from llama_index.prompts.base import BasePromptTemplate, PromptTemplate, PromptType
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
-from llama_index.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.service_context import ServiceContext
-from llama_index.storage.storage_context import StorageContext
-from llama_index.utils import print_text
+from llama_index.legacy.prompts.base import (
+    BasePromptTemplate,
+    PromptTemplate,
+    PromptType,
+)
+from llama_index.legacy.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.legacy.response_synthesizers import (
+    BaseSynthesizer,
+    get_response_synthesizer,
+)
+from llama_index.legacy.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.storage.storage_context import StorageContext
+from llama_index.legacy.utils import print_text
 
 logger = logging.getLogger(__name__)
 

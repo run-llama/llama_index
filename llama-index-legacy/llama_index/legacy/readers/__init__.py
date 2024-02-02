@@ -10,53 +10,53 @@ definition of a Document - the bare minimum is a `text` property.
 
 """
 
-from llama_index.readers.bagel import BagelReader
-from llama_index.readers.base import ReaderConfig
-from llama_index.readers.chatgpt_plugin import ChatGPTRetrievalPluginReader
-from llama_index.readers.chroma import ChromaReader
-from llama_index.readers.dashvector import DashVectorReader
-from llama_index.readers.deeplake import DeepLakeReader
-from llama_index.readers.discord_reader import DiscordReader
-from llama_index.readers.download import download_loader
-from llama_index.readers.elasticsearch import ElasticsearchReader
-from llama_index.readers.faiss import FaissReader
+from llama_index.legacy.readers.bagel import BagelReader
+from llama_index.legacy.readers.base import ReaderConfig
+from llama_index.legacy.readers.chatgpt_plugin import ChatGPTRetrievalPluginReader
+from llama_index.legacy.readers.chroma import ChromaReader
+from llama_index.legacy.readers.dashvector import DashVectorReader
+from llama_index.legacy.readers.deeplake import DeepLakeReader
+from llama_index.legacy.readers.discord_reader import DiscordReader
+from llama_index.legacy.readers.download import download_loader
+from llama_index.legacy.readers.elasticsearch import ElasticsearchReader
+from llama_index.legacy.readers.faiss import FaissReader
 
 # readers
-from llama_index.readers.file.base import SimpleDirectoryReader
-from llama_index.readers.file.docs_reader import PDFReader
-from llama_index.readers.file.html_reader import HTMLTagReader
-from llama_index.readers.github_readers.github_repository_reader import (
+from llama_index.legacy.readers.file.base import SimpleDirectoryReader
+from llama_index.legacy.readers.file.docs_reader import PDFReader
+from llama_index.legacy.readers.file.html_reader import HTMLTagReader
+from llama_index.legacy.readers.github_readers.github_repository_reader import (
     GithubRepositoryReader,
 )
-from llama_index.readers.google_readers.gdocs import GoogleDocsReader
-from llama_index.readers.json import JSONReader
-from llama_index.readers.make_com.wrapper import MakeWrapper
-from llama_index.readers.mbox import MboxReader
-from llama_index.readers.metal import MetalReader
-from llama_index.readers.milvus import MilvusReader
-from llama_index.readers.mongo import SimpleMongoReader
-from llama_index.readers.myscale import MyScaleReader
-from llama_index.readers.notion import NotionPageReader
-from llama_index.readers.obsidian import ObsidianReader
-from llama_index.readers.pathway import PathwayReader
-from llama_index.readers.pinecone import PineconeReader
-from llama_index.readers.psychic import PsychicReader
-from llama_index.readers.qdrant import QdrantReader
-from llama_index.readers.slack import SlackReader
-from llama_index.readers.steamship.file_reader import SteamshipFileReader
-from llama_index.readers.string_iterable import StringIterableReader
-from llama_index.readers.twitter import TwitterTweetReader
-from llama_index.readers.txtai import TxtaiReader
-from llama_index.readers.weaviate.reader import WeaviateReader
-from llama_index.readers.web import (
+from llama_index.legacy.readers.google_readers.gdocs import GoogleDocsReader
+from llama_index.legacy.readers.json import JSONReader
+from llama_index.legacy.readers.make_com.wrapper import MakeWrapper
+from llama_index.legacy.readers.mbox import MboxReader
+from llama_index.legacy.readers.metal import MetalReader
+from llama_index.legacy.readers.milvus import MilvusReader
+from llama_index.legacy.readers.mongo import SimpleMongoReader
+from llama_index.legacy.readers.myscale import MyScaleReader
+from llama_index.legacy.readers.notion import NotionPageReader
+from llama_index.legacy.readers.obsidian import ObsidianReader
+from llama_index.legacy.readers.pathway import PathwayReader
+from llama_index.legacy.readers.pinecone import PineconeReader
+from llama_index.legacy.readers.psychic import PsychicReader
+from llama_index.legacy.readers.qdrant import QdrantReader
+from llama_index.legacy.readers.slack import SlackReader
+from llama_index.legacy.readers.steamship.file_reader import SteamshipFileReader
+from llama_index.legacy.readers.string_iterable import StringIterableReader
+from llama_index.legacy.readers.twitter import TwitterTweetReader
+from llama_index.legacy.readers.txtai import TxtaiReader
+from llama_index.legacy.readers.weaviate.reader import WeaviateReader
+from llama_index.legacy.readers.web import (
     BeautifulSoupWebReader,
     RssReader,
     SimpleWebPageReader,
     TrafilaturaWebReader,
 )
-from llama_index.readers.wikipedia import WikipediaReader
-from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
-from llama_index.schema import Document
+from llama_index.legacy.readers.wikipedia import WikipediaReader
+from llama_index.legacy.readers.youtube_transcript import YoutubeTranscriptReader
+from llama_index.legacy.schema import Document
 
 __all__ = [
     "WikipediaReader",

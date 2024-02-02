@@ -4,19 +4,19 @@ import httpx
 from openai.lib.azure import AsyncAzureOpenAI
 from openai.lib.azure import AzureOpenAI as SyncAzureOpenAI
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.constants import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.llms.generic_utils import get_from_param_or_env
-from llama_index.llms.openai_utils import (
+from llama_index.legacy.llms.generic_utils import get_from_param_or_env
+from llama_index.legacy.llms.openai_utils import (
     refresh_openai_azuread_token,
     resolve_from_aliases,
 )
-from llama_index.multi_modal_llms import MultiModalLLMMetadata, OpenAIMultiModal
+from llama_index.legacy.multi_modal_llms import MultiModalLLMMetadata, OpenAIMultiModal
 
 
 class AzureOpenAIMultiModal(OpenAIMultiModal):

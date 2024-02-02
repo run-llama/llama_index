@@ -1,11 +1,11 @@
 import logging
 from typing import Any, List
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.core.embeddings.base import Embedding
-from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
-from llama_index.schema import ImageType
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.constants import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.legacy.core.embeddings.base import Embedding
+from llama_index.legacy.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.legacy.schema import ImageType
 
 logger = logging.getLogger(__name__)
 

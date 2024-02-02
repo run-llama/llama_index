@@ -1,32 +1,36 @@
 """Default query for SQLStructStoreIndex."""
+
 import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from sqlalchemy import Table
 
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.response.schema import Response
-from llama_index.indices.struct_store.container_builder import (
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.response.schema import Response
+from llama_index.legacy.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
-from llama_index.indices.struct_store.sql import SQLStructStoreIndex
-from llama_index.indices.struct_store.sql_retriever import NLSQLRetriever, SQLParserMode
-from llama_index.objects.base import ObjectRetriever
-from llama_index.objects.table_node_mapping import SQLTableSchema
-from llama_index.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.default_prompts import (
+from llama_index.legacy.indices.struct_store.sql import SQLStructStoreIndex
+from llama_index.legacy.indices.struct_store.sql_retriever import (
+    NLSQLRetriever,
+    SQLParserMode,
+)
+from llama_index.legacy.objects.base import ObjectRetriever
+from llama_index.legacy.objects.table_node_mapping import SQLTableSchema
+from llama_index.legacy.prompts import BasePromptTemplate, PromptTemplate
+from llama_index.legacy.prompts.default_prompts import (
     DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT,
     DEFAULT_TEXT_TO_SQL_PROMPT,
 )
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.prompts.prompt_type import PromptType
-from llama_index.response_synthesizers import (
+from llama_index.legacy.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.legacy.prompts.prompt_type import PromptType
+from llama_index.legacy.response_synthesizers import (
     get_response_synthesizer,
 )
-from llama_index.schema import QueryBundle
-from llama_index.service_context import ServiceContext
-from llama_index.utilities.sql_wrapper import SQLDatabase
+from llama_index.legacy.schema import QueryBundle
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.utilities.sql_wrapper import SQLDatabase
 
 logger = logging.getLogger(__name__)
 

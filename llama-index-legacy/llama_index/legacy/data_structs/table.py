@@ -5,8 +5,8 @@ from typing import Any, Dict
 
 from dataclasses_json import DataClassJsonMixin
 
-from llama_index.data_structs.data_structs import IndexStruct
-from llama_index.data_structs.struct_type import IndexStructType
+from llama_index.legacy.data_structs.data_structs import IndexStruct
+from llama_index.legacy.data_structs.struct_type import IndexStructType
 
 
 @dataclass

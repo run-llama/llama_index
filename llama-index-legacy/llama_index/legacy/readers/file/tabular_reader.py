@@ -3,13 +3,14 @@
 Contains parsers for tabular data files.
 
 """
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from llama_index.readers.base import BaseReader
-from llama_index.schema import Document
+from llama_index.legacy.readers.base import BaseReader
+from llama_index.legacy.schema import Document
 
 
 class CSVReader(BaseReader):

@@ -1,9 +1,9 @@
 from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_TEMPERATURE
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.constants import DEFAULT_TEMPERATURE
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -13,8 +13,8 @@ from llama_index.core.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
-from llama_index.llms.generic_utils import (
+from llama_index.legacy.llms.base import llm_chat_callback, llm_completion_callback
+from llama_index.legacy.llms.generic_utils import (
     achat_to_completion_decorator,
     acompletion_to_chat_decorator,
     astream_chat_to_completion_decorator,
@@ -24,7 +24,7 @@ from llama_index.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.llms.litellm_utils import (
+from llama_index.legacy.llms.litellm_utils import (
     acompletion_with_retry,
     completion_with_retry,
     from_litellm_message,
@@ -33,8 +33,8 @@ from llama_index.llms.litellm_utils import (
     to_openai_message_dicts,
     validate_litellm_api_key,
 )
-from llama_index.llms.llm import LLM
-from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 

@@ -4,7 +4,7 @@ Maintain this file for backwards compat.
 
 """
 
-from llama_index.core.llms.types import (
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,

@@ -1,7 +1,7 @@
 """List-based data structures."""
 
-from llama_index.indices.list.base import GPTListIndex, ListIndex, SummaryIndex
-from llama_index.indices.list.retrievers import (
+from llama_index.legacy.indices.list.base import GPTListIndex, ListIndex, SummaryIndex
+from llama_index.legacy.indices.list.retrievers import (
     ListIndexEmbeddingRetriever,
     ListIndexLLMRetriever,
     ListIndexRetriever,

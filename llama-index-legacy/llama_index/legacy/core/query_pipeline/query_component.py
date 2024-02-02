@@ -3,14 +3,14 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generator, List, Optional, Set, Union, cast, get_args
 
-from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.callbacks.base import CallbackManager
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import BaseModel, Field
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.core.llms.types import (
     ChatResponse,
     CompletionResponse,
 )
-from llama_index.core.response.schema import Response
-from llama_index.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.legacy.core.response.schema import Response
+from llama_index.legacy.schema import NodeWithScore, QueryBundle, TextNode
 
 ## Define common types used throughout these components
 StringableInput = Union[

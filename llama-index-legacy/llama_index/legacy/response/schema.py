@@ -4,7 +4,7 @@ Maintain this file for backwards compat.
 
 """
 
-from llama_index.core.response.schema import (
+from llama_index.legacy.core.response.schema import (
     RESPONSE_TYPE,
     PydanticResponse,
     Response,

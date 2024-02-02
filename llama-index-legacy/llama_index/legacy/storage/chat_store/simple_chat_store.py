@@ -4,9 +4,9 @@ from typing import Dict, List, Optional
 
 import fsspec
 
-from llama_index.bridge.pydantic import Field
-from llama_index.llms import ChatMessage
-from llama_index.storage.chat_store.base import BaseChatStore
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.llms import ChatMessage
+from llama_index.legacy.storage.chat_store.base import BaseChatStore
 
 
 class SimpleChatStore(BaseChatStore):

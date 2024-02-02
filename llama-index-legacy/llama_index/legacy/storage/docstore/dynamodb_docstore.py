@@ -1,8 +1,8 @@
 from typing import Optional
 
-from llama_index.storage.docstore.keyval_docstore import KVDocumentStore
-from llama_index.storage.docstore.types import DEFAULT_BATCH_SIZE
-from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
+from llama_index.legacy.storage.docstore.keyval_docstore import KVDocumentStore
+from llama_index.legacy.storage.docstore.types import DEFAULT_BATCH_SIZE
+from llama_index.legacy.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
 
 
 class DynamoDBDocumentStore(KVDocumentStore):

@@ -6,13 +6,16 @@ from typing import Any, Dict, cast
 from unittest.mock import patch
 
 import pytest
-from llama_index.legacy.core.response.schema import Response
-from llama_index.legacy.indices.struct_store.json_query import JSONQueryEngine, JSONType
-from llama_index.legacy.llm_predictor import LLMPredictor
-from llama_index.legacy.llms.mock import MockLLM
-from llama_index.legacy.prompts.base import BasePromptTemplate
-from llama_index.legacy.schema import QueryBundle
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.core.response.schema import Response
+from llama_index.legacy.legacy.indices.struct_store.json_query import (
+    JSONQueryEngine,
+    JSONType,
+)
+from llama_index.legacy.legacy.llm_predictor import LLMPredictor
+from llama_index.legacy.legacy.llms.mock import MockLLM
+from llama_index.legacy.legacy.prompts.base import BasePromptTemplate
+from llama_index.legacy.legacy.schema import QueryBundle
+from llama_index.legacy.legacy.service_context import ServiceContext
 
 TEST_PARAMS = [
     # synthesize_response, call_apredict

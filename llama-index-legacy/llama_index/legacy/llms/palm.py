@@ -1,19 +1,20 @@
 """Palm API."""
+
 import os
 from typing import Any, Callable, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_NUM_OUTPUTS
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.constants import DEFAULT_NUM_OUTPUTS
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.llms.base import llm_completion_callback
-from llama_index.llms.custom import CustomLLM
-from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.legacy.llms.base import llm_completion_callback
+from llama_index.legacy.llms.custom import CustomLLM
+from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
 
 DEFAULT_PALM_MODEL = "models/text-bison-001"
 

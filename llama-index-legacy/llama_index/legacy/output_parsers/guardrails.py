@@ -3,9 +3,10 @@
 See https://github.com/ShreyaR/guardrails.
 
 """
+
 from deprecated import deprecated
 
-from llama_index.output_parsers.base import ChainableOutputParser
+from llama_index.legacy.output_parsers.base import ChainableOutputParser
 
 try:
     from guardrails import Guard
@@ -17,7 +18,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 if TYPE_CHECKING:
-    from llama_index.bridge.langchain import BaseLLM
+    from llama_index.legacy.bridge.langchain import BaseLLM
 
 
 def get_callable(llm: Optional["BaseLLM"]) -> Optional[Callable]:

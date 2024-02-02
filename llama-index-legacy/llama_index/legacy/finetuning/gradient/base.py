@@ -3,8 +3,8 @@
 import json
 from typing import Any, Optional, overload
 
-from llama_index.finetuning.types import BaseLLMFinetuneEngine
-from llama_index.llms.gradient import GradientModelAdapterLLM
+from llama_index.legacy.finetuning.types import BaseLLMFinetuneEngine
+from llama_index.legacy.llms.gradient import GradientModelAdapterLLM
 
 
 class GradientFinetuneEngine(BaseLLMFinetuneEngine):

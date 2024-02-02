@@ -1,10 +1,10 @@
 from abc import abstractmethod
 from typing import List, Sequence
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.prompts.mixin import PromptMixin, PromptMixinType
-from llama_index.schema import QueryBundle
-from llama_index.tools.types import ToolMetadata
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.prompts.mixin import PromptMixin, PromptMixinType
+from llama_index.legacy.schema import QueryBundle
+from llama_index.legacy.tools.types import ToolMetadata
 
 
 class SubQuestion(BaseModel):

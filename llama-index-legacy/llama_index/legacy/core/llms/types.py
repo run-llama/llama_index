@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Any, AsyncGenerator, Generator, Optional
 
-from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.legacy.bridge.pydantic import BaseModel, Field
+from llama_index.legacy.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 
 class MessageRole(str, Enum):

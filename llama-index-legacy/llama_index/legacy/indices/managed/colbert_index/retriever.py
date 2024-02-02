@@ -1,10 +1,10 @@
 from typing import Any, Dict, List, Optional
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.schema import NodeWithScore, QueryBundle
-from llama_index.vector_stores.types import MetadataFilters
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.schema import NodeWithScore, QueryBundle
+from llama_index.legacy.vector_stores.types import MetadataFilters
 
 from .base import ColbertIndex
 

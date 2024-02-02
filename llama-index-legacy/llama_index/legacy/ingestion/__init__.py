@@ -1,5 +1,5 @@
-from llama_index.ingestion.cache import IngestionCache
-from llama_index.ingestion.pipeline import (
+from llama_index.legacy.ingestion.cache import IngestionCache
+from llama_index.legacy.ingestion.pipeline import (
     DocstoreStrategy,
     IngestionPipeline,
     arun_transformations,

@@ -1,12 +1,12 @@
 from typing import Dict, Type
 
-from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.vector_stores.lantern import LanternVectorStore
-from llama_index.vector_stores.pinecone import PineconeVectorStore
-from llama_index.vector_stores.postgres import PGVectorStore
-from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.vector_stores.types import BasePydanticVectorStore
-from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.legacy.vector_stores.chroma import ChromaVectorStore
+from llama_index.legacy.vector_stores.lantern import LanternVectorStore
+from llama_index.legacy.vector_stores.pinecone import PineconeVectorStore
+from llama_index.legacy.vector_stores.postgres import PGVectorStore
+from llama_index.legacy.vector_stores.qdrant import QdrantVectorStore
+from llama_index.legacy.vector_stores.types import BasePydanticVectorStore
+from llama_index.legacy.vector_stores.weaviate import WeaviateVectorStore
 
 LOADABLE_VECTOR_STORES: Dict[str, Type[BasePydanticVectorStore]] = {
     ChromaVectorStore.class_name(): ChromaVectorStore,

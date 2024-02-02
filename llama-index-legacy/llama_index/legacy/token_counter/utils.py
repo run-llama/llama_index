@@ -1,7 +1,8 @@
 """Token predictor utils."""
+
 from typing import Optional
 
-from llama_index.indices.keyword_table.utils import simple_extract_keywords
+from llama_index.legacy.indices.keyword_table.utils import simple_extract_keywords
 
 
 def mock_extract_keywords_response(

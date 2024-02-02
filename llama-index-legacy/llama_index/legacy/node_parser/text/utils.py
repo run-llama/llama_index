@@ -1,7 +1,7 @@
 import logging
 from typing import Callable, List
 
-from llama_index.node_parser.interface import TextSplitter
+from llama_index.legacy.node_parser.interface import TextSplitter
 
 logger = logging.getLogger(__name__)
 

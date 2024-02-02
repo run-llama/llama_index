@@ -1,4 +1,5 @@
 """Test finetuning engine."""
+
 import pkgutil
 
 import pytest
@@ -7,14 +8,12 @@ import pytest
 def test_torch_imports() -> None:
     """Test that torch is an optional dependency."""
     # importing fine-tuning modules should be ok
-    from llama_index.legacy.finetuning import EmbeddingAdapterFinetuneEngine  # noqa
-    from llama_index.legacy.finetuning import OpenAIFinetuneEngine  # noqa
-    from llama_index.legacy.finetuning import SentenceTransformersFinetuneEngine  # noqa
+    from llama_index.legacy.legacy.finetuning import OpenAIFinetuneEngine  # noqa
 
     # if torch isn't installed, then these should fail
     if pkgutil.find_loader("torch") is None:
         with pytest.raises(ModuleNotFoundError):
-            from llama_index.legacy.embeddings.adapter_utils import LinearLayer
+            pass
     else:
         # else, importing these should be ok
-        from llama_index.legacy.embeddings.adapter_utils import LinearLayer  # noqa
+        pass

@@ -9,11 +9,11 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 import tqdm
 
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.query_engine.retriever_query_engine import RetrieverQueryEngine
-from llama_index.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.utils import get_cache_dir
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.query_engine.retriever_query_engine import RetrieverQueryEngine
+from llama_index.legacy.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.legacy.utils import get_cache_dir
 
 DEV_DISTRACTOR_URL = """http://curtis.ml.cmu.edu/datasets/\
 hotpot/hotpot_dev_distractor_v1.json"""

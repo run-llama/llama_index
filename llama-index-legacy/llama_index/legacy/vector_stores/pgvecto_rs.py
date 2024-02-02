@@ -1,14 +1,17 @@
 import logging
 from typing import TYPE_CHECKING, Any, List
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.schema import BaseNode, MetadataMode
-from llama_index.vector_stores.types import (
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.schema import BaseNode, MetadataMode
+from llama_index.legacy.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import metadata_dict_to_node, node_to_metadata_dict
+from llama_index.legacy.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
 
 logger = logging.getLogger(__name__)
 import_err_msg = (
@@ -70,11 +73,13 @@ class PGVectoRsStore(BasePydanticVectorStore):
         results = self._client.search(
             embedding=query.query_embedding,
             top_k=query.similarity_top_k,
-            filter=meta_contains(
-                {pair.key: pair.value for pair in query.filters.legacy_filters()}
-            )
-            if query.filters is not None
-            else None,
+            filter=(
+                meta_contains(
+                    {pair.key: pair.value for pair in query.filters.legacy_filters()}
+                )
+                if query.filters is not None
+                else None
+            ),
         )
 
         nodes = [

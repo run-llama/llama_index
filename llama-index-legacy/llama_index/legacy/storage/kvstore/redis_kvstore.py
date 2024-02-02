@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from llama_index.storage.kvstore.types import (
+from llama_index.legacy.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
     DEFAULT_COLLECTION,
     BaseKVStore,
@@ -21,7 +21,7 @@ class RedisKVStore(BaseKVStore):
             ValueError: If redis-py is not installed
 
     Examples:
-        >>> from llama_index.storage.kvstore.redis_kvstore import RedisKVStore
+        >>> from llama_index.legacy.storage.kvstore.redis_kvstore import RedisKVStore
         >>> # Create a RedisKVStore
         >>> redis_kv_store = RedisKVStore(
         >>>     redis_url="redis://127.0.0.1:6379")

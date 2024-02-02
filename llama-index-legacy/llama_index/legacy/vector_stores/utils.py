@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, Optional, Tuple
 
-from llama_index.schema import (
+from llama_index.legacy.schema import (
     BaseNode,
     ImageNode,
     IndexNode,

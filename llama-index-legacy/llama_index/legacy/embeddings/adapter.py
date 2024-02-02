@@ -3,11 +3,11 @@
 import logging
 from typing import Any, List, Optional, Type, cast
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.core.embeddings.base import BaseEmbedding
-from llama_index.utils import infer_torch_device
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.constants import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.legacy.core.embeddings.base import BaseEmbedding
+from llama_index.legacy.utils import infer_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class AdapterEmbeddingModel(BaseEmbedding):
         """Init params."""
         import torch
 
-        from llama_index.embeddings.adapter_utils import BaseAdapter, LinearLayer
+        from llama_index.legacy.embeddings.adapter_utils import BaseAdapter, LinearLayer
 
         if device is None:
             device = infer_torch_device()

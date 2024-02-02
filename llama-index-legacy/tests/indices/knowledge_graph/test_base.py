@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
-from llama_index.legacy.embeddings.base import BaseEmbedding
-from llama_index.legacy.indices.knowledge_graph.base import KnowledgeGraphIndex
-from llama_index.legacy.schema import Document, TextNode
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.legacy.indices.knowledge_graph.base import KnowledgeGraphIndex
+from llama_index.legacy.legacy.schema import Document, TextNode
+from llama_index.legacy.legacy.service_context import ServiceContext
 
 from tests.mock_utils.mock_prompts import (
     MOCK_KG_TRIPLET_EXTRACT_PROMPT,

@@ -1,33 +1,34 @@
 """Node PostProcessor module."""
 
-
-from llama_index.postprocessor.cohere_rerank import CohereRerank
-from llama_index.postprocessor.flag_embedding_reranker import FlagEmbeddingReranker
-from llama_index.postprocessor.llm_rerank import LLMRerank
-from llama_index.postprocessor.longllmlingua import LongLLMLinguaPostprocessor
-from llama_index.postprocessor.metadata_replacement import (
+from llama_index.legacy.postprocessor.cohere_rerank import CohereRerank
+from llama_index.legacy.postprocessor.flag_embedding_reranker import (
+    FlagEmbeddingReranker,
+)
+from llama_index.legacy.postprocessor.llm_rerank import LLMRerank
+from llama_index.legacy.postprocessor.longllmlingua import LongLLMLinguaPostprocessor
+from llama_index.legacy.postprocessor.metadata_replacement import (
     MetadataReplacementPostProcessor,
 )
-from llama_index.postprocessor.node import (
+from llama_index.legacy.postprocessor.node import (
     AutoPrevNextNodePostprocessor,
     KeywordNodePostprocessor,
     LongContextReorder,
     PrevNextNodePostprocessor,
     SimilarityPostprocessor,
 )
-from llama_index.postprocessor.node_recency import (
+from llama_index.legacy.postprocessor.node_recency import (
     EmbeddingRecencyPostprocessor,
     FixedRecencyPostprocessor,
     TimeWeightedPostprocessor,
 )
-from llama_index.postprocessor.optimizer import SentenceEmbeddingOptimizer
-from llama_index.postprocessor.pii import (
+from llama_index.legacy.postprocessor.optimizer import SentenceEmbeddingOptimizer
+from llama_index.legacy.postprocessor.pii import (
     NERPIINodePostprocessor,
     PIINodePostprocessor,
 )
-from llama_index.postprocessor.rankGPT_rerank import RankGPTRerank
-from llama_index.postprocessor.sbert_rerank import SentenceTransformerRerank
-from llama_index.postprocessor.types import BaseNodePostprocessor
+from llama_index.legacy.postprocessor.rankGPT_rerank import RankGPTRerank
+from llama_index.legacy.postprocessor.sbert_rerank import SentenceTransformerRerank
+from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
 
 __all__ = [
     "SimilarityPostprocessor",

@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from typing import Any, List, Tuple
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.schema import NodeWithScore, QueryBundle
 
 
 class BaseAutoRetriever(BaseRetriever):

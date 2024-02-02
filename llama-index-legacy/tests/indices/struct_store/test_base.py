@@ -2,13 +2,15 @@
 
 from typing import Any, Dict, List, Tuple
 
-from llama_index.legacy.indices.list.base import SummaryIndex
-from llama_index.legacy.indices.struct_store.sql import (
+from llama_index.legacy.legacy.indices.list.base import SummaryIndex
+from llama_index.legacy.legacy.indices.struct_store.sql import (
     SQLContextContainerBuilder,
     SQLStructStoreIndex,
 )
-from llama_index.legacy.indices.struct_store.sql_query import NLStructStoreQueryEngine
-from llama_index.legacy.schema import (
+from llama_index.legacy.legacy.indices.struct_store.sql_query import (
+    NLStructStoreQueryEngine,
+)
+from llama_index.legacy.legacy.schema import (
     BaseNode,
     Document,
     NodeRelationship,
@@ -16,8 +18,8 @@ from llama_index.legacy.schema import (
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.utilities.sql_wrapper import SQLDatabase
+from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import (
     Column,
     Integer,

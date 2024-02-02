@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 import numpy as np
 
-from llama_index.tts.base import BaseTTS
+from llama_index.legacy.tts.base import BaseTTS
 
 # text to be chunked into chunks of 10 words
 # to avoid hallicunation for bark

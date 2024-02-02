@@ -1,4 +1,5 @@
 """Test MongoDB Atlas Vector Search functionality."""
+
 from __future__ import annotations
 
 import os
@@ -20,9 +21,9 @@ try:
 except (ImportError, Exception):
     pymongo_available = False
 
-from llama_index.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.legacy.vector_stores.mongodb import MongoDBAtlasVectorSearch
-from llama_index.legacy.vector_stores.types import VectorStoreQuery
+from llama_index.legacy.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.legacy.legacy.vector_stores.mongodb import MongoDBAtlasVectorSearch
+from llama_index.legacy.legacy.vector_stores.types import VectorStoreQuery
 
 
 @pytest.fixture(scope="session")

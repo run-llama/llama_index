@@ -9,15 +9,15 @@ https://developers.generativeai.google/guide
 import logging
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
 
-from llama_index.bridge.pydantic import BaseModel  # type: ignore
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.response.schema import Response
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.prompts.mixin import PromptDictType
-from llama_index.response_synthesizers.base import BaseSynthesizer, QueryTextType
-from llama_index.schema import MetadataMode, NodeWithScore, TextNode
-from llama_index.types import RESPONSE_TEXT_TYPE
-from llama_index.vector_stores.google.generativeai import google_service_context
+from llama_index.legacy.bridge.pydantic import BaseModel  # type: ignore
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.core.response.schema import Response
+from llama_index.legacy.indices.query.schema import QueryBundle
+from llama_index.legacy.prompts.mixin import PromptDictType
+from llama_index.legacy.response_synthesizers.base import BaseSynthesizer, QueryTextType
+from llama_index.legacy.schema import MetadataMode, NodeWithScore, TextNode
+from llama_index.legacy.types import RESPONSE_TEXT_TYPE
+from llama_index.legacy.vector_stores.google.generativeai import google_service_context
 
 if TYPE_CHECKING:
     import google.ai.generativelanguage as genai
@@ -68,7 +68,7 @@ class GoogleTextSynthesizer(BaseSynthesizer):
         See `from_defaults` for more documentation.
         """
         try:
-            import llama_index.vector_stores.google.generativeai.genai_extension as genaix
+            import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -139,7 +139,7 @@ class GoogleTextSynthesizer(BaseSynthesizer):
         try:
             import google.ai.generativelanguage as genai
 
-            import llama_index.vector_stores.google.generativeai.genai_extension as genaix
+            import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
         except ImportError:
             raise ImportError(_import_err_msg)
 

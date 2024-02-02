@@ -1,22 +1,23 @@
 """Node parser interface."""
+
 from abc import ABC, abstractmethod
 from typing import Any, List, Sequence
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks import CallbackManager, CBEventType, EventPayload
-from llama_index.node_parser.node_utils import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks import CallbackManager, CBEventType, EventPayload
+from llama_index.legacy.node_parser.node_utils import (
     IdFuncCallable,
     build_nodes_from_splits,
     default_id_func,
 )
-from llama_index.schema import (
+from llama_index.legacy.schema import (
     BaseNode,
     Document,
     MetadataMode,
     NodeRelationship,
     TransformComponent,
 )
-from llama_index.utils import get_tqdm_iterable
+from llama_index.legacy.utils import get_tqdm_iterable
 
 
 class NodeParser(TransformComponent, ABC):

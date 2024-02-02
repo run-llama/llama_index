@@ -3,13 +3,13 @@ from typing import Callable, List, Optional, cast
 
 from nltk.stem import PorterStemmer
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.indices.keyword_table.utils import simple_extract_keywords
-from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle
-from llama_index.storage.docstore.types import BaseDocumentStore
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.constants import DEFAULT_SIMILARITY_TOP_K
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.indices.keyword_table.utils import simple_extract_keywords
+from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
+from llama_index.legacy.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle
+from llama_index.legacy.storage.docstore.types import BaseDocumentStore
 
 logger = logging.getLogger(__name__)
 

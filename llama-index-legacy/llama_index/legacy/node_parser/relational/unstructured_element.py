@@ -4,13 +4,13 @@ from typing import Any, Callable, List, Optional
 
 import pandas as pd
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.node_parser.relational.base_element import (
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.node_parser.relational.base_element import (
     DEFAULT_SUMMARY_QUERY_STR,
     BaseElementNodeParser,
     Element,
 )
-from llama_index.schema import BaseNode, TextNode
+from llama_index.legacy.schema import BaseNode, TextNode
 
 
 def html_to_df(html_str: str) -> pd.DataFrame:

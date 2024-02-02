@@ -15,8 +15,8 @@ from datetime import datetime
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, TypeVar
 
-from llama_index.callbacks.base_handler import BaseCallbackHandler
-from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.callbacks.base_handler import BaseCallbackHandler
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
 
 if TYPE_CHECKING:
     from pandas import DataFrame

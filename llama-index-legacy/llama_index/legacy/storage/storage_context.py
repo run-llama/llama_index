@@ -5,31 +5,37 @@ from typing import Dict, Optional, Union
 
 import fsspec
 
-from llama_index.constants import (
+from llama_index.legacy.constants import (
     DOC_STORE_KEY,
     GRAPH_STORE_KEY,
     INDEX_STORE_KEY,
     VECTOR_STORE_KEY,
 )
-from llama_index.graph_stores.simple import DEFAULT_PERSIST_FNAME as GRAPH_STORE_FNAME
-from llama_index.graph_stores.simple import SimpleGraphStore
-from llama_index.graph_stores.types import GraphStore
-from llama_index.storage.docstore.simple_docstore import SimpleDocumentStore
-from llama_index.storage.docstore.types import DEFAULT_PERSIST_FNAME as DOCSTORE_FNAME
-from llama_index.storage.docstore.types import BaseDocumentStore
-from llama_index.storage.index_store.simple_index_store import SimpleIndexStore
-from llama_index.storage.index_store.types import (
+from llama_index.legacy.graph_stores.simple import (
+    DEFAULT_PERSIST_FNAME as GRAPH_STORE_FNAME,
+)
+from llama_index.legacy.graph_stores.simple import SimpleGraphStore
+from llama_index.legacy.graph_stores.types import GraphStore
+from llama_index.legacy.storage.docstore.simple_docstore import SimpleDocumentStore
+from llama_index.legacy.storage.docstore.types import (
+    DEFAULT_PERSIST_FNAME as DOCSTORE_FNAME,
+)
+from llama_index.legacy.storage.docstore.types import BaseDocumentStore
+from llama_index.legacy.storage.index_store.simple_index_store import SimpleIndexStore
+from llama_index.legacy.storage.index_store.types import (
     DEFAULT_PERSIST_FNAME as INDEX_STORE_FNAME,
 )
-from llama_index.storage.index_store.types import BaseIndexStore
-from llama_index.utils import concat_dirs
-from llama_index.vector_stores.simple import DEFAULT_PERSIST_FNAME as VECTOR_STORE_FNAME
-from llama_index.vector_stores.simple import (
+from llama_index.legacy.storage.index_store.types import BaseIndexStore
+from llama_index.legacy.utils import concat_dirs
+from llama_index.legacy.vector_stores.simple import (
+    DEFAULT_PERSIST_FNAME as VECTOR_STORE_FNAME,
+)
+from llama_index.legacy.vector_stores.simple import (
     DEFAULT_VECTOR_STORE,
     NAMESPACE_SEP,
     SimpleVectorStore,
 )
-from llama_index.vector_stores.types import BasePydanticVectorStore, VectorStore
+from llama_index.legacy.vector_stores.types import BasePydanticVectorStore, VectorStore
 
 DEFAULT_PERSIST_DIR = "./storage"
 IMAGE_STORE_FNAME = "image_store.json"

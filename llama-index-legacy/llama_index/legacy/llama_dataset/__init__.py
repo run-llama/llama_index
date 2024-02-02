@@ -1,6 +1,6 @@
 """ Dataset Module."""
 
-from llama_index.llama_dataset.base import (
+from llama_index.legacy.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,
     BaseLlamaExamplePrediction,
@@ -8,8 +8,8 @@ from llama_index.llama_dataset.base import (
     CreatedBy,
     CreatedByType,
 )
-from llama_index.llama_dataset.download import download_llama_dataset
-from llama_index.llama_dataset.evaluator_evaluation import (
+from llama_index.legacy.llama_dataset.download import download_llama_dataset
+from llama_index.legacy.llama_dataset.evaluator_evaluation import (
     EvaluatorExamplePrediction,
     EvaluatorPredictionDataset,
     LabeledEvaluatorDataExample,
@@ -23,7 +23,7 @@ from llama_index.llama_dataset.evaluator_evaluation import (
     PairwiseEvaluatorExamplePrediction,
     PairwiseEvaluatorPredictionDataset,
 )
-from llama_index.llama_dataset.rag import (
+from llama_index.legacy.llama_dataset.rag import (
     LabeledRagDataExample,
     LabeledRagDataset,
     LabelledRagDataExample,

@@ -2,10 +2,10 @@ from unittest.mock import MagicMock, patch
 
 import openai
 import pytest
-from llama_index.legacy.agent import OpenAIAssistantAgent
-from llama_index.legacy.agent.openai_assistant_agent import acall_function
-from llama_index.legacy.llms import ChatMessage
-from llama_index.legacy.tools import FunctionTool, ToolOutput
+from llama_index.legacy.legacy.agent import OpenAIAssistantAgent
+from llama_index.legacy.legacy.agent.openai_assistant_agent import acall_function
+from llama_index.legacy.legacy.llms import ChatMessage
+from llama_index.legacy.legacy.tools import FunctionTool, ToolOutput
 from openai.types.beta.threads.required_action_function_tool_call import Function
 
 

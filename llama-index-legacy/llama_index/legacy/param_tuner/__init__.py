@@ -1,4 +1,4 @@
-from llama_index.param_tuner.base import (
+from llama_index.legacy.param_tuner.base import (
     AsyncParamTuner,
     BaseParamTuner,
     ParamTuner,

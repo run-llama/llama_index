@@ -12,20 +12,22 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence, Set, Union
 
-from llama_index.async_utils import run_async_tasks
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.data_structs.data_structs import KeywordTable
-from llama_index.indices.base import BaseIndex
-from llama_index.indices.keyword_table.utils import extract_keywords_given_response
-from llama_index.prompts import BasePromptTemplate
-from llama_index.prompts.default_prompts import (
+from llama_index.legacy.async_utils import run_async_tasks
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.data_structs.data_structs import KeywordTable
+from llama_index.legacy.indices.base import BaseIndex
+from llama_index.legacy.indices.keyword_table.utils import (
+    extract_keywords_given_response,
+)
+from llama_index.legacy.prompts import BasePromptTemplate
+from llama_index.legacy.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
-from llama_index.schema import BaseNode, IndexNode, MetadataMode
-from llama_index.service_context import ServiceContext
-from llama_index.storage.docstore.types import RefDocInfo
-from llama_index.utils import get_tqdm_iterable
+from llama_index.legacy.schema import BaseNode, IndexNode, MetadataMode
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.storage.docstore.types import RefDocInfo
+from llama_index.legacy.utils import get_tqdm_iterable
 
 DQKET = DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE
 
@@ -99,7 +101,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         **kwargs: Any,
     ) -> BaseRetriever:
         # NOTE: lazy import
-        from llama_index.indices.keyword_table.retrievers import (
+        from llama_index.legacy.indices.keyword_table.retrievers import (
             KeywordTableGPTRetriever,
             KeywordTableRAKERetriever,
             KeywordTableSimpleRetriever,

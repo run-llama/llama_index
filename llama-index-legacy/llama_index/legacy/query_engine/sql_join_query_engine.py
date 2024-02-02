@@ -3,25 +3,25 @@
 import logging
 from typing import Callable, Dict, Optional, Union
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.response.schema import RESPONSE_TYPE, Response
-from llama_index.indices.query.query_transform.base import BaseQueryTransform
-from llama_index.indices.struct_store.sql_query import (
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.response.schema import RESPONSE_TYPE, Response
+from llama_index.legacy.indices.query.query_transform.base import BaseQueryTransform
+from llama_index.legacy.indices.struct_store.sql_query import (
     BaseSQLTableQueryEngine,
     NLSQLTableQueryEngine,
 )
-from llama_index.llm_predictor.base import LLMPredictorType
-from llama_index.llms.utils import resolve_llm
-from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.schema import QueryBundle
-from llama_index.selectors.llm_selectors import LLMSingleSelector
-from llama_index.selectors.pydantic_selectors import PydanticSingleSelector
-from llama_index.selectors.utils import get_selector_from_context
-from llama_index.service_context import ServiceContext
-from llama_index.tools.query_engine import QueryEngineTool
-from llama_index.utils import print_text
+from llama_index.legacy.llm_predictor.base import LLMPredictorType
+from llama_index.legacy.llms.utils import resolve_llm
+from llama_index.legacy.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.legacy.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.legacy.schema import QueryBundle
+from llama_index.legacy.selectors.llm_selectors import LLMSingleSelector
+from llama_index.legacy.selectors.pydantic_selectors import PydanticSingleSelector
+from llama_index.legacy.selectors.utils import get_selector_from_context
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.tools.query_engine import QueryEngineTool
+from llama_index.legacy.utils import print_text
 
 logger = logging.getLogger(__name__)
 

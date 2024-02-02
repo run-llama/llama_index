@@ -1,8 +1,8 @@
 from typing import List, Optional
 
-from llama_index.bridge.pydantic import Field
-from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
+from llama_index.legacy.schema import MetadataMode, NodeWithScore, QueryBundle
 
 
 class MetadataReplacementPostProcessor(BaseNodePostprocessor):

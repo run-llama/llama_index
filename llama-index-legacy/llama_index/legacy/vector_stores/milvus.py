@@ -3,18 +3,19 @@
 An index that is built within Milvus.
 
 """
+
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from llama_index.schema import BaseNode, TextNode
-from llama_index.vector_stores.types import (
+from llama_index.legacy.schema import BaseNode, TextNode
+from llama_index.legacy.vector_stores.types import (
     MetadataFilters,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import (
+from llama_index.legacy.vector_stores.utils import (
     DEFAULT_DOC_ID_KEY,
     DEFAULT_EMBEDDING_KEY,
     metadata_dict_to_node,

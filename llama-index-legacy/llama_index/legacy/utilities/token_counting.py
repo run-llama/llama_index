@@ -3,8 +3,8 @@
 
 from typing import Any, Callable, Dict, List, Optional
 
-from llama_index.llms import ChatMessage, MessageRole
-from llama_index.utils import get_tokenizer
+from llama_index.legacy.llms import ChatMessage, MessageRole
+from llama_index.legacy.utils import get_tokenizer
 
 
 class TokenCounter:

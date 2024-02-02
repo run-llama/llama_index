@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks.base import CallbackManager
-from llama_index.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.constants import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.legacy.embeddings.base import BaseEmbedding
 
 
 class OllamaEmbedding(BaseEmbedding):

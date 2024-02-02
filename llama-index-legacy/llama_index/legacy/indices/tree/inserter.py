@@ -2,21 +2,21 @@
 
 from typing import Optional, Sequence
 
-from llama_index.data_structs.data_structs import IndexGraph
-from llama_index.indices.tree.utils import get_numbered_text_from_nodes
-from llama_index.indices.utils import (
+from llama_index.legacy.data_structs.data_structs import IndexGraph
+from llama_index.legacy.indices.tree.utils import get_numbered_text_from_nodes
+from llama_index.legacy.indices.utils import (
     extract_numbers_given_response,
     get_sorted_node_list,
 )
-from llama_index.prompts.base import BasePromptTemplate
-from llama_index.prompts.default_prompts import (
+from llama_index.legacy.prompts.base import BasePromptTemplate
+from llama_index.legacy.prompts.default_prompts import (
     DEFAULT_INSERT_PROMPT,
     DEFAULT_SUMMARY_PROMPT,
 )
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.service_context import ServiceContext
-from llama_index.storage.docstore import BaseDocumentStore
-from llama_index.storage.docstore.registry import get_default_docstore
+from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.storage.docstore import BaseDocumentStore
+from llama_index.legacy.storage.docstore.registry import get_default_docstore
 
 
 class TreeIndexInserter:

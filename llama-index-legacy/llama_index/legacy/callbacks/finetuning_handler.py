@@ -2,8 +2,8 @@ import json
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from llama_index.callbacks.base import BaseCallbackHandler
-from llama_index.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.callbacks.base import BaseCallbackHandler
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
 
 
 class BaseFinetuningHandler(BaseCallbackHandler):
@@ -35,7 +35,7 @@ class BaseFinetuningHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> str:
         """Run when an event starts and return id of event."""
-        from llama_index.core.llms.types import ChatMessage, MessageRole
+        from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
 
         if event_type == CBEventType.LLM:
             cur_messages = []
@@ -68,7 +68,7 @@ class BaseFinetuningHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run when an event ends."""
-        from llama_index.core.llms.types import ChatMessage, MessageRole
+        from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
 
         if (
             event_type == CBEventType.LLM
@@ -133,7 +133,7 @@ class OpenAIFineTuningHandler(BaseFinetuningHandler):
         },
         ...
         """
-        from llama_index.llms.openai_utils import to_openai_message_dicts
+        from llama_index.legacy.llms.openai_utils import to_openai_message_dicts
 
         events_dict = self.get_finetuning_events()
         json_strs = []
@@ -187,7 +187,7 @@ class GradientAIFineTuningHandler(BaseFinetuningHandler):
         },
         ...
         """
-        from llama_index.llms.generic_utils import messages_to_history_str
+        from llama_index.legacy.llms.generic_utils import messages_to_history_str
 
         events_dict = self.get_finetuning_events()
         json_strs = []

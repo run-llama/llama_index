@@ -4,7 +4,7 @@ Simple wrapper around AgentRunner + ReActAgentWorker.
 
 For the legacy implementation see:
 ```python
-from llama_index.agent.legacy.react.base import ReActAgent
+from llama_index.legacy.agent.legacy.react.base import ReActAgent
 ```
 
 """

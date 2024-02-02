@@ -2,8 +2,8 @@
 
 from typing import Any, Callable, Optional
 
-from llama_index.query_engine.flare.schema import QueryTask
-from llama_index.types import BaseOutputParser
+from llama_index.legacy.query_engine.flare.schema import QueryTask
+from llama_index.legacy.types import BaseOutputParser
 
 
 def default_parse_is_done_fn(response: str) -> bool:

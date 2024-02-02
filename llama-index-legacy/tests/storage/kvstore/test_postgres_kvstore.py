@@ -2,7 +2,7 @@ from typing import Dict, Union
 
 import pytest
 from docker.models.containers import Container
-from llama_index.legacy.storage.kvstore.postgres_kvstore import PostgresKVStore
+from llama_index.legacy.legacy.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 try:
     import asyncpg  # noqa

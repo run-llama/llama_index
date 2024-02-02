@@ -1,18 +1,19 @@
 """Chroma vector store."""
+
 import logging
 import math
 from typing import Any, Dict, Generator, List, Optional, cast
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.utils import truncate_text
-from llama_index.vector_stores.types import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
+from llama_index.legacy.utils import truncate_text
+from llama_index.legacy.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import (
+from llama_index.legacy.vector_stores.utils import (
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,

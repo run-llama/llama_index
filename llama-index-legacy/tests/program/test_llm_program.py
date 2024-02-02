@@ -3,17 +3,17 @@
 import json
 from unittest.mock import MagicMock
 
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.core.llms.types import (
+from llama_index.legacy.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     CompletionResponse,
     LLMMetadata,
     MessageRole,
 )
-from llama_index.legacy.output_parsers.pydantic import PydanticOutputParser
-from llama_index.legacy.program.llm_program import LLMTextCompletionProgram
-from llama_index.legacy.prompts import ChatPromptTemplate
+from llama_index.legacy.legacy.output_parsers.pydantic import PydanticOutputParser
+from llama_index.legacy.legacy.program.llm_program import LLMTextCompletionProgram
+from llama_index.legacy.legacy.prompts import ChatPromptTemplate
 
 
 class MockLLM(MagicMock):

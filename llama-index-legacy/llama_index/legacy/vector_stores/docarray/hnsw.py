@@ -2,7 +2,7 @@ import json
 import os
 from typing import Any, List, Literal
 
-from llama_index.vector_stores.docarray.base import DocArrayVectorStore
+from llama_index.legacy.vector_stores.docarray.base import DocArrayVectorStore
 
 
 class DocArrayHnswVectorStore(DocArrayVectorStore):

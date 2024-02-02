@@ -1,9 +1,9 @@
 import warnings
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
@@ -12,16 +12,16 @@ from llama_index.core.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.llms.base import (
+from llama_index.legacy.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.xinference_utils import (
+from llama_index.legacy.llms.custom import CustomLLM
+from llama_index.legacy.llms.xinference_utils import (
     xinference_message_to_history,
     xinference_modelname_to_contextsize,
 )
-from llama_index.types import BaseOutputParser, PydanticProgramMode
+from llama_index.legacy.types import BaseOutputParser, PydanticProgramMode
 
 # an approximation of the ratio between llama and GPT2 tokens
 TOKEN_RATIO = 2.5

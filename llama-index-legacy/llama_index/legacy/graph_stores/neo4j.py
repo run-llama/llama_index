@@ -1,8 +1,9 @@
 """Neo4j graph store index."""
+
 import logging
 from typing import Any, Dict, List, Optional
 
-from llama_index.graph_stores.types import GraphStore
+from llama_index.legacy.graph_stores.types import GraphStore
 
 logger = logging.getLogger(__name__)
 

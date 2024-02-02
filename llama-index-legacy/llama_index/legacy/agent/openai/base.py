@@ -4,10 +4,9 @@ Simple wrapper around AgentRunner + OpenAIAgentWorker.
 
 For the legacy implementation see:
 ```python
-from llama_index.agent.legacy.openai.base import OpenAIAgent
+from llama_index.legacy.agent.legacy.openai.base import OpenAIAgent
 ```
 """
-
 
 from typing import (
     Any,
@@ -16,18 +15,18 @@ from typing import (
     Type,
 )
 
-from llama_index.agent.openai.step import OpenAIAgentWorker
-from llama_index.agent.runner.base import AgentRunner
-from llama_index.callbacks import (
+from llama_index.legacy.agent.openai.step import OpenAIAgentWorker
+from llama_index.legacy.agent.runner.base import AgentRunner
+from llama_index.legacy.callbacks import (
     CallbackManager,
 )
-from llama_index.llms.base import ChatMessage
-from llama_index.llms.llm import LLM
-from llama_index.llms.openai import OpenAI
-from llama_index.memory.chat_memory_buffer import ChatMemoryBuffer
-from llama_index.memory.types import BaseMemory
-from llama_index.objects.base import ObjectRetriever
-from llama_index.tools import BaseTool
+from llama_index.legacy.llms.base import ChatMessage
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.llms.openai import OpenAI
+from llama_index.legacy.memory.chat_memory_buffer import ChatMemoryBuffer
+from llama_index.legacy.memory.types import BaseMemory
+from llama_index.legacy.objects.base import ObjectRetriever
+from llama_index.legacy.tools import BaseTool
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -41,7 +40,7 @@ class OpenAIAgent(AgentRunner):
 
     For the legacy implementation see:
     ```python
-    from llama_index.agent.legacy.openai.base import OpenAIAgent
+    from llama_index.legacy.agent.legacy.openai.base import OpenAIAgent
     ```
 
     """

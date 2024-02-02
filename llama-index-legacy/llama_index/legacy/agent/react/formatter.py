@@ -4,14 +4,17 @@ import logging
 from abc import abstractmethod
 from typing import List, Optional, Sequence
 
-from llama_index.agent.react.prompts import (
+from llama_index.legacy.agent.react.prompts import (
     CONTEXT_REACT_CHAT_SYSTEM_HEADER,
     REACT_CHAT_SYSTEM_HEADER,
 )
-from llama_index.agent.react.types import BaseReasoningStep, ObservationReasoningStep
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.core.llms.types import ChatMessage, MessageRole
-from llama_index.tools import BaseTool
+from llama_index.legacy.agent.react.types import (
+    BaseReasoningStep,
+    ObservationReasoningStep,
+)
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 

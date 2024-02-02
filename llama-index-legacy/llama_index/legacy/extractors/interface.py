@@ -1,4 +1,5 @@
 """Node parser interface."""
+
 import asyncio
 from abc import abstractmethod
 from copy import deepcopy
@@ -6,8 +7,13 @@ from typing import Any, Dict, List, Optional, Sequence, cast
 
 from typing_extensions import Self
 
-from llama_index.bridge.pydantic import Field
-from llama_index.schema import BaseNode, MetadataMode, TextNode, TransformComponent
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.schema import (
+    BaseNode,
+    MetadataMode,
+    TextNode,
+    TransformComponent,
+)
 
 DEFAULT_NODE_TEXT_TEMPLATE = """\
 [Excerpt from document]\n{metadata_str}\n\
@@ -51,14 +57,14 @@ class BaseExtractor(TransformComponent):
 
         llm_predictor = data.get("llm_predictor", None)
         if llm_predictor:
-            from llama_index.llm_predictor.loading import load_predictor
+            from llama_index.legacy.llm_predictor.loading import load_predictor
 
             llm_predictor = load_predictor(llm_predictor)
             data["llm_predictor"] = llm_predictor
 
         llm = data.get("llm", None)
         if llm:
-            from llama_index.llms.loading import load_llm
+            from llama_index.legacy.llms.loading import load_llm
 
             llm = load_llm(llm)
             data["llm"] = llm

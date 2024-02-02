@@ -1,11 +1,11 @@
 """Test object index."""
 
-from llama_index.legacy.indices.list.base import SummaryIndex
-from llama_index.legacy.objects.base import ObjectIndex
-from llama_index.legacy.objects.base_node_mapping import SimpleObjectNodeMapping
-from llama_index.legacy.objects.tool_node_mapping import SimpleToolNodeMapping
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.tools.function_tool import FunctionTool
+from llama_index.legacy.legacy.indices.list.base import SummaryIndex
+from llama_index.legacy.legacy.objects.base import ObjectIndex
+from llama_index.legacy.legacy.objects.base_node_mapping import SimpleObjectNodeMapping
+from llama_index.legacy.legacy.objects.tool_node_mapping import SimpleToolNodeMapping
+from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.tools.function_tool import FunctionTool
 
 
 def test_object_index(mock_service_context: ServiceContext) -> None:

@@ -1,16 +1,16 @@
 import logging
 from typing import Optional
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.response.schema import RESPONSE_TYPE, Response
-from llama_index.evaluation.base import BaseEvaluator
-from llama_index.evaluation.guideline import GuidelineEvaluator
-from llama_index.indices.query.query_transform.feedback_transform import (
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.response.schema import RESPONSE_TYPE, Response
+from llama_index.legacy.evaluation.base import BaseEvaluator
+from llama_index.legacy.evaluation.guideline import GuidelineEvaluator
+from llama_index.legacy.indices.query.query_transform.feedback_transform import (
     FeedbackQueryTransformation,
 )
-from llama_index.prompts.mixin import PromptMixinType
-from llama_index.schema import QueryBundle
+from llama_index.legacy.prompts.mixin import PromptMixinType
+from llama_index.legacy.schema import QueryBundle
 
 logger = logging.getLogger(__name__)
 

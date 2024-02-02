@@ -4,7 +4,7 @@ import os
 from decimal import Decimal
 from typing import Any, Dict, List, Set, Tuple
 
-from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
+from llama_index.legacy.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
 
 IMPORT_ERROR_MSG = "`boto3` package not found, please run `pip install boto3`"
 

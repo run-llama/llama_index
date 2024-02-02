@@ -1,12 +1,12 @@
 import json
 from typing import Any, Dict, Optional, Type, Union, cast
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.llms.huggingface import HuggingFaceLLM
-from llama_index.llms.llama_cpp import LlamaCPP
-from llama_index.program.llm_prompt_program import BaseLLMFunctionProgram
-from llama_index.prompts.base import PromptTemplate
-from llama_index.prompts.lmformatenforcer_utils import (
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.llms.huggingface import HuggingFaceLLM
+from llama_index.legacy.llms.llama_cpp import LlamaCPP
+from llama_index.legacy.program.llm_prompt_program import BaseLLMFunctionProgram
+from llama_index.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.prompts.lmformatenforcer_utils import (
     activate_lm_format_enforcer,
     build_lm_format_enforcer_function,
 )
@@ -38,7 +38,7 @@ class LMFormatEnforcerPydanticProgram(BaseLLMFunctionProgram):
 
         if llm is None:
             try:
-                from llama_index.llms import LlamaCPP
+                from llama_index.legacy.llms import LlamaCPP
 
                 llm = LlamaCPP()
             except ImportError as e:

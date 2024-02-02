@@ -1,9 +1,12 @@
 """LlamaIndex objects."""
 
-from llama_index.objects.base import ObjectIndex, ObjectRetriever
-from llama_index.objects.base_node_mapping import SimpleObjectNodeMapping
-from llama_index.objects.table_node_mapping import SQLTableNodeMapping, SQLTableSchema
-from llama_index.objects.tool_node_mapping import (
+from llama_index.legacy.objects.base import ObjectIndex, ObjectRetriever
+from llama_index.legacy.objects.base_node_mapping import SimpleObjectNodeMapping
+from llama_index.legacy.objects.table_node_mapping import (
+    SQLTableNodeMapping,
+    SQLTableSchema,
+)
+from llama_index.legacy.objects.tool_node_mapping import (
     SimpleQueryToolNodeMapping,
     SimpleToolNodeMapping,
 )

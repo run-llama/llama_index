@@ -1,9 +1,10 @@
 """Test text splitter."""
+
 import os
 from typing import List
 
-from llama_index.legacy.schema import Document, MetadataMode, TextNode
-from llama_index.legacy.text_splitter import CodeSplitter
+from llama_index.legacy.legacy.schema import Document, MetadataMode, TextNode
+from llama_index.legacy.legacy.text_splitter import CodeSplitter
 
 
 def test_python_code_splitter() -> None:

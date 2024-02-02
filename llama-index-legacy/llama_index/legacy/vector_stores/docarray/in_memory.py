@@ -2,7 +2,7 @@ from typing import Any, List, Literal, Optional
 
 import fsspec
 
-from llama_index.vector_stores.docarray.base import DocArrayVectorStore
+from llama_index.legacy.vector_stores.docarray.base import DocArrayVectorStore
 
 
 class DocArrayInMemoryVectorStore(DocArrayVectorStore):

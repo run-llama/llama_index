@@ -1,9 +1,9 @@
 import asyncio
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.bridge.pydantic import Field
-from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.prompts.mixin import PromptDictType, PromptMixinType
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.legacy.prompts.mixin import PromptDictType, PromptMixinType
 
 
 class TonicValidateEvaluationResult(EvaluationResult):

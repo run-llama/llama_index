@@ -5,24 +5,24 @@ from glob import iglob
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Union, cast
 
-from llama_index import (
+from llama_index.legacy import (
     Response,
     ServiceContext,
     SimpleDirectoryReader,
     VectorStoreIndex,
 )
-from llama_index.bridge.pydantic import BaseModel, Field, validator
-from llama_index.chat_engine import CondenseQuestionChatEngine
-from llama_index.core.response.schema import RESPONSE_TYPE, StreamingResponse
-from llama_index.embeddings.base import BaseEmbedding
-from llama_index.ingestion import IngestionPipeline
-from llama_index.llms import LLM, OpenAI
-from llama_index.query_engine import CustomQueryEngine
-from llama_index.query_pipeline import FnComponent
-from llama_index.query_pipeline.query import QueryPipeline
-from llama_index.readers.base import BaseReader
-from llama_index.response_synthesizers import CompactAndRefine
-from llama_index.utils import get_cache_dir
+from llama_index.legacy.bridge.pydantic import BaseModel, Field, validator
+from llama_index.legacy.chat_engine import CondenseQuestionChatEngine
+from llama_index.legacy.core.response.schema import RESPONSE_TYPE, StreamingResponse
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.ingestion import IngestionPipeline
+from llama_index.legacy.llms import LLM, OpenAI
+from llama_index.legacy.query_engine import CustomQueryEngine
+from llama_index.legacy.query_pipeline import FnComponent
+from llama_index.legacy.query_pipeline.query import QueryPipeline
+from llama_index.legacy.readers.base import BaseReader
+from llama_index.legacy.response_synthesizers import CompactAndRefine
+from llama_index.legacy.utils import get_cache_dir
 
 
 def default_ragcli_persist_dir() -> str:

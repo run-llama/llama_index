@@ -1,7 +1,7 @@
 from typing import Optional
 
-from llama_index.storage.index_store.keyval_index_store import KVIndexStore
-from llama_index.storage.kvstore.postgres_kvstore import PostgresKVStore
+from llama_index.legacy.storage.index_store.keyval_index_store import KVIndexStore
+from llama_index.legacy.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 
 class PostgresIndexStore(KVIndexStore):

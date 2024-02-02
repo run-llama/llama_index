@@ -1,17 +1,17 @@
 from typing import List, Optional, Sequence, cast
 
-from llama_index.llms.llm import LLM
-from llama_index.llms.openai import OpenAI
-from llama_index.program.openai_program import OpenAIPydanticProgram
-from llama_index.prompts.mixin import PromptDictType
-from llama_index.question_gen.prompts import build_tools_text
-from llama_index.question_gen.types import (
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.llms.openai import OpenAI
+from llama_index.legacy.program.openai_program import OpenAIPydanticProgram
+from llama_index.legacy.prompts.mixin import PromptDictType
+from llama_index.legacy.question_gen.prompts import build_tools_text
+from llama_index.legacy.question_gen.types import (
     BaseQuestionGenerator,
     SubQuestion,
     SubQuestionList,
 )
-from llama_index.schema import QueryBundle
-from llama_index.tools.types import ToolMetadata
+from llama_index.legacy.schema import QueryBundle
+from llama_index.legacy.tools.types import ToolMetadata
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 

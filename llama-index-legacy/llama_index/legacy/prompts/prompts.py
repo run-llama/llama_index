@@ -1,6 +1,6 @@
 """Subclasses from base prompt."""
 
-from llama_index.prompts.base import PromptTemplate
+from llama_index.legacy.prompts.base import PromptTemplate
 
 # deprecated, kept for backward compatibility
 

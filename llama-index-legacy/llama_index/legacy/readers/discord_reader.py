@@ -10,8 +10,8 @@ import logging
 import os
 from typing import List, Optional
 
-from llama_index.readers.base import BasePydanticReader
-from llama_index.schema import Document
+from llama_index.legacy.readers.base import BasePydanticReader
+from llama_index.legacy.schema import Document
 
 logger = logging.getLogger(__name__)
 

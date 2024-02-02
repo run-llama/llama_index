@@ -1,6 +1,6 @@
 from typing import Any
 
-from llama_index.callbacks.base_handler import BaseCallbackHandler
+from llama_index.legacy.callbacks.base_handler import BaseCallbackHandler
 
 
 def deepeval_callback_handler(**kwargs: Any) -> BaseCallbackHandler:

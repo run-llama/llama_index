@@ -11,9 +11,9 @@ from typing import Any, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from llama_index.async_utils import asyncio_module
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.evaluation.base import EvaluationResult
+from llama_index.legacy.async_utils import asyncio_module
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.evaluation.base import EvaluationResult
 
 
 async def aget_responses(

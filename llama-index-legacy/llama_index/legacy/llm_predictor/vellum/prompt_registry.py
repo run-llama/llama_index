@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 from uuid import uuid4
 
-from llama_index.llm_predictor.vellum.types import (
+from llama_index.legacy.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
-from llama_index.llm_predictor.vellum.utils import convert_to_kebab_case
-from llama_index.prompts import BasePromptTemplate
-from llama_index.prompts.base import PromptTemplate
+from llama_index.legacy.llm_predictor.vellum.utils import convert_to_kebab_case
+from llama_index.legacy.prompts import BasePromptTemplate
+from llama_index.legacy.prompts.base import PromptTemplate
 
 if TYPE_CHECKING:
     import vellum

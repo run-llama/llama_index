@@ -1,16 +1,17 @@
 """DynamoDB vector store index."""
+
 from __future__ import annotations
 
 from logging import getLogger
 from typing import Any, Dict, List, cast
 
-from llama_index.indices.query.embedding_utils import (
+from llama_index.legacy.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
 )
-from llama_index.schema import BaseNode
-from llama_index.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
-from llama_index.vector_stores.types import (
+from llama_index.legacy.schema import BaseNode
+from llama_index.legacy.storage.kvstore.dynamodb_kvstore import DynamoDBKVStore
+from llama_index.legacy.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,

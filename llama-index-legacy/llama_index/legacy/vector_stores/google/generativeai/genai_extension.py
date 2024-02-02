@@ -17,7 +17,7 @@ from google.api_core import gapic_v1
 from google.auth import credentials, exceptions
 from google.protobuf import timestamp_pb2
 
-import llama_index
+import llama_index.legacy
 
 _logger = logging.getLogger(__name__)
 _DEFAULT_API_ENDPOINT = "generativelanguage.googleapis.com"

@@ -1,8 +1,8 @@
 from typing import Any, List, Optional, Sequence
 
-from llama_index.prompts.prompt_utils import get_biggest_prompt
-from llama_index.response_synthesizers.refine import Refine
-from llama_index.types import RESPONSE_TEXT_TYPE
+from llama_index.legacy.prompts.prompt_utils import get_biggest_prompt
+from llama_index.legacy.response_synthesizers.refine import Refine
+from llama_index.legacy.types import RESPONSE_TEXT_TYPE
 
 
 class CompactAndRefine(Refine):

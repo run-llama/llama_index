@@ -1,27 +1,28 @@
 """Test components."""
+
 from typing import Any, List, Sequence
 
 import pytest
-from llama_index.legacy.core.base_selector import (
+from llama_index.legacy.legacy.core.base_selector import (
     BaseSelector,
     MultiSelection,
     SelectorResult,
     SingleSelection,
 )
-from llama_index.legacy.core.query_pipeline.components import (
+from llama_index.legacy.legacy.core.query_pipeline.components import (
     ArgPackComponent,
     FnComponent,
     InputComponent,
     KwargPackComponent,
 )
-from llama_index.legacy.prompts.mixin import PromptDictType
-from llama_index.legacy.query_pipeline.components.router import (
+from llama_index.legacy.legacy.prompts.mixin import PromptDictType
+from llama_index.legacy.legacy.query_pipeline.components.router import (
     RouterComponent,
     SelectorComponent,
 )
-from llama_index.legacy.query_pipeline.query import QueryPipeline
-from llama_index.legacy.schema import QueryBundle
-from llama_index.legacy.tools.types import ToolMetadata
+from llama_index.legacy.legacy.query_pipeline.query import QueryPipeline
+from llama_index.legacy.legacy.schema import QueryBundle
+from llama_index.legacy.legacy.tools.types import ToolMetadata
 
 
 def foo_fn(a: int, b: int = 1, c: int = 2) -> int:

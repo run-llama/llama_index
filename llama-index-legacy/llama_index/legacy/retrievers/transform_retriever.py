@@ -1,10 +1,10 @@
 from typing import List, Optional
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.indices.query.query_transform.base import BaseQueryTransform
-from llama_index.prompts.mixin import PromptMixinType
-from llama_index.schema import NodeWithScore, QueryBundle
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.indices.query.query_transform.base import BaseQueryTransform
+from llama_index.legacy.prompts.mixin import PromptMixinType
+from llama_index.legacy.schema import NodeWithScore, QueryBundle
 
 
 class TransformRetriever(BaseRetriever):

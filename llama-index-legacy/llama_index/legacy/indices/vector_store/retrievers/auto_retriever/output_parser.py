@@ -1,9 +1,9 @@
 from typing import Any
 
-from llama_index.output_parsers.base import StructuredOutput
-from llama_index.output_parsers.utils import parse_json_markdown
-from llama_index.types import BaseOutputParser
-from llama_index.vector_stores.types import VectorStoreQuerySpec
+from llama_index.legacy.output_parsers.base import StructuredOutput
+from llama_index.legacy.output_parsers.utils import parse_json_markdown
+from llama_index.legacy.types import BaseOutputParser
+from llama_index.legacy.vector_stores.types import VectorStoreQuerySpec
 
 
 class VectorStoreQueryOutputParser(BaseOutputParser):

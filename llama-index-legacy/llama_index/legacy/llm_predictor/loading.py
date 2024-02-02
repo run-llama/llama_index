@@ -1,7 +1,7 @@
-from llama_index.llm_predictor.base import BaseLLMPredictor, LLMPredictor
-from llama_index.llm_predictor.mock import MockLLMPredictor
-from llama_index.llm_predictor.structured import StructuredLLMPredictor
-from llama_index.llm_predictor.vellum.predictor import VellumPredictor
+from llama_index.legacy.llm_predictor.base import BaseLLMPredictor, LLMPredictor
+from llama_index.legacy.llm_predictor.mock import MockLLMPredictor
+from llama_index.legacy.llm_predictor.structured import StructuredLLMPredictor
+from llama_index.legacy.llm_predictor.vellum.predictor import VellumPredictor
 
 
 def load_predictor(data: dict) -> BaseLLMPredictor:

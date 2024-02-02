@@ -1,10 +1,10 @@
 from typing import Any, List, Optional
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.callbacks import CBEventType, EventPayload
-from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle
-from llama_index.utils import infer_torch_device
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.callbacks import CBEventType, EventPayload
+from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
+from llama_index.legacy.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.legacy.utils import infer_torch_device
 
 DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH = 512
 

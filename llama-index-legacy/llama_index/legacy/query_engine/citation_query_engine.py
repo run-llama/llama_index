@@ -1,22 +1,22 @@
 from typing import Any, List, Optional, Sequence
 
-from llama_index.callbacks.base import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.base_query_engine import BaseQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
-from llama_index.core.response.schema import RESPONSE_TYPE
-from llama_index.indices.base import BaseGPTIndex
-from llama_index.node_parser import SentenceSplitter, TextSplitter
-from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.prompts import PromptTemplate
-from llama_index.prompts.base import BasePromptTemplate
-from llama_index.prompts.mixin import PromptMixinType
-from llama_index.response_synthesizers import (
+from llama_index.legacy.callbacks.base import CallbackManager
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.core.base_query_engine import BaseQueryEngine
+from llama_index.legacy.core.base_retriever import BaseRetriever
+from llama_index.legacy.core.response.schema import RESPONSE_TYPE
+from llama_index.legacy.indices.base import BaseGPTIndex
+from llama_index.legacy.node_parser import SentenceSplitter, TextSplitter
+from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
+from llama_index.legacy.prompts import PromptTemplate
+from llama_index.legacy.prompts.base import BasePromptTemplate
+from llama_index.legacy.prompts.mixin import PromptMixinType
+from llama_index.legacy.response_synthesizers import (
     BaseSynthesizer,
     ResponseMode,
     get_response_synthesizer,
 )
-from llama_index.schema import MetadataMode, NodeWithScore, QueryBundle, TextNode
+from llama_index.legacy.schema import MetadataMode, NodeWithScore, QueryBundle, TextNode
 
 CITATION_QA_TEMPLATE = PromptTemplate(
     "Please provide an answer based solely on the provided sources. "

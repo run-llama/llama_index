@@ -1,14 +1,15 @@
 """Faithfulness evaluation."""
+
 from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence, Union
 
-from llama_index.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.multi_modal_llms.base import MultiModalLLM
-from llama_index.multi_modal_llms.openai import OpenAIMultiModal
-from llama_index.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType
-from llama_index.schema import ImageNode
+from llama_index.legacy.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.legacy.multi_modal_llms.base import MultiModalLLM
+from llama_index.legacy.multi_modal_llms.openai import OpenAIMultiModal
+from llama_index.legacy.prompts import BasePromptTemplate, PromptTemplate
+from llama_index.legacy.prompts.mixin import PromptDictType
+from llama_index.legacy.schema import ImageNode
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Please tell if a given piece of information "

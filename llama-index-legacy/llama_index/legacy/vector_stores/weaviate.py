@@ -8,17 +8,17 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
-from llama_index.bridge.pydantic import Field, PrivateAttr
-from llama_index.schema import BaseNode
-from llama_index.vector_stores.types import (
+from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
+from llama_index.legacy.schema import BaseNode
+from llama_index.legacy.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import DEFAULT_TEXT_KEY
-from llama_index.vector_stores.weaviate_utils import (
+from llama_index.legacy.vector_stores.utils import DEFAULT_TEXT_KEY
+from llama_index.legacy.vector_stores.weaviate_utils import (
     add_node,
     class_schema_exists,
     create_default_schema,

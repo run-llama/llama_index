@@ -4,7 +4,7 @@ from typing import Any, Callable, Type
 from unittest.mock import patch
 
 import pytest
-from llama_index.legacy.vector_stores.pinecone import (
+from llama_index.legacy.legacy.vector_stores.pinecone import (
     PineconeVectorStore,
 )
 

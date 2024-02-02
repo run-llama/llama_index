@@ -1,8 +1,8 @@
 from typing import Optional, Type, TypeVar
 
-from llama_index.bridge.pydantic import BaseModel
-from llama_index.output_parsers.base import OutputParserException
-from llama_index.output_parsers.utils import parse_json_markdown
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.output_parsers.base import OutputParserException
+from llama_index.legacy.output_parsers.utils import parse_json_markdown
 
 
 def convert_to_handlebars(text: str) -> str:

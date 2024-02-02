@@ -1,5 +1,5 @@
-from llama_index.indices.managed.vectara.base import VectaraIndex
-from llama_index.indices.managed.vectara.retriever import (
+from llama_index.legacy.indices.managed.vectara.base import VectaraIndex
+from llama_index.legacy.indices.managed.vectara.retriever import (
     VectaraAutoRetriever,
     VectaraRetriever,
 )

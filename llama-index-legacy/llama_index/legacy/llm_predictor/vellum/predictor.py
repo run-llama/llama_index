@@ -4,18 +4,18 @@ from typing import Any, Tuple, cast
 
 from deprecated import deprecated
 
-from llama_index.bridge.pydantic import PrivateAttr
-from llama_index.callbacks import CallbackManager
-from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.llm_predictor.base import LLM, BaseLLMPredictor, LLMMetadata
-from llama_index.llm_predictor.vellum.exceptions import VellumGenerateException
-from llama_index.llm_predictor.vellum.prompt_registry import VellumPromptRegistry
-from llama_index.llm_predictor.vellum.types import (
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.callbacks.schema import CBEventType, EventPayload
+from llama_index.legacy.llm_predictor.base import LLM, BaseLLMPredictor, LLMMetadata
+from llama_index.legacy.llm_predictor.vellum.exceptions import VellumGenerateException
+from llama_index.legacy.llm_predictor.vellum.prompt_registry import VellumPromptRegistry
+from llama_index.legacy.llm_predictor.vellum.types import (
     VellumCompiledPrompt,
     VellumRegisteredPrompt,
 )
-from llama_index.prompts import BasePromptTemplate
-from llama_index.types import TokenAsyncGen, TokenGen
+from llama_index.legacy.prompts import BasePromptTemplate
+from llama_index.legacy.types import TokenAsyncGen, TokenGen
 
 
 @deprecated("VellumPredictor is deprecated and will be removed in a future release.")

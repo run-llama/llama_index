@@ -4,9 +4,9 @@ import sys
 from typing import TYPE_CHECKING, Any, List, Optional
 from urllib.parse import urlparse
 
-from llama_index.bridge.pydantic import Field
-from llama_index.llms import ChatMessage
-from llama_index.storage.chat_store.base import BaseChatStore
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.llms import ChatMessage
+from llama_index.legacy.storage.chat_store.base import BaseChatStore
 
 if TYPE_CHECKING:
     from redis import Redis

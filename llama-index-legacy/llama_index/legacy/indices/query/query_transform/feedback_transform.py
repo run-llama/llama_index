@@ -1,13 +1,13 @@
 import logging
 from typing import Dict, Optional
 
-from llama_index.evaluation.base import Evaluation
-from llama_index.indices.query.query_transform.base import BaseQueryTransform
-from llama_index.llm_predictor.base import LLMPredictorType
-from llama_index.llms.utils import resolve_llm
-from llama_index.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.prompts.mixin import PromptDictType
-from llama_index.schema import QueryBundle
+from llama_index.legacy.evaluation.base import Evaluation
+from llama_index.legacy.indices.query.query_transform.base import BaseQueryTransform
+from llama_index.legacy.llm_predictor.base import LLMPredictorType
+from llama_index.legacy.llms.utils import resolve_llm
+from llama_index.legacy.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.legacy.prompts.mixin import PromptDictType
+from llama_index.legacy.schema import QueryBundle
 
 logger = logging.getLogger(__name__)
 

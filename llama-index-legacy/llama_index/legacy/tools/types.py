@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
 if TYPE_CHECKING:
-    from llama_index.bridge.langchain import StructuredTool, Tool
+    from llama_index.legacy.bridge.langchain import StructuredTool, Tool
 from deprecated import deprecated
 
-from llama_index.bridge.pydantic import BaseModel
+from llama_index.legacy.bridge.pydantic import BaseModel
 
 
 class DefaultToolFnSchema(BaseModel):
@@ -121,7 +121,7 @@ class BaseTool:
         **langchain_tool_kwargs: Any,
     ) -> "Tool":
         """To langchain tool."""
-        from llama_index.bridge.langchain import Tool
+        from llama_index.legacy.bridge.langchain import Tool
 
         langchain_tool_kwargs = self._process_langchain_tool_kwargs(
             langchain_tool_kwargs
@@ -136,7 +136,7 @@ class BaseTool:
         **langchain_tool_kwargs: Any,
     ) -> "StructuredTool":
         """To langchain structured tool."""
-        from llama_index.bridge.langchain import StructuredTool
+        from llama_index.legacy.bridge.langchain import StructuredTool
 
         langchain_tool_kwargs = self._process_langchain_tool_kwargs(
             langchain_tool_kwargs

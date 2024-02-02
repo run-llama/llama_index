@@ -3,11 +3,11 @@ from typing import Any, Callable, List, Optional
 
 import pandas as pd
 
-from llama_index.node_parser.relational.base_element import (
+from llama_index.legacy.node_parser.relational.base_element import (
     BaseElementNodeParser,
     Element,
 )
-from llama_index.schema import BaseNode, TextNode
+from llama_index.legacy.schema import BaseNode, TextNode
 
 
 def md_to_df(md_str: str) -> pd.DataFrame:

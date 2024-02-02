@@ -3,24 +3,24 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
-from llama_index.callbacks import CallbackManager, trace_method
-from llama_index.chat_engine.types import (
+from llama_index.legacy.callbacks import CallbackManager, trace_method
+from llama_index.legacy.chat_engine.types import (
     AgentChatResponse,
     BaseChatEngine,
     StreamingAgentChatResponse,
     ToolOutput,
 )
-from llama_index.core.llms.types import ChatMessage, MessageRole
-from llama_index.indices.base_retriever import BaseRetriever
-from llama_index.indices.query.schema import QueryBundle
-from llama_index.indices.service_context import ServiceContext
-from llama_index.llms.generic_utils import messages_to_history_str
-from llama_index.llms.llm import LLM
-from llama_index.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.prompts.base import PromptTemplate
-from llama_index.schema import MetadataMode, NodeWithScore
-from llama_index.utilities.token_counting import TokenCounter
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.indices.base_retriever import BaseRetriever
+from llama_index.legacy.indices.query.schema import QueryBundle
+from llama_index.legacy.indices.service_context import ServiceContext
+from llama_index.legacy.llms.generic_utils import messages_to_history_str
+from llama_index.legacy.llms.llm import LLM
+from llama_index.legacy.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.legacy.postprocessor.types import BaseNodePostprocessor
+from llama_index.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.schema import MetadataMode, NodeWithScore
+from llama_index.legacy.utilities.token_counting import TokenCounter
 
 logger = logging.getLogger(__name__)
 

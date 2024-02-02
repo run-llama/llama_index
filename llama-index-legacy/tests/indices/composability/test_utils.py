@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from llama_index.legacy.schema import BaseNode
-from llama_index.legacy.vector_stores.types import (
+from llama_index.legacy.legacy.schema import BaseNode
+from llama_index.legacy.legacy.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,

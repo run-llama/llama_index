@@ -1,13 +1,13 @@
 from typing import Callable, List, Optional, Union
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks import CallbackManager
-from llama_index.core.embeddings.base import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.core.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
     Embedding,
 )
-from llama_index.embeddings.huggingface_utils import format_query, format_text
+from llama_index.legacy.embeddings.huggingface_utils import format_query, format_text
 
 DEFAULT_URL = "http://127.0.0.1:8080"
 

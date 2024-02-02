@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 if TYPE_CHECKING:
     from weaviate import Client
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.vector_stores.utils import (
+from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
+from llama_index.legacy.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
