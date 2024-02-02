@@ -17,7 +17,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-name = "llama-index-embeddings-clip"
+name = "flying-delta-embeddings-clip"
 version = "0.1.0"
 description = "llama-index embeddings clip integration"
 authors = ["Your Name <you@example.com>"]
