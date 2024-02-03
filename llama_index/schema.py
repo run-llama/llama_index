@@ -454,7 +454,6 @@ class ImageNode(TextNode):
     """Node with image."""
 
     # TODO: store reference instead of actual image
-
     # base64 encoded image str
     image: Optional[str] = None
     image_path: Optional[str] = None
