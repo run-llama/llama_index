@@ -10,14 +10,15 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 from warnings import warn
 
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.indices.query.embedding_utils import get_top_k_mmr_embeddings
 from llama_index.schema import BaseNode, MetadataMode
 from llama_index.vector_stores.types import (
+    BasePydanticVectorStore,
     ExactMatchFilter,
     FilterOperator,
     MetadataFilter,
     MetadataFilters,
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -35,7 +36,7 @@ MAX_INSERT_BATCH_SIZE = 20
 NON_INDEXED_FIELDS = ["metadata._node_content", "content"]
 
 
-class AstraDBVectorStore(VectorStore):
+class AstraDBVectorStore(BasePydanticVectorStore):
     """
     Astra DB Vector Store.
 
@@ -61,6 +62,11 @@ class AstraDBVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    _embedding_dimension: int = PrivateAttr()
+    _ttl_seconds: Optional[int] = PrivateAttr()
+    _astra_db: Any = PrivateAttr()
+    _astra_db_collection: Any = PrivateAttr()
+
     def __init__(
         self,
         *,
@@ -71,6 +77,8 @@ class AstraDBVectorStore(VectorStore):
         namespace: Optional[str] = None,
         ttl_seconds: Optional[int] = None,
     ) -> None:
+        super().__init__()
+
         import_err_msg = (
             "`astrapy` package not found, please run `pip install --upgrade astrapy`"
         )
