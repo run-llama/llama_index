@@ -1,8 +1,4 @@
-import json
-from typing import Any, Coroutine, Dict, Sequence, Tuple
-
-import httpx
-from httpx import Timeout
+from typing import Any, Dict, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field
 from llama_index.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -11,13 +7,11 @@ from llama_index.core.llms.types import (
     ChatResponse,
     ChatResponseAsyncGen,
     ChatResponseGen,
-    CompletionResponseAsyncGen,
-    CompletionResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
 )
-from llama_index.llms.base import llm_chat_callback, llm_completion_callback
 from llama_index.multi_modal_llms import (
     MultiModalLLM,
     MultiModalLLMMetadata,
@@ -25,27 +19,31 @@ from llama_index.multi_modal_llms import (
 from llama_index.multi_modal_llms.generic_utils import image_documents_to_base64
 from llama_index.schema import ImageDocument
 
+
 def get_additional_kwargs(
     response: Dict[str, Any], exclude: Tuple[str, ...]
 ) -> Dict[str, Any]:
     return {k: v for k, v in response.items() if k not in exclude}
 
+
 def _messages_to_dicts(messages: Sequence[ChatMessage]) -> Sequence[Dict[str, Any]]:
     """Convert messages to dicts.
 
     For use in ollama API
-    
+
     """
     results = []
     for message in messages:
         # TODO: just pass through the image arg for now.
         # TODO: have a consistent interface between multimodal models
         images = message.additional_kwargs.get("images")
-        results.append({
-            "role": message.role.value,
-            "content": message.content,
-            "images": images,
-        })
+        results.append(
+            {
+                "role": message.role.value,
+                "content": message.content,
+                "images": images,
+            }
+        )
     return results
 
 
@@ -106,12 +104,9 @@ class OllamaMultiModal(MultiModalLLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat."""
         import ollama
+
         ollama_messages = _messages_to_dicts(messages)
-        response = ollama.chat(
-            model=self.model,
-            messages=ollama_messages,
-            stream=False
-        )
+        response = ollama.chat(model=self.model, messages=ollama_messages, stream=False)
         return ChatResponse(
             message=ChatMessage(
                 content=response["message"]["content"],
@@ -121,19 +116,15 @@ class OllamaMultiModal(MultiModalLLM):
             raw=response["message"],
             additional_kwargs=get_additional_kwargs(response, ("message",)),
         )
-        
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         """Stream chat."""
         import ollama
+
         ollama_messages = _messages_to_dicts(messages)
-        response = ollama.chat(
-            model=self.model,
-            messages=ollama_messages,
-            stream=True
-        )
+        response = ollama.chat(model=self.model, messages=ollama_messages, stream=True)
         text = ""
         for chunk in response:
             if "done" in chunk and chunk["done"]:
@@ -145,14 +136,15 @@ class OllamaMultiModal(MultiModalLLM):
                 message=ChatMessage(
                     content=text,
                     role=MessageRole(message["role"]),
-                    additional_kwargs=get_additional_kwargs(message, ("content", "role")),
+                    additional_kwargs=get_additional_kwargs(
+                        message, ("content", "role")
+                    ),
                 ),
                 delta=delta,
                 raw=message,
                 additional_kwargs=get_additional_kwargs(chunk, ("message",)),
             )
 
-        
     def complete(
         self,
         prompt: str,
@@ -175,7 +167,6 @@ class OllamaMultiModal(MultiModalLLM):
             raw=response,
             additional_kwargs=get_additional_kwargs(response, ("response",)),
         )
-
 
     def stream_complete(
         self,

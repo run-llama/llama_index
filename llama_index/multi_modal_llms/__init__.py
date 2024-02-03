@@ -7,9 +7,9 @@ from llama_index.multi_modal_llms.dashscope import (
     DashScopeMultiModalModels,
 )
 from llama_index.multi_modal_llms.gemini import GeminiMultiModal
+from llama_index.multi_modal_llms.ollama import OllamaMultiModal
 from llama_index.multi_modal_llms.openai import OpenAIMultiModal
 from llama_index.multi_modal_llms.replicate_multi_modal import ReplicateMultiModal
-from llama_index.multi_modal_llms.ollama import OllamaMultiModal
 
 __all__ = [
     "ReplicateMultiModal",
@@ -19,5 +19,5 @@ __all__ = [
     "GeminiMultiModal",
     "DashScopeMultiModal",
     "DashScopeMultiModalModels",
-    "OllamaMultiModal"
+    "OllamaMultiModal",
 ]
