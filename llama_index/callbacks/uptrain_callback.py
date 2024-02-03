@@ -2,7 +2,6 @@ from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Literal, Optional, Set
 
 import nest_asyncio
-from uptrain import APIClient, EvalLLM, Evals, Settings
 
 from llama_index.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.schema import (
@@ -56,6 +55,13 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         project_name_prefix: str = "llama",
     ) -> None:
         """Initialize the UpTrain callback handler."""
+        try:
+            from uptrain import APIClient, EvalLLM, Settings
+        except ImportError:
+            raise ImportError(
+                "UpTrainCallbackHandler requires the 'uptrain' package. "
+                "Please install it using 'pip install uptrain'."
+            )
         nest_asyncio.apply()
         super().__init__(
             event_starts_to_ignore=[],
@@ -156,6 +162,13 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Run when an event ends."""
+        try:
+            from uptrain import Evals
+        except ImportError:
+            raise ImportError(
+                "UpTrainCallbackHandler requires the 'uptrain' package. "
+                "Please install it using 'pip install uptrain'."
+            )
         event = CBEvent(event_type, payload=payload, id_=event_id)
         self._event_pairs_by_id[event.id_].append(event)
         self._trace_map = defaultdict(list)
