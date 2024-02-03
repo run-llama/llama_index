@@ -8,6 +8,7 @@ powered by the astrapy library
 import json
 import logging
 from typing import Any, Dict, List, Optional, cast
+from warnings import warn
 
 from llama_index.indices.query.embedding_utils import get_top_k_mmr_embeddings
 from llama_index.schema import BaseNode, MetadataMode
@@ -30,6 +31,8 @@ _logger = logging.getLogger(__name__)
 
 DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 MAX_INSERT_BATCH_SIZE = 20
+
+NON_INDEXED_FIELDS = ["metadata._node_content", "content"]
 
 
 class AstraDBVectorStore(VectorStore):
@@ -89,10 +92,67 @@ class AstraDBVectorStore(VectorStore):
             api_endpoint=api_endpoint, token=token, namespace=namespace
         )
 
-        # Create and connect to the newly created collection
-        self._astra_db_collection = self._astra_db.create_collection(
-            collection_name=collection_name, dimension=embedding_dimension
-        )
+        from astrapy.api import APIRequestError
+
+        try:
+            # Create and connect to the newly created collection
+            self._astra_db_collection = self._astra_db.create_collection(
+                collection_name=collection_name,
+                dimension=embedding_dimension,
+                options={"indexing": {"deny": NON_INDEXED_FIELDS}},
+            )
+        except APIRequestError as e:
+            # possibly the collection is preexisting and has legacy
+            # indexing settings: verify
+            get_coll_response = self._astra_db.get_collections(
+                options={"explain": True}
+            )
+            collections = (get_coll_response["status"] or {}).get("collections") or []
+            preexisting = [
+                collection
+                for collection in collections
+                if collection["name"] == collection_name
+            ]
+            if preexisting:
+                pre_collection = preexisting[0]
+                # if it has no "indexing", it is a legacy collection;
+                # otherwise it's unexpected warn and proceed at user's risk
+                pre_col_options = pre_collection.get("options") or {}
+                if "indexing" not in pre_col_options:
+                    warn(
+                        (
+                            f"Collection '{collection_name}' is detected as legacy"
+                            " and has indexing turned on for all fields. This"
+                            " implies stricter limitations on the amount of text"
+                            " each entry can store. Consider reindexing anew on a"
+                            " fresh collection to be able to store longer texts."
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                    self._astra_db_collection = self._astra_db.collection(
+                        collection_name=collection_name,
+                    )
+                else:
+                    options_json = json.dumps(pre_col_options["indexing"])
+                    warn(
+                        (
+                            f"Collection '{collection_name}' has unexpected 'indexing'"
+                            f" settings (options.indexing = {options_json})."
+                            " This can result in odd behaviour when running "
+                            " metadata filtering and/or unwarranted limitations"
+                            " on storing long texts. Consider reindexing anew on a"
+                            " fresh collection."
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                    self._astra_db_collection = self._astra_db.collection(
+                        collection_name=collection_name,
+                    )
+            else:
+                # other exception
+                raise
 
     def add(
         self,
