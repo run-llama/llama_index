@@ -454,6 +454,7 @@ class ImageNode(TextNode):
     """Node with image."""
 
     # TODO: store reference instead of actual image
+
     # base64 encoded image str
     image: Optional[str] = None
     image_path: Optional[str] = None
@@ -462,6 +463,10 @@ class ImageNode(TextNode):
     text_embedding: Optional[List[float]] = Field(
         default=None,
         description="Text embedding of image node, if text field is filled out",
+    )
+    image_embedding: Optional[List[float]] = Field(
+        default=None,
+        description="Image embedding of image node",
     )
 
     @classmethod
