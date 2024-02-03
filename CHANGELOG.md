@@ -3,9 +3,11 @@
 ## [0.9.43] - 2024-02-03
 
 ### New Features
+
 - Add multi-modal ollama (#10434)
 
 ### Bug Fixes / Nits
+
 - update base class for astradb (#10435)
 
 ## [0.9.42.post1] - 2024-02-02
