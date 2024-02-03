@@ -16,7 +16,7 @@
 
 There two ways you can use UpTrain with LlamaIndex:
 
-1. **Using the UpTrain Callback Handler**: This method allows you to seemlessly integrate UpTrain with LlamaIndex. You can simply add UpTrainCallbackHandler to your existing LlamaIndex pipeline and it will take care of sending the generated responses to the UpTrain Managed Service for evaluations. This is the recommended method as it is the easiest to use and provides you with dashboards and insights with minimal effort.
+1. **Using the UpTrain Callback Handler**: This method allows you to seamlessly integrate UpTrain with LlamaIndex. You can simply add UpTrainCallbackHandler to your existing LlamaIndex pipeline and it will take care of sending the generated responses to the UpTrain Managed Service for evaluations. This is the recommended method as it is the easiest to use and provides you with dashboards and insights with minimal effort.
 
 2. **Using UpTrain's EvalLlamaIndex**: This method allows you to use UpTrain to perform evaluations on the generated responses. You can use the EvalLlamaIndex object to generate responses for the queries and then perform evaluations on the responses. You can find a detailed tutorial on how to do this below. This method offers more flexibility and control over the evaluations, but requires more effort to set up and use.
 
@@ -42,7 +42,7 @@ The SubQuestionQueryGeneration operator decomposes a question into sub-questions
 
 ## 3. **Re-Ranking Evaluations**:
 
-Re-ranking involves reordering nodes based on relevance to the query and chosing top n nodes. Different evaluations are performed based on the number of nodes returned after re-ranking.
+Re-ranking involves reordering nodes based on relevance to the query and choosing top n nodes. Different evaluations are performed based on the number of nodes returned after re-ranking.
 
 a. Same Number of Nodes
 
@@ -63,8 +63,8 @@ These evaluations collectively ensure the robustness and effectiveness of the RA
 
 Install notebook dependencies.
 
-```python
-!pip install -q html2text llama-index pandas tqdm uptrain cohere
+```bash
+pip install -q html2text llama-index pandas tqdm uptrain cohere
 ```
 
 Import libraries.
@@ -93,7 +93,7 @@ You can choose between the following options for evaluating using UpTrain:
 ### 1. **UpTrain's Open-Source Software (OSS)**:
 
 You can use the open-source evaluation service to evaluate your model.
-In this case, you will need to provie an OpenAI API key. You can get yours [here](https://platform.openai.com/account/api-keys).
+In this case, you will need to provide an OpenAI API key. You can get yours [here](https://platform.openai.com/account/api-keys).
 
 Parameters:
 
@@ -214,7 +214,7 @@ Here's an example of the dashboard showing how you can filter and drill down to 
 
 # 2. Sub-Question Query Engine Evaluation
 
-The **sub question query engine** is used to tackle the problem of answering a complex query using multiple data sources. It first breaks down the complex query into sub questions for each relevant data source, then gather all the intermediate reponses and synthesizes a final response.
+The **sub question query engine** is used to tackle the problem of answering a complex query using multiple data sources. It first breaks down the complex query into sub questions for each relevant data source, then gather all the intermediate responses and synthesizes a final response.
 
 UpTrain callback handler will automatically capture the sub-question and the responses for each of them once generated and will run the following three evaluations _(Graded from 0 to 1)_ on the response:
 
