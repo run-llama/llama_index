@@ -464,10 +464,6 @@ class ImageNode(TextNode):
         default=None,
         description="Text embedding of image node, if text field is filled out",
     )
-    image_embedding: Optional[List[float]] = Field(
-        default=None,
-        description="Image embedding of image node",
-    )
 
     @classmethod
     def get_type(cls) -> str:
