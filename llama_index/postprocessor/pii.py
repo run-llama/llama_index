@@ -146,3 +146,66 @@ class NERPIINodePostprocessor(BaseNodePostprocessor):
             new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))
 
         return new_nodes
+
+class PresidioPIINodePostprocessor(BaseNodePostprocessor):
+    """presidio PII Node processor.
+
+    Uses a presidio to analyse PIIs.
+
+    """
+
+    pii_node_info_key: str = "__pii_node_info__"
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PresidioPIINodePostprocessor"
+
+    def mask_pii(self, text: str) -> Tuple[str, Dict]:
+        from presidio_analyzer import AnalyzerEngine
+        from presidio_anonymizer import AnonymizerEngine
+        from presidio_anonymizer.entities import (OperatorConfig)
+
+        analyzer = AnalyzerEngine()
+        results = analyzer.analyze(text=text, language='en')
+        
+        engine = AnonymizerEngine()
+
+        anonymized_text = engine.anonymize(
+            text=text,
+            analyzer_results=results
+        )
+        # mapping = dict([(result.entity_type, text[result.start:result.end]) for result in results])
+        # new_text = anonymized_text.text
+        mapping = dict([(f"<{result.entity_type}_{result.start}>", text[result.start:result.end]) for result in results])
+        mapping = {value:key for key, value in  mapping.items()}
+
+        new_text = text
+        for result in results:
+            # new_text = new_text.replace(text[result.start:result.end], mapping[f"<{result.entity_type}_{result.start}>"])
+            new_text = new_text.replace(text[result.start:result.end], mapping[text[result.start:result.end]])
+
+        mapping = {value:key for key, value in  mapping.items()}
+
+        return new_text, mapping
+
+    def _postprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes."""
+        # swap out text from nodes, with the original node mappings
+        new_nodes = []
+        for node_with_score in nodes:
+            node = node_with_score.node
+            new_text, mapping_info = self.mask_pii(
+                node.get_content(metadata_mode=MetadataMode.LLM)
+            )
+            new_node = deepcopy(node)
+            new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
+            new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
+            new_node.metadata[self.pii_node_info_key] = mapping_info
+            new_node.set_content(new_text)
+            new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))
+
+        return new_nodes

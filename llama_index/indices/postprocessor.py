@@ -11,6 +11,7 @@ from llama_index.postprocessor import (
     MetadataReplacementPostProcessor,
     NERPIINodePostprocessor,
     PIINodePostprocessor,
+    PresidioPIINodePostprocessor,
     PrevNextNodePostprocessor,
     SentenceEmbeddingOptimizer,
     SentenceTransformerRerank,
