@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Optional, Sequence, Dict, get_args, List
+from typing import Any, Dict, List, Optional, Sequence, get_args
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.constants import (
@@ -16,14 +16,14 @@ from llama_index.core.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
 )
-from llama_index.schema import BaseComponent, ImageDocument
 from llama_index.core.query_pipeline.query_component import (
+    ChainableMixin,
     InputKeys,
     OutputKeys,
     QueryComponent,
-    ChainableMixin,
     validate_and_convert_stringable,
 )
+from llama_index.schema import BaseComponent, ImageDocument
 
 
 class MultiModalLLMMetadata(BaseModel):
@@ -144,7 +144,6 @@ class MultiModalLLM(ChainableMixin, BaseComponent):
 
     def _as_query_component(self, **kwargs: Any) -> ChainableMixin:
         """Return query component."""
-
         if self.metadata.is_chat_model:
             # TODO: we don't have a separate chat component
             return MultiModalCompleteComponent(multi_modal_llm=self, **kwargs)
@@ -164,7 +163,6 @@ class BaseMultiModalComponent(QueryComponent):
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""
         # TODO: make callbacks work with multi-modal
-        pass
 
 
 class MultiModalCompleteComponent(BaseMultiModalComponent):
@@ -177,7 +175,9 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
 
         # do special check to see if prompt is a list of chat messages
         if isinstance(input["prompt"], get_args(List[ChatMessage])):
-            raise NotImplementedError("Chat messages not yet supported as input to multi-modal model.")
+            raise NotImplementedError(
+                "Chat messages not yet supported as input to multi-modal model."
+            )
         else:
             input["prompt"] = validate_and_convert_stringable(input["prompt"])
 
@@ -187,7 +187,9 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
                 raise ValueError("image_documents must be a list.")
             for doc in input["image_documents"]:
                 if not isinstance(doc, ImageDocument):
-                    raise ValueError("image_documents must be a list of ImageDocument objects.")
+                    raise ValueError(
+                        "image_documents must be a list of ImageDocument objects."
+                    )
 
         return input
 
@@ -209,7 +211,9 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
         prompt = kwargs["prompt"]
         image_documents = kwargs.get("image_documents", [])
         if self.streaming:
-            response = await self.multi_modal_llm.astream_complete(prompt, image_documents)
+            response = await self.multi_modal_llm.astream_complete(
+                prompt, image_documents
+            )
         else:
             response = await self.multi_modal_llm.acomplete(prompt, image_documents)
         return {"output": response}
@@ -224,4 +228,3 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"output"})
-
