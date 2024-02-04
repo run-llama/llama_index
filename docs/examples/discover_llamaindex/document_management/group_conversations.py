@@ -46,7 +46,7 @@ for msg in data["messages"]:
         parent_id = msg["reference"]["messageId"]
         try:
             messages[_id].set_parent(messages[parent_id])
-        except:
+        except Exception:
             continue  # deleted message reference?
         messages[parent_id].set_child(messages[_id])
 

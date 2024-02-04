@@ -1,5 +1,5 @@
-from llama_index.schema import TextNode
-from llama_index import ServiceContext, VectorStoreIndex
+from llama_index.core.schema import TextNode
+from llama_index.core import ServiceContext, VectorStoreIndex
 import pandas as pd
 from tqdm import tqdm
 
@@ -59,7 +59,6 @@ def display_results(names, results_arr):
         hit_rates.append(hit_rate)
         mrrs.append(mrr)
 
-    final_df = pd.DataFrame(
+    return pd.DataFrame(
         {"retrievers": names, "hit_rate": hit_rates, "mrr": mrrs}
     )
-    display(final_df)
