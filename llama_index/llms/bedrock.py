@@ -68,7 +68,7 @@ class Bedrock(LLM):
     max_retries: int = Field(
         default=10, description="The maximum number of API retries.", gt=0
     )
-    timeout: int = Field(
+    timeout: float = Field(
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )

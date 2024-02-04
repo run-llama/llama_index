@@ -61,12 +61,12 @@ class BedrockEmbedding(BaseEmbedding):
     max_retries: int = Field(
         default=10, description="The maximum number of API retries.", gt=0
     )
-    timeout: int = Field(
+    timeout: float = Field(
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs for the OpenAI API."
+        default_factory=dict, description="Additional kwargs for the bedrock client."
     )
     _client: Any = PrivateAttr()
 
@@ -83,7 +83,7 @@ class BedrockEmbedding(BaseEmbedding):
         botocore_config: Optional[Any] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
-        timeout: int = 60.0,
+        timeout: float = 60.0,
         callback_manager: Optional[CallbackManager] = None,
         # base class
         system_prompt: Optional[str] = None,
