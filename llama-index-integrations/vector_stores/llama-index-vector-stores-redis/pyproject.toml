@@ -18,7 +18,7 @@ python_version = "3.8"
 
 [tool.poetry]
 name = "llama-index-vector-stores-redis"
-version = "0.1.1"
+version = "0.0.1"
 description = "llama-index vector_stores redis integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
