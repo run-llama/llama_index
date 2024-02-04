@@ -11,10 +11,10 @@ from llama_index.core import (
     SimpleDirectoryReader,
     VectorStoreIndex,
 )
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.base.response.schema import RESPONSE_TYPE, StreamingResponse
 from llama_index.core.bridge.pydantic import BaseModel, Field, validator
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
-from llama_index.core.embeddings.base import BaseEmbedding
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.llms import LLM
 from llama_index.core.query_engine import CustomQueryEngine
