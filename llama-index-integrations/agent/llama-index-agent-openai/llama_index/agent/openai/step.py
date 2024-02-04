@@ -7,7 +7,6 @@ import uuid
 from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
 
-from llama_index.core.agent.openai.utils import resolve_tool_choice
 from llama_index.core.agent.types import (
     BaseAgentWorker,
     Task,
@@ -36,6 +35,7 @@ from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall
+from llama_index.agent.openai.utils import resolve_tool_choice
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
