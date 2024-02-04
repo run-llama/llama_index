@@ -142,7 +142,7 @@ class MultiModalLLM(ChainableMixin, BaseComponent):
     ) -> ChatResponseAsyncGen:
         """Async streaming chat endpoint for Multi-Modal LLM."""
 
-    def _as_query_component(self, **kwargs: Any) -> ChainableMixin:
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return query component."""
         if self.metadata.is_chat_model:
             # TODO: we don't have a separate chat component
