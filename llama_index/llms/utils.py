@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
@@ -12,8 +13,12 @@ from llama_index.llms.openai_utils import validate_openai_api_key
 
 LLMType = Union[str, LLM, "BaseLanguageModel"]
 
+logger = logging.getLogger(__name__)
 
-def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
+
+def resolve_llm(
+    llm: Optional[LLMType] = None, local_files_only: Optional[bool] = False
+) -> LLM:
     """Resolve LLM from string or LLM instance."""
     try:
         from langchain.base_language import BaseLanguageModel
@@ -23,6 +28,14 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
         BaseLanguageModel = None  # type: ignore
 
     if llm == "default":
+        if local_files_only:
+            raise ValueError(
+                "local_files_only is True, but llm='default'. "
+                "This will attempt to use the OpenAI API. To use local files only, "
+                "set llm='local:<model_path>' or llm=LLM(...) in the service context."
+                "To use the OpenAI API, set local_files_only=False."
+            )
+
         # return default OpenAI model. If it fails, return LlamaCPP
         try:
             llm = OpenAI()
@@ -46,6 +59,7 @@ def resolve_llm(llm: Optional[LLMType] = None) -> LLM:
             raise ValueError(
                 "llm must start with str 'local' or of type LLM or BaseLanguageModel"
             )
+        logger.debug(f"Attempting to load Llamacpp model from {model_path}")
         llm = LlamaCPP(
             model_path=model_path,
             messages_to_prompt=messages_to_prompt,

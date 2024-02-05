@@ -1,4 +1,6 @@
+import logging
 import asyncio
+import os
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
@@ -21,6 +23,8 @@ if TYPE_CHECKING:
     import torch
 
 DEFAULT_HUGGINGFACE_LENGTH = 512
+
+logger = logging.getLogger(__name__)
 
 
 class HuggingFaceEmbedding(BaseEmbedding):
@@ -60,6 +64,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         trust_remote_code: bool = False,
         device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        local_files_only: Optional[bool] = False,
     ):
         try:
             from transformers import AutoModel, AutoTokenizer
@@ -79,9 +84,33 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 if model_name is not None
                 else DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             )
-            model = AutoModel.from_pretrained(
-                model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code
-            )
+            # TODO: Loading a local model via cloned repo only works like this for some reason.
+            # Can this be done in a better way?
+            if local_files_only:
+                model = AutoModel.from_pretrained(
+                    os.path.join(cache_folder, model_name),
+                    local_files_only=local_files_only,
+                )
+            else:
+                logger.debug(
+                    f"Trying to load local model: {model_name} from dir: {cache_folder}"
+                )
+
+                try:
+                    model = AutoModel.from_pretrained(
+                        model_name,
+                        cache_dir=cache_folder,
+                        trust_remote_code=trust_remote_code,
+                    )
+                except OSError as e:
+                    raise OSError(
+                        f"Could not load model {model_name}\n"
+                        f"from {cache_folder}.\n"
+                        f"Please check that the model exists in {cache_folder}\n"
+                        "or provide a valid model name. To force usage of a local model, set local_files_only=True in the service context."
+                    ) from e
+
+            logger.debug("Successfully loaded embedding model")
         elif model_name is None:  # Extract model_name from model
             model_name = model.name_or_path
         self._model = model.to(self._device)
@@ -90,9 +119,16 @@ class HuggingFaceEmbedding(BaseEmbedding):
             tokenizer_name = (
                 model_name or tokenizer_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             )
-            tokenizer = AutoTokenizer.from_pretrained(
-                tokenizer_name, cache_dir=cache_folder
-            )
+
+            if local_files_only:
+                tokenizer = AutoTokenizer.from_pretrained(
+                    os.path.join(cache_folder, tokenizer_name)
+                )
+            else:
+                tokenizer = AutoTokenizer.from_pretrained(
+                    tokenizer_name, cache_dir=cache_folder
+                )
+            logger.debug(f"Loaded tokenizer {tokenizer_name}")
         elif tokenizer_name is None:  # Extract tokenizer_name from model
             tokenizer_name = tokenizer.name_or_path
         self._tokenizer = tokenizer

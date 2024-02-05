@@ -1,6 +1,7 @@
 """General utils functions."""
 
 import asyncio
+import logging
 import os
 import random
 import sys
@@ -27,6 +28,8 @@ from typing import (
     Union,
     runtime_checkable,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class GlobalsHelper:
@@ -126,7 +129,12 @@ def get_tokenizer() -> Callable[[str], List]:
                 "_static/tiktoken_cache",
             )
 
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        try:
+            enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+            logger.debug("Tiktoken encoder loaded successfully")
+        except Exception as e:
+            logger.error("Failed to load default tiktoken encoder")
+
         tokenizer = partial(enc.encode, allowed_special="all")
         set_global_tokenizer(tokenizer)
 

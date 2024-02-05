@@ -35,7 +35,7 @@ def load_embedding(file_path: str) -> List[float]:
         return embedding
 
 
-def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbedding:
+def resolve_embed_model(embed_model: Optional[EmbedType] = None, local_files_only: Optional[bool] = False) -> BaseEmbedding:
     """Resolve embed model."""
     try:
         from llama_index.bridge.langchain import Embeddings as LCEmbeddings
@@ -43,6 +43,15 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
         LCEmbeddings = None  # type: ignore
 
     if embed_model == "default":
+        if local_files_only:
+            raise ValueError(
+                "local_files_only is True, but embed_model='default'. "
+                "This will attempt to use an embedding model that requires the OpenAI API. "
+                "To use local files only, "
+                "set embed_model='local:<model_path>' or embed_model=BaseEmbedding(...) "
+                "in the service context."
+                "To use the OpenAI API, set local_files_only=False."
+            )
         try:
             embed_model = OpenAIEmbedding()
             validate_openai_api_key(embed_model.api_key)
@@ -82,7 +91,7 @@ def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbeddin
             )
         else:
             embed_model = HuggingFaceEmbedding(
-                model_name=model_name, cache_folder=cache_folder
+                model_name=model_name, cache_folder=cache_folder, local_files_only=local_files_only
             )
 
     if LCEmbeddings is not None and isinstance(embed_model, LCEmbeddings):
