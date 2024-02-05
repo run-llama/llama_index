@@ -2,7 +2,7 @@
 
 One common use case is chatting with an LLM about files you have saved locally on your computer.
 
-We have written a CLI tool do help you do just that! You can point the rag CLI tool to a set of files you've saved locally, and it will ingest those files into a local vector database that is then used for a Chat Q&A repl within your terminal.
+We have written a CLI tool to help you do just that! You can point the rag CLI tool to a set of files you've saved locally, and it will ingest those files into a local vector database that is then used for a Chat Q&A repl within your terminal.
 
 By default, this tool uses OpenAI for the embeddings & LLM as well as a local Chroma Vector DB instance. **Warning**: this means that, by default, the local data you ingest with this tool _will_ be sent to OpenAI's API.
 

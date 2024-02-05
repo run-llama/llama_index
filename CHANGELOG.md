@@ -1,5 +1,29 @@
 # ChangeLog
 
+## [0.9.44] - 2024-02-05
+
+### New Features
+
+- ollama vision cookbook (#10438)
+- Support Gemini "transport" configuration (#10457)
+- Add Upstash Vector (#10451)
+
+## [0.9.43] - 2024-02-03
+
+### New Features
+
+- Add multi-modal ollama (#10434)
+
+### Bug Fixes / Nits
+
+- update base class for astradb (#10435)
+
+## [0.9.42.post1] - 2024-02-02
+
+### New Features
+
+- Add Async support for Base nodes parser (#10418)
+
 ## [0.9.42] - 2024-02-02
 
 ### New Features

@@ -27,6 +27,8 @@ Image to Image Retrieval </examples/multi_modal/image_to_image_retrieval.ipynb>
 /examples/multi_modal/structured_image_retrieval.ipynb
 /examples/multi_modal/ChromaMultiModalDemo.ipynb
 /examples/multi_modal/multi_modal_pdf_tables.ipynb
+/examples/multi_modal/gemini.ipynb
+/examples/multi_modal/ollama_cookbook.ipynb
 ```
 
 ### Structured Outputs
@@ -102,4 +104,17 @@ In this notebook guide, we'll demonstrate how to evaluate a Multi-Modal RAG syst
 maxdepth: 1
 ---
 /examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb
+```
+
+## Model Guides
+
+Here are notebook guides showing you how to interact with different multimodal model providers.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/multi_modal/openai_multi_modal.ipynb
+/examples/multi_modal/replicate_multi_modal.ipynb
+/examples/multi_modal/ollama_multi_modal.ipynb
 ```
