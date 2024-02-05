@@ -18,7 +18,11 @@ def parse_lines(
 
     parsing_modules = False
     for line in lines:
-        if "from llama_index." in line or "from llama_index import" in line:
+        if (
+            "from llama_index." in line
+            or "from llama_index import" in line
+            or "from llama_hub." in line
+        ):
             imported_modules = [line, line.split(" import ")[-1].strip()]
             if imported_modules[-1].startswith("("):
                 imported_modules[-1] = []
@@ -80,6 +84,23 @@ def parse_lines(
     return new_lines, [f"%pip install {el}" for el in new_installs]
 
 
+def _cell_installs_llama_hub(cell) -> bool:
+    lines = cell["source"]
+    if len(lines) > 1:
+        return False
+    if cell["cell_type"] == "code" and "pip install llama-hub" in lines[0]:
+        return True
+    return False
+
+
+def _format_new_installs(new_installs):
+    formatted_new_installs = []
+    for mod in new_installs[:-1]:
+        formatted_new_installs.append(mod + "\n")
+    formatted_new_installs.append(new_installs[-1])
+    return formatted_new_installs
+
+
 def upgrade_nb_file(file_path):
     with open(file_path) as f:
         notebook = json.load(f)
@@ -102,6 +123,7 @@ def upgrade_nb_file(file_path):
 
         cur_cells.append(cell)
 
+    print(f"new_installs: {new_installs}", flush=True)
     if len(new_installs) > 0:
         notebook["cells"] = cur_cells
         new_cell = {
@@ -109,10 +131,11 @@ def upgrade_nb_file(file_path):
             "metadata": {},
             "execution_count": None,
             "outputs": [],
-            "source": new_installs,
+            "source": _format_new_installs(new_installs),
         }
         cur_cells.insert(first_code_idx, new_cell)
 
+    cur_cells = [cell for cell in cur_cells if not _cell_installs_llama_hub(cell)]
     notebook["cells"] = cur_cells
     with open(file_path, "w") as f:
         json.dump(notebook, f, indent=1, ensure_ascii=False)
@@ -126,13 +149,13 @@ def upgrade_py_md_file(file_path: str) -> None:
     new_lines, new_installs = parse_lines(lines, installed_modules)
 
     with open(file_path, "w") as f:
-        f.write("".join(new_installs))
+        f.write("".join(_format_new_installs(new_installs)))
         f.write("".join(new_lines))
 
     if len(new_installs) > 0:
         print("New installs:")
     for install in new_installs:
-        print(install.strip().replace("!", ""))
+        print(install.strip().replace("%", ""))
 
 
 def upgrade_file(file_path: str) -> None:
