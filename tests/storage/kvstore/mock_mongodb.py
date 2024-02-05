@@ -8,6 +8,9 @@ class MockMongoCollection:
     def __init__(self) -> None:
         self._data: Dict[str, dict] = {}
 
+    def create_index(self, attr_name: str) -> None:
+        pass
+
     def find_one(self, filter: dict) -> Optional[dict]:
         for data in self._data.values():
             if filter is None or all(data[key] == val for key, val in filter.items()):
