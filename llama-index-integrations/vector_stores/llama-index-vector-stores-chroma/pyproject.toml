@@ -18,7 +18,7 @@ python_version = "3.8"
 
 [tool.poetry]
 name = "llama-index-vector-stores-chroma"
-version = "0.0.2a0"
+version = "0.0.2"
 description = "llama-index vector_stores chroma integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
