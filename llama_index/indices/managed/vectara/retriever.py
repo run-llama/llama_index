@@ -1,5 +1,5 @@
 """Vectara index.
-An index that that is built on top of Vectara.
+An index that is built on top of Vectara.
 """
 
 import json
@@ -7,10 +7,12 @@ import logging
 from typing import Any, List, Optional, Tuple
 
 from llama_index.callbacks.base import CallbackManager
-from llama_index.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.managed.types import ManagedIndexQueryMode
 from llama_index.indices.managed.vectara.base import VectaraIndex
+from llama_index.indices.managed.vectara.prompts import (
+    DEFAULT_VECTARA_QUERY_PROMPT_TMPL,
+)
 from llama_index.indices.vector_store.retrievers.auto_retriever.auto_retriever import (
     VectorIndexAutoRetriever,
 )
@@ -30,7 +32,7 @@ class VectaraRetriever(BaseRetriever):
 
     Args:
         index (VectaraIndex): the Vectara Index
-        similarity_top_k (int): number of top k results to return.
+        similarity_top_k (int): number of top k results to return, defaults to 5.
         vectara_query_mode (str): vector store query mode
             See reference for vectara_query_mode for full list of supported modes.
         lambda_val (float): for hybrid search.
@@ -56,7 +58,7 @@ class VectaraRetriever(BaseRetriever):
     def __init__(
         self,
         index: VectaraIndex,
-        similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
+        similarity_top_k: int = 5,
         vectara_query_mode: ManagedIndexQueryMode = ManagedIndexQueryMode.DEFAULT,
         lambda_val: float = 0.025,
         n_sentences_before: int = 2,
@@ -67,7 +69,7 @@ class VectaraRetriever(BaseRetriever):
         summary_enabled: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 7,
-        summary_prompt_name: str = "vectara-summary-ext-v1.2.0",
+        summary_prompt_name: str = "vectara-experimental-summary-ext-2023-10-23-small",
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -251,7 +253,7 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
         vector_store_info: VectorStoreInfo,
         **kwargs: Any,
     ) -> None:
-        super().__init__(index, vector_store_info, **kwargs)  # type: ignore
+        super().__init__(index, vector_store_info, prompt_template_str=DEFAULT_VECTARA_QUERY_PROMPT_TMPL, **kwargs)  # type: ignore
         self._index = index  # type: ignore
         self._kwargs = kwargs
         self._verbose = self._kwargs.get("verbose", False)
@@ -259,8 +261,8 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
 
     def _build_retriever_from_spec(
         self, spec: VectorStoreQuerySpec
-    ) -> Tuple[BaseRetriever, QueryBundle]:
-        query_bundle = QueryBundle(query_str=spec.query)
+    ) -> Tuple[VectaraRetriever, QueryBundle]:
+        query_bundle = self._get_query_bundle(spec.query)
 
         filter_list = [
             (filter.key, filter.operator.value, filter.value) for filter in spec.filters
@@ -302,3 +304,16 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
             ),
             query_bundle,
         )
+
+    def _vectara_query(
+        self,
+        query_bundle: QueryBundle,
+        **kwargs: Any,
+    ) -> Tuple[List[NodeWithScore], str]:
+        spec = self.generate_retrieval_spec(query_bundle)
+        vectara_retriever, new_query = self._build_retriever_from_spec(
+            VectorStoreQuerySpec(
+                query=spec.query, filters=spec.filters, top_k=self._similarity_top_k
+            )
+        )
+        return vectara_retriever._vectara_query(new_query, **kwargs)

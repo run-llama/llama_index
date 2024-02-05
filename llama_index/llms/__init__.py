@@ -17,6 +17,7 @@ from llama_index.llms.bedrock import Bedrock
 from llama_index.llms.clarifai import Clarifai
 from llama_index.llms.cohere import Cohere
 from llama_index.llms.custom import CustomLLM
+from llama_index.llms.dashscope import DashScope, DashScopeGenerationModels
 from llama_index.llms.everlyai import EverlyAI
 from llama_index.llms.gemini import Gemini
 from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
@@ -43,11 +44,16 @@ from llama_index.llms.perplexity import Perplexity
 from llama_index.llms.portkey import Portkey
 from llama_index.llms.predibase import PredibaseLLM
 from llama_index.llms.replicate import Replicate
+from llama_index.llms.sagemaker_llm_endpoint import SageMakerLLM, SageMakerLLMEndPoint
 from llama_index.llms.together import TogetherLLM
 from llama_index.llms.vertex import Vertex
 from llama_index.llms.vllm import Vllm, VllmServer
 from llama_index.llms.watsonx import WatsonX
 from llama_index.llms.xinference import Xinference
+from llama_index.multi_modal_llms.dashscope import (
+    DashScopeMultiModal,
+    DashScopeMultiModalModels,
+)
 
 __all__ = [
     "AI21",
@@ -97,10 +103,16 @@ __all__ = [
     "Portkey",
     "PredibaseLLM",
     "Replicate",
+    "SageMakerLLM",
+    "SageMakerLLMEndPoint",  # deprecated
     "TogetherLLM",
     "WatsonX",
     "Xinference",
     "Vllm",
     "VllmServer",
     "Vertex",
+    "DashScope",
+    "DashScopeGenerationModels",
+    "DashScopeMultiModalModels",
+    "DashScopeMultiModal",
 ]

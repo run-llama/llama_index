@@ -11,6 +11,13 @@ from llama_index.embeddings.bedrock import BedrockEmbedding
 from llama_index.embeddings.clarifai import ClarifaiEmbedding
 from llama_index.embeddings.clip import ClipEmbedding
 from llama_index.embeddings.cohereai import CohereEmbedding
+from llama_index.embeddings.dashscope import (
+    DashScopeBatchTextEmbeddingModels,
+    DashScopeEmbedding,
+    DashScopeMultiModalEmbeddingModels,
+    DashScopeTextEmbeddingModels,
+    DashScopeTextEmbeddingType,
+)
 from llama_index.embeddings.elasticsearch import (
     ElasticsearchEmbedding,
     ElasticsearchEmbeddings,
@@ -31,9 +38,13 @@ from llama_index.embeddings.instructor import InstructorEmbedding
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.embeddings.llm_rails import LLMRailsEmbedding, LLMRailsEmbeddings
 from llama_index.embeddings.mistralai import MistralAIEmbedding
+from llama_index.embeddings.nomic import NomicEmbedding
 from llama_index.embeddings.ollama_embedding import OllamaEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.pooling import Pooling
+from llama_index.embeddings.sagemaker_embedding_endpoint import (
+    SageMakerEmbedding,
+)
 from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 from llama_index.embeddings.together import TogetherEmbedding
 from llama_index.embeddings.utils import resolve_embed_model
@@ -63,11 +74,13 @@ __all__ = [
     "AnyscaleEmbedding",
     "OptimumEmbedding",
     "Pooling",
+    "SageMakerEmbedding",
     "GooglePaLMEmbedding",
     "SimilarityMode",
     "TextEmbeddingsInference",
     "TogetherEmbedding",
     "resolve_embed_model",
+    "NomicEmbedding",
     # Deprecated, kept for backwards compatibility
     "LLMRailsEmbeddings",
     "ElasticsearchEmbeddings",
@@ -75,4 +88,9 @@ __all__ = [
     "VoyageEmbedding",
     "OllamaEmbedding",
     "GeminiEmbedding",
+    "DashScopeEmbedding",
+    "DashScopeTextEmbeddingModels",
+    "DashScopeTextEmbeddingType",
+    "DashScopeBatchTextEmbeddingModels",
+    "DashScopeMultiModalEmbeddingModels",
 ]

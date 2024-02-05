@@ -8,7 +8,7 @@ from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.node_parser import NodeParser
 from llama_index.node_parser.interface import NodeParser
-from llama_index.node_parser.node_utils import build_nodes_from_splits
+from llama_index.node_parser.node_utils import build_nodes_from_splits, default_id_func
 from llama_index.node_parser.text.utils import split_by_sentence_tokenizer
 from llama_index.schema import BaseNode, Document
 from llama_index.utils import get_tqdm_iterable
@@ -79,11 +79,14 @@ class SemanticSplitterNodeParser(NodeParser):
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        id_func: Optional[Callable[[int, Document], str]] = None,
     ) -> "SemanticSplitterNodeParser":
         callback_manager = callback_manager or CallbackManager([])
 
         sentence_splitter = sentence_splitter or split_by_sentence_tokenizer()
         embed_model = embed_model or OpenAIEmbedding()
+
+        id_func = id_func or default_id_func
 
         return cls(
             embed_model=embed_model,
@@ -94,6 +97,7 @@ class SemanticSplitterNodeParser(NodeParser):
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
             callback_manager=callback_manager,
+            id_func=id_func,
         )
 
     def _parse_nodes(

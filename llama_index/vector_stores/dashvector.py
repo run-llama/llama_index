@@ -2,11 +2,12 @@
 import logging
 from typing import Any, List, Optional, cast
 
-from llama_index.schema import BaseNode, TextNode
+from llama_index.schema import BaseNode, MetadataMode, TextNode
 from llama_index.vector_stores.types import (
     MetadataFilters,
     VectorStore,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.utils import (
@@ -49,6 +50,8 @@ class DashVectorStore(VectorStore):
 
     Args:
         collection (Optional[dashvector.Collection]): DashVector collection instance
+        support_sparse_vector (bool): whether support sparse vector for collection.
+        encoder (Optional[dashtext.SparseVectorEncoder]): encoder for generating sparse vector from document
     """
 
     stores_text: bool = True
@@ -57,15 +60,30 @@ class DashVectorStore(VectorStore):
     def __init__(
         self,
         collection: Optional[Any] = None,
+        support_sparse_vector: bool = False,
+        encoder: Optional[Any] = None,
     ) -> None:
         """Initialize params."""
-        import_err_msg = (
-            "`dashvector` package not found, please run `pip install dashvector`"
-        )
         try:
             import dashvector
         except ImportError:
-            raise ImportError(import_err_msg)
+            raise ImportError(
+                "`dashvector` package not found, please run `pip install dashvector`"
+            )
+
+        if support_sparse_vector:
+            try:
+                import dashtext
+            except ImportError:
+                raise ImportError(
+                    "`dashtext` package not found, please run `pip install dashtext`"
+                )
+
+            if encoder is None:
+                encoder = dashtext.SparseVectorEncoder.default()
+
+            self._support_sparse_vector = support_sparse_vector
+            self._encoder = cast(dashtext.SparseVectorEncoder, encoder)
 
         if collection is not None:
             self._collection = cast(dashvector.Collection, collection)
@@ -89,6 +107,11 @@ class DashVectorStore(VectorStore):
                 Doc(
                     id=node.node_id,
                     vector=node.embedding,
+                    sparse_vector=self._encoder.encode_documents(
+                        node.get_content(metadata_mode=MetadataMode.EMBED)
+                    )
+                    if self._support_sparse_vector
+                    else None,
                     fields=node_to_metadata_dict(
                         node, remove_text=False, flat_metadata=self.flat_metadata
                     ),
@@ -126,10 +149,28 @@ class DashVectorStore(VectorStore):
         query_embedding = (
             [float(e) for e in query.query_embedding] if query.query_embedding else []
         )
+
+        sparse_vector = None
+        topk = query.similarity_top_k
+        if (
+            query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID)
+            and self._support_sparse_vector
+        ):
+            sparse_vector = self._encoder.encode_queries(query.query_str)
+            topk = query.hybrid_top_k or query.similarity_top_k
+
+            if query.alpha is not None:
+                from dashtext import combine_dense_and_sparse
+
+                query_embedding, sparse_vector = combine_dense_and_sparse(
+                    query_embedding, sparse_vector, query.alpha
+                )
+
         filter = _to_dashvector_filter(query.filters)
         rsp = self._collection.query(
             vector=query_embedding,
-            topk=query.similarity_top_k,
+            sparse_vector=sparse_vector,
+            topk=topk,
             filter=filter,
             include_vector=True,
         )

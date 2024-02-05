@@ -19,7 +19,6 @@ The prompts used to generate the metadata are specifically aimed to help
 disambiguate the document or subsection from other similar documents or subsections.
 (similar with contrastive learning)
 """
-from functools import reduce
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, cast
 
 from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
@@ -100,45 +99,53 @@ class TitleExtractor(BaseExtractor):
         return "TitleExtractor"
 
     async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        nodes_to_extract_title: List[BaseNode] = []
+        nodes_by_doc_id = self.separate_nodes_by_ref_id(nodes)
+        titles_by_doc_id = await self.extract_titles(nodes_by_doc_id)
+        return [{"document_title": titles_by_doc_id[node.ref_doc_id]} for node in nodes]
 
+    def filter_nodes(self, nodes: Sequence[BaseNode]) -> List[BaseNode]:
+        filtered_nodes: List[BaseNode] = []
         for node in nodes:
-            if len(nodes_to_extract_title) >= self.nodes:
-                break
             if self.is_text_node_only and not isinstance(node, TextNode):
                 continue
-            nodes_to_extract_title.append(node)
+            filtered_nodes.append(node)
+        return filtered_nodes
 
-        if len(nodes_to_extract_title) == 0:
-            # Could not extract title
-            return []
+    def separate_nodes_by_ref_id(self, nodes: Sequence[BaseNode]) -> Dict:
+        separated_items: Dict[Optional[str], List[BaseNode]] = {}
 
+        for node in nodes:
+            key = node.ref_doc_id
+            if key not in separated_items:
+                separated_items[key] = []
+
+            if len(separated_items[key]) < self.nodes:
+                separated_items[key].append(node)
+
+        return separated_items
+
+    async def extract_titles(self, nodes_by_doc_id: Dict) -> Dict:
+        titles_by_doc_id = {}
+        for key, nodes in nodes_by_doc_id.items():
+            title_candidates = await self.get_title_candidates(nodes)
+            combined_titles = ", ".join(title_candidates)
+            titles_by_doc_id[key] = await self.llm.apredict(
+                PromptTemplate(template=self.combine_template),
+                context_str=combined_titles,
+            )
+        return titles_by_doc_id
+
+    async def get_title_candidates(self, nodes: List[BaseNode]) -> List[str]:
         title_jobs = [
             self.llm.apredict(
                 PromptTemplate(template=self.node_template),
                 context_str=cast(TextNode, node).text,
             )
-            for node in nodes_to_extract_title
+            for node in nodes
         ]
-        title_candidates = await run_jobs(
+        return await run_jobs(
             title_jobs, show_progress=self.show_progress, workers=self.num_workers
         )
-
-        if len(nodes_to_extract_title) > 1:
-            titles = reduce(
-                lambda x, y: x + "," + y, title_candidates[1:], title_candidates[0]
-            )
-
-            title = await self.llm.apredict(
-                PromptTemplate(template=self.combine_template),
-                context_str=titles,
-            )
-        else:
-            title = title_candidates[
-                0
-            ]  # if single node, just use the title from that node
-
-        return [{"document_title": title.strip(' \t\n\r"')} for _ in nodes]
 
 
 class KeywordExtractor(BaseExtractor):
@@ -185,13 +192,14 @@ class KeywordExtractor(BaseExtractor):
             return {}
 
         # TODO: figure out a good way to allow users to customize keyword template
+        context_str = node.get_content(metadata_mode=self.metadata_mode)
         keywords = await self.llm.apredict(
             PromptTemplate(
                 template=f"""\
 {{context_str}}. Give {self.keywords} unique keywords for this \
 document. Format as comma separated. Keywords: """
             ),
-            context_str=cast(TextNode, node).text,
+            context_str=context_str,
         )
 
         return {"excerpt_keywords": keywords.strip()}

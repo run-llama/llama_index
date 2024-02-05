@@ -73,7 +73,6 @@ class SimpleWebPageReader(BasePydanticReader):
                 metadata = self._metadata_fn(url)
 
             documents.append(Document(text=response, id_=url, metadata=metadata or {}))
-            documents.append(Document(id_=url, text=response, metadata=metadata or {}))
 
         return documents
 

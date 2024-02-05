@@ -502,7 +502,7 @@ class GenerateAnswerError(Exception):
 
     def __str__(self) -> str:
         return (
-            f"finish_reason: {self.finish_reason.name} "
+            f"finish_reason: {self.finish_reason} "
             f"finish_message: {self.finish_message} "
             f"safety ratings: {self.safety_ratings}"
         )
@@ -542,9 +542,10 @@ def generate_answer(
     )
 
     if response.answer.finish_reason != genai.Candidate.FinishReason.STOP:
+        finish_message = _get_finish_message(response.answer)
         raise GenerateAnswerError(
             finish_reason=response.answer.finish_reason,
-            finish_message=response.answer.finish_message,
+            finish_message=finish_message,
             safety_ratings=response.answer.safety_ratings,
         )
 
@@ -561,6 +562,22 @@ def generate_answer(
         ],
         answerable_probability=response.answerable_probability,
     )
+
+
+# TODO: Use candidate.finish_message when that field is launched.
+# For now, we derive this message from other existing fields.
+def _get_finish_message(candidate: genai.Candidate) -> str:
+    finish_messages: Dict[int, str] = {
+        genai.Candidate.FinishReason.MAX_TOKENS: "Maximum token in context window reached.",
+        genai.Candidate.FinishReason.SAFETY: "Blocked because of safety",
+        genai.Candidate.FinishReason.RECITATION: "Blocked because of recitation",
+    }
+
+    finish_reason = candidate.finish_reason
+    if finish_reason not in finish_messages:
+        return "Unexpected generation error"
+
+    return finish_messages[finish_reason]
 
 
 def _convert_to_metadata(metadata: Dict[str, Any]) -> List[genai.CustomMetadata]:

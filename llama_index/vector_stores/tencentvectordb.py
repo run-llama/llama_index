@@ -1,6 +1,6 @@
 """Tencent Vector store index.
 
-An index that that is built with Tencent Vector Database.
+An index that is built with Tencent Vector Database.
 
 """
 import json

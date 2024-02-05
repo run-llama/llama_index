@@ -627,12 +627,12 @@ class AzureQueryResultSearchBase:
 class AzureQueryResultSearchDefault(AzureQueryResultSearchBase):
     def _create_query_vector(self) -> Optional[List[Any]]:
         """Query vector store."""
-        from azure.search.documents.models import Vector
+        from azure.search.documents.models import VectorizedQuery
 
         if not self._query.query_embedding:
             raise ValueError("Query missing embedding")
 
-        vector = Vector(
+        vector = VectorizedQuery(
             value=self._query.query_embedding,
             k=self._query.similarity_top_k,
             fields=self._field_mapping["embedding"],
@@ -666,13 +666,13 @@ class AzureQueryResultSearchHybrid(
 class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
     def _create_query_vector(self) -> Optional[List[Any]]:
         """Query vector store."""
-        from azure.search.documents.models import Vector
+        from azure.search.documents.models import VectorizedQuery
 
         if not self._query.query_embedding:
             raise ValueError("Query missing embedding")
         # k is set to 50 to align with the number of accept document in azure semantic reranking model.
         # https://learn.microsoft.com/en-us/azure/search/semantic-search-overview
-        vector = Vector(
+        vector = VectorizedQuery(
             value=self._query.query_embedding,
             k=50,
             fields=self._field_mapping["embedding"],
