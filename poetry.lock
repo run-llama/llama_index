@@ -1719,6 +1719,21 @@ server = ["fastapi (>=0.100.0)", "pydantic-settings (>=2.0.1)", "sse-starlette (
 test = ["httpx (>=0.24.1)", "pytest (>=7.4.0)", "scipy (>=1.10)"]
 
 [[package]]
+name = "llama-index-agent-openai"
+version = "0.0.3"
+description = "llama-index agent openai integration"
+optional = false
+python-versions = ">=3.8.1,<3.12"
+files = [
+    {file = "llama_index_agent_openai-0.0.3-py3-none-any.whl", hash = "sha256:e2d92986ad52a3a71c1b2a2887afc5aa39c1e03ebadb6268f2096056119b20be"},
+    {file = "llama_index_agent_openai-0.0.3.tar.gz", hash = "sha256:22838bc2ebb555d0c4efaa3448611972199f353563ce9d52d3615fd60cb4875a"},
+]
+
+[package.dependencies]
+llama-index-core = ">=0.9.40,<0.10.0"
+llama-index-llms-openai = ">=0.0.1,<0.0.2"
+
+[[package]]
 name = "llama-index-core"
 version = "0.9.42"
 description = "Interface between LLMs and your data"
@@ -5379,4 +5394,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "f0eae6b6ff44ee8501c9bff5d7c673ef1a100ad6f18439c9df5f8bad1d4a8772"
+content-hash = "ee27b079051db028324642aa79a580cbba0937c9ff666af88b5791d439b3aa3b"
