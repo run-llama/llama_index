@@ -6,7 +6,6 @@ Make sure you've followed the [installation](installation.md) steps first.
 
 This is our famous "5 lines of code" starter example with local LLM and embedding models. We will use `BAAI/bge-m3` as our embedding model and `Mistral-7B` served through `Ollama` as our LLM.
 
-
 ## Download data
 
 This example uses the text of Paul Graham's essay, ["What I Worked On"](http://paulgraham.com/worked.html). This and many other examples can be found in the `examples` folder of our repo.
@@ -40,10 +39,13 @@ embed_model = resolve_embed_model("local:BAAI/bge-small-en-v1.5")
 # ollama
 llm = Ollama(model="mistral", request_timeout=30.0)
 
-service_context = ServiceContext.from_defaults(embed_model=embed_model, llm=llm)
+service_context = ServiceContext.from_defaults(
+    embed_model=embed_model, llm=llm
+)
 
-index = VectorStoreIndex.from_documents(documents, service_context=service_context)
-
+index = VectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
 ```
 
 This builds an index over the documents in the `data` folder (which in this case just consists of the essay text, but could contain many documents).
