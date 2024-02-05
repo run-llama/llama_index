@@ -34,6 +34,7 @@ as the storage backend for `VectorStoreIndex`.
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
+- Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
@@ -568,6 +569,14 @@ vector_store = TimescaleVectorStore.from_params(
 )
 ```
 
+**Upstash**
+
+```python
+from llama_index.vector_stores import UpstashVectorStore
+
+vector_store = UpstashVectorStore(url="YOUR_URL", token="YOUR_TOKEN")
+```
+
 **Weaviate**
 
 ```python
@@ -780,6 +789,7 @@ maxdepth: 1
 ../../examples/vector_stores/TairIndexDemo.ipynb
 ../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb
 ../../examples/vector_stores/Timescalevector.ipynb
+../../examples/vector_stores/UpstashVectorDemo.ipynb
 ../../examples/vector_stores/WeaviateIndexDemo.ipynb
 ../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/ZepIndexDemo.ipynb
