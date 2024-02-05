@@ -13,13 +13,15 @@ This example uses the text of Paul Graham's essay, ["What I Worked On"](http://p
 
 The easiest way to get it is to [download it via this link](https://raw.githubusercontent.com/run-llama/llama_index/main/docs/examples/data/paul_graham/paul_graham_essay.txt) and save it in a folder called `data`.
 
-## Setup Ollama
+## Setup
 
 Ollama is a tool to help you get setup with LLMs locally (currently supported on OSX and Linux. You can install Ollama on Windows through WSL 2).
 
 Follow the [README](https://github.com/jmorganca/ollama) to learn how to install it.
 
 To load in a Mistral-7B model just do `ollama pull mistral`
+
+**NOTE**: You will need a machine with at least 32GB of RAM.
 
 ## Load data and build an index
 
@@ -33,7 +35,7 @@ from llama_index.llms import Ollama
 documents = SimpleDirectoryReader("data").load_data()
 
 # bge-m3 embedding model
-embed_model = resolve_embed_model("local:BAAI/bge-m3")
+embed_model = resolve_embed_model("local:BAAI/bge-small-en-v1.5")
 
 # ollama
 llm = Ollama(model="mistral", request_timeout=30.0)
@@ -53,6 +55,8 @@ Your directory structure should look like this:
 └── data
     └── paul_graham_essay.txt
 </pre>
+
+We use the `BAAI/bge-small-en-v1.5` model through `resolve_embed_model`, which resolves to our HuggingFaceEmbedding class. We also use our `Ollama` LLM wrapper to load in the mistral model.
 
 ## Query your data
 
