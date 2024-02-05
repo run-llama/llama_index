@@ -94,6 +94,9 @@ def _cell_installs_llama_hub(cell) -> bool:
 
 
 def _format_new_installs(new_installs):
+    if len(new_installs) < 2:
+        return new_installs
+
     formatted_new_installs = []
     for mod in new_installs[:-1]:
         formatted_new_installs.append(mod + "\n")
@@ -123,7 +126,6 @@ def upgrade_nb_file(file_path):
 
         cur_cells.append(cell)
 
-    print(f"new_installs: {new_installs}", flush=True)
     if len(new_installs) > 0:
         notebook["cells"] = cur_cells
         new_cell = {
