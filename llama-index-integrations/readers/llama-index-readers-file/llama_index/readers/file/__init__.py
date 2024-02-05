@@ -12,6 +12,7 @@ from llama_index.readers.file.tabular.base import PandasCSVReader
 from llama_index.readers.file.video_audio.base import VideoAudioReader
 from llama_index.readers.file.unstructured.base import UnstructuredReader
 from llama_index.readers.file.pymu_pdf.base import PyMuPDFReader
+from llama_index.readers.file.image_deplot.base import ImageTabularChartReader
 
 
 __all__ = [
@@ -31,4 +32,5 @@ __all__ = [
     "VideoAudioReader",
     "UnstructuredReader",
     "PyMuPDFReader",
+    "ImageTabularChartReader",
 ]
