@@ -2,7 +2,7 @@
 
 from typing import List, Optional, Type, Union
 
-from llama_index.core.agent.legacy.openai_agent import (
+from llama_index.agent.legacy.openai_agent import (
     DEFAULT_MAX_FUNCTION_CALLS,
     BaseOpenAIAgent,
 )
