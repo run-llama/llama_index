@@ -139,14 +139,6 @@ def validate_step_from_args(
         return step
     else:
         return None
-    # else:
-    #     return (
-    #         None
-    #         if input is None
-    #         else TaskStep(
-    #             task_id=task_id, step_id=str(uuid.uuid4()), input=input, **kwargs
-    #         )
-    #     )
 
 
 class TaskState(BaseModel):
