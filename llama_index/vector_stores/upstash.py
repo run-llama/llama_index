@@ -84,7 +84,6 @@ class UpstashVectorStore(VectorStore):
         for node_batch in iter_batch(nodes, self.batch_size):
             for node in node_batch:
                 metadata_dict = node_to_metadata_dict(node)
-                metadata_dict = {k: v for k, v in metadata_dict.items() if v != "None"}
                 ids.append(node.node_id)
                 vectors.append((node.node_id, node.embedding, metadata_dict))
 
