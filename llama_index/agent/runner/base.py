@@ -1,4 +1,3 @@
-import uuid
 from abc import abstractmethod
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Union, cast
@@ -363,7 +362,9 @@ class AgentRunner(BaseAgentRunner):
     ) -> TaskStepOutput:
         """Run step."""
         step = validate_step_from_args(task_id, input, step, **kwargs)
-        return self._run_step(task_id, step, input=input, mode=ChatResponseMode.WAIT, **kwargs)
+        return self._run_step(
+            task_id, step, input=input, mode=ChatResponseMode.WAIT, **kwargs
+        )
 
     async def arun_step(
         self,

@@ -180,10 +180,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
 
     @abstractmethod
     def _run_step(
-        self,
-        state: Dict[str, Any],
-        task: Task,
-        input: Optional[str] = None
+        self, state: Dict[str, Any], task: Task, input: Optional[str] = None
     ) -> Tuple[AgentChatResponse, bool]:
         """Run step.
 
@@ -193,10 +190,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         """
 
     async def _arun_step(
-        self,
-        state: Dict[str, Any],
-        task: Task,
-        input: Optional[str] = None
+        self, state: Dict[str, Any], task: Task, input: Optional[str] = None
     ) -> Tuple[AgentChatResponse, bool]:
         """Run step (async).
 
@@ -213,7 +207,9 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
-        agent_response, is_done = self._run_step(step.step_state, task, input=step.input)
+        agent_response, is_done = self._run_step(
+            step.step_state, task, input=step.input
+        )
         response = self._get_task_step_response(agent_response, step, is_done)
         # sync step state with task state
         task.extra_state.update(step.step_state)
@@ -224,7 +220,9 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
-        agent_response, is_done = await self._arun_step(step.step_state, task, input=step.input)
+        agent_response, is_done = await self._arun_step(
+            step.step_state, task, input=step.input
+        )
         response = self._get_task_step_response(agent_response, step, is_done)
         task.extra_state.update(step.step_state)
         return response
