@@ -1,5 +1,13 @@
 # ChangeLog
 
+## [0.9.44] - 2024-02-05
+
+### New Features
+
+- ollama vision cookbook (#10438)
+- Support Gemini "transport" configuration (#10457)
+- Add Upstash Vector (#10451)
+
 ## [0.9.43] - 2024-02-03
 
 ### New Features
