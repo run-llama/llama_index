@@ -1,4 +1,5 @@
 """Simple reader that reads files of different formats from a directory."""
+
 import logging
 import mimetypes
 import multiprocessing
@@ -13,39 +14,46 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Type
 from tqdm import tqdm
 
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.readers.file.docs_reader import (
-    DocxReader,
-    HWPReader,
-    PDFReader,
-)
-from llama_index.core.readers.file.epub_reader import EpubReader
-from llama_index.core.readers.file.image_reader import ImageReader
-from llama_index.core.readers.file.ipynb_reader import IPYNBReader
-from llama_index.core.readers.file.markdown_reader import MarkdownReader
-from llama_index.core.readers.file.mbox_reader import MboxReader
-from llama_index.core.readers.file.slides_reader import PptxReader
-from llama_index.core.readers.file.tabular_reader import PandasCSVReader
-from llama_index.core.readers.file.video_audio_reader import VideoAudioReader
 from llama_index.core.schema import Document
 
-DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
-    ".hwp": HWPReader,
-    ".pdf": PDFReader,
-    ".docx": DocxReader,
-    ".pptx": PptxReader,
-    ".ppt": PptxReader,
-    ".pptm": PptxReader,
-    ".jpg": ImageReader,
-    ".png": ImageReader,
-    ".jpeg": ImageReader,
-    ".mp3": VideoAudioReader,
-    ".mp4": VideoAudioReader,
-    ".csv": PandasCSVReader,
-    ".epub": EpubReader,
-    ".md": MarkdownReader,
-    ".mbox": MboxReader,
-    ".ipynb": IPYNBReader,
-}
+
+def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
+    try:
+        from llama_index.readers.file import (
+            DocxReader,
+            EpubReader,
+            HWPReader,
+            ImageReader,
+            IPYNBReader,
+            MarkdownReader,
+            MboxReader,
+            PandasCSVReader,
+            PDFReader,
+            PptxReader,
+            VideoAudioReader,
+        )
+    except ImportError:
+        raise ImportError("`llama-index-readers-file` package not found")
+
+    default_file_reader_cls: Dict[str, Type[BaseReader]] = {
+        ".hwp": HWPReader,
+        ".pdf": PDFReader,
+        ".docx": DocxReader,
+        ".pptx": PptxReader,
+        ".ppt": PptxReader,
+        ".pptm": PptxReader,
+        ".jpg": ImageReader,
+        ".png": ImageReader,
+        ".jpeg": ImageReader,
+        ".mp3": VideoAudioReader,
+        ".mp4": VideoAudioReader,
+        ".csv": PandasCSVReader,
+        ".epub": EpubReader,
+        ".md": MarkdownReader,
+        ".mbox": MboxReader,
+        ".ipynb": IPYNBReader,
+    }
+    return default_file_reader_cls
 
 
 def default_file_metadata_func(file_path: str) -> Dict:
@@ -106,7 +114,7 @@ class SimpleDirectoryReader(BaseReader):
             Default is None.
     """
 
-    supported_suffix = list(DEFAULT_FILE_READER_CLS.keys())
+    supported_suffix: list[str] = []
 
     def __init__(
         self,
@@ -125,6 +133,9 @@ class SimpleDirectoryReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         super().__init__()
+
+        # load starter file readers
+        self.supported_suffix = list(_try_loading_included_file_formats().keys())
 
         if not input_dir and not input_files:
             raise ValueError("Must provide either `input_dir` or `input_files`.")
@@ -292,6 +303,8 @@ class SimpleDirectoryReader(BaseReader):
         Returns:
             List[Document]: loaded documents
         """
+        # TODO: make this less redundant
+        default_file_reader_cls = _try_loading_included_file_formats()
         metadata: Optional[dict] = None
         documents: List[Document] = []
 
@@ -306,7 +319,7 @@ class SimpleDirectoryReader(BaseReader):
             # use file readers
             if file_suffix not in file_extractor:
                 # instantiate file reader if not already
-                reader_cls = DEFAULT_FILE_READER_CLS[file_suffix]
+                reader_cls = default_file_reader_cls[file_suffix]
                 file_extractor[file_suffix] = reader_cls()
             reader = file_extractor[file_suffix]
 
