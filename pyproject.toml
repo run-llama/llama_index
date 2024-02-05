@@ -30,7 +30,6 @@ version = "0.0.3"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
-llama-index-core = "^0.9.41"
 llama-index-legacy = "^0.0.1"
 llama-index-llms-openai = "^0.0.1"
 llama-index-llms-llama-cpp = "^0.0.1"
@@ -40,6 +39,8 @@ llama-index-program-openai = "^0.0.3"
 llama-index-question-gen-openai = "^0.0.2"
 llama-index-agent-openai = "^0.0.3"
 llama-index-vector-stores-chroma = "0.0.2a0"
+llama-index-core = "^0.9.44.post2"
+llama-index-readers-file = "^0.0.6"
 
 [tool.poetry.group.docs]
 optional = true
