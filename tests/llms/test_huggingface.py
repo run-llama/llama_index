@@ -74,7 +74,11 @@ class TestHuggingFaceInferenceAPI:
     def test_chat_text_generation(
         self, hf_inference_api: HuggingFaceInferenceAPI
     ) -> None:
+        mock_formatter = MagicMock(
+            return_value="System: You are an expert movie reviewer\nUser: Which movie is the best?\nAssistant:"
+        )
         hf_inference_api.task = "text-generation"
+        hf_inference_api.completion_prompt_formatter = mock_formatter
         messages = [
             ChatMessage(
                 role=MessageRole.SYSTEM, content="You are an expert movie reviewer"
@@ -89,7 +93,8 @@ class TestHuggingFaceInferenceAPI:
             return_value=conversational_return,
         ) as mock_complete:
             response = hf_inference_api.chat(messages=messages)
-            print(response)
+
+        mock_formatter.assert_called_once_with(messages)
         assert response.message.role == MessageRole.ASSISTANT
         assert response.message.content == conversational_return
         mock_complete.assert_called_once_with(
