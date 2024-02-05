@@ -1,6 +1,7 @@
 from llama_index.readers.file.docs.base import DocxReader, HWPReader, PDFReader
 from llama_index.readers.file.epub.base import EpubReader
 from llama_index.readers.file.flat.base import FlatReader
+from llama_index.readers.file.html.base import HTMLTagReader
 from llama_index.readers.file.image_caption.base import ImageCaptionReader
 from llama_index.readers.file.image.base import ImageReader
 from llama_index.readers.file.image_vision_llm.base import ImageVisionLLMReader
@@ -21,6 +22,7 @@ __all__ = [
     "PDFReader",
     "EpubReader",
     "FlatReader",
+    "HTMLTagReader",
     "ImageCaptionReader",
     "ImageReader",
     "ImageVisionLLMReader",

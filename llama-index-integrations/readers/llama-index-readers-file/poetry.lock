@@ -3,7 +3,7 @@
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "4212484c20ff9b8697b49050d96fd263276a66570d70089020aa8e6d44fb183a"
+content-hash = "7eb8956ecb7272be9120009aab05b5c83ac64c5c3860b79302f3f979b5093772"
 
 [[package]]
 name = "aiohttp"
@@ -433,6 +433,20 @@ webencodings = "*"
 
 [package.extras]
 css = ["tinycss2 (>=1.1.0,<1.3)"]
+
+[[package]]
+name = "bs4"
+version = "0.0.2"
+description = "Dummy package for Beautiful Soup (beautifulsoup4)"
+optional = false
+python-versions = "*"
+files = [
+  {file = "bs4-0.0.2-py2.py3-none-any.whl", hash = "sha256:abf8742c0805ef7f662dce4b51cca104cffe52b835238afc169142ab9b3fbccc"},
+  {file = "bs4-0.0.2.tar.gz", hash = "sha256:a48685c58f50fe127722417bae83fe6badf500d54b55f7e39ffe43b798653925"}
+]
+
+[package.dependencies]
+beautifulsoup4 = "*"
 
 [[package]]
 name = "certifi"
