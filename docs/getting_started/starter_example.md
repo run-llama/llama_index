@@ -4,7 +4,11 @@
 Make sure you've followed the [installation](installation.md) steps first.
 ```
 
-This is our famous "5 lines of code" starter example.
+This is our famous "5 lines of code" starter example using OpenAI.
+
+```{admonition} Want to use local models?
+If you want to do our starter tutorial using only local models, [check out this tutorial instead](starter_example_local.md).
+```
 
 ## Download data
 
