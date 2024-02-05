@@ -38,7 +38,10 @@ except ImportError:
     pass
 
 # This lists the multi-modal models - see also llms.gemini for text models.
-GEMINI_MM_MODELS = ("models/gemini-pro-vision",)
+GEMINI_MM_MODELS = (
+    "models/gemini-pro-vision",
+    "models/gemini-ultra-vision",
+)
 
 
 class GeminiMultiModal(MultiModalLLM):
