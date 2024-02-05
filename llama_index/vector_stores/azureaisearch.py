@@ -150,7 +150,7 @@ class AzureAISearchVectorStore(VectorStore):
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
                 vector_search_dimensions=self.embedding_dimensionality,
-                vector_search_profile_name="myHnswProfile",
+                vector_search_profile_name="default",
             ),
             SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
@@ -167,6 +167,7 @@ class AzureAISearchVectorStore(VectorStore):
                 HnswAlgorithmConfiguration(
                     name="myHnsw",
                     kind=VectorSearchAlgorithmKind.HNSW,
+                    # For more information on HNSw parameters, visit https://learn.microsoft.com//azure/search/vector-search-ranking#creating-the-hnsw-graph
                     parameters=HnswParameters(
                         m=4,
                         ef_construction=400,
@@ -743,3 +744,6 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
         return VectorStoreQueryResult(
             nodes=node_result, similarities=score_result, ids=id_result
         )
+
+
+CognitiveSearchVectorStore = AzureAISearchVectorStore

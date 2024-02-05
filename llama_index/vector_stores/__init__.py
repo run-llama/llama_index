@@ -89,6 +89,7 @@ __all__ = [
     "BagelVectorStore",
     "Neo4jVectorStore",
     "AzureAISearchVectorStore",
+    "CognitiveSearchVectorStore",
     "EpsillaVectorStore",
     "SingleStoreVectorStore",
     "VectorStoreQuery",
