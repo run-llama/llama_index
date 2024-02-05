@@ -4,10 +4,9 @@ Simple wrapper around AgentRunner + OpenAIAgentWorker.
 
 For the legacy implementation see:
 ```python
-from llama_index.core.agent.legacy.openai.base import OpenAIAgent
+from llama_index.agent.legacy.openai.base import OpenAIAgent
 ```
 """
-
 
 from typing import (
     Any,
@@ -38,7 +37,7 @@ class OpenAIAgent(AgentRunner):
 
     For the legacy implementation see:
     ```python
-    from llama_index.core.agent.legacy.openai.base import OpenAIAgent
+    from llama_index..agent.legacy.openai.base import OpenAIAgent
     ```
 
     """
