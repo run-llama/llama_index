@@ -5,7 +5,7 @@ from abc import abstractmethod
 from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast, get_args
 
-from llama_index.agent.openai.utils import get_function_by_name
+from llama_index.agent.openai_legacy.utils import get_function_by_name
 from llama_index.core.agent.types import BaseAgent
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.callbacks import (
