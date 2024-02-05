@@ -18,7 +18,7 @@ python_version = "3.8"
 
 [tool.poetry]
 name = "llama-index-vector-stores-chroma"
-version = "0.0.1"
+version = "0.0.2a0"
 description = "llama-index vector_stores chroma integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
@@ -29,6 +29,8 @@ packages = [{include = "llama_index/"}]
 python = ">=3.8.1,<3.12"
 llama-index-core = "^0.9.32"
 chromadb = "^0.4.22"
+onnxruntime = "^1.17.0"
+tokenizers = "^0.15.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
