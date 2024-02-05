@@ -100,6 +100,7 @@ The vector stores that support this practice are:
 - PineconeVectorStore
 - QdrantVectorStore
 - RedisVectorStore
+- UpstashVectorStore
 - WeaviateVectorStore
 
 A small example using Pinecone is below:
