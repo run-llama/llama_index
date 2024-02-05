@@ -60,11 +60,13 @@ def parse_lines(
                 new_install_parent = new_import_parent.replace(".", "-").replace(
                     "_", "-"
                 )
-                if new_install_parent not in installed_modules:
+                if (new_install_parent not in installed_modules) and (
+                    new_install_parent not in new_installs
+                ):
                     overlap = [x for x in installed_modules if x in new_install_parent]
                     if len(overlap) == 0:
                         installed_modules.append(new_install_parent)
-                        new_installs.append(f"%pip install {new_install_parent}\n")
+                        new_installs.append(new_install_parent)
                 new_imports = ", ".join(new_imports)
                 new_lines.append(f"from {new_import_parent} import {new_imports}\n")
 
@@ -75,7 +77,7 @@ def parse_lines(
         elif not parsing_modules:
             new_lines.append(line)
 
-    return new_lines, new_installs
+    return new_lines, [f"%pip install {el}" for el in new_installs]
 
 
 def upgrade_nb_file(file_path):
