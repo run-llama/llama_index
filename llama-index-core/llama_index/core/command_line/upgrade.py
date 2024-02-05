@@ -64,7 +64,7 @@ def parse_lines(
                     overlap = [x for x in installed_modules if x in new_install_parent]
                     if len(overlap) == 0:
                         installed_modules.append(new_install_parent)
-                        new_installs.append(f"!pip install {new_install_parent}\n")
+                        new_installs.append(f"%pip install {new_install_parent}\n")
                 new_imports = ", ".join(new_imports)
                 new_lines.append(f"from {new_import_parent} import {new_imports}\n")
 
@@ -84,33 +84,39 @@ def upgrade_nb_file(file_path):
 
     installed_modules = ["llama-index-core"]  # default installs
     cur_cells = []
-    for cell in notebook["cells"]:
+    new_installs = []
+    first_code_idx = -1
+    for idx, cell in enumerate(notebook["cells"]):
         if cell["cell_type"] == "code":
+            if first_code_idx == -1:
+                first_code_idx = idx
+
             code = cell["source"]
 
-            new_lines, new_installs = parse_lines(code, installed_modules)
-
-            if len(new_installs) > 0:
-                cur_cells.append(
-                    {
-                        "cell_type": "code",
-                        "metadata": {},
-                        "execution_count": None,
-                        "outputs": [],
-                        "source": new_installs,
-                    }
-                )
+            new_lines, cur_new_installs = parse_lines(code, installed_modules)
+            new_installs += cur_new_installs
 
             cell["source"] = new_lines
 
         cur_cells.append(cell)
+
+    if len(new_installs) > 0:
+        notebook["cells"] = cur_cells
+        new_cell = {
+            "cell_type": "code",
+            "metadata": {},
+            "execution_count": None,
+            "outputs": [],
+            "source": new_installs,
+        }
+        cur_cells.insert(first_code_idx, new_cell)
 
     notebook["cells"] = cur_cells
     with open(file_path, "w") as f:
         json.dump(notebook, f, indent=1, ensure_ascii=False)
 
 
-def upgrade_py_file(file_path: str) -> None:
+def upgrade_py_md_file(file_path: str) -> None:
     with open(file_path) as f:
         lines = f.readlines()
 
@@ -130,8 +136,8 @@ def upgrade_py_file(file_path: str) -> None:
 def upgrade_file(file_path: str) -> None:
     if file_path.endswith(".ipynb"):
         upgrade_nb_file(file_path)
-    elif file_path.endswith(".py"):
-        upgrade_py_file(file_path)
+    elif file_path.endswith((".py", ".md")):
+        upgrade_py_md_file(file_path)
     else:
         raise Exception(f"File type not supported: {file_path}")
 
@@ -143,6 +149,7 @@ def _is_hidden(path: Path) -> bool:
 def upgrade_dir(input_dir: str) -> None:
     file_refs = list(Path(input_dir).rglob("*.py"))
     file_refs += list(Path(input_dir).rglob("*.ipynb"))
+    file_refs += list(Path(input_dir).rglob("*.md"))
     file_refs = [x for x in file_refs if not _is_hidden(x)]
     for file_ref in file_refs:
         if file_ref.is_file():

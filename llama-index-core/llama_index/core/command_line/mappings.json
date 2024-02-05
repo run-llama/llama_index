@@ -653,6 +653,7 @@
   "PptxReader": "llama_index.readers.file",
   "PandasCSVReader": "llama_index.readers.file",
   "VideoAudioReader": "llama_index.readers.file",
+  "UnstructuredReader": "llama_index.readers.file",
   "CSVReader": "llama_index.readers.file.tabular",
   "KalturaESearchReader": "llama_index.readers.kaltura_esearch",
   "AwadbReader": "llama_index.readers.awadb",
