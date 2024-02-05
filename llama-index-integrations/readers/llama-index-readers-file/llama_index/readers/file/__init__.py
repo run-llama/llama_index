@@ -10,6 +10,7 @@ from llama_index.readers.file.mbox.base import MboxReader
 from llama_index.readers.file.slides.base import PptxReader
 from llama_index.readers.file.tabular.base import PandasCSVReader
 from llama_index.readers.file.video_audio.base import VideoAudioReader
+from llama_index.readers.file.unstructured.base import UnstructuredReader
 
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "PptxReader",
     "PandasCSVReader",
     "VideoAudioReader",
+    "UnstructuredReader",
 ]
