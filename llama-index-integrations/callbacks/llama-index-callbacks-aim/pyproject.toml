@@ -19,7 +19,7 @@ python_version = "3.8"
 
 [tool.poetry]
 name = "llama-index-callbacks-aim"
-version = "0.0.2"
+version = "0.0.3"
 description = "llama-index callbacks aim integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
