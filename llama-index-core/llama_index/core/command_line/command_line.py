@@ -12,8 +12,6 @@ from llama_index.core.llama_dataset.download import (
 from llama_index.core.llama_pack.download import LLAMA_HUB_URL, download_llama_pack
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.text_splitter import SentenceSplitter
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.vector_stores.chroma import ChromaVectorStore
 
 
 def handle_download_llama_pack(
@@ -59,6 +57,10 @@ def handle_download_llama_dataset(
 
 def default_rag_cli() -> RagCLI:
     import chromadb
+    from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
+    from llama_index.vector_stores.chroma import (
+        ChromaVectorStore,
+    )  # pants: no-infer-dep
 
     persist_dir = default_ragcli_persist_dir()
     chroma_client = chromadb.PersistentClient(path=persist_dir)
