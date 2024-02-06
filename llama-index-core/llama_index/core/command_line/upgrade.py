@@ -64,13 +64,11 @@ def parse_lines(
                 new_install_parent = new_import_parent.replace(".", "-").replace(
                     "_", "-"
                 )
-                if (new_install_parent not in installed_modules) and (
-                    new_install_parent not in new_installs
-                ):
+                if new_install_parent not in installed_modules:
                     overlap = [x for x in installed_modules if x in new_install_parent]
                     if len(overlap) == 0:
                         installed_modules.append(new_install_parent)
-                        new_installs.append(new_install_parent)
+                        new_installs.append(f"%pip install {new_install_parent}\n")
                 new_imports = ", ".join(new_imports)
                 new_lines.append(f"from {new_import_parent} import {new_imports}\n")
 
@@ -81,7 +79,7 @@ def parse_lines(
         elif not parsing_modules:
             new_lines.append(line)
 
-    return new_lines, [f"%pip install {el}" for el in new_installs]
+    return new_lines, new_installs[:-1] + [new_installs[-1].replace("\n", "")]
 
 
 def _cell_installs_llama_hub(cell) -> bool:
@@ -91,17 +89,6 @@ def _cell_installs_llama_hub(cell) -> bool:
     if cell["cell_type"] == "code" and "pip install llama-hub" in lines[0]:
         return True
     return False
-
-
-def _format_new_installs(new_installs):
-    if len(new_installs) < 2:
-        return new_installs
-
-    formatted_new_installs = []
-    for mod in new_installs[:-1]:
-        formatted_new_installs.append(mod + "\n")
-    formatted_new_installs.append(new_installs[-1])
-    return formatted_new_installs
 
 
 def upgrade_nb_file(file_path):
@@ -133,7 +120,7 @@ def upgrade_nb_file(file_path):
             "metadata": {},
             "execution_count": None,
             "outputs": [],
-            "source": _format_new_installs(new_installs),
+            "source": new_installs,
         }
         cur_cells.insert(first_code_idx, new_cell)
 
@@ -151,7 +138,7 @@ def upgrade_py_md_file(file_path: str) -> None:
     new_lines, new_installs = parse_lines(lines, installed_modules)
 
     with open(file_path, "w") as f:
-        f.write("".join(_format_new_installs(new_installs)))
+        f.write("".join(new_installs))
         f.write("".join(new_lines))
 
     if len(new_installs) > 0:
