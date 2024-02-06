@@ -1444,13 +1444,13 @@ testing = ["pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)",
 
 [[package]]
 name = "ipykernel"
-version = "6.29.0"
+version = "6.29.1"
 description = "IPython Kernel for Jupyter"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "ipykernel-6.29.0-py3-none-any.whl", hash = "sha256:076663ca68492576f051e4af7720d33f34383e655f2be0d544c8b1c9de915b2f"},
-    {file = "ipykernel-6.29.0.tar.gz", hash = "sha256:b5dd3013cab7b330df712891c96cd1ab868c27a7159e606f762015e9bf8ceb3f"},
+    {file = "ipykernel-6.29.1-py3-none-any.whl", hash = "sha256:e5dfba210fc9da74a5dae8fa6c41f816e11bd18d10381b2517d9a0d57cc987c4"},
+    {file = "ipykernel-6.29.1.tar.gz", hash = "sha256:1547352b32da95a2761011a8dac2af930c26a0703dfa07690d16b7d74dac0ba1"},
 ]
 
 [package.dependencies]
@@ -1473,7 +1473,7 @@ cov = ["coverage[toml]", "curio", "matplotlib", "pytest-cov", "trio"]
 docs = ["myst-parser", "pydata-sphinx-theme", "sphinx", "sphinx-autodoc-typehints", "sphinxcontrib-github-alt", "sphinxcontrib-spelling", "trio"]
 pyqt5 = ["pyqt5"]
 pyside6 = ["pyside6"]
-test = ["flaky", "ipyparallel", "pre-commit", "pytest (>=7.0)", "pytest-asyncio (==0.23.2)", "pytest-cov", "pytest-timeout"]
+test = ["flaky", "ipyparallel", "pre-commit", "pytest (>=7.0)", "pytest-asyncio (==0.23.4)", "pytest-cov", "pytest-timeout"]
 
 [[package]]
 name = "ipython"
@@ -1749,13 +1749,13 @@ llama-index-llms-openai = ">=0.0.1,<0.0.2"
 
 [[package]]
 name = "llama-index-core"
-version = "0.9.46"
+version = "0.9.47"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "llama_index_core-0.9.46-py3-none-any.whl", hash = "sha256:07c1b21288aeaae73fdbeca04bf61f588f801e6511e0a035e62e0857d0a6bd19"},
-    {file = "llama_index_core-0.9.46.tar.gz", hash = "sha256:e7cdb8353dddd60911ecd515f7337719130f783bd48089338c9dc3780925a8e1"},
+    {file = "llama_index_core-0.9.47-py3-none-any.whl", hash = "sha256:ff959bd5fb94704cb4f967ca45e1e0cf0d5a396eae4c626f69873c53b857aab4"},
+    {file = "llama_index_core-0.9.47.tar.gz", hash = "sha256:82e5eb53b97c833f81431f78b8fc5db7b1402228aa3ce5e90d9f1e4a667820ce"},
 ]
 
 [package.dependencies]
@@ -2998,8 +2998,8 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.20.3", markers = "python_version < \"3.10\""},
-    {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
     {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
+    {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
