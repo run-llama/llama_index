@@ -1749,13 +1749,13 @@ llama-index-llms-openai = ">=0.0.1,<0.0.2"
 
 [[package]]
 name = "llama-index-core"
-version = "0.9.47"
+version = "0.9.48"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "llama_index_core-0.9.47-py3-none-any.whl", hash = "sha256:ff959bd5fb94704cb4f967ca45e1e0cf0d5a396eae4c626f69873c53b857aab4"},
-    {file = "llama_index_core-0.9.47.tar.gz", hash = "sha256:82e5eb53b97c833f81431f78b8fc5db7b1402228aa3ce5e90d9f1e4a667820ce"},
+    {file = "llama_index_core-0.9.48-py3-none-any.whl", hash = "sha256:1480866536bd6db95fd2e5421131cfa529688d80ddbd5bd5f413c1dada0e525b"},
+    {file = "llama_index_core-0.9.48.tar.gz", hash = "sha256:7ede6a753e11a4f5e8a7161f6899fa3ad1d7ecddc20485a091d5fad7005422b7"},
 ]
 
 [package.dependencies]
@@ -2998,8 +2998,8 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.20.3", markers = "python_version < \"3.10\""},
-    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version >= \"3.11\""},
+    {version = ">=1.21.0", markers = "python_version >= \"3.10\" and python_version < \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -5486,4 +5486,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "eef4e756275acdfa1a25a76206373d629466807fe350d6ee98607c36bc2aa449"
+content-hash = "1ef528e60e1de0ae2a1372eed1e39f14c6cbf16908450df921aac92a29909d6c"
