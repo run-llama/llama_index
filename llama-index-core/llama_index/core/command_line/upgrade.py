@@ -79,7 +79,7 @@ def parse_lines(
         elif not parsing_modules:
             new_lines.append(line)
 
-    return new_lines, new_installs[:-1] + [new_installs[-1].replace("\n", "")]
+    return new_lines, new_installs
 
 
 def _cell_installs_llama_hub(cell) -> bool:
@@ -89,6 +89,12 @@ def _cell_installs_llama_hub(cell) -> bool:
     if cell["cell_type"] == "code" and "pip install llama-hub" in lines[0]:
         return True
     return False
+
+
+def _format_new_installs(new_installs):
+    if new_installs:
+        return new_installs[:-1] + [new_installs[-1].replace("\n", "")]
+    return new_installs
 
 
 def upgrade_nb_file(file_path):
@@ -120,7 +126,7 @@ def upgrade_nb_file(file_path):
             "metadata": {},
             "execution_count": None,
             "outputs": [],
-            "source": new_installs,
+            "source": _format_new_installs(new_installs),
         }
         cur_cells.insert(first_code_idx, new_cell)
 
@@ -138,7 +144,7 @@ def upgrade_py_md_file(file_path: str) -> None:
     new_lines, new_installs = parse_lines(lines, installed_modules)
 
     with open(file_path, "w") as f:
-        f.write("".join(new_installs))
+        f.write("".join(_format_new_installs(new_installs)))
         f.write("".join(new_lines))
 
     if len(new_installs) > 0:
