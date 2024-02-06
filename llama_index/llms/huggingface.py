@@ -395,16 +395,6 @@ def chat_messages_to_conversational_kwargs(
     return kwargs
 
 
-def chat_messages_to_completion_prompt(messages: Sequence[ChatMessage]) -> str:
-    """Convert ChatMessages to a completion prompt."""
-    return (
-        "\n".join(
-            f"{message.role.capitalize()}: {message.content}" for message in messages
-        )
-        + "\nAssistant:"
-    )
-
-
 class HuggingFaceInferenceAPI(CustomLLM):
     """
     Wrapper on the Hugging Face's Inference API.
@@ -471,6 +461,7 @@ class HuggingFaceInferenceAPI(CustomLLM):
             " model_name is left as default of None."
         ),
     )
+
     _sync_client: "InferenceClient" = PrivateAttr()
     _async_client: "AsyncInferenceClient" = PrivateAttr()
     _get_model_info: "Callable[..., ModelInfo]" = PrivateAttr()
@@ -543,6 +534,7 @@ class HuggingFaceInferenceAPI(CustomLLM):
             task = "conversational"
         else:
             task = kwargs["task"].lower()
+
         super().__init__(**kwargs)  # Populate pydantic Fields
         self._sync_client = InferenceClient(**self._get_inference_client_kwargs())
         self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
@@ -595,7 +587,7 @@ class HuggingFaceInferenceAPI(CustomLLM):
             )
         else:
             # try and use text generation
-            prompt = chat_messages_to_completion_prompt(messages=messages)
+            prompt = self.messages_to_prompt(messages)
             completion = self.complete(prompt)
             return ChatResponse(
                 message=ChatMessage(role=MessageRole.ASSISTANT, content=completion.text)
