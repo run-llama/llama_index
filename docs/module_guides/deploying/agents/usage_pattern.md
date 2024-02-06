@@ -34,6 +34,14 @@ Example usage:
 agent.chat("What is 2123 * 215123")
 ```
 
+To automatically pick the best agent depending on the LLM, you can use the `from_llm` method to generate an agent.
+
+```python
+from llama_index.agent import AgentRunner
+
+agent = AgentRunner.from_llm([multiply_tool], llm=llm, verbose=True)
+```
+
 ## Defining Tools
 
 ### Query Engine Tools
