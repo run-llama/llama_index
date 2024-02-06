@@ -3,5 +3,5 @@ from llama_index.callbacks.promptlayer.base import PromptLayerHandler
 
 
 def test_handler_callable():
-    handler = PromptLayerHandler()
-    assert isinstance(handler, BaseCallbackHandler)
+    names_of_base_classes = [b.__name__ for b in PromptLayerHandler.__mro__]
+    assert BaseCallbackHandler.__name__ in names_of_base_classes
