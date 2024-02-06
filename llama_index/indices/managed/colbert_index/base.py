@@ -1,3 +1,6 @@
+import os
+import shutil
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.core.base_retriever import BaseRetriever
@@ -138,6 +141,38 @@ class ColbertIndex(BaseIndex[IndexDict]):
     #     Z = sum(math.exp(doc.score) for doc in docs)
     #     for doc in docs:
     #         doc.score = math.exp(doc.score) / Z
+
+    def persist(self, persist_dir: str) -> None:
+        # Check if the destination directory exists
+        if os.path.exists(persist_dir):
+            # Remove the existing destination directory
+            shutil.rmtree(persist_dir)
+
+        # Copy PLAID vectors
+        shutil.copytree(
+            Path(self.index_path) / self.index_name, Path(persist_dir) / self.index_name
+        )
+        self._storage_context.persist(persist_dir=persist_dir)
+
+    @classmethod
+    def load_from_disk(cls, persist_dir: str, index_name: str = "") -> "ColbertIndex":
+        from colbert import Searcher
+        from colbert.infra import ColBERTConfig
+
+        colbert_config = ColBERTConfig.load_from_index(Path(persist_dir) / index_name)
+        searcher = Searcher(
+            index=index_name, index_root=persist_dir, config=colbert_config
+        )
+        sc = StorageContext.from_defaults(persist_dir=persist_dir)
+        colbert_index = ColbertIndex(
+            index_struct=sc.index_store.index_structs()[0], storage_context=sc
+        )
+        docs_pos_to_node_id = {
+            int(k): v for k, v in colbert_index.index_struct.nodes_dict.items()
+        }
+        colbert_index._docs_pos_to_node_id = docs_pos_to_node_id
+        colbert_index.store = searcher
+        return colbert_index
 
     def query(self, query_str: str, top_k: int = 10) -> List[NodeWithScore]:
         """
