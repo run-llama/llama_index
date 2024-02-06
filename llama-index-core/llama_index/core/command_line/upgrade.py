@@ -1,91 +1,171 @@
 import json
 import os
+import re
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 mappings_path = os.path.join(os.path.dirname(__file__), "mappings.json")
+
+
+def _parse_from_imports(
+    mappings: Dict[str, str],
+    installed_modules: List[str],
+    line: str,
+):
+    new_lines = []
+    new_installs = []
+    parsing_modules = False
+    imported_modules = [line, line.split(" import ")[-1].strip()]
+    if imported_modules[-1].startswith("("):
+        imported_modules[-1] = []
+        parsing_modules = True
+    else:
+        imported_modules[-1] = imported_modules[-1].split(", ")
+
+    if parsing_modules:
+        if ")" in line:
+            parsing_modules = False
+        elif "(" not in line:
+            imported_modules[-1].append(line.strip().replace(",", ""))
+
+    if not parsing_modules and len(imported_modules) > 0:
+        imported_module_names = [x.strip() for x in imported_modules[-1]]
+        new_imports = {}
+        for module in imported_module_names:
+            if module in mappings:
+                new_import_parent = mappings[module]
+                if new_import_parent not in new_imports:
+                    new_imports[new_import_parent] = [module]
+                else:
+                    new_imports[new_import_parent].append(module)
+            else:
+                print(f"Module not found: {module}\nSwitching to core")
+                new_import_parent = (
+                    imported_modules[0]
+                    .split(" import ")[0]
+                    .split("from ")[-1]
+                    .replace("llama_index", "llama_index.core")
+                )
+                if new_import_parent not in new_imports:
+                    new_imports[new_import_parent] = [module]
+                else:
+                    new_imports[new_import_parent].append(module)
+
+        for new_import_parent, new_imports in new_imports.items():
+            new_install_parent = new_import_parent.replace(".", "-").replace("_", "-")
+            if new_install_parent not in installed_modules:
+                overlap = [x for x in installed_modules if x in new_install_parent]
+                if len(overlap) == 0:
+                    installed_modules.append(new_install_parent)
+                    new_installs.append(f"%pip install {new_install_parent}\n")
+            new_imports = ", ".join(new_imports)
+            new_lines.append(f"from {new_import_parent} import {new_imports}\n")
+
+            parsing_modules = False
+            new_imports = {}
+            imported_modules = []
+
+    elif not parsing_modules:
+        new_lines.append(line)
+
+    return new_lines, new_installs, installed_modules
+
+
+def _parse_hub_downloads(
+    mappings: Dict[str, str],
+    installed_modules: List[str],
+    line: str,
+):
+    regex = r"download_loader\([\"']([A-Z,a-z]+)[\"'][\s,a-z,A-Z,_=]*\)|download_tool\([\"']([a-z,A-Z]+)[\"'][A-Z,a-z,\s,_=]*\)"
+    result = re.search(regex, line)
+    new_lines = []
+    new_installs = []
+    if result:
+        tool, reader = result.groups()
+        module = tool if tool else reader
+        if module in mappings:
+            new_import_parent = mappings[module]
+            new_lines.append(f"from {new_import_parent} import {module}\n")
+            new_install_parent = new_import_parent.replace(".", "-").replace("_", "-")
+            if new_install_parent not in installed_modules:
+                new_installs.append(f"%pip install {new_install_parent}\n")
+                installed_modules.append(new_install_parent)
+        else:
+            print(f"Reader/Tool not found: {module}\nKeeping line as is.")
+            new_lines.append(line)
+
+    return new_lines, new_installs, installed_modules
 
 
 def parse_lines(
     lines: List[str], installed_modules: List[str]
 ) -> Tuple[List[str], List[str]]:
+    print(f"\n======================\nlines: {lines}\n\n")
+
     with open(mappings_path) as f:
         mappings = json.load(f)
 
-    imported_modules = []
     new_installs = []
     new_lines = []
 
-    parsing_modules = False
     for line in lines:
+        this_new_lines = []
+        this_new_installs = []
+        this_installed_modules = []
+
         if (
             "from llama_index." in line
             or "from llama_index import" in line
             or "from llama_hub." in line
         ):
-            imported_modules = [line, line.split(" import ")[-1].strip()]
-            if imported_modules[-1].startswith("("):
-                imported_modules[-1] = []
-                parsing_modules = True
-            else:
-                imported_modules[-1] = imported_modules[-1].split(", ")
+            (
+                this_new_lines,
+                this_new_installs,
+                this_installed_modules,
+            ) = _parse_from_imports(
+                mappings=mappings,
+                installed_modules=installed_modules,
+                line=line,
+            )
 
-        if parsing_modules:
-            if ")" in line:
-                parsing_modules = False
-            elif "(" not in line:
-                imported_modules[-1].append(line.strip().replace(",", ""))
+        elif "download_loader(" in line or "download_tool(" in line:
+            (
+                this_new_lines,
+                this_new_installs,
+                this_installed_modules,
+            ) = _parse_hub_downloads(
+                mappings=mappings,
+                installed_modules=installed_modules,
+                line=line,
+            )
 
-        if not parsing_modules and len(imported_modules) > 0:
-            imported_module_names = [x.strip() for x in imported_modules[-1]]
-            new_imports = {}
-            for module in imported_module_names:
-                if module in mappings:
-                    new_import_parent = mappings[module]
-                    if new_import_parent not in new_imports:
-                        new_imports[new_import_parent] = [module]
-                    else:
-                        new_imports[new_import_parent].append(module)
-                else:
-                    print(f"Module not found: {module}\nSwitching to core")
-                    new_import_parent = (
-                        imported_modules[0]
-                        .split(" import ")[0]
-                        .split("from ")[-1]
-                        .replace("llama_index", "llama_index.core")
-                    )
-                    if new_import_parent not in new_imports:
-                        new_imports[new_import_parent] = [module]
-                    else:
-                        new_imports[new_import_parent].append(module)
+        else:
+            this_new_lines = [line]
 
-            for new_import_parent, new_imports in new_imports.items():
-                new_install_parent = new_import_parent.replace(".", "-").replace(
-                    "_", "-"
-                )
-                if new_install_parent not in installed_modules:
-                    overlap = [x for x in installed_modules if x in new_install_parent]
-                    if len(overlap) == 0:
-                        installed_modules.append(new_install_parent)
-                        new_installs.append(f"%pip install {new_install_parent}\n")
-                new_imports = ", ".join(new_imports)
-                new_lines.append(f"from {new_import_parent} import {new_imports}\n")
+        print(f"this_new_lines: {this_new_lines}", flush=True)
 
-                parsing_modules = False
-                new_imports = {}
-                imported_modules = []
+        new_lines += this_new_lines
+        new_installs += this_new_installs
+        installed_modules += this_installed_modules
 
-        elif not parsing_modules:
-            new_lines.append(line)
-
+    print(f"new_lines: {new_lines}", flush=True)
+    print(f"new_installs: {new_installs}", flush=True)
     return new_lines, list(set(new_installs))
 
 
 def _cell_installs_llama_hub(cell) -> bool:
     lines = cell["source"]
+    llama_hub_partial_statements = [
+        "pip install llama-hub",
+        "import download_loader",
+        "import download_tool",
+    ]
+
     if len(lines) > 1:
         return False
-    if cell["cell_type"] == "code" and "pip install llama-hub" in lines[0]:
+    if cell["cell_type"] == "code" and any(
+        el in lines[0] for el in llama_hub_partial_statements
+    ):
         return True
     return False
 
