@@ -1749,13 +1749,13 @@ llama-index-llms-openai = ">=0.0.1,<0.0.2"
 
 [[package]]
 name = "llama-index-core"
-version = "0.9.49"
+version = "0.9.50"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "llama_index_core-0.9.49-py3-none-any.whl", hash = "sha256:6788ca1f3bd79e7b4674e689d8ce056f3ec38370b90bfb1de51b87fba2f2d85c"},
-    {file = "llama_index_core-0.9.49.tar.gz", hash = "sha256:a9fbb0fdf439475c5f706e7476ea70e69fc89afcc825d0abccf3554fcb3418b1"},
+    {file = "llama_index_core-0.9.50-py3-none-any.whl", hash = "sha256:68aa7fec317fbd7337d1b5a03f22668237abee8c32afe1c12b54f4950153c3a5"},
+    {file = "llama_index_core-0.9.50.tar.gz", hash = "sha256:718ca06d177b7e74873663a61737b1a06bd35c9625b59857ea738f274812a206"},
 ]
 
 [package.dependencies]
@@ -5486,4 +5486,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "86659f4656f52e49d0b96cbf065ffb002dd3c6acf4f1be465cd8194daa4dde6b"
+content-hash = "6d6cf190004290cfdefbd3259665c09b403df3b794e5b21834f7de5f5cf93ef3"
