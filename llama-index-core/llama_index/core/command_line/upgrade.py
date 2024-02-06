@@ -59,7 +59,6 @@ def parse_lines(
                     else:
                         new_imports[new_import_parent].append(module)
 
-            new_installs = []
             for new_import_parent, new_imports in new_imports.items():
                 new_install_parent = new_import_parent.replace(".", "-").replace(
                     "_", "-"
@@ -79,7 +78,7 @@ def parse_lines(
         elif not parsing_modules:
             new_lines.append(line)
 
-    return new_lines, new_installs
+    return new_lines, list(set(new_installs))
 
 
 def _cell_installs_llama_hub(cell) -> bool:
