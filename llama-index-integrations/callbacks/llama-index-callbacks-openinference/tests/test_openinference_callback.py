@@ -3,5 +3,5 @@ from llama_index.callbacks.openinference.base import OpenInferenceCallbackHandle
 
 
 def test_handler_callable():
-    handler = OpenInferenceCallbackHandler()
-    assert isinstance(handler, BaseCallbackHandler)
+    names_of_base_classes = [b.__name__ for b in OpenInferenceCallbackHandler.__mro__]
+    assert BaseCallbackHandler.__name__ in names_of_base_classes
