@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.readers import PDFReader
+from llama_index.readers.file import PDFReader
 from llama_index.llms.openai import OpenAI
 from llama_index.core import ServiceContext
 from llama_index.core.schema import NodeWithScore
