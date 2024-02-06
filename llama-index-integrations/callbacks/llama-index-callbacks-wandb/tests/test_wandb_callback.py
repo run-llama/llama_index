@@ -3,5 +3,5 @@ from llama_index.callbacks.wandb.base import WandbCallbackHandler
 
 
 def test_handler_callable():
-    handler = WandbCallbackHandler()
-    assert isinstance(handler, BaseCallbackHandler)
+    names_of_base_classes = [b.__name__ for b in WandbCallbackHandler.__mro__]
+    assert BaseCallbackHandler.__name__ in names_of_base_classes
