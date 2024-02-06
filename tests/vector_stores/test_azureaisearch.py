@@ -3,8 +3,10 @@ from unittest.mock import MagicMock
 
 import pytest
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
-from llama_index.vector_stores.azureaisearch import IndexManagement
+from llama_index.vector_stores.azureaisearch import (
+    AzureAISearchVectorStore,
+    IndexManagement,
+)
 
 try:
     from azure.search.documents import SearchClient

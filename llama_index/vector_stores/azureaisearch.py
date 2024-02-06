@@ -118,20 +118,20 @@ class AzureAISearchVectorStore(VectorStore):
         metadata filtering keys.
         """
         from azure.search.documents.indexes.models import (
-            SearchIndex,
-            SimpleField,
+            ExhaustiveKnnAlgorithmConfiguration,
+            ExhaustiveKnnParameters,
+            HnswAlgorithmConfiguration,
+            HnswParameters,
             SearchableField,
             SearchField,
             SearchFieldDataType,
+            SearchIndex,
             SemanticConfiguration,
-            SemanticPrioritizedFields,
             SemanticField,
+            SemanticPrioritizedFields,
             SemanticSearch,
+            SimpleField,
             VectorSearch,
-            HnswAlgorithmConfiguration,
-            HnswParameters,
-            ExhaustiveKnnAlgorithmConfiguration,
-            ExhaustiveKnnParameters,
             VectorSearchAlgorithmKind,
             VectorSearchAlgorithmMetric,
             VectorSearchProfile,
@@ -636,7 +636,7 @@ class AzureQueryResultSearchBase:
 class AzureQueryResultSearchDefault(AzureQueryResultSearchBase):
     def _create_query_vector(self) -> Optional[List[Any]]:
         """Query vector store."""
-        from azure.search.documents.models import QueryType, VectorizedQuery
+        from azure.search.documents.models import VectorizedQuery
 
         if not self._query.query_embedding:
             raise ValueError("Query missing embedding")
@@ -675,7 +675,7 @@ class AzureQueryResultSearchHybrid(
 class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
     def _create_query_vector(self) -> Optional[List[Any]]:
         """Query vector store."""
-        from azure.search.documents.models import QueryType, VectorizedQuery
+        from azure.search.documents.models import VectorizedQuery
 
         if not self._query.query_embedding:
             raise ValueError("Query missing embedding")
