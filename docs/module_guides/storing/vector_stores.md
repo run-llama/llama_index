@@ -61,10 +61,10 @@ maxdepth: 1
 ---
 /examples/vector_stores/AstraDBIndexDemo.ipynb
 /examples/vector_stores/AsyncIndexCreationDemo.ipynb
+/examples/vector_stores/AzureAISearchIndexDemo.ipynb
 /examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb
 /examples/vector_stores/CassandraIndexDemo.ipynb
 /examples/vector_stores/ChromaIndexDemo.ipynb
-/examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 /examples/vector_stores/DashvectorIndexDemo.ipynb
 /examples/vector_stores/DashvectorIndexDemo-Hybrid.ipynb
 /examples/vector_stores/DeepLakeIndexDemo.ipynb
