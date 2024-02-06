@@ -2,9 +2,9 @@
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -136,7 +136,6 @@ class DashScope(CustomLLM):
                                                              repetition.",
         default=None,
     )
-
     api_key: str = Field(
         default=None, description="The DashScope API key.", exclude=True
     )
@@ -177,7 +176,9 @@ class DashScope(CustomLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        DASHSCOPE_MODEL_META[self.model_name]["num_output"] = self.max_tokens
+        DASHSCOPE_MODEL_META[self.model_name]["num_output"] = (
+            self.max_tokens or DASHSCOPE_MODEL_META[self.model_name]["num_output"]
+        )
         return LLMMetadata(
             model_name=self.model_name, **DASHSCOPE_MODEL_META[self.model_name]
         )
