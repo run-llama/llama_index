@@ -7,7 +7,7 @@ from enum import Enum
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.schema import Document
 from llama_index.graph_stores.neo4j import Neo4jGraphStore
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core import (
     StorageContext,
     ServiceContext,

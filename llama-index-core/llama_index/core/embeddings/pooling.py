@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Union, overload
 import numpy as np
 
 if TYPE_CHECKING:
-    import torch
+    import torch  # pants: no-infer-dep
 
 
 class Pooling(str, Enum):

@@ -7,7 +7,7 @@ from llama_index.core.base.embeddings.base import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.embeddings.huggingface_utils import (
+from llama_index.embeddings.huggingface_utils import (
     DEFAULT_INSTRUCT_MODEL,
     get_query_instruct_for_model_name,
     get_text_instruct_for_model_name,

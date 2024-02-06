@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 from llama_index.core import ServiceContext, VectorStoreIndex, get_response_synthesizer
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.schema import Document
 from llama_index.core.vector_stores.types import MetadataFilters, ExactMatchFilter

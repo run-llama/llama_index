@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.readers import PDFReader
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core import ServiceContext
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.response_synthesizers import TreeSummarize

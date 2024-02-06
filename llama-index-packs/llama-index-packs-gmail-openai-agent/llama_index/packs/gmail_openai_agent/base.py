@@ -7,9 +7,9 @@ from llama_index.core.llama_pack.base import BaseLlamaPack
 
 # backwards compatibility
 try:
-    from llama_index.core.agent.legacy.openai_agent import OpenAIAgent
+    from llama_index.agent.legacy.openai_agent import OpenAIAgent
 except ImportError:
-    from llama_index.core.agent.openai import OpenAIAgent
+    from llama_index.agent.openai import OpenAIAgent
 
 
 class GmailOpenAIAgentPack(BaseLlamaPack):

@@ -7,7 +7,7 @@ from llama_index.core import (
     ServiceContext,
 )
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.readers.wikipedia import WikipediaReader
 
 

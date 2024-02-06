@@ -123,7 +123,7 @@ class NERPIINodePostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        from transformers import pipeline
+        from transformers import pipeline  # pants: no-infer-dep
 
         ner = pipeline("ner", grouped_entities=True)
 

@@ -1,6 +1,6 @@
 """Multidoc Autoretriever."""
 
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from typing import List, Dict, Any, Optional, cast
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.schema import Document, BaseNode

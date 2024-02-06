@@ -42,7 +42,7 @@ from llama_index.core.callbacks import (
 )
 from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever

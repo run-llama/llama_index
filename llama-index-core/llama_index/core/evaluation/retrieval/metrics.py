@@ -83,7 +83,7 @@ class CohereRerankRelevancyMetric(BaseRetrievalMetric):
                 "specify via COHERE_API_KEY environment variable "
             )
         try:
-            from cohere import Client
+            from cohere import Client  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "Cannot import cohere package, please `pip install cohere`."

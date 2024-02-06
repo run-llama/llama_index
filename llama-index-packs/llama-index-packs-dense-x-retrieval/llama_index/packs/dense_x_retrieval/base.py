@@ -4,9 +4,9 @@ import yaml
 from typing import Any, Dict, List, Optional
 
 from llama_index.core import Document, ServiceContext, VectorStoreIndex
-from llama_index.core.embeddings.openai import OpenAIEmbedding, BaseEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding, BaseEmbedding
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core.node_parser.interface import TextSplitter
 from llama_index.core.node_parser.text import SentenceSplitter
 from llama_index.core.base.response.schema import RESPONSE_TYPE

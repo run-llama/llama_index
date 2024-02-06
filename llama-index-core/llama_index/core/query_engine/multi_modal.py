@@ -56,7 +56,7 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
             self._multi_modal_llm = multi_modal_llm
         else:
             try:
-                from llama_index.core.multi_modal_llms.openai import OpenAIMultiModal
+                from llama_index.multi_modal_llms.openai import OpenAIMultiModal
 
                 self._multi_modal_llm = OpenAIMultiModal(
                     model="gpt-4-vision-preview", max_new_tokens=1000

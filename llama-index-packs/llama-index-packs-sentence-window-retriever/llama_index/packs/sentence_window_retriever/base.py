@@ -1,7 +1,7 @@
 """Sentence window retriever."""
 
 from llama_index.core import ServiceContext, VectorStoreIndex
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.node_parser import (
     SentenceWindowNodeParser,

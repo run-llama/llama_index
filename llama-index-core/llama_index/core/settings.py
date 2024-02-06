@@ -123,7 +123,7 @@ class _Settings:
     def tokenizer(self, tokenizer: Callable[[str], List[Any]]) -> None:
         """Set the tokenizer."""
         try:
-            from transformers import PreTrainedTokenizerBase
+            from transformers import PreTrainedTokenizerBase  # pants: no-infer-dep
 
             if isinstance(tokenizer, PreTrainedTokenizerBase):
                 from functools import partial

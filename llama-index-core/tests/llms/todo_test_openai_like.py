@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, call, patch
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms.localai import LOCALAI_DEFAULTS
-from llama_index.core.llms.openai import Tokenizer
-from llama_index.core.llms.openai_like import OpenAILike
+from llama_index.llms.openai import Tokenizer
+from llama_index.llms.openai_like import OpenAILike
 from openai.types import Completion, CompletionChoice
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage

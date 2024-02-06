@@ -7,7 +7,7 @@ from llama_index.core.query_pipeline.components.input import InputComponent
 from typing import Dict, Any, List, Optional
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core import Document, VectorStoreIndex, ServiceContext
 from llama_index.core.response_synthesizers import TreeSummarize
 from llama_index.core.schema import NodeWithScore

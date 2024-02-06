@@ -30,7 +30,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         keep_retrieval_score: Optional[bool] = False,
     ):
         try:
-            from sentence_transformers import CrossEncoder
+            from sentence_transformers import CrossEncoder  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "Cannot import sentence-transformers or torch package,",

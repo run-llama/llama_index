@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 from llama_index.core import ServiceContext, VectorStoreIndex
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.voyageai import VoyageEmbedding
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.schema import Document

@@ -4,7 +4,8 @@ from llama_index.core.query_engine import BaseQueryEngine
 from llama_index.core.llama_dataset import BaseLlamaDataset, BaseLlamaPredictionDataset
 from llama_index.core.llama_pack.base import BaseLlamaPack
 import tqdm
-from llama_index.core.llms.openai import OpenAI, LLM
+from llama_index.llms.openai import OpenAI
+from llama_index.core.llms import LLM
 from llama_index.core import ServiceContext
 from llama_index.core.evaluation import (
     CorrectnessEvaluator,

@@ -73,7 +73,7 @@ def resolve_embed_model(
     # for image embeddings
     if embed_model == "clip":
         try:
-            from llama_index.embeddings.clip import ClipEmbedding
+            from llama_index.embeddings.clip import ClipEmbedding  # pants: no-infer-dep
 
             embed_model = ClipEmbedding()
         except ImportError as e:
@@ -84,7 +84,7 @@ def resolve_embed_model(
 
     if isinstance(embed_model, str):
         try:
-            from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+            from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # pants: no-infer-dep
 
             splits = embed_model.split(":", 1)
             is_local = splits[0]

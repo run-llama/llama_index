@@ -1,7 +1,7 @@
 """Recursive retriever (with node references)."""
 
 from llama_index.core import ServiceContext, VectorStoreIndex
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core.node_parser import SentenceSplitter
 from typing import List, Dict, Any
 from llama_index.core.llama_pack.base import BaseLlamaPack

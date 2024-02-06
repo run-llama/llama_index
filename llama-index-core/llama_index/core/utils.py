@@ -296,7 +296,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
                         For instance, fxmarty/tiny-llama-fast-tokenizer.
     """
     try:
-        from transformers import AutoTokenizer
+        from transformers import AutoTokenizer  # pants: no-infer-dep
     except ImportError:
         raise ValueError(
             "`transformers` package not found, please run `pip install transformers`"
@@ -465,7 +465,7 @@ def infer_torch_device() -> str:
     try:
         has_cuda = torch.cuda.is_available()
     except NameError:
-        import torch
+        import torch  # pants: no-infer-dep
 
         has_cuda = torch.cuda.is_available()
     if has_cuda:

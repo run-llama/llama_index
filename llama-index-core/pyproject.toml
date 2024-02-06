@@ -79,6 +79,9 @@ aiohttp = "^3.8.6"
 networkx = ">=3.0"
 psycopg2-binary = {optional = true, version = "^2.9.9"}
 dirtyjson = "^1.0.8"
+tqdm = "^4.66.1"
+pillow = ">=9.0.0"
+PyYAML = ">=6.0.1"
 
 [tool.poetry.extras]
 gradientai = [

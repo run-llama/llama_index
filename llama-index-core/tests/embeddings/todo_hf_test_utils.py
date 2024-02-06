@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
-from llama_index.core.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # pants: no-infer-dep
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
-from llama_index.core.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.embeddings.utils import resolve_embed_model
 from pytest import MonkeyPatch
 
@@ -28,11 +28,11 @@ def mock_openai_embeddings(self: Any, *args: Any, **kwargs: Dict[str, Any]) -> A
 
 def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "llama_index.core.embeddings.huggingface.HuggingFaceEmbedding.__init__",
+        "llama_index.embeddings.huggingface.HuggingFaceEmbedding.__init__",
         mock_hf_embeddings,
     )
     monkeypatch.setattr(
-        "llama_index.core.embeddings.openai.OpenAIEmbedding.__init__",
+        "llama_index.embeddings.openai.OpenAIEmbedding.__init__",
         mock_openai_embeddings,
     )
 

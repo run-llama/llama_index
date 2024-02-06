@@ -11,7 +11,7 @@ notebook as well!
 from typing import Dict, Any, List, Optional
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.schema import Document
-from llama_index.core.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import VectorStoreIndex
 
 import re
@@ -147,7 +147,7 @@ class SemanticChunker(MetadataAwareTextSplitter):
         breakpoint_percentile_threshold: float = 95.0,
         **kwargs: Any
     ):
-        from llama_index.core.embeddings.openai import OpenAIEmbedding
+        from llama_index.embeddings.openai import OpenAIEmbedding
 
         super().__init__(
             buffer_size=buffer_size,

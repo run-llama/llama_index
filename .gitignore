@@ -1,2 +1,5 @@
+.pants.d/
 dist/
 migration_scripts/
+venv/
+BUILD

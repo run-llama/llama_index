@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from llama_index.core.schema import Document, NodeWithScore, TextNode
 
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core.llms.llm import LLM
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.retrievers import BaseRetriever

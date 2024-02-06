@@ -74,7 +74,7 @@ def bench_simple_vector_store(
     results = []
 
     if torch_num_threads is not None:
-        import torch
+        import torch  # pants: no-infer-dep
 
         torch.set_num_threads(torch_num_threads)
 

@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Tuple, Optional
 
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core.agent import ReActAgent
 
 from llama_index.tools.arxiv import ArxivToolSpec

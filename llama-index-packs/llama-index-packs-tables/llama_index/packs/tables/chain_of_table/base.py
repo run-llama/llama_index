@@ -12,7 +12,7 @@ from llama_index.core.query_engine import CustomQueryEngine
 from llama_index.core.base.response.schema import Response
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core.query_pipeline.query import QueryPipeline as QP
 from llama_index.core.query_pipeline.components.function import FnComponent
 from llama_index.core.base.query_pipeline.query import QueryComponent

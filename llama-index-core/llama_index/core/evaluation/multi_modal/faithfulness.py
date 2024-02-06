@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Sequence, Union
 
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
-from llama_index.core.multi_modal_llms.openai import OpenAIMultiModal
+from llama_index.multi_modal_llms.openai import OpenAIMultiModal
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import ImageNode

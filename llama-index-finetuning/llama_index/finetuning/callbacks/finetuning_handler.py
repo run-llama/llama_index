@@ -133,7 +133,7 @@ class OpenAIFineTuningHandler(BaseFinetuningHandler):
         },
         ...
         """
-        from llama_index.core.llms.openai_utils import to_openai_message_dicts
+        from llama_index.llms.openai_utils import to_openai_message_dicts
 
         events_dict = self.get_finetuning_events()
         json_strs = []

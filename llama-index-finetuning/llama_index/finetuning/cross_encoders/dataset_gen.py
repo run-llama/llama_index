@@ -10,7 +10,7 @@ from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser import TokenTextSplitter
 from llama_index.core.schema import Document, MetadataMode
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 
 
 @dataclass

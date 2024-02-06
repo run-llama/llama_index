@@ -1,7 +1,7 @@
 """Auto Merging Retriever."""
 
 from llama_index.core import ServiceContext, VectorStoreIndex
-from llama_index.core.llms.openai import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core.node_parser import (
     HierarchicalNodeParser,
     get_leaf_nodes,

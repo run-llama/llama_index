@@ -139,7 +139,7 @@ import tiktoken
 set_global_tokenizer(tiktoken.encoding_for_model("gpt-3.5-turbo").encode)
 
 # huggingface
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer  # pants: no-infer-dep
 
 set_global_tokenizer(
     AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta").encode
