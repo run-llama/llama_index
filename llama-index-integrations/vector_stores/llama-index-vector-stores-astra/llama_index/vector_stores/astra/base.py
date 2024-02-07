@@ -5,19 +5,21 @@ An index based on a DB table with vector search capabilities,
 powered by the astrapy library
 
 """
-from astrapy.db import AstraDB
+
 import json
 import logging
 from typing import Any, Dict, List, Optional, cast
+from warnings import warn
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
     ExactMatchFilter,
     FilterOperator,
     MetadataFilter,
     MetadataFilters,
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -32,8 +34,10 @@ _logger = logging.getLogger(__name__)
 DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 MAX_INSERT_BATCH_SIZE = 20
 
+NON_INDEXED_FIELDS = ["metadata._node_content", "content"]
 
-class AstraDBVectorStore(VectorStore):
+
+class AstraDBVectorStore(BasePydanticVectorStore):
     """
     Astra DB Vector Store.
 
@@ -59,6 +63,11 @@ class AstraDBVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    _embedding_dimension: int = PrivateAttr()
+    _ttl_seconds: Optional[int] = PrivateAttr()
+    _astra_db: Any = PrivateAttr()
+    _astra_db_collection: Any = PrivateAttr()
+
     def __init__(
         self,
         *,
@@ -69,6 +78,18 @@ class AstraDBVectorStore(VectorStore):
         namespace: Optional[str] = None,
         ttl_seconds: Optional[int] = None,
     ) -> None:
+        super().__init__()
+
+        import_err_msg = (
+            "`astrapy` package not found, please run `pip install --upgrade astrapy`"
+        )
+
+        # Try to import astrapy for use
+        try:
+            from astrapy.db import AstraDB
+        except ImportError:
+            raise ImportError(import_err_msg)
+
         # Set all the required class parameters
         self._embedding_dimension = embedding_dimension
         self._ttl_seconds = ttl_seconds
@@ -80,10 +101,67 @@ class AstraDBVectorStore(VectorStore):
             api_endpoint=api_endpoint, token=token, namespace=namespace
         )
 
-        # Create and connect to the newly created collection
-        self._astra_db_collection = self._astra_db.create_collection(
-            collection_name=collection_name, dimension=embedding_dimension
-        )
+        from astrapy.api import APIRequestError
+
+        try:
+            # Create and connect to the newly created collection
+            self._astra_db_collection = self._astra_db.create_collection(
+                collection_name=collection_name,
+                dimension=embedding_dimension,
+                options={"indexing": {"deny": NON_INDEXED_FIELDS}},
+            )
+        except APIRequestError:
+            # possibly the collection is preexisting and has legacy
+            # indexing settings: verify
+            get_coll_response = self._astra_db.get_collections(
+                options={"explain": True}
+            )
+            collections = (get_coll_response["status"] or {}).get("collections") or []
+            preexisting = [
+                collection
+                for collection in collections
+                if collection["name"] == collection_name
+            ]
+            if preexisting:
+                pre_collection = preexisting[0]
+                # if it has no "indexing", it is a legacy collection;
+                # otherwise it's unexpected warn and proceed at user's risk
+                pre_col_options = pre_collection.get("options") or {}
+                if "indexing" not in pre_col_options:
+                    warn(
+                        (
+                            f"Collection '{collection_name}' is detected as legacy"
+                            " and has indexing turned on for all fields. This"
+                            " implies stricter limitations on the amount of text"
+                            " each entry can store. Consider reindexing anew on a"
+                            " fresh collection to be able to store longer texts."
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                    self._astra_db_collection = self._astra_db.collection(
+                        collection_name=collection_name,
+                    )
+                else:
+                    options_json = json.dumps(pre_col_options["indexing"])
+                    warn(
+                        (
+                            f"Collection '{collection_name}' has unexpected 'indexing'"
+                            f" settings (options.indexing = {options_json})."
+                            " This can result in odd behaviour when running "
+                            " metadata filtering and/or unwarranted limitations"
+                            " on storing long texts. Consider reindexing anew on a"
+                            " fresh collection."
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                    self._astra_db_collection = self._astra_db.collection(
+                        collection_name=collection_name,
+                    )
+            else:
+                # other exception
+                raise
 
     def add(
         self,

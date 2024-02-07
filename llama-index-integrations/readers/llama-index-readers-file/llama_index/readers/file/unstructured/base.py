@@ -55,7 +55,7 @@ class UnstructuredReader(BaseReader):
         extra_info: Optional[Dict] = None,
         split_documents: Optional[bool] = False,
     ) -> List[Document]:
-        """If api is set, parse through api"""
+        """If api is set, parse through api."""
         if self.api:
             from unstructured.partition.api import partition_via_api
 

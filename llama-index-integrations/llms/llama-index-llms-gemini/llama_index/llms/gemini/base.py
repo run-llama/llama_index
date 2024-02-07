@@ -71,6 +71,7 @@ class Gemini(CustomLLM):
         safety_settings: "genai.types.SafetySettingOptions" = None,
         callback_manager: Optional[CallbackManager] = None,
         api_base: Optional[str] = None,
+        transport: Optional[str] = None,
         **generate_kwargs: Any,
     ):
         """Creates a new Gemini model interface."""
@@ -89,6 +90,9 @@ class Gemini(CustomLLM):
         }
         if api_base:
             config_params["client_options"] = {"api_endpoint": api_base}
+        if transport:
+            config_params["transport"] = transport
+        # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
         genai.configure(**config_params)
 
         base_gen_config = generation_config if generation_config else {}

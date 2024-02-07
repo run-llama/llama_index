@@ -1,6 +1,6 @@
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
 
 [tool.codespell]
 check-filenames = true
@@ -17,18 +17,18 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-name = "llama-index-llms-bedrock"
-version = "0.0.1"
-description = "llama-index llms bedrock integration"
 authors = ["Your Name <you@example.com>"]
+description = "llama-index llms bedrock integration"
 license = "MIT"
-readme = "README.md"
+name = "llama-index-llms-bedrock"
 packages = [{include = "llama_index/"}]
+readme = "README.md"
+version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
 llama-index-core = "^0.9.32"
-llama-index-llms-anthropic = "^0.1.0"
+llama-index-llms-anthropic = "^0.0.1"
 boto3 = "^1.34.26"
 
 [tool.poetry.group.dev.dependencies]

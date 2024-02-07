@@ -1,5 +1,5 @@
-from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.callbacks.wandb.base import WandbCallbackHandler
+from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 
 
 def test_handler_callable():

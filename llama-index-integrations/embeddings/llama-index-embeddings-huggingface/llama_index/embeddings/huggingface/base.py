@@ -15,13 +15,13 @@ from llama_index.core.base.embeddings.base import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
+from llama_index.core.utils import get_cache_dir, infer_torch_device
+from llama_index.embeddings.huggingface.pooling import Pooling
 from llama_index.embeddings.huggingface_utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
     format_query,
     format_text,
 )
-from llama_index.core.utils import get_cache_dir, infer_torch_device
-from llama_index.embeddings.huggingface.pooling import Pooling
 from transformers import AutoModel, AutoTokenizer
 
 if TYPE_CHECKING:

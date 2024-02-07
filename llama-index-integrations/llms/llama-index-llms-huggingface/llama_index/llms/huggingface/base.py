@@ -447,6 +447,7 @@ class HuggingFaceInferenceAPI(CustomLLM):
             " model_name is left as default of None."
         ),
     )
+
     _sync_client: "InferenceClient" = PrivateAttr()
     _async_client: "AsyncInferenceClient" = PrivateAttr()
     _get_model_info: "Callable[..., ModelInfo]" = PrivateAttr()
@@ -504,6 +505,11 @@ class HuggingFaceInferenceAPI(CustomLLM):
                 f"Using Hugging Face's recommended model {kwargs['model_name']}"
                 f" given task {task}."
             )
+        if kwargs.get("task") is None:
+            task = "conversational"
+        else:
+            task = kwargs["task"].lower()
+
         super().__init__(**kwargs)  # Populate pydantic Fields
         self._sync_client = InferenceClient(**self._get_inference_client_kwargs())
         self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
@@ -544,14 +550,23 @@ class HuggingFaceInferenceAPI(CustomLLM):
         )
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        output: "ConversationalOutput" = self._sync_client.conversational(
-            **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
-        )
-        return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT, content=output["generated_text"]
+        # default to conversational task as that was the previous functionality
+        if self.task == "conversational" or self.task is None:
+            output: "ConversationalOutput" = self._sync_client.conversational(
+                **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
             )
-        )
+            return ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT, content=output["generated_text"]
+                )
+            )
+        else:
+            # try and use text generation
+            prompt = self.messages_to_prompt(messages)
+            completion = self.complete(prompt)
+            return ChatResponse(
+                message=ChatMessage(role=MessageRole.ASSISTANT, content=completion.text)
+            )
 
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any

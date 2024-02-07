@@ -8,29 +8,10 @@ import logging
 from typing import Any, List, Optional, Tuple, cast
 
 import qdrant_client
-from qdrant_client.http import models as rest
-from qdrant_client.http.exceptions import UnexpectedResponse
-from qdrant_client.http.models import (
-    FieldCondition,
-    Filter,
-    MatchAny,
-    MatchExcept,
-    MatchText,
-    MatchValue,
-    Range,
-    Payload,
-)
 from grpc import RpcError
-
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.utils import iter_batch
-from llama_index.vector_stores.qdrant.utils import (
-    HybridFusionCallable,
-    SparseEncoderCallable,
-    default_sparse_encoder,
-    relative_score_fusion,
-)
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -41,6 +22,24 @@ from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
+)
+from llama_index.vector_stores.qdrant.utils import (
+    HybridFusionCallable,
+    SparseEncoderCallable,
+    default_sparse_encoder,
+    relative_score_fusion,
+)
+from qdrant_client.http import models as rest
+from qdrant_client.http.exceptions import UnexpectedResponse
+from qdrant_client.http.models import (
+    FieldCondition,
+    Filter,
+    MatchAny,
+    MatchExcept,
+    MatchText,
+    MatchValue,
+    Payload,
+    Range,
 )
 
 logger = logging.getLogger(__name__)
@@ -62,6 +61,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
     Args:
         collection_name: (str): name of the Qdrant collection
         client (Optional[Any]): QdrantClient instance from `qdrant-client` package
+        aclient (Optional[Any]): AsyncQdrantClient instance from `qdrant-client` package
+        url (Optional[str]): url of the Qdrant instance
+        api_key (Optional[str]): API key for authenticating with Qdrant
+        batch_size (int): number of points to upload in a single request to Qdrant. Defaults to 64
+        parallel (int): number of parallel processes to use during upload. Defaults to 1
+        max_retries (int): maximum number of retries in case of a failure. Defaults to 3
+        client_kwargs (Optional[dict]): additional kwargs for QdrantClient and AsyncQdrantClient
+        enable_hybrid (bool): whether to enable hybrid search using dense and sparse vectors
+        sparse_doc_fn (Optional[SparseEncoderCallable]): function to encode sparse vectors
+        sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
+        hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
     """
 
     stores_text: bool = True
@@ -72,6 +82,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     url: Optional[str]
     api_key: Optional[str]
     batch_size: int
+    parallel: int
+    max_retries: int
     client_kwargs: dict = Field(default_factory=dict)
     enable_hybrid: bool
 
@@ -89,7 +101,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
         aclient: Optional[Any] = None,
         url: Optional[str] = None,
         api_key: Optional[str] = None,
-        batch_size: int = 100,
+        batch_size: int = 64,
+        parallel: int = 1,
+        max_retries: int = 3,
         client_kwargs: Optional[dict] = None,
         enable_hybrid: bool = False,
         sparse_doc_fn: Optional[SparseEncoderCallable] = None,
@@ -148,6 +162,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             url=url,
             api_key=api_key,
             batch_size=batch_size,
+            parallel=parallel,
+            max_retries=max_retries,
             client_kwargs=client_kwargs or {},
             enable_hybrid=enable_hybrid,
         )
@@ -235,12 +251,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         points, ids = self._build_points(nodes)
 
-        # batch upsert the points into Qdrant collection to avoid large payloads
-        for points_batch in iter_batch(points, self.batch_size):
-            self._client.upsert(
-                collection_name=self.collection_name,
-                points=points_batch,
-            )
+        self._client.upload_points(
+            collection_name=self.collection_name,
+            points=points,
+            batch_size=self.batch_size,
+            parallel=self.parallel,
+            max_retries=self.max_retries,
+            wait=True,
+        )
 
         return ids
 
@@ -267,12 +285,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         points, ids = self._build_points(nodes)
 
-        # batch upsert the points into Qdrant collection to avoid large payloads
-        for points_batch in iter_batch(points, self.batch_size):
-            await self._aclient.upsert(
-                collection_name=self.collection_name,
-                points=points_batch,
-            )
+        await self._aclient.upload_points(
+            collection_name=self.collection_name,
+            points=points,
+            batch_size=self.batch_size,
+            parallel=self.parallel,
+            max_retries=self.max_retries,
+            wait=True,
+        )
 
         return ids
 

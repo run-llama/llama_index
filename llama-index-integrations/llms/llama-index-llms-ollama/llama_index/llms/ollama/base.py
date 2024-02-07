@@ -147,6 +147,8 @@ class Ollama(CustomLLM):
                 for line in response.iter_lines():
                     if line:
                         chunk = json.loads(line)
+                        if "done" in chunk and chunk["done"]:
+                            break
                         message = chunk["message"]
                         delta = message.get("content")
                         text += delta

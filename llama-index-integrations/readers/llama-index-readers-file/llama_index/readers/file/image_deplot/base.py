@@ -20,10 +20,9 @@ class ImageTabularChartReader(BaseReader):
         prompt: str = "Generate underlying data table of the figure below:",
     ):
         """Init params."""
-
         if parser_config is None:
             try:
-                import torch  # noqa: F401
+                import torch
                 from PIL import Image  # noqa: F401
                 from transformers import (
                     Pix2StructForConditionalGeneration,

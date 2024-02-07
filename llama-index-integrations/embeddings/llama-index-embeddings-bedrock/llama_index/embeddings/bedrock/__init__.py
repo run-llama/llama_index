@@ -1,3 +1,3 @@
-from llama_index.embeddings.bedrock.base import BedrockEmbedding
+from llama_index.embeddings.bedrock.base import BedrockEmbedding, Models
 
-__all__ = ["BedrockEmbedding"]
+__all__ = ["BedrockEmbedding", "Models"]

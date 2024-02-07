@@ -1,6 +1,6 @@
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
 
 [tool.codespell]
 check-filenames = true
@@ -17,13 +17,13 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-name = "llama-index-readers-singlestore"
-version = "0.0.1"
-description = "llama-index readers singlestore integration"
 authors = ["Your Name <you@example.com>"]
+description = "llama-index readers singlestore integration"
 license = "MIT"
-readme = "README.md"
+name = "llama-index-readers-singlestore"
 packages = [{include = "llama_index/"}]
+readme = "README.md"
+version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
 
 [tool.codespell]
 check-filenames = true
@@ -18,13 +18,13 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-name = "llama-index-callbacks-promptlayer"
-version = "0.0.2"
-description = "llama-index callbacks promptlayer integration"
 authors = ["Your Name <you@example.com>"]
+description = "llama-index callbacks promptlayer integration"
 license = "MIT"
-readme = "README.md"
+name = "llama-index-callbacks-promptlayer"
 packages = [{include = "llama_index/"}]
+readme = "README.md"
+version = "0.0.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
