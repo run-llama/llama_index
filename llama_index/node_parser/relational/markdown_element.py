@@ -150,6 +150,8 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                 table_lines = element.element.split("\n")
                 table_columns = [len(line.split("|")) for line in table_lines]
                 if len(set(table_columns)) > 1:
+                    # if the table have different number of columns on each rows, it's not a perfect table
+                    # we will store the raw text for such tables instead of converting them to a dataframe
                     perfect_table = False
 
                 # verify that the table (markdown) have at least 2 rows
@@ -169,6 +171,8 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                             id=f"id_{idx}", type="table", element=element, table=table
                         )
                     else:
+                        # for non-perfect tables, we will store the raw text
+                        # and give it a different type to differentiate it from perfect tables
                         elements[idx] = Element(
                             id=f"id_{idx}",
                             type="table_text",

@@ -250,7 +250,7 @@ class BaseElementNodeParser(NodeParser):
         cur_text_el_buffer: List[str] = []
         for element in elements:
             if element.type == "table" or element.type == "table_text":
-                # flush text buffer
+                # flush text buffer for table
                 if len(cur_text_el_buffer) > 0:
                     cur_text_nodes = self._get_nodes_from_buffer(
                         cur_text_el_buffer, node_parser
@@ -278,6 +278,7 @@ class BaseElementNodeParser(NodeParser):
                             table_md += f"{col}|"
                         table_md += "\n"
                 elif element.type == "table_text":
+                    # if the table is non-perfect table, we still want to keep the original text of table
                     table_md = str(element.element)
                 table_id = element.id + "_table"
                 table_ref_id = element.id + "_table_ref"
@@ -309,7 +310,7 @@ class BaseElementNodeParser(NodeParser):
                     text=table_str,
                     id_=table_id,
                     metadata={
-                        # serialize the table as a dictionary string
+                        # serialize the table as a dictionary string for dataframe of perfect table
                         "table_df": str(table_df.to_dict())
                         if element.type == "table"
                         else table_md,
