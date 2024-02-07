@@ -26,6 +26,7 @@ from llama_index.llms.base import ChatMessage
 from llama_index.llms.llm import LLM
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.memory.types import BaseMemory
+from llama_index.tools.types import BaseTool
 
 
 class BaseAgentRunner(BaseAgent):
@@ -212,6 +213,32 @@ class AgentRunner(BaseAgentRunner):
         self.init_task_state_kwargs = init_task_state_kwargs or {}
         self.delete_task_on_finish = delete_task_on_finish
         self.default_tool_choice = default_tool_choice
+
+    @staticmethod
+    def from_llm(
+        tools: Optional[List[BaseTool]] = None,
+        llm: Optional[LLM] = None,
+        **kwargs: Any,
+    ) -> "AgentRunner":
+        from llama_index.llms.openai import OpenAI
+        from llama_index.llms.openai_utils import is_function_calling_model
+
+        if isinstance(llm, OpenAI) and is_function_calling_model(llm.model):
+            from llama_index.agent import OpenAIAgent
+
+            return OpenAIAgent.from_tools(
+                tools=tools,
+                llm=llm,
+                **kwargs,
+            )
+        else:
+            from llama_index.agent import ReActAgent
+
+            return ReActAgent.from_tools(
+                tools=tools,
+                llm=llm,
+                **kwargs,
+            )
 
     @property
     def chat_history(self) -> List[ChatMessage]:
