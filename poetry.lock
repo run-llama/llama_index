@@ -145,13 +145,13 @@ trio = ["trio (>=0.23)"]
 
 [[package]]
 name = "appnope"
-version = "0.1.3"
+version = "0.1.4"
 description = "Disable App Nap on macOS >= 10.9"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6"
 files = [
-    {file = "appnope-0.1.3-py2.py3-none-any.whl", hash = "sha256:265a455292d0bd8a72453494fa24df5a11eb18373a60c7c0430889f22548605e"},
-    {file = "appnope-0.1.3.tar.gz", hash = "sha256:02bd91c4de869fbb1e1c50aafc4098827a7a54ab2f39d9dcba6c9547ed920e24"},
+    {file = "appnope-0.1.4-py2.py3-none-any.whl", hash = "sha256:502575ee11cd7a28c0205f379b525beefebab9d161b7c964670864014ed7213c"},
+    {file = "appnope-0.1.4.tar.gz", hash = "sha256:1de3860566df9caf38f01f86f65e0e13e379af54f9e4bee1e66b48f2efffd1ee"},
 ]
 
 [[package]]
@@ -1444,13 +1444,13 @@ testing = ["pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)",
 
 [[package]]
 name = "ipykernel"
-version = "6.29.1"
+version = "6.29.2"
 description = "IPython Kernel for Jupyter"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "ipykernel-6.29.1-py3-none-any.whl", hash = "sha256:e5dfba210fc9da74a5dae8fa6c41f816e11bd18d10381b2517d9a0d57cc987c4"},
-    {file = "ipykernel-6.29.1.tar.gz", hash = "sha256:1547352b32da95a2761011a8dac2af930c26a0703dfa07690d16b7d74dac0ba1"},
+    {file = "ipykernel-6.29.2-py3-none-any.whl", hash = "sha256:50384f5c577a260a1d53f1f59a828c7266d321c9b7d00d345693783f66616055"},
+    {file = "ipykernel-6.29.2.tar.gz", hash = "sha256:3bade28004e3ff624ed57974948116670604ac5f676d12339693f3142176d3f0"},
 ]
 
 [package.dependencies]
@@ -1712,12 +1712,12 @@ tornado = {version = "*", markers = "python_version > \"2.7\""}
 
 [[package]]
 name = "llama-cpp-python"
-version = "0.2.38"
+version = "0.2.39"
 description = "Python bindings for the llama.cpp library"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "llama_cpp_python-0.2.38.tar.gz", hash = "sha256:5acf5dd43e7e36e012924c92cb27612cd116571fe5849528758a2d6b301b7139"},
+    {file = "llama_cpp_python-0.2.39.tar.gz", hash = "sha256:e4fed6d0e9b925810a6463d75ef339d73288db5fa004938e5b6ce4fb40977d4f"},
 ]
 
 [package.dependencies]
@@ -1749,13 +1749,13 @@ llama-index-llms-openai = ">=0.0.1,<0.0.2"
 
 [[package]]
 name = "llama-index-core"
-version = "0.9.51"
+version = "0.9.54"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "llama_index_core-0.9.51-py3-none-any.whl", hash = "sha256:ed036673d265340191a55a462cc024ccc87332b7cfec3a105a4631c6b584d758"},
-    {file = "llama_index_core-0.9.51.tar.gz", hash = "sha256:f51f8ec39d6afa39d93aaf627ac1acb9906419d7047402cc6cdb1b47c8cd90c4"},
+    {file = "llama_index_core-0.9.54-py3-none-any.whl", hash = "sha256:2e55f0a5c2a88a775f4cb82e0ab6f403fe81e74b8e2806fa5176ea0da3e3b459"},
+    {file = "llama_index_core-0.9.54.tar.gz", hash = "sha256:a76e1511b003ef4bed42598cb25416b1dfe319ab4bfb66da46b2164c5cea9c36"},
 ]
 
 [package.dependencies]
@@ -5574,4 +5574,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "e22389357c7e5d8bde75d29c81dbfdcfffb46e32886e665ea1f58a6af253a556"
+content-hash = "3312942e3277dfea08363033afcf46b84d0f5dd060097485e5f4b17f9227428b"
