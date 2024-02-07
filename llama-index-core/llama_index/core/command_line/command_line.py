@@ -59,38 +59,55 @@ def handle_download_llama_dataset(
     print(f"Successfully downloaded {llama_dataset_class} to {download_dir}")
 
 
-def default_rag_cli() -> RagCLI:
-    import chromadb
-
-    from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
-    from llama_index.vector_stores.chroma import (
-        ChromaVectorStore,
-    )
-
-    persist_dir = default_ragcli_persist_dir()
-    chroma_client = chromadb.PersistentClient(path=persist_dir)
-    chroma_collection = chroma_client.create_collection("default", get_or_create=True)
-    vector_store = ChromaVectorStore(
-        chroma_collection=chroma_collection, persist_dir=persist_dir
-    )
-    docstore = SimpleDocumentStore()
-
-    ingestion_pipeline = IngestionPipeline(
-        transformations=[SentenceSplitter(), OpenAIEmbedding()],
-        vector_store=vector_store,
-        docstore=docstore,
-        cache=IngestionCache(),
-    )
+def default_rag_cli() -> Optional[RagCLI]:
     try:
-        ingestion_pipeline.load(persist_dir=persist_dir)
-    except FileNotFoundError:
-        pass
+        from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
+    except ImportError:
+        OpenAIEmbedding = None
 
-    return RagCLI(
-        ingestion_pipeline=ingestion_pipeline,
-        verbose=False,
-        persist_dir=persist_dir,
-    )
+    try:
+        import chromadb
+
+        from llama_index.vector_stores.chroma import (
+            ChromaVectorStore,
+        )
+    except ImportError:
+        ChromaVectorStore = None
+
+    if OpenAIEmbedding and ChromaVectorStore:
+        persist_dir = default_ragcli_persist_dir()
+        chroma_client = chromadb.PersistentClient(path=persist_dir)
+        chroma_collection = chroma_client.create_collection(
+            "default", get_or_create=True
+        )
+        vector_store = ChromaVectorStore(
+            chroma_collection=chroma_collection, persist_dir=persist_dir
+        )
+        docstore = SimpleDocumentStore()
+
+        ingestion_pipeline = IngestionPipeline(
+            transformations=[SentenceSplitter(), OpenAIEmbedding()],
+            vector_store=vector_store,
+            docstore=docstore,
+            cache=IngestionCache(),
+        )
+        try:
+            ingestion_pipeline.load(persist_dir=persist_dir)
+        except FileNotFoundError:
+            pass
+
+        return RagCLI(
+            ingestion_pipeline=ingestion_pipeline,
+            verbose=False,
+            persist_dir=persist_dir,
+        )
+    else:
+        print(
+            "Default RagCLI was not built. There are packages missing. Please"
+            " install required dependencies by running "
+            "`pip install llama-index-embeddings-openai llama-index-llms-openai chroma llama-index-vector-stores-chroma`"
+        )
+        return None
 
 
 def main() -> None:

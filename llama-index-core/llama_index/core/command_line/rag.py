@@ -252,45 +252,48 @@ class RagCLI(BaseModel):
     def add_parser_args(
         cls,
         parser: Union[ArgumentParser, Any],
-        instance_generator: Callable[[], "RagCLI"],
+        instance_generator: Optional[Callable[[], "RagCLI"]],
     ) -> None:
-        parser.add_argument(
-            "-q",
-            "--question",
-            type=str,
-            help="The question you want to ask.",
-            required=False,
-        )
+        if instance_generator:
+            parser.add_argument(
+                "-q",
+                "--question",
+                type=str,
+                help="The question you want to ask.",
+                required=False,
+            )
 
-        parser.add_argument(
-            "-f",
-            "--files",
-            type=str,
-            help=(
-                "The name of the file or directory you want to ask a question about,"
-                'such as "file.pdf".'
-            ),
-        )
-        parser.add_argument(
-            "-c",
-            "--chat",
-            help="If flag is present, opens a chat REPL.",
-            action="store_true",
-        )
-        parser.add_argument(
-            "-v",
-            "--verbose",
-            help="Whether to print out verbose information during execution.",
-            action="store_true",
-        )
-        parser.add_argument(
-            "--clear",
-            help="Clears out all currently embedded data.",
-            action="store_true",
-        )
-        parser.set_defaults(
-            func=lambda args: asyncio.run(instance_generator().handle_cli(**vars(args)))
-        )
+            parser.add_argument(
+                "-f",
+                "--files",
+                type=str,
+                help=(
+                    "The name of the file or directory you want to ask a question about,"
+                    'such as "file.pdf".'
+                ),
+            )
+            parser.add_argument(
+                "-c",
+                "--chat",
+                help="If flag is present, opens a chat REPL.",
+                action="store_true",
+            )
+            parser.add_argument(
+                "-v",
+                "--verbose",
+                help="Whether to print out verbose information during execution.",
+                action="store_true",
+            )
+            parser.add_argument(
+                "--clear",
+                help="Clears out all currently embedded data.",
+                action="store_true",
+            )
+            parser.set_defaults(
+                func=lambda args: asyncio.run(
+                    instance_generator().handle_cli(**vars(args))
+                )
+            )
 
     def cli(self) -> None:
         """
