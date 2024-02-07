@@ -16,7 +16,9 @@ from llama_index.core.llms.types import (
 from llama_index.llms.mock import MockLLM
 from llama_index.tools.function_tool import FunctionTool
 from llama_index.tools.types import BaseTool
-
+"""""\Install the stream_chat and asyncio libraries.
+Use StreamChatAsync context manager to handle asynchronous operations.
+Within the context manager, leverage asynchronous methods like channel.watch(), channel.on_event(), or message.delete() to react to chat events and actions."""""
 
 @pytest.fixture()
 def add_tool() -> FunctionTool:
