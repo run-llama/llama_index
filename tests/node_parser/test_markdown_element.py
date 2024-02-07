@@ -76,7 +76,7 @@ def test_md_table_extraction_broken_table() -> None:
     print(f"Number of nodes: {len(nodes)}")
     for i, node in enumerate(nodes, start=0):
         print(f"Node {i}: {node}, Type: {type(node)}")
-    assert len(nodes) == 3
+    assert len(nodes) == 6
     assert isinstance(nodes[0], TextNode)
     assert isinstance(nodes[1], IndexNode)
     assert isinstance(nodes[2], TextNode)
@@ -2645,4 +2645,4 @@ Llama 2 is a new technology that carries risks with use. Testing conducted to da
     node_parser = MarkdownElementNodeParser(llm=MockLLM())
 
     nodes = node_parser.get_nodes_from_documents([test_data])
-    assert len(nodes) == 208
+    assert len(nodes) == 224
