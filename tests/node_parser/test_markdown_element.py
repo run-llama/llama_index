@@ -80,6 +80,9 @@ def test_md_table_extraction_broken_table() -> None:
     assert isinstance(nodes[0], TextNode)
     assert isinstance(nodes[1], IndexNode)
     assert isinstance(nodes[2], TextNode)
+    assert isinstance(nodes[3], TextNode)
+    assert isinstance(nodes[4], TextNode)
+    assert isinstance(nodes[5], TextNode)
 
 
 def test_complex_md() -> None:
