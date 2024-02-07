@@ -1,9 +1,11 @@
 from typing import Any, Dict
 
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # pants: no-infer-dep
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.embeddings.utils import resolve_embed_model
+from llama_index.embeddings.huggingface import (
+    HuggingFaceEmbedding,  # pants: no-infer-dep
+)
+from llama_index.embeddings.openai import OpenAIEmbedding
 from pytest import MonkeyPatch
 
 

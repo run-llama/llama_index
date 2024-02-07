@@ -1,7 +1,8 @@
 """Base index classes."""
+
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, cast
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -415,22 +416,20 @@ class BaseIndex(Generic[IS], ABC):
             kwargs["service_context"] = self.service_context
 
         # resolve chat mode
-        if chat_mode == ChatMode.BEST:
-            try:
-                from llama_index.llms.openai import OpenAI
-                from llama_index.llms.openai.utils import is_function_calling_model
-            except ImportError as e:
-                raise ImportError(
-                    "`llama-index-llms-openai` package not found."
-                    " Please install with `pip install llama-index-llms-openai`."
-                )
+        if chat_mode in [ChatMode.REACT, ChatMode.OPENAI, ChatMode.BEST]:
+            # use an agent with query engine tool in these chat modes
+            # NOTE: lazy import
+            from llama_index.core.agent import AgentRunner
+            from llama_index.core.tools.query_engine import QueryEngineTool
 
-            if isinstance(llm, OpenAI) and is_function_calling_model(
-                llm.metadata.model_name
-            ):
-                chat_mode = ChatMode.OPENAI
-            else:
-                chat_mode = ChatMode.REACT
+            # get LLM
+            service_context = cast(ServiceContext, kwargs["service_context"])
+            llm = service_context.llm
+
+            # convert query engine to tool
+            query_engine_tool = QueryEngineTool.from_defaults(query_engine=query_engine)
+
+            return AgentRunner.from_llm(tools=[query_engine_tool], llm=llm, **kwargs)
 
         if chat_mode == ChatMode.CONDENSE_QUESTION:
             # NOTE: lazy import
@@ -456,36 +455,6 @@ class BaseIndex(Generic[IS], ABC):
                 **kwargs,
             )
 
-        elif chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
-            # NOTE: lazy import
-            from llama_index.core.agent import ReActAgent
-            from llama_index.core.tools.query_engine import QueryEngineTool
-
-            try:
-                from llama_index.agent.openai import OpenAIAgent
-            except ImportError as e:
-                raise ImportError(
-                    "`llama-index-agent-openai` package not found."
-                    " Please install with `pip install llama-index-agent-openai`."
-                )
-
-            # convert query engine to tool
-            query_engine_tool = QueryEngineTool.from_defaults(query_engine=query_engine)
-
-            if chat_mode == ChatMode.REACT:
-                return ReActAgent.from_tools(
-                    tools=[query_engine_tool],
-                    llm=llm,
-                    **kwargs,
-                )
-            elif chat_mode == ChatMode.OPENAI:
-                return OpenAIAgent.from_tools(
-                    tools=[query_engine_tool],
-                    llm=llm,
-                    **kwargs,
-                )
-            else:
-                raise ValueError(f"Unknown chat mode: {chat_mode}")
         elif chat_mode == ChatMode.SIMPLE:
             from llama_index.core.chat_engine import SimpleChatEngine
 

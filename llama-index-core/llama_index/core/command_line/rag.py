@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 from argparse import ArgumentParser
 from glob import iglob
 from pathlib import Path
@@ -35,6 +36,9 @@ def _try_load_openai_llm():
             "`llama-index-llms-openai` package not found, "
             "please run `pip install llama-index-llms-openai`"
         )
+
+
+RAG_HISTORY_FILE_NAME = "files_history.txt"
 
 
 def default_ragcli_persist_dir() -> str:
@@ -176,6 +180,7 @@ class RagCLI(BaseModel):
         chat: bool = False,
         verbose: bool = False,
         clear: bool = False,
+        create_llama: bool = False,
         **kwargs: Dict[str, Any],
     ) -> None:
         """
@@ -219,6 +224,70 @@ class RagCLI(BaseModel):
 
             await ingestion_pipeline.arun(show_progress=verbose, documents=documents)
             ingestion_pipeline.persist(persist_dir=self.persist_dir)
+
+            # Append the `--files` argument to the history file
+            with open(f"{self.persist_dir}/{RAG_HISTORY_FILE_NAME}", "a") as f:
+                f.write(files + "\n")
+
+        if create_llama:
+            if shutil.which("npx") is None:
+                print(
+                    "`npx` is not installed. Please install it by calling `npm install -g npx`"
+                )
+            else:
+                history_file_path = Path(f"{self.persist_dir}/{RAG_HISTORY_FILE_NAME}")
+                if not history_file_path.exists():
+                    print(
+                        "No data has been ingested, "
+                        "please specify `--files` to create llama dataset."
+                    )
+                else:
+                    with open(history_file_path) as f:
+                        stored_paths = {line.strip() for line in f if line.strip()}
+                    if len(stored_paths) == 0:
+                        print(
+                            "No data has been ingested, "
+                            "please specify `--files` to create llama dataset."
+                        )
+                    elif len(stored_paths) > 1:
+                        print(
+                            "Multiple files or folders were ingested, which is not supported by create-llama. "
+                            "Please call `llamaindex-cli rag --clear` to clear the cache first, "
+                            "then call `llamaindex-cli rag --files` again with a single folder or file"
+                        )
+                    else:
+                        path = stored_paths.pop()
+                        if "*" in path:
+                            print(
+                                "Glob pattern is not supported by create-llama. "
+                                "Please call `llamaindex-cli rag --clear` to clear the cache first, "
+                                "then call `llamaindex-cli rag --files` again with a single folder or file."
+                            )
+                        elif not os.path.exists(path):
+                            print(
+                                f"The path {path} does not exist. "
+                                "Please call `llamaindex-cli rag --clear` to clear the cache first, "
+                                "then call `llamaindex-cli rag --files` again with a single folder or file."
+                            )
+                        else:
+                            print(f"Calling create-llama using data from {path} ...")
+                            command_args = [
+                                "npx",
+                                "create-llama@latest",
+                                "--frontend",
+                                "--template",
+                                "streaming",
+                                "--framework",
+                                "fastapi",
+                                "--ui",
+                                "shadcn",
+                                "--vector-db",
+                                "none",
+                                "--engine",
+                                "context",
+                                f"--files {path}",
+                            ]
+                            os.system(" ".join(command_args))
 
         if question is not None:
             await self.handle_question(question)
@@ -287,6 +356,12 @@ class RagCLI(BaseModel):
             parser.add_argument(
                 "--clear",
                 help="Clears out all currently embedded data.",
+                action="store_true",
+            )
+            parser.add_argument(
+                "--create-llama",
+                help="Create a LlamaIndex application with your embedded data.",
+                required=False,
                 action="store_true",
             )
             parser.set_defaults(

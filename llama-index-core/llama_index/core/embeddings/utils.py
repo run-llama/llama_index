@@ -84,7 +84,9 @@ def resolve_embed_model(
 
     if isinstance(embed_model, str):
         try:
-            from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # pants: no-infer-dep
+            from llama_index.embeddings.huggingface import (
+                HuggingFaceEmbedding,  # pants: no-infer-dep
+            )
 
             splits = embed_model.split(":", 1)
             is_local = splits[0]

@@ -194,3 +194,12 @@ def test_dag_agent() -> None:
     assert step_outputs[0].is_last is True
     assert step_outputs[1].is_last is True
     assert len(agent_runner.state.task_dict[task.task_id].completed_steps) == 3
+
+
+def test_agent_from_llm() -> None:
+    from llama_index.core.agent import ReActAgent
+    from llama_index.core.llms.mock import MockLLM
+
+    llm = MockLLM()
+    agent_runner = AgentRunner.from_llm(llm=llm)
+    assert isinstance(agent_runner, ReActAgent)

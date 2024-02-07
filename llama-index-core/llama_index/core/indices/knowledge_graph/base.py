@@ -184,6 +184,12 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             if not subj or not pred or not obj:
                 # skip partial triplets
                 continue
+
+            # Strip double quotes and Capitalize triplets for disambiguation
+            subj, pred, obj = (
+                entity.strip('"').capitalize() for entity in [subj, pred, obj]
+            )
+
             results.append((subj, pred, obj))
         return results
 

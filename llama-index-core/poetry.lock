@@ -2063,13 +2063,13 @@ files = [
 
 [[package]]
 name = "ipykernel"
-version = "6.29.1"
+version = "6.29.2"
 description = "IPython Kernel for Jupyter"
 optional = false
 python-versions = ">=3.8"
 files = [
-  {file = "ipykernel-6.29.1-py3-none-any.whl", hash = "sha256:e5dfba210fc9da74a5dae8fa6c41f816e11bd18d10381b2517d9a0d57cc987c4"},
-  {file = "ipykernel-6.29.1.tar.gz", hash = "sha256:1547352b32da95a2761011a8dac2af930c26a0703dfa07690d16b7d74dac0ba1"}
+  {file = "ipykernel-6.29.2-py3-none-any.whl", hash = "sha256:50384f5c577a260a1d53f1f59a828c7266d321c9b7d00d345693783f66616055"},
+  {file = "ipykernel-6.29.2.tar.gz", hash = "sha256:3bade28004e3ff624ed57974948116670604ac5f676d12339693f3142176d3f0"}
 ]
 
 [package.dependencies]
@@ -2735,13 +2735,13 @@ data = ["language-data (>=1.1,<2.0)"]
 
 [[package]]
 name = "langsmith"
-version = "0.0.86"
+version = "0.0.87"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = true
 python-versions = ">=3.8.1,<4.0"
 files = [
-  {file = "langsmith-0.0.86-py3-none-any.whl", hash = "sha256:7af15c36edb8c9fd9ae5c6d4fb940eb1da668b630a703d63c90c91e9be53aefb"},
-  {file = "langsmith-0.0.86.tar.gz", hash = "sha256:c1572824664810c4425b17f2d1e9a59d53992e6898df22a37236c62d3c80f59e"}
+  {file = "langsmith-0.0.87-py3-none-any.whl", hash = "sha256:8903d3811b9fc89eb18f5961c8e6935fbd2d0f119884fbf30dc70b8f8f4121fc"},
+  {file = "langsmith-0.0.87.tar.gz", hash = "sha256:36c4cc47e5b54be57d038036a30fb19ce6e4c73048cd7a464b8f25b459694d34"}
 ]
 
 [package.dependencies]
@@ -6587,45 +6587,45 @@ typing = ["mypy (>=1.6,<2.0)", "traitlets (>=5.11.1)"]
 
 [[package]]
 name = "thinc"
-version = "8.2.2"
+version = "8.2.3"
 description = "A refreshing functional take on deep learning, compatible with your favorite libraries"
 optional = true
 python-versions = ">=3.6"
 files = [
-  {file = "thinc-8.2.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:f01ab734e3b670cde7692399252c34acac04c48d2394bde0f3c9f089c0b79938"},
-  {file = "thinc-8.2.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:fbefd12c56f77f4e1daff546cbf6417943d8885a0cbd961f7d2de7ffd94302a0"},
-  {file = "thinc-8.2.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c38fd89d0d0e50198559bace73d9132b53a4d96d4dcec4c5024d00b958d9b4d8"},
-  {file = "thinc-8.2.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:05b7599656a15f325c5e244df84cd90aa76d8d511bf3640ba7edbda94670cb61"},
-  {file = "thinc-8.2.2-cp310-cp310-win_amd64.whl", hash = "sha256:e69ace01f9e4d4bca8ef4d39d1520d8abb18c7910633fdf8b2b55db0cd774dac"},
-  {file = "thinc-8.2.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:2e4ec23d5054fbed4791da2de1187a78c33513ef273996f1ae759ff16bcc2a6a"},
-  {file = "thinc-8.2.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:9328be7df60a91d68ae70199dd8ca6ca1bc41817a76c91ae81bed70567107067"},
-  {file = "thinc-8.2.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8110f150b2255de98261ff859e0c7ab633f78d4afb2e5279983465da887ccf49"},
-  {file = "thinc-8.2.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e47a7e359b336e01e5303945d195c5de3bf04d44b5de9d5ac3b906bfd98cbadc"},
-  {file = "thinc-8.2.2-cp311-cp311-win_amd64.whl", hash = "sha256:bfc9f3fe03a1be223181b1af18edf981cc938324b30a69a8009924a02ccb3a0b"},
-  {file = "thinc-8.2.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:f5b33f63639994f483fa0f1a8f01b8c5a0c972ecc3c8d35fc89480ac1cfa3d8b"},
-  {file = "thinc-8.2.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:db60de27edffe795a8b3a1bf89c3a4821928a4bc783ae060a67a079d034c5f9e"},
-  {file = "thinc-8.2.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0b35a4f95d760a64f9057f35f569c50528768345a6bab00d412a03a4569b36dd"},
-  {file = "thinc-8.2.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6607dfaec70787a3332bade5b1fb7a53333fe6945f7a8fdc2f162d88206bd5cf"},
-  {file = "thinc-8.2.2-cp312-cp312-win_amd64.whl", hash = "sha256:fd58790296002f24998615ae3cbb2c52d23129a15d8c975e9135208902816934"},
-  {file = "thinc-8.2.2-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:31d945fd40de0bf9d82b5c411527b10d508360436d0a9b31e1f6c845e6ef1687"},
-  {file = "thinc-8.2.2-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:013afe3bc625bc289483608c79c34066080661a94084b3882a914994b1315e93"},
-  {file = "thinc-8.2.2-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b6ac8bcef0be5536cad66b99ecef8ea4d7d7105c65e6db9f00795513ba597b55"},
-  {file = "thinc-8.2.2-cp36-cp36m-win_amd64.whl", hash = "sha256:a47c71d4ae0c2ca600546dfcb9e6019754cee8a36bd6df07737e915e090bd8f8"},
-  {file = "thinc-8.2.2-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:40d506312668a6e613f3c78d2c38646974097dd8b4eb9f953e2ea820701b5df2"},
-  {file = "thinc-8.2.2-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:54ceb78a05a14394c1401771cf7b03af6bc0cfdcb877b786dee6c0f6d403001c"},
-  {file = "thinc-8.2.2-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:32c6cd566612ff7ffd8930570e725f31fe06134ffd282454ffb3091d1d152fc5"},
-  {file = "thinc-8.2.2-cp37-cp37m-win_amd64.whl", hash = "sha256:d0b0f7517aef458e602748561e45079cc970161d39bdf790627e5455249ff096"},
-  {file = "thinc-8.2.2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:0df0eb6c0529f2f63410bdc0671d234202e6a23775cd13d0b7785f8b7ecdcd8a"},
-  {file = "thinc-8.2.2-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:cde01b50e82e829e6a647741768818d9ea5239ea68252457ba26f0e45c69e3eb"},
-  {file = "thinc-8.2.2-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:33ecb014bca3e8a2f0f11c8e63c65be68e057df9d0463625e89f31ad11386efd"},
-  {file = "thinc-8.2.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5cdfb38bfba7f443ad9d768398f30d0f8d6b5a0f5b40480f930b037072af95f8"},
-  {file = "thinc-8.2.2-cp38-cp38-win_amd64.whl", hash = "sha256:7ca835bdd4e7dfa53f31144cb6f75adf7b0e2dac596f1bddf81328e930d34ba9"},
-  {file = "thinc-8.2.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:464d1ac6c3eb13edb49b2b27c45cd9547aba369a6a5202970bbcd1af8a5a7646"},
-  {file = "thinc-8.2.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:04e7e675df6bcd7e5a61d1d2d2d886f5c1b2e34709601c3934e7c71b3ecd2176"},
-  {file = "thinc-8.2.2-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7a4c5b8fba15a3d3a6a7965505c11b2d779eeb78d87ad8877c126d752e6eb595"},
-  {file = "thinc-8.2.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fa2c56bca9ade6d6f2b4d187b439fb2dd164299087cd0225501e4dc5ca6f4fad"},
-  {file = "thinc-8.2.2-cp39-cp39-win_amd64.whl", hash = "sha256:5536f1f10b561e877df6198d96555befccc707744db524089eb7ba3fcc7b8206"},
-  {file = "thinc-8.2.2.tar.gz", hash = "sha256:6e85b944672c0f95241a71f67f9882e1ab319c449a47740b0d159f4cf86d1587"}
+  {file = "thinc-8.2.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:27950dc8a14e1ead09dec329ad98edf1b8f7cc71ec9d5ce5f301073de9d7dadf"},
+  {file = "thinc-8.2.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:fce09571619f344983f915f5deb5b8346304b56d3a9ae1bc5ac8c5872eee0738"},
+  {file = "thinc-8.2.3-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ce0fb4e534c978ff4b429678ab28db2f81503549f97ed61b2b752c07c08b2083"},
+  {file = "thinc-8.2.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:607223c178ae5fba36a3b35fa82d94a453694551bcfbe7f9ac04a01a9e87ebad"},
+  {file = "thinc-8.2.3-cp310-cp310-win_amd64.whl", hash = "sha256:53b48a6ae43b0e4054816a378163237b1d2120a49c71994682037437d64b7f84"},
+  {file = "thinc-8.2.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:9db67f460dae2e3aada1ff166394ce13c2dabb4db93d6bd79cd256f5beab9599"},
+  {file = "thinc-8.2.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:0d57bdf43e0acd1406d681bf988179f677cf1b385c86f744bf314d827383ce31"},
+  {file = "thinc-8.2.3-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:78311a593b8bf3f03af52bf71d6b364463c598f3540ea8387c00017d2a0e0a5d"},
+  {file = "thinc-8.2.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b9489ae7fec427064a50a0c3e7c661a95251756032e31316add2c8c13f98f93c"},
+  {file = "thinc-8.2.3-cp311-cp311-win_amd64.whl", hash = "sha256:d0bf3840d434e3dbdf294643e6d54d2042d0e652abc68dee16673f28269fc456"},
+  {file = "thinc-8.2.3-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:bb7c64d0cb8066c47af9441cd611e89a0e2b28b85f2fffbdec791724c81e1915"},
+  {file = "thinc-8.2.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c11ab3236e56311568f1e84099bfbeea3a4ee2434758a32982b224ddf8bad9c5"},
+  {file = "thinc-8.2.3-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d0a7f29ad534b6e761ee24d0c9e7402447e8ed4e772922795f77c98d88d7f99c"},
+  {file = "thinc-8.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2817bde75c92f98fee747efdbebca68d16158b808401c5a922ba54a5f2619e9b"},
+  {file = "thinc-8.2.3-cp312-cp312-win_amd64.whl", hash = "sha256:a336f8cae7374d1768a52e63a5084a1208e30b8761eede113d2703e43e7839f1"},
+  {file = "thinc-8.2.3-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:45c1a2880329eae53da1d77a4898b7fd30faad445b28fdf92c5557dbf6492ff0"},
+  {file = "thinc-8.2.3-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5c899b25442ed915bc77fa4cf07e908dea1bccab7c4b8d854cc0b261026d6a06"},
+  {file = "thinc-8.2.3-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:83a6b46d5f0accf0c2b2e5ff05b1bffd4d99721513b6d0374574009b0aab292c"},
+  {file = "thinc-8.2.3-cp36-cp36m-win_amd64.whl", hash = "sha256:9a29a9ca7a5060c923866f16ba7823a4540cfd708eafa7202ee89ac029e0b78b"},
+  {file = "thinc-8.2.3-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:bd25b781faae71c52ba053157ab1865f4163be1a6485e70a007855a037ba060f"},
+  {file = "thinc-8.2.3-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f01a7107c36c4fc60b60fdbda30d76a0ac9bc8f4f9c7f6872db62250e2f836a5"},
+  {file = "thinc-8.2.3-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:aa65182424efda03be9359c3540928bf2985792f89826a76ee475c7c6b2ec64f"},
+  {file = "thinc-8.2.3-cp37-cp37m-win_amd64.whl", hash = "sha256:4d448c8a870f594125cbfadc91024ce67683eae5698207101d2ea4793ab222a1"},
+  {file = "thinc-8.2.3-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:97605421b898441733fda24c6dda74a85325fbeebc808176857b0a8e6e7a9d47"},
+  {file = "thinc-8.2.3-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:8b0309d14bcfdad24b1e8bb87f8b245acfd7eb5305be466c284c788adf026ffa"},
+  {file = "thinc-8.2.3-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:aead20abe233adade3c37daeb9d08e5429dfcada81856b1f2b1b7e4a67a671a0"},
+  {file = "thinc-8.2.3-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:324e5d2c98f787d82d239cf33cee425e1c11e34a3c96cb3f4e1ee5661abef50c"},
+  {file = "thinc-8.2.3-cp38-cp38-win_amd64.whl", hash = "sha256:45e6416e56d5101d0557e31cd06235d80fc89e9ac455ef1b444c440cb3c1ce64"},
+  {file = "thinc-8.2.3-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:5e6ebf63a185d7691b38655a184e30554fbe589805a802d97230eed07af8ea39"},
+  {file = "thinc-8.2.3-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:4d29ee871cfd0d40f4a0436e154640c0965b163b91a088a85bcd5658c1cc3ed4"},
+  {file = "thinc-8.2.3-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a8709d114131680bc7c02b0c97817bd7692eda50beb7849c7908666cf15a6cfd"},
+  {file = "thinc-8.2.3-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d9b81e3c1e89c8ed6dff5a8440f584cda623ec77a3bd8c0ed059936405b8a7ca"},
+  {file = "thinc-8.2.3-cp39-cp39-win_amd64.whl", hash = "sha256:1df983af74952d4818703e6bac8af64fad338eaaef8b017fa05d372e3c68e577"},
+  {file = "thinc-8.2.3.tar.gz", hash = "sha256:f5afc5222912a80bda8bdcec958362a2ba538d7027dc8db6154845d2859dca76"}
 ]
 
 [package.dependencies]

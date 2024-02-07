@@ -232,6 +232,7 @@ def test__parse_triplet_response(
         )
     assert len(parsed_triplets) == 1
     assert len(parsed_triplets[0]) == 3
-    assert ("foo", "is", "bar") in parsed_triplets[0]
-    assert ("hello", "is not", "world") in parsed_triplets[0]
-    assert ("Jane", "is mother of", "Bob") in parsed_triplets[0]
+    # Expecting Capitalized triplet Outputs
+    assert ("Foo", "Is", "Bar") in parsed_triplets[0]
+    assert ("Hello", "Is not", "World") in parsed_triplets[0]
+    assert ("Jane", "Is mother of", "Bob") in parsed_triplets[0]

@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, get_args
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -9,6 +9,13 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
+)
+from llama_index.core.base.query_pipeline.query import (
+    ChainableMixin,
+    InputKeys,
+    OutputKeys,
+    QueryComponent,
+    validate_and_convert_stringable,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.constants import (
@@ -53,11 +60,20 @@ class MultiModalLLMMetadata(BaseModel):
         ),
     )
 
+    is_chat_model: bool = Field(
+        default=False,
+        description=(
+            "Set True if the model exposes a chat interface (i.e. can be passed a"
+            " sequence of messages, rather than text), like OpenAI's"
+            " /v1/chat/completions endpoint."
+        ),
+    )
+
 
 # TODO add callback functionality
 
 
-class MultiModalLLM(BaseComponent):
+class MultiModalLLM(ChainableMixin, BaseComponent):
     """Multi-Modal LLM interface."""
 
     class Config:
@@ -125,3 +141,90 @@ class MultiModalLLM(BaseComponent):
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         """Async streaming chat endpoint for Multi-Modal LLM."""
+
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """Return query component."""
+        if self.metadata.is_chat_model:
+            # TODO: we don't have a separate chat component
+            return MultiModalCompleteComponent(multi_modal_llm=self, **kwargs)
+        else:
+            return MultiModalCompleteComponent(multi_modal_llm=self, **kwargs)
+
+
+class BaseMultiModalComponent(QueryComponent):
+    """Base LLM component."""
+
+    multi_modal_llm: MultiModalLLM = Field(..., description="LLM")
+    streaming: bool = Field(default=False, description="Streaming mode")
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: Any) -> None:
+        """Set callback manager."""
+        # TODO: make callbacks work with multi-modal
+
+
+class MultiModalCompleteComponent(BaseMultiModalComponent):
+    """Multi-modal completion component."""
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        if "prompt" not in input:
+            raise ValueError("Prompt must be in input dict.")
+
+        # do special check to see if prompt is a list of chat messages
+        if isinstance(input["prompt"], get_args(List[ChatMessage])):
+            raise NotImplementedError(
+                "Chat messages not yet supported as input to multi-modal model."
+            )
+        else:
+            input["prompt"] = validate_and_convert_stringable(input["prompt"])
+
+        # make sure image documents are valid
+        if "image_documents" in input:
+            if not isinstance(input["image_documents"], list):
+                raise ValueError("image_documents must be a list.")
+            for doc in input["image_documents"]:
+                if not isinstance(doc, ImageDocument):
+                    raise ValueError(
+                        "image_documents must be a list of ImageDocument objects."
+                    )
+
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # TODO: support only complete for now
+        prompt = kwargs["prompt"]
+        image_documents = kwargs.get("image_documents", [])
+        if self.streaming:
+            response = self.multi_modal_llm.stream_complete(prompt, image_documents)
+        else:
+            response = self.multi_modal_llm.complete(prompt, image_documents)
+        return {"output": response}
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # TODO: support only complete for now
+        # non-trivial to figure how to support chat/complete/etc.
+        prompt = kwargs["prompt"]
+        image_documents = kwargs.get("image_documents", [])
+        if self.streaming:
+            response = await self.multi_modal_llm.astream_complete(
+                prompt, image_documents
+            )
+        else:
+            response = await self.multi_modal_llm.acomplete(prompt, image_documents)
+        return {"output": response}
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        # TODO: support only complete for now
+        return InputKeys.from_keys({"prompt", "image_documents"})
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"output"})

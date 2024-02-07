@@ -1,5 +1,59 @@
 # ChangeLog
 
+## [0.9.45] - 2024-02-07
+
+### New Features
+
+- Refactor: add AgentRunner.from_llm method (#10452)
+- Support custom prompt formatting for non-chat LLMS (#10466)
+- Bump cryptography from 41.0.7 to 42.0.0 (#10467)
+- Add persist and load method for Colbert Index (#10477)
+- Allow custom agent to take in user inputs (#10450)
+
+### Bug Fixes / Nits
+
+- remove exporter from arize-phoenix global callback handler (#10465)
+- Fixing Dashscope qwen llm bug (#10471)
+- Fix: calling AWS Bedrock models (#10443)
+- Update Azure AI Search (fka Azure Cognitive Search) vector store integration to latest client SDK 11.4.0 stable + updating jupyter notebook sample (#10416)
+- fix some imports (#10485)
+
+## [0.9.44] - 2024-02-05
+
+### New Features
+
+- ollama vision cookbook (#10438)
+- Support Gemini "transport" configuration (#10457)
+- Add Upstash Vector (#10451)
+
+## [0.9.43] - 2024-02-03
+
+### New Features
+
+- Add multi-modal ollama (#10434)
+
+### Bug Fixes / Nits
+
+- update base class for astradb (#10435)
+
+## [0.9.42.post1] - 2024-02-02
+
+### New Features
+
+- Add Async support for Base nodes parser (#10418)
+
+## [0.9.42] - 2024-02-02
+
+### New Features
+
+- Add support for `gpt-3.5-turbo-0125` (#10412)
+- Added `create-llama` support to rag cli (#10405)
+
+### Bug Fixes / Nits
+
+- Fixed minor bugs in lance-db vector store (#10404)
+- Fixed streaming bug in ollama (#10407)
+
 ## [0.9.41] - 2024-02-01
 
 ### New Features
