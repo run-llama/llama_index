@@ -1,4 +1,3 @@
-import uuid
 from abc import abstractmethod
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Union, cast
@@ -140,13 +139,7 @@ def validate_step_from_args(
             raise ValueError(f"step must be TaskStep: {step}")
         return step
     else:
-        return (
-            None
-            if input is None
-            else TaskStep(
-                task_id=task_id, step_id=str(uuid.uuid4()), input=input, **kwargs
-            )
-        )
+        return None
 
 
 class TaskState(BaseModel):
@@ -316,6 +309,7 @@ class AgentRunner(BaseAgentRunner):
         self,
         task_id: str,
         step: Optional[TaskStep] = None,
+        input: Optional[str] = None,
         mode: ChatResponseMode = ChatResponseMode.WAIT,
         **kwargs: Any,
     ) -> TaskStepOutput:
@@ -323,6 +317,8 @@ class AgentRunner(BaseAgentRunner):
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
+        if input is not None:
+            step.input = input
 
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
@@ -347,6 +343,7 @@ class AgentRunner(BaseAgentRunner):
         self,
         task_id: str,
         step: Optional[TaskStep] = None,
+        input: Optional[str] = None,
         mode: ChatResponseMode = ChatResponseMode.WAIT,
         **kwargs: Any,
     ) -> TaskStepOutput:
@@ -354,6 +351,8 @@ class AgentRunner(BaseAgentRunner):
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
+        if input is not None:
+            step.input = input
 
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
@@ -382,7 +381,9 @@ class AgentRunner(BaseAgentRunner):
     ) -> TaskStepOutput:
         """Run step."""
         step = validate_step_from_args(task_id, input, step, **kwargs)
-        return self._run_step(task_id, step, mode=ChatResponseMode.WAIT, **kwargs)
+        return self._run_step(
+            task_id, step, input=input, mode=ChatResponseMode.WAIT, **kwargs
+        )
 
     async def arun_step(
         self,
@@ -394,7 +395,7 @@ class AgentRunner(BaseAgentRunner):
         """Run step (async)."""
         step = validate_step_from_args(task_id, input, step, **kwargs)
         return await self._arun_step(
-            task_id, step, mode=ChatResponseMode.WAIT, **kwargs
+            task_id, step, input=input, mode=ChatResponseMode.WAIT, **kwargs
         )
 
     def stream_step(
@@ -406,7 +407,9 @@ class AgentRunner(BaseAgentRunner):
     ) -> TaskStepOutput:
         """Run step (stream)."""
         step = validate_step_from_args(task_id, input, step, **kwargs)
-        return self._run_step(task_id, step, mode=ChatResponseMode.STREAM, **kwargs)
+        return self._run_step(
+            task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
+        )
 
     async def astream_step(
         self,
@@ -418,7 +421,7 @@ class AgentRunner(BaseAgentRunner):
         """Run step (async stream)."""
         step = validate_step_from_args(task_id, input, step, **kwargs)
         return await self._arun_step(
-            task_id, step, mode=ChatResponseMode.STREAM, **kwargs
+            task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
         )
 
     def finalize_response(
