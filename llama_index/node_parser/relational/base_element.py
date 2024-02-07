@@ -312,7 +312,7 @@ class BaseElementNodeParser(NodeParser):
                         # serialize the table as a dictionary string
                         "table_df": str(table_df.to_dict())
                         if element.type == "table"
-                        else table_df,
+                        else table_md,
                         # add table summary for retrieval purposes
                         "table_summary": table_summary,
                     },
