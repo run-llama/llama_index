@@ -234,7 +234,7 @@ class IngestionPipeline(BaseModel):
     base_url: str = Field(
         default=DEFAULT_BASE_URL, description="Base URL for the platform API"
     )
-    cloud_app_url: str = Field(
+    app_url: str = Field(
         default=DEFAULT_APP_URL, description="Base URL for the platform app"
     )
     api_key: Optional[str] = Field(default=None, description="Platform API key")
@@ -253,7 +253,7 @@ class IngestionPipeline(BaseModel):
         cache: Optional[IngestionCache] = None,
         disable_cache: bool = False,
         base_url: Optional[str] = None,
-        cloud_app_url: Optional[str] = None,
+        app_url: Optional[str] = None,
         api_key: Optional[str] = None,
         docstore: Optional[BaseDocumentStore] = None,
         docstore_strategy: DocstoreStrategy = DocstoreStrategy.UPSERTS,
@@ -261,10 +261,8 @@ class IngestionPipeline(BaseModel):
         if transformations is None:
             transformations = self._get_default_transformations()
 
-        base_url = base_url or os.environ.get("PLATFORM_BASE_URL", DEFAULT_BASE_URL)
-        cloud_app_url = cloud_app_url or os.environ.get(
-            "PLATFORM_APP_URL", DEFAULT_APP_URL
-        )
+        base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
         api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
 
         super().__init__(
@@ -278,7 +276,7 @@ class IngestionPipeline(BaseModel):
             disable_cache=disable_cache,
             base_url=base_url,
             api_key=api_key,
-            cloud_app_url=cloud_app_url,
+            app_url=app_url,
             docstore=docstore,
             docstore_strategy=docstore_strategy,
         )
@@ -321,15 +319,15 @@ class IngestionPipeline(BaseModel):
         base_url: Optional[str] = None,
         cache: Optional[IngestionCache] = None,
         api_key: Optional[str] = None,
-        cloud_app_url: Optional[str] = None,
+        app_url: Optional[str] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         disable_cache: bool = False,
     ) -> "IngestionPipeline":
-        base_url = base_url or os.environ.get("PLATFORM_BASE_URL", DEFAULT_BASE_URL)
+        base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
         assert base_url is not None
 
         api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
-        cloud_app_url = cloud_app_url or os.environ.get("PLATFORM_APP_URL", None)
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", None)
 
         client = PlatformApi(base_url=base_url, token=api_key)
 
@@ -342,8 +340,8 @@ class IngestionPipeline(BaseModel):
         project = projects[0]
         assert project.id is not None, "Project ID should not be None"
 
-        pipelines: List[Pipeline] = client.pipeline.get_pipeline_by_name(
-            pipeline_name=name, project_name=project_name
+        pipelines: List[Pipeline] = client.pipeline.search_pipelines(
+            project_name=project_name, pipeline_name=name
         )
         if len(pipelines) < 0:
             raise ValueError(f"Pipeline with name {name} not found")
@@ -393,7 +391,7 @@ class IngestionPipeline(BaseModel):
             cache=cache,
             disable_cache=disable_cache,
             api_key=api_key,
-            cloud_app_url=cloud_app_url,
+            app_url=app_url,
         )
 
     def persist(
@@ -463,7 +461,7 @@ class IngestionPipeline(BaseModel):
         assert project.id is not None, "Project ID should not be None"
 
         # delayed import to avoid circular import
-        from llama_index.indices.managed.llama_index import get_pipeline_create
+        from llama_index.indices.managed.llama_cloud import get_pipeline_create
 
         pipeline_create = get_pipeline_create(
             self.name,
@@ -485,7 +483,7 @@ class IngestionPipeline(BaseModel):
         # Print playground URL if not running remote
         if verbose:
             print(
-                f"Pipeline available at: {self.cloud_app_url}/project/{project.id}/playground/{pipeline.id}"
+                f"Pipeline available at: {self.app_url}/project/{project.id}/playground/{pipeline.id}"
             )
 
         return pipeline.id
@@ -508,7 +506,7 @@ class IngestionPipeline(BaseModel):
         ), "Pipeline execution ID should not be None"
 
         print(
-            f"Find your remote results here: {self.cloud_app_url}/"
+            f"Find your remote results here: {self.app_url}/"
             f"pipelines/execution?id={pipeline_execution.id}"
         )
 

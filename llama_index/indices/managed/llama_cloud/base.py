@@ -4,6 +4,7 @@ A managed Index - where the index is accessible via some API that
 interfaces a managed service.
 
 """
+import os
 import time
 from typing import Any, List, Optional, Sequence, Type
 
@@ -12,7 +13,7 @@ from llama_index_client import PipelineType, ProjectCreate, StatusEnum
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.managed.base import BaseManagedIndex
-from llama_index.indices.managed.llama_index.utils import (
+from llama_index.indices.managed.llama_cloud.utils import (
     default_transformations,
     get_aclient,
     get_client,
@@ -35,7 +36,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         project_name: str = DEFAULT_PROJECT_NAME,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        cloud_app_url: Optional[str] = None,
+        app_url: Optional[str] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
         **kwargs: Any,
@@ -54,12 +55,12 @@ class LlamaCloudIndex(BaseManagedIndex):
             # TODO: How to handle uploading nodes without running transforms on them?
             raise ValueError("LlamaCloudIndex does not support nodes on initialization")
 
-        self._client = get_client(api_key, base_url, cloud_app_url, timeout)
-        self._aclient = get_aclient(api_key, base_url, cloud_app_url, timeout)
+        self._client = get_client(api_key, base_url, app_url, timeout)
+        self._aclient = get_aclient(api_key, base_url, app_url, timeout)
 
         self._api_key = api_key
         self._base_url = base_url
-        self._cloud_app_url = cloud_app_url
+        self._app_url = app_url
         self._timeout = timeout
         self._show_progress = show_progress
         self._service_context = service_context  # type: ignore
@@ -67,19 +68,20 @@ class LlamaCloudIndex(BaseManagedIndex):
     @classmethod
     def from_documents(  # type: ignore
         cls: Type["LlamaCloudIndex"],
-        name: str,
         documents: List[Document],
+        name: str,
         transformations: Optional[List[TransformComponent]] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        cloud_app_url: Optional[str] = None,
+        app_url: Optional[str] = None,
         timeout: int = 60,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "LlamaCloudIndex":
         """Build a Vectara index from a sequence of documents."""
-        client = get_client(api_key, base_url, cloud_app_url, timeout)
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", None)
+        client = get_client(api_key, base_url, app_url, timeout)
 
         pipeline_create = get_pipeline_create(
             name,
@@ -170,9 +172,7 @@ class LlamaCloudIndex(BaseManagedIndex):
                     print(".", end="")
                 time.sleep(0.5)
 
-        print(
-            f"Find your index at {cloud_app_url}/project/{project.id}/deploy/{pipeline.id}"
-        )
+        print(f"Find your index at {app_url}/project/{project.id}/deploy/{pipeline.id}")
 
         return cls(
             name,
@@ -180,14 +180,14 @@ class LlamaCloudIndex(BaseManagedIndex):
             project_name=project_name,
             api_key=api_key,
             base_url=base_url,
-            cloud_app_url=cloud_app_url,
+            app_url=app_url,
             timeout=timeout,
             **kwargs,
         )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
-        from llama_index.indices.managed.llama_index.retriever import (
+        from llama_index.indices.managed.llama_cloud.retriever import (
             LlamaCloudRetriever,
         )
 
@@ -201,7 +201,7 @@ class LlamaCloudIndex(BaseManagedIndex):
             project_name=self.project_name,
             api_key=self._api_key,
             base_url=self._base_url,
-            cloud_app_url=self._cloud_app_url,
+            app_url=self._app_url,
             timeout=self._timeout,
             dense_similarity_top_k=dense_similarity_top_k,
             **kwargs,

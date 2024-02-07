@@ -40,12 +40,12 @@ def default_transformations() -> List[TransformComponent]:
 def get_client(
     api_key: Optional[str] = None,
     base_url: Optional[str] = None,
-    cloud_app_url: Optional[str] = None,
+    app_url: Optional[str] = None,
     timeout: int = 60,
 ) -> PlatformApi:
     """Get the sync platform API client."""
-    base_url = base_url or os.environ.get("PLATFORM_BASE_URL", DEFAULT_BASE_URL)
-    cloud_app_url = cloud_app_url or os.environ.get("PLATFORM_APP_URL", DEFAULT_APP_URL)
+    base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
+    app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
     api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
 
     return PlatformApi(base_url=base_url, token=api_key, timeout=timeout)
@@ -54,12 +54,12 @@ def get_client(
 def get_aclient(
     api_key: Optional[str] = None,
     base_url: Optional[str] = None,
-    cloud_app_url: Optional[str] = None,
+    app_url: Optional[str] = None,
     timeout: int = 60,
 ) -> AsyncPlatformApi:
     """Get the async platform API client."""
-    base_url = base_url or os.environ.get("PLATFORM_BASE_URL", DEFAULT_BASE_URL)
-    cloud_app_url = cloud_app_url or os.environ.get("PLATFORM_APP_URL", DEFAULT_APP_URL)
+    base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
+    app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
     api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
 
     return AsyncPlatformApi(base_url=base_url, token=api_key, timeout=timeout)

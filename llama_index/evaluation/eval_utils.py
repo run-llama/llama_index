@@ -106,7 +106,7 @@ def upload_eval_dataset(
             "Must supply either a list of `questions`, or a `llama_dataset_id` to import from llama-hub."
         )
 
-    base_url = base_url or os.environ.get("PLATFORM_BASE_URL", DEFAULT_BASE_URL)
+    base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
     assert base_url is not None
 
     api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)

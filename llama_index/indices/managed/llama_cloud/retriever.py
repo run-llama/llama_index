@@ -4,7 +4,7 @@ from llama_index_client import TextNodeWithScore
 from llama_index_client.resources.retrieval.client import OMIT
 
 from llama_index.core.base_retriever import BaseRetriever
-from llama_index.indices.managed.llama_index.utils import get_aclient, get_client
+from llama_index.indices.managed.llama_cloud.utils import get_aclient, get_client
 from llama_index.ingestion.pipeline import DEFAULT_PROJECT_NAME
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 
@@ -22,15 +22,15 @@ class LlamaCloudRetriever(BaseRetriever):
         search_filters: Optional[Dict[str, List[Any]]] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        cloud_app_url: Optional[str] = None,
+        app_url: Optional[str] = None,
         timeout: int = 60,
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Retriever."""
         self.name = name
         self.project_name = project_name
-        self._client = get_client(api_key, base_url, cloud_app_url, timeout)
-        self._aclient = get_aclient(api_key, base_url, cloud_app_url, timeout)
+        self._client = get_client(api_key, base_url, app_url, timeout)
+        self._aclient = get_aclient(api_key, base_url, app_url, timeout)
 
         projects = self._client.project.list_projects(project_name=project_name)
         if len(projects) == 0:
@@ -57,8 +57,8 @@ class LlamaCloudRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve from the platform."""
-        pipelines = self._client.pipeline.get_pipeline_by_name(
-            pipeline_name=self.name, project_name=self.project_name
+        pipelines = self._client.pipeline.search_pipelines(
+            project_name=self.project_name, pipeline_name=self.name
         )
         assert len(pipelines) == 1
         pipeline = pipelines[0]
@@ -85,8 +85,8 @@ class LlamaCloudRetriever(BaseRetriever):
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Asynchronously retrieve from the platform."""
-        pipelines = await self._aclient.pipeline.get_pipeline_by_name(
-            pipeline_name=self.name, project_name=self.project_name
+        pipelines = self._client.pipeline.search_pipelines(
+            project_name=self.project_name, pipeline_name=self.name
         )
         assert len(pipelines) == 1
         pipeline = pipelines[0]

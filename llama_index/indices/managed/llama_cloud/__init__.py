@@ -1,6 +1,6 @@
-from llama_index.indices.managed.llama_index.base import LlamaCloudIndex
-from llama_index.indices.managed.llama_index.retriever import LlamaCloudRetriever
-from llama_index.indices.managed.llama_index.utils import (
+from llama_index.indices.managed.llama_cloud.base import LlamaCloudIndex
+from llama_index.indices.managed.llama_cloud.retriever import LlamaCloudRetriever
+from llama_index.indices.managed.llama_cloud.utils import (
     default_transformations,
     get_aclient,
     get_client,
