@@ -1,14 +1,16 @@
 """Download."""
+
 import json
 import logging
 import os
-import requests
 import subprocess
 import sys
 from enum import Enum
 from importlib import util
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+
+import requests
 
 from llama_index.core.download.utils import (
     get_exports,

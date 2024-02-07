@@ -5,13 +5,13 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-import requests
 import tqdm
 
 from llama_index.core.download.module import LLAMA_HUB_URL
 from llama_index.core.download.utils import (
     get_file_content,
     get_file_content_bytes,
+    get_source_files_list,
     initialize_directory,
 )
 
@@ -43,13 +43,6 @@ def _resolve_dataset_file_name(class_name: str) -> str:
         return DATASET_CLASS_FILENAME_REGISTRY[class_name]
     except KeyError as err:
         raise ValueError("Invalid dataset filename.") from err
-
-
-def _get_source_files_list(source_tree_url: str, path: str) -> List[str]:
-    """Get the list of source files to download."""
-    resp = requests.get(source_tree_url + path + "?recursive=1")
-    payload = resp.json()["payload"]
-    return [item["name"] for item in payload["tree"]["items"]]
 
 
 def get_dataset_info(
@@ -98,7 +91,7 @@ def get_dataset_info(
 
         source_files = []
         if dataset_class_name == "LabelledRagDataset":
-            source_files = _get_source_files_list(
+            source_files = get_source_files_list(
                 str(remote_source_dir_path), f"/{dataset_id}/{source_files_path}"
             )
 
