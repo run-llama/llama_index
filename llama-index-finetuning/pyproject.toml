@@ -18,7 +18,7 @@ python_version = "3.8"
 
 [tool.poetry]
 name = "llama-index-finetuning"
-version = "0.0.3"
+version = "0.0.4"
 description = "llama-index finetuning"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
