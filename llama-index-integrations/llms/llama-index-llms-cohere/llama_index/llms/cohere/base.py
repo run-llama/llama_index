@@ -8,7 +8,7 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.types import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
