@@ -100,8 +100,6 @@ def _parse_hub_downloads(
 def parse_lines(
     lines: List[str], installed_modules: List[str]
 ) -> Tuple[List[str], List[str]]:
-    print(f"\n======================\nlines: {lines}\n\n")
-
     with open(mappings_path) as f:
         mappings = json.load(f)
 
@@ -142,14 +140,10 @@ def parse_lines(
         else:
             this_new_lines = [line]
 
-        print(f"this_new_lines: {this_new_lines}", flush=True)
-
         new_lines += this_new_lines
         new_installs += this_new_installs
         installed_modules += this_installed_modules
 
-    print(f"new_lines: {new_lines}", flush=True)
-    print(f"new_installs: {new_installs}", flush=True)
     return new_lines, list(set(new_installs))
 
 
