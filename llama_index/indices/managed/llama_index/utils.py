@@ -38,43 +38,31 @@ def default_transformations() -> List[TransformComponent]:
 
 
 def get_client(
-    platform_api_key: Optional[str] = None,
-    platform_base_url: Optional[str] = None,
-    platform_app_url: Optional[str] = None,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+    cloud_app_url: Optional[str] = None,
     timeout: int = 60,
 ) -> PlatformApi:
     """Get the sync platform API client."""
-    platform_base_url = platform_base_url or os.environ.get(
-        "PLATFORM_BASE_URL", DEFAULT_BASE_URL
-    )
-    platform_app_url = platform_app_url or os.environ.get(
-        "PLATFORM_APP_URL", DEFAULT_APP_URL
-    )
-    platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
+    base_url = base_url or os.environ.get("PLATFORM_BASE_URL", DEFAULT_BASE_URL)
+    cloud_app_url = cloud_app_url or os.environ.get("PLATFORM_APP_URL", DEFAULT_APP_URL)
+    api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
 
-    return PlatformApi(
-        base_url=platform_base_url, token=platform_api_key, timeout=timeout
-    )
+    return PlatformApi(base_url=base_url, token=api_key, timeout=timeout)
 
 
 def get_aclient(
-    platform_api_key: Optional[str] = None,
-    platform_base_url: Optional[str] = None,
-    platform_app_url: Optional[str] = None,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+    cloud_app_url: Optional[str] = None,
     timeout: int = 60,
 ) -> AsyncPlatformApi:
     """Get the async platform API client."""
-    platform_base_url = platform_base_url or os.environ.get(
-        "PLATFORM_BASE_URL", DEFAULT_BASE_URL
-    )
-    platform_app_url = platform_app_url or os.environ.get(
-        "PLATFORM_APP_URL", DEFAULT_APP_URL
-    )
-    platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
+    base_url = base_url or os.environ.get("PLATFORM_BASE_URL", DEFAULT_BASE_URL)
+    cloud_app_url = cloud_app_url or os.environ.get("PLATFORM_APP_URL", DEFAULT_APP_URL)
+    api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
 
-    return AsyncPlatformApi(
-        base_url=platform_base_url, token=platform_api_key, timeout=timeout
-    )
+    return AsyncPlatformApi(base_url=base_url, token=api_key, timeout=timeout)
 
 
 def get_pipeline_create(

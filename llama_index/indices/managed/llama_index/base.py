@@ -33,9 +33,9 @@ class PlatformIndex(BaseManagedIndex):
         transformations: Optional[List[TransformComponent]] = None,
         timeout: int = 60,
         project_name: str = DEFAULT_PROJECT_NAME,
-        platform_api_key: Optional[str] = None,
-        platform_base_url: Optional[str] = None,
-        platform_app_url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        cloud_app_url: Optional[str] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
         **kwargs: Any,
@@ -54,16 +54,12 @@ class PlatformIndex(BaseManagedIndex):
             # TODO: How to handle uploading nodes without running transforms on them?
             raise ValueError("PlatformIndex does not support nodes on initialization")
 
-        self._client = get_client(
-            platform_api_key, platform_base_url, platform_app_url, timeout
-        )
-        self._aclient = get_aclient(
-            platform_api_key, platform_base_url, platform_app_url, timeout
-        )
+        self._client = get_client(api_key, base_url, cloud_app_url, timeout)
+        self._aclient = get_aclient(api_key, base_url, cloud_app_url, timeout)
 
-        self._platform_api_key = platform_api_key
-        self._platform_base_url = platform_base_url
-        self._platform_app_url = platform_app_url
+        self._api_key = api_key
+        self._base_url = base_url
+        self._cloud_app_url = cloud_app_url
         self._timeout = timeout
         self._show_progress = show_progress
         self._service_context = service_context  # type: ignore
@@ -75,17 +71,15 @@ class PlatformIndex(BaseManagedIndex):
         documents: List[Document],
         transformations: Optional[List[TransformComponent]] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
-        platform_api_key: Optional[str] = None,
-        platform_base_url: Optional[str] = None,
-        platform_app_url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        cloud_app_url: Optional[str] = None,
         timeout: int = 60,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "PlatformIndex":
         """Build a Vectara index from a sequence of documents."""
-        client = get_client(
-            platform_api_key, platform_base_url, platform_app_url, timeout
-        )
+        client = get_client(api_key, base_url, cloud_app_url, timeout)
 
         pipeline_create = get_pipeline_create(
             name,
@@ -177,16 +171,16 @@ class PlatformIndex(BaseManagedIndex):
                 time.sleep(0.5)
 
         print(
-            f"Find your index at {platform_app_url}/project/{project.id}/deploy/{pipeline.id}"
+            f"Find your index at {cloud_app_url}/project/{project.id}/deploy/{pipeline.id}"
         )
 
         return cls(
             name,
             transformations=transformations,
             project_name=project_name,
-            platform_api_key=platform_api_key,
-            platform_base_url=platform_base_url,
-            platform_app_url=platform_app_url,
+            api_key=api_key,
+            base_url=base_url,
+            cloud_app_url=cloud_app_url,
             timeout=timeout,
             **kwargs,
         )
@@ -203,9 +197,9 @@ class PlatformIndex(BaseManagedIndex):
         return PlatformRetriever(
             self.name,
             project_name=self.project_name,
-            platform_api_key=self._platform_api_key,
-            platform_base_url=self._platform_base_url,
-            platform_app_url=self._platform_app_url,
+            api_key=self._api_key,
+            base_url=self._base_url,
+            cloud_app_url=self._cloud_app_url,
             timeout=self._timeout,
             dense_similarity_top_k=dense_similarity_top_k,
             **kwargs,

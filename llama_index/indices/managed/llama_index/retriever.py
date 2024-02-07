@@ -20,21 +20,17 @@ class PlatformRetriever(BaseRetriever):
         rerank_top_n: Optional[int] = None,
         alpha: Optional[float] = None,
         search_filters: Optional[Dict[str, List[Any]]] = None,
-        platform_api_key: Optional[str] = None,
-        platform_base_url: Optional[str] = None,
-        platform_app_url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        cloud_app_url: Optional[str] = None,
         timeout: int = 60,
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Retriever."""
         self.name = name
         self.project_name = project_name
-        self._client = get_client(
-            platform_api_key, platform_base_url, platform_app_url, timeout
-        )
-        self._aclient = get_aclient(
-            platform_api_key, platform_base_url, platform_app_url, timeout
-        )
+        self._client = get_client(api_key, base_url, cloud_app_url, timeout)
+        self._aclient = get_aclient(api_key, base_url, cloud_app_url, timeout)
 
         projects = self._client.project.list_projects(project_name=project_name)
         if len(projects) == 0:

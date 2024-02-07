@@ -95,8 +95,8 @@ def upload_eval_dataset(
     questions: Optional[List[str]] = None,
     llama_dataset_id: Optional[str] = None,
     project_name: str = DEFAULT_PROJECT_NAME,
-    platform_base_url: Optional[str] = None,
-    platform_api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+    api_key: Optional[str] = None,
     overwrite: bool = False,
     append: bool = False,
 ) -> str:
@@ -106,14 +106,12 @@ def upload_eval_dataset(
             "Must supply either a list of `questions`, or a `llama_dataset_id` to import from llama-hub."
         )
 
-    platform_base_url = platform_base_url or os.environ.get(
-        "PLATFORM_BASE_URL", DEFAULT_BASE_URL
-    )
-    assert platform_base_url is not None
+    base_url = base_url or os.environ.get("PLATFORM_BASE_URL", DEFAULT_BASE_URL)
+    assert base_url is not None
 
-    platform_api_key = platform_api_key or os.environ.get("PLATFORM_API_KEY", None)
+    api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
 
-    client = PlatformApi(base_url=platform_base_url, token=platform_api_key)
+    client = PlatformApi(base_url=base_url, token=api_key)
 
     project = client.project.upsert_project(request=ProjectCreate(name=project_name))
     assert project.id is not None
