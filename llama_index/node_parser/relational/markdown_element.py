@@ -176,7 +176,7 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                         elements[idx] = Element(
                             id=f"id_{idx}",
                             type="table_text",
-                            element=element,
+                            element=element.element,
                             # table=table
                         )
                 else:
