@@ -9,7 +9,7 @@ from llama_index.ingestion.pipeline import DEFAULT_PROJECT_NAME
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 
 
-class PlatformRetriever(BaseRetriever):
+class LlamaCloudRetriever(BaseRetriever):
     def __init__(
         self,
         name: str,

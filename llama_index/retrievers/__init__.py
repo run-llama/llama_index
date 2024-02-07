@@ -13,6 +13,7 @@ from llama_index.indices.list.retrievers import (
     SummaryIndexLLMRetriever,
     SummaryIndexRetriever,
 )
+from llama_index.indices.managed.llama_cloud.retriever import LlamaCloudRetriever
 from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 from llama_index.indices.struct_store.sql_retriever import (
     NLSQLRetriever,
@@ -66,6 +67,7 @@ __all__ = [
     "PathwayRetriever",
     "PathwayVectorServer",
     "QueryFusionRetriever",
+    "LlamaCloudRetriever",
     # SQL
     "SQLRetriever",
     "NLSQLRetriever",

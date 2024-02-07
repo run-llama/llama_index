@@ -23,7 +23,7 @@ from llama_index.schema import BaseNode, Document, TransformComponent
 from llama_index.service_context import ServiceContext
 
 
-class PlatformIndex(BaseManagedIndex):
+class LlamaCloudIndex(BaseManagedIndex):
     """LlamaIndex Platform Index."""
 
     def __init__(
@@ -52,7 +52,7 @@ class PlatformIndex(BaseManagedIndex):
 
         if nodes is not None:
             # TODO: How to handle uploading nodes without running transforms on them?
-            raise ValueError("PlatformIndex does not support nodes on initialization")
+            raise ValueError("LlamaCloudIndex does not support nodes on initialization")
 
         self._client = get_client(api_key, base_url, cloud_app_url, timeout)
         self._aclient = get_aclient(api_key, base_url, cloud_app_url, timeout)
@@ -66,7 +66,7 @@ class PlatformIndex(BaseManagedIndex):
 
     @classmethod
     def from_documents(  # type: ignore
-        cls: Type["PlatformIndex"],
+        cls: Type["LlamaCloudIndex"],
         name: str,
         documents: List[Document],
         transformations: Optional[List[TransformComponent]] = None,
@@ -77,7 +77,7 @@ class PlatformIndex(BaseManagedIndex):
         timeout: int = 60,
         verbose: bool = False,
         **kwargs: Any,
-    ) -> "PlatformIndex":
+    ) -> "LlamaCloudIndex":
         """Build a Vectara index from a sequence of documents."""
         client = get_client(api_key, base_url, cloud_app_url, timeout)
 
@@ -187,14 +187,16 @@ class PlatformIndex(BaseManagedIndex):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
-        from llama_index.indices.managed.llama_index.retriever import PlatformRetriever
+        from llama_index.indices.managed.llama_index.retriever import (
+            LlamaCloudRetriever,
+        )
 
         similarity_top_k = kwargs.pop("similarity_top_k", None)
         dense_similarity_top_k = kwargs.pop("dense_similarity_top_k", None)
         if similarity_top_k is not None:
             dense_similarity_top_k = similarity_top_k
 
-        return PlatformRetriever(
+        return LlamaCloudRetriever(
             self.name,
             project_name=self.project_name,
             api_key=self._api_key,
@@ -215,14 +217,14 @@ class PlatformIndex(BaseManagedIndex):
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a set of documents (each a node)."""
-        raise NotImplementedError("_insert not implemented for PlatformIndex.")
+        raise NotImplementedError("_insert not implemented for LlamaCloudIndex.")
 
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
         """Delete a document and it's nodes by using ref_doc_id."""
-        raise NotImplementedError("delete_ref_doc not implemented for PlatformIndex.")
+        raise NotImplementedError("delete_ref_doc not implemented for LlamaCloudIndex.")
 
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
         """Update a document and it's corresponding nodes."""
-        raise NotImplementedError("update_ref_doc not implemented for PlatformIndex.")
+        raise NotImplementedError("update_ref_doc not implemented for LlamaCloudIndex.")

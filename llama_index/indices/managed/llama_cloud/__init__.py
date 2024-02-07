@@ -1,5 +1,5 @@
-from llama_index.indices.managed.llama_index.base import PlatformIndex
-from llama_index.indices.managed.llama_index.retriever import PlatformRetriever
+from llama_index.indices.managed.llama_index.base import LlamaCloudIndex
+from llama_index.indices.managed.llama_index.retriever import LlamaCloudRetriever
 from llama_index.indices.managed.llama_index.utils import (
     default_transformations,
     get_aclient,
@@ -8,8 +8,8 @@ from llama_index.indices.managed.llama_index.utils import (
 )
 
 __all__ = [
-    "PlatformIndex",
-    "PlatformRetriever",
+    "LlamaCloudIndex",
+    "LlamaCloudRetriever",
     "get_aclient",
     "get_client",
     "get_pipeline_create",
