@@ -152,8 +152,7 @@ class PandasQueryEngine(BaseQueryEngine):
         )
 
         if pandas_response_str is not None:
-            match_obj = re.search(r'df.*?\]', pandas_response_str)
-
+            match_obj = re.search(r"df.*?\]", pandas_response_str)
             # Check if the pattern is found
             if match_obj:
                 # Access the group attribute only if the pattern is found
