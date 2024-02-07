@@ -2,7 +2,7 @@ import argparse
 from typing import Any, Optional
 
 from llama_index.core.command_line.rag import RagCLI, default_ragcli_persist_dir
-from llama_index.core.command_line.upgrade import upgrade_dir
+from llama_index.core.command_line.upgrade import upgrade_dir, upgrade_file
 from llama_index.core.ingestion import IngestionCache, IngestionPipeline
 from llama_index.core.llama_dataset.download import (
     LLAMA_DATASETS_LFS_URL,
@@ -188,7 +188,7 @@ def main() -> None:
 
     # Upgrade command
     upgrade_parser = subparsers.add_parser(
-        "upgrade", help="Upgrade a notebook or python file."
+        "upgrade", help="Upgrade a directory containing notebooks or python files."
     )
     upgrade_parser.add_argument(
         "directory",
@@ -196,6 +196,17 @@ def main() -> None:
         help="The directory to upgrade. Will run on only .ipynb or .py files.",
     )
     upgrade_parser.set_defaults(func=lambda args: upgrade_dir(args.directory))
+
+    # Upgrade command
+    upgrade_file_parser = subparsers.add_parser(
+        "upgrade-file", help="Upgrade a single notebook or python file."
+    )
+    upgrade_file_parser.add_argument(
+        "path",
+        type=str,
+        help="The directory to upgrade. Will run on only .ipynb or .py files.",
+    )
+    upgrade_file_parser.set_defaults(func=lambda args: upgrade_file(args.path))
 
     # Parse the command-line arguments
     args = parser.parse_args()

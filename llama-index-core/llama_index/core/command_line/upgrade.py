@@ -11,6 +11,7 @@ def _parse_from_imports(
     mappings: Dict[str, str],
     installed_modules: List[str],
     line: str,
+    verbose: bool = False,
 ):
     new_lines = []
     new_installs = []
@@ -98,7 +99,7 @@ def _parse_hub_downloads(
 
 
 def parse_lines(
-    lines: List[str], installed_modules: List[str]
+    lines: List[str], installed_modules: List[str], verbose: bool = False
 ) -> Tuple[List[str], List[str]]:
     with open(mappings_path) as f:
         mappings = json.load(f)
@@ -124,6 +125,7 @@ def parse_lines(
                 mappings=mappings,
                 installed_modules=installed_modules,
                 line=line,
+                verbose=verbose,
             )
 
         elif "download_loader(" in line or "download_tool(" in line:
@@ -171,8 +173,13 @@ def _format_new_installs(new_installs):
 
 
 def upgrade_nb_file(file_path):
+    print(f"\n=====================\n{file_path}\n", flush=True)
     with open(file_path) as f:
         notebook = json.load(f)
+
+    verbose = False
+    if file_path == "../docs/examples/managed/manage_retrieval_benchmark.ipynb":
+        verbose = True
 
     installed_modules = ["llama-index-core"]  # default installs
     cur_cells = []
@@ -180,12 +187,14 @@ def upgrade_nb_file(file_path):
     first_code_idx = -1
     for idx, cell in enumerate(notebook["cells"]):
         if cell["cell_type"] == "code":
+            if verbose:
+                print(f"cell: {cell}", flush=True)
             if first_code_idx == -1:
                 first_code_idx = idx
 
             code = cell["source"]
 
-            new_lines, cur_new_installs = parse_lines(code, installed_modules)
+            new_lines, cur_new_installs = parse_lines(code, installed_modules, verbose)
             new_installs += cur_new_installs
 
             cell["source"] = new_lines
