@@ -257,19 +257,36 @@ async def test_astream_chat_basic(
     ]
 
 
-def _get_agent(tools: List[BaseTool]) -> ReActAgent:
-    mock_llm = MockChatLLM(
-        responses=[
-            ChatMessage(
-                content=MOCK_ACTION_RESPONSE,
-                role=MessageRole.ASSISTANT,
-            ),
-            ChatMessage(
-                content=MOCK_FINAL_RESPONSE,
-                role=MessageRole.ASSISTANT,
-            ),
-        ]
-    )
+def _get_agent(
+    tools: List[BaseTool],
+    streaming: bool = False,
+) -> ReActAgent:
+    if streaming:
+        mock_llm = MockStreamChatLLM(
+            responses=[
+                ChatMessage(
+                    content=MOCK_ACTION_RESPONSE,
+                    role=MessageRole.ASSISTANT,
+                ),
+                ChatMessage(
+                    content=MOCK_STREAM_FINAL_RESPONSE,
+                    role=MessageRole.ASSISTANT,
+                ),
+            ]
+        )
+    else:
+        mock_llm = MockChatLLM(
+            responses=[
+                ChatMessage(
+                    content=MOCK_ACTION_RESPONSE,
+                    role=MessageRole.ASSISTANT,
+                ),
+                ChatMessage(
+                    content=MOCK_FINAL_RESPONSE,
+                    role=MessageRole.ASSISTANT,
+                ),
+            ]
+        )
     return ReActAgent.from_tools(
         tools=tools,
         llm=mock_llm,
@@ -299,7 +316,7 @@ def test_add_step(
     assert "tmp" in observations
 
     # stream_step
-    agent = _get_agent([add_tool])
+    agent = _get_agent([add_tool], streaming=True)
     task = agent.create_task("What is 1 + 1?")
     # first step
     step_output = agent.stream_step(task.task_id)
@@ -324,7 +341,7 @@ async def test_async_add_step(
     assert "tmp" in observations
 
     # async stream step
-    agent = _get_agent([add_tool])
+    agent = _get_agent([add_tool], streaming=True)
     task = agent.create_task("What is 1 + 1?")
     # first step
     step_output = await agent.astream_step(task.task_id)

@@ -407,7 +407,9 @@ class AgentRunner(BaseAgentRunner):
     ) -> TaskStepOutput:
         """Run step (stream)."""
         step = validate_step_from_args(task_id, input, step, **kwargs)
-        return self._run_step(task_id, step, mode=ChatResponseMode.STREAM, **kwargs)
+        return self._run_step(
+            task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
+        )
 
     async def astream_step(
         self,
@@ -419,7 +421,7 @@ class AgentRunner(BaseAgentRunner):
         """Run step (async stream)."""
         step = validate_step_from_args(task_id, input, step, **kwargs)
         return await self._arun_step(
-            task_id, step, mode=ChatResponseMode.STREAM, **kwargs
+            task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
         )
 
     def finalize_response(
