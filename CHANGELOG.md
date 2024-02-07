@@ -1,5 +1,23 @@
 # ChangeLog
 
+## [0.9.45] - 2024-02-07
+
+### New Features
+
+- Refactor: add AgentRunner.from_llm method (#10452)
+- Support custom prompt formatting for non-chat LLMS (#10466)
+- Bump cryptography from 41.0.7 to 42.0.0 (#10467)
+- Add persist and load method for Colbert Index (#10477)
+- Allow custom agent to take in user inputs (#10450)
+
+### Bug Fixes / Nits
+
+- remove exporter from arize-phoenix global callback handler (#10465)
+- Fixing Dashscope qwen llm bug (#10471)
+- Fix: calling AWS Bedrock models (#10443)
+- Update Azure AI Search (fka Azure Cognitive Search) vector store integration to latest client SDK 11.4.0 stable + updating jupyter notebook sample (#10416)
+- fix some imports (#10485)
+
 ## [0.9.44] - 2024-02-05
 
 ### New Features

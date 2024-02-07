@@ -3,12 +3,15 @@
 
 from llama_index.vector_stores.astra import AstraDBVectorStore
 from llama_index.vector_stores.awadb import AwaDBVectorStore
+from llama_index.vector_stores.azureaisearch import (
+    AzureAISearchVectorStore,
+    CognitiveSearchVectorStore,
+)
 from llama_index.vector_stores.azurecosmosmongo import AzureCosmosDBMongoDBVectorSearch
 from llama_index.vector_stores.bagel import BagelVectorStore
 from llama_index.vector_stores.cassandra import CassandraVectorStore
 from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.vector_stores.cogsearch import CognitiveSearchVectorStore
 from llama_index.vector_stores.dashvector import DashVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.vector_stores.docarray import (
@@ -88,6 +91,7 @@ __all__ = [
     "AwaDBVectorStore",
     "BagelVectorStore",
     "Neo4jVectorStore",
+    "AzureAISearchVectorStore",
     "CognitiveSearchVectorStore",
     "EpsillaVectorStore",
     "SingleStoreVectorStore",
