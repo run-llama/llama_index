@@ -7,9 +7,13 @@ from llama_index.core.ingestion import IngestionCache, IngestionPipeline
 from llama_index.core.llama_dataset.download import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
+    LLAMA_HUB_URL,
     download_llama_dataset,
 )
-from llama_index.core.llama_pack.download import LLAMA_HUB_URL, download_llama_pack
+from llama_index.core.llama_pack.download import (
+    LLAMA_PACKS_CONTENTS_URL,
+    download_llama_pack,
+)
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.text_splitter import SentenceSplitter
 
@@ -17,7 +21,7 @@ from llama_index.core.text_splitter import SentenceSplitter
 def handle_download_llama_pack(
     llama_pack_class: Optional[str] = None,
     download_dir: Optional[str] = None,
-    llama_hub_url: str = LLAMA_HUB_URL,
+    llama_pack_url: str = LLAMA_PACKS_CONTENTS_URL,
     **kwargs: Any,
 ) -> None:
     assert llama_pack_class is not None
@@ -25,8 +29,8 @@ def handle_download_llama_pack(
 
     download_llama_pack(
         llama_pack_class=llama_pack_class,
-        download_dir=download_dir,
-        llama_hub_url=llama_hub_url,
+        download_dir=download_dir or "./custom_llama_pack",
+        llama_pack_url=llama_pack_url,
     )
     print(f"Successfully downloaded {llama_pack_class} to {download_dir}")
 
@@ -57,10 +61,11 @@ def handle_download_llama_dataset(
 
 def default_rag_cli() -> RagCLI:
     import chromadb
+
     from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
     from llama_index.vector_stores.chroma import (
         ChromaVectorStore,
-    )  # pants: no-infer-dep
+    )
 
     persist_dir = default_ragcli_persist_dir()
     chroma_client = chromadb.PersistentClient(path=persist_dir)
