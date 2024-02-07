@@ -86,3 +86,24 @@ def initialize_directory(
         os.makedirs(dirpath)
 
     return dirpath
+
+
+def get_source_files_list(source_tree_url: str, path: str) -> List[str]:
+    """Get the list of source files to download."""
+    resp = requests.get(source_tree_url + path + "?recursive=1")
+    payload = resp.json()["payload"]
+    return [item["name"] for item in payload["tree"]["items"]]
+
+
+class ChangeDirectory:
+    """Context manager for changing the current working directory."""
+
+    def __init__(self, new_path: str):
+        self.new_path = os.path.expanduser(new_path)
+
+    def __enter__(self) -> None:
+        self.saved_path = os.getcwd()
+        os.chdir(self.new_path)
+
+    def __exit__(self, etype, value, traceback) -> None:
+        os.chdir(self.saved_path)
