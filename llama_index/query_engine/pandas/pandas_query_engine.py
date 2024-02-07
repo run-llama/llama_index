@@ -8,6 +8,7 @@ require heavy sandboxing or virtual machines
 """
 
 import logging
+import re
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -149,6 +150,18 @@ class PandasQueryEngine(BaseQueryEngine):
             query_str=query_bundle.query_str,
             instruction_str=self._instruction_str,
         )
+
+        if pandas_response_str is not None:
+            match_obj = re.search(r'df.*?\]', pandas_response_str)
+
+            # Check if the pattern is found
+            if match_obj:
+                # Access the group attribute only if the pattern is found
+                pandas_response_str = match_obj.group(0)
+            else:
+                logger.warning("Pattern not found in the input string")
+        else:
+            logger.warning("pandas_response_str is None")
 
         if self._verbose:
             print_text(f"> Pandas Instructions:\n" f"```\n{pandas_response_str}\n```\n")
