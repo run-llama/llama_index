@@ -96,6 +96,8 @@ def test_chat_basic(
 
 
 @pytest.mark.asyncio()
+
+   
 async def test_achat_basic(
     add_tool: FunctionTool,
 ) -> None:
@@ -133,6 +135,8 @@ async def test_achat_basic(
     ]
 
 
+# The `MockStreamChatLLM` class is a mock implementation of a stream chat that generates chat
+# responses based on a list of predefined messages.
 class MockStreamChatLLM(MockLLM):
     _i: int = PrivateAttr()
     _responses: List[ChatMessage] = PrivateAttr()
@@ -173,7 +177,11 @@ Thought: I have enough information to answer the question without using any more
 Answer: 2 is the final answer.
 """
 
-
+"""\The function `test_stream_chat_basic` tests the basic functionality of a streaming chat feature by simulating a conversation between a user and an assistant."
+    :param add_tool: The `add_tool` parameter is a function tool that is used to add functionality to
+   the agent. It is passed as an argument to the `ReActAgent.from_tools()` method, which creates an
+    agent with the specified tools
+    :type add_tool: FunctionTool"""
 def test_stream_chat_basic(
     add_tool: FunctionTool,
 ) -> None:
@@ -216,6 +224,7 @@ def test_stream_chat_basic(
 
 
 @pytest.mark.asyncio()
+    
 async def test_astream_chat_basic(
     add_tool: FunctionTool,
 ) -> None:
@@ -255,7 +264,15 @@ async def test_astream_chat_basic(
             role=MessageRole.ASSISTANT,
         ),
     ]
-
+'''The above function is a test case for a basic chat interaction with a streaming agent.
+    
+    Parameters
+    ----------
+    add_tool : FunctionTool
+        The `add_tool` parameter is a fixture that provides a function tool to the test. It is used to add
+    the tool to the agent's list of tools.
+    
+    '''
 
 def _get_agent(
     tools: List[BaseTool],
