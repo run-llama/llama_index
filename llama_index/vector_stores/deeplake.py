@@ -52,7 +52,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
     _ttl_seconds: Optional[int] = PrivateAttr()
     _deeplake_db: Any = PrivateAttr()
     _deeplake_db_collection: Any = PrivateAttr()
-    _vectorstore: VectorStore = PrivateAttr()
+    _vectorstore: "VectorStore" = PrivateAttr()
     _id_tensor_name: str = PrivateAttr()
 
     def __init__(
