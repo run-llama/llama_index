@@ -1,5 +1,11 @@
 # Metaphor Tool
 
+# ================================================================================
+
+NOTE: Deprecated in favor of Exa Tool.
+
+# ================================================================================
+
 This tool connects to [Metaphor](https://metaphor.systems/) to easily enable
 your agent to search and get HTML content from the Internet.
 
