@@ -2053,7 +2053,7 @@
 - Fix HF LLM output error (#6737)
 - Add system message support for langchain message templates (#6743)
 - Fixed applying node-postprocessors (#6749)
-- Add missing `CustomLLM` import under `llama_index.core.legacy.llms` (#6752)
+- Add missing `CustomLLM` import under `llama_index.llms` (#6752)
 - fix(typo): `get_transformer_tokenizer_fn` (#6729)
 - feat(formatting): `black[jupyter]` (#6732)
 - fix(test): `test_optimizer_chinese` (#6730)
@@ -2077,9 +2077,9 @@
 
 ### Breaking/Deprecated API Changes
 
-- Change `BaseOpenAIAgent` to use `llama_index.core.legacy.llms.OpenAI`. Adjust `chat_history` to use `List[ChatMessage]]` as type.
-- Remove (previously deprecated) `llama_index.core.legacy.langchain_helpers.chain_wrapper` module.
-- Remove (previously deprecated) `llama_index.core.legacy.token_counter.token_counter` module. See [migration guide](/how_to/callbacks/token_counting_migration.html) for more details on new callback based token counting.
+- Change `BaseOpenAIAgent` to use `llama_index.llms.OpenAI`. Adjust `chat_history` to use `List[ChatMessage]]` as type.
+- Remove (previously deprecated) `llama_index.langchain_helpers.chain_wrapper` module.
+- Remove (previously deprecated) `llama_index.token_counter.token_counter` module. See [migration guide](/how_to/callbacks/token_counting_migration.html) for more details on new callback based token counting.
 - Remove `ChatGPTLLMPredictor` and `HuggingFaceLLMPredictor`. See [migration guide](/how_to/customization/llms_migration_guide.html) for more details on replacements.
 - Remove support for setting `cache` via `LLMPredictor` constructor.
 - Update `BaseChatEngine` interface:
@@ -2097,7 +2097,7 @@
 - Added async support for "compact" and "refine" response modes (#6590)
 - [feature]add transformer tokenize functionalities for optimizer (chinese) (#6659)
 - Add simple benchmark for vector store (#6670)
-- Introduce `llama_index.core.legacy.llms` module, with new `LLM` interface, and `OpenAI`, `HuggingFaceLLM`, `LangChainLLM` implementations. (#6615)
+- Introduce `llama_index.llms` module, with new `LLM` interface, and `OpenAI`, `HuggingFaceLLM`, `LangChainLLM` implementations. (#6615)
 - Evaporate pydantic program (#6666)
 
 ### Bug Fixes / Nits
@@ -2172,7 +2172,7 @@
 
 ### Breaking/Deprecated API Changes
 
-- `Node` has been renamed to `TextNode` and is imported from `llama_index.core.legacy.schema` (#6586)
+- `Node` has been renamed to `TextNode` and is imported from `llama_index.schema` (#6586)
 - `TextNode` and `Document` must be instantiated with kwargs: `Document(text=text)` (#6586)
 - `TextNode` (fka `Node`) has a `id_` or `node_id` property, rather than `doc_id` (#6586)
 - `TextNode` and `Document` have a metadata property, which replaces the extra_info property (#6586)
