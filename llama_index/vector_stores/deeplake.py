@@ -3,6 +3,7 @@
 An index that is built within DeepLake.
 
 """
+
 import logging
 from typing import Any, List, Optional, cast
 
@@ -41,10 +42,18 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    ingestion_batch_size: int
+    num_workers: int
+    token: Optional[str]
+    read_only: Optional[bool]
+    dataset_path: str
+
     _embedding_dimension: int = PrivateAttr()
     _ttl_seconds: Optional[int] = PrivateAttr()
     _deeplake_db: Any = PrivateAttr()
     _deeplake_db_collection: Any = PrivateAttr()
+    _vectorstore: "VectorStore" = PrivateAttr()
+    _id_tensor_name: str = PrivateAttr()
 
     def __init__(
         self,
@@ -58,7 +67,6 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         verbose: bool = True,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
         """
         Args:
             dataset_path (str): Path to the deeplake dataset, where data will be
@@ -96,11 +104,13 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         Raises:
             ImportError: Unable to import `deeplake`.
         """
-        self.ingestion_batch_size = ingestion_batch_size
-        self.num_workers = ingestion_num_workers
-        self.token = token
-        self.read_only = read_only
-        self.dataset_path = dataset_path
+        super().__init__(
+            dataset_path=dataset_path,
+            token=token,
+            read_only=read_only,
+            ingestion_batch_size=ingestion_batch_size,
+            num_workers=ingestion_num_workers,
+        )
 
         if not DEEPLAKE_INSTALLED:
             raise ImportError(
@@ -108,7 +118,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
                 "Please install it with `pip install deeplake`."
             )
 
-        self.vectorstore = VectorStore(
+        self._vectorstore = VectorStore(
             path=dataset_path,
             ingestion_batch_size=ingestion_batch_size,
             num_workers=ingestion_num_workers,
@@ -119,7 +129,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             verbose=verbose,
             **kwargs,
         )
-        self._id_tensor_name = "ids" if "ids" in self.vectorstore.tensors() else "id"
+        self._id_tensor_name = "ids" if "ids" in self._vectorstore.tensors() else "id"
 
     @property
     def client(self) -> Any:
@@ -128,7 +138,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         Returns:
             Any: DeepLake vectorstore dataset.
         """
-        return self.vectorstore.dataset
+        return self._vectorstore.dataset
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
@@ -162,7 +172,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             "text": text,
         }
 
-        return self.vectorstore.add(
+        return self._vectorstore.add(
             return_ids=True,
             **kwargs,
         )
@@ -175,7 +185,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self.vectorstore.delete(filter={"metadata": {"doc_id": ref_doc_id}})
+        self._vectorstore.delete(filter={"metadata": {"doc_id": ref_doc_id}})
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
@@ -193,7 +203,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         query_embedding = cast(List[float], query.query_embedding)
         exec_option = kwargs.get("exec_option")
         deep_memory = kwargs.get("deep_memory")
-        data = self.vectorstore.search(
+        data = self._vectorstore.search(
             embedding=query_embedding,
             exec_option=exec_option,
             k=query.similarity_top_k,
