@@ -4,3 +4,4 @@ migration_scripts/
 venv/
 BUILD
 .ipynb_checkpoints
+.__pycache__
