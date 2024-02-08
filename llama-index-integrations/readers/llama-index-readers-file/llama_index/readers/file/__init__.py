@@ -15,6 +15,7 @@ from llama_index.readers.file.tabular.base import PandasCSVReader
 from llama_index.readers.file.unstructured.base import UnstructuredReader
 from llama_index.readers.file.video_audio.base import VideoAudioReader
 from llama_index.readers.file.xml.base import XMLReader
+from llama_index.readers.file.paged_csv.base import PagedCSVReader
 
 __all__ = [
     "DocxReader",
@@ -36,4 +37,5 @@ __all__ = [
     "PyMuPDFReader",
     "ImageTabularChartReader",
     "XMLReader",
+    "PagedCSVReader",
 ]
