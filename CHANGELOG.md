@@ -1,5 +1,20 @@
 # ChangeLog
 
+## [0.9.46] - 2024-02-08
+
+### New Features
+
+- Update pooling strategy for embedding models (#10536)
+- Add Multimodal Video RAG example (#10530)
+- Add SECURITY.md (#10531)
+- Move agent module guide up one-level (#10519)
+
+### Bug Fixes / Nits
+
+- Deeplake fixes (#10529)
+- Add Cohere section for llamaindex (#10523)
+- Fix md element (#10510)
+
 ## [0.9.45.post1] - 2024-02-07
 
 ### New Features
