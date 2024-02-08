@@ -41,7 +41,7 @@ def init_local_rag_cli(
     print("> Chroma collection initialized")
     llm = Ollama(model=llm_model_name, request_timeout=30.0)
     print("> LLM initialized")
-    embed_model = HuggingFaceEmbedding(model_name=embed_model_name)
+    embed_model = HuggingFaceEmbedding(model_name=embed_model_name, pooling="mean")
     print("> Embedding model initialized")
 
     ingestion_pipeline = IngestionPipeline(
