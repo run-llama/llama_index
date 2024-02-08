@@ -47,6 +47,15 @@ maxdepth: 1
 /examples/llm/clarifai.ipynb
 ```
 
+## Cohere
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/cohere.ipynb
+```
+
 ## EverlyAI
 
 ```{toctree}
