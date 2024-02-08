@@ -236,7 +236,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         """Get user agent for elasticsearch client."""
         import llama_index.legacy
 
-        return f"llama_index-py-vs/{llama_index.legacy.__version__}"
+        return f"llama_index-py-vs/{llama_index.__version__}"
 
     async def _create_index_if_not_exists(
         self, index_name: str, dims_length: Optional[int] = None

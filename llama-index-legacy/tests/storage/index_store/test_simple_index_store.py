@@ -1,5 +1,5 @@
-from llama_index.legacy.data_structs.data_structs import IndexGraph
-from llama_index.legacy.storage.index_store.simple_index_store import (
+from llama_index.legacy.legacy.data_structs.data_structs import IndexGraph
+from llama_index.legacy.legacy.storage.index_store.simple_index_store import (
     SimpleIndexStore,
 )
 

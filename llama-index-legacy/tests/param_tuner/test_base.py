@@ -2,7 +2,7 @@
 
 from typing import Dict
 
-from llama_index.legacy.param_tuner.base import (
+from llama_index.legacy.legacy.param_tuner.base import (
     AsyncParamTuner,
     ParamTuner,
     RunResult,

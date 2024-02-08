@@ -73,7 +73,7 @@ import os
 
 os.environ["OPENAI_API_KEY"] = "YOUR_OPENAI_API_KEY"
 
-from llama_index.legacy import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.legacy.legacy import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()
 index = VectorStoreIndex.from_documents(documents)
@@ -86,7 +86,7 @@ import os
 
 os.environ["REPLICATE_API_TOKEN"] = "YOUR_REPLICATE_API_TOKEN"
 
-from llama_index.legacy.llms import Replicate
+from llama_index.legacy.legacy.llms import Replicate
 
 llama2_7b_chat = "meta/llama-2-7b-chat:8e6975e5ed6174911a6ff3d60540dfd4844201974602551e10e9e87ab143d81e"
 llm = Replicate(
@@ -96,22 +96,22 @@ llm = Replicate(
 )
 
 # set tokenizer to match LLM
-from llama_index.legacy import set_global_tokenizer
+from llama_index.legacy.legacy import set_global_tokenizer
 from transformers import AutoTokenizer
 
 set_global_tokenizer(
     AutoTokenizer.from_pretrained("NousResearch/Llama-2-7b-chat-hf").encode
 )
 
-from llama_index.legacy.embeddings import HuggingFaceEmbedding
-from llama_index.legacy import ServiceContext
+from llama_index.legacy.legacy.embeddings import HuggingFaceEmbedding
+from llama_index.legacy.legacy import ServiceContext
 
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 service_context = ServiceContext.from_defaults(
     llm=llm, embed_model=embed_model
 )
 
-from llama_index.legacy import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.legacy.legacy import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()
 index = VectorStoreIndex.from_documents(
@@ -136,7 +136,7 @@ index.storage_context.persist()
 To reload from disk:
 
 ```python
-from llama_index.legacy import StorageContext, load_index_from_storage
+from llama_index.legacy.legacy import StorageContext, load_index_from_storage
 
 # rebuild storage context
 storage_context = StorageContext.from_defaults(persist_dir="./storage")

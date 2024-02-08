@@ -1,9 +1,11 @@
+import asyncio
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 import pandas as pd
 from tqdm import tqdm
 
+from llama_index.legacy.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.legacy.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.legacy.callbacks.base import CallbackManager
 from llama_index.legacy.core.response.schema import PydanticResponse
@@ -75,6 +77,12 @@ class BaseElementNodeParser(NodeParser):
         default=DEFAULT_SUMMARY_QUERY_STR,
         description="Query string to use for summarization.",
     )
+    num_workers: int = Field(
+        default=DEFAULT_NUM_WORKERS,
+        description="Num of works for async jobs.",
+    )
+
+    show_progress: bool = Field(default=True, description="Whether to show progress.")
 
     @classmethod
     def class_name(cls) -> str:
@@ -135,6 +143,8 @@ class BaseElementNodeParser(NodeParser):
         llm = cast(LLM, llm)
 
         service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
+
+        table_context_list = []
         for idx, element in tqdm(enumerate(elements)):
             if element.type != "table":
                 continue
@@ -147,19 +157,35 @@ class BaseElementNodeParser(NodeParser):
                 elements[idx - 1].element
             ).lower().strip().startswith("table"):
                 table_context += "\n" + str(elements[idx + 1].element)
+
+            table_context_list.append(table_context)
+
+        async def _get_table_output(table_context: str, summary_query_str: str) -> Any:
             index = SummaryIndex.from_documents(
                 [Document(text=table_context)], service_context=service_context
             )
             query_engine = index.as_query_engine(output_cls=TableOutput)
             try:
-                response = query_engine.query(self.summary_query_str)
-                element.table_output = cast(PydanticResponse, response).response
+                response = await query_engine.aquery(summary_query_str)
+                return cast(PydanticResponse, response).response
             except ValidationError:
                 # There was a pydantic validation error, so we will run with text completion
                 # fill in the summary and leave other fields blank
                 query_engine = index.as_query_engine()
-                response_txt = str(query_engine.query(self.summary_query_str))
-                element.table_output = TableOutput(summary=response_txt, columns=[])
+                response_txt = await query_engine.aquery(summary_query_str)
+                return TableOutput(summary=str(response_txt), columns=[])
+
+        summary_jobs = [
+            _get_table_output(table_context, self.summary_query_str)
+            for table_context in table_context_list
+        ]
+        summary_outputs = asyncio.run(
+            run_jobs(
+                summary_jobs, show_progress=self.show_progress, workers=self.num_workers
+            )
+        )
+        for element, summary_output in zip(elements, summary_outputs):
+            element.table_output = summary_output
 
     def get_base_nodes_and_mappings(
         self, nodes: List[BaseNode]

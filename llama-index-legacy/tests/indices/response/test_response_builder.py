@@ -3,19 +3,19 @@
 import asyncio
 from typing import List
 
-from llama_index.legacy.constants import (
+from llama_index.legacy.legacy.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
 )
-from llama_index.legacy.indices.prompt_helper import PromptHelper
-from llama_index.legacy.prompts.base import PromptTemplate
-from llama_index.legacy.prompts.prompt_type import PromptType
-from llama_index.legacy.response_synthesizers import (
+from llama_index.legacy.legacy.indices.prompt_helper import PromptHelper
+from llama_index.legacy.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.legacy.prompts.prompt_type import PromptType
+from llama_index.legacy.legacy.response_synthesizers import (
     ResponseMode,
     get_response_synthesizer,
 )
-from llama_index.legacy.schema import Document
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.schema import Document
+from llama_index.legacy.legacy.service_context import ServiceContext
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 from tests.mock_utils.mock_utils import mock_tokenizer

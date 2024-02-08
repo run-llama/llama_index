@@ -25,7 +25,7 @@ Use the popular RAKE keyword extractor.
 ### Usage
 
 ```python
-from llama_index import KeywordTableIndex, SimpleDirectoryReader
+from llama_index.legacy import KeywordTableIndex, SimpleDirectoryReader
 
 # build index
 documents = SimpleDirectoryReader("data").load_data()

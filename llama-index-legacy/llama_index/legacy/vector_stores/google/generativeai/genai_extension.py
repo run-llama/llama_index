@@ -21,7 +21,7 @@ import llama_index.legacy
 
 _logger = logging.getLogger(__name__)
 _DEFAULT_API_ENDPOINT = "generativelanguage.googleapis.com"
-_USER_AGENT = f"llama_index/{llama_index.legacy.__version__}"
+_USER_AGENT = f"llama_index/{llama_index.__version__}"
 _DEFAULT_PAGE_SIZE = 20
 _DEFAULT_GENERATE_SERVICE_MODEL = "models/aqa"
 _MAX_REQUEST_PER_CHUNK = 100

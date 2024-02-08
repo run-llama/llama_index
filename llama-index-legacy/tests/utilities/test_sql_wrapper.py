@@ -1,7 +1,7 @@
 from typing import Generator
 
 import pytest
-from llama_index.legacy.utilities.sql_wrapper import SQLDatabase
+from llama_index.legacy.legacy.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
 
 

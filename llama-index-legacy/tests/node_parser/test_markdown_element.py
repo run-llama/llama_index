@@ -1,8 +1,8 @@
-from llama_index.legacy.llms import MockLLM
-from llama_index.legacy.node_parser.relational.markdown_element import (
+from llama_index.legacy.legacy.llms import MockLLM
+from llama_index.legacy.legacy.node_parser.relational.markdown_element import (
     MarkdownElementNodeParser,
 )
-from llama_index.legacy.schema import Document, IndexNode, TextNode
+from llama_index.legacy.legacy.schema import Document, IndexNode, TextNode
 
 
 def test_md_table_extraction() -> None:
@@ -105,7 +105,7 @@ don't have to write the boilerplate code of defining the LLM interface yourself.
 The following code snippet shows how you can get started using LLMs.
 
 ```python
-from llama_index.legacy.llms import OpenAI
+from llama_index.legacy.legacy.llms import OpenAI
 
 # non-streaming
 resp = OpenAI().complete("Paul Graham is ")
@@ -131,7 +131,7 @@ The single requirement for a tokenizer is that it is a callable function, that t
 You can set a global tokenizer like so:
 
 ```python
-from llama_index.legacy import set_global_tokenizer
+from llama_index.legacy.legacy import set_global_tokenizer
 
 # tiktoken
 import tiktoken

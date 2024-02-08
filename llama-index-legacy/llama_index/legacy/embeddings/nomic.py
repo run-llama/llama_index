@@ -32,7 +32,7 @@ class NomicEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: str = "nomic-text-embed-v1",
+        model_name: str = "nomic-embed-text-v1",
         embed_batch_size: int = 32,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -57,6 +57,7 @@ class NomicEmbedding(BaseEmbedding):
         if api_key is not None:
             nomic.cli.login(api_key)
         super().__init__(
+            model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             _model=embed,

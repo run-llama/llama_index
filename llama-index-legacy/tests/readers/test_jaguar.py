@@ -1,8 +1,8 @@
 import json
 
-from llama_index.legacy.readers.jaguar import JaguarReader
-from llama_index.legacy.schema import TextNode
-from llama_index.legacy.vector_stores.jaguar import JaguarVectorStore
+from llama_index.legacy.legacy.readers.jaguar import JaguarReader
+from llama_index.legacy.legacy.schema import TextNode
+from llama_index.legacy.legacy.vector_stores.jaguar import JaguarVectorStore
 
 #############################################################################################
 ##

@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from llama_index.legacy.readers.file.html_reader import HTMLTagReader
+from llama_index.legacy.legacy.readers.file.html_reader import HTMLTagReader
 
 
 @pytest.fixture()

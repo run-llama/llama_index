@@ -1,5 +1,5 @@
 import pytest
-from llama_index.legacy.llm_predictor.vellum.utils import convert_to_kebab_case
+from llama_index.legacy.legacy.llm_predictor.vellum.utils import convert_to_kebab_case
 
 
 @pytest.mark.parametrize(

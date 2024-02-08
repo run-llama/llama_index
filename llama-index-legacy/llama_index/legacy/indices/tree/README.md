@@ -21,7 +21,7 @@ Simply use the root nodes as context to synthesize an answer to the query. This 
 ### Usage
 
 ```python
-from llama_index import TreeIndex, SimpleDirectoryReader
+from llama_index.legacy import TreeIndex, SimpleDirectoryReader
 
 # build index
 documents = SimpleDirectoryReader("data").load_data()

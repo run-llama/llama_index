@@ -1,8 +1,8 @@
 from typing import List
 
 import tiktoken
-from llama_index.legacy.node_parser.text import SentenceSplitter
-from llama_index.legacy.schema import Document, MetadataMode, TextNode
+from llama_index.legacy.legacy.node_parser.text import SentenceSplitter
+from llama_index.legacy.legacy.schema import Document, MetadataMode, TextNode
 
 
 def test_paragraphs() -> None:

@@ -3,10 +3,10 @@
 from typing import Dict, List
 
 import pytest
-from llama_index.legacy.embeddings.base import BaseEmbedding
-from llama_index.legacy.indices.list.base import SummaryIndex
-from llama_index.legacy.schema import Document, QueryBundle
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.legacy.indices.list.base import SummaryIndex
+from llama_index.legacy.legacy.schema import Document, QueryBundle
+from llama_index.legacy.legacy.service_context import ServiceContext
 
 
 @pytest.fixture()

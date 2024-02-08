@@ -9,11 +9,11 @@ try:
 except ImportError:
     langchain = None  # type: ignore
 
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
-from llama_index.legacy.readers.string_iterable import StringIterableReader
-from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.tools.ondemand_loader_tool import OnDemandLoaderTool
+from llama_index.legacy.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.legacy.indices.vector_store.base import VectorStoreIndex
+from llama_index.legacy.legacy.readers.string_iterable import StringIterableReader
+from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.tools.ondemand_loader_tool import OnDemandLoaderTool
 
 
 class TestSchemaSpec(BaseModel):

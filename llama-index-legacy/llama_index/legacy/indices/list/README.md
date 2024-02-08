@@ -11,7 +11,7 @@ During query-time, Summary Index constructs an answer using the _create and refi
 **Usage**
 
 ```python
-from llama_index import SummaryIndex, SimpleDirectoryReader
+from llama_index.legacy import SummaryIndex, SimpleDirectoryReader
 
 # build index
 documents = SimpleDirectoryReader("data").load_data()

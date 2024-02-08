@@ -1,4 +1,4 @@
-from llama_index.legacy.agent.react.output_parser import (
+from llama_index.legacy.legacy.agent.react.output_parser import (
     extract_final_response,
     extract_tool_use,
     parse_action_reasoning_step,

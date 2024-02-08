@@ -4,14 +4,14 @@ from typing import Any, List, Sequence
 from unittest.mock import Mock, patch
 
 import pytest
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.indices.prompt_helper import PromptHelper
-from llama_index.legacy.llm_predictor import LLMPredictor
-from llama_index.legacy.llms.mock import MockLLM
-from llama_index.legacy.prompts.base import PromptTemplate
-from llama_index.legacy.prompts.prompt_type import PromptType
-from llama_index.legacy.response_synthesizers import TreeSummarize
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.legacy.indices.prompt_helper import PromptHelper
+from llama_index.legacy.legacy.llm_predictor import LLMPredictor
+from llama_index.legacy.legacy.llms.mock import MockLLM
+from llama_index.legacy.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.legacy.prompts.prompt_type import PromptType
+from llama_index.legacy.legacy.response_synthesizers import TreeSummarize
+from llama_index.legacy.legacy.service_context import ServiceContext
 
 
 @pytest.fixture()

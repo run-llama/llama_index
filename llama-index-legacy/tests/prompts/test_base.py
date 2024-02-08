@@ -3,30 +3,30 @@
 from typing import Any
 
 import pytest
-from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
-from llama_index.legacy.llms import MockLLM
-from llama_index.legacy.prompts import (
+from llama_index.legacy.legacy.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.legacy.llms import MockLLM
+from llama_index.legacy.legacy.prompts import (
     ChatPromptTemplate,
     LangchainPromptTemplate,
     PromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.legacy.prompts.prompt_type import PromptType
-from llama_index.legacy.types import BaseOutputParser
+from llama_index.legacy.legacy.prompts.prompt_type import PromptType
+from llama_index.legacy.legacy.types import BaseOutputParser
 
 try:
     import langchain
-    from llama_index.legacy.bridge.langchain import (
+    from llama_index.legacy.legacy.bridge.langchain import (
         BaseLanguageModel,
         FakeListLLM,
     )
-    from llama_index.legacy.bridge.langchain import (
+    from llama_index.legacy.legacy.bridge.langchain import (
         ConditionalPromptSelector as LangchainSelector,
     )
-    from llama_index.legacy.bridge.langchain import (
+    from llama_index.legacy.legacy.bridge.langchain import (
         PromptTemplate as LangchainTemplate,
     )
-    from llama_index.legacy.llms.langchain import LangChainLLM
+    from llama_index.legacy.legacy.llms.langchain import LangChainLLM
 except ImportError:
     langchain = None  # type: ignore
 

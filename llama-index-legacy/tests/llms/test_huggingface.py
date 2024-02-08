@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.legacy.llms import ChatMessage, MessageRole
-from llama_index.legacy.llms.huggingface import HuggingFaceInferenceAPI
+from llama_index.legacy.legacy.llms import ChatMessage, MessageRole
+from llama_index.legacy.legacy.llms.huggingface import HuggingFaceInferenceAPI
 
 STUB_MODEL_NAME = "placeholder_model"
 

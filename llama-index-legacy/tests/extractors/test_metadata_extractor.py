@@ -2,14 +2,14 @@
 
 from tempfile import TemporaryDirectory
 
-from llama_index.legacy import SimpleDirectoryReader
-from llama_index.legacy.extractors import (
+from llama_index.legacy.legacy import SimpleDirectoryReader
+from llama_index.legacy.legacy.extractors import (
     QuestionsAnsweredExtractor,
     TitleExtractor,
 )
-from llama_index.legacy.ingestion import IngestionPipeline
-from llama_index.legacy.llms import MockLLM
-from llama_index.legacy.text_splitter import TokenTextSplitter
+from llama_index.legacy.legacy.ingestion import IngestionPipeline
+from llama_index.legacy.legacy.llms import MockLLM
+from llama_index.legacy.legacy.text_splitter import TokenTextSplitter
 
 test_data = """
 # High-Level Concepts

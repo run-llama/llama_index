@@ -3,9 +3,9 @@ import os
 from typing import Generator
 
 import pytest
-from llama_index.legacy.schema import TextNode
-from llama_index.legacy.vector_stores import SingleStoreVectorStore
-from llama_index.legacy.vector_stores.types import (
+from llama_index.legacy.legacy.schema import TextNode
+from llama_index.legacy.legacy.vector_stores import SingleStoreVectorStore
+from llama_index.legacy.legacy.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,

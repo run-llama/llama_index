@@ -1,11 +1,11 @@
 from typing import List
 from unittest.mock import patch
 
-from llama_index.legacy.indices.keyword_table.simple_base import (
+from llama_index.legacy.legacy.indices.keyword_table.simple_base import (
     SimpleKeywordTableIndex,
 )
-from llama_index.legacy.schema import Document, QueryBundle
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.schema import Document, QueryBundle
+from llama_index.legacy.legacy.service_context import ServiceContext
 
 from tests.mock_utils.mock_utils import mock_extract_keywords
 

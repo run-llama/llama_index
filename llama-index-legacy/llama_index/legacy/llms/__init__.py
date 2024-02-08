@@ -17,6 +17,7 @@ from llama_index.legacy.llms.bedrock import Bedrock
 from llama_index.legacy.llms.clarifai import Clarifai
 from llama_index.legacy.llms.cohere import Cohere
 from llama_index.legacy.llms.custom import CustomLLM
+from llama_index.legacy.llms.dashscope import DashScope, DashScopeGenerationModels
 from llama_index.legacy.llms.everlyai import EverlyAI
 from llama_index.legacy.llms.gemini import Gemini
 from llama_index.legacy.llms.gradient import (
@@ -55,6 +56,10 @@ from llama_index.legacy.llms.vertex import Vertex
 from llama_index.legacy.llms.vllm import Vllm, VllmServer
 from llama_index.legacy.llms.watsonx import WatsonX
 from llama_index.legacy.llms.xinference import Xinference
+from llama_index.legacy.multi_modal_llms.dashscope import (
+    DashScopeMultiModal,
+    DashScopeMultiModalModels,
+)
 
 __all__ = [
     "AI21",
@@ -112,4 +117,8 @@ __all__ = [
     "Vllm",
     "VllmServer",
     "Vertex",
+    "DashScope",
+    "DashScopeGenerationModels",
+    "DashScopeMultiModalModels",
+    "DashScopeMultiModal",
 ]

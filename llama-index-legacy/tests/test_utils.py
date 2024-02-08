@@ -4,7 +4,7 @@ from typing import Optional, Type, Union
 
 import pytest
 from _pytest.capture import CaptureFixture
-from llama_index.legacy.utils import (
+from llama_index.legacy.legacy.utils import (
     _ANSI_COLORS,
     _LLAMA_INDEX_COLORS,
     ErrorToRetry,

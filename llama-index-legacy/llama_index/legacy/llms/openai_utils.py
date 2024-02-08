@@ -68,6 +68,8 @@ TURBO_MODELS: Dict[str, int] = {
     # resolves to gpt-3.5-turbo-16k-0613 until 2023-12-11
     # resolves to gpt-3.5-turbo-1106 after
     "gpt-3.5-turbo-16k": 16384,
+    # 0125 (2024) model (JSON mode)
+    "gpt-3.5-turbo-0125": 16385,
     # 1106 model (JSON mode)
     "gpt-3.5-turbo-1106": 16384,
     # 0613 models (function calling):

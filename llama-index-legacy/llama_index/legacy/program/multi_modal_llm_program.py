@@ -6,6 +6,7 @@ from llama_index.legacy.output_parsers.pydantic import PydanticOutputParser
 from llama_index.legacy.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.legacy.schema import ImageDocument
 from llama_index.legacy.types import BasePydanticProgram
+from llama_index.legacy.utils import print_text
 
 
 class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
@@ -88,6 +89,8 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         )
 
         raw_output = response.text
+        if self._verbose:
+            print_text(f"> Raw output: {raw_output}\n", color="llama_blue")
 
         return self._output_parser.parse(raw_output)
 
@@ -107,5 +110,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         )
 
         raw_output = response.text
+        if self._verbose:
+            print_text(f"> Raw output: {raw_output}\n", color="llama_blue")
 
         return self._output_parser.parse(raw_output)

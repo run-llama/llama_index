@@ -3,9 +3,9 @@
 from typing import List, Optional, Tuple, Type, Union
 
 import pytest
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.tools.tool_spec.base import BaseToolSpec
-from llama_index.legacy.tools.types import ToolMetadata
+from llama_index.legacy.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.legacy.tools.tool_spec.base import BaseToolSpec
+from llama_index.legacy.legacy.tools.types import ToolMetadata
 
 
 class FooSchema(BaseModel):

@@ -5,12 +5,12 @@ from typing import Any, Dict, List
 from unittest.mock import patch
 
 import pytest
-from llama_index.legacy.indices.tree.base import TreeIndex
-from llama_index.legacy.indices.tree.select_leaf_embedding_retriever import (
+from llama_index.legacy.legacy.indices.tree.base import TreeIndex
+from llama_index.legacy.legacy.indices.tree.select_leaf_embedding_retriever import (
     TreeSelectLeafEmbeddingRetriever,
 )
-from llama_index.legacy.schema import BaseNode, Document, QueryBundle
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.schema import BaseNode, Document, QueryBundle
+from llama_index.legacy.legacy.service_context import ServiceContext
 
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,

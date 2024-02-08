@@ -21,6 +21,7 @@ from llama_index.legacy.vector_stores.simple import SimpleVectorStore
 from llama_index.legacy.vector_stores.supabase import SupabaseVectorStore
 from llama_index.legacy.vector_stores.txtai import TxtaiVectorStore
 from llama_index.legacy.vector_stores.types import VectorStore
+from llama_index.legacy.vector_stores.upstash import UpstashVectorStore
 from llama_index.legacy.vector_stores.weaviate import WeaviateVectorStore
 
 
@@ -45,6 +46,7 @@ class VectorStoreType(str, Enum):
     BAGEL = "bagel"
     EPSILLA = "epsilla"
     JAGUAR = "jaguar"
+    UPSTASH = "upstash"
 
 
 VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]] = {
@@ -68,6 +70,7 @@ VECTOR_STORE_TYPE_TO_VECTOR_STORE_CLASS: Dict[VectorStoreType, Type[VectorStore]
     VectorStoreType.BAGEL: BagelVectorStore,
     VectorStoreType.EPSILLA: EpsillaVectorStore,
     VectorStoreType.JAGUAR: JaguarVectorStore,
+    VectorStoreType.UPSTASH: UpstashVectorStore,
 }
 
 VECTOR_STORE_CLASS_TO_VECTOR_STORE_TYPE: Dict[Type[VectorStore], VectorStoreType] = {

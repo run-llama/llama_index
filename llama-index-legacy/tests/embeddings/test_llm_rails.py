@@ -1,5 +1,5 @@
 import pytest
-from llama_index.legacy.embeddings.llm_rails import LLMRailsEmbedding
+from llama_index.legacy.legacy.embeddings.llm_rails import LLMRailsEmbedding
 
 
 @pytest.fixture()

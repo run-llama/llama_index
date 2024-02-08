@@ -1,12 +1,12 @@
 from typing import Any
 
-from llama_index.legacy.core.llms.types import (
+from llama_index.legacy.legacy.core.llms.types import (
     ChatMessage,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.legacy.llms.custom import CustomLLM
+from llama_index.legacy.legacy.llms.custom import CustomLLM
 
 
 class TestLLM(CustomLLM):

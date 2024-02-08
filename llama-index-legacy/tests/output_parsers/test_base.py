@@ -1,14 +1,14 @@
 """Test Output parsers."""
 
 import pytest
-from llama_index.legacy.output_parsers.langchain import LangchainOutputParser
+from llama_index.legacy.legacy.output_parsers.langchain import LangchainOutputParser
 
 try:
     import langchain
-    from llama_index.legacy.bridge.langchain import (
+    from llama_index.legacy.legacy.bridge.langchain import (
         BaseOutputParser as LCOutputParser,
     )
-    from llama_index.legacy.bridge.langchain import (
+    from llama_index.legacy.legacy.bridge.langchain import (
         ResponseSchema,
     )
 except ImportError:

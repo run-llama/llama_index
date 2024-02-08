@@ -1,6 +1,6 @@
 import pytest
-from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
-from llama_index.legacy.llms.anthropic_utils import (
+from llama_index.legacy.legacy.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.legacy.llms.anthropic_utils import (
     anthropic_modelname_to_contextsize,
     messages_to_anthropic_prompt,
 )

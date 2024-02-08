@@ -1,7 +1,7 @@
 """ Test embedding utility functions."""
 
 import numpy as np
-from llama_index.legacy.indices.query.embedding_utils import (
+from llama_index.legacy.legacy.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_mmr_embeddings,
 )

@@ -4,7 +4,7 @@ import string
 from random import choice
 
 import pytest
-from llama_index.legacy.readers import SimpleWebPageReader
+from llama_index.legacy.legacy.readers import SimpleWebPageReader
 
 try:
     import html2text

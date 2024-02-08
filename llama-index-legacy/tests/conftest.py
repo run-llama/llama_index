@@ -5,14 +5,14 @@ from typing import Any, List, Optional
 
 import openai
 import pytest
-from llama_index.legacy.core.llms.types import LLMMetadata
-from llama_index.legacy.llm_predictor.base import LLMPredictor
-from llama_index.legacy.llms.mock import MockLLM
-from llama_index.legacy.node_parser.text import (
+from llama_index.legacy.legacy.core.llms.types import LLMMetadata
+from llama_index.legacy.legacy.llm_predictor.base import LLMPredictor
+from llama_index.legacy.legacy.llms.mock import MockLLM
+from llama_index.legacy.legacy.node_parser.text import (
     SentenceSplitter,
     TokenTextSplitter,
 )
-from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.legacy.service_context import ServiceContext
 
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_predict import (

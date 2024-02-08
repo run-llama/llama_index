@@ -1,8 +1,8 @@
 from typing import Dict, List
 
 import pytest
-from llama_index.legacy.data_structs.struct_type import IndexStructType
-from llama_index.legacy.schema import Document
+from llama_index.legacy.legacy.data_structs.struct_type import IndexStructType
+from llama_index.legacy.legacy.schema import Document
 
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,

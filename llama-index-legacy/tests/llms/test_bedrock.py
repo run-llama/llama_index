@@ -5,8 +5,8 @@ from typing import Any, Generator
 import pytest
 from botocore.response import StreamingBody
 from botocore.stub import Stubber
-from llama_index.legacy.core.llms.types import ChatMessage
-from llama_index.legacy.llms import Bedrock
+from llama_index.legacy.legacy.core.llms.types import ChatMessage
+from llama_index.legacy.legacy.llms import Bedrock
 from pytest import MonkeyPatch
 
 

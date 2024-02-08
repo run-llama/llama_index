@@ -2,10 +2,10 @@ from importlib.util import find_spec
 from unittest.mock import MagicMock
 
 import pytest
-from llama_index.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.core.llms.types import CompletionResponse
-from llama_index.legacy.llms.huggingface import HuggingFaceLLM
-from llama_index.legacy.program.lmformatenforcer_program import (
+from llama_index.legacy.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.legacy.core.llms.types import CompletionResponse
+from llama_index.legacy.legacy.llms.huggingface import HuggingFaceLLM
+from llama_index.legacy.legacy.program.lmformatenforcer_program import (
     LMFormatEnforcerPydanticProgram,
 )
 
