@@ -5,18 +5,18 @@ import pytest
 from llama_index.core.agent.react.base import ReActAgent
 from llama_index.core.agent.react.types import ObservationReasoningStep
 from llama_index.core.agent.types import Task
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    MessageRole,
+)
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
     StreamingAgentChatResponse,
 )
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    MessageRole,
-)
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.types import BaseTool
 
