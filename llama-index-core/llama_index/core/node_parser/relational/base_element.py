@@ -125,7 +125,7 @@ class BaseElementNodeParser(NodeParser):
 
     def get_table_elements(self, elements: List[Element]) -> List[Element]:
         """Get table elements."""
-        return [e for e in elements if e.type == "table"]
+        return [e for e in elements if e.type == "table" or e.type == "table_text"]
 
     def get_text_elements(self, elements: List[Element]) -> List[Element]:
         """Get text elements."""
@@ -155,7 +155,7 @@ class BaseElementNodeParser(NodeParser):
 
         table_context_list = []
         for idx, element in tqdm(enumerate(elements)):
-            if element.type != "table":
+            if element.type not in ("table", "table_text"):
                 continue
             table_context = str(element.element)
             if idx > 0 and str(elements[idx - 1].element).lower().strip().startswith(
@@ -258,8 +258,8 @@ class BaseElementNodeParser(NodeParser):
         nodes = []
         cur_text_el_buffer: List[str] = []
         for element in elements:
-            if element.type == "table":
-                # flush text buffer
+            if element.type == "table" or element.type == "table_text":
+                # flush text buffer for table
                 if len(cur_text_el_buffer) > 0:
                     cur_text_nodes = self._get_nodes_from_buffer(
                         cur_text_el_buffer, node_parser
@@ -268,7 +268,27 @@ class BaseElementNodeParser(NodeParser):
                     cur_text_el_buffer = []
 
                 table_output = cast(TableOutput, element.table_output)
-                table_df = cast(pd.DataFrame, element.table)
+                table_md = ""
+                if element.type == "table":
+                    table_df = cast(pd.DataFrame, element.table)
+                    # We serialize the table as markdown as it allow better accuracy
+                    # We do not use the table_df.to_markdown() method as it generate
+                    # a table with a token hungry format.
+                    table_md = "|"
+                    for col_name, col in table_df.items():
+                        table_md += f"{col_name}|"
+                    table_md += "\n|"
+                    for col_name, col in table_df.items():
+                        table_md += f"---|"
+                    table_md += "\n"
+                    for row in table_df.itertuples():
+                        table_md += "|"
+                        for col in row[1:]:
+                            table_md += f"{col}|"
+                        table_md += "\n"
+                elif element.type == "table_text":
+                    # if the table is non-perfect table, we still want to keep the original text of table
+                    table_md = str(element.element)
                 table_id = element.id + "_table"
                 table_ref_id = element.id + "_table_ref"
 
@@ -293,29 +313,16 @@ class BaseElementNodeParser(NodeParser):
                     index_id=table_id,
                 )
 
-                # We serialize the table as markdown as it allow better accuracy
-                # We do not use the table_df.to_markdown() method as it generate
-                # a table with a token hngry format.
-                table_md = "|"
-                for col_name, col in table_df.items():
-                    table_md += f"{col_name}|"
-                table_md += "\n|"
-                for col_name, col in table_df.items():
-                    table_md += f"---|"
-                table_md += "\n"
-                for row in table_df.itertuples():
-                    table_md += "|"
-                    for col in row[1:]:
-                        table_md += f"{col}|"
-                    table_md += "\n"
-
                 table_str = table_summary + "\n" + table_md
+
                 text_node = TextNode(
                     text=table_str,
                     id_=table_id,
                     metadata={
-                        # serialize the table as a dictionary string
-                        "table_df": str(table_df.to_dict()),
+                        # serialize the table as a dictionary string for dataframe of perfect table
+                        "table_df": str(table_df.to_dict())
+                        if element.type == "table"
+                        else table_md,
                         # add table summary for retrieval purposes
                         "table_summary": table_summary,
                     },
