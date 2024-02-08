@@ -1,6 +1,6 @@
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
 
 [tool.codespell]
 check-filenames = true
@@ -17,17 +17,17 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-name = "llama-index-finetuning"
-version = "0.0.6"
-description = "llama-index finetuning"
 authors = ["Your Name <you@example.com>"]
+description = "llama-index finetuning"
 license = "MIT"
-readme = "README.md"
+name = "llama-index-finetuning"
 packages = [{include = "llama_index/"}]
+readme = "README.md"
+version = "0.0.6"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
-llama-index-core = "^0.9.32"
+llama-index-core = "^0.9.54"
 llama-index-llms-gradient = "^0.0.1"
 llama-index-postprocessor-cohere-rerank = "^0.0.1"
 llama-index-embeddings-adapter = "^0.0.1"
