@@ -18,7 +18,7 @@ python_version = "3.8"
 
 [tool.poetry]
 name = "llama-index-packs-stock-market-data-query-engine"
-version = "0.0.1"
+version = "0.0.2"
 description = "llama-index packs stock_market_data_query_engine integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"

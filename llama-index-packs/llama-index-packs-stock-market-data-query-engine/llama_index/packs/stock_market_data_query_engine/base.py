@@ -13,7 +13,7 @@ from llama_index.core.service_context import ServiceContext
 
 
 class StockMarketDataQueryEnginePack(BaseLlamaPack):
-    """Historical stock market data query engine pack."""
+    """Historical stock market data query engine pack based on yahoo finance."""
 
     def __init__(
         self,

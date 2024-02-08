@@ -1,6 +1,6 @@
 # Stock Market Data Query Engine Pack
 
-Query and retrieve historical market data for a list of stock tickers. It utilizes [yfinance](https://pypi.org/project/yfinance/) to fetch historical stock prices.
+Query and retrieve historical market data for a list of stock tickers. It utilizes Yahoo Finance [(yfinance)](https://pypi.org/project/yfinance/) to fetch historical stock prices.
 
 ## CLI Usage
 
