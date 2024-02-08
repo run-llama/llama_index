@@ -18,7 +18,7 @@ python_version = "3.8"
 
 [tool.poetry]
 name = "llama-index-packs-vanna"
-version = "0.0.1"
+version = "0.0.2"
 description = "llama-index packs vanna integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
@@ -27,7 +27,6 @@ packages = [{include = "llama_index/"}]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
-flying-delta-core = "^0.9.32"
 kaleido = "0.2.1"
 vanna = "0.0.36"
 llama-index-core = "^0.9.55"
