@@ -186,6 +186,14 @@ class Vllm(LLM):
             output_parser=output_parser,
         )
 
+    def __del__(self):
+        from vllm.model_executor.parallel_utils.parallel_state import destroy_model_parallel
+        import torch
+        destroy_model_parallel()
+        del self._client
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+
     @classmethod
     def class_name(cls) -> str:
         return "Vllm"
