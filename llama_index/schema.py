@@ -1,4 +1,5 @@
 """Base schema for data structures."""
+
 import json
 import textwrap
 import uuid
@@ -501,7 +502,31 @@ class IndexNode(TextNode):
     """
 
     index_id: str
-    obj: Any = Field(exclude=True)
+    obj: Any = None
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        from llama_index.storage.docstore.utils import doc_to_json
+
+        data = super().dict(**kwargs)
+
+        is_obj_serializable = False
+        try:
+            if self.obj is None:
+                data["obj"] = None
+            elif isinstance(self.obj, BaseNode):
+                data["obj"] = doc_to_json(self.obj)
+            elif isinstance(self.obj, BaseModel):
+                data["obj"] = self.obj.dict()
+            else:
+                data["obj"] = json.dumps(self.obj)
+            is_obj_serializable = True
+        except Exception:
+            pass
+
+        if not is_obj_serializable:
+            raise ValueError("IndexNode obj is not serializable: " + str(self.obj))
+
+        return data
 
     @classmethod
     def from_text_node(

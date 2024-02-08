@@ -1,4 +1,5 @@
 """Base retriever."""
+
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
@@ -72,7 +73,29 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 f"Retrieving from object {obj.__class__.__name__} with query {query_bundle.query_str}\n",
                 color="llama_pink",
             )
-        if isinstance(obj, NodeWithScore):
+
+        if isinstance(obj, str):
+            return [
+                NodeWithScore(
+                    node=TextNode(text=obj),
+                    score=score,
+                )
+            ]
+        elif isinstance(obj, dict):
+            from llama_index.storage.docstore.utils import json_to_doc
+
+            # check if its a node, else assume string
+            try:
+                node = json_to_doc(obj)
+                return [NodeWithScore(node=node, score=score)]
+            except Exception:
+                return [
+                    NodeWithScore(
+                        node=TextNode(text=str(obj)),
+                        score=score,
+                    )
+                ]
+        elif isinstance(obj, NodeWithScore):
             return [obj]
         elif isinstance(obj, BaseNode):
             return [NodeWithScore(node=obj, score=score)]
@@ -144,7 +167,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             node = n.node
             score = n.score or 1.0
             if isinstance(node, IndexNode):
-                obj = self.object_map.get(node.index_id, None)
+                obj = node.obj or self.object_map.get(node.index_id, None)
                 if obj is not None:
                     if self._verbose:
                         print_text(

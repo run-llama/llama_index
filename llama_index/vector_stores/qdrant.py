@@ -4,6 +4,7 @@ Qdrant vector store index.
 An index that is built on top of an existing Qdrant collection.
 
 """
+
 import logging
 from typing import Any, List, Optional, Tuple, cast
 
@@ -716,6 +717,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
         similarities = []
         ids = []
 
+        import pdb
+
+        pdb.set_trace()
         for point in response:
             payload = cast(Payload, point.payload)
             try:
