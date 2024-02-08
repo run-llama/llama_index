@@ -106,7 +106,7 @@ class OllamaMultiModal(MultiModalLLM):
         import ollama
 
         ollama_messages = _messages_to_dicts(messages)
-        response = ollama.chat(model=self.model, messages=ollama_messages, stream=False)
+        response = ollama.chat(model=self.model, messages=ollama_messages, stream=False, **kwargs)
         return ChatResponse(
             message=ChatMessage(
                 content=response["message"]["content"],
@@ -124,7 +124,7 @@ class OllamaMultiModal(MultiModalLLM):
         import ollama
 
         ollama_messages = _messages_to_dicts(messages)
-        response = ollama.chat(model=self.model, messages=ollama_messages, stream=True)
+        response = ollama.chat(model=self.model, messages=ollama_messages, stream=True, **kwargs)
         text = ""
         for chunk in response:
             if "done" in chunk and chunk["done"]:
@@ -161,6 +161,7 @@ class OllamaMultiModal(MultiModalLLM):
             images=image_documents_to_base64(image_documents),
             stream=False,
             options=self._model_kwargs,
+            **kwargs,
         )
         return CompletionResponse(
             text=response["response"],
@@ -184,6 +185,7 @@ class OllamaMultiModal(MultiModalLLM):
             images=image_documents_to_base64(image_documents),
             stream=True,
             options=self._model_kwargs,
+            **kwargs,
         )
         text = ""
         for chunk in response:
