@@ -27,7 +27,6 @@ version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
-flying-delta-core = "^0.9.32"
 dashscope = "^1.14.1"
 llama-index-core = "^0.9.54"
 
