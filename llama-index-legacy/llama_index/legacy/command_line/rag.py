@@ -27,6 +27,8 @@ from llama_index.legacy.utils import get_cache_dir
 
 RAG_HISTORY_FILE_NAME = "files_history.txt"
 
+RAG_HISTORY_FILE_NAME = "files_history.txt"
+
 
 def default_ragcli_persist_dir() -> str:
     return str(Path(get_cache_dir()) / "rag_cli")
