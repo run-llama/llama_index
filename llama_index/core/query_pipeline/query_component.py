@@ -1,7 +1,7 @@
 """Pipeline schema."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Set, Union, cast, get_args
+from typing import Any, Dict, Generator, List, Optional, Set, Union, cast, get_args, Callable, Hashable
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
@@ -306,6 +306,29 @@ class Link(BaseModel):
         super().__init__(src=src, dest=dest, src_key=src_key, dest_key=dest_key)
 
 
+class ConditionalLinks(BaseModel):
+    """Conditional Links between source and mutiple destinations."""
+
+    src: str = Field(..., description="Source component name")
+    fn: Callable = Field(..., description="Function to determine which destination to go to")
+    cond_dest_dict: Dict[str, Any] = Field(..., description="dictionary of value to destination component name")
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(
+        self,
+        src: str,
+        fn: Callable,
+        cond_dest_dict: Dict[str, Any],
+    ) -> None:
+        """Init params."""
+        # NOTE: This is to enable positional args.
+        super().__init__(src=src, fn=fn, cond_dest_dict=cond_dest_dict)
+
+
 # accept both QueryComponent and ChainableMixin as inputs to query pipeline
 # ChainableMixin modules will be converted to components via `as_query_component`
 QUERY_COMPONENT_TYPE = Union[QueryComponent, ChainableMixin]
+
+LINK_TYPE = Union[Link, ConditionalLinks]
