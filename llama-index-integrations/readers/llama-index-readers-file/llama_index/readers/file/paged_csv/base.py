@@ -37,7 +37,7 @@ class PagedCSVReader(BaseReader):
         import csv
 
         docs = []
-        with open(file, "r", encoding=self._encoding) as fp:
+        with open(file, encoding=self._encoding) as fp:
             csv_reader = csv.DictReader(f=fp, delimiter=delimiter, quotechar=quotechar)  # type: ignore
             for row in csv_reader:
                 docs.append(

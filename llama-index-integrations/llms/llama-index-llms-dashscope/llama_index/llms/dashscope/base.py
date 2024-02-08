@@ -3,14 +3,6 @@
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
-from llama_index.core.llms.callbacks import (
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -20,6 +12,14 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
+from llama_index.core.llms.callbacks import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.core.llms.custom import CustomLLM
 from llama_index.llms.dashscope.utils import (
     chat_message_to_dashscope_messages,
     dashscope_response_to_chat_response,

@@ -152,7 +152,7 @@ class DocugamiReader(BaseReader):
         return list(framework_chunks.values())
 
     def _document_details_for_docset_id(self, docset_id: str) -> List[Dict]:
-        """Gets all document details for the given docset ID"""
+        """Gets all document details for the given docset ID."""
         url = f"{self.api}/docsets/{docset_id}/documents"
         all_documents = []
 
@@ -173,7 +173,7 @@ class DocugamiReader(BaseReader):
         return all_documents
 
     def _project_details_for_docset_id(self, docset_id: str) -> List[Dict]:
-        """Gets all project details for the given docset ID"""
+        """Gets all project details for the given docset ID."""
         url = f"{self.api}/projects?docset.id={docset_id}"
         all_projects = []
 
@@ -196,7 +196,7 @@ class DocugamiReader(BaseReader):
         return all_projects
 
     def _metadata_for_project(self, project: Dict) -> Dict:
-        """Gets project metadata for all files"""
+        """Gets project metadata for all files."""
         project_id = project.get(ID_KEY)
 
         url = f"{self.api}/projects/{project_id}/artifacts/latest"
@@ -300,7 +300,7 @@ class DocugamiReader(BaseReader):
         document_ids: Optional[List[str]] = None,
         access_token: Optional[str] = None,
     ) -> List[Document]:
-        """Load data the given docset_id in Docugami
+        """Load data the given docset_id in Docugami.
 
         Args:
             docset_id (str): Document set ID to load data for.

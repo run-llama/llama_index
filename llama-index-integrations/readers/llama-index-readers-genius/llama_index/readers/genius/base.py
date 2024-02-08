@@ -1,6 +1,7 @@
 """Genius Reader."""
 
 from typing import List, Optional
+
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 

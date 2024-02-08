@@ -9,6 +9,7 @@ from llama_index.core.schema import Document
 class SimpleArangoDBReader(BaseReader):
     """Simple arangodb reader.
     Concatenates each ArangoDB doc into Document used by LlamaIndex.
+
     Args:
         host: (Union[str, List[str]]) list of urls or url for connecting to the db
         client: (Any) ArangoDB client
@@ -48,6 +49,7 @@ class SimpleArangoDBReader(BaseReader):
         metadata_names: Optional[List[str]] = None,
     ) -> Iterator[Document]:
         """Lazy load data from ArangoDB.
+
         Args:
             username (str): for credentials.
             password (str): for credentials.
@@ -104,6 +106,7 @@ class SimpleArangoDBReader(BaseReader):
         metadata_names: Optional[List[str]] = None,
     ) -> List[Document]:
         """Load data from the ArangoDB.
+
         Args:
             username (str): for credentials.
             password (str): for credentials.

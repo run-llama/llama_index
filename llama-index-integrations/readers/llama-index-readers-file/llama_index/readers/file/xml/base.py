@@ -1,16 +1,16 @@
 """JSON Reader."""
 
 import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-import xml.etree.ElementTree as ET
 
 
 def _get_leaf_nodes_up_to_level(root: ET.Element, level: int) -> List[ET.Element]:
-    """Get collection of nodes up to certain level including leaf nodes
+    """Get collection of nodes up to certain level including leaf nodes.
 
     Args:
         root (ET.Element): XML Root Element
@@ -90,6 +90,4 @@ class XMLReader(BaseReader):
             file = Path(file)
 
         tree = ET.parse(file)
-        documents = self._parse_xmlelt_to_document(tree.getroot(), extra_info)
-
-        return documents
+        return self._parse_xmlelt_to_document(tree.getroot(), extra_info)

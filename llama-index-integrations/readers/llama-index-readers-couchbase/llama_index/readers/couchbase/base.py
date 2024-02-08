@@ -1,6 +1,7 @@
-"""Couchbase document loader"""
+"""Couchbase document loader."""
 
 from typing import Any, Iterable, List, Optional
+
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 

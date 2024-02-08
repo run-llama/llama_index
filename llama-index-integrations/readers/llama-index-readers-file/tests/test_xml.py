@@ -1,7 +1,7 @@
-import pytest
-
-from llama_index.readers.file.xml import XMLReader
 import xml.etree.ElementTree as ET
+
+import pytest
+from llama_index.readers.file.xml import XMLReader
 
 # Sample XML data for testing
 SAMPLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -34,7 +34,7 @@ SAMPLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 # Fixture to create a temporary XML file
-@pytest.fixture
+@pytest.fixture()
 def xml_file(tmp_path):
     file = tmp_path / "test.xml"
     with open(file, "w") as f:
