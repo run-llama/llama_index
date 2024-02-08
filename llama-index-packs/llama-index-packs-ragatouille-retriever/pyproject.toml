@@ -27,7 +27,8 @@ packages = [{include = "llama_index/"}]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
-llama-index-core = "^0.9.32"
+llama-index-core = "^0.9.55"
+llama-index-llms-openai = "^0.0.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
@@ -39,7 +40,7 @@ pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-mock = "3.11.1"
-ruff = "0.0.292"
+ruff = "^0.1.9"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"

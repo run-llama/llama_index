@@ -1,6 +1,5 @@
 """RAGatouille Retriever Pack."""
 
-
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.schema import Document, NodeWithScore, TextNode
@@ -9,7 +8,7 @@ from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.llms.openai import OpenAI
 from llama_index.core.llms.llm import LLM
 from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.retrievers import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.indices.query.schema import QueryBundle
 
@@ -69,11 +68,18 @@ class RAGatouilleRetrieverPack(BaseLlamaPack):
             )
 
         doc_txts = [doc.get_content() for doc in documents]
+        doc_ids = [doc.doc_id for doc in documents]
+        doc_metadatas = [doc.metadata for doc in documents]
 
         # index the documents
         if index_path is None:
             RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
-            index_path = RAG.index(index_name=index_name, collection=doc_txts)
+            index_path = RAG.index(
+                index_name=index_name,
+                collection=doc_txts,
+                document_ids=doc_ids,
+                document_metadatas=doc_metadatas,
+            )
         else:
             RAG = RAGPretrainedModel.from_index(index_path)
 
@@ -88,6 +94,26 @@ class RAGatouilleRetrieverPack(BaseLlamaPack):
         self.query_engine = RetrieverQueryEngine.from_args(
             self.custom_retriever, service_context=ServiceContext.from_defaults(llm=llm)
         )
+
+    def add_documents(self, documents: List[Document]) -> None:
+        """Add documents."""
+
+        doc_txts = [doc.get_content() for doc in documents]
+        doc_ids = [doc.doc_id for doc in documents]
+        doc_metadatas = [doc.metadata for doc in documents]
+
+        self.RAG.add_to_index(
+            new_collection=doc_txts,
+            new_document_ids=doc_ids,
+            new_document_metadatas=doc_metadatas,
+        )
+
+    def delete_documents(self, documents: List[Document]) -> None:
+        """Delete documents."""
+
+        doc_ids = [doc.doc_id for doc in documents]
+
+        self.RAG.delete_from_index(document_ids=doc_ids)
 
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""
