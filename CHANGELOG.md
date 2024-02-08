@@ -15,6 +15,17 @@
 - Add Cohere section for llamaindex (#10523)
 - Fix md element (#10510)
 
+## [0.9.45.post1] - 2024-02-07
+
+### New Features
+
+- Upgraded deeplake vector database to use BasePydanticVectorStore (#10504)
+
+### Bug Fixes / Nits
+
+- Fix MD parser for inconsistency tables (#10488)
+- Fix ImportError for pypdf in MetadataExtractionSEC.ipynb (#10491)
+
 ## [0.9.45] - 2024-02-07
 
 ### New Features
