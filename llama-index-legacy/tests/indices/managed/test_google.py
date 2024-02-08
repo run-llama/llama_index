@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.legacy.legacy.core.response.schema import Response
-from llama_index.legacy.legacy.schema import Document
+from llama_index.legacy.core.response.schema import Response
+from llama_index.legacy.schema import Document
 
 try:
     import google.ai.generativelanguage as genai
@@ -11,7 +11,7 @@ try:
 except ImportError:
     has_google = False
 
-from llama_index.legacy.legacy.indices.managed.google.generativeai import (
+from llama_index.legacy.indices.managed.google.generativeai import (
     GoogleIndex,
     set_google_config,
 )
@@ -20,7 +20,7 @@ SKIP_TEST_REASON = "Google GenerativeAI is not installed"
 
 
 if has_google:
-    import llama_index.legacy.legacy.vector_stores.google.generativeai.genai_extension as genaix
+    import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
 
     set_google_config(
         api_endpoint="No-such-endpoint-to-prevent-hitting-real-backend",

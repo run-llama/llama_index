@@ -4,9 +4,9 @@ import sys
 from unittest.mock import MagicMock
 
 import pytest
-from llama_index.legacy.legacy.storage.storage_context import StorageContext
-from llama_index.legacy.legacy.vector_stores.faiss import FaissVectorStore
-from llama_index.legacy.legacy.vector_stores.txtai import TxtaiVectorStore
+from llama_index.legacy.storage.storage_context import StorageContext
+from llama_index.legacy.vector_stores.faiss import FaissVectorStore
+from llama_index.legacy.vector_stores.txtai import TxtaiVectorStore
 
 from tests.indices.vector_store.mock_faiss import MockFaissIndex
 from tests.indices.vector_store.mock_txtai import MockTxtaiIndex

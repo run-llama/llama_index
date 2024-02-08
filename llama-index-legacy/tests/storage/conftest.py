@@ -4,11 +4,11 @@ from typing import Dict, Generator, Union
 import docker
 import pytest
 from docker.models.containers import Container
-from llama_index.legacy.legacy.storage.kvstore.firestore_kvstore import FirestoreKVStore
-from llama_index.legacy.legacy.storage.kvstore.mongodb_kvstore import MongoDBKVStore
-from llama_index.legacy.legacy.storage.kvstore.postgres_kvstore import PostgresKVStore
-from llama_index.legacy.legacy.storage.kvstore.redis_kvstore import RedisKVStore
-from llama_index.legacy.legacy.storage.kvstore.simple_kvstore import SimpleKVStore
+from llama_index.legacy.storage.kvstore.firestore_kvstore import FirestoreKVStore
+from llama_index.legacy.storage.kvstore.mongodb_kvstore import MongoDBKVStore
+from llama_index.legacy.storage.kvstore.postgres_kvstore import PostgresKVStore
+from llama_index.legacy.storage.kvstore.redis_kvstore import RedisKVStore
+from llama_index.legacy.storage.kvstore.simple_kvstore import SimpleKVStore
 
 from tests.storage.kvstore.mock_mongodb import MockMongoClient
 

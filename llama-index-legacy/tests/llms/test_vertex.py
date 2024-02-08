@@ -1,9 +1,9 @@
 from typing import Sequence
 
 import pytest
-from llama_index.legacy.legacy.core.llms.types import ChatMessage, CompletionResponse
-from llama_index.legacy.legacy.llms.vertex import Vertex
-from llama_index.legacy.legacy.llms.vertex_utils import init_vertexai
+from llama_index.legacy.core.llms.types import ChatMessage, CompletionResponse
+from llama_index.legacy.llms.vertex import Vertex
+from llama_index.legacy.llms.vertex_utils import init_vertexai
 
 try:
     init_vertexai()

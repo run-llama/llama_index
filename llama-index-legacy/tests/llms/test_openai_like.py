@@ -1,9 +1,9 @@
 from typing import List
 from unittest.mock import MagicMock, call, patch
 
-from llama_index.legacy.legacy.core.llms.types import ChatMessage, MessageRole
-from llama_index.legacy.legacy.llms import LOCALAI_DEFAULTS, OpenAILike
-from llama_index.legacy.legacy.llms.openai import Tokenizer
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.llms import LOCALAI_DEFAULTS, OpenAILike
+from llama_index.legacy.llms.openai import Tokenizer
 from openai.types import Completion, CompletionChoice
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
@@ -58,7 +58,7 @@ def mock_completion(text: str) -> Completion:
     )
 
 
-@patch("llama_index.legacy.llms.openai.SyncOpenAI")
+@patch("llama_index.llms.openai.SyncOpenAI")
 def test_completion(MockSyncOpenAI: MagicMock) -> None:
     mock_instance = MockSyncOpenAI.return_value
     mock_instance.completions.create.side_effect = [
@@ -102,7 +102,7 @@ def test_completion(MockSyncOpenAI: MagicMock) -> None:
     mock_instance.completions.create.assert_has_calls(expected_calls)
 
 
-@patch("llama_index.legacy.llms.openai.SyncOpenAI")
+@patch("llama_index.llms.openai.SyncOpenAI")
 def test_chat(MockSyncOpenAI: MagicMock) -> None:
     content = "placeholder"
 

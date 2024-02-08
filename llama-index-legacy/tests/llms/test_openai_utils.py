@@ -1,9 +1,9 @@
 from typing import List
 
 import pytest
-from llama_index.legacy.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.legacy.core.llms.types import ChatMessage, MessageRole
-from llama_index.legacy.legacy.llms.openai_utils import (
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.core.llms.types import ChatMessage, MessageRole
+from llama_index.legacy.llms.openai_utils import (
     from_openai_message_dicts,
     from_openai_messages,
     to_openai_message_dicts,

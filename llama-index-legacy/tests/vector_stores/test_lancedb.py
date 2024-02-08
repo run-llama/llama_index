@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-from llama_index.legacy.legacy.vector_stores.lancedb import _to_llama_similarities
+from llama_index.legacy.vector_stores.lancedb import _to_llama_similarities
 
 data_stub = {
     "id": [1, 2, 3],

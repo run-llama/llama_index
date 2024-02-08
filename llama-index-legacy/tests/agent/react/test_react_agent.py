@@ -2,23 +2,23 @@ import re
 from typing import Any, List, Sequence
 
 import pytest
-from llama_index.legacy.legacy.agent.react.base import ReActAgent
-from llama_index.legacy.legacy.agent.react.types import ObservationReasoningStep
-from llama_index.legacy.legacy.agent.types import Task
-from llama_index.legacy.legacy.bridge.pydantic import PrivateAttr
-from llama_index.legacy.legacy.chat_engine.types import (
+from llama_index.legacy.agent.react.base import ReActAgent
+from llama_index.legacy.agent.react.types import ObservationReasoningStep
+from llama_index.legacy.agent.types import Task
+from llama_index.legacy.bridge.pydantic import PrivateAttr
+from llama_index.legacy.chat_engine.types import (
     AgentChatResponse,
     StreamingAgentChatResponse,
 )
-from llama_index.legacy.legacy.core.llms.types import (
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
     MessageRole,
 )
-from llama_index.legacy.legacy.llms.mock import MockLLM
-from llama_index.legacy.legacy.tools.function_tool import FunctionTool
-from llama_index.legacy.legacy.tools.types import BaseTool
+from llama_index.legacy.llms.mock import MockLLM
+from llama_index.legacy.tools.function_tool import FunctionTool
+from llama_index.legacy.tools.types import BaseTool
 
 
 @pytest.fixture()
@@ -260,19 +260,36 @@ async def test_astream_chat_basic(
     ]
 
 
-def _get_agent(tools: List[BaseTool]) -> ReActAgent:
-    mock_llm = MockChatLLM(
-        responses=[
-            ChatMessage(
-                content=MOCK_ACTION_RESPONSE,
-                role=MessageRole.ASSISTANT,
-            ),
-            ChatMessage(
-                content=MOCK_FINAL_RESPONSE,
-                role=MessageRole.ASSISTANT,
-            ),
-        ]
-    )
+def _get_agent(
+    tools: List[BaseTool],
+    streaming: bool = False,
+) -> ReActAgent:
+    if streaming:
+        mock_llm = MockStreamChatLLM(
+            responses=[
+                ChatMessage(
+                    content=MOCK_ACTION_RESPONSE,
+                    role=MessageRole.ASSISTANT,
+                ),
+                ChatMessage(
+                    content=MOCK_STREAM_FINAL_RESPONSE,
+                    role=MessageRole.ASSISTANT,
+                ),
+            ]
+        )
+    else:
+        mock_llm = MockChatLLM(
+            responses=[
+                ChatMessage(
+                    content=MOCK_ACTION_RESPONSE,
+                    role=MessageRole.ASSISTANT,
+                ),
+                ChatMessage(
+                    content=MOCK_FINAL_RESPONSE,
+                    role=MessageRole.ASSISTANT,
+                ),
+            ]
+        )
     return ReActAgent.from_tools(
         tools=tools,
         llm=mock_llm,
@@ -302,7 +319,7 @@ def test_add_step(
     assert "tmp" in observations
 
     # stream_step
-    agent = _get_agent([add_tool])
+    agent = _get_agent([add_tool], streaming=True)
     task = agent.create_task("What is 1 + 1?")
     # first step
     step_output = agent.stream_step(task.task_id)
@@ -327,7 +344,7 @@ async def test_async_add_step(
     assert "tmp" in observations
 
     # async stream step
-    agent = _get_agent([add_tool])
+    agent = _get_agent([add_tool], streaming=True)
     task = agent.create_task("What is 1 + 1?")
     # first step
     step_output = await agent.astream_step(task.task_id)

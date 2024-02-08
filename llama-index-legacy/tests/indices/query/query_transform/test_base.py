@@ -1,9 +1,9 @@
 """Test query transform."""
 
-from llama_index.legacy.legacy.indices.query.query_transform.base import (
+from llama_index.legacy.indices.query.query_transform.base import (
     DecomposeQueryTransform,
 )
-from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.service_context import ServiceContext
 
 from tests.indices.query.query_transform.mock_utils import MOCK_DECOMPOSE_PROMPT
 

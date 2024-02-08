@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Tuple
 from unittest.mock import patch
 
 import pytest
-from llama_index.legacy.legacy.embeddings.base import BaseEmbedding
-from llama_index.legacy.legacy.indices.knowledge_graph.base import KnowledgeGraphIndex
-from llama_index.legacy.legacy.schema import Document, TextNode
-from llama_index.legacy.legacy.service_context import ServiceContext
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.indices.knowledge_graph.base import KnowledgeGraphIndex
+from llama_index.legacy.schema import Document, TextNode
+from llama_index.legacy.service_context import ServiceContext
 
 from tests.mock_utils.mock_prompts import (
     MOCK_KG_TRIPLET_EXTRACT_PROMPT,
@@ -232,6 +232,7 @@ def test__parse_triplet_response(
         )
     assert len(parsed_triplets) == 1
     assert len(parsed_triplets[0]) == 3
-    assert ("foo", "is", "bar") in parsed_triplets[0]
-    assert ("hello", "is not", "world") in parsed_triplets[0]
-    assert ("Jane", "is mother of", "Bob") in parsed_triplets[0]
+    # Expecting Capitalized triplet Outputs
+    assert ("Foo", "Is", "Bar") in parsed_triplets[0]
+    assert ("Hello", "Is not", "World") in parsed_triplets[0]
+    assert ("Jane", "Is mother of", "Bob") in parsed_triplets[0]

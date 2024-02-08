@@ -1,11 +1,11 @@
 from typing import Any, Dict
 
-from llama_index.legacy.legacy.embeddings import (
+from llama_index.legacy.embeddings import (
     HuggingFaceEmbedding,
     OpenAIEmbedding,
 )
-from llama_index.legacy.legacy.embeddings.utils import resolve_embed_model
-from llama_index.legacy.legacy.token_counter.mock_embed_model import MockEmbedding
+from llama_index.legacy.embeddings.utils import resolve_embed_model
+from llama_index.legacy.token_counter.mock_embed_model import MockEmbedding
 from pytest import MonkeyPatch
 
 
@@ -21,11 +21,11 @@ def mock_openai_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
 
 def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "llama_index.legacy.embeddings.huggingface.HuggingFaceEmbedding.__init__",
+        "llama_index.embeddings.huggingface.HuggingFaceEmbedding.__init__",
         mock_hf_embeddings,
     )
     monkeypatch.setattr(
-        "llama_index.legacy.embeddings.OpenAIEmbedding.__init__", mock_openai_embeddings
+        "llama_index.embeddings.OpenAIEmbedding.__init__", mock_openai_embeddings
     )
 
     # Test None

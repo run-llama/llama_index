@@ -3,11 +3,11 @@
 import json
 from typing import Any, Dict
 
-from llama_index.legacy.legacy.prompts.base import (
+from llama_index.legacy.prompts.base import (
     BasePromptTemplate,
 )
-from llama_index.legacy.legacy.prompts.prompt_type import PromptType
-from llama_index.legacy.legacy.token_counter.utils import mock_extract_keywords_response
+from llama_index.legacy.prompts.prompt_type import PromptType
+from llama_index.legacy.token_counter.utils import mock_extract_keywords_response
 
 
 def _mock_summary_predict(prompt_args: Dict) -> str:

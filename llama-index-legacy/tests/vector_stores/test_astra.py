@@ -1,9 +1,10 @@
-import unittest
+import os
+from typing import Iterable
 
 import pytest
-from llama_index.legacy.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.legacy.legacy.vector_stores.astra import AstraDBVectorStore
-from llama_index.legacy.legacy.vector_stores.types import VectorStoreQuery
+from llama_index.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.legacy.vector_stores.astra import AstraDBVectorStore
+from llama_index.legacy.vector_stores.types import VectorStoreQuery
 
 try:
     import astrapy
@@ -15,45 +16,54 @@ except ImportError:
     has_astrapy = False
 
 
-def get_astra_db_store() -> AstraDBVectorStore:
-    return AstraDBVectorStore(
-        token="AstraCS:<...>",
-        api_endpoint=f"https://<...>",
+# env variables
+ASTRA_DB_APPLICATION_TOKEN = os.getenv("ASTRA_DB_APPLICATION_TOKEN", "")
+ASTRA_DB_API_ENDPOINT = os.getenv("ASTRA_DB_API_ENDPOINT", "")
+
+
+@pytest.fixture(scope="module")
+def astra_db_store() -> Iterable[AstraDBVectorStore]:
+    store = AstraDBVectorStore(
+        token=ASTRA_DB_APPLICATION_TOKEN,
+        api_endpoint=ASTRA_DB_API_ENDPOINT,
         collection_name="test_collection",
         embedding_dimension=2,
-        namespace="default_keyspace",
-        ttl_seconds=123,
+    )
+    yield store
+
+    store._astra_db.delete_collection("test_collection")
+
+
+@pytest.mark.skipif(not has_astrapy, reason="astrapy not installed")
+@pytest.mark.skipif(
+    ASTRA_DB_APPLICATION_TOKEN == "" or ASTRA_DB_API_ENDPOINT == "",
+    reason="missing Astra DB credentials",
+)
+def test_astra_db_create_and_crud(astra_db_store: AstraDBVectorStore) -> None:
+    astra_db_store.add(
+        [
+            TextNode(
+                text="test node text",
+                id_="test node id",
+                relationships={
+                    NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test doc id")
+                },
+                embedding=[0.5, 0.5],
+            )
+        ]
     )
 
+    astra_db_store.delete("test node id")
 
-class TestAstraDBVectorStore(unittest.TestCase):
-    @pytest.mark.skipif(not has_astrapy, reason="astrapy not installed")
-    def test_astra_db_create_and_crud(self) -> None:
-        vector_store = get_astra_db_store()
 
-        vector_store.add(
-            [
-                TextNode(
-                    text="test node text",
-                    id_="test node id",
-                    relationships={
-                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test doc id")
-                    },
-                    embedding=[0.5, 0.5],
-                )
-            ]
-        )
+@pytest.mark.skipif(not has_astrapy, reason="astrapy not installed")
+@pytest.mark.skipif(
+    ASTRA_DB_APPLICATION_TOKEN == "" or ASTRA_DB_API_ENDPOINT == "",
+    reason="missing Astra DB credentials",
+)
+def test_astra_db_queries(astra_db_store: AstraDBVectorStore) -> None:
+    query = VectorStoreQuery(query_embedding=[1, 1], similarity_top_k=3)
 
-        vector_store.delete("test node id")
-
-        vector_store.client
-
-    @pytest.mark.skipif(not has_astrapy, reason="astrapy not installed")
-    def test_astra_db_queries(self) -> None:
-        vector_store = get_astra_db_store()
-
-        query = VectorStoreQuery(query_embedding=[1, 1], similarity_top_k=3)
-
-        vector_store.query(
-            query,
-        )
+    astra_db_store.query(
+        query,
+    )

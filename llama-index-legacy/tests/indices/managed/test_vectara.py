@@ -1,8 +1,8 @@
 from typing import List
 
 import pytest
-from llama_index.legacy.legacy.indices.managed.vectara.base import VectaraIndex
-from llama_index.legacy.legacy.schema import Document
+from llama_index.legacy.indices.managed.vectara.base import VectaraIndex
+from llama_index.legacy.schema import Document
 
 #
 # For this test to run properly, please setup as follows:

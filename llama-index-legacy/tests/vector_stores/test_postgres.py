@@ -2,16 +2,16 @@ import asyncio
 from typing import Any, Dict, Generator, List, Union, cast
 
 import pytest
-from llama_index.legacy.legacy.schema import (
+from llama_index.legacy.schema import (
     BaseNode,
     IndexNode,
     NodeRelationship,
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.legacy.legacy.vector_stores import PGVectorStore
-from llama_index.legacy.legacy.vector_stores.loading import load_vector_store
-from llama_index.legacy.legacy.vector_stores.types import (
+from llama_index.legacy.vector_stores import PGVectorStore
+from llama_index.legacy.vector_stores.loading import load_vector_store
+from llama_index.legacy.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,

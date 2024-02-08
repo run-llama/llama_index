@@ -1,7 +1,5 @@
-from llama_index.legacy.legacy.node_parser.sentence_window import (
-    SentenceWindowNodeParser,
-)
-from llama_index.legacy.legacy.schema import Document
+from llama_index.legacy.node_parser.sentence_window import SentenceWindowNodeParser
+from llama_index.legacy.schema import Document
 
 
 def test_split_and_window() -> None:

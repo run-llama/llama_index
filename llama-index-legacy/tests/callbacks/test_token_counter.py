@@ -1,7 +1,7 @@
 """Embeddings."""
 
-from llama_index.legacy.legacy.callbacks.schema import CBEventType
-from llama_index.legacy.legacy.callbacks.token_counting import TokenCountingHandler
+from llama_index.legacy.callbacks.schema import CBEventType
+from llama_index.legacy.callbacks.token_counting import TokenCountingHandler
 
 TEST_PAYLOAD = {"chunks": ["one"], "formatted_prompt": "two", "response": "three"}
 TEST_ID = "my id"

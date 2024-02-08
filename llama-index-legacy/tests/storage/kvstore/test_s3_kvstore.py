@@ -1,7 +1,7 @@
 from typing import Generator
 
 import pytest
-from llama_index.legacy.legacy.storage.kvstore.s3_kvstore import S3DBKVStore
+from llama_index.legacy.storage.kvstore.s3_kvstore import S3DBKVStore
 
 try:
     import boto3

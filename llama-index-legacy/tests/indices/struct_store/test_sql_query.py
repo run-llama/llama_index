@@ -2,16 +2,16 @@ import asyncio
 from typing import Any, Dict, Tuple
 
 import pytest
-from llama_index.legacy.legacy.indices.struct_store.base import default_output_parser
-from llama_index.legacy.legacy.indices.struct_store.sql import SQLStructStoreIndex
-from llama_index.legacy.legacy.indices.struct_store.sql_query import (
+from llama_index.legacy.indices.struct_store.base import default_output_parser
+from llama_index.legacy.indices.struct_store.sql import SQLStructStoreIndex
+from llama_index.legacy.indices.struct_store.sql_query import (
     NLSQLTableQueryEngine,
     NLStructStoreQueryEngine,
     SQLStructStoreQueryEngine,
 )
-from llama_index.legacy.legacy.schema import Document
-from llama_index.legacy.legacy.service_context import ServiceContext
-from llama_index.legacy.legacy.utilities.sql_wrapper import SQLDatabase
+from llama_index.legacy.schema import Document
+from llama_index.legacy.service_context import ServiceContext
+from llama_index.legacy.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
 from sqlalchemy.exc import OperationalError
 

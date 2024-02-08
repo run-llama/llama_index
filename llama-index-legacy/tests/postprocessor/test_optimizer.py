@@ -3,9 +3,9 @@
 from typing import Any, List
 from unittest.mock import patch
 
-from llama_index.legacy.legacy.embeddings.openai import OpenAIEmbedding
-from llama_index.legacy.legacy.postprocessor.optimizer import SentenceEmbeddingOptimizer
-from llama_index.legacy.legacy.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.legacy.embeddings.openai import OpenAIEmbedding
+from llama_index.legacy.postprocessor.optimizer import SentenceEmbeddingOptimizer
+from llama_index.legacy.schema import NodeWithScore, QueryBundle, TextNode
 
 
 def mock_tokenizer_fn(text: str) -> List[str]:

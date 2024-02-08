@@ -1,6 +1,6 @@
 """Test String Iterable Reader."""
 
-from llama_index.legacy.legacy.readers.string_iterable import StringIterableReader
+from llama_index.legacy.readers.string_iterable import StringIterableReader
 
 
 def test_load() -> None:

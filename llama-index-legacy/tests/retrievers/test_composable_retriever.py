@@ -1,5 +1,5 @@
-from llama_index.legacy.legacy import SummaryIndex
-from llama_index.legacy.legacy.schema import IndexNode, TextNode
+from llama_index.legacy import SummaryIndex
+from llama_index.legacy.schema import IndexNode, TextNode
 
 
 def test_composable_retrieval() -> None:

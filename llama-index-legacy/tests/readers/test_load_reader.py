@@ -2,10 +2,10 @@ import importlib.util
 from typing import cast
 
 import pytest
-from llama_index.legacy.legacy.readers.loading import load_reader
-from llama_index.legacy.legacy.readers.notion import NotionPageReader
-from llama_index.legacy.legacy.readers.string_iterable import StringIterableReader
-from llama_index.legacy.legacy.readers.web import BeautifulSoupWebReader
+from llama_index.legacy.readers.loading import load_reader
+from llama_index.legacy.readers.notion import NotionPageReader
+from llama_index.legacy.readers.string_iterable import StringIterableReader
+from llama_index.legacy.readers.web import BeautifulSoupWebReader
 
 
 @pytest.mark.xfail(

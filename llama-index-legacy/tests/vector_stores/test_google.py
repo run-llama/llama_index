@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.legacy.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.legacy.legacy.vector_stores.types import (
+from llama_index.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.legacy.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,
@@ -15,7 +15,7 @@ try:
 except ImportError:
     has_google = False
 
-from llama_index.legacy.legacy.vector_stores.google.generativeai import (
+from llama_index.legacy.vector_stores.google.generativeai import (
     GoogleVectorStore,
     set_google_config,
 )
@@ -24,7 +24,7 @@ SKIP_TEST_REASON = "Google GenerativeAI is not installed"
 
 
 if has_google:
-    import llama_index.legacy.legacy.vector_stores.google.generativeai.genai_extension as genaix
+    import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
 
     # Make sure the tests do not hit actual production servers.
     set_google_config(

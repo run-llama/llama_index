@@ -1,8 +1,8 @@
 import pytest
-from llama_index.legacy.legacy.node_parser.relational.unstructured_element import (
+from llama_index.legacy.node_parser.relational.unstructured_element import (
     UnstructuredElementNodeParser,
 )
-from llama_index.legacy.legacy.schema import Document, IndexNode, TextNode
+from llama_index.legacy.schema import Document, IndexNode, TextNode
 
 try:
     from unstructured.partition.html import partition_html

@@ -7,10 +7,10 @@ try:
 except ImportError:
     qdrant_client = None  # type: ignore
 
-from llama_index.legacy.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.legacy.legacy.vector_stores import QdrantVectorStore
-from llama_index.legacy.legacy.vector_stores.qdrant_utils import relative_score_fusion
-from llama_index.legacy.legacy.vector_stores.types import (
+from llama_index.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.legacy.vector_stores import QdrantVectorStore
+from llama_index.legacy.vector_stores.qdrant_utils import relative_score_fusion
+from llama_index.legacy.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,

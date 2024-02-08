@@ -1,7 +1,7 @@
-from llama_index.legacy.legacy.node_parser.text.semantic_splitter import (
+from llama_index.legacy.node_parser.text.semantic_splitter import (
     SemanticSplitterNodeParser,
 )
-from llama_index.legacy.legacy.schema import Document
+from llama_index.legacy.schema import Document
 from tests.playground.test_base import MockEmbedding
 
 

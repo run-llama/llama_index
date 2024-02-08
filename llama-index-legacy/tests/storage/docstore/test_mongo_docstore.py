@@ -1,9 +1,9 @@
 from typing import List
 
 import pytest
-from llama_index.legacy.legacy.schema import BaseNode, Document
-from llama_index.legacy.legacy.storage.docstore.mongo_docstore import MongoDocumentStore
-from llama_index.legacy.legacy.storage.kvstore.mongodb_kvstore import MongoDBKVStore
+from llama_index.legacy.schema import BaseNode, Document
+from llama_index.legacy.storage.docstore.mongo_docstore import MongoDocumentStore
+from llama_index.legacy.storage.kvstore.mongodb_kvstore import MongoDBKVStore
 
 try:
     from pymongo import MongoClient

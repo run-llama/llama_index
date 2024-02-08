@@ -1,17 +1,15 @@
 import pytest
-from llama_index.legacy.legacy import (
+from llama_index.legacy import (
     Document,
     ServiceContext,
     TreeIndex,
 )
-from llama_index.legacy.legacy.indices.tree.select_leaf_retriever import (
+from llama_index.legacy.indices.tree.select_leaf_retriever import (
     TreeSelectLeafRetriever,
 )
-from llama_index.legacy.legacy.llms import Anthropic
-from llama_index.legacy.legacy.llms.openai import OpenAI
-from llama_index.legacy.legacy.query_engine.retriever_query_engine import (
-    RetrieverQueryEngine,
-)
+from llama_index.legacy.llms import Anthropic
+from llama_index.legacy.llms.openai import OpenAI
+from llama_index.legacy.query_engine.retriever_query_engine import RetrieverQueryEngine
 
 try:
     import anthropic

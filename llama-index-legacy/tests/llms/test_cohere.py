@@ -1,14 +1,14 @@
 from typing import Any
 
 import pytest
-from llama_index.legacy.legacy.core.llms.types import ChatMessage
+from llama_index.legacy.core.llms.types import ChatMessage
 from pytest import MonkeyPatch
 
 try:
     import cohere
 except ImportError:
     cohere = None  # type: ignore
-from llama_index.legacy.legacy.llms.cohere import Cohere
+from llama_index.legacy.llms.cohere import Cohere
 
 
 def mock_completion_with_retry(*args: Any, **kwargs: Any) -> dict:
@@ -112,8 +112,7 @@ async def mock_achat_with_retry(*args: Any, **kwargs: Any) -> dict:
 @pytest.mark.skipif(cohere is None, reason="cohere not installed")
 def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "llama_index.legacy.llms.cohere.completion_with_retry",
-        mock_completion_with_retry,
+        "llama_index.llms.cohere.completion_with_retry", mock_completion_with_retry
     )
     mock_api_key = "fake_key"
     llm = Cohere(model="command", api_key=mock_api_key)
@@ -122,7 +121,7 @@ def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
     assert response.text == "\n\nThis is indeed a test"
 
     monkeypatch.setattr(
-        "llama_index.legacy.llms.cohere.completion_with_retry", mock_chat_with_retry
+        "llama_index.llms.cohere.completion_with_retry", mock_chat_with_retry
     )
 
     message = ChatMessage(role="user", content=test_prompt)
@@ -135,8 +134,7 @@ def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
 async def test_async(monkeypatch: MonkeyPatch) -> None:
     mock_api_key = "fake_key"
     monkeypatch.setattr(
-        "llama_index.legacy.llms.cohere.acompletion_with_retry",
-        mock_acompletion_with_retry,
+        "llama_index.llms.cohere.acompletion_with_retry", mock_acompletion_with_retry
     )
     llm = Cohere(model="command", api_key=mock_api_key)
     test_prompt = "test prompt"
@@ -144,7 +142,7 @@ async def test_async(monkeypatch: MonkeyPatch) -> None:
     assert response.text == "\n\nThis is indeed a test"
 
     monkeypatch.setattr(
-        "llama_index.legacy.llms.cohere.acompletion_with_retry", mock_achat_with_retry
+        "llama_index.llms.cohere.acompletion_with_retry", mock_achat_with_retry
     )
     message = ChatMessage(role="user", content=test_prompt)
     chat_response = await llm.achat([message])

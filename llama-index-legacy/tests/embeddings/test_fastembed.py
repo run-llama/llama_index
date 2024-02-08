@@ -1,7 +1,7 @@
 from typing import Literal
 
 import pytest
-from llama_index.legacy.legacy.embeddings import FastEmbedEmbedding
+from llama_index.legacy.embeddings import FastEmbedEmbedding
 
 try:
     import fastembed

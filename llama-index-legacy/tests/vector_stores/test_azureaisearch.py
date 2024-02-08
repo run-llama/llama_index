@@ -2,17 +2,19 @@ from typing import Any, List, Optional
 from unittest.mock import MagicMock
 
 import pytest
-from llama_index.legacy.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.legacy.legacy.vector_stores import CognitiveSearchVectorStore
-from llama_index.legacy.legacy.vector_stores.cogsearch import IndexManagement
+from llama_index.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.legacy.vector_stores.azureaisearch import (
+    AzureAISearchVectorStore,
+    IndexManagement,
+)
 
 try:
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
 
-    cogsearch_installed = True
+    azureaisearch_installed = True
 except ImportError:
-    cogsearch_installed = False
+    azureaisearch_installed = False
     search_client = None  # type: ignore
 
 
@@ -20,16 +22,18 @@ def create_mock_vector_store(
     search_client: Any,
     index_name: Optional[str] = None,
     index_management: IndexManagement = IndexManagement.NO_VALIDATION,
-) -> CognitiveSearchVectorStore:
-    return CognitiveSearchVectorStore(
+) -> AzureAISearchVectorStore:
+    return AzureAISearchVectorStore(
         search_or_index_client=search_client,
         id_field_key="id",
         chunk_field_key="content",
         embedding_field_key="embedding",
-        metadata_string_field_key="li_jsonMetadata",
-        doc_id_field_key="li_doc_id",
+        metadata_string_field_key="metadata",
+        doc_id_field_key="doc_id",
+        filterable_metadata_field_keys=[],  # Added to match the updated constructor
         index_name=index_name,
         index_management=index_management,
+        embedding_dimensionality=2,  # Assuming a dimensionality of 2 for simplicity
     )
 
 
@@ -51,9 +55,9 @@ def create_sample_documents(n: int) -> List[TextNode]:
 
 
 @pytest.mark.skipif(
-    not cogsearch_installed, reason="azure-search-documents package not installed"
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_cogsearch_add_two_batches() -> None:
+def test_azureaisearch_add_two_batches() -> None:
     search_client = MagicMock(spec=SearchClient)
     vector_store = create_mock_vector_store(search_client)
 
@@ -69,9 +73,9 @@ def test_cogsearch_add_two_batches() -> None:
 
 
 @pytest.mark.skipif(
-    not cogsearch_installed, reason="azure-search-documents package not installed"
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_cogsearch_add_one_batch() -> None:
+def test_azureaisearch_add_one_batch() -> None:
     search_client = MagicMock(spec=SearchClient)
     vector_store = create_mock_vector_store(search_client)
 
@@ -87,7 +91,7 @@ def test_cogsearch_add_one_batch() -> None:
 
 
 @pytest.mark.skipif(
-    not cogsearch_installed, reason="azure-search-documents package not installed"
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
 def test_invalid_index_management_for_searchclient() -> None:
     search_client = MagicMock(spec=SearchClient)
@@ -114,13 +118,23 @@ def test_invalid_index_management_for_searchclient() -> None:
 
 
 @pytest.mark.skipif(
-    not cogsearch_installed, reason="azure-search-documents package not installed"
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
 def test_invalid_index_management_for_searchindexclient() -> None:
     search_client = MagicMock(spec=SearchIndexClient)
 
     # Index name must be supplied
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="index_name must be supplied if search_or_index_client is of type azure.search.documents.SearchIndexClient",
+    ):
         create_mock_vector_store(
             search_client, index_management=IndexManagement.VALIDATE_INDEX
         )
+
+    # No error when index name is supplied with SearchIndexClient
+    create_mock_vector_store(
+        search_client,
+        index_name="test01",
+        index_management=IndexManagement.CREATE_IF_NOT_EXISTS,
+    )

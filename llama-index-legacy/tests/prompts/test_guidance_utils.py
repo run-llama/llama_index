@@ -1,7 +1,7 @@
 from typing import List
 
-from llama_index.legacy.legacy.bridge.pydantic import BaseModel
-from llama_index.legacy.legacy.prompts.guidance_utils import (
+from llama_index.legacy.bridge.pydantic import BaseModel
+from llama_index.legacy.prompts.guidance_utils import (
     convert_to_handlebars,
     pydantic_to_guidance_output_template,
 )

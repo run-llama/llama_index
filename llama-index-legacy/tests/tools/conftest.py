@@ -3,7 +3,7 @@
 from typing import List
 
 import pytest
-from llama_index.legacy.legacy.schema import Document
+from llama_index.legacy.schema import Document
 
 
 @pytest.fixture()

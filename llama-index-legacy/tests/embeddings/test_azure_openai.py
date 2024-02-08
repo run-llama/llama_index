@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock, patch
 
 import httpx
-from llama_index.legacy.legacy.embeddings import AzureOpenAIEmbedding
+from llama_index.legacy.embeddings import AzureOpenAIEmbedding
 
 
-@patch("llama_index.legacy.embeddings.azure_openai.AzureOpenAI")
+@patch("llama_index.embeddings.azure_openai.AzureOpenAI")
 def test_custom_http_client(azure_openai_mock: MagicMock) -> None:
     """
     Verify that a custom http_client set for AzureOpenAIEmbedding.

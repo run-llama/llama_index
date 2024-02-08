@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from llama_index.legacy.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.legacy.legacy.vector_stores import (
+from llama_index.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.legacy.vector_stores import (
     DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
 )
-from llama_index.legacy.legacy.vector_stores.types import (
+from llama_index.legacy.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,

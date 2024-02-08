@@ -1,12 +1,12 @@
 from unittest.mock import MagicMock, patch
 
 import httpx
-from llama_index.legacy.legacy.llms import AzureOpenAI
+from llama_index.legacy.llms import AzureOpenAI
 
 from tests.llms.test_openai import mock_chat_completion_v1
 
 
-@patch("llama_index.legacy.llms.azure_openai.SyncAzureOpenAI")
+@patch("llama_index.llms.azure_openai.SyncAzureOpenAI")
 def test_custom_http_client(sync_azure_openai_mock: MagicMock) -> None:
     """
     Verify that a custom http_client set for AzureOpenAI.

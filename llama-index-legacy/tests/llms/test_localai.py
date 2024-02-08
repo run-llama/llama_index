@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.legacy.legacy.core.llms.types import ChatMessage
-from llama_index.legacy.legacy.llms import LocalAI
+from llama_index.legacy.core.llms.types import ChatMessage
+from llama_index.legacy.llms import LocalAI
 from openai.types import Completion, CompletionChoice
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
@@ -50,7 +50,7 @@ def mock_completion(text: str) -> Completion:
 
 
 @pytest.mark.filterwarnings("ignore:LocalAI subclass is deprecated")
-@patch("llama_index.legacy.llms.openai.SyncOpenAI")
+@patch("llama_index.llms.openai.SyncOpenAI")
 def test_completion(MockSyncOpenAI: MagicMock) -> None:
     text = "placeholder"
 
@@ -66,7 +66,7 @@ def test_completion(MockSyncOpenAI: MagicMock) -> None:
 
 
 @pytest.mark.filterwarnings("ignore:LocalAI subclass is deprecated")
-@patch("llama_index.legacy.llms.openai.SyncOpenAI")
+@patch("llama_index.llms.openai.SyncOpenAI")
 def test_chat(MockSyncOpenAI: MagicMock) -> None:
     content = "placeholder"
 

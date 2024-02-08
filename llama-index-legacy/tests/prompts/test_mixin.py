@@ -1,7 +1,7 @@
 """Test prompt mixin."""
 
-from llama_index.legacy.legacy.prompts.base import PromptTemplate
-from llama_index.legacy.legacy.prompts.mixin import (
+from llama_index.legacy.prompts.base import PromptTemplate
+from llama_index.legacy.prompts.mixin import (
     PromptDictType,
     PromptMixin,
     PromptMixinType,

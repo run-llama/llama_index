@@ -1,6 +1,6 @@
 """Test utils."""
 
-from llama_index.legacy.legacy.indices.keyword_table.utils import (
+from llama_index.legacy.indices.keyword_table.utils import (
     extract_keywords_given_response,
 )
 

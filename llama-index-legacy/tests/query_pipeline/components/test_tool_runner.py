@@ -1,10 +1,8 @@
 """Test components."""
 
-from llama_index.legacy.legacy.query_pipeline.components.tool_runner import (
-    ToolRunnerComponent,
-)
-from llama_index.legacy.legacy.tools.function_tool import FunctionTool
-from llama_index.legacy.legacy.tools.types import ToolMetadata
+from llama_index.legacy.query_pipeline.components.tool_runner import ToolRunnerComponent
+from llama_index.legacy.tools.function_tool import FunctionTool
+from llama_index.legacy.tools.types import ToolMetadata
 
 
 def foo_fn(a: int, b: int = 1, c: int = 2) -> int:

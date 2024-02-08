@@ -1,9 +1,9 @@
 import json
 import time
 
-from llama_index.legacy.legacy.schema import TextNode
-from llama_index.legacy.legacy.vector_stores.jaguar import JaguarVectorStore
-from llama_index.legacy.legacy.vector_stores.types import (
+from llama_index.legacy.schema import TextNode
+from llama_index.legacy.vector_stores.jaguar import JaguarVectorStore
+from llama_index.legacy.vector_stores.types import (
     VectorStoreQuery,
 )
 

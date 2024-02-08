@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Union
 
 import pytest
-from llama_index.legacy.legacy.llms import ChatMessage
+from llama_index.legacy.llms import ChatMessage
 from pytest import MonkeyPatch
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ except ImportError:
     ai21 = None  # type: ignore
 
 
-from llama_index.legacy.legacy.llms.ai21 import AI21
+from llama_index.legacy.llms.ai21 import AI21
 
 
 def mock_completion(*args: Any, **kwargs: Any) -> Union[Any, "AI21Object"]:

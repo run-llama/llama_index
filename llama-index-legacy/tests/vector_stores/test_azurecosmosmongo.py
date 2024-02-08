@@ -21,11 +21,11 @@ try:
 except (ImportError, Exception):
     pymongo_available = False
 
-from llama_index.legacy.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.legacy.legacy.vector_stores.azurecosmosmongo import (
+from llama_index.legacy.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.legacy.vector_stores.azurecosmosmongo import (
     AzureCosmosDBMongoDBVectorSearch,
 )
-from llama_index.legacy.legacy.vector_stores.types import VectorStoreQuery
+from llama_index.legacy.vector_stores.types import VectorStoreQuery
 
 
 @pytest.fixture(scope="session")
