@@ -8,7 +8,4 @@ Currently, we support security patches by committing changes and bumping the ver
 
 Found a vulnerability? Please email us:
 
-- logan@llamaindex.ai
-- andrei@llamaindex.ai
-- simon@llamaindex.ai
-- jerry@llamaindex.ai
+- security@llamaindex.ai
