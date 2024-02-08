@@ -1,8 +1,8 @@
 # Required Environment Variables: OPENAI_API_KEY
 
 from pathlib import Path
-from llama_index import download_loader
-from llama_index.llama_pack import download_llama_pack
+from llama_index.core import download_loader
+from llama_index.core.llama_pack import download_llama_pack
 from llama_index.llms.openai import OpenAI
 
 # download and install dependencies
