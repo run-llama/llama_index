@@ -14,12 +14,12 @@ This loader takes in IDs of PDF, DOCX or DOC files processed by [Docugami](https
 To use this loader, you simply need to pass in a Docugami Doc Set ID, and optionally an array of Document IDs (by default, all documents in the Doc Set are loaded).
 
 ```python
-from llama_index import download_loader
+from llama_index.core import download_loader
 
 DocugamiReader = download_loader("DocugamiReader")
 
-docset_id = "ecxqpipcoe2p"
-document_ids = ["43rj0ds7s0ur", "bpc1vibyeke2"]
+docset_id = "tjwrr2ekqkc3"
+document_ids = ["ui7pkriyckwi", "1be3o7ch10iy"]
 
 loader = DocugamiReader()
 documents = loader.load_data(docset_id=docset_id, document_ids=document_ids)
