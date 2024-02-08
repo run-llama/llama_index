@@ -7,7 +7,9 @@ import pytest
 from llama_index.legacy.data_structs.data_structs import IndexStruct
 from llama_index.legacy.embeddings.base import BaseEmbedding
 from llama_index.legacy.indices.composability.graph import ComposableGraph
-from llama_index.legacy.indices.keyword_table.simple_base import SimpleKeywordTableIndex
+from llama_index.legacy.indices.keyword_table.simple_base import (
+    SimpleKeywordTableIndex,
+)
 from llama_index.legacy.indices.vector_store.base import VectorStoreIndex
 from llama_index.legacy.schema import Document
 from llama_index.legacy.service_context import ServiceContext

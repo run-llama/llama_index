@@ -26,7 +26,10 @@ try:
         )
 
     from llama_index.legacy.llms.langchain import LangChainLLM
-    from llama_index.legacy.llms.langchain_utils import from_lc_messages, to_lc_messages
+    from llama_index.legacy.llms.langchain_utils import (
+        from_lc_messages,
+        to_lc_messages,
+    )
 
 except ImportError:
     langchain = None  # type: ignore

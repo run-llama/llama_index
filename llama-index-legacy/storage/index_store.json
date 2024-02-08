@@ -1,8 +1,8 @@
 {
   "index_store/data": {
-    "33a37059-8f2e-4a01-90cb-f5b2a835bbe5": {
+    "08629ea0-de9d-4d38-b2b4-df95ff78dc98": {
       "__type__": "list",
-      "__data__": "{\"index_id\": \"33a37059-8f2e-4a01-90cb-f5b2a835bbe5\", \"summary\": null, \"nodes\": [\"f1ab4ed5-487d-491c-adb3-9ddc39f2a300\", \"7527ab26-40ef-449a-87c1-74d477db59e2\", \"baf0b970-7a22-4c9e-9a0b-e2bb2d7f7cc3\"]}"
+      "__data__": "{\"index_id\": \"08629ea0-de9d-4d38-b2b4-df95ff78dc98\", \"summary\": null, \"nodes\": [\"1f609c8c-1b4a-4f57-acf4-a2df02cf2ad9\", \"13531e69-e7af-4b48-9985-82df1e99c341\", \"6adaa8f9-71f3-4daf-802d-9dca8f874a3c\"]}"
     }
   }
 }

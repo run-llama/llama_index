@@ -3,7 +3,10 @@
 import asyncio
 from typing import List
 
-from llama_index.legacy.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.legacy.constants import (
+    DEFAULT_CONTEXT_WINDOW,
+    DEFAULT_NUM_OUTPUTS,
+)
 from llama_index.legacy.indices.prompt_helper import PromptHelper
 from llama_index.legacy.prompts.base import PromptTemplate
 from llama_index.legacy.prompts.prompt_type import PromptType

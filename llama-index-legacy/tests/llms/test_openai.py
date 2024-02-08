@@ -249,7 +249,7 @@ def mock_chat_completion_stream_v1(
     yield from responses
 
 
-@patch("llama_index.llms.openai.SyncOpenAI")
+@patch("llama_index.legacy.llms.openai.SyncOpenAI")
 def test_completion_model_basic(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -266,7 +266,7 @@ def test_completion_model_basic(MockSyncOpenAI: MagicMock) -> None:
         assert chat_response.message.content == "\n\nThis is indeed a test"
 
 
-@patch("llama_index.llms.openai.SyncOpenAI")
+@patch("llama_index.legacy.llms.openai.SyncOpenAI")
 def test_chat_model_basic(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -283,7 +283,7 @@ def test_chat_model_basic(MockSyncOpenAI: MagicMock) -> None:
         assert chat_response.message.content == "\n\nThis is a test!"
 
 
-@patch("llama_index.llms.openai.SyncOpenAI")
+@patch("llama_index.legacy.llms.openai.SyncOpenAI")
 def test_completion_model_streaming(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -303,7 +303,7 @@ def test_completion_model_streaming(MockSyncOpenAI: MagicMock) -> None:
         assert chat_responses[-1].message.content == "12"
 
 
-@patch("llama_index.llms.openai.SyncOpenAI")
+@patch("llama_index.legacy.llms.openai.SyncOpenAI")
 def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -329,7 +329,7 @@ def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
 
 
 @pytest.mark.asyncio()
-@patch("llama_index.llms.openai.AsyncOpenAI")
+@patch("llama_index.legacy.llms.openai.AsyncOpenAI")
 async def test_completion_model_async(MockAsyncOpenAI: MagicMock) -> None:
     mock_instance = MockAsyncOpenAI.return_value
     create_fn = AsyncMock()
@@ -348,7 +348,7 @@ async def test_completion_model_async(MockAsyncOpenAI: MagicMock) -> None:
 
 
 @pytest.mark.asyncio()
-@patch("llama_index.llms.openai.AsyncOpenAI")
+@patch("llama_index.legacy.llms.openai.AsyncOpenAI")
 async def test_completion_model_async_streaming(MockAsyncOpenAI: MagicMock) -> None:
     mock_instance = MockAsyncOpenAI.return_value
     create_fn = AsyncMock()

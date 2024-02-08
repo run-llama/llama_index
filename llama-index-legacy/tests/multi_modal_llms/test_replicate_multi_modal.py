@@ -39,7 +39,8 @@ def mock_completion(*args: Any, **kwargs: Any) -> dict:
 
 def test_completion_model_basic(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "llama_index.multi_modal_llms.ReplicateMultiModal.complete", mock_completion
+        "llama_index.legacy.multi_modal_llms.ReplicateMultiModal.complete",
+        mock_completion,
     )
 
     llm = ReplicateMultiModal(model="llava")

@@ -2,7 +2,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
-from llama_index.legacy.embeddings.huggingface import HuggingFaceInferenceAPIEmbedding
+from llama_index.legacy.embeddings.huggingface import (
+    HuggingFaceInferenceAPIEmbedding,
+)
 from llama_index.legacy.embeddings.pooling import Pooling
 
 from tests.llms.test_huggingface import STUB_MODEL_NAME

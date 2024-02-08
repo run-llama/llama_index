@@ -2,7 +2,9 @@ from typing import List
 
 import pytest
 from llama_index.legacy.schema import BaseNode, Document
-from llama_index.legacy.storage.docstore.postgres_docstore import PostgresDocumentStore
+from llama_index.legacy.storage.docstore.postgres_docstore import (
+    PostgresDocumentStore,
+)
 from llama_index.legacy.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 try:

@@ -23,7 +23,9 @@ from llama_index.legacy.schema import (
     TextNode,
 )
 from llama_index.legacy.service_context import ServiceContext
-from llama_index.legacy.storage.docstore.simple_docstore import SimpleDocumentStore
+from llama_index.legacy.storage.docstore.simple_docstore import (
+    SimpleDocumentStore,
+)
 
 spacy_installed = bool(find_spec("spacy"))
 

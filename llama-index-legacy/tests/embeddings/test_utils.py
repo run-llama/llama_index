@@ -21,11 +21,11 @@ def mock_openai_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
 
 def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "llama_index.embeddings.huggingface.HuggingFaceEmbedding.__init__",
+        "llama_index.legacy.embeddings.huggingface.HuggingFaceEmbedding.__init__",
         mock_hf_embeddings,
     )
     monkeypatch.setattr(
-        "llama_index.embeddings.OpenAIEmbedding.__init__", mock_openai_embeddings
+        "llama_index.legacy.embeddings.OpenAIEmbedding.__init__", mock_openai_embeddings
     )
 
     # Test None

@@ -41,7 +41,7 @@ def test_init(sql_database: SQLDatabase) -> None:
 # NOTE: Test is failing after removing langchain for some reason.
 # # Test from_uri method
 # def test_from_uri(mocker: MockerFixture) -> None:
-#     mocked = mocker.patch("llama_index.utilities.sql_wrapper.create_engine")
+#     mocked = mocker.patch("llama_index.legacy.utilities.sql_wrapper.create_engine")
 #     SQLDatabase.from_uri("sqlite:///:memory:")
 #     mocked.assert_called_once_with("sqlite:///:memory:", **{})
 

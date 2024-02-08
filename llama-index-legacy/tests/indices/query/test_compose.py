@@ -3,7 +3,9 @@
 from typing import Dict, List
 
 from llama_index.legacy.indices.composability.graph import ComposableGraph
-from llama_index.legacy.indices.keyword_table.simple_base import SimpleKeywordTableIndex
+from llama_index.legacy.indices.keyword_table.simple_base import (
+    SimpleKeywordTableIndex,
+)
 from llama_index.legacy.indices.list.base import SummaryIndex
 from llama_index.legacy.indices.tree.base import TreeIndex
 from llama_index.legacy.schema import Document

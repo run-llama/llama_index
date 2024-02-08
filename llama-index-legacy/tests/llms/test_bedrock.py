@@ -162,7 +162,7 @@ def test_model_basic(
 
 def test_model_streaming(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "llama_index.llms.bedrock.completion_with_retry",
+        "llama_index.legacy.llms.bedrock.completion_with_retry",
         MockStreamCompletionWithRetry("test prompt").mock_stream_completion_with_retry,
     )
     llm = Bedrock(
@@ -177,7 +177,7 @@ def test_model_streaming(monkeypatch: MonkeyPatch) -> None:
     assert response[-1].text == "\n\nThis is indeed a test"
 
     monkeypatch.setattr(
-        "llama_index.llms.bedrock.completion_with_retry",
+        "llama_index.legacy.llms.bedrock.completion_with_retry",
         MockStreamCompletionWithRetry(
             "user: test prompt\nassistant: "
         ).mock_stream_completion_with_retry,

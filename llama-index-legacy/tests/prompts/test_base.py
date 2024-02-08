@@ -16,11 +16,16 @@ from llama_index.legacy.types import BaseOutputParser
 
 try:
     import langchain
-    from llama_index.legacy.bridge.langchain import BaseLanguageModel, FakeListLLM
+    from llama_index.legacy.bridge.langchain import (
+        BaseLanguageModel,
+        FakeListLLM,
+    )
     from llama_index.legacy.bridge.langchain import (
         ConditionalPromptSelector as LangchainSelector,
     )
-    from llama_index.legacy.bridge.langchain import PromptTemplate as LangchainTemplate
+    from llama_index.legacy.bridge.langchain import (
+        PromptTemplate as LangchainTemplate,
+    )
     from llama_index.legacy.llms.langchain import LangChainLLM
 except ImportError:
     langchain = None  # type: ignore

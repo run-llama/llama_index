@@ -92,7 +92,7 @@ def test_tool_object_node_mapping() -> None:
 def test_sql_table_node_mapping_to_node(mocker: MockerFixture) -> None:
     """Test to add node for sql table node mapping object to ensure no 'None' values in metadata output to avoid issues with nulls when upserting to indexes."""
     mocker.patch(
-        "llama_index.utilities.sql_wrapper.SQLDatabase.get_single_table_info",
+        "llama_index.legacy.utilities.sql_wrapper.SQLDatabase.get_single_table_info",
         return_value="",
     )
 

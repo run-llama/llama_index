@@ -110,7 +110,7 @@ class ServiceContext:
         If an argument is specified, then use the argument value provided for that
         parameter. If an argument is not specified, then use the default value.
 
-        You can change the base defaults by setting llama_index.global_service_context
+        You can change the base defaults by setting llama_index.legacy.global_service_context
         to a ServiceContext object with your desired settings.
 
         Args:
@@ -141,9 +141,9 @@ class ServiceContext:
             )
             chunk_size = chunk_size_limit
 
-        if llama_index.global_service_context is not None:
+        if llama_index.legacy.global_service_context is not None:
             return cls.from_service_context(
-                llama_index.global_service_context,
+                llama_index.legacy.global_service_context,
                 llm=llm,
                 llm_predictor=llm_predictor,
                 prompt_helper=prompt_helper,
@@ -387,4 +387,4 @@ class ServiceContext:
 
 def set_global_service_context(service_context: Optional[ServiceContext]) -> None:
     """Helper function to set the global service context."""
-    llama_index.global_service_context = service_context
+    llama_index.legacy.global_service_context = service_context

@@ -2,7 +2,9 @@ from typing import Any, List
 from unittest.mock import patch
 
 from llama_index.legacy.indices.list.base import SummaryIndex
-from llama_index.legacy.indices.list.retrievers import SummaryIndexEmbeddingRetriever
+from llama_index.legacy.indices.list.retrievers import (
+    SummaryIndexEmbeddingRetriever,
+)
 from llama_index.legacy.llms.mock import MockLLM
 from llama_index.legacy.prompts import BasePromptTemplate
 from llama_index.legacy.schema import Document

@@ -5,7 +5,9 @@ import pytest
 from llama_index.legacy.bridge.pydantic import BaseModel
 from llama_index.legacy.callbacks import CallbackManager
 from llama_index.legacy.response_synthesizers import Refine
-from llama_index.legacy.response_synthesizers.refine import StructuredRefineResponse
+from llama_index.legacy.response_synthesizers.refine import (
+    StructuredRefineResponse,
+)
 from llama_index.legacy.service_context import ServiceContext
 from llama_index.legacy.types import BasePydanticProgram
 

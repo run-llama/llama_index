@@ -4,7 +4,9 @@ except ImportError:
     MockLLM = None  # type: ignore
 import pytest
 from llama_index.legacy.output_parsers.base import OutputParserException
-from llama_index.legacy.question_gen.guidance_generator import GuidanceQuestionGenerator
+from llama_index.legacy.question_gen.guidance_generator import (
+    GuidanceQuestionGenerator,
+)
 from llama_index.legacy.schema import QueryBundle
 from llama_index.legacy.tools.types import ToolMetadata
 

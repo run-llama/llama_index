@@ -11,7 +11,9 @@ from llama_index.legacy.core.response.schema import Response
 from llama_index.legacy.indices.query.schema import QueryBundle
 from llama_index.legacy.indices.service_context import ServiceContext
 from llama_index.legacy.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
-from llama_index.legacy.query_engine.pandas.output_parser import PandasInstructionParser
+from llama_index.legacy.query_engine.pandas.output_parser import (
+    PandasInstructionParser,
+)
 from llama_index.legacy.query_engine.pandas.pandas_query_engine import (
     PandasQueryEngine,
 )

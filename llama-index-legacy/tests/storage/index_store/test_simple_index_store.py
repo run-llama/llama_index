@@ -1,5 +1,7 @@
 from llama_index.legacy.data_structs.data_structs import IndexGraph
-from llama_index.legacy.storage.index_store.simple_index_store import SimpleIndexStore
+from llama_index.legacy.storage.index_store.simple_index_store import (
+    SimpleIndexStore,
+)
 
 
 def test_simple_index_store_dict() -> None:

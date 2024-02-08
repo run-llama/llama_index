@@ -7,7 +7,9 @@ from llama_index.legacy.indices.struct_store.sql import (
     SQLContextContainerBuilder,
     SQLStructStoreIndex,
 )
-from llama_index.legacy.indices.struct_store.sql_query import NLStructStoreQueryEngine
+from llama_index.legacy.indices.struct_store.sql_query import (
+    NLStructStoreQueryEngine,
+)
 from llama_index.legacy.schema import (
     BaseNode,
     Document,

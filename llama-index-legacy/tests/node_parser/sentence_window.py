@@ -1,4 +1,6 @@
-from llama_index.legacy.node_parser.sentence_window import SentenceWindowNodeParser
+from llama_index.legacy.node_parser.sentence_window import (
+    SentenceWindowNodeParser,
+)
 from llama_index.legacy.schema import Document
 
 

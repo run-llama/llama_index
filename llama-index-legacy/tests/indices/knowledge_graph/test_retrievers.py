@@ -3,7 +3,9 @@ from unittest.mock import patch
 
 from llama_index.legacy.graph_stores import SimpleGraphStore
 from llama_index.legacy.indices.knowledge_graph.base import KnowledgeGraphIndex
-from llama_index.legacy.indices.knowledge_graph.retrievers import KGTableRetriever
+from llama_index.legacy.indices.knowledge_graph.retrievers import (
+    KGTableRetriever,
+)
 from llama_index.legacy.schema import Document, QueryBundle
 from llama_index.legacy.service_context import ServiceContext
 from llama_index.legacy.storage.storage_context import StorageContext

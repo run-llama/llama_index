@@ -1,6 +1,8 @@
 """Test components."""
 
-from llama_index.legacy.query_pipeline.components.tool_runner import ToolRunnerComponent
+from llama_index.legacy.query_pipeline.components.tool_runner import (
+    ToolRunnerComponent,
+)
 from llama_index.legacy.tools.function_tool import FunctionTool
 from llama_index.legacy.tools.types import ToolMetadata
 

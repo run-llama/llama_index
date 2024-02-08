@@ -6,7 +6,12 @@ from unittest.mock import patch
 from llama_index.legacy.llms.mock import MockLLM
 from llama_index.legacy.postprocessor.llm_rerank import LLMRerank
 from llama_index.legacy.prompts import BasePromptTemplate
-from llama_index.legacy.schema import BaseNode, NodeWithScore, QueryBundle, TextNode
+from llama_index.legacy.schema import (
+    BaseNode,
+    NodeWithScore,
+    QueryBundle,
+    TextNode,
+)
 from llama_index.legacy.service_context import ServiceContext
 
 

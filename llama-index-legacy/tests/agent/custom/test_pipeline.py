@@ -2,7 +2,9 @@
 
 from typing import Any, Dict, Set, Tuple
 
-from llama_index.legacy.agent.custom.pipeline_worker import QueryPipelineAgentWorker
+from llama_index.legacy.agent.custom.pipeline_worker import (
+    QueryPipelineAgentWorker,
+)
 from llama_index.legacy.agent.runner.base import AgentRunner
 from llama_index.legacy.agent.types import Task
 from llama_index.legacy.bridge.pydantic import Field
