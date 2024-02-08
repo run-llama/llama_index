@@ -14,6 +14,7 @@ from llama_index.readers.file import (
     PptxReader,
     PandasCSVReader,
     VideoAudioReader,
+    XMLReader,
 )
 
 
@@ -58,4 +59,7 @@ def test_classes():
     assert BaseReader.__name__ in names_of_base_classes
 
     names_of_base_classes = [b.__name__ for b in VideoAudioReader.__mro__]
+    assert BaseReader.__name__ in names_of_base_classes
+
+    names_of_base_classes = [b.__name__ for b in XMLReader.__mro__]
     assert BaseReader.__name__ in names_of_base_classes

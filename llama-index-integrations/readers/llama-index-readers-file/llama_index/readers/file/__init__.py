@@ -14,6 +14,7 @@ from llama_index.readers.file.slides.base import PptxReader
 from llama_index.readers.file.tabular.base import PandasCSVReader
 from llama_index.readers.file.unstructured.base import UnstructuredReader
 from llama_index.readers.file.video_audio.base import VideoAudioReader
+from llama_index.readers.file.xml.base import XMLReader
 
 __all__ = [
     "DocxReader",
@@ -34,4 +35,5 @@ __all__ = [
     "UnstructuredReader",
     "PyMuPDFReader",
     "ImageTabularChartReader",
+    "XMLReader",
 ]
