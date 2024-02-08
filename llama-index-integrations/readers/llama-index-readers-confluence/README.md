@@ -4,6 +4,7 @@ This loader loads pages from a given Confluence cloud instance. The user needs t
 instance to initialize the ConfluenceReader - base URL needs to end with `/wiki`. The user can optionally specify
 OAuth 2.0 credentials to authenticate with the Confluence instance. If no credentials are specified, the loader will
 look for `CONFLUENCE_API_TOKEN` or `CONFLUENCE_USERNAME`/`CONFLUENCE_PASSWORD` environment variables to proceed with basic authentication.
+Keep in mind `CONFLUENCE_PASSWORD` is not your actual password, but an API Token obtained here: https://id.atlassian.com/manage-profile/security/api-tokens.
 
 For more on authenticating using OAuth 2.0, checkout:
 
