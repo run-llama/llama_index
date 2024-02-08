@@ -22,7 +22,7 @@ After that, you can start using the tool:
 
 ```shell
 $ llamaindex-cli rag -h
-usage: llamaindex-cli rag [-h] [-q QUESTION] [-f FILES] [-c] [-v] [--clear]
+usage: llamaindex-cli rag [-h] [-q QUESTION] [-f FILES] [-c] [-v] [--clear] [--create-llama]
 
 options:
   -h, --help            show this help message and exit
@@ -33,6 +33,7 @@ options:
   -c, --chat            If flag is present, opens a chat REPL.
   -v, --verbose         Whether to print out verbose information during execution.
   --clear               Clears out all currently embedded data.
+  --create-llama        Create a LlamaIndex application based on the selected files.
 ```
 
 ## Usage
@@ -57,6 +58,35 @@ Here are some high level steps to get you started:
    LlamaIndex is a data framework that helps in ingesting, structuring, and accessing private or domain-specific data for LLM-based applications. It provides tools such as data connectors to ingest data from various sources, data indexes to structure the data, and engines for natural language access to the data. LlamaIndex follows a Retrieval-Augmented Generation (RAG) approach, where it retrieves information from data sources, adds it to the question as context, and then asks the LLM to generate an answer based on the enriched prompt. This approach overcomes the limitations of fine-tuning LLMs and provides a more cost-effective, up-to-date, and trustworthy solution for data augmentation. LlamaIndex is designed for both beginner and advanced users, with a high-level API for easy usage and lower-level APIs for customization and extension.
    ```
 1. **Open a Chat REPL**: You can even open a chat interface within your terminal! Just run `$ llamaindex-cli rag --chat` and start asking questions about the files you've ingested.
+
+### Create a LlamaIndex chat application
+
+You can also create a full-stack chat application with a FastAPI backend and NextJS frontend based on the files that you have selected.
+
+To bootstrap the application, make sure you have NodeJS and npx installed on your machine. If not, please refer to the [LlamaIndex.TS](https://ts.llamaindex.ai/getting_started/installation) documentation for instructions.
+
+Once you have everything set up, creating a new application is easy. Simply run the following command:
+
+`$ llamaindex-cli rag --create-llama`
+
+It will call our `create-llama` tool, so you will need to provide several pieces of information to create the app. You can find more information about the `create-llama` on [npmjs - create-llama](https://www.npmjs.com/package/create-llama#example)
+
+```shell
+❯ llamaindex-cli rag --create-llama
+
+Calling create-llama using data from /tmp/rag-data/...
+
+✔ What is your project named? … my-app
+✔ Which model would you like to use? › gpt-3.5-turbo
+✔ Please provide your OpenAI API key (leave blank to skip): …
+? How would you like to proceed? › - Use arrow-keys. Return to submit.
+   Just generate code (~1 sec)
+   Generate code and install dependencies (~2 min)
+❯  Generate code, install dependencies, and run the app (~2 min)
+...
+```
+
+If you choose the option `Generate code, install dependencies, and run the app (~2 min)`, all dependencies will be installed and the app will run automatically. You can then access the application by going to this address: http://localhost:3000.
 
 ### Supported File Types
 

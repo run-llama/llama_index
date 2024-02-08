@@ -266,10 +266,14 @@ def test_add_step(
         tools=[add_tool],
         llm=llm,
     )
+    ## NOTE: can only take a single step before finishing,
+    # since mocked chat output does not call any tools
     task = agent.create_task("What is 1 + 1?")
-    # first step
     step_output = agent.run_step(task.task_id)
+    assert str(step_output) == "\n\nThis is a test!"
+
     # add human input (not used but should be in memory)
+    task = agent.create_task("What is 1 + 1?")
     step_output = agent.run_step(task.task_id, input="tmp")
     chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
     assert "tmp" in [m.content for m in chat_history]
@@ -307,6 +311,7 @@ async def test_async_add_step(
     mock_instance.chat.completions.create.return_value = mock_achat_completion()
     step_output = await agent.arun_step(task.task_id)
     # add human input (not used but should be in memory)
+    task = agent.create_task("What is 1 + 1?")
     mock_instance.chat.completions.create.return_value = mock_achat_completion()
     step_output = await agent.arun_step(task.task_id, input="tmp")
     chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
@@ -322,6 +327,7 @@ async def test_async_add_step(
     mock_instance.chat.completions.create.side_effect = mock_achat_stream
     step_output = await agent.astream_step(task.task_id)
     # add human input (not used but should be in memory)
+    task = agent.create_task("What is 1 + 1?")
     mock_instance.chat.completions.create.side_effect = mock_achat_stream
     step_output = await agent.astream_step(task.task_id, input="tmp")
     chat_history = task.extra_state["new_memory"].get_all()

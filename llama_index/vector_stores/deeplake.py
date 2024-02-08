@@ -6,9 +6,10 @@ An index that is built within DeepLake.
 import logging
 from typing import Any, List, Optional, cast
 
+from llama_index.bridge.pydantic import PrivateAttr
 from llama_index.schema import BaseNode, MetadataMode
-from llama_index.vector_stores.types import VectorStore as VectorStoreBase
 from llama_index.vector_stores.types import (
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -27,11 +28,11 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class DeepLakeVectorStore(VectorStoreBase):
+class DeepLakeVectorStore(BasePydanticVectorStore):
     """The DeepLake Vector Store.
 
     In this vector store we store the text, its embedding and
-    a few pieces of its metadata in a deeplake dataset. This implemnetation
+    a few pieces of its metadata in a deeplake dataset. This implementation
     allows the use of an already existing deeplake dataset if it is one that was created
     this vector store. It also supports creating a new one if the dataset doesn't
     exist or if `overwrite` is set to True.
@@ -39,6 +40,11 @@ class DeepLakeVectorStore(VectorStoreBase):
 
     stores_text: bool = True
     flat_metadata: bool = True
+
+    _embedding_dimension: int = PrivateAttr()
+    _ttl_seconds: Optional[int] = PrivateAttr()
+    _deeplake_db: Any = PrivateAttr()
+    _deeplake_db_collection: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -51,7 +57,8 @@ class DeepLakeVectorStore(VectorStoreBase):
         exec_option: Optional[str] = None,
         verbose: bool = True,
         **kwargs: Any,
-    ):
+    ) -> None:
+        super().__init__()
         """
         Args:
             dataset_path (str): Path to the deeplake dataset, where data will be
@@ -62,8 +69,8 @@ class DeepLakeVectorStore(VectorStoreBase):
                 dataset with proper access. Defaults to None.
             read_only (bool, optional): Whether to open the dataset with read only mode.
             ingestion_batch_size (int): used for controlling batched data
-                injestion to deeplake dataset. Defaults to 1024.
-            ingestion_num_workers (int): number of workers to use during data injestion.
+                ingestion to deeplake dataset. Defaults to 1024.
+            ingestion_num_workers (int): number of workers to use during data ingestion.
                 Defaults to 4.
             overwrite (bool): Whether to overwrite existing dataset with the
                 new dataset with the same name.

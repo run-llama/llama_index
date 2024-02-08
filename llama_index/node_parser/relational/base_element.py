@@ -1,9 +1,11 @@
+import asyncio
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 import pandas as pd
 from tqdm import tqdm
 
+from llama_index.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.callbacks.base import CallbackManager
 from llama_index.core.response.schema import PydanticResponse
@@ -75,6 +77,12 @@ class BaseElementNodeParser(NodeParser):
         default=DEFAULT_SUMMARY_QUERY_STR,
         description="Query string to use for summarization.",
     )
+    num_workers: int = Field(
+        default=DEFAULT_NUM_WORKERS,
+        description="Num of works for async jobs.",
+    )
+
+    show_progress: bool = Field(default=True, description="Whether to show progress.")
 
     @classmethod
     def class_name(cls) -> str:
@@ -118,7 +126,7 @@ class BaseElementNodeParser(NodeParser):
 
     def get_table_elements(self, elements: List[Element]) -> List[Element]:
         """Get table elements."""
-        return [e for e in elements if e.type == "table"]
+        return [e for e in elements if e.type == "table" or e.type == "table_text"]
 
     def get_text_elements(self, elements: List[Element]) -> List[Element]:
         """Get text elements."""
@@ -135,8 +143,10 @@ class BaseElementNodeParser(NodeParser):
         llm = cast(LLM, llm)
 
         service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
+
+        table_context_list = []
         for idx, element in tqdm(enumerate(elements)):
-            if element.type != "table":
+            if element.type not in ("table", "table_text"):
                 continue
             table_context = str(element.element)
             if idx > 0 and str(elements[idx - 1].element).lower().strip().startswith(
@@ -147,19 +157,35 @@ class BaseElementNodeParser(NodeParser):
                 elements[idx - 1].element
             ).lower().strip().startswith("table"):
                 table_context += "\n" + str(elements[idx + 1].element)
+
+            table_context_list.append(table_context)
+
+        async def _get_table_output(table_context: str, summary_query_str: str) -> Any:
             index = SummaryIndex.from_documents(
                 [Document(text=table_context)], service_context=service_context
             )
             query_engine = index.as_query_engine(output_cls=TableOutput)
             try:
-                response = query_engine.query(self.summary_query_str)
-                element.table_output = cast(PydanticResponse, response).response
+                response = await query_engine.aquery(summary_query_str)
+                return cast(PydanticResponse, response).response
             except ValidationError:
                 # There was a pydantic validation error, so we will run with text completion
                 # fill in the summary and leave other fields blank
                 query_engine = index.as_query_engine()
-                response_txt = str(query_engine.query(self.summary_query_str))
-                element.table_output = TableOutput(summary=response_txt, columns=[])
+                response_txt = await query_engine.aquery(summary_query_str)
+                return TableOutput(summary=str(response_txt), columns=[])
+
+        summary_jobs = [
+            _get_table_output(table_context, self.summary_query_str)
+            for table_context in table_context_list
+        ]
+        summary_outputs = asyncio.run(
+            run_jobs(
+                summary_jobs, show_progress=self.show_progress, workers=self.num_workers
+            )
+        )
+        for element, summary_output in zip(elements, summary_outputs):
+            element.table_output = summary_output
 
     def get_base_nodes_and_mappings(
         self, nodes: List[BaseNode]
@@ -223,8 +249,8 @@ class BaseElementNodeParser(NodeParser):
         nodes = []
         cur_text_el_buffer: List[str] = []
         for element in elements:
-            if element.type == "table":
-                # flush text buffer
+            if element.type == "table" or element.type == "table_text":
+                # flush text buffer for table
                 if len(cur_text_el_buffer) > 0:
                     cur_text_nodes = self._get_nodes_from_buffer(
                         cur_text_el_buffer, node_parser
@@ -233,7 +259,27 @@ class BaseElementNodeParser(NodeParser):
                     cur_text_el_buffer = []
 
                 table_output = cast(TableOutput, element.table_output)
-                table_df = cast(pd.DataFrame, element.table)
+                table_md = ""
+                if element.type == "table":
+                    table_df = cast(pd.DataFrame, element.table)
+                    # We serialize the table as markdown as it allow better accuracy
+                    # We do not use the table_df.to_markdown() method as it generate
+                    # a table with a token hungry format.
+                    table_md = "|"
+                    for col_name, col in table_df.items():
+                        table_md += f"{col_name}|"
+                    table_md += "\n|"
+                    for col_name, col in table_df.items():
+                        table_md += f"---|"
+                    table_md += "\n"
+                    for row in table_df.itertuples():
+                        table_md += "|"
+                        for col in row[1:]:
+                            table_md += f"{col}|"
+                        table_md += "\n"
+                elif element.type == "table_text":
+                    # if the table is non-perfect table, we still want to keep the original text of table
+                    table_md = str(element.element)
                 table_id = element.id + "_table"
                 table_ref_id = element.id + "_table_ref"
 
@@ -258,29 +304,16 @@ class BaseElementNodeParser(NodeParser):
                     index_id=table_id,
                 )
 
-                # We serialize the table as markdown as it allow better accuracy
-                # We do not use the table_df.to_markdown() method as it generate
-                # a table with a token hngry format.
-                table_md = "|"
-                for col_name, col in table_df.items():
-                    table_md += f"{col_name}|"
-                table_md += "\n|"
-                for col_name, col in table_df.items():
-                    table_md += f"---|"
-                table_md += "\n"
-                for row in table_df.itertuples():
-                    table_md += "|"
-                    for col in row[1:]:
-                        table_md += f"{col}|"
-                    table_md += "\n"
-
                 table_str = table_summary + "\n" + table_md
+
                 text_node = TextNode(
                     text=table_str,
                     id_=table_id,
                     metadata={
-                        # serialize the table as a dictionary string
-                        "table_df": str(table_df.to_dict()),
+                        # serialize the table as a dictionary string for dataframe of perfect table
+                        "table_df": str(table_df.to_dict())
+                        if element.type == "table"
+                        else table_md,
                         # add table summary for retrieval purposes
                         "table_summary": table_summary,
                     },

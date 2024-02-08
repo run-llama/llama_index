@@ -49,6 +49,7 @@ We are actively adding more integrations and improving feature coverage for each
 | TencentVectorDB          | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Timescale                |                     | ✓                  |               | ✓      | ✓               | ✓     |
 | Typesense                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| Upstash                  | cloud               |                    |               |        | ✓               |       |
 | Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
@@ -60,10 +61,10 @@ maxdepth: 1
 ---
 /examples/vector_stores/AstraDBIndexDemo.ipynb
 /examples/vector_stores/AsyncIndexCreationDemo.ipynb
+/examples/vector_stores/AzureAISearchIndexDemo.ipynb
 /examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb
 /examples/vector_stores/CassandraIndexDemo.ipynb
 /examples/vector_stores/ChromaIndexDemo.ipynb
-/examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 /examples/vector_stores/DashvectorIndexDemo.ipynb
 /examples/vector_stores/DashvectorIndexDemo-Hybrid.ipynb
 /examples/vector_stores/DeepLakeIndexDemo.ipynb

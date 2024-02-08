@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
+from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -92,6 +93,7 @@ class DashScope(CustomLLM):
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
+        default=DEFAULT_NUM_OUTPUTS,
         gt=0,
     )
     incremental_output: Optional[bool] = Field(
@@ -115,7 +117,7 @@ class DashScope(CustomLLM):
     )
     temperature: Optional[float] = Field(
         description="The temperature to use during generation.",
-        default=None,
+        default=DEFAULT_TEMPERATURE,
         gte=0.0,
         lte=2.0,
     )
@@ -134,7 +136,6 @@ class DashScope(CustomLLM):
                                                              repetition.",
         default=None,
     )
-
     api_key: str = Field(
         default=None, description="The DashScope API key.", exclude=True
     )
@@ -142,11 +143,11 @@ class DashScope(CustomLLM):
     def __init__(
         self,
         model_name: Optional[str] = DashScopeGenerationModels.QWEN_MAX,
-        max_tokens: Optional[int] = None,
+        max_tokens: Optional[int] = DEFAULT_NUM_OUTPUTS,
         incremental_output: Optional[int] = True,
         enable_search: Optional[bool] = False,
         stop: Optional[Any] = None,
-        temperature: Optional[float] = None,
+        temperature: Optional[float] = DEFAULT_TEMPERATURE,
         top_k: Optional[int] = None,
         top_p: Optional[float] = None,
         seed: Optional[int] = 1234,
@@ -175,6 +176,9 @@ class DashScope(CustomLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
+        DASHSCOPE_MODEL_META[self.model_name]["num_output"] = (
+            self.max_tokens or DASHSCOPE_MODEL_META[self.model_name]["num_output"]
+        )
         return LLMMetadata(
             model_name=self.model_name, **DASHSCOPE_MODEL_META[self.model_name]
         )
