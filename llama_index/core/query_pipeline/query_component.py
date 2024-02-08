@@ -1,7 +1,18 @@
 """Pipeline schema."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Set, Union, cast, get_args, Callable, Hashable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Set,
+    Union,
+    cast,
+    get_args,
+)
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
@@ -310,8 +321,12 @@ class ConditionalLinks(BaseModel):
     """Conditional Links between source and mutiple destinations."""
 
     src: str = Field(..., description="Source component name")
-    fn: Callable = Field(..., description="Function to determine which destination to go to")
-    cond_dest_dict: Dict[str, Any] = Field(..., description="dictionary of value to destination component name")
+    fn: Callable = Field(
+        ..., description="Function to determine which destination to go to"
+    )
+    cond_dest_dict: Dict[str, Any] = Field(
+        ..., description="dictionary of value to destination component name"
+    )
 
     class Config:
         arbitrary_types_allowed = True

@@ -2,7 +2,18 @@
 
 import json
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast, get_args, Callable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+    get_args,
+)
 
 import networkx
 
@@ -11,17 +22,16 @@ from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.query_pipeline.query_component import (
+    LINK_TYPE,
     QUERY_COMPONENT_TYPE,
     ChainableMixin,
+    ConditionalLinks,
     InputKeys,
     Link,
-    ConditionalLinks,
     OutputKeys,
     QueryComponent,
-    LINK_TYPE
 )
 from llama_index.utils import print_text
-
 
 
 def get_single_output(
@@ -124,14 +134,14 @@ class QueryPipeline(QueryComponent):
         default_factory=dict, description="The modules in the pipeline."
     )
     conditional_dict: Dict[str, Callable] = Field(
-        default_factory=dict, 
+        default_factory=dict,
         description=(
             "Mapping from module key to conditional function."
             "Specifically used in the case of conditional links. "
             "The conditional function should take in the output of the source module and "
             "return a value that will then be mapped to the relevant destination module "
             "in the conditional link."
-        )
+        ),
     )
     dag: networkx.MultiDiGraph = Field(
         default_factory=networkx.MultiDiGraph, description="The DAG of the pipeline."
@@ -261,10 +271,10 @@ class QueryPipeline(QueryComponent):
         self.conditional_dict[src] = fn
         for conditional, dest_dict in cond_dest_dict.items():
             self.dag.add_edge(
-                src, 
-                dest_dict["dest"], 
-                dest_key=dest_dict["dest_key"], 
-                conditional=conditional
+                src,
+                dest_dict["dest"],
+                dest_key=dest_dict["dest_key"],
+                conditional=conditional,
             )
 
     def get_root_keys(self) -> List[str]:
@@ -486,7 +496,9 @@ class QueryPipeline(QueryComponent):
                 single_output = get_single_output(output_dict)
                 # the conditional_val determines which edge to take
                 # new_output is the output that will be passed to the next module
-                conditional_val, new_output = self.conditional_dict[module_key](single_output)
+                conditional_val, new_output = self.conditional_dict[module_key](
+                    single_output
+                )
             edge_list = list(self.dag.edges(module_key, data=True))
             # get conditional edge list
             conditional_edge_list = [
