@@ -2,6 +2,7 @@ from typing import Any, Optional, Sequence
 
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
+
 from tonic_validate.metrics.augmentation_precision_metric import (
     AugmentationPrecisionMetric,
 )

@@ -1,6 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, TypeVar, Union
-
-from typing_extensions import Literal
+from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, TypeVar, Union
 
 from llama_index.legacy.readers.base import BaseReader
 from llama_index.legacy.readers.schema.base import Document

@@ -1,7 +1,7 @@
 from llama_index.core.llama_pack import BaseLlamaPack
 from llama_index.packs.recursive_retriever import (
-    RecursiveRetrieverSmallToBigPack,
     EmbeddedTablesUnstructuredRetrieverPack,
+    RecursiveRetrieverSmallToBigPack,
 )
 
 

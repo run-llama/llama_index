@@ -6,9 +6,9 @@ from typing import Any, Dict, List
 from llama_index.core.ingestion.cache import IngestionCache
 from llama_index.core.ingestion.pipeline import IngestionPipeline
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.vector_stores.redis import RedisVectorStore
-from llama_index.storage.kvstore.redis import RedisKVStore as RedisCache
 from llama_index.core.schema import BaseNode, TransformComponent
+from llama_index.storage.kvstore.redis import RedisKVStore as RedisCache
+from llama_index.vector_stores.redis import RedisVectorStore
 
 
 class RedisIngestionPipelinePack(BaseLlamaPack):
@@ -24,7 +24,6 @@ class RedisIngestionPipelinePack(BaseLlamaPack):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-
         self.vector_store = RedisVectorStore(
             hostname=hostname,
             port=port,

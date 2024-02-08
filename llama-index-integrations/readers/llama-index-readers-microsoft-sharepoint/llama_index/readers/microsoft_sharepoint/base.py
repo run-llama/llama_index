@@ -1,17 +1,14 @@
 """SharePoint files reader."""
 
-import os
 import logging
-
-from typing import Any, Dict, List
+import os
 import tempfile
+from typing import Any, Dict, List
 
 import requests
-
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +63,7 @@ class SharePointReader(BaseReader):
             data=payload,
         )
 
-        if response.status_code == 200 and "access_token" in response.json().keys():
+        if response.status_code == 200 and "access_token" in response.json():
             return response.json()["access_token"]
 
         else:
@@ -229,7 +226,6 @@ class SharePointReader(BaseReader):
         Returns:
             str: The path of the downloaded file in the temporary directory.
         """
-
         # Get the donwload URL for the file.
         file_download_url = item["@microsoft.graph.downloadUrl"]
         file_name = item["name"]
@@ -257,13 +253,11 @@ class SharePointReader(BaseReader):
         """
         # Extract the required metadata for file.
 
-        file_metadata = {
+        return {
             "file_id": item.get("id"),
             "file_name": item.get("name"),
             "url": item.get("webUrl"),
         }
-
-        return file_metadata
 
     def _download_file(
         self,
@@ -309,11 +303,9 @@ class SharePointReader(BaseReader):
             sharepoint_folder_path
         )
 
-        metadata = self._download_files_and_extract_metadata(
+        return self._download_files_and_extract_metadata(
             self.sharepoint_folder_id, download_dir, recursive
         )
-
-        return metadata
 
     def _load_documents_with_metadata(
         self,
@@ -339,8 +331,7 @@ class SharePointReader(BaseReader):
         simple_loader = SimpleDirectoryReader(
             download_dir, file_metadata=get_metadata, recursive=recursive
         )
-        documents = simple_loader.load_data()
-        return documents
+        return simple_loader.load_data()
 
     def load_data(
         self,

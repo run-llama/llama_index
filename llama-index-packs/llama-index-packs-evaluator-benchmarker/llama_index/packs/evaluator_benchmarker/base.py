@@ -1,19 +1,20 @@
+import warnings
 from typing import Union
-from llama_index.core.llama_pack.base import BaseLlamaPack
+
+import numpy as np
+import pandas as pd
+from llama_index.core.evaluation import BaseEvaluator
 from llama_index.core.llama_dataset.evaluator_evaluation import (
+    EvaluatorPredictionDataset,
     LabelledEvaluatorDataset,
     LabelledPairwiseEvaluatorDataset,
     PairwiseEvaluatorPredictionDataset,
-    EvaluatorPredictionDataset,
 )
-from llama_index.core.evaluation import BaseEvaluator
-import warnings
-import pandas as pd
-import numpy as np
+from llama_index.core.llama_pack.base import BaseLlamaPack
 
 
 class EvaluatorBenchmarkerPack(BaseLlamaPack):
-    """A pack for benchmarking/evaluating your own evaluator
+    """A pack for benchmarking/evaluating your own evaluator.
 
     Args:
         evaluator (BaseEvaluator): The evaluator to evaluate/benchmark.
@@ -158,5 +159,4 @@ class EvaluatorBenchmarkerPack(BaseLlamaPack):
             await self._amake_predictions(batch_size, sleep_time_in_seconds)
 
         # produce metrics
-        benchmark_df = self._make_evaluations()
-        return benchmark_df
+        return self._make_evaluations()

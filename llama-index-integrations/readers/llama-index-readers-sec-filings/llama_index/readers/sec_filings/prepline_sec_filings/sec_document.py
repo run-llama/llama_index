@@ -3,8 +3,8 @@ import sys
 from functools import partial
 from typing import Any, Iterable, Iterator, List, Optional, Tuple
 
-if sys.version_info < (3, 8):
-    from typing_extensions import Final
+if sys.version_info < (3, 8):  # noqa: UP036
+    from typing import Final
 else:
     from typing import Final
 
@@ -93,8 +93,7 @@ class SECDocument(HTMLDocument):
                     else:
                         # NOTE(yuming): Found the end of the TOC section.
                         end = i - 1
-                        filtered_elements = elements[start:end]
-                        return filtered_elements
+                        return elements[start:end]
         elif self.filing_type in S1_TYPES:
             # NOTE(yuming): Narrow TOC as all elements within
             # the first pair of duplicated titles that contain the keyword 'prospectus'.
@@ -110,8 +109,7 @@ class SECDocument(HTMLDocument):
                 if "prospectus" in title and len(indices) == 2:
                     start = indices[0]
                     end = indices[1] - 1
-                    filtered_elements = elements[start:end]
-                    return filtered_elements
+                    return elements[start:end]
         # NOTE(yuming): Probably better ways to improve TOC,
         # but now we return [] if it fails to find the keyword.
         return []
@@ -130,19 +128,15 @@ class SECDocument(HTMLDocument):
             idxs = cluster_num_to_indices(i, title_locs, res)
             cluster_elements: List[Text] = [self.elements[i] for i in idxs]
             if any(
-                [
-                    # TODO(alan): Maybe swap risk title out for something more generic? It helps to
-                    # have 2 markers though, I think.
-                    is_risk_title(el.text, self.filing_type)
-                    for el in cluster_elements
-                    if isinstance(el, Title)
-                ]
+                # TODO(alan): Maybe swap risk title out for something more generic? It helps to
+                # have 2 markers though, I think.
+                is_risk_title(el.text, self.filing_type)
+                for el in cluster_elements
+                if isinstance(el, Title)
             ) and any(
-                [
-                    is_toc_title(el.text)
-                    for el in cluster_elements
-                    if isinstance(el, Title)
-                ]
+                is_toc_title(el.text)
+                for el in cluster_elements
+                if isinstance(el, Title)
             ):
                 return out_cls.from_elements(
                     self._filter_table_of_contents(cluster_elements)
@@ -151,12 +145,13 @@ class SECDocument(HTMLDocument):
 
     def get_section_narrative_no_toc(self, section: SECSection) -> List[NarrativeText]:
         """Identifies narrative text sections that fall under the given section heading without
-        using the table of contents."""
+        using the table of contents.
+        """
         _raise_for_invalid_filing_type(self.filing_type)
         # NOTE(robinson) - We are not skipping table text because the risk narrative section
         # usually does not contain any tables and sometimes tables are used for
         # title formating
-        section_elements: List[NarrativeText] = list()
+        section_elements: List[NarrativeText] = []
         in_section = False
         for element in self.elements:
             is_title = is_possible_title(element.text)
@@ -166,9 +161,7 @@ class SECDocument(HTMLDocument):
                         return section_elements
                     else:
                         in_section = False
-                elif isinstance(element, NarrativeText) or isinstance(
-                    element, ListItem
-                ):
+                elif isinstance(element, (NarrativeText, ListItem)):
                     section_elements.append(element)
 
             if is_title and is_section_elem(section, element, self.filing_type):
@@ -179,7 +172,7 @@ class SECDocument(HTMLDocument):
     def _get_toc_sections(
         self, section: SECSection, toc: HTMLDocument
     ) -> Tuple[Text, Text]:
-        """Identifies section title and next section title in TOC under the given section heading"""
+        """Identifies section title and next section title in TOC under the given section heading."""
         # Note(yuming): The matching section and the section after the matching section
         # can be thought of as placeholders to look for matching content below the toc.
         section_toc = first(
@@ -202,7 +195,7 @@ class SECDocument(HTMLDocument):
         return (section_toc, next_section_toc)
 
     def get_section_narrative(self, section: SECSection) -> List[NarrativeText]:
-        """Identifies narrative text sections that fall under the given section heading"""
+        """Identifies narrative text sections that fall under the given section heading."""
         _raise_for_invalid_filing_type(self.filing_type)
         # NOTE(robinson) - We are not skipping table text because the risk narrative section
         # usually does not contain any tables and sometimes tables are used for
@@ -257,7 +250,7 @@ class SECDocument(HTMLDocument):
         )
 
     def get_risk_narrative(self) -> List[NarrativeText]:
-        """Identifies narrative text sections that fall under the "risk" heading"""
+        """Identifies narrative text sections that fall under the "risk" heading."""
         return self.get_section_narrative(SECSection.RISK_FACTORS)
 
     def doc_after_cleaners(
@@ -308,27 +301,24 @@ def get_narrative_texts(
     doc: HTMLDocument, up_to_next_title: Optional[bool] = False
 ) -> List[Text]:
     """Returns a list of NarrativeText or ListItem from document,
-    with option to return narrative texts only up to next Title element."""
+    with option to return narrative texts only up to next Title element.
+    """
     if up_to_next_title:
         narrative_texts = []
         for el in doc.elements:
-            if isinstance(el, NarrativeText) or isinstance(el, ListItem):
+            if isinstance(el, (NarrativeText, ListItem)):
                 narrative_texts.append(el)
             else:
                 break
         return narrative_texts
     else:
-        return [
-            el
-            for el in doc.elements
-            if isinstance(el, NarrativeText) or isinstance(el, ListItem)
-        ]
+        return [el for el in doc.elements if isinstance(el, (NarrativeText, ListItem))]
 
 
 def is_section_elem(
     section: SECSection, elem: Text, filing_type: Optional[str]
 ) -> bool:
-    """Checks to see if a text element matches the section title for a given filing type"""
+    """Checks to see if a text element matches the section title for a given filing type."""
     _raise_for_invalid_filing_type(filing_type)
     if section is SECSection.RISK_FACTORS:
         return is_risk_title(elem.text, filing_type=filing_type)
@@ -395,13 +385,12 @@ def is_s1_risk_title(title: str) -> bool:
 
 def to_sklearn_format(elements: List[Element]) -> npt.NDArray[np.float32]:
     """The input to clustering needs to be locations in euclidean space, so we need to interpret
-    the locations of Titles within the sequence of elements as locations in 1d space
+    the locations of Titles within the sequence of elements as locations in 1d space.
     """
     is_title: npt.NDArray[np.bool_] = np.array(
         [is_possible_title(el.text) for el in elements][: len(elements)], dtype=bool
     )
-    title_locs = np.arange(len(is_title)).astype(np.float32)[is_title].reshape(-1, 1)
-    return title_locs
+    return np.arange(len(is_title)).astype(np.float32)[is_title].reshape(-1, 1)
 
 
 def cluster_num_to_indices(
@@ -411,8 +400,7 @@ def cluster_num_to_indices(
     location in 1-d space, this function gives back the original indices of elements that are
     members of the cluster with the given number.
     """
-    idxs = elem_idxs[res == num].astype(int).flatten().tolist()
-    return idxs
+    return elem_idxs[res == num].astype(int).flatten().tolist()
 
 
 def first(it: Iterable) -> Any:
@@ -426,13 +414,15 @@ def first(it: Iterable) -> Any:
 
 def match_s1_toc_title_to_section(text: str, title: str) -> bool:
     """Matches an S-1 style title from the table of contents to the associated title in the document
-    body"""
+    body.
+    """
     return text == title
 
 
 def match_10k_toc_title_to_section(text: str, title: str) -> bool:
     """Matches a 10-K style title from the table of contents to the associated title in the document
-    body"""
+    body.
+    """
     if re.match(ITEM_TITLE_RE, title):
         return text.startswith(title)
     else:
@@ -442,7 +432,8 @@ def match_10k_toc_title_to_section(text: str, title: str) -> bool:
 
 def remove_item_from_section_text(text: str) -> str:
     """Removes 'item' heading from section text for 10-K/Q forms as preparation for other matching
-    techniques"""
+    techniques.
+    """
     return re.sub(ITEM_TITLE_RE, "", text).strip()
 
 
@@ -451,7 +442,7 @@ def get_element_by_title(
     title: str,
     filing_type: Optional[str],
 ) -> Optional[Element]:
-    """Get element from Element list whose text approximately matches title"""
+    """Get element from Element list whose text approximately matches title."""
     _raise_for_invalid_filing_type(filing_type)
     if filing_type in REPORT_TYPES:
         match = match_10k_toc_title_to_section

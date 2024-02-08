@@ -55,6 +55,8 @@ class OpensearchReader(BaseReader):
             embedding_field (Optional[str]): If there are embeddings stored in
                 this index, this field can be used
                 to set the embedding field on the returned Document list.
+
+
         Returns:
             List[Document]: A list of documents.
 

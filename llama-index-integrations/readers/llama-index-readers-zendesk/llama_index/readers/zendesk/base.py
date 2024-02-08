@@ -24,6 +24,8 @@ class ZendeskReader(BaseReader):
 
         Args:
             workspace_id (str): Workspace ID.
+
+
         Returns:
             List[Document]: List of documents.
         """

@@ -1,10 +1,10 @@
 """Test summary index."""
 
-from typing import Dict, List, Tuple
+from typing import List
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.indices.list.base import ListRetrieverMode, SummaryIndex
-from llama_index.core.schema import BaseNode, Document
+from llama_index.core.schema import Document
 from llama_index.core.service_context import ServiceContext
 
 
@@ -150,23 +150,6 @@ def test_list_delete(
     assert nodes[1].get_content() == "This is a test."
     assert nodes[2].ref_doc_id == "test_id_3"
     assert nodes[2].get_content() == "This is a test v2."
-
-
-def _get_embeddings(
-    query_str: str, nodes: List[BaseNode]
-) -> Tuple[List[float], List[List[float]]]:
-    """Get node text embedding similarity."""
-    text_embed_map: Dict[str, List[float]] = {
-        "Hello world.": [1.0, 0.0, 0.0, 0.0, 0.0],
-        "This is a test.": [0.0, 1.0, 0.0, 0.0, 0.0],
-        "This is another test.": [0.0, 0.0, 1.0, 0.0, 0.0],
-        "This is a test v2.": [0.0, 0.0, 0.0, 1.0, 0.0],
-    }
-    node_embeddings = []
-    for node in nodes:
-        node_embeddings.append(text_embed_map[node.get_content()])
-
-    return [1.0, 0, 0, 0, 0], node_embeddings
 
 
 def test_as_retriever(

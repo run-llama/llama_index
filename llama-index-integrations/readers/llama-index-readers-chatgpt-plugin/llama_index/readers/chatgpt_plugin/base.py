@@ -4,10 +4,9 @@ import os
 from typing import Any, List, Optional
 
 import requests
-from requests.adapters import HTTPAdapter, Retry
-
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from requests.adapters import HTTPAdapter, Retry
 
 
 class ChatGPTRetrievalPluginReader(BaseReader):

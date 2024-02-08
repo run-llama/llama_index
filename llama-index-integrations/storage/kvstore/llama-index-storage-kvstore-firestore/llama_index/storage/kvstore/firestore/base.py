@@ -1,14 +1,14 @@
 from typing import Any, Dict, List, Optional, Tuple
 
-from llama_index.core.storage.kvstore.types import (
-    DEFAULT_BATCH_SIZE,
-    DEFAULT_COLLECTION,
-    BaseKVStore,
-)
 from google.cloud.firestore_v1.async_client import AsyncClient
 from google.cloud.firestore_v1.client import Client
 from google.cloud.firestore_v1.services.firestore.transports.base import (
     DEFAULT_CLIENT_INFO,
+)
+from llama_index.core.storage.kvstore.types import (
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_COLLECTION,
+    BaseKVStore,
 )
 
 # keyword "_" is reserved in Firestore but referred in llama_index/constants.py.

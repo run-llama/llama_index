@@ -11,10 +11,9 @@ from itertools import repeat
 from pathlib import Path
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
-from tqdm import tqdm
-
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from tqdm import tqdm
 
 
 def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
@@ -31,7 +30,7 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
             PDFReader,
             PptxReader,
             VideoAudioReader,
-        )
+        )  # pants: no-infer-dep
     except ImportError:
         raise ImportError("`llama-index-readers-file` package not found")
 

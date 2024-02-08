@@ -2,9 +2,9 @@
 
 from typing import List
 
-from llama_index.readers.database import DatabaseReader
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from llama_index.readers.database import DatabaseReader
 
 
 class SingleStoreReader(BaseReader):

@@ -5,15 +5,16 @@ files into a List of Documents,
 with each Document containing text from under an Obsidian header.
 
 """
+
 import os
 from pathlib import Path
-from typing import Any, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List
 
 if TYPE_CHECKING:
     from langchain.docstore.document import Document as LCDocument
 
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.readers.file.markdown_reader import MarkdownReader
+from llama_index.readers.file import MarkdownReader
 from llama_index.core.schema import Document
 
 

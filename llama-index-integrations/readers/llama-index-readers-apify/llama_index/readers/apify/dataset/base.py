@@ -1,4 +1,4 @@
-"""Apify dataset reader"""
+"""Apify dataset reader."""
 from typing import Callable, Dict, List
 
 from llama_index.core.readers.base import BaseReader
@@ -23,9 +23,12 @@ class ApifyDataset(BaseReader):
         self, dataset_id: str, dataset_mapping_function: Callable[[Dict], Document]
     ) -> List[Document]:
         """Load data from the Apify dataset.
+
         Args:
             dataset_id (str): Dataset ID.
             dataset_mapping_function (Callable[[Dict], Document]): Function to map dataset items to Document.
+
+
         Returns:
             List[Document]: List of documents.
         """

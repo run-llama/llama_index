@@ -1,4 +1,5 @@
 """Hubspot reader."""
+
 from typing import List
 
 from llama_index.core.readers.base import BaseReader
@@ -14,11 +15,10 @@ class HubspotReader(BaseReader):
 
     def __init__(self, access_token: str) -> None:
         """Initialize Hubspot reader."""
-
         self.access_token = access_token
 
     def load_data(self) -> List[Document]:
-        """Load deals, contacts and companies data from Hubspot
+        """Load deals, contacts and companies data from Hubspot.
 
         Returns:
             List[Document]: List of documents, where each document represensts a list of Hubspot objects
@@ -29,7 +29,7 @@ class HubspotReader(BaseReader):
         all_deals = api_client.crm.deals.get_all()
         all_contacts = api_client.crm.contacts.get_all()
         all_companies = api_client.crm.companies.get_all()
-        results = [
+        return [
             Document(
                 text=f"{all_deals}".replace("\n", ""), extra_info={"type": "deals"}
             ),
@@ -42,4 +42,3 @@ class HubspotReader(BaseReader):
                 extra_info={"type": "companies"},
             ),
         ]
-        return results

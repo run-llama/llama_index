@@ -5,7 +5,6 @@ from llama_index.tools.playgrounds.subgraph_inspector.base import (
     PlaygroundsSubgraphInspectorToolSpec,
 )
 
-
 __all__ = [
     "PlaygroundsSubgraphConnectorToolSpec",
     "PlaygroundsSubgraphInspectorToolSpec",

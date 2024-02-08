@@ -60,15 +60,17 @@ class GoogleDriveReader(BaseReader):
                 1. credentials.json
                 2. client_secrets.json
             Both 1, 2 are esentially same but needed with two different names according to google-api-python-client, google-auth-httplib2, google-auth-oauthlib and pydrive libraries.
+
         Returns:
-            credentials, pydrive object
+            credentials, pydrive object.
         """
-        from google.auth.transport.requests import Request
-        from google.oauth2 import service_account
-        from google.oauth2.credentials import Credentials
         from google_auth_oauthlib.flow import InstalledAppFlow
         from pydrive.auth import GoogleAuth
         from pydrive.drive import GoogleDrive
+
+        from google.auth.transport.requests import Request
+        from google.oauth2 import service_account
+        from google.oauth2.credentials import Credentials
 
         # First, we need the Google API credentials for the app
         creds = None
@@ -215,9 +217,7 @@ class GoogleDriveReader(BaseReader):
             return fileids_meta
 
         except Exception as e:
-            logger.error(
-                "An error occurred while getting fileids metadata: {}".format(e)
-            )
+            logger.error(f"An error occurred while getting fileids metadata: {e}")
 
     def _download_file(self, fileid: str, filename: str) -> str:
         """Download the file with fileid and filename
@@ -225,9 +225,8 @@ class GoogleDriveReader(BaseReader):
             fileid: file id of the file in google drive
             filename: filename with which it will be downloaded
         Returns:
-            The downloaded filename, which which may have a new extension
+            The downloaded filename, which which may have a new extension.
         """
-
         from io import BytesIO
 
         from googleapiclient.discovery import build
@@ -267,16 +266,16 @@ class GoogleDriveReader(BaseReader):
 
             return new_file_name
         except Exception as e:
-            logger.error("An error occurred while downloading file: {}".format(e))
+            logger.error(f"An error occurred while downloading file: {e}")
 
     def _load_data_fileids_meta(self, fileids_meta: List[List[str]]) -> List[Document]:
         """Load data from fileids metadata
         Args:
             fileids_meta: metadata of fileids in google drive.
-        Returns:
-            Lis[Document]: List of Document of data present in fileids
-        """
 
+        Returns:
+            Lis[Document]: List of Document of data present in fileids.
+        """
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
 
@@ -307,9 +306,7 @@ class GoogleDriveReader(BaseReader):
 
             return documents
         except Exception as e:
-            logger.error(
-                "An error occurred while loading data from fileids meta: {}".format(e)
-            )
+            logger.error(f"An error occurred while loading data from fileids meta: {e}")
 
     def _load_from_file_ids(
         self, file_ids: List[str], mime_types: list
@@ -317,21 +314,19 @@ class GoogleDriveReader(BaseReader):
         """Load data from file ids
         Args:
             file_ids: file ids of the files in google drive.
+
         Returns:
             Document: List of Documents of text.
         """
-
         try:
             fileids_meta = []
             for file_id in file_ids:
                 fileids_meta.extend(
                     self._get_fileids_meta(file_id=file_id, mime_types=mime_types)
                 )
-            documents = self._load_data_fileids_meta(fileids_meta)
-
-            return documents
+            return self._load_data_fileids_meta(fileids_meta)
         except Exception as e:
-            logger.error("An error occurred while loading with fileid: {}".format(e))
+            logger.error(f"An error occurred while loading with fileid: {e}")
 
     def _load_from_folder(self, folder_id: str, mime_types: list) -> List[Document]:
         """Load data from folder_id
@@ -345,10 +340,9 @@ class GoogleDriveReader(BaseReader):
             fileids_meta = self._get_fileids_meta(
                 folder_id=folder_id, mime_types=mime_types
             )
-            documents = self._load_data_fileids_meta(fileids_meta)
-            return documents
+            return self._load_data_fileids_meta(fileids_meta)
         except Exception as e:
-            logger.error("An error occurred while loading from folder: {}".format(e))
+            logger.error(f"An error occurred while loading from folder: {e}")
 
     def load_data(
         self,
@@ -357,6 +351,7 @@ class GoogleDriveReader(BaseReader):
         mime_types: List[str] = None,
     ) -> List[Document]:
         """Load data from the folder id and file ids.
+
         Args:
             folder_id: folder id of the folder in google drive.
             file_ids: file ids of the files in google drive.

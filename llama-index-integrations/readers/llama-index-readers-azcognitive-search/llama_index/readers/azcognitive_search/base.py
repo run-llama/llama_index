@@ -5,11 +5,10 @@ A loader that fetches documents from specific index.
 
 from typing import List, Optional
 
-from llama_index.core.readers.base import BaseReader
-from llama_index.core.schema import Document
-
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
+from llama_index.core.readers.base import BaseReader
+from llama_index.core.schema import Document
 
 
 class AzCognitiveSearchReader(BaseReader):
@@ -52,7 +51,6 @@ class AzCognitiveSearchReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-
         search_result = self.search_client.search(query, filter=filter)
 
         return [

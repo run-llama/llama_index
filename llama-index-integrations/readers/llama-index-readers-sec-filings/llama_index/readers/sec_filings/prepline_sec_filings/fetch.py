@@ -1,4 +1,5 @@
-"""Module for fetching data from the SEC EDGAR Archives"""
+"""Module for fetching data from the SEC EDGAR Archives."""
+
 import json
 import os
 import re
@@ -7,8 +8,8 @@ from typing import List, Optional, Tuple, Union
 
 import requests
 
-if sys.version_info < (3, 8):
-    from typing_extensions import Final
+if sys.version_info < (3, 8):  # noqa: UP036
+    from typing import Final
 else:
     from typing import Final
 
@@ -43,7 +44,8 @@ def get_filing(
 ) -> str:
     """Fetches the specified filing from the SEC EDGAR Archives. Conforms to the rate
     limits specified on the SEC website.
-    ref: https://www.sec.gov/os/accessing-edgar-data"""
+    ref: https://www.sec.gov/os/accessing-edgar-data.
+    """
     session = _get_session(company, email)
     return _get_filing(session, cik, accession_number)
 
@@ -81,17 +83,15 @@ def get_forms_by_cik(session: requests.Session, cik: Union[str, int]) -> dict:
     response.raise_for_status()
     content = json.loads(response.content)
     recent_forms = content["filings"]["recent"]
-    form_types = {
-        k: v for k, v in zip(recent_forms["accessionNumber"], recent_forms["form"])
-    }
-    return form_types
+    return dict(zip(recent_forms["accessionNumber"], recent_forms["form"]))
 
 
 def _get_recent_acc_num_by_cik(
     session: requests.Session, cik: Union[str, int], form_types: List[str]
 ) -> Tuple[str, str]:
     """Returns accession number and form type for the most recent filing for one of the
-    given form_types (AKA filing types) for a given cik."""
+    given form_types (AKA filing types) for a given cik.
+    """
     retrieved_form_types = get_forms_by_cik(session, cik)
     for acc_num, form_type_ in retrieved_form_types.items():
         if form_type_ in form_types:
@@ -150,7 +150,7 @@ def get_form_by_ticker(
 
 def _form_types(form_type: str, allow_amended_filing: Optional[bool] = True):
     """Potentialy expand to include amended filing, e.g.:
-    "10-Q" -> "10-Q/A"
+    "10-Q" -> "10-Q/A".
     """
     assert form_type in VALID_FILING_TYPES
     if allow_amended_filing and not form_type.endswith("/A"):
@@ -174,13 +174,13 @@ def get_form_by_cik(
     acc_num, _ = _get_recent_acc_num_by_cik(
         session, cik, _form_types(form_type, allow_amended_filing)
     )
-    text = _get_filing(session, cik, acc_num)
-    return text
+    return _get_filing(session, cik, acc_num)
 
 
 def open_form(cik, acc_num):
     """For a given cik and accession number, opens the index page in default browser for the
-    associated SEC form"""
+    associated SEC form.
+    """
     acc_num = _drop_dashes(acc_num)
     webbrowser.open_new_tab(
         f"{SEC_ARCHIVE_URL}/{cik}/{acc_num}/{_add_dashes(acc_num)}-index.html"
@@ -195,7 +195,8 @@ def open_form_by_ticker(
     email: Optional[str] = None,
 ):
     """For a given ticker, opens the index page in default browser for the most recent form of a
-    given form_type."""
+    given form_type.
+    """
     session = _get_session(company, email)
     cik = get_cik_by_ticker(session, ticker)
     acc_num, _ = _get_recent_acc_num_by_cik(
@@ -206,7 +207,8 @@ def open_form_by_ticker(
 
 def archive_url(cik: Union[str, int], accession_number: Union[str, int]) -> str:
     """Builds the archive URL for the SEC accession number. Looks for the .txt file for the
-    filing, while follows a {accession_number}.txt format."""
+    filing, while follows a {accession_number}.txt format.
+    """
     filename = f"{_add_dashes(accession_number)}.txt"
     accession_number = _drop_dashes(accession_number)
     return f"{SEC_ARCHIVE_URL}/{cik}/{accession_number}/{filename}"
@@ -214,12 +216,11 @@ def archive_url(cik: Union[str, int], accession_number: Union[str, int]) -> str:
 
 def _search_url(cik: Union[str, int]) -> str:
     search_string = f"CIK={cik}&Find=Search&owner=exclude&action=getcompany"
-    url = f"{SEC_SEARCH_URL}?{search_string}"
-    return url
+    return f"{SEC_SEARCH_URL}?{search_string}"
 
 
 def _add_dashes(accession_number: Union[str, int]) -> str:
-    """Adds the dashes back into the accession number"""
+    """Adds the dashes back into the accession number."""
     accession_number = str(accession_number)
     return f"{accession_number[:10]}-{accession_number[10:12]}-{accession_number[12:]}"
 
@@ -235,7 +236,8 @@ def _get_session(
 ) -> requests.Session:
     """Creates a requests sessions with the appropriate headers set. If these headers are not
     set, SEC will reject your request.
-    ref: https://www.sec.gov/os/accessing-edgar-data"""
+    ref: https://www.sec.gov/os/accessing-edgar-data.
+    """
     if company is None:
         company = os.environ.get("SEC_API_ORGANIZATION")
     if email is None:

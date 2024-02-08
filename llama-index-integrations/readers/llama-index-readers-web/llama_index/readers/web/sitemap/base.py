@@ -2,9 +2,9 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from typing import List
 
-from llama_index.readers.web.async_web.base import AsyncWebPageReader
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from llama_index.readers.web.async_web.base import AsyncWebPageReader
 
 
 class SitemapReader(BaseReader):

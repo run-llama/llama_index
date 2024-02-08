@@ -1,4 +1,5 @@
 """Embedding utils for LlamaIndex."""
+
 import os
 from typing import TYPE_CHECKING, List, Optional, Union
 
@@ -46,8 +47,13 @@ def resolve_embed_model(
             return embed_model
 
         try:
-            from llama_index.embeddings.openai import OpenAIEmbedding
-            from llama_index.embeddings.openai.utils import validate_openai_api_key
+            from llama_index.embeddings.openai import (
+                OpenAIEmbedding,
+            )  # pants: no-infer-dep
+
+            from llama_index.embeddings.openai.utils import (
+                validate_openai_api_key,
+            )  # pants: no-infer-dep
 
             embed_model = OpenAIEmbedding()
             validate_openai_api_key(embed_model.api_key)
@@ -85,8 +91,8 @@ def resolve_embed_model(
     if isinstance(embed_model, str):
         try:
             from llama_index.embeddings.huggingface import (
-                HuggingFaceEmbedding,  # pants: no-infer-dep
-            )
+                HuggingFaceEmbedding,
+            )  # pants: no-infer-dep
 
             splits = embed_model.split(":", 1)
             is_local = splits[0]
@@ -110,7 +116,9 @@ def resolve_embed_model(
 
     if LCEmbeddings is not None and isinstance(embed_model, LCEmbeddings):
         try:
-            from llama_index.embeddings.langchain import LangchainEmbedding
+            from llama_index.embeddings.langchain import (
+                LangchainEmbedding,
+            )  # pants: no-infer-dep
 
             embed_model = LangchainEmbedding(embed_model)
         except ImportError as e:

@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.vector_stores.cassandra import CassandraVectorStore
 from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+from llama_index.vector_stores.cassandra import CassandraVectorStore
 
 try:
     import cassio  # noqa

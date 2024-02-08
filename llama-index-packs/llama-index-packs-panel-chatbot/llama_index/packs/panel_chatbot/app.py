@@ -1,4 +1,5 @@
-"""Provides a ChatBot UI for a Github Repository. Powered by Llama Index and Panel"""
+"""Provides a ChatBot UI for a Github Repository. Powered by Llama Index and Panel."""
+
 import os
 import pickle
 from pathlib import Path
@@ -7,7 +8,6 @@ import nest_asyncio
 import panel as pn
 import param
 from llama_index.core import VectorStoreIndex
-
 from llama_index.readers.github import GithubClient, GithubRepositoryReader
 
 # needed because both Panel and GithubRepositoryReader starts up the ioloop
@@ -75,7 +75,8 @@ def _split_and_clean(cstext):
 
 class IndexLoader(pn.viewable.Viewer):
     """The IndexLoader enables the user to interactively create a VectorStoreIndex from a
-    github repository of choice"""
+    github repository of choice.
+    """
 
     value: VectorStoreIndex = param.ClassSelector(class_=VectorStoreIndex)
 
@@ -108,7 +109,7 @@ class IndexLoader(pn.viewable.Viewer):
         doc="Loads the repository index from scratch",
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         if self.index_exists:
@@ -139,7 +140,7 @@ class IndexLoader(pn.viewable.Viewer):
             pn.pane.Str(self.param.status),
         )
 
-    def __panel__(self):
+    def __panel__(self) -> pn.Column:
         return self._layout
 
     @property
@@ -150,8 +151,7 @@ class IndexLoader(pn.viewable.Viewer):
             + self.filter_directories
             + self.filter_file_extensions
         )
-        uid = uid.replace(",", "").replace(".", "")
-        return uid
+        return uid.replace(",", "").replace(".", "")
 
     @property
     def _cached_docs_path(self):
@@ -233,7 +233,8 @@ class IndexLoader(pn.viewable.Viewer):
     @param.depends("_load", watch=True)
     async def load(self):
         """Loads the repository index either from the cache or by downloading from
-        the repository"""
+        the repository.
+        """
         self._update_status("Loading ...")
         self.value = None
 
@@ -258,19 +259,19 @@ class IndexLoader(pn.viewable.Viewer):
 
     @param.depends("owner", "repo")
     def github_url(self):
-        """Returns a html string with a link to the github repository"""
+        """Returns a html string with a link to the github repository."""
         text = f"{self.owner}/{self.repo}"
         href = f"https://github.com/{text}"
         return f"<a href='{href}' target='_blank'>{text}</a>"
 
     @property
     def index_exists(self):
-        """Returns True if the index already exists"""
+        """Returns True if the index already exists."""
         return self._cached_docs_path.exists() and self._cached_index_path.exists()
 
 
 def powered_by():
-    """Returns a component describing the frameworks powering the chat ui"""
+    """Returns a component describing the frameworks powering the chat ui."""
     params = {"height": 40, "sizing_mode": "fixed", "margin": (0, 10)}
     return pn.Column(
         pn.pane.Markdown("### AI Powered By", margin=(10, 5, 10, 0)),
@@ -284,7 +285,7 @@ def powered_by():
 
 
 async def chat_component(index: VectorStoreIndex, index_loader: IndexLoader):
-    """Returns the chat component powering the main area of the application"""
+    """Returns the chat component powering the main area of the application."""
     if not index:
         return pn.Column(
             pn.chat.ChatMessage(
@@ -327,7 +328,7 @@ async def chat_component(index: VectorStoreIndex, index_loader: IndexLoader):
 
 
 def settings_components(index_loader: IndexLoader):
-    """Returns a list of the components to add to the sidebar"""
+    """Returns a list of the components to add to the sidebar."""
     return [
         pn.pane.Image(
             CUTE_LLAMA,
@@ -343,7 +344,7 @@ def settings_components(index_loader: IndexLoader):
 
 
 def create_chat_ui():
-    """Returns the Chat UI"""
+    """Returns the Chat UI."""
     pn.extension(
         sizing_mode="stretch_width", raw_css=[CSS_FIXES_TO_BE_UPSTREAMED_TO_PANEL]
     )

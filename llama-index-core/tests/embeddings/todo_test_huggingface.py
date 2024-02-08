@@ -2,12 +2,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
+
 from llama_index.core.embeddings.pooling import Pooling
 from llama_index.embeddings.huggingface import (
     HuggingFaceInferenceAPIEmbedding,
-)
-
-from tests.llms.test_huggingface import STUB_MODEL_NAME
+)  # pants: no-infer-dep
+from tests.llms.test_huggingface import STUB_MODEL_NAME  # pants: no-infer-dep
 
 
 @pytest.fixture(name="hf_inference_api_embedding")

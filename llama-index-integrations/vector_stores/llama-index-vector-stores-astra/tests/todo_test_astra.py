@@ -1,19 +1,10 @@
 import os
 from typing import Iterable
 
-import pytest
+import astrapy
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import VectorStoreQuery
 from llama_index.vector_stores.astra import AstraDBVectorStore
-
-try:
-    import astrapy
-
-    print(f"astrapy detected: {astrapy.__version__}")
-
-    has_astrapy = True
-except ImportError:
-    has_astrapy = False
 
 print(f"astrapy detected: {astrapy.__version__}")
 
@@ -36,7 +27,6 @@ def astra_db_store() -> Iterable[AstraDBVectorStore]:
     store._astra_db.delete_collection("test_collection")
 
 
-@pytest.mark.skipif(not has_astrapy, reason="astrapy not installed")
 @pytest.mark.skipif(
     ASTRA_DB_APPLICATION_TOKEN == "" or ASTRA_DB_API_ENDPOINT == "",
     reason="missing Astra DB credentials",
@@ -58,7 +48,6 @@ def test_astra_db_create_and_crud(astra_db_store: AstraDBVectorStore) -> None:
     astra_db_store.delete("test node id")
 
 
-@pytest.mark.skipif(not has_astrapy, reason="astrapy not installed")
 @pytest.mark.skipif(
     ASTRA_DB_APPLICATION_TOKEN == "" or ASTRA_DB_API_ENDPOINT == "",
     reason="missing Astra DB credentials",

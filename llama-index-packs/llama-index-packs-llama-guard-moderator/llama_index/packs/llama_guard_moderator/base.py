@@ -1,6 +1,5 @@
 """LlamaPack class."""
 
-
 from typing import Any, Dict
 
 from llama_index.core.llama_pack.base import BaseLlamaPack
@@ -60,8 +59,8 @@ class LlamaGuardModeratorPack(BaseLlamaPack):
     ) -> None:
         """Init params."""
         try:
-            from transformers import AutoTokenizer, AutoModelForCausalLM
             import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
         except ImportError:
             raise ImportError(
                 "Dependencies missing, run " "`pip install torch transformers`"
@@ -99,7 +98,6 @@ class LlamaGuardModeratorPack(BaseLlamaPack):
 
     def run(self, message: str, **kwargs: Any) -> Any:
         """Run the pipeline."""
-
         # tailored for query engine input/output, using "user" role
         chat = [{"role": "user", "content": message}]
 
@@ -107,10 +105,7 @@ class LlamaGuardModeratorPack(BaseLlamaPack):
         inputs = self.tokenizer([prompt], return_tensors="pt").to(self.device)
         output = self.model.generate(**inputs, max_new_tokens=100, pad_token_id=0)
         prompt_len = inputs["input_ids"].shape[-1]
-        moderator_response = self.tokenizer.decode(
-            output[0][prompt_len:], skip_special_tokens=True
-        )
-        return moderator_response
+        return self.tokenizer.decode(output[0][prompt_len:], skip_special_tokens=True)
 
     def _moderation_prompt_for_chat(self, chat):
         # For simplicity, we assume the chat dictionary correctly alternates "user" and "assistant" roles

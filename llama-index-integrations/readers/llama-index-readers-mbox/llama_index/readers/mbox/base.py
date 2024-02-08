@@ -1,10 +1,11 @@
 """Simple reader for mbox (mailbox) files."""
+
 import os
 from pathlib import Path
 from typing import Any, List
 
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.readers.file.mbox_reader import MboxReader as MboxFileReader
+from llama_index.readers.file import MboxReader as MboxFileReader
 from llama_index.core.schema import Document
 
 

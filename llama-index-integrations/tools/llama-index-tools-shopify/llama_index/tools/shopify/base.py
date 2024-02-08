@@ -19,7 +19,7 @@ class ShopifyToolSpec(BaseToolSpec):
 
     def run_graphql_query(self, graphql_query: str):
         """
-        Run a GraphQL query against the Shopify Admin API
+        Run a GraphQL query against the Shopify Admin API.
 
         Example graphql_query: {
               products (first: 3) {

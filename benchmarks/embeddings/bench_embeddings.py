@@ -3,7 +3,6 @@ from functools import partial
 from typing import Callable, List, Optional, Tuple
 
 import pandas as pd
-
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,

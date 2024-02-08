@@ -5,12 +5,11 @@ from typing import List, Optional
 import requests
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-
 from llama_index.tools.openapi.base import OpenAPIToolSpec
 
 
 class ChatGPTPluginToolSpec(BaseToolSpec):
-    """ChatGPT Plugin Tool
+    """ChatGPT Plugin Tool.
 
     This tool leverages the OpenAPI tool spec to automatically load ChatGPT
     plugins from a manifest file.

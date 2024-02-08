@@ -15,7 +15,6 @@ class IntercomReader(BaseReader):
 
     def __init__(self, intercom_access_token: str) -> None:
         """Initialize Intercom reader."""
-
         self.intercom_access_token = intercom_access_token
 
     def load_data(self) -> List[Document]:
@@ -23,6 +22,8 @@ class IntercomReader(BaseReader):
 
         Args:
             workspace_id (str): Workspace ID.
+
+
         Returns:
             List[Document]: List of documents.
         """

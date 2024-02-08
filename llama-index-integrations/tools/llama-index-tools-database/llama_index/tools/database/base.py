@@ -2,10 +2,10 @@
 
 from typing import Any, List, Optional
 
-from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import MetaData, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import NoSuchTableError
@@ -104,13 +104,13 @@ class DatabaseToolSpec(BaseToolSpec, BaseReader):
         """
         Returns a list of available tables in the database.
         To retrieve details about the columns of specfic tables, use
-        the describe_tables endpoint
+        the describe_tables endpoint.
         """
-        return list(map(lambda x: x.name, self._metadata.sorted_tables))
+        return [x.name for x in self._metadata.sorted_tables]
 
     def describe_tables(self, tables: Optional[List[str]] = None) -> str:
         """
-        Describes the specifed tables in the database
+        Describes the specifed tables in the database.
 
         Args:
             tables (List[str]): A list of table names to retrieve details about

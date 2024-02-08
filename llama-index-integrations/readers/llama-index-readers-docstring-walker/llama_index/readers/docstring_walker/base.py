@@ -1,13 +1,12 @@
-"""Main module for DocstringWalker loader for Llama Hub"""
-
+"""Main module for DocstringWalker loader for Llama Hub."""
 
 import ast
-import os
 import logging
+import os
 from typing import List
-from llama_index.core.schema import Document
-from llama_index.core.readers.base import BaseReader
 
+from llama_index.core.readers.base import BaseReader
+from llama_index.core.schema import Document
 
 TYPES_TO_PROCESS = {ast.FunctionDef, ast.ClassDef}
 
@@ -43,16 +42,12 @@ class DocstringWalker(BaseReader):
             Whether to fail on malformed files. Defaults to False - in this case,
             the malformed files are skipped and a warning is logged.
 
-        Returns
+        Returns:
         -------
         List[Document]
             A list of loaded documents.
         """
-
-        llama_docs = self.process_directory(
-            code_dir, skip_initpy, fail_on_malformed_files
-        )
-        return llama_docs
+        return self.process_directory(code_dir, skip_initpy, fail_on_malformed_files)
 
     def process_directory(
         self,
@@ -72,7 +67,7 @@ class DocstringWalker(BaseReader):
             Whether to fail on malformed files. Defaults to False - in this case,
             the malformed files are skipped and a warning is logged.
 
-        Returns
+        Returns:
         -------
         List[Document]
             A list of Document objects.
@@ -90,7 +85,7 @@ class DocstringWalker(BaseReader):
                         llama_docs.append(doc)
                     except Exception as e:
                         if fail_on_malformed_files:
-                            raise e
+                            raise e  # noqa: TRY201
                         log.warning(
                             "Failed to parse file %s. Skipping. Error: %s",
                             module_path,
@@ -107,14 +102,13 @@ class DocstringWalker(BaseReader):
         path : str
             Path to the module.
 
-        Returns
+        Returns:
         -------
         str
             The text of the module.
         """
-        with open(path, mode="r", encoding="utf-8") as f:
-            text = f.read()
-        return text
+        with open(path, encoding="utf-8") as f:
+            return f.read()
 
     def parse_module(self, module_name: str, path: str) -> Document:
         """Function for parsing a single Python module.
@@ -126,7 +120,7 @@ class DocstringWalker(BaseReader):
         path : str
             Path to the module.
 
-        Returns
+        Returns:
         -------
         Document
             A LLama Index Document object with extracted information from the module.
@@ -141,8 +135,7 @@ class DocstringWalker(BaseReader):
                 sub_text = self.process_elem(elem, module_name)
                 sub_texts.append(sub_text)
         module_text += "\n".join(sub_texts)
-        document = Document(text=module_text)
-        return document
+        return Document(text=module_text)
 
     def process_class(self, class_node: ast.ClassDef, parent_node: str):
         """
@@ -183,7 +176,7 @@ class DocstringWalker(BaseReader):
         parent_node : str
             The name of the parent node.
 
-        Returns
+        Returns:
         -------
         str
             A string representation of the processed function node with its sub-elements.
@@ -213,7 +206,6 @@ class DocstringWalker(BaseReader):
         Returns:
             str: The result of processing the element.
         """
-
         if isinstance(elem, ast.FunctionDef):
             return self.process_function(elem, parent_node)
         elif isinstance(elem, ast.ClassDef):

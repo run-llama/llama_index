@@ -7,7 +7,6 @@ from llama_index.core.prompts.base import (
     BasePromptTemplate,
 )
 from llama_index.core.prompts.prompt_type import PromptType
-
 from tests.mock_utils.mock_utils import mock_extract_keywords_response
 
 

@@ -8,7 +8,6 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, cast
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
-
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,

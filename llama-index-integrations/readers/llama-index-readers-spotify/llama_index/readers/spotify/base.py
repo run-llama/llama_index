@@ -19,7 +19,6 @@ class SpotifyReader(BaseReader):
         Args:
             collections (Optional[str]): "albums", "tracks", or "playlists"
         """
-
         import spotipy
         from spotipy.oauth2 import SpotifyOAuth
 

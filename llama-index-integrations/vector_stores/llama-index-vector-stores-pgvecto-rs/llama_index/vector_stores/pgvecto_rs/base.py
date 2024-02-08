@@ -1,9 +1,6 @@
 import logging
 from typing import Any, List
 
-from pgvecto_rs.sdk import PGVectoRs, Record
-from pgvecto_rs.sdk.filters import meta_contains
-
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
@@ -15,6 +12,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+from pgvecto_rs.sdk import PGVectoRs, Record
+from pgvecto_rs.sdk.filters import meta_contains
 
 logger = logging.getLogger(__name__)
 import_err_msg = (

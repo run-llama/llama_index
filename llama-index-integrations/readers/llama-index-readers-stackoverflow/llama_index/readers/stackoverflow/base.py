@@ -104,7 +104,7 @@ class StackoverflowReader(BaseReader):
             response = {}
             if self._cache_dir and os.path.exists(fp) and os.path.getsize(fp) > 0:
                 try:
-                    with open(fp, "r") as f:
+                    with open(fp) as f:
                         response = f.read()
                         response = json.loads(response)
                 except Exception as e:
@@ -162,8 +162,7 @@ class StackoverflowReader(BaseReader):
         # not sure if this filter is shared globally, or only to a particular team
         filter_fragment = "&filter=!nOedRLbqzB"
         page_fragment = f"&page={page}"
-        url = f"https://api.stackoverflowteams.com/2.3/{doc_type}?{team_fragment}{filter_fragment}{page_fragment}"
-        return url
+        return f"https://api.stackoverflowteams.com/2.3/{doc_type}?{team_fragment}{filter_fragment}{page_fragment}"
 
 
 if __name__ == "__main__":

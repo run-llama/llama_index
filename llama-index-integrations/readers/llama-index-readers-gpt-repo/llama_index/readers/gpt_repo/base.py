@@ -40,7 +40,7 @@ from llama_index.core.schema import Document
 
 def get_ignore_list(ignore_file_path) -> List[str]:
     ignore_list = []
-    with open(ignore_file_path, "r") as ignore_file:
+    with open(ignore_file_path) as ignore_file:
         for line in ignore_file:
             ignore_list.append(line.strip())
     return ignore_list
@@ -74,7 +74,7 @@ def process_repository(
                 not should_ignore(relative_file_path, ignore_list)
                 and is_correct_extension
             ):
-                with open(file_path, "r", errors="ignore") as file:
+                with open(file_path, errors="ignore") as file:
                     contents = file.read()
                 result_text += "-" * 4 + "\n"
                 result_text += f"{relative_file_path}\n"

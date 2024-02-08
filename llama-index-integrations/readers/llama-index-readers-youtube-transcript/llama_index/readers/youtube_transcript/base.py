@@ -1,12 +1,10 @@
 """Simple Reader that reads transcript of youtube video."""
 import re
+from importlib.util import find_spec
 from typing import Any, List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-
-from importlib.util import find_spec
-
 from llama_index.readers.youtube_transcript.utils import YOUTUBE_URL_PATTERNS
 
 
@@ -43,11 +41,11 @@ class YoutubeTranscriptReader(BaseReader):
                 raise ValueError(
                     f"Supplied url {link} is not a supported youtube URL."
                     "Supported formats include:"
-                    "  youtube.com/watch?v=\{video_id\} "
+                    "  youtube.com/watch?v=\\{video_id\\} "
                     "(with or without 'www.')\n"
-                    "  youtube.com/embed?v=\{video_id\} "
+                    "  youtube.com/embed?v=\\{video_id\\} "
                     "(with or without 'www.')\n"
-                    "  youtu.be/{video_id\} (never includes www subdomain)"
+                    "  youtu.be/{video_id\\} (never includes www subdomain)"
                 )
             transcript_chunks = YouTubeTranscriptApi.get_transcript(
                 video_id, languages=languages

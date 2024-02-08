@@ -8,9 +8,6 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 from uuid import uuid4
 
-import weaviate  # noqa
-from weaviate import AuthApiKey, Client
-
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode
 from llama_index.core.vector_stores.types import (
@@ -30,6 +27,9 @@ from llama_index.vector_stores.weaviate.utils import (
     parse_get_response,
     to_node,
 )
+
+import weaviate  # noqa
+from weaviate import AuthApiKey, Client
 
 logger = logging.getLogger(__name__)
 

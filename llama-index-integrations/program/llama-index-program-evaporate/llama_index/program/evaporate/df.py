@@ -1,11 +1,10 @@
 from typing import Any, List, Optional, Type, cast
 
 import pandas as pd
-
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.program.llm_prompt_program import BaseLLMFunctionProgram
-from llama_index.program.openai import OpenAIPydanticProgram
 from llama_index.core.types import BasePydanticProgram
+from llama_index.program.openai import OpenAIPydanticProgram
 
 
 class DataFrameRow(BaseModel):

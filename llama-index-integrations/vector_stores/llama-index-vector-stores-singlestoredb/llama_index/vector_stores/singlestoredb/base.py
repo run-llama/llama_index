@@ -2,10 +2,6 @@ import json
 import logging
 from typing import Any, List, Optional, Sequence
 
-from sqlalchemy.pool import QueuePool
-
-import singlestoredb as s2
-
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     VectorStore,
@@ -16,6 +12,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from sqlalchemy.pool import QueuePool
+
+import singlestoredb as s2
 
 logger = logging.getLogger(__name__)
 

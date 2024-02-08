@@ -3,5 +3,4 @@ from llama_index.packs.agent_search_retriever.base import (
     AgentSearchRetrieverPack,
 )
 
-
 __all__ = ["AgentSearchRetriever", "AgentSearchRetrieverPack"]

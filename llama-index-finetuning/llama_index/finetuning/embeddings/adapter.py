@@ -50,7 +50,6 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
     ) -> None:
         """Init params."""
         import torch
-
         from llama_index.finetuning.embeddings.adapter_utils import (
             BaseAdapter,
             LinearLayer,

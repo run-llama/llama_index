@@ -5,29 +5,29 @@ https://arxiv.org/pdf/2401.04398v1.pdf
 
 """
 
-from llama_index.core.llama_pack.base import BaseLlamaPack
+import re
 from abc import abstractmethod
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import pandas as pd
+from llama_index.core.base.query_pipeline.query import QueryComponent
+from llama_index.core.base.response.schema import Response
+from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.llama_pack.base import BaseLlamaPack
+from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.query_engine import CustomQueryEngine
-from llama_index.core.base.response.schema import Response
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.llms.llm import LLM
-from llama_index.llms.openai import OpenAI
-from llama_index.core.query_pipeline.query import QueryPipeline as QP
 from llama_index.core.query_pipeline.components.function import FnComponent
-from llama_index.core.base.query_pipeline.query import QueryComponent
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.query_pipeline.query import QueryPipeline as QP
 from llama_index.core.utils import print_text
-import pandas as pd
-from typing import Any, Optional, Dict, Callable, List, Tuple
-import re
+from llama_index.llms.openai import OpenAI
 
 
 def _get_regex_parser_fn(regex: str) -> Callable:
     """Get regex parser."""
 
     def _regex_parser(output: Any) -> List[str]:
-        """Regex parser"""
+        """Regex parser."""
         output = str(output)
         m = re.search(regex, output)
         args = m.group(1)
@@ -239,7 +239,7 @@ class AddColumnSchema(FunctionSchema):
     ) -> None:
         """Init params."""
         prompt = PromptTemplate(add_column_str)
-        regex = "f_add_column\((.*)\)"
+        regex = "f_add_column\\((.*)\\)"
         super().__init__(
             prompt=prompt,
             regex=regex,
@@ -318,7 +318,7 @@ class SelectColumnSchema(FunctionSchema):
         prompt = PromptTemplate(select_column_str)
         super().__init__(
             prompt=prompt,
-            regex="f_select_column\(\[(.*)\]\)",
+            regex="f_select_column\\(\\[(.*)\\]\\)",
             **kwargs,
         )
 
@@ -328,8 +328,7 @@ class SelectColumnSchema(FunctionSchema):
         assert isinstance(args, list)
         table = table.copy()
         # select columns from table
-        table = table[args]
-        return table
+        return table[args]
 
 
 select_column_schema = SelectColumnSchema()
@@ -393,7 +392,7 @@ class SelectRowSchema(FunctionSchema):
         prompt = PromptTemplate(select_row_str)
         super().__init__(
             prompt=prompt,
-            regex="f_select_row\(\[(.*)\]\)",
+            regex="f_select_row\\(\\[(.*)\\]\\)",
             **kwargs,
         )
 
@@ -406,8 +405,7 @@ class SelectRowSchema(FunctionSchema):
 
         table = table.copy()
         # select rows from table
-        table = table.loc[args]
-        return table
+        return table.loc[args]
 
 
 select_row_schema = SelectRowSchema()
@@ -442,7 +440,7 @@ class GroupBySchema(FunctionSchema):
         prompt = PromptTemplate(group_by_str)
         super().__init__(
             prompt=prompt,
-            regex="f_group_by\((.*)\)",
+            regex="f_group_by\\((.*)\\)",
             **kwargs,
         )
 
@@ -502,7 +500,7 @@ class SortBySchema(FunctionSchema):
         prompt = PromptTemplate(sort_by_str)
         super().__init__(
             prompt=prompt,
-            regex="f_sort_by\((.*)\)",
+            regex="f_sort_by\\((.*)\\)",
             **kwargs,
         )
 
@@ -723,7 +721,6 @@ class ChainOfTablePack(BaseLlamaPack):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-
         self.query_engine = ChainOfTableQueryEngine(
             table=table,
             llm=llm,

@@ -2,7 +2,6 @@ import os
 from typing import Optional
 
 import fsspec
-
 from llama_index.core.storage.index_store.keyval_index_store import KVIndexStore
 from llama_index.core.storage.index_store.types import (
     DEFAULT_PERSIST_DIR,

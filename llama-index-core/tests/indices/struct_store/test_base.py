@@ -30,7 +30,6 @@ from sqlalchemy import (
     delete,
     select,
 )
-
 from tests.mock_utils.mock_prompts import MOCK_TABLE_CONTEXT_PROMPT
 
 

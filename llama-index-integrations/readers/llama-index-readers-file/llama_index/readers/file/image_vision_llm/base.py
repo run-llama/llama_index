@@ -54,9 +54,8 @@ class ImageVisionLLMReader(BaseReader):
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """Parse file."""
-        from PIL import Image
-
         from llama_index.core.img_utils import img_2_b64
+        from PIL import Image
 
         # load document image
         image = Image.open(file)

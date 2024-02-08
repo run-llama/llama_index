@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from typing import Any, Dict
 
 from dataclasses_json import DataClassJsonMixin
-
 from llama_index.core.data_structs.data_structs import IndexStruct
 from llama_index.core.data_structs.struct_type import IndexStructType
 

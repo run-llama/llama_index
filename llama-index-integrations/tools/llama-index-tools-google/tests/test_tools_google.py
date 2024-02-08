@@ -1,7 +1,7 @@
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.google import (
-    GoogleCalendarToolSpec,
     GmailToolSpec,
+    GoogleCalendarToolSpec,
     GoogleSearchToolSpec,
 )
 

@@ -3,8 +3,8 @@
 
 from typing import Any, Dict, List, Optional
 
-from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.indices.multi_modal import MultiModalVectorStoreIndex
+from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.query_engine import SimpleMultiModalQueryEngine
 from llama_index.core.schema import BaseNode
 from llama_index.core.storage.storage_context import StorageContext

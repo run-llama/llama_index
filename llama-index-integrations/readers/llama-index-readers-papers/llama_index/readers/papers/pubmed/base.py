@@ -1,4 +1,5 @@
 """Read Pubmed Papers."""
+
 from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -51,11 +52,13 @@ class PubmedReader(BaseReader):
                     info = resp.json()
                     title = "Pubmed Paper"
                     try:
-                        title = [
-                            p["text"]
-                            for p in info["documents"][0]["passages"]
-                            if p["infons"]["section_type"] == "TITLE"
-                        ][0]
+                        title = next(
+                            [
+                                p["text"]
+                                for p in info["documents"][0]["passages"]
+                                if p["infons"]["section_type"] == "TITLE"
+                            ]
+                        )
                     except KeyError:
                         pass
                     pubmed_search.append(
@@ -70,7 +73,6 @@ class PubmedReader(BaseReader):
                     )
                 except Exception:
                     print(f"Unable to parse PMC{_id} or it does not exist")
-                    pass
 
         # Then get documents from Pubmed text, which includes abstracts
         pubmed_documents = []
@@ -98,9 +100,12 @@ class PubmedReader(BaseReader):
         max_results: Optional[int] = 10,
     ) -> List[Document]:
         """Search for a topic on Pubmed, fetch the text of the most relevant full-length papers.
+
         Args:
             search_query (str): A topic to search for (e.g. "Alzheimers").
             max_results (Optional[int]): Maximum number of papers to fetch.
+
+
         Returns:
             List[Document]: A list of Document objects.
         """
@@ -153,7 +158,6 @@ class PubmedReader(BaseReader):
                     time.sleep(1)  # API rate limits
                 except Exception as e:
                     print(f"Unable to parse PMC{_id} or it does not exist:", e)
-                    pass
 
         # Then get documents from Pubmed text, which includes abstracts
         pubmed_documents = []

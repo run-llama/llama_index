@@ -1,6 +1,5 @@
 """Prompts."""
 
-
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import (
@@ -21,6 +20,8 @@ if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import (
         BasePromptTemplate as LangchainTemplate,
     )
+
+    # pants: no-infer-dep
     from llama_index.core.bridge.langchain import (
         ConditionalPromptSelector as LangchainSelector,
     )

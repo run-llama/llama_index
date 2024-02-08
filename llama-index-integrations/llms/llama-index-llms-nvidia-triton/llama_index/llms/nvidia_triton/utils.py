@@ -14,7 +14,6 @@ from typing import (
 )
 
 import numpy as np
-
 import tritonclient.grpc as grpcclient
 import tritonclient.http as httpclient
 

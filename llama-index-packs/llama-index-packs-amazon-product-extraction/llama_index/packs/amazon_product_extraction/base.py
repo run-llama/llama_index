@@ -1,14 +1,15 @@
 """Product extraction pack."""
-from typing import Dict, Any
-from llama_index.core.llama_pack.base import BaseLlamaPack
 import asyncio
-from llama_index.multi_modal_llms.openai import OpenAIMultiModal
+from typing import Any, Dict
+
 from llama_index.core import SimpleDirectoryReader
-from pydantic import BaseModel, Field
+from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.output_parsers import PydanticOutputParser
 from llama_index.core.program.multi_modal_llm_program import (
     MultiModalLLMCompletionProgram,
 )
+from llama_index.multi_modal_llms.openai import OpenAIMultiModal
+from pydantic import BaseModel, Field
 
 
 async def _screenshot_page(

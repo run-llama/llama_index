@@ -1,13 +1,13 @@
-from typing import List
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import time
+from typing import List
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 class WholeSiteReader(BaseReader):
@@ -81,8 +81,11 @@ class WholeSiteReader(BaseReader):
 
     def load_data(self, base_url: str) -> List[Document]:
         """Load data from the base URL using BFS algorithm.
+
         Args:
             base_url (str): Base URL to start scraping.
+
+
         Returns:
             List[Document]: List of scraped documents.
         """

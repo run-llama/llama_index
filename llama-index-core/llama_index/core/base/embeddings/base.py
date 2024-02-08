@@ -6,7 +6,6 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
-
 from llama_index.core.bridge.pydantic import Field, validator
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload

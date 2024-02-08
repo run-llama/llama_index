@@ -1,10 +1,10 @@
 """News article reader using Newspaper."""
 import logging
-from typing import Any, List, Generator
+from importlib.util import find_spec
+from typing import Any, Generator, List
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-from importlib.util import find_spec
 
 logger = logging.getLogger(__name__)
 

@@ -12,11 +12,10 @@ from openai.types.chat.chat_completion import (
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
 from openai.types.completion import Completion, CompletionChoice, CompletionUsage
-
 from tests.conftest import CachedOpenAIApiKeys
 
 try:
-    from llama_index.llms.openai import OpenAI
+    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
 except ImportError:
     OpenAI = None  # type: ignore
 

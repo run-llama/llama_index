@@ -11,17 +11,18 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.llms.base import ChatMessage, ChatResponse
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.tools.function_tool import FunctionTool
+
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
 try:
-    from llama_index.llms.openai import OpenAI
+    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
 except ImportError:
     OpenAI = None  # type: ignore
 
 try:
-    from llama_index.agent.openai import OpenAIAgent
+    from llama_index.agent.openai import OpenAIAgent  # pants: no-infer-dep
 except ImportError:
     OpenAIAgent = None  # type: ignore
 

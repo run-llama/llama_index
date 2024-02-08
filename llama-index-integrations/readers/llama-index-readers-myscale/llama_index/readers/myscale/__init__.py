@@ -4,5 +4,4 @@ from llama_index.readers.myscale.base import (
     format_list_to_string,
 )
 
-
 __all__ = ["MyScaleReader", "escape_str", "format_list_to_string"]

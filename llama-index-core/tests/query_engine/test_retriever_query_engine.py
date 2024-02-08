@@ -12,7 +12,7 @@ from llama_index.core.query_engine.retriever_query_engine import (
 )
 
 try:
-    from llama_index.llms.openai import OpenAI
+    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
 except ImportError:
     OpenAI = None  # type: ignore
 

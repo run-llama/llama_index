@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set
 
 from dataclasses_json import DataClassJsonMixin
-
 from llama_index.core.data_structs.struct_type import IndexStructType
 from llama_index.core.schema import BaseNode, TextNode
 

@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 import fsspec
-
 from llama_index.core.data_structs.data_structs import IndexStruct
 
 DEFAULT_PERSIST_DIR = "./storage"

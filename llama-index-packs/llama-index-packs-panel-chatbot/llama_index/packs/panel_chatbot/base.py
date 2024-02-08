@@ -1,4 +1,4 @@
-"""Provides the PanelChatPack"""
+"""Provides the PanelChatPack."""
 import os
 from typing import Any, Dict
 

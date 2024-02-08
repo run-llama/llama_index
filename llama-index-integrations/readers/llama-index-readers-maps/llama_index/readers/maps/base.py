@@ -1,4 +1,4 @@
-"""Simple reader that reads OSMmap data from overpass API"""
+"""Simple reader that reads OSMmap data from overpass API."""
 
 import random
 import string
@@ -37,8 +37,7 @@ class OpenMap(BaseReader):
     def _get_user() -> str:
         # choose from all lowercase letter
         letters = string.ascii_lowercase
-        result_str = "".join(random.choice(letters) for i in range(10))
-        return result_str
+        return "".join(random.choice(letters) for i in range(10))
 
     @staticmethod
     def _get_latlon(locarea: str, user_agent: str) -> tuple:
@@ -61,10 +60,9 @@ class OpenMap(BaseReader):
         local_area_buffer: Optional[int] = 2000,
     ) -> List[Document]:
         """
-        This loader will bring you the all the node values from the open street maps for the given location
+        This loader will bring you the all the node values from the open street maps for the given location.
 
         Args:
-
         localarea(str) -  Area or location you are searching for
         search_tag(str)  - Tag that you are looking for
         if you not sure about the search_tag and tag_values visit https://taginfo.openstreetmap.org/tags
@@ -119,7 +117,7 @@ class OpenMap(BaseReader):
         extra_info["lat"] = lat
         extra_info["lon"] = lon
         # filtering for only the tag values
-        filtered = [i for i in res if "tags" in i.keys()] if tag_only else res
+        filtered = [i for i in res if "tags" in i] if tag_only else res
 
         for key in remove_keys:
             [i.pop(key, None) for i in filtered]

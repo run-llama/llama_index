@@ -130,7 +130,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         try:
             from llama_index.multi_modal_llms.openai.utils import (
                 generate_openai_multi_modal_chat_message,
-            )
+            )  # pants: no-infer-dep
 
             self._add_user_step_to_reasoning = partial(
                 add_user_step_to_reasoning,
@@ -177,7 +177,9 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         """
         if multi_modal_llm is None:
             try:
-                from llama_index.multi_modal_llms.openai import OpenAIMultiModal
+                from llama_index.multi_modal_llms.openai import (
+                    OpenAIMultiModal,
+                )  # pants: no-infer-dep
 
                 multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
                     model="gpt-4-vision-preview", max_new_tokens=1000

@@ -4,11 +4,10 @@ import re
 import uuid
 from typing import Dict, List, Tuple
 
-from tqdm import tqdm
-
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms.utils import LLM
 from llama_index.core.schema import MetadataMode, TextNode
+from tqdm import tqdm
 
 
 class EmbeddingQAFinetuneDataset(BaseModel):

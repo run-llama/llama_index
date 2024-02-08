@@ -32,8 +32,10 @@ def resolve_llm(
 
         # return default OpenAI model. If it fails, return LlamaCPP
         try:
-            from llama_index.llms.openai import OpenAI
-            from llama_index.llms.openai.utils import validate_openai_api_key
+            from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
+            from llama_index.llms.openai.utils import (
+                validate_openai_api_key,
+            )  # pants: no-infer-dep
 
             llm = OpenAI()
             validate_openai_api_key(llm.api_key)
@@ -65,8 +67,9 @@ def resolve_llm(
             from llama_index.llms.llama.utils import (
                 completion_to_prompt,
                 messages_to_prompt,
-            )
-            from llama_index.llms.llama_cpp import LlamaCPP
+            )  # pants: no-infer-dep
+
+            from llama_index.llms.llama_cpp import LlamaCPP  # pants: no-infer-dep
 
             llm = LlamaCPP(
                 model_path=model_path,
@@ -83,7 +86,7 @@ def resolve_llm(
     elif BaseLanguageModel is not None and isinstance(llm, BaseLanguageModel):
         # NOTE: if it's a langchain model, wrap it in a LangChainLLM
         try:
-            from llama_index.llms.langchain import LangChainLLM
+            from llama_index.llms.langchain import LangChainLLM  # pants: no-infer-dep
 
             llm = LangChainLLM(llm=llm)
         except ImportError:

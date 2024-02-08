@@ -16,7 +16,8 @@ import tempfile
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.readers.file.base import DEFAULT_FILE_READER_CLS
+from llama_index.core.readers.file.base import _try_loading_included_file_formats
+from llama_index.core.schema import Document
 from llama_index.readers.github.repository.github_client import (
     GitBranchResponseModel,
     GitCommitResponseModel,
@@ -28,9 +29,11 @@ from llama_index.readers.github.repository.utils import (
     get_file_extension,
     print_if_verbose,
 )
-from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
+
+
+DEFAULT_FILE_READER_CLS = _try_loading_included_file_formats()
 
 
 class GithubRepositoryReader(BaseReader):

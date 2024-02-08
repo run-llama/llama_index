@@ -26,7 +26,7 @@ retries = Retry(
     status_forcelist=[403, 500, 502, 503, 504],
 )
 
-FilingMetadata = namedtuple(
+FilingMetadata = namedtuple(  # noqa: PYI024
     "FilingMetadata",
     [
         "accession_number",
@@ -49,7 +49,7 @@ def form_request_payload(
     start_index: int,
     query: str,
 ) -> dict:
-    payload = {
+    return {
         "dateRange": "custom",
         "startdt": start_date,
         "enddt": end_date,
@@ -58,7 +58,6 @@ def form_request_payload(
         "from": start_index,
         "q": query,
     }
-    return payload
 
 
 def build_filing_metadata_from_hit(hit: dict) -> FilingMetadata:
@@ -117,7 +116,7 @@ def get_filing_urls_to_download(
     include_amends: bool,
     query: str = "",
 ) -> List[FilingMetadata]:
-    """Get the filings URL to download the data
+    """Get the filings URL to download the data.
 
     Returns:
         List[FilingMetadata]: Filing metadata from SEC

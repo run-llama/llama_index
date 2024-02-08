@@ -3,7 +3,6 @@ import logging
 from typing import Any, List, Optional
 
 import clickhouse_connect
-
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 

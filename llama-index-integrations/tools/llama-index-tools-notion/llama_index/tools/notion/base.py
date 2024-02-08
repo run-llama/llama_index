@@ -3,10 +3,9 @@
 from typing import Any, Dict, List, Optional, Type
 
 import requests
-
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.readers.notion import NotionPageReader
 from llama_index.core.tools.tool_spec.base import SPEC_FUNCTION_TYPE, BaseToolSpec
+from llama_index.readers.notion import NotionPageReader
 
 SEARCH_URL = "https://api.notion.com/v1/search"
 

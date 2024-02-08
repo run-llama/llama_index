@@ -4,12 +4,8 @@ import uuid
 from logging import getLogger
 from typing import Any, Callable, Dict, List, Literal, Optional, Union, cast
 
-import elasticsearch
-from elasticsearch.helpers import BulkIndexError, async_bulk
-
 import nest_asyncio
 import numpy as np
-
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -23,6 +19,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+import elasticsearch
+from elasticsearch.helpers import BulkIndexError, async_bulk
 
 logger = getLogger(__name__)
 

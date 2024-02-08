@@ -15,7 +15,9 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
     """Get global eval handler."""
     if eval_mode == "wandb":
         try:
-            from llama_index.callbacks.wandb import WandbCallbackHandler
+            from llama_index.callbacks.wandb import (
+                WandbCallbackHandler,
+            )  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "WandbCallbackHandler is not installed. "
@@ -27,7 +29,7 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         try:
             from llama_index.callbacks.openinference import (
                 OpenInferenceCallbackHandler,
-            )
+            )  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "OpenInferenceCallbackHandler is not installed. "
@@ -39,7 +41,7 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         try:
             from llama_index.callbacks.arize_phoenix import (
                 arize_phoenix_callback_handler,
-            )
+            )  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "ArizePhoenixCallbackHandler is not installed. "
@@ -51,7 +53,7 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         try:
             from llama_index.callbacks.honeyhive import (
                 honeyhive_callback_handler,
-            )
+            )  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "HoneyHiveCallbackHandler is not installed. "
@@ -60,7 +62,9 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         handler = honeyhive_callback_handler(**eval_params)
     elif eval_mode == "promptlayer":
         try:
-            from llama_index.callbacks.promptlayer import PromptLayerHandler
+            from llama_index.callbacks.promptlayer import (
+                PromptLayerHandler,
+            )  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "PromptLayerHandler is not installed. "
@@ -71,7 +75,7 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         try:
             from llama_index.callbacks.deepeval import (
                 deepeval_callback_handler,
-            )
+            )  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "DeepEvalCallbackHandler is not installed. "
@@ -82,7 +86,9 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         handler = SimpleLLMHandler(**eval_params)
     elif eval_mode == "argilla":
         try:
-            from llama_index.callbacks.argilla import argilla_callback_handler
+            from llama_index.callbacks.argilla import (
+                argilla_callback_handler,
+            )  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "ArgillaCallbackHandler is not installed. "

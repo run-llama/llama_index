@@ -1,4 +1,4 @@
-"""dad_jokes reader"""
+"""dad_jokes reader."""
 
 from typing import List
 

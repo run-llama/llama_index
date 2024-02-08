@@ -6,9 +6,9 @@ A loader that fetches a file or iterates through a directory on AWS S3 or other 
 
 from typing import Dict, List, Optional, Union
 
-from llama_index.readers.opendal.base import OpendalReader
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from llama_index.readers.opendal.base import OpendalReader
 
 
 class OpendalS3Reader(BaseReader):

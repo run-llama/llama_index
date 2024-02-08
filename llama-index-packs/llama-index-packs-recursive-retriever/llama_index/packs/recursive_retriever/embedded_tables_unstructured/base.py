@@ -1,16 +1,16 @@
 """Embedded Tables Retriever w/ Unstructured.IO."""
 
-from llama_index.core import VectorStoreIndex
-from llama_index.core.node_parser import UnstructuredElementNodeParser
-from typing import Dict, Any
-from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.retrievers import RecursiveRetriever
-from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.readers.file.flat_reader import FlatReader
-from pathlib import Path
-from typing import Optional
 import os
 import pickle
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+from llama_index.core import VectorStoreIndex
+from llama_index.core.llama_pack.base import BaseLlamaPack
+from llama_index.core.node_parser import UnstructuredElementNodeParser
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.retrievers import RecursiveRetriever
+from llama_index.readers.file.flat import FlatReader
 
 
 class EmbeddedTablesUnstructuredRetrieverPack(BaseLlamaPack):

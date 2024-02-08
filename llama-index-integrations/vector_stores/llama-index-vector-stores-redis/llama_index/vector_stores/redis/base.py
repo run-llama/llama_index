@@ -2,26 +2,12 @@
 
 An index that is built on top of an existing vector store.
 """
+
 import logging
 from typing import Any, Dict, List, Optional
 
 import fsspec
-
-import redis
-from redis.client import Redis as RedisType
-from redis.exceptions import RedisError
-from redis.exceptions import TimeoutError as RedisTimeoutError
-from redis import DataError
-from redis.commands.search.field import VectorField
-
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.readers.redis.utils import (
-    TokenEscaper,
-    array_to_buffer,
-    check_redis_modules_exist,
-    convert_bytes,
-    get_redis_query,
-)
 from llama_index.core.schema import (
     BaseNode,
     MetadataMode,
@@ -39,6 +25,20 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from llama_index.vector_stores.redis.utils import (
+    TokenEscaper,
+    array_to_buffer,
+    check_redis_modules_exist,
+    convert_bytes,
+    get_redis_query,
+)
+
+import redis
+from redis import DataError
+from redis.client import Redis as RedisType
+from redis.commands.search.field import VectorField
+from redis.exceptions import RedisError
+from redis.exceptions import TimeoutError as RedisTimeoutError
 
 _logger = logging.getLogger(__name__)
 

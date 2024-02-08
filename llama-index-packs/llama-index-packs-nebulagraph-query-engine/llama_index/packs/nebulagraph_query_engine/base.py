@@ -1,29 +1,30 @@
 """NebulaGraph Query Engine Pack."""
 
 import os
-from typing import Any, Dict, List, Optional
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
-from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.schema import Document
-from llama_index.graph_stores.nebula import NebulaGraphStore
-from llama_index.llms.openai import OpenAI
 from llama_index.core import (
-    StorageContext,
-    ServiceContext,
     KnowledgeGraphIndex,
+    QueryBundle,
+    ServiceContext,
+    StorageContext,
+    VectorStoreIndex,
+    get_response_synthesizer,
 )
-from llama_index.core import get_response_synthesizer, VectorStoreIndex
-from llama_index.core.retrievers import VectorIndexRetriever, KGTableRetriever
-from llama_index.core import QueryBundle
-from llama_index.core.schema import NodeWithScore
+from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.retrievers import (
     BaseRetriever,
+    KGTableRetriever,
+    VectorIndexRetriever,
 )
+from llama_index.core.schema import Document, NodeWithScore
+from llama_index.graph_stores.nebula import NebulaGraphStore
+from llama_index.llms.openai import OpenAI
 
 
 class NebulaGraphQueryEngineType(str, Enum):
-    """NebulaGraph query engine type"""
+    """NebulaGraph query engine type."""
 
     KG_KEYWORD = "keyword"
     KG_HYBRID = "hybrid"
@@ -51,7 +52,6 @@ class NebulaGraphQueryEnginePack(BaseLlamaPack):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-
         os.environ["GRAPHD_HOST"] = "127.0.0.1"
         os.environ["NEBULA_USER"] = username
         os.environ["NEBULA_PASSWORD"] = password
@@ -181,7 +181,7 @@ class NebulaGraphQueryEnginePack(BaseLlamaPack):
 
 
 class CustomRetriever(BaseRetriever):
-    """Custom retriever that performs both Vector search and Knowledge Graph search"""
+    """Custom retriever that performs both Vector search and Knowledge Graph search."""
 
     def __init__(
         self,
@@ -190,7 +190,6 @@ class CustomRetriever(BaseRetriever):
         mode: str = "OR",
     ) -> None:
         """Init params."""
-
         self._vector_retriever = vector_retriever
         self._kg_retriever = kg_retriever
         if mode not in ("AND", "OR"):
@@ -199,7 +198,6 @@ class CustomRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve nodes given query."""
-
         vector_nodes = self._vector_retriever.retrieve(query_bundle)
         kg_nodes = self._kg_retriever.retrieve(query_bundle)
 
@@ -214,5 +212,4 @@ class CustomRetriever(BaseRetriever):
         else:
             retrieve_ids = vector_ids.union(kg_ids)
 
-        retrieve_nodes = [combined_dict[rid] for rid in retrieve_ids]
-        return retrieve_nodes
+        return [combined_dict[rid] for rid in retrieve_ids]

@@ -8,11 +8,11 @@ https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetc
 import asyncio
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
+from llama_index.core.utils import print_text
 from pydantic import BaseModel
 
 from .schema import LLMCompilerTask
 from .utils import parse_llm_compiler_action_args
-from llama_index.core.utils import print_text
 
 SCHEDULING_INTERVAL = 0.01  # seconds
 

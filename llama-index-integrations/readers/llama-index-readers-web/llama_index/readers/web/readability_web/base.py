@@ -8,27 +8,13 @@ from llama_index.core.schema import Document
 
 path = Path(__file__).parent / "Readability.js"
 
-readabilityjs = ""
-with open(path, "r") as f:
-    readabilityjs = f.read()
-
-inject_readability = f"""
-    (function(){{
-      {readabilityjs}
-      function executor() {{
-        return new Readability({{}}, document).parse();
-      }}
-      return executor();
-    }}())
-"""
-
 
 def nfkc_normalize(text: str) -> str:
     return unicodedata.normalize("NFKC", text)
 
 
 class ReadabilityWebPageReader(BaseReader):
-    """Readability Webpage Loader
+    """Readability Webpage Loader.
 
     Extracting relevant information from a fully rendered web page.
     During the processing, it is always assumed that web pages used as data sources contain textual content.
@@ -62,9 +48,10 @@ class ReadabilityWebPageReader(BaseReader):
             }
         self._text_splitter = text_splitter
         self._normalize = normalize
+        self._readability_js = None
 
     def load_data(self, url: str) -> List[Document]:
-        """render and load data content from url.
+        """Render and load data content from url.
 
         Args:
             url (str): URL to scrape.
@@ -132,6 +119,20 @@ class ReadabilityWebPageReader(BaseReader):
 
         """
         from playwright.sync_api._generated import Browser
+
+        if self._readability_js is None:
+            with open(path) as f:
+                self._readability_js = f.read()
+
+        inject_readability = f"""
+            (function(){{
+            {self._readability_js}
+            function executor() {{
+                return new Readability({{}}, document).parse();
+            }}
+            return executor();
+            }}())
+        """
 
         browser = cast(Browser, browser)
         page = browser.new_page(ignore_https_errors=True)

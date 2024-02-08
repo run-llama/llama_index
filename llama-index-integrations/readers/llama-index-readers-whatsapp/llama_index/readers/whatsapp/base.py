@@ -1,4 +1,4 @@
-"""Whatsapp chat data loader"""
+"""Whatsapp chat data loader."""
 
 import logging
 from pathlib import Path
@@ -18,14 +18,12 @@ class WhatsappChatLoader(BaseReader):
 
     def __init__(self, path: str):
         """Initialize with path."""
-
         self.file_path = path
 
     def load_data(self) -> List[Document]:
         """
-        Parse Whatsapp file into Documents
+        Parse Whatsapp file into Documents.
         """
-
         from chatminer.chatparsers import WhatsAppParser
 
         path = Path(self.file_path)

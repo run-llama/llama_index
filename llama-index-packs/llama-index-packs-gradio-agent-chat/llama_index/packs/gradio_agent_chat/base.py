@@ -1,24 +1,23 @@
-from typing import Dict, Any, List, Tuple
-
-from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.agent.types import BaseAgent
-
-from io import StringIO
 import sys
+from io import StringIO
+from typing import Any, Dict, List, Tuple
+
+from llama_index.core.agent.types import BaseAgent
+from llama_index.core.llama_pack.base import BaseLlamaPack
 
 
 class Capturing(list):
     """To capture the stdout from `BaseAgent.stream_chat` with `verbose=True`. Taken from
     https://stackoverflow.com/questions/16571150/\
-        how-to-capture-stdout-output-from-a-python-function-call
+        how-to-capture-stdout-output-from-a-python-function-call.
     """
 
-    def __enter__(self):
+    def __enter__(self) -> Any:
         self._stdout = sys.stdout
         sys.stdout = self._stringio = StringIO()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args) -> None:
         self.extend(self._stringio.getvalue().splitlines())
         del self._stringio  # free up some memory
         sys.stdout = self._stdout
@@ -48,8 +47,9 @@ class GradioAgentChatPack(BaseLlamaPack):
 
     def _handle_user_message(self, user_message, history):
         """Handle the user submitted message. Clear message box, and append
-        to the history."""
-        return "", history + [(user_message, "")]
+        to the history.
+        """
+        return "", [*history, (user_message, "")]
 
     def _generate_response(
         self, chat_history: List[Tuple[str, str]]
@@ -74,7 +74,7 @@ class GradioAgentChatPack(BaseLlamaPack):
     def run(self, *args: Any, **kwargs: Any) -> Any:
         """Run the pipeline."""
         import gradio as gr
-        from gradio.themes.utils import fonts, colors, sizes
+        from gradio.themes.utils import colors, fonts, sizes
 
         llama_theme = gr.themes.Soft(
             primary_hue=colors.purple,

@@ -12,9 +12,7 @@ class PDFNougatOCR(BaseReader):
         cli_command = ["nougat", "--markdown", "pdf", str(file_path), "--out", "output"]
 
         try:
-            result = subprocess.run(
-                cli_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-            )
+            result = subprocess.run(cli_command, capture_output=True, text=True)
             result.check_returncode()
             return result.stdout
 
@@ -53,4 +51,4 @@ class PDFNougatOCR(BaseReader):
             return [Document(text=content)]
 
         except Exception as e:
-            logging.error(f"An error occurred while processing the PDF: {str(e)}")
+            logging.error(f"An error occurred while processing the PDF: {e!s}")

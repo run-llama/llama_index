@@ -29,7 +29,6 @@ class AsyncWebPageReader(BaseReader):
         fail_on_error: bool = False,
     ) -> None:
         """Initialize with parameters."""
-
         try:
             import html2text  # noqa: F401
         except ImportError:

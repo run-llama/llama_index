@@ -6,9 +6,9 @@ A loader that fetches a file or iterates through a directory on Gcs.
 
 from typing import Dict, List, Optional, Union
 
-from llama_index.readers.opendal.base import OpendalReader
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from llama_index.readers.opendal.base import OpendalReader
 
 
 class OpendalGcsReader(BaseReader):

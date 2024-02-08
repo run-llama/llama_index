@@ -1,7 +1,6 @@
 from typing import Any, Callable, List, Optional, Sequence, TypedDict
 
 import numpy as np
-
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
@@ -88,7 +87,9 @@ class SemanticSplitterNodeParser(NodeParser):
         sentence_splitter = sentence_splitter or split_by_sentence_tokenizer()
         if embed_model is None:
             try:
-                from llama_index.embeddings.openai import OpenAIEmbedding
+                from llama_index.embeddings.openai import (
+                    OpenAIEmbedding,
+                )  # pants: no-infer-dep
 
                 embed_model = embed_model or OpenAIEmbedding()
             except ImportError:

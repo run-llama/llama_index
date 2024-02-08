@@ -43,7 +43,6 @@ class PlaygroundsSubgraphInspectorToolSpec(GraphQLToolSpec):
         Returns:
             str: The constructed URL.
         """
-
         endpoint = "deployments" if use_deployment_id else "subgraphs"
         return f"https://api.playgrounds.network/v1/proxy/{endpoint}/id/{identifier}"
 

@@ -68,7 +68,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
 
                 from elasticsearch import Elasticsearch
 
-                from llama_index.legacy.embeddings import ElasticsearchEmbedding
+                from llama_index.embeddings.elasticsearch import ElasticsearchEmbedding
 
                 # Define the model ID and input field name (if different from default)
                 model_id = "your_model_id"
@@ -111,7 +111,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
         Example:
             .. code-block:: python
 
-                from llama_index.legacy.embeddings import ElasticsearchEmbedding
+                from llama_index.embeddings.bedrock import ElasticsearchEmbedding
 
                 # Define the model ID and input field name (if different from default)
                 model_id = "your_model_id"

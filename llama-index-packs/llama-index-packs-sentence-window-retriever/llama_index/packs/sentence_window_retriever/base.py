@@ -1,15 +1,16 @@
 """Sentence window retriever."""
 
+from typing import Any, Dict, List
+
 from llama_index.core import ServiceContext, VectorStoreIndex
-from llama_index.llms.openai import OpenAI
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.node_parser import (
     SentenceWindowNodeParser,
 )
-from typing import List, Dict, Any
-from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.schema import Document
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
+from llama_index.core.schema import Document
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.llms.openai import OpenAI
 
 
 class SentenceWindowRetrieverPack(BaseLlamaPack):

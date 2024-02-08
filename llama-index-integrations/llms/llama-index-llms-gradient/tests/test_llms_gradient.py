@@ -1,5 +1,5 @@
 from llama_index.core.llms.base import BaseLLM
-from llama_index.llms.gradient import GradientModelAdapterLLM, GradientBaseModelLLM
+from llama_index.llms.gradient import GradientBaseModelLLM, GradientModelAdapterLLM
 
 
 def test_embedding_class():

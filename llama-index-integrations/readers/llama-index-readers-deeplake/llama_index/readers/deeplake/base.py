@@ -2,7 +2,6 @@
 from typing import List, Optional, Union
 
 import numpy as np
-
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 

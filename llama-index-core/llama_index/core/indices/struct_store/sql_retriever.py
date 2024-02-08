@@ -5,8 +5,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
-from sqlalchemy import Table
-
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
@@ -31,6 +29,7 @@ from llama_index.core.settings import (
     llm_from_settings_or_context,
 )
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
+from sqlalchemy import Table
 
 logger = logging.getLogger(__name__)
 

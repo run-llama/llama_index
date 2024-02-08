@@ -21,8 +21,8 @@ except (ImportError, Exception):
     pymongo_available = False
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.vector_stores.azurecosmosmongo import AzureCosmosDBMongoDBVectorSearch
 from llama_index.core.vector_stores.types import VectorStoreQuery
+from llama_index.vector_stores.azurecosmosmongo import AzureCosmosDBMongoDBVectorSearch
 
 
 @pytest.fixture(scope="session")

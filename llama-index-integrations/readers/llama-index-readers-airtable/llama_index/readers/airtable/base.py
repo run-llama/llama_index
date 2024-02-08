@@ -1,10 +1,9 @@
 """Airtable reader."""
 from typing import List
 
-from pyairtable import Table
-
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from pyairtable import Table
 
 
 class AirtableReader(BaseReader):
@@ -16,15 +15,16 @@ class AirtableReader(BaseReader):
 
     def __init__(self, api_key: str) -> None:
         """Initialize Airtable reader."""
-
         self.api_key = api_key
 
     def load_data(self, base_id: str, table_id: str) -> List[Document]:
-        """Load data from a table in a base
+        """Load data from a table in a base.
 
         Args:
             table_id (str): Table ID.
             base_id (str): Base ID.
+
+
         Returns:
             List[Document]: List of documents.
         """

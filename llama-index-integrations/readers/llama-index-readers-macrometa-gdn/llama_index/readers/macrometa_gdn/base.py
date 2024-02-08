@@ -1,9 +1,9 @@
 """Macrometa GDN Reader."""
 
-from typing import List
-import requests
 import json
+from typing import List
 
+import requests
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 

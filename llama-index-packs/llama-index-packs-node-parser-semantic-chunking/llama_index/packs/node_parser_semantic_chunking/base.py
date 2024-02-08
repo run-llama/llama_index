@@ -8,19 +8,17 @@ notebook as well!
 
 """
 
-from typing import Dict, Any, List, Optional
-from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.schema import Document
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.core import VectorStoreIndex
-
 import re
+from typing import Any, Dict, List, Optional
 
 import numpy as np
-
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core import VectorStoreIndex
 from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.node_parser.interface import MetadataAwareTextSplitter
+from llama_index.core.schema import Document
+from llama_index.embeddings.openai import OpenAIEmbedding
 
 
 def combine_sentences(sentences: List[str], buffer_size: int = 1) -> List[str]:
@@ -198,9 +196,7 @@ class SemanticChunker(MetadataAwareTextSplitter):
         )
 
         # make chunks
-        chunks = make_chunks(combined_sentences, indices_above_thresh)
-
-        return chunks
+        return make_chunks(combined_sentences, indices_above_thresh)
 
 
 class SemanticChunkingQueryEnginePack(BaseLlamaPack):

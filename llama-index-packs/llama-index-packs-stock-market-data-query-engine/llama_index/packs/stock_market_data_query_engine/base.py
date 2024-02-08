@@ -1,15 +1,14 @@
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
-from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.schema import IndexNode
 from llama_index.core import VectorStoreIndex
-from llama_index.core.query_engine import PandasQueryEngine
-from llama_index.core.retrievers import RecursiveRetriever
-from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.response_synthesizers import get_response_synthesizer
+from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms.llm import LLM
-from llama_index.llms.openai import OpenAI
+from llama_index.core.query_engine import PandasQueryEngine, RetrieverQueryEngine
+from llama_index.core.response_synthesizers import get_response_synthesizer
+from llama_index.core.retrievers import RecursiveRetriever
+from llama_index.core.schema import IndexNode
 from llama_index.core.service_context import ServiceContext
+from llama_index.llms.openai import OpenAI
 
 
 class StockMarketDataQueryEnginePack(BaseLlamaPack):

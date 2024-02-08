@@ -1,5 +1,5 @@
-from llama_index.finetuning.types import BaseLLMFinetuneEngine
 from llama_index.finetuning.openai import OpenAIFinetuneEngine
+from llama_index.finetuning.types import BaseLLMFinetuneEngine
 
 
 def test_class():

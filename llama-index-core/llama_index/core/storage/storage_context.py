@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Dict, Optional, Union
 
 import fsspec
-
 from llama_index.core.constants import (
     DOC_STORE_KEY,
     GRAPH_STORE_KEY,

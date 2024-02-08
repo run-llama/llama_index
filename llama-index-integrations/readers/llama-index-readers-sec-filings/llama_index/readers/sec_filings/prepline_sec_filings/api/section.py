@@ -41,20 +41,18 @@ try:
         validate_section_names,
     )
 except ImportError:
-    from prepline_sec_filings.sections import (
-        section_string_to_enum,
-        validate_section_names,
-    )
     from prepline_sec_filings.sec_document import (
-        SECDocument,
         REPORT_TYPES,
         VALID_FILING_TYPES,
+        SECDocument,
     )
     from prepline_sec_filings.sections import (
         ALL_SECTIONS,
         SECTIONS_10K,
         SECTIONS_10Q,
         SECTIONS_S1,
+        section_string_to_enum,
+        validate_section_names,
     )
 
 import csv
@@ -73,31 +71,28 @@ router = APIRouter()
 def is_expected_response_type(media_type, response_type):
     if media_type == "application/json" and response_type not in [dict, list]:
         return True
-    elif media_type == "text/csv" and response_type != str:
-        return True
-    else:
-        return False
+    return bool(media_type == "text/csv" and response_type != str)
 
 
 # pipeline-api
 
 
 class timeout:
-    def __init__(self, seconds=1, error_message="Timeout"):
+    def __init__(self, seconds=1, error_message="Timeout") -> None:
         self.seconds = seconds
         self.error_message = error_message
 
     def handle_timeout(self, signum, frame):
         raise TimeoutError(self.error_message)
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         try:
             signal.signal(signal.SIGALRM, self.handle_timeout)
             signal.alarm(self.seconds)
         except ValueError:
             pass
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type, value, traceback) -> None:
         try:
             signal.alarm(0)
         except ValueError:
@@ -125,7 +120,7 @@ def convert_to_isd_csv(results: dict) -> str:
     for section, section_narrative in results.items():
         rows: List[Dict[str, str]] = convert_to_isd(section_narrative)
         for row in rows:
-            new_row_item = dict()
+            new_row_item = {}
             new_row_item["section"] = section
             new_row_item["element_type"] = row["type"]
             new_row_item["text"] = row["text"]
@@ -150,7 +145,7 @@ def pipeline_api(
     m_section=[],
     m_section_regex=[],
 ):
-    """Many supported sections including: RISK_FACTORS, MANAGEMENT_DISCUSSION, and many more"""
+    """Many supported sections including: RISK_FACTORS, MANAGEMENT_DISCUSSION, and many more."""
     validate_section_names(m_section)
 
     sec_document = SECDocument.from_string(text)
@@ -406,7 +401,7 @@ def pipeline_1(
             )
         else:
             return (
-                list(response_generator(is_multipart=False))[0]
+                next(iter(response_generator(is_multipart=False)))
                 if len(text_files) == 1
                 else response_generator(is_multipart=False)
             )

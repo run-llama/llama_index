@@ -5,7 +5,6 @@ import uuid
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast, get_args
 
 import networkx
-
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.base.query_pipeline.query import (
     QUERY_COMPONENT_TYPE,

@@ -1,14 +1,14 @@
-from llama_index.core.readers.base import BaseReader
-from llama_index.core.schema import Document
 from datetime import datetime
 from typing import List
 
+from llama_index.core.readers.base import BaseReader
+from llama_index.core.schema import Document
 from llama_index.readers.earnings_call_transcript.utils import get_earnings_transcript
 
 
 class EarningsCallTranscript(BaseReader):
     def __init__(self, year: int, ticker: str, quarter: str):
-        """Get the earning call transcripts for a given company, in a given year and quarter
+        """Get the earning call transcripts for a given company, in a given year and quarter.
 
         Args:
             year (int): Year of the transcript

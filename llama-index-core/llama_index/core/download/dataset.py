@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import tqdm
-
 from llama_index.core.download.module import LLAMA_HUB_URL
 from llama_index.core.download.utils import (
     get_file_content,

@@ -7,7 +7,7 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class GraphQLToolSpec(BaseToolSpec):
-    """Requests Tool"""
+    """Requests Tool."""
 
     spec_functions = ["graphql_request"]
 
@@ -16,7 +16,7 @@ class GraphQLToolSpec(BaseToolSpec):
         self.url = url
 
     def graphql_request(self, query: str, variables: str, operation_name: str):
-        """
+        r"""
         Use this tool to make a GraphQL query against the server.
 
         Args:

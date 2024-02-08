@@ -1,16 +1,13 @@
-from typing import Dict, Any, List, Tuple, Optional
+import functools
+import sys
+from io import StringIO
+from typing import Any, Dict, List, Optional, Tuple
 
+from llama_index.core.agent import ReActAgent
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.llms.openai import OpenAI
-from llama_index.core.agent import ReActAgent
-
 from llama_index.tools.arxiv import ArxivToolSpec
 from llama_index.tools.wikipedia import WikipediaToolSpec
-import functools
-
-from io import StringIO
-import sys
-
 
 SUPPORTED_TOOLS = {
     "arxiv_search_tool": ArxivToolSpec,
@@ -21,15 +18,15 @@ SUPPORTED_TOOLS = {
 class Capturing(list):
     """To capture the stdout from ReActAgent.chat with verbose=True. Taken from
     https://stackoverflow.com/questions/16571150/\
-        how-to-capture-stdout-output-from-a-python-function-call
+        how-to-capture-stdout-output-from-a-python-function-call.
     """
 
-    def __enter__(self):
+    def __enter__(self) -> Any:
         self._stdout = sys.stdout
         sys.stdout = self._stringio = StringIO()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args) -> None:
         self.extend(self._stringio.getvalue().splitlines())
         del self._stringio  # free up some memory
         sys.stdout = self._stdout
@@ -40,7 +37,7 @@ class GradioReActAgentPack(BaseLlamaPack):
 
     def __init__(
         self,
-        tools_list: Optional[List[str]] = [k for k in SUPPORTED_TOOLS.keys()],
+        tools_list: Optional[List[str]] = list(SUPPORTED_TOOLS.keys()),
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -75,8 +72,9 @@ class GradioReActAgentPack(BaseLlamaPack):
 
     def _handle_user_message(self, user_message, history):
         """Handle the user submitted message. Clear message box, and append
-        to the history."""
-        return "", history + [(user_message, "")]
+        to the history.
+        """
+        return "", [*history, (user_message, "")]
 
     def _generate_response(
         self, chat_history: List[Tuple[str, str]]

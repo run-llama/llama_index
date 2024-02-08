@@ -4,7 +4,6 @@ import math
 from typing import Any, Callable, List, Optional, Tuple
 
 import numpy as np
-
 from llama_index.core.base.embeddings.base import similarity as default_similarity_fn
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 

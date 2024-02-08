@@ -5,11 +5,11 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
+from llama_index.core.query_engine import SubQuestionQueryEngine
 from llama_index.core.schema import TextNode
 from llama_index.core.storage.storage_context import StorageContext
-from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
-from llama_index.core.query_engine import SubQuestionQueryEngine
+from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
 
 class WeaviateSubQuestionPack(BaseLlamaPack):
@@ -24,7 +24,7 @@ class WeaviateSubQuestionPack(BaseLlamaPack):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        from weaviate import Client  # noqa: F401
+        from weaviate import Client
 
         self.client: Client = Client(host, auth_client_secret=auth_client_secret)
 

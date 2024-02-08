@@ -11,10 +11,6 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
-from llama_index.vector_stores.pinecone.utils import (
-    _import_pinecone,
-    _is_pinecone_v3,
-)
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -27,6 +23,10 @@ from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
+)
+from llama_index.vector_stores.pinecone.utils import (
+    _import_pinecone,
+    _is_pinecone_v3,
 )
 
 ID_KEY = "id"

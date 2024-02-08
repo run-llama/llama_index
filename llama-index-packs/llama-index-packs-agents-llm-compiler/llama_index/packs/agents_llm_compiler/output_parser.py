@@ -2,11 +2,12 @@
 
 import re
 from typing import Any, Dict, List, Sequence
+
+from llama_index.core.tools import BaseTool
 from llama_index.core.types import BaseOutputParser
 
 from .schema import JoinerOutput, LLMCompilerParseResult
 from .utils import get_graph_dict
-from llama_index.core.tools import BaseTool
 
 THOUGHT_PATTERN = r"Thought: ([^\n]*)"
 ACTION_PATTERN = r"\n*(\d+)\. (\w+)\((.*)\)(\s*#\w+\n)?"

@@ -27,9 +27,17 @@ jobs:
         uses: snok/install-poetry@v1
         with:
           version: ${{ env.POETRY_VERSION }}
-      - name: Install deps
-        shell: bash
-        run: poetry install --with dev
+      - uses: pantsbuild/actions/init-pants@v5-scie-pants
+        with:
+          # v0 makes it easy to bust the cache if needed
+          # just increase the integer to start with a fresh cache
+          gha-cache-key: v0-py${{ matrix.python_version }}
+          named-caches-hash: ${{ hashFiles('**/pyproject.toml') }}
+          pants-python-version: ${{ matrix.python-version }}
+          pants-ci-config: pants.toml
+      - name: Check BUILD files
+        run: |
+          pants tailor --check update-build-files --check ::
       - name: Run testing
         env:
           CI: true

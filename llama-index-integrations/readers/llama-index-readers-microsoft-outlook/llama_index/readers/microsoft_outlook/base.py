@@ -29,7 +29,7 @@ from llama_index.core.schema import Document
 
 class OutlookLocalCalendarReader(BaseReader):
     """Outlook local calendar reader for Windows.
-    Reads events from local copy of Outlook calendar
+    Reads events from local copy of Outlook calendar.
     """
 
     def load_data(
@@ -40,6 +40,7 @@ class OutlookLocalCalendarReader(BaseReader):
         more_attributes: Optional[List[str]] = None,
     ) -> List[Document]:
         """Load data from user's local calendar.
+
         Args:
             number_of_results (Optional[int]): the number of events to return. Defaults to 100.
             start_date (Optional[Union[str, datetime.date]]): the start date to return events from. Defaults to today.

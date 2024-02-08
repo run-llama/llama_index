@@ -1,11 +1,11 @@
 """Reader that pulls in a BoardDocs site."""
+
 import json
 from typing import Any, List, Optional
 
 import html2text
-from bs4 import BeautifulSoup
-
 import requests
+from bs4 import BeautifulSoup
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
@@ -49,7 +49,7 @@ class BoardDocsReader(BaseReader):
 
     def get_meeting_list(self) -> List[dict]:
         """
-        Returns a list of meetings for the committee
+        Returns a list of meetings for the committee.
 
         Args:
             None
@@ -62,7 +62,7 @@ class BoardDocsReader(BaseReader):
         response = requests.post(meeting_list_url, headers=self.headers, data=data)
         meetingsData = json.loads(response.text)
 
-        meetings = [
+        return [
             {
                 "meetingID": meeting.get("unique", None),
                 "date": meeting.get("numberdate", None),
@@ -70,15 +70,13 @@ class BoardDocsReader(BaseReader):
             }
             for meeting in meetingsData
         ]
-        return meetings
 
     def process_meeting(
         self, meeting_id: str, index_pdfs: bool = True
     ) -> List[Document]:
         """
-        Returns documents from the given meeting
+        Returns documents from the given meeting.
         """
-
         agenda_url = self.base_url + "/PRINT-AgendaDetailed"
 
         # set the meetingID & committee
@@ -118,7 +116,6 @@ class BoardDocsReader(BaseReader):
         Args:
             meeting_ids (List[str]): A list of meeting IDs to load. If None, load all meetings.
         """
-
         # if a list of meetings wasn't provided, enumerate them all
         if not meeting_ids:
             meeting_ids = [

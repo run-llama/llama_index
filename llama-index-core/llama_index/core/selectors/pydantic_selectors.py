@@ -17,7 +17,7 @@ from llama_index.core.tools.types import ToolMetadata
 from llama_index.core.types import BasePydanticProgram
 
 if TYPE_CHECKING:
-    from llama_index.llms.openai import OpenAI
+    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
 
 
 def _pydantic_output_to_selector_result(output: Any) -> SelectorResult:
@@ -49,7 +49,9 @@ class PydanticSingleSelector(BaseSelector):
         verbose: bool = False,
     ) -> "PydanticSingleSelector":
         try:
-            from llama_index.program.openai import OpenAIPydanticProgram
+            from llama_index.program.openai import (
+                OpenAIPydanticProgram,
+            )  # pants: no-infer-dep
         except ImportError as e:
             raise ImportError(
                 "`llama-index-program-openai` package is missing. "
@@ -114,7 +116,9 @@ class PydanticMultiSelector(BaseSelector):
         verbose: bool = False,
     ) -> "PydanticMultiSelector":
         try:
-            from llama_index.program.openai import OpenAIPydanticProgram
+            from llama_index.program.openai import (
+                OpenAIPydanticProgram,
+            )  # pants: no-infer-dep
         except ImportError as e:
             raise ImportError(
                 "`llama-index-program-openai` package is missing. "

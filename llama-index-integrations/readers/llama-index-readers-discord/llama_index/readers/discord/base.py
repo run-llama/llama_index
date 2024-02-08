@@ -29,7 +29,7 @@ async def read_channel(
     this function with `asyncio.get_event_loop().run_until_complete`.
 
     """
-    import discord  # noqa: F401
+    import discord
 
     messages: List[discord.Message] = []
 
@@ -70,21 +70,19 @@ async def read_channel(
 
     # Wraps each message in a Document containing the text \
     # as well as some useful metadata properties.
-    return list(
-        map(
-            lambda msg: Document(
-                text=msg.content,
-                id_=msg.id,
-                metadata={
-                    "message_id": msg.id,
-                    "username": msg.author.name,
-                    "created_at": msg.created_at,
-                    "edited_at": msg.edited_at,
-                },
-            ),
-            messages,
+    return [
+        Document(
+            text=msg.content,
+            id_=msg.id,
+            metadata={
+                "message_id": msg.id,
+                "username": msg.author.name,
+                "created_at": msg.created_at,
+                "edited_at": msg.edited_at,
+            },
         )
-    )
+        for msg in messages
+    ]
 
 
 class DiscordReader(BasePydanticReader):
@@ -128,12 +126,11 @@ class DiscordReader(BasePydanticReader):
         self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True
     ) -> List[Document]:
         """Read channel."""
-        result = asyncio.get_event_loop().run_until_complete(
+        return asyncio.get_event_loop().run_until_complete(
             read_channel(
                 self.discord_token, channel_id, limit=limit, oldest_first=oldest_first
             )
         )
-        return result
 
     def load_data(
         self,

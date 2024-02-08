@@ -35,7 +35,7 @@ class MetaphorToolSpec(BaseToolSpec):
         end_published_date: Optional[str] = None,
     ) -> str:
         """
-        Metaphor allows you to use a natural language query to search the internet
+        Metaphor allows you to use a natural language query to search the internet.
 
         Args:
             query (str): A natural language query phrased as an answer for what the link provides, ie: "This is the latest news about space:"
@@ -63,12 +63,11 @@ class MetaphorToolSpec(BaseToolSpec):
 
     def retrieve_documents(self, ids: List[str]) -> List[Document]:
         """
-        Retrieve a list of document summaries returned by `metaphor_search`, using the ID field
+        Retrieve a list of document summaries returned by `metaphor_search`, using the ID field.
 
-        args:
+        Args:
             ids (List(str)): the ids of the documents to retrieve
         """
-
         response = self.client.get_contents(ids)
         return [Document(text=con.extract) for con in response.contents]
 
@@ -80,7 +79,7 @@ class MetaphorToolSpec(BaseToolSpec):
         end_published_date: Optional[str] = None,
     ) -> str:
         """
-        Retrieve a list of similar documents to a given url
+        Retrieve a list of similar documents to a given url.
 
         Args:
             url (str): The web page to find similar results of
@@ -109,7 +108,7 @@ class MetaphorToolSpec(BaseToolSpec):
         end_published_date: Optional[str] = None,
     ) -> str:
         """
-        Combines the functionality of `search` and `retrieve_documents`
+        Combines the functionality of `search` and `retrieve_documents`.
 
         Args:
             query (str): the natural language query
@@ -137,6 +136,6 @@ class MetaphorToolSpec(BaseToolSpec):
     def current_date(self):
         """
         A function to return todays date.
-        Call this before any other functions that take timestamps as an argument
+        Call this before any other functions that take timestamps as an argument.
         """
         return datetime.date.today()

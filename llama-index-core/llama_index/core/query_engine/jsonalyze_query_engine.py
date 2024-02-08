@@ -67,7 +67,7 @@ def default_jsonalyzer(
             the Schema, and the Result.
     """
     try:
-        import sqlite_utils
+        import sqlite_utils  # pants: no-infer-dep
     except ImportError as exc:
         IMPORT_ERROR_MSG = (
             "sqlite-utils is needed to use this Query Engine:\n"
@@ -135,7 +135,7 @@ async def async_default_jsonalyzer(
             the Schema, and the Result.
     """
     try:
-        import sqlite_utils
+        import sqlite_utils  # pants: no-infer-dep
     except ImportError as exc:
         IMPORT_ERROR_MSG = (
             "sqlite-utils is needed to use this Query Engine:\n"

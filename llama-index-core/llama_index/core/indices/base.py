@@ -455,6 +455,39 @@ class BaseIndex(Generic[IS], ABC):
                 **kwargs,
             )
 
+<<<<<<< HEAD
+=======
+        elif chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
+            # NOTE: lazy import
+            from llama_index.core.agent import ReActAgent
+            from llama_index.core.tools.query_engine import QueryEngineTool
+
+            try:
+                from llama_index.agent.openai import OpenAIAgent  # pants: no-infer-dep
+            except ImportError as e:
+                raise ImportError(
+                    "`llama-index-agent-openai` package not found."
+                    " Please install with `pip install llama-index-agent-openai`."
+                )
+
+            # convert query engine to tool
+            query_engine_tool = QueryEngineTool.from_defaults(query_engine=query_engine)
+
+            if chat_mode == ChatMode.REACT:
+                return ReActAgent.from_tools(
+                    tools=[query_engine_tool],
+                    llm=llm,
+                    **kwargs,
+                )
+            elif chat_mode == ChatMode.OPENAI:
+                return OpenAIAgent.from_tools(
+                    tools=[query_engine_tool],
+                    llm=llm,
+                    **kwargs,
+                )
+            else:
+                raise ValueError(f"Unknown chat mode: {chat_mode}")
+>>>>>>> 824e0bf8 (wip pants ci)
         elif chat_mode == ChatMode.SIMPLE:
             from llama_index.core.chat_engine import SimpleChatEngine
 

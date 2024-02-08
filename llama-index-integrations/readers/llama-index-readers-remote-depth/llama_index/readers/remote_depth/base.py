@@ -5,9 +5,9 @@ A loader that fetches any remote page or file by URL and retrieves child pages w
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-from llama_index.readers.remote import RemoteReader
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from llama_index.readers.remote import RemoteReader
 
 
 class RemoteDepthReader(BaseReader):

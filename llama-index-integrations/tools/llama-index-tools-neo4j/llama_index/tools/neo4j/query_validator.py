@@ -2,14 +2,14 @@ import re
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Tuple
 
-Schema = namedtuple("Schema", ["left_node", "relation", "right_node"])
+Schema = namedtuple("Schema", ["left_node", "relation", "right_node"])  # noqa: PYI024
 
 
 class CypherQueryCorrector:
     """
     Used to correct relationship direction in generated Cypher statements.
     This code is copied from the winner's submission to the Cypher competition:
-    https://github.com/sakusaku-rich/cypher-direction-competition
+    https://github.com/sakusaku-rich/cypher-direction-competition.
     """
 
     property_pattern = re.compile(r"\{.+?\}")
@@ -23,26 +23,25 @@ class CypherQueryCorrector:
     def __init__(self, schemas: List[Schema]):
         """
         Args:
-            schemas: list of schemas
+            schemas: list of schemas.
         """
         self.schemas = schemas
 
     def clean_node(self, node: str) -> str:
         """
         Args:
-            node: node in string format
+            node: node in string format.
 
         """
         node = re.sub(self.property_pattern, "", node)
         node = node.replace("(", "")
         node = node.replace(")", "")
-        node = node.strip()
-        return node
+        return node.strip()
 
     def detect_node_variables(self, query: str) -> Dict[str, List[str]]:
         """
         Args:
-            query: cypher query
+            query: cypher query.
         """
         nodes = re.findall(self.node_pattern, query)
         nodes = [self.clean_node(node) for node in nodes]
@@ -60,14 +59,14 @@ class CypherQueryCorrector:
     def extract_paths(self, query: str) -> "List[str]":
         """
         Args:
-            query: cypher query
+            query: cypher query.
         """
         return re.findall(self.path_pattern, query)
 
     def judge_direction(self, relation: str) -> str:
         """
         Args:
-            relation: relation in string format
+            relation: relation in string format.
         """
         direction = "BIDIRECTIONAL"
         if relation[0] == "<":
@@ -79,7 +78,7 @@ class CypherQueryCorrector:
     def extract_node_variable(self, part: str) -> Optional[str]:
         """
         Args:
-            part: node in string format
+            part: node in string format.
         """
         part = part.lstrip("(").rstrip(")")
         idx = part.find(":")
@@ -93,7 +92,7 @@ class CypherQueryCorrector:
         """
         Args:
             str_node: node in string format
-            node_variable_dict: dictionary of node variables
+            node_variable_dict: dictionary of node variables.
         """
         splitted_node = str_node.split(":")
         variable = splitted_node[0]
@@ -114,7 +113,7 @@ class CypherQueryCorrector:
         Args:
             from_node_labels: labels of the from node
             relation_type: type of the relation
-            to_node_labels: labels of the to node
+            to_node_labels: labels of the to node.
         """
         valid_schemas = self.schemas
         if from_node_labels != []:
@@ -137,7 +136,7 @@ class CypherQueryCorrector:
     def detect_relation_types(self, str_relation: str) -> Tuple[str, List[str]]:
         """
         Args:
-            str_relation: relation in string format
+            str_relation: relation in string format.
         """
         relation_direction = self.judge_direction(str_relation)
         relation_type = self.relation_type_pattern.search(str_relation)
@@ -152,7 +151,7 @@ class CypherQueryCorrector:
     def correct_query(self, query: str) -> str:
         """
         Args:
-            query: cypher query
+            query: cypher query.
         """
         node_variable_dict = self.detect_node_variables(query)
         paths = self.extract_paths(query)
@@ -243,6 +242,6 @@ class CypherQueryCorrector:
     def __call__(self, query: str) -> str:
         """Correct the query to make it valid. If
         Args:
-            query: cypher query
+            query: cypher query.
         """
         return self.correct_query(query)

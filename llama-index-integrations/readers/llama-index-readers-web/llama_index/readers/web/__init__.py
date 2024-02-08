@@ -37,7 +37,6 @@ from llama_index.readers.web.whole_site.base import (
     WholeSiteReader,
 )
 
-
 __all__ = [
     "AsyncWebPageReader",
     "BeautifulSoupWebReader",

@@ -1,5 +1,6 @@
+from typing import Dict, List
+
 import requests
-from typing import List, Dict
 
 
 def get_pdb_publications_from_rcsb(pdb_id: str) -> List[Dict]:
@@ -22,7 +23,7 @@ def get_pdb_publications_from_rcsb(pdb_id: str) -> List[Dict]:
 def parse_rcsb_publication_dict(entry_response: Dict, pubmed_response: Dict):
     parsed_dict = {}
     citations = entry_response["citation"]
-    primary_citation = [pub for pub in citations if pub["id"] == "primary"][0]
+    primary_citation = next([pub for pub in citations if pub["id"] == "primary"])
     parsed_dict[primary_citation["title"]] = {
         "doi": pubmed_response["rcsb_pubmed_doi"],
         "abstract": {"abstract": pubmed_response["rcsb_pubmed_abstract_text"]},
@@ -39,8 +40,7 @@ def get_pdb_publications_from_ebi(pdb_id: str) -> List[Dict]:
         raise Exception(
             f"EBI API call for ({pdb_id}) failed with status code: {response.status_code}"
         )
-    pub_dicts = response.json()[pdb_id]
-    return pub_dicts
+    return response.json()[pdb_id]
 
 
 def parse_ebi_publication_list(pub_list: List[Dict]):

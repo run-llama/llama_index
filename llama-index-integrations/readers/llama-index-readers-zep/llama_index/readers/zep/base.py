@@ -16,7 +16,7 @@ class ZepReader(BaseReader):
 
     def __init__(self, api_url: str, api_key: Optional[str] = None):
         """Initialize with parameters."""
-        from zep_python import ZepClient  # noqa: F401
+        from zep_python import ZepClient
 
         self._api_url = api_url
         self._api_key = api_key
@@ -48,7 +48,6 @@ class ZepReader(BaseReader):
         Returns:
             List[Document]: A list of documents.
         """
-
         if query is None and vector is None:
             raise ValueError("Either query or vector must be specified.")
 

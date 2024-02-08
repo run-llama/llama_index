@@ -36,14 +36,14 @@ class FeishuDocsReader(BaseReader):
         "/open-apis/auth/v3/tenant_access_token/internal"
     )
 
-    def __init__(self, app_id, app_secret):
+    def __init__(self, app_id, app_secret) -> None:
         """
 
         Args:
             app_id: The unique identifier of the application is obtained after the application is created.
             app_secret: Application key, obtained after creating the application.
         """
-        super(FeishuDocsReader, self).__init__()
+        super().__init__()
         self.app_id = app_id
         self.app_secret = app_secret
 
@@ -78,14 +78,14 @@ class FeishuDocsReader(BaseReader):
         if self.tenant_access_token == "" or self.expire < time.time():
             self._update_tenant_access_token()
         headers = {
-            "Authorization": "Bearer {}".format(self.tenant_access_token),
+            "Authorization": f"Bearer {self.tenant_access_token}",
             "Content-Type": "application/json; charset=utf-8",
         }
         response = requests.get(url, headers=headers)
         return response.json()["data"]["content"]
 
     def _update_tenant_access_token(self):
-        """For update tenant_access_token"""
+        """For update tenant_access_token."""
         url = self.host + self.tenant_access_token_internal_url_path
         headers = {"Content-Type": "application/json; charset=utf-8"}
         data = {"app_id": self.app_id, "app_secret": self.app_secret}
@@ -94,7 +94,7 @@ class FeishuDocsReader(BaseReader):
         self.expire = time.time() + response.json()["expire"]
 
     def set_lark_domain(self):
-        """The default API endpoints are for Feishu, in order to switch to Lark, we should use set_lark_domain"""
+        """The default API endpoints are for Feishu, in order to switch to Lark, we should use set_lark_domain."""
         self.host = "https://open.larksuite.com"
 
 

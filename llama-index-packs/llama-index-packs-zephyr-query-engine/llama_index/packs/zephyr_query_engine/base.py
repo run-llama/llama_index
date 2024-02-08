@@ -5,17 +5,17 @@ from typing import Any, Dict, List
 
 from llama_index.core import ServiceContext, VectorStoreIndex, set_global_tokenizer
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import Document
+from llama_index.llms.huggingface import HuggingFaceLLM
 
 
 class ZephyrQueryEnginePack(BaseLlamaPack):
     def __init__(self, documents: List[Document]) -> None:
         """Init params."""
         try:
-            from transformers import BitsAndBytesConfig
             import torch
+            from transformers import BitsAndBytesConfig
         except ImportError:
             raise ImportError(
                 "Dependencies missing, run "

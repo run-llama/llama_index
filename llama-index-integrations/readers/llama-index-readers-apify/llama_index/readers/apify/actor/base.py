@@ -1,9 +1,10 @@
-"""Apify Actor reader"""
+"""Apify Actor reader."""
+
 from typing import Callable, Dict, List, Optional
 
-from llama_index.readers.apify.dataset.base import ApifyDataset
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from llama_index.readers.apify.dataset.base import ApifyDataset
 
 
 class ApifyActor(BaseReader):
@@ -32,6 +33,7 @@ class ApifyActor(BaseReader):
         timeout_secs: Optional[int] = None,
     ) -> List[Document]:
         """Call an Actor on the Apify platform, wait for it to finish, and return its resulting dataset.
+
         Args:
             actor_id (str): The ID or name of the Actor.
             run_input (Dict): The input object of the Actor that you're trying to run.
@@ -39,6 +41,8 @@ class ApifyActor(BaseReader):
             build (str, optional): Optionally specifies the Actor build to run. It can be either a build tag or build number.
             memory_mbytes (int, optional): Optional memory limit for the run, in megabytes.
             timeout_secs (int, optional): Optional timeout for the run, in seconds.
+
+
         Returns:
             List[Document]: List of documents.
         """
@@ -50,9 +54,7 @@ class ApifyActor(BaseReader):
         )
 
         reader = ApifyDataset(self.apify_api_token)
-        documents = reader.load_data(
+        return reader.load_data(
             dataset_id=actor_call.get("defaultDatasetId"),
             dataset_mapping_function=dataset_mapping_function,
         )
-
-        return documents

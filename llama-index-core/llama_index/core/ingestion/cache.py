@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 import fsspec
-
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.schema import BaseNode
 from llama_index.core.storage.docstore.utils import doc_to_json, json_to_doc

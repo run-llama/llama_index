@@ -2,8 +2,6 @@ import math
 from typing import Any, List
 
 import metal_sdk  # noqa
-from metal_sdk.metal import Metal
-
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
@@ -16,6 +14,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from metal_sdk.metal import Metal
 
 
 def _to_metal_filters(standard_filters: MetadataFilters) -> list:

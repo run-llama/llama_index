@@ -3,8 +3,9 @@
 from typing import Optional
 from urllib.parse import urlparse
 
-import requests
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+
+import requests
 
 INVALID_URL_PROMPT = (
     "This url did not include a hostname or scheme. Please determine the complete URL"
@@ -13,7 +14,7 @@ INVALID_URL_PROMPT = (
 
 
 class RequestsToolSpec(BaseToolSpec):
-    """Requests Tool"""
+    """Requests Tool."""
 
     spec_functions = ["get_request", "post_request", "patch_request"]
 
@@ -63,6 +64,7 @@ class RequestsToolSpec(BaseToolSpec):
             return INVALID_URL_PROMPT
 
         requests.patch(url, headers=self._get_headers_for_url(url), json=data)
+        return None
 
     def _valid_url(self, url: str) -> bool:
         parsed = urlparse(url)

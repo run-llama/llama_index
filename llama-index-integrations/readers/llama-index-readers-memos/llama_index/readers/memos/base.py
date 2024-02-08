@@ -1,4 +1,4 @@
-"""Simple Reader for Memos"""
+"""Simple Reader for Memos."""
 
 from typing import Dict, List
 from urllib.parse import urljoin
@@ -16,7 +16,6 @@ class MemosReader(BaseReader):
 
     def __init__(self, host: str = "https://demo.usememos.com/") -> None:
         """Init params."""
-
         self._memoUrl = urljoin(host, "api/memo")
 
     def load_data(self, params: Dict = {}) -> List[Document]:

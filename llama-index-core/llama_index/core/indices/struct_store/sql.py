@@ -3,8 +3,6 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Optional, Sequence, Union
 
-from sqlalchemy import Table
-
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.data_structs.table import SQLStructTable
@@ -21,6 +19,7 @@ from llama_index.core.schema import BaseNode
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings, llm_from_settings_or_context
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
+from sqlalchemy import Table
 
 
 class SQLQueryMode(str, Enum):

@@ -46,7 +46,7 @@ def get_program_for_llm(
         try:
             from llama_index.program.openai_program import (
                 OpenAIPydanticProgram,
-            )
+            )  # pants: no-infer-dep
 
             return OpenAIPydanticProgram.from_defaults(
                 output_cls=output_cls,

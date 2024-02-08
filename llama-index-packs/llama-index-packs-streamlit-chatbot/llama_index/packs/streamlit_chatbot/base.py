@@ -1,15 +1,13 @@
-from typing import Dict, Any
 import asyncio
-
+from typing import Any, Dict
 
 from llama_index.core import (
-    VectorStoreIndex,
     ServiceContext,
+    VectorStoreIndex,
 )
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.llms.openai import OpenAI
 from llama_index.readers.wikipedia import WikipediaReader
-
 
 # Create a new event loop
 loop = asyncio.new_event_loop()
@@ -79,10 +77,9 @@ class StreamlitChatPack(BaseLlamaPack):
             service_context = ServiceContext.from_defaults(
                 llm=OpenAI(model="gpt-3.5-turbo", temperature=0.5)
             )
-            index = VectorStoreIndex.from_documents(
+            return VectorStoreIndex.from_documents(
                 docs, service_context=service_context
             )
-            return index
 
         index = load_index_data()
 

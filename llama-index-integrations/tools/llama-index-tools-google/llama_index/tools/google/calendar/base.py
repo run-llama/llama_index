@@ -45,7 +45,6 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             number_of_results (Optional[int]): the number of events to return. Defaults to 100.
             start_date (Optional[Union[str, datetime.date]]): the start date to return events from in date isoformat. Defaults to today.
         """
-
         from googleapiclient.discovery import build
 
         credentials = self._get_credentials()
@@ -115,9 +114,10 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         Returns:
             Credentials, the obtained credential.
         """
+        from google_auth_oauthlib.flow import InstalledAppFlow
+
         from google.auth.transport.requests import Request
         from google.oauth2.credentials import Credentials
-        from google_auth_oauthlib.flow import InstalledAppFlow
 
         creds = None
         if os.path.exists("token.json"):
@@ -147,7 +147,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         attendees: Optional[List[str]] = None,
     ) -> str:
         """
-            Create an event on the users calendar
+            Create an event on the users calendar.
 
         Args:
             title (Optional[str]): The title for the event
@@ -157,7 +157,6 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             end_datetime Optional[Union[str, datetime.datetime]]: The end datetime for the event
             attendees Optional[List[str]]: A list of email address to invite to the event
         """
-
         from googleapiclient.discovery import build
 
         credentials = self._get_credentials()
@@ -197,6 +196,6 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
     def get_date(self):
         """
-        A function to return todays date. Call this before any other functions if you are unaware of the date
+        A function to return todays date. Call this before any other functions if you are unaware of the date.
         """
         return datetime.date.today()

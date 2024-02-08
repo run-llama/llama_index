@@ -4,14 +4,15 @@ When Joplin is installed and running it will parse all markdown
 files into a List of Documents.
 
 """
+
 import json
 import os
 import urllib
 from datetime import datetime
 from typing import Iterator, List, Optional
 
-from llama_index.core.readers.file import markdown_reader
 from llama_index.core.readers.base import BaseReader
+from llama_index.readers.file import MarkdownReader
 from llama_index.core.schema import Document
 
 LINK_NOTE_TEMPLATE = "joplin://x-callback-url/openNote?id={id}"
@@ -51,7 +52,7 @@ class JoplinReader(BaseReader):
         """
         self.parse_markdown = parse_markdown
         if parse_markdown:
-            self.parser = markdown_reader()
+            self.parser = MarkdownReader()
 
         access_token = access_token or self._get_token_from_env()
         base_url = f"http://{host}:{port}"

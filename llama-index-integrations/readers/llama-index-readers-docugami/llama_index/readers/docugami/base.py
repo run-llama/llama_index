@@ -4,12 +4,16 @@ import hashlib
 import io
 import logging
 import os
-from pathlib import Path
-from typing import Dict, List, Mapping, Optional, Sequence, Union
-
 import requests
+from pathlib import Path
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
+
+
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+
+from dgml_utils.models import Chunk
+from dgml_utils.segmentation import get_chunks
 
 TABLE_NAME = "{http://www.w3.org/1999/xhtml}table"
 
@@ -91,13 +95,31 @@ class DocugamiReader(BaseReader):
                 "Please install it with `pip install lxml`."
             )
 
-        try:
-            from dgml_utils.models import Chunk
-            from dgml_utils.segmentation import get_chunks
-        except ImportError:
-            raise ImportError(
-                "Could not import from dgml-utils python package. "
-                "Please install it with `pip install dgml-utils`."
+        # helpers
+        def _xpath_qname_for_chunk(chunk: Any) -> str:
+            """Get the xpath qname for a chunk."""
+            qname = f"{chunk.prefix}:{chunk.tag.split('}')[-1]}"
+
+            parent = chunk.getparent()
+            if parent is not None:
+                doppelgangers = [x for x in parent if x.tag == chunk.tag]
+                if len(doppelgangers) > 1:
+                    idx_of_self = doppelgangers.index(chunk)
+                    qname = f"{qname}[{idx_of_self + 1}]"
+
+            return qname
+
+        def _xpath_for_chunk(chunk: Any) -> str:
+            """Get the xpath for a chunk."""
+            ancestor_chain = chunk.xpath("ancestor-or-self::*")
+            return "/" + "/".join(_xpath_qname_for_chunk(x) for x in ancestor_chain)
+
+        def _structure_value(node: Any) -> Optional[str]:
+            """Get the structure value for a node."""
+            return (
+                "table"
+                if node.tag == TABLE_NAME
+                else node.attrib["structure"] if "structure" in node.attrib else None
             )
 
         def _build_framework_chunk(dg_chunk: Chunk) -> Document:

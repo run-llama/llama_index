@@ -1,18 +1,19 @@
 """Auto Merging Retriever."""
 
+from typing import Any, Dict, List
+
 from llama_index.core import ServiceContext, VectorStoreIndex
-from llama_index.llms.openai import OpenAI
+from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.node_parser import (
     HierarchicalNodeParser,
     get_leaf_nodes,
 )
-from typing import List, Dict, Any
-from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.schema import Document
-from llama_index.core.retrievers.auto_merging_retriever import AutoMergingRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.core.retrievers.auto_merging_retriever import AutoMergingRetriever
+from llama_index.core.schema import Document
 from llama_index.core.storage import StorageContext
+from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.llms.openai import OpenAI
 
 
 class AutoMergingRetrieverPack(BaseLlamaPack):

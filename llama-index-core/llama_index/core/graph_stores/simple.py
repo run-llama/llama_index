@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
-
 from llama_index.core.graph_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,

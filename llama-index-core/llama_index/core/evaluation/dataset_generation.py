@@ -8,7 +8,6 @@ import uuid
 from typing import Coroutine, Dict, List, Optional, Tuple
 
 from deprecated import deprecated
-
 from llama_index.core import Document, ServiceContext, SummaryIndex
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager

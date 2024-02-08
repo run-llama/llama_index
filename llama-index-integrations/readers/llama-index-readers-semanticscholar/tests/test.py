@@ -9,7 +9,6 @@ from llama_index import (
 )
 from llama_index.core.llms import OpenAI
 from llama_index.core.query_engine import CitationQueryEngine
-
 from llama_index.readers.semanticscholar.base import SemanticScholarReader
 
 # initialize the SemanticScholarReader

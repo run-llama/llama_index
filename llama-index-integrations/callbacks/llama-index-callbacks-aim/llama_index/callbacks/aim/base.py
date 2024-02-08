@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
+
 from aim import Run, Text  # type: ignore[attr-defined]
 
 logger = logging.getLogger(__name__)

@@ -1,6 +1,7 @@
 """Timescale Vector Auto-retrieval Pack."""
 
 
+from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.indices.vector_store import VectorStoreIndex
@@ -11,10 +12,8 @@ from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.schema import TextNode
 from llama_index.core.storage.storage_context import StorageContext
-from llama_index.vector_stores.timescalevector import TimescaleVectorStore
 from llama_index.core.vector_stores.types import VectorStoreInfo
-
-from datetime import timedelta
+from llama_index.vector_stores.timescalevector import TimescaleVectorStore
 
 
 class TimescaleVectorAutoretrievalPack(BaseLlamaPack):
@@ -30,7 +29,6 @@ class TimescaleVectorAutoretrievalPack(BaseLlamaPack):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-
         self._vector_store = TimescaleVectorStore.from_params(
             service_url=service_url,
             table_name=table_name,

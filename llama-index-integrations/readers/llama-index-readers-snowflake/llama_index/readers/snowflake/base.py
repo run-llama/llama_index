@@ -1,14 +1,13 @@
-"""Snowflake Reader"""
+"""Snowflake Reader."""
 
 import logging
-from typing import Optional, List, Any
-
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.engine import Engine
+from typing import Any, List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)
 
@@ -129,5 +128,5 @@ class SnowflakeReader(BaseReader):
             return documents
         except Exception as e:
             logger.error(
-                "An error occurred while loading the data: {}".format(e), exc_info=True
+                f"An error occurred while loading the data: {e}", exc_info=True
             )

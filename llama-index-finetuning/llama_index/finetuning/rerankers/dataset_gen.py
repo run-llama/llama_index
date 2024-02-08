@@ -2,8 +2,8 @@ import random
 from typing import Any, List, Optional, Tuple
 
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.finetuning import EmbeddingQAFinetuneDataset
 from llama_index.core.indices.query.embedding_utils import get_top_k_embeddings
+from llama_index.finetuning import EmbeddingQAFinetuneDataset
 
 
 class CohereRerankerFinetuneDataset(BaseModel):

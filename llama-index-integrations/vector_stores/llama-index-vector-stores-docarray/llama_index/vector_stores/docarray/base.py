@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type
 
 import numpy as np
-
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (

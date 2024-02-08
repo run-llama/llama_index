@@ -7,10 +7,6 @@ An index that is built on top of an existing vector store.
 import logging
 from typing import Any, Callable, List, Optional, cast
 
-import typesense
-from typesense.collection import Collection
-from typesense.exceptions import ObjectNotFound
-
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.utils import get_tokenizer
 from llama_index.core.vector_stores.types import (
@@ -26,6 +22,10 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+import typesense
+from typesense.collection import Collection
+from typesense.exceptions import ObjectNotFound
 
 _logger = logging.getLogger(__name__)
 

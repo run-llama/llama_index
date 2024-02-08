@@ -1,24 +1,26 @@
 """Multidoc Autoretriever."""
 
-from llama_index.llms.openai import OpenAI
-from typing import List, Dict, Any, Optional, cast
-from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.schema import Document, BaseNode
-from llama_index.vector_stores.weaviate import WeaviateVectorStore
-from llama_index.core.vector_stores.types import VectorStoreInfo
-from llama_index.core.storage import StorageContext
+from typing import Any, Dict, List, Optional, cast
+
 from llama_index.core import VectorStoreIndex
-from llama_index.core.retrievers import VectorIndexAutoRetriever, RecursiveRetriever
+from llama_index.core.indices.query.schema import QueryBundle
+from llama_index.core.llama_pack.base import BaseLlamaPack
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.retrievers import (
+    BaseRetriever,
+    RecursiveRetriever,
+    VectorIndexAutoRetriever,
+)
+from llama_index.core.schema import BaseNode, Document, IndexNode, NodeWithScore
+from llama_index.core.storage import StorageContext
 from llama_index.core.vector_stores.types import (
+    FilterOperator,
     MetadataFilter,
     MetadataFilters,
-    FilterOperator,
+    VectorStoreInfo,
 )
-
-from llama_index.core.retrievers import BaseRetriever
-from llama_index.core.indices.query.schema import QueryBundle
-from llama_index.core.schema import IndexNode, NodeWithScore
-from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.llms.openai import OpenAI
+from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
 
 class IndexAutoRetriever(BaseRetriever):

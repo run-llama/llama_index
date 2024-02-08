@@ -2,7 +2,6 @@ import os
 from typing import Optional
 
 import fsspec
-
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.core.storage.docstore.types import (
     DEFAULT_BATCH_SIZE,

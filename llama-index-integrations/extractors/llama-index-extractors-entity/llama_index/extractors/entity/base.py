@@ -4,9 +4,8 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.extractors.interface import BaseExtractor
 from llama_index.core.schema import BaseNode
 from llama_index.core.utils import get_tqdm_iterable
-from span_marker import SpanMarkerModel
 from nltk.tokenize import word_tokenize
-
+from span_marker import SpanMarkerModel
 
 DEFAULT_ENTITY_MAP = {
     "PER": "persons",

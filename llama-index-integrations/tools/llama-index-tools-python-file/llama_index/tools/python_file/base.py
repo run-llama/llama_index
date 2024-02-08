@@ -13,7 +13,7 @@ class PythonFileToolSpec(BaseToolSpec):
 
     def function_definitions(self, external: Optional[bool] = True) -> str:
         """
-        Use this function to get the name and arguments of all function defintions in the python file
+        Use this function to get the name and arguments of all function defintions in the python file.
 
         Args:
             external (Optional[bool]): Defaults to true. If false, this function will also return functions that start with _
@@ -44,6 +44,7 @@ name: {node.name}
 arguments: {ast.dump(node.args)}
 docstring: {ast.get_docstring(node)}
                         """
+        return None
 
     def get_functions(self, names: List[str]) -> str:
         """

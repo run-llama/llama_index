@@ -1,4 +1,4 @@
-"""Smart PDF Loader"""
+"""Smart PDF Loader."""
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -6,7 +6,7 @@ from llama_index.core.schema import Document
 
 
 class SmartPDFLoader(BaseReader):
-    """SmartPDFLoader uses nested layout information such as sections, paragraphs, lists and tables to smartly chunk PDFs for optimal usage of LLM context window
+    """SmartPDFLoader uses nested layout information such as sections, paragraphs, lists and tables to smartly chunk PDFs for optimal usage of LLM context window.
 
     Args:
         llmsherpa_api_url (str): Address of the service hosting llmsherpa PDF parser

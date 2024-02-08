@@ -45,7 +45,7 @@ class UnstructuredURLLoader(BaseReader):
         """Load file."""
         from unstructured.partition.html import partition_html
 
-        docs: List[Document] = list()
+        docs: List[Document] = []
         for url in self.urls:
             try:
                 if self.__is_headers_available():
@@ -59,5 +59,5 @@ class UnstructuredURLLoader(BaseReader):
                 if self.continue_on_failure:
                     logger.error(f"Error fetching or processing {url}, exeption: {e}")
                 else:
-                    raise e
+                    raise e  # noqa: TRY201
         return docs

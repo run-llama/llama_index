@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Sequence
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
-
 from llama_index.core.schema import BaseNode
 from llama_index.core.storage.kvstore.types import DEFAULT_BATCH_SIZE
 

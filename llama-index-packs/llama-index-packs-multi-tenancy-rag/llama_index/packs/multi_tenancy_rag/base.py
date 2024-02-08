@@ -1,13 +1,14 @@
 from typing import Any, Dict, List
+
 from llama_index.core import ServiceContext, VectorStoreIndex, get_response_synthesizer
-from llama_index.llms.openai import OpenAI
-from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.schema import Document
-from llama_index.core.vector_stores.types import MetadataFilters, ExactMatchFilter
-from llama_index.core.retrievers import VectorIndexRetriever
-from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.llama_pack.base import BaseLlamaPack
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.core.schema import Document
 from llama_index.core.text_splitter import SentenceSplitter
+from llama_index.core.vector_stores.types import ExactMatchFilter, MetadataFilters
+from llama_index.llms.openai import OpenAI
 
 
 class MultiTenancyRAGPack(BaseLlamaPack):
@@ -24,7 +25,7 @@ class MultiTenancyRAGPack(BaseLlamaPack):
         return {"llm": self.llm, "index": self.index}
 
     def add(self, documents: List[Document], user: Any) -> None:
-        """Insert Documents of a user into index"""
+        """Insert Documents of a user into index."""
         # Add metadata to documents
         for document in documents:
             document.metadata["user"] = user

@@ -19,7 +19,7 @@ class FastEmbedEmbedding(BaseEmbedding):
 
     `pip install fastembed`
     Example:
-        from llama_index.legacy.embeddings import FastEmbedEmbedding
+        from llama_index.embeddings.fastembed import FastEmbedEmbedding
         fastembed = FastEmbedEmbedding()
     """
 

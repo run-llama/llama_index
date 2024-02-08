@@ -22,7 +22,7 @@ def _substack_reader(soup: Any, **kwargs) -> Tuple[str, Dict[str, Any]]:
 
 
 def _readthedocs_reader(soup: Any, url: str, **kwargs) -> Tuple[str, Dict[str, Any]]:
-    """Extract text from a ReadTheDocs documentation site"""
+    """Extract text from a ReadTheDocs documentation site."""
     import requests
     from bs4 import BeautifulSoup
 
@@ -52,7 +52,7 @@ def _readthedocs_reader(soup: Any, url: str, **kwargs) -> Tuple[str, Dict[str, A
 def _readmedocs_reader(
     soup: Any, url: str, include_url_in_text: bool = True
 ) -> Tuple[str, Dict[str, Any]]:
-    """Extract text from a ReadMe documentation site"""
+    """Extract text from a ReadMe documentation site."""
     import requests
     from bs4 import BeautifulSoup
 
@@ -94,7 +94,7 @@ def _readmedocs_reader(
 def _gitbook_reader(
     soup: Any, url: str, include_url_in_text: bool = True
 ) -> Tuple[str, Dict[str, Any]]:
-    """Extract text from a ReadMe documentation site"""
+    """Extract text from a ReadMe documentation site."""
     import requests
     from bs4 import BeautifulSoup
 

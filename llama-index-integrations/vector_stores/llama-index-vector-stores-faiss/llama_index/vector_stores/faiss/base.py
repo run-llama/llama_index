@@ -11,7 +11,6 @@ from typing import Any, List, Optional, cast
 import fsspec
 import numpy as np
 from fsspec.implementations.local import LocalFileSystem
-
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode
 from llama_index.core.vector_stores.simple import DEFAULT_VECTOR_STORE, NAMESPACE_SEP

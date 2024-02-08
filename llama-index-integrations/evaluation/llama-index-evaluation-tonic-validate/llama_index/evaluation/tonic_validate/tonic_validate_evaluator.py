@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
+
 from tonic_validate.metrics.answer_consistency_metric import (
     AnswerConsistencyMetric,
 )

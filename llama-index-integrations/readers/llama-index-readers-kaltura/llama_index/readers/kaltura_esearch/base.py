@@ -1,4 +1,5 @@
 """Kaltura eSearch API Reader."""
+
 import json
 import logging
 from typing import Any, Dict, List, Optional
@@ -155,7 +156,7 @@ class KalturaESearchReader(BaseReader):
             return []
 
     def _get_json_transcript(self, caption_asset_id):
-        """Fetch json transcript/captions from a given caption_asset_id
+        """Fetch json transcript/captions from a given caption_asset_id.
 
         Args:
             caption_asset_id: The ID of the caption asset that includes the captions to fetch json transcript for
@@ -168,8 +169,7 @@ class KalturaESearchReader(BaseReader):
             cap_json_url = self.client.caption.captionAsset.serveAsJson(
                 caption_asset_id
             )
-            cap_json = requests.get(cap_json_url).json()
-            return cap_json
+            return requests.get(cap_json_url).json()
         except Exception as e:
             logger.error(f"An error occurred while getting captions: {e}")
             return {}

@@ -3,14 +3,13 @@ import re
 from dataclasses import dataclass
 from typing import List, Optional
 
-from tqdm.auto import tqdm
-
 from llama_index.core import VectorStoreIndex, get_tokenizer
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser import TokenTextSplitter
 from llama_index.core.schema import Document, MetadataMode
 from llama_index.llms.openai import OpenAI
+from tqdm.auto import tqdm
 
 
 @dataclass

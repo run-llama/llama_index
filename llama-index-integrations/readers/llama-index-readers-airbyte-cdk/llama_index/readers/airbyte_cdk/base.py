@@ -24,7 +24,6 @@ class AirbyteCDKReader(BaseReader):
         record_handler: Optional[RecordHandler] = None,
     ) -> None:
         """Initialize with parameters."""
-
         from airbyte_cdk.models.airbyte_protocol import AirbyteRecordMessage
         from airbyte_cdk.sources.embedded.base_integration import (
             BaseEmbeddedIntegration,

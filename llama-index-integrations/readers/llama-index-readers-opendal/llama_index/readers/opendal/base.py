@@ -45,7 +45,6 @@ class OpendalReader(BaseReader):
 
     def load_data(self) -> List[Document]:
         """Load file(s) from OpenDAL."""
-
         with tempfile.TemporaryDirectory() as temp_dir:
             if not self.path.endswith("/"):
                 asyncio.run(download_file_from_opendal(self.op, temp_dir, self.path))
@@ -75,7 +74,6 @@ async def download_file_from_opendal(op: Any, temp_dir: str, path: str) -> str:
 
 async def download_dir_from_opendal(op: Any, temp_dir: str, dir: str) -> str:
     """Download directory from opendal."""
-
     import opendal
 
     op = cast(opendal.AsyncOperator, op)

@@ -1,10 +1,15 @@
 """Preprocess Reader."""
-import os
 import hashlib
+import os
 from typing import List
+
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.schema import Document
-from llama_index.core.schema import TextNode, NodeRelationship, RelatedNodeInfo
+from llama_index.core.schema import (
+    Document,
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+)
 
 
 class PreprocessReader(BaseReader):

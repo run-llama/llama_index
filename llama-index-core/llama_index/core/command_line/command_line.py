@@ -59,7 +59,27 @@ def handle_download_llama_dataset(
     print(f"Successfully downloaded {llama_dataset_class} to {download_dir}")
 
 
-def default_rag_cli() -> Optional[RagCLI]:
+def default_rag_cli() -> RagCLI:
+    import chromadb  # pants: no-infer-dep
+    from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
+    from llama_index.vector_stores.chroma import (
+        ChromaVectorStore,
+    )  # pants: no-infer-dep
+
+    persist_dir = default_ragcli_persist_dir()
+    chroma_client = chromadb.PersistentClient(path=persist_dir)
+    chroma_collection = chroma_client.create_collection("default", get_or_create=True)
+    vector_store = ChromaVectorStore(
+        chroma_collection=chroma_collection, persist_dir=persist_dir
+    )
+    docstore = SimpleDocumentStore()
+
+    ingestion_pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(), OpenAIEmbedding()],
+        vector_store=vector_store,
+        docstore=docstore,
+        cache=IngestionCache(),
+    )
     try:
         from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
     except ImportError:

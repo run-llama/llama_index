@@ -1,9 +1,9 @@
-"""bitbucket reader"""
-
-from typing import List, Optional
+"""bitbucket reader."""
 
 import base64
 import os
+from typing import List, Optional
+
 import requests
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -68,7 +68,7 @@ class BitbucketReader(BaseReader):
 
     def load_all_file_paths(self, slug, branch, directory_path="", paths=[]):
         """
-        Go inside every file that is present in the repository and get the paths for each file
+        Go inside every file that is present in the repository and get the paths for each file.
         """
         content_url = f"{self.base_url}/rest/api/latest/projects/{self.project_key}/repos/{slug}/browse/{directory_path}"
 
@@ -100,7 +100,7 @@ class BitbucketReader(BaseReader):
 
     def load_text_by_paths(self, slug, file_path, branch) -> List:
         """
-        Go inside every file that is present in the repository and get the paths for each file
+        Go inside every file that is present in the repository and get the paths for each file.
         """
         content_url = f"{self.base_url}/rest/api/latest/projects/{self.project_key}/repos/{slug}/browse{file_path}"
 

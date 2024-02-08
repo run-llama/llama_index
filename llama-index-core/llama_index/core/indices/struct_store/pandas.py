@@ -4,7 +4,6 @@ import logging
 from typing import Any, Optional, Sequence
 
 import pandas as pd
-
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.data_structs.table import PandasStructTable

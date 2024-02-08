@@ -1,19 +1,17 @@
 """NebulaGraph graph store index."""
+
 import logging
 import os
 from string import Template
 from typing import Any, Dict, List, Optional
 
-from tenacity import retry, stop_after_attempt, wait_random_exponential
-
 from llama_index.core.graph_stores.types import GraphStore
-
-import nebula3  # noqa
 from nebula3.common import ttypes
 from nebula3.Config import SessionPoolConfig
-from nebula3.gclient.net.SessionPool import SessionPool
 from nebula3.Exception import IOErrorException
 from nebula3.fbthrift.transport.TTransport import TTransportException
+from nebula3.gclient.net.SessionPool import SessionPool
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 QUOTE = '"'
 RETRY_TIMES = 3
@@ -207,7 +205,6 @@ class NebulaGraphStore(GraphStore):
 
     def init_session_pool(self) -> Any:
         """Return NebulaGraph session pool."""
-
         # ensure "NEBULA_USER", "NEBULA_PASSWORD", "NEBULA_ADDRESS" are set
         # in environment variables
         if not all(
@@ -258,7 +255,6 @@ class NebulaGraphStore(GraphStore):
         Returns:
             Query result.
         """
-
         # Clean the query string by removing triple backticks
         query = query.replace("```", "").strip()
 

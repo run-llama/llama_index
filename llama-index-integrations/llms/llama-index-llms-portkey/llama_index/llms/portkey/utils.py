@@ -4,6 +4,7 @@ Utility Tools for the Portkey Class.
 This file module contains a collection of utility functions designed to enhance
 the functionality and usability of the Portkey class
 """
+
 from typing import TYPE_CHECKING, List
 
 from llama_index.core.base.llms.types import LLMMetadata
@@ -135,7 +136,7 @@ def generate_llm_metadata(llm: "LLMOptions") -> LLMMetadata:
 
     Raises:
         ValueError: If the provided 'llm' is not an instance of
-        llama_index.legacy.llms.base.LLM.
+        llama_index.core.llms.LLM.
     """
     try:
         from portkey import LLMOptions

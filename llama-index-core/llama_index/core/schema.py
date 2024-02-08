@@ -10,16 +10,14 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from dataclasses_json import DataClassJsonMixin
-from typing_extensions import Self
-
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.utils import SAMPLE_TEXT, truncate_text
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from haystack.schema import Document as HaystackDocument
-    from semantic_kernel.memory.memory_record import MemoryRecord
-
     from llama_index.core.bridge.langchain import Document as LCDocument
+    from semantic_kernel.memory.memory_record import MemoryRecord
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"

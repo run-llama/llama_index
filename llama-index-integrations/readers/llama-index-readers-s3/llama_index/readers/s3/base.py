@@ -3,9 +3,9 @@
 A loader that fetches a file or iterates through a directory on AWS S3.
 
 """
-import tempfile
 import os
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -129,8 +129,7 @@ class S3Reader(BaseReader):
         return loader.load_data()
 
     def load_data(self, custom_temp_subdir: str = None) -> List[Document]:
-        """Decide which directory to load files in - randomly generated directories under /tmp or a custom subdirectory under /tmp"""
-
+        """Decide which directory to load files in - randomly generated directories under /tmp or a custom subdirectory under /tmp."""
         if custom_temp_subdir is None:
             with tempfile.TemporaryDirectory() as temp_dir:
                 documents = self.load_s3_files_as_docs(temp_dir)

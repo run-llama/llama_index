@@ -5,12 +5,12 @@ import os
 from typing import Any, List
 
 import googleapiclient.discovery as discovery
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 
 SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
 
@@ -75,7 +75,6 @@ class GoogleDocsReader(BasePydanticReader):
         Returns:
             The document text.
         """
-
         credentials = self._get_credentials()
         docs_service = discovery.build("docs", "v1", credentials=credentials)
         doc = docs_service.documents().get(documentId=document_id).execute()

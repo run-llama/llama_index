@@ -1,6 +1,6 @@
+import gradientai as gradientai_mod
 import pytest
 from llama_index.embeddings.gradient import GradientEmbedding
-import gradientai as gradientai_mod
 
 # TODO: fixed these tests
 gradientai = None

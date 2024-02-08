@@ -1,4 +1,5 @@
 """Code splitter."""
+
 from typing import Any, Callable, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -53,11 +54,11 @@ class CodeSplitter(TextSplitter):
         id_func: Optional[Callable[[int, Document], str]] = None,
     ) -> None:
         """Initialize a CodeSplitter."""
-        from tree_sitter import Parser
+        from tree_sitter import Parser  # pants: no-infer-dep
 
         if parser is None:
             try:
-                import tree_sitter_languages
+                import tree_sitter_languages  # pants: no-infer-dep
 
                 parser = tree_sitter_languages.get_parser(language)
             except ImportError:

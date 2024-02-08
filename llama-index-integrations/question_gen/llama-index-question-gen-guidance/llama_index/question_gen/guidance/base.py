@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, List, Optional, Sequence, cast
 
-from llama_index.program.guidance import GuidancePydanticProgram
 from llama_index.core.prompts.guidance_utils import convert_to_handlebars
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.question_gen.prompts import (
@@ -14,6 +13,7 @@ from llama_index.core.question_gen.types import (
 )
 from llama_index.core.schema import QueryBundle
 from llama_index.core.tools.types import ToolMetadata
+from llama_index.program.guidance import GuidancePydanticProgram
 
 if TYPE_CHECKING:
     from guidance.models import Model as GuidanceLLM

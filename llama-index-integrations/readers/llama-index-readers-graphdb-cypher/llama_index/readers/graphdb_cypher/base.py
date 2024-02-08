@@ -39,7 +39,7 @@ class GraphDBCypherReader(BaseReader):
     def load_data(
         self, query: str, parameters: Optional[Dict] = None
     ) -> List[Document]:
-        """Run the Cypher with optional parameters and turn results into documents
+        """Run the Cypher with optional parameters and turn results into documents.
 
         Args:
             query (str): Graph Cypher query string.
@@ -56,6 +56,4 @@ class GraphDBCypherReader(BaseReader):
             query, parameters, database_=self.database
         )
 
-        documents = [Document(text=yaml.dump(entry.data())) for entry in records]
-
-        return documents
+        return [Document(text=yaml.dump(entry.data())) for entry in records]

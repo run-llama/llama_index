@@ -1,5 +1,5 @@
-from llama_index.finetuning.types import BaseCohereRerankerFinetuningEngine
 from llama_index.finetuning.rerankers import CohereRerankerFinetuneEngine
+from llama_index.finetuning.types import BaseCohereRerankerFinetuningEngine
 
 
 def test_classes():

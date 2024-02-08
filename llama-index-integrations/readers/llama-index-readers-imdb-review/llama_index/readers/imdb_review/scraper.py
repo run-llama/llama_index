@@ -1,18 +1,19 @@
 try:
-    from selenium import webdriver
-    from selenium.webdriver.common.by import By
-    from selenium.common.exceptions import NoSuchElementException
-    import pandas as pd
+    import concurrent.futures
     import os
     import re
-    import concurrent.futures
+
+    import imdb
+    import pandas as pd
+    from selenium import webdriver
+    from selenium.common.exceptions import NoSuchElementException
     from selenium.webdriver.chrome.service import Service
-    from webdriver_manager.microsoft import EdgeChromiumDriverManager
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import WebDriverWait
     from webdriver_manager.chrome import ChromeDriverManager
     from webdriver_manager.firefox import GeckoDriverManager
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    import imdb
+    from webdriver_manager.microsoft import EdgeChromiumDriverManager
 except ImportError:
     print("There is an import error")
 
@@ -40,13 +41,11 @@ def clean_text(text: str) -> str:
     text = re.sub('""', "", text)
     # Use re.search to find the match in the sentence
     text = re.sub(r"\d+ out of \d+ found this helpful", "", text)
-    text = text.strip()  # strip white space at the ends
-
-    return text
+    return text.strip()  # strip white space at the ends
 
 
 def scrape_data(revs):
-    """Multiprocessing function to get the data from the IMDB reviews page
+    """Multiprocessing function to get the data from the IMDB reviews page.
 
     Args:
         revs (selenium element): element for all the reviews
@@ -58,7 +57,6 @@ def scrape_data(revs):
         title (str): the title of the review
         link(str): the link of the review
     """
-
     try:
         spoiler_btn = revs.find_element(By.CLASS_NAME, "ipl-expander")
         spoiler_btn.click()
@@ -97,7 +95,7 @@ def scrape_data(revs):
 
 
 def process_muted_text(mute_text: str) -> (float, float):
-    """Post processing the muted text
+    """Post processing the muted text.
 
     Args:
         mute_text (str): text on how many people people found it helpful
@@ -124,7 +122,7 @@ def main_scraper(
     max_workers: int = 0,
     reviews_folder: str = "movie_reviews",
 ):
-    """The main helper function to scrape data
+    """The main helper function to scrape data.
 
     Args:
         movie_name (str): The name of the movie along with the year

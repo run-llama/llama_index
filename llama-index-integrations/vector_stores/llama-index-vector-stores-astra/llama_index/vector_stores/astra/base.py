@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, cast
 from warnings import warn
 
 from llama_index.core.bridge.pydantic import PrivateAttr
+from astrapy.db import AstraDB
 from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
@@ -79,16 +80,6 @@ class AstraDBVectorStore(BasePydanticVectorStore):
         ttl_seconds: Optional[int] = None,
     ) -> None:
         super().__init__()
-
-        import_err_msg = (
-            "`astrapy` package not found, please run `pip install --upgrade astrapy`"
-        )
-
-        # Try to import astrapy for use
-        try:
-            from astrapy.db import AstraDB
-        except ImportError:
-            raise ImportError(import_err_msg)
 
         # Set all the required class parameters
         self._embedding_dimension = embedding_dimension

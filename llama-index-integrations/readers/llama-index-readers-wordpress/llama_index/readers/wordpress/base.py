@@ -21,6 +21,7 @@ class WordpressReader(BaseReader):
 
     def load_data(self) -> List[Document]:
         """Load data from the workspace.
+
         Returns:
             List[Document]: List of documents.
         """

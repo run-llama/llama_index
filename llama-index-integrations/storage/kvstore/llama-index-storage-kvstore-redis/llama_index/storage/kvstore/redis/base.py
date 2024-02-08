@@ -6,6 +6,7 @@ from llama_index.core.storage.kvstore.types import (
     DEFAULT_COLLECTION,
     BaseKVStore,
 )
+
 from redis import Redis
 
 
@@ -20,7 +21,7 @@ class RedisKVStore(BaseKVStore):
             ValueError: If redis-py is not installed
 
     Examples:
-        >>> from llama_index.legacy.storage.kvstore.redis_kvstore import RedisKVStore
+        >>> from llama_index.storage.kvstore.redis import RedisKVStore
         >>> # Create a RedisKVStore
         >>> redis_kv_store = RedisKVStore(
         >>>     redis_url="redis://127.0.0.1:6379")

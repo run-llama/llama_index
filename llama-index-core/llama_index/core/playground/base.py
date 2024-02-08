@@ -5,7 +5,6 @@ import time
 from typing import Any, Dict, List, Type
 
 import pandas as pd
-
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.list.base import ListRetrieverMode, SummaryIndex

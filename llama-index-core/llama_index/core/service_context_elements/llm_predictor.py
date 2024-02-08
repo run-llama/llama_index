@@ -5,8 +5,6 @@ from abc import ABC, abstractmethod
 from collections import ChainMap
 from typing import Any, Dict, List, Optional, Union
 
-from typing_extensions import Self
-
 from llama_index.core.base.llms.types import (
     ChatMessage,
     LLMMetadata,
@@ -26,6 +24,7 @@ from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.schema import BaseComponent
 from llama_index.core.types import PydanticProgramMode, TokenAsyncGen, TokenGen
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 

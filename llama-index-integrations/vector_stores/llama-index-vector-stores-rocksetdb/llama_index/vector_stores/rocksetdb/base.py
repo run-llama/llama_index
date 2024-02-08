@@ -5,8 +5,8 @@ from os import getenv
 from time import sleep
 from types import ModuleType
 from typing import Any, List, Type, TypeVar
-import rockset
 
+import rockset
 from llama_index.core.schema import BaseNode
 from llama_index.core.vector_stores.types import (
     VectorStore,

@@ -1,3 +1,6 @@
+from llama_index.evaluation.tonic_validate.answer_consistency import (
+    AnswerConsistencyEvaluator,
+)
 from llama_index.evaluation.tonic_validate.answer_consistency_binary import (
     AnswerConsistencyBinaryEvaluator,
 )

@@ -17,13 +17,11 @@ ERRORS_KEY = "errors"
 class WordLiftLoaderError(Exception):
     """Base class for WordLiftLoader exceptions."""
 
-    pass
-
 
 class APICallError(WordLiftLoaderError):
     """Exception raised for errors in API calls."""
 
-    def __init__(self, message):
+    def __init__(self, message) -> None:
         self.message = message
         super().__init__(self.message)
 
@@ -31,7 +29,7 @@ class APICallError(WordLiftLoaderError):
 class DataTransformError(WordLiftLoaderError):
     """Exception raised for errors in data transformation."""
 
-    def __init__(self, message):
+    def __init__(self, message) -> None:
         self.message = message
         super().__init__(self.message)
 
@@ -59,7 +57,7 @@ class WordLiftLoader(BaseReader):
         rows (int): The number of rows per page.
     """
 
-    def __init__(self, endpoint, headers, query, fields, configure_options):
+    def __init__(self, endpoint, headers, query, fields, configure_options) -> None:
         self.endpoint = endpoint
         self.headers = headers
         self.query = query
@@ -166,8 +164,7 @@ class WordLiftLoader(BaseReader):
         """
         try:
             data = self.fetch_data()
-            documents = self.transform_data(data)
-            return documents
+            return self.transform_data(data)
         except (APICallError, DataTransformError):
             logging.error("Error loading data:", exc_info=True)
             raise
@@ -200,9 +197,8 @@ class WordLiftLoader(BaseReader):
             rows_argument = ArgumentNode(
                 name=NameNode(value="rows"), value=IntValueNode(value=rows)
             )
-            field_node.arguments = field_node.arguments + (page_argument, rows_argument)
-        altered_query = print_ast(ast)
-        return altered_query
+            field_node.arguments = (*field_node.arguments, page_argument, rows_argument)
+        return print_ast(ast)
 
 
 def is_url(text: str) -> bool:
@@ -280,7 +276,7 @@ def clean_html(text: str) -> str:
                 else:
                     cleaned_text = ""
             elif os.path.isfile(text):
-                with open(text, "r") as file:
+                with open(text) as file:
                     soup = BeautifulSoup(file, "lxml")
                     cleaned_text = soup.get_text()
             else:
@@ -304,7 +300,6 @@ def get_separated_value(item: dict, field_keys: List[str]) -> any:
     """
     Retrieves the metadata value from the nested item based on field keys.
     """
-
     if not field_keys:
         return item
     key = field_keys[0]

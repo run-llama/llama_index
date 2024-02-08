@@ -3,8 +3,9 @@ TruLens-Eval LlamaPack.
 """
 
 from typing import Any, Dict, List
-from llama_index.core.llama_pack.base import BaseLlamaPack
+
 from llama_index.core.indices.vector_store import VectorStoreIndex
+from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.schema import TextNode
 
 
@@ -35,8 +36,7 @@ class TruLensRAGTriadPack(BaseLlamaPack):
             app_id (str): The application ID for the TruLensEvalPack.
         """
         try:
-            from trulens_eval import Tru, TruLlama
-            from trulens_eval import Feedback
+            from trulens_eval import Feedback, Tru, TruLlama
             from trulens_eval.feedback import Groundedness
             from trulens_eval.feedback.provider.openai import OpenAI
         except ImportError:
@@ -109,8 +109,7 @@ class TruLensRAGTriadPack(BaseLlamaPack):
             Any: A response from the query engine.
         """
         with self._tru_query_engine as _:
-            response = self._query_engine.query(*args, **kwargs)
-        return response
+            return self._query_engine.query(*args, **kwargs)
 
 
 class TruLensHarmlessPack(BaseLlamaPack):
@@ -140,8 +139,7 @@ class TruLensHarmlessPack(BaseLlamaPack):
             app_id (str): The application ID for the TruLensEvalPack.
         """
         try:
-            from trulens_eval import Tru, TruLlama
-            from trulens_eval import Feedback
+            from trulens_eval import Feedback, Tru, TruLlama
             from trulens_eval.feedback.provider.openai import OpenAI
         except ImportError:
             raise ImportError(
@@ -239,8 +237,7 @@ class TruLensHarmlessPack(BaseLlamaPack):
             Any: A response from the query engine.
         """
         with self._tru_query_engine as _:
-            response = self._query_engine.query(*args, **kwargs)
-        return response
+            return self._query_engine.query(*args, **kwargs)
 
 
 class TruLensHelpfulPack(BaseLlamaPack):
@@ -270,10 +267,9 @@ class TruLensHelpfulPack(BaseLlamaPack):
             app_id (str): The application ID for the TruLensEvalPack.
         """
         try:
-            from trulens_eval import Tru, TruLlama
-            from trulens_eval import Feedback
-            from trulens_eval.feedback.provider.openai import OpenAI
+            from trulens_eval import Feedback, Tru, TruLlama
             from trulens_eval.feedback.provider.hugs import Huggingface
+            from trulens_eval.feedback.provider.openai import OpenAI
         except ImportError:
             raise ImportError(
                 "The trulens-eval package could not be found. "
@@ -338,5 +334,4 @@ class TruLensHelpfulPack(BaseLlamaPack):
             Any: A response from the query engine.
         """
         with self._tru_query_engine as _:
-            response = self._query_engine.query(*args, **kwargs)
-        return response
+            return self._query_engine.query(*args, **kwargs)

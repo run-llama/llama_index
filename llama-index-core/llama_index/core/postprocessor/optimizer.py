@@ -1,4 +1,5 @@
 """Optimization related classes and functions."""
+
 import logging
 from typing import Callable, List, Optional
 
@@ -66,7 +67,9 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             self._embed_model = embed_model
         else:
             try:
-                from llama_index.embeddings.openai import OpenAIEmbedding
+                from llama_index.embeddings.openai import (
+                    OpenAIEmbedding,
+                )  # pants: no-infer-dep
 
                 self._embed_model = OpenAIEmbedding()
             except ImportError:

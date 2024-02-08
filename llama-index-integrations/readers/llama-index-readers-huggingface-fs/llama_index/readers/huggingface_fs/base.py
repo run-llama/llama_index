@@ -3,6 +3,7 @@
 A parser for HF files.
 
 """
+
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -14,13 +15,9 @@ from llama_index.core.schema import Document
 
 
 class HuggingFaceFSReader(BaseReader):
-    r"""Hugging Face File System reader.
+    """Hugging Face File System reader.
 
     Uses the new Filesystem API from the Hugging Face Hub client library.
-
-    Args:
-
-
     """
 
     def __init__(self) -> None:
@@ -30,7 +27,6 @@ class HuggingFaceFSReader(BaseReader):
 
     def load_dicts(self, path: str) -> List[Dict]:
         """Parse file."""
-
         test_data = self.fs.read_bytes(path)
 
         path = Path(path)

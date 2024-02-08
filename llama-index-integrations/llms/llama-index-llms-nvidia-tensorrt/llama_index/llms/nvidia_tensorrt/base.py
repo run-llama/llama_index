@@ -1,5 +1,3 @@
-import torch
-from transformers import AutoTokenizer
 import gc
 import json
 import os
@@ -7,6 +5,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Sequence
 
+import torch
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -27,6 +26,7 @@ from llama_index.llms.nvidia_tensorrt.utils import (
     get_output,
     parse_input,
 )
+from transformers import AutoTokenizer
 
 EOS_TOKEN = 2
 PAD_TOKEN = 2

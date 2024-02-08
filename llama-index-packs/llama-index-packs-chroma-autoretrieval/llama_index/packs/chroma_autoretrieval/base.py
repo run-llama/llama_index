@@ -11,8 +11,8 @@ from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.schema import TextNode
 from llama_index.core.storage.storage_context import StorageContext
-from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core.vector_stores.types import VectorStoreInfo
+from llama_index.vector_stores.chroma import ChromaVectorStore
 
 
 class ChromaAutoretrievalPack(BaseLlamaPack):

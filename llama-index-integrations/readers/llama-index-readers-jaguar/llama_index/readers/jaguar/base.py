@@ -5,7 +5,6 @@ import json
 from typing import Any, List, Optional
 
 from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
-
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 

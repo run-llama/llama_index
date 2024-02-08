@@ -106,7 +106,9 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         llm = llm or llm_from_settings_or_context(Settings, service_context)
         if question_gen is None:
             try:
-                from llama_index.question_gen.openai import OpenAIQuestionGenerator
+                from llama_index.question_gen.openai import (
+                    OpenAIQuestionGenerator,
+                )  # pants: no-infer-dep
 
                 # try to use OpenAI function calling based question generator.
                 # if incompatible, use general LLM question generator

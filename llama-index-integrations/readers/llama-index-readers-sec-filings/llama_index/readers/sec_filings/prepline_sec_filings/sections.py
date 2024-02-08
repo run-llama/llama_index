@@ -1,4 +1,4 @@
-"""Module for defining/enumerating the common sections from SEC forms"""
+"""Module for defining/enumerating the common sections from SEC forms."""
 import re
 from enum import Enum
 from typing import List
@@ -142,7 +142,7 @@ SECTIONS_S1 = (
 def validate_section_names(section_names: List[str]):
     """Return section names that don't correspond to a defined enum."""
     if len(section_names) == 1 and section_names[0] == ALL_SECTIONS:
-        return None
+        return
     elif len(section_names) > 1 and ALL_SECTIONS in section_names:
         raise ValueError(f"{ALL_SECTIONS} may not be specified with other sections")
 
@@ -151,4 +151,4 @@ def validate_section_names(section_names: List[str]):
     ]
     if invalid_names:
         raise ValueError(f"The following section names are not valid: {invalid_names}")
-    return None
+    return

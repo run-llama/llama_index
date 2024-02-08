@@ -1,4 +1,5 @@
 """Read Arxiv Papers."""
+
 import hashlib
 import logging
 import os
@@ -17,13 +18,12 @@ class ArxivReader(BaseReader):
 
     def __init__(
         self,
-    ):
+    ) -> None:
         """Initialize with parameters."""
         super().__init__()
 
     def _hacky_hash(self, some_string):
-        _hash = hashlib.md5(some_string.encode("utf-8")).hexdigest()
-        return _hash
+        return hashlib.md5(some_string.encode("utf-8")).hexdigest()
 
     def load_data(
         self,

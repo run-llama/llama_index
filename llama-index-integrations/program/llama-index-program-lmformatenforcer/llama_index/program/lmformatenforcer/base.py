@@ -6,7 +6,7 @@ from llama_index.core.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.llms.llama_cpp import LlamaCPP
-from llama_index.prompts.lmformatenforcer.utils import (
+from llama_index.program.lmformatenforcer.utils import (
     activate_lm_format_enforcer,
     build_lm_format_enforcer_function,
 )

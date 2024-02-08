@@ -5,9 +5,9 @@ from datetime import datetime
 from ssl import SSLContext
 from typing import List, Optional
 
-from llama_index.readers.slack import SlackReader
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from llama_index.readers.slack import SlackReader
 
 logger = logging.getLogger(__name__)
 

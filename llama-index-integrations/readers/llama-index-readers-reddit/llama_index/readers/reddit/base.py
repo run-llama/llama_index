@@ -1,4 +1,4 @@
-"""Simple Reader that loads text relevant to a certain search keyword from subreddits"""
+"""Simple Reader that loads text relevant to a certain search keyword from subreddits."""
 from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -7,7 +7,7 @@ from llama_index.core.schema import Document
 
 class RedditReader(BaseReader):
     """
-    Subreddit post and top-level comments reader for Reddit
+    Subreddit post and top-level comments reader for Reddit.
     """
 
     def load_data(
@@ -17,7 +17,7 @@ class RedditReader(BaseReader):
         post_limit: Optional[int] = [10],
     ) -> List[Document]:
         """
-        Load text from relevant posts and top-level comments in subreddit(s), given keyword(s) for search
+        Load text from relevant posts and top-level comments in subreddit(s), given keyword(s) for search.
 
         Args:
             subreddits (List[str]): List of subreddits you'd like to read from
@@ -25,7 +25,6 @@ class RedditReader(BaseReader):
             post_limit (Optional[int]): Maximum number of posts per subreddit you'd like to read from, defaults to 10
 
         """
-
         import os
 
         import praw

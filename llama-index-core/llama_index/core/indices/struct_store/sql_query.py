@@ -3,8 +3,6 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from sqlalchemy import Table
-
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import Response
 from llama_index.core.indices.struct_store.container_builder import (
@@ -36,6 +34,7 @@ from llama_index.core.settings import (
     llm_from_settings_or_context,
 )
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
+from sqlalchemy import Table
 
 logger = logging.getLogger(__name__)
 

@@ -85,21 +85,21 @@ DEFAULT_AFTER_DATE = date(2000, 1, 1).strftime(DATE_FORMAT_TOKENS)
 
 
 class timeout:
-    def __init__(self, seconds=1, error_message="Timeout"):
+    def __init__(self, seconds=1, error_message="Timeout") -> None:
         self.seconds = seconds
         self.error_message = error_message
 
     def handle_timeout(self, signum, frame):
         raise TimeoutError(self.error_message)
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         try:
             signal.signal(signal.SIGALRM, self.handle_timeout)
             signal.alarm(self.seconds)
         except ValueError:
             pass
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type, value, traceback) -> None:
         try:
             signal.alarm(0)
         except ValueError:
@@ -108,7 +108,7 @@ class timeout:
 
 # pipeline-api
 def get_regex_enum(section_regex):
-    """Get sections using regular expression
+    """Get sections using regular expression.
 
     Args:
         section_regex (str): regular expression for the section name
@@ -138,7 +138,7 @@ class SECExtractor:
         sections: List[str] = ["_ALL"],
         include_amends: bool = True,
     ):
-        """_summary_
+        """_summary_.
 
         Args:
             tickers (List[str]): list of ticker
@@ -157,7 +157,7 @@ class SECExtractor:
         self.include_amends = include_amends
 
     def get_accession_numbers(self, tic: str) -> dict:
-        """Get accession numbers and download URL for the SEC filing
+        """Get accession numbers and download URL for the SEC filing.
 
         Args:
             tic (str): ticker symbol
@@ -195,7 +195,7 @@ class SECExtractor:
         return final_dict
 
     def get_year(self, filing_details: str) -> str:
-        """Get the year for 10-K and year,month for 10-Q
+        """Get the year for 10-K and year,month for 10-Q.
 
         Args:
             filing_details (str): filing url
@@ -205,9 +205,9 @@ class SECExtractor:
         """
         details = filing_details.split("/")[-1]
         if self.filing_type == "10-K":
-            matches = re.findall("20\d{2}", details)
+            matches = re.findall("20\\d{2}", details)
         elif self.filing_type == "10-Q":
-            matches = re.findall("20\d{4}", details)
+            matches = re.findall("20\\d{4}", details)
 
         if matches:
             return matches[-1]  # Return the first match
@@ -215,7 +215,7 @@ class SECExtractor:
             return None  # In case no match is found
 
     def get_all_text(self, section, all_narratives):
-        """Join all the text from a section
+        """Join all the text from a section.
 
         Args:
             section (str): section name
@@ -232,7 +232,7 @@ class SECExtractor:
         return " ".join(all_texts)
 
     def get_text_from_url(self, url: str):
-        """Get the text from filing document URL
+        """Get the text from filing document URL.
 
         Args:
             url (str): url link
@@ -252,7 +252,7 @@ class SECExtractor:
         return all_narrative_dict, filing_type
 
     def pipeline_api(self, text, m_section=[], m_section_regex=[]):
-        """Unsturcured API to get the text
+        """Unsturcured API to get the text.
 
         Args:
             text (str): Text from the filing document URL
@@ -307,7 +307,8 @@ class SECExtractor:
     def get_filing(self, url: str, company: str, email: str) -> str:
         """Fetches the specified filing from the SEC EDGAR Archives. Conforms to the rate
         limits specified on the SEC website.
-        ref: https://www.sec.gov/os/accessing-edgar-data"""
+        ref: https://www.sec.gov/os/accessing-edgar-data.
+        """
         session = self._get_session(company, email)
         response = session.get(url)
         response.raise_for_status()
@@ -318,7 +319,8 @@ class SECExtractor:
     ) -> requests.Session:
         """Creates a requests sessions with the appropriate headers set. If these headers are not
         set, SEC will reject your request.
-        ref: https://www.sec.gov/os/accessing-edgar-data"""
+        ref: https://www.sec.gov/os/accessing-edgar-data.
+        """
         if company is None:
             company = os.environ.get("SEC_API_ORGANIZATION")
         if email is None:

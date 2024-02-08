@@ -1,4 +1,5 @@
-"""Simple Reader that loads highlights from Readwise.io"""
+"""Simple Reader that loads highlights from Readwise.io."""
+
 import datetime
 import json
 from typing import List, Optional
@@ -57,5 +58,4 @@ class ReadwiseReader(BaseReader):
         readwise_response = _get_readwise_data(
             api_key=self._api_key, updated_after=updated_after
         )
-        result = [Document(text=json.dumps(d)) for d in readwise_response]
-        return result
+        return [Document(text=json.dumps(d)) for d in readwise_response]

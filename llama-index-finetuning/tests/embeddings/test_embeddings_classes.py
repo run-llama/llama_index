@@ -1,8 +1,8 @@
-from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 from llama_index.finetuning.embeddings import (
-    SentenceTransformersFinetuneEngine,
     EmbeddingAdapterFinetuneEngine,
+    SentenceTransformersFinetuneEngine,
 )
+from llama_index.finetuning.types import BaseEmbeddingFinetuneEngine
 
 
 def test_class():

@@ -1,9 +1,9 @@
 """Simple Reader that reads abstract of primary citation for a given PDB id."""
 from typing import List
-from llama_index.readers.pdb.utils import get_pdb_abstract
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from llama_index.readers.pdb.utils import get_pdb_abstract
 
 
 class PdbAbstractReader(BaseReader):
@@ -19,7 +19,6 @@ class PdbAbstractReader(BaseReader):
             pdb_ids (List[str]): List of PDB ids \
                 for which primary citation abstract are to be read.
         """
-
         results = []
         for pdb_id in pdb_ids:
             title, abstracts = get_pdb_abstract(pdb_id)

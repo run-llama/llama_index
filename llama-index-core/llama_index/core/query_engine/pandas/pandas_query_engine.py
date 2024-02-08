@@ -11,7 +11,6 @@ import logging
 from typing import Any, Dict, Optional
 
 import pandas as pd
-
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import Response
 from llama_index.core.indices.struct_store.pandas import PandasIndex

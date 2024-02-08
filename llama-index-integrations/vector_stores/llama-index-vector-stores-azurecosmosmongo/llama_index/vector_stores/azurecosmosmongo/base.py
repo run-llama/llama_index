@@ -7,6 +7,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
+import pymongo
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     VectorStore,
@@ -18,7 +19,6 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-import pymongo
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-"""LLama Kibela Reader"""
+"""LLama Kibela Reader."""
 from typing import Dict, Generic, List, Optional, TypeVar
 
 from llama_index.core.readers.base import BaseReader

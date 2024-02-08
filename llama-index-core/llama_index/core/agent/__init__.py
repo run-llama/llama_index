@@ -15,7 +15,6 @@ __all__ = [
     "ParallelAgentRunner",
     "ReActAgentWorker",
     "ReActAgent",
-    "ContextRetrieverOpenAIAgent",
     "CustomSimpleAgentWorker",
     "QueryPipelineAgentWorker",
     "ReActChatFormatter",

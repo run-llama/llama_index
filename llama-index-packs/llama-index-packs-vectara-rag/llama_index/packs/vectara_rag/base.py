@@ -3,9 +3,9 @@
 
 from typing import Any, Dict, List, Optional
 
-from llama_index.indices.managed.vectara import VectaraIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.schema import TextNode
+from llama_index.indices.managed.vectara import VectaraIndex
 
 
 class VectaraRagPack(BaseLlamaPack):

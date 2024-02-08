@@ -3,7 +3,6 @@
 from typing import Any, Callable, List, Optional
 
 import pandas as pd
-
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser.relational.base_element import (
     DEFAULT_SUMMARY_QUERY_STR,
@@ -54,8 +53,8 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
     ) -> None:
         """Initialize."""
         try:
-            import lxml  # noqa
-            import unstructured  # noqa
+            import lxml  # noqa  # pants: no-infer-dep
+            import unstructured  # noqa  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "You must install the `unstructured` and `lxml` "
@@ -89,7 +88,7 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
         self, text: str, table_filters: Optional[List[Callable]] = None, **kwargs: Any
     ) -> List[Element]:
         """Extract elements from text."""
-        from unstructured.partition.html import partition_html
+        from unstructured.partition.html import partition_html  # pants: no-infer-dep
 
         table_filters = table_filters or []
         elements = partition_html(text=text)

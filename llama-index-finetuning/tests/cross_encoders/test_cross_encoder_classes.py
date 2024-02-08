@@ -1,5 +1,5 @@
-from llama_index.finetuning.types import BaseCrossEncoderFinetuningEngine
 from llama_index.finetuning.cross_encoders import CrossEncoderFinetuneEngine
+from llama_index.finetuning.types import BaseCrossEncoderFinetuningEngine
 
 
 def test_class():

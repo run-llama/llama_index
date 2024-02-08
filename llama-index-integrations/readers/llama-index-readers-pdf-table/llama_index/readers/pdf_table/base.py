@@ -1,4 +1,4 @@
-"""PDF Table reader"""
+"""PDF Table reader."""
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 

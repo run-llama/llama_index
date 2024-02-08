@@ -4,7 +4,6 @@ import re
 from typing import Optional, Set
 
 import pandas as pd
-
 from llama_index.core.indices.utils import expand_tokens_with_subtokens
 from llama_index.core.utils import globals_helper
 

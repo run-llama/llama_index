@@ -2,10 +2,6 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import zep_python
-from zep_python import ZepClient
-from zep_python.document import DocumentCollection
-from zep_python.document import Document as ZepDocument
-
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
@@ -17,6 +13,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from zep_python import ZepClient
+from zep_python.document import Document as ZepDocument
+from zep_python.document import DocumentCollection
 
 logger = logging.getLogger(__name__)
 

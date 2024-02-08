@@ -8,6 +8,7 @@ powered by the cassIO library
 import logging
 from typing import Any, Dict, Iterable, List, Optional, TypeVar, cast
 
+from cassio.table import ClusteredMetadataVectorCassandraTable
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_mmr_embeddings,
 )
@@ -24,8 +25,6 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-from cassio.table import ClusteredMetadataVectorCassandraTable
 
 _logger = logging.getLogger(__name__)
 

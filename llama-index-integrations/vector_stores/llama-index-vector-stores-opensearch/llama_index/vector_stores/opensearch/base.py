@@ -3,10 +3,6 @@ import json
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
-from opensearchpy import OpenSearch
-from opensearchpy.helpers import bulk
-from opensearchpy.exceptions import NotFoundError
-
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
@@ -19,6 +15,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from opensearchpy import OpenSearch
+from opensearchpy.exceptions import NotFoundError
+from opensearchpy.helpers import bulk
 
 IMPORT_OPENSEARCH_PY_ERROR = (
     "Could not import OpenSearch. Please install it with `pip install opensearch-py`."

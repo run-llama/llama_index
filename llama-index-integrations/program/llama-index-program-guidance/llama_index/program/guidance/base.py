@@ -4,13 +4,13 @@ from typing import Any, Optional, Type, cast
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.core.prompts.base import PromptTemplate
-from llama_index.core.prompts.guidance_utils import (
+from llama_index.program.guidance.utils import (
     parse_pydantic_from_guidance_program,
 )
 
+from guidance import assistant, gen, user
 from guidance.models import Model as GuidanceLLM
 from guidance.models import OpenAIChat
-from guidance import assistant, gen, user
 
 
 class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):

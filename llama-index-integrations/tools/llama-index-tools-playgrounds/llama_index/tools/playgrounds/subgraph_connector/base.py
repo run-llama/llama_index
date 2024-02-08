@@ -3,7 +3,6 @@
 from typing import Optional, Union
 
 import requests
-
 from llama_index.tools.graphql.base import GraphQLToolSpec
 
 
@@ -55,7 +54,6 @@ class PlaygroundsSubgraphConnectorToolSpec(GraphQLToolSpec):
             dict: The response from the GraphQL server if successful.
             str: Error message if the request fails.
         """
-
         payload = {"query": query.strip()}
 
         if variables:

@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any, List
 
 from dataclasses_json import DataClassJsonMixin
-
 from llama_index.core.output_parsers.base import (
     OutputParserException,
     StructuredOutput,

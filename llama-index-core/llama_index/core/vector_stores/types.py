@@ -15,7 +15,6 @@ from typing import (
 
 import fsspec
 from deprecated import deprecated
-
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     StrictFloat,

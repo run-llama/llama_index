@@ -1,4 +1,5 @@
 """MangoppsGuides reader."""
+
 import re
 from typing import List
 from urllib.parse import urlparse
@@ -20,6 +21,7 @@ class MangoppsGuidesReader(BaseReader):
 
     def load_data(self, domain_url: str, limit: int) -> List[Document]:
         """Load data from the workspace.
+
         Returns:
             List[Document]: List of documents.
         """
@@ -100,18 +102,14 @@ class MangoppsGuidesReader(BaseReader):
         return results
 
     def crawl_urls(self) -> List[str]:
-        """Crawls all the urls from given domain"""
-
+        """Crawls all the urls from given domain."""
         self.visited = []
 
         fetched_urls = self.fetch_url(self.start_url)
-        fetched_urls = list(set(fetched_urls))
-
-        return fetched_urls
+        return list(set(fetched_urls))
 
     def fetch_url(self, url):
-        """Fetch the urls from given domain"""
-
+        """Fetch the urls from given domain."""
         import requests
         from bs4 import BeautifulSoup
 
@@ -137,8 +135,7 @@ class MangoppsGuidesReader(BaseReader):
             ):
                 newurls = newurls + self.fetch_url(newurl)
 
-        newurls = list(set(newurls))
-        return newurls
+        return list(set(newurls))
 
 
 if __name__ == "__main__":

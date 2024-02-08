@@ -1,12 +1,12 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.readers.file import PDFReader
-from llama_index.llms.openai import OpenAI
-from llama_index.core import ServiceContext
-from llama_index.core.schema import NodeWithScore
-from llama_index.core.response_synthesizers import TreeSummarize
 
+from llama_index.core import ServiceContext
+from llama_index.core.llama_pack.base import BaseLlamaPack
+from llama_index.core.response_synthesizers import TreeSummarize
+from llama_index.core.schema import NodeWithScore
+from llama_index.llms.openai import OpenAI
+from llama_index.readers.file import PDFReader
 from pydantic import BaseModel, Field
 
 # backwards compatibility
@@ -28,14 +28,14 @@ You job is to decide if the candidate pass the resume screen given the job descr
 
 
 class CriteriaDecision(BaseModel):
-    """The decision made based on a single criteria"""
+    """The decision made based on a single criteria."""
 
     decision: bool = Field(description="The decision made based on the criteria")
     reasoning: str = Field(description="The reasoning behind the decision")
 
 
 class ResumeScreenerDecision(BaseModel):
-    """The decision made by the resume screener"""
+    """The decision made by the resume screener."""
 
     criteria_decisions: List[CriteriaDecision] = Field(
         description="The decisions made based on the criteria"

@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 from deprecated import deprecated
-
 from llama_index.core.bridge.pydantic import BaseModel
 
 

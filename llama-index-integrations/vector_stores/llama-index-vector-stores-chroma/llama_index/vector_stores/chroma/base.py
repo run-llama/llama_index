@@ -5,7 +5,6 @@ from typing import Any, Dict, Generator, List, Optional, cast
 
 import chromadb
 from chromadb.api.models.Collection import Collection
-
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.utils import truncate_text

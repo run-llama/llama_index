@@ -7,12 +7,12 @@ from typing import Any, List, Optional
 import numpy as np
 import pandas as pd
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.readers.file.tabular_reader import PandasCSVReader
 from llama_index.core.schema import Document
+from llama_index.readers.file import PandasCSVReader
 
 
 class PandasAIReader(BaseReader):
-    """Pandas AI reader.
+    r"""Pandas AI reader.
 
     Light wrapper around https://github.com/gventuri/pandas-ai.
 
@@ -67,7 +67,6 @@ class PandasAIReader(BaseReader):
         is_conversational_answer: bool = False,
     ) -> Any:
         """Load dataframe."""
-
         return self._pandas_ai.run(
             initial_df, prompt=query, is_conversational_answer=is_conversational_answer
         )
@@ -79,7 +78,6 @@ class PandasAIReader(BaseReader):
         is_conversational_answer: bool = False,
     ) -> List[Document]:
         """Parse file."""
-
         result = self.run_pandas_ai(
             initial_df, query, is_conversational_answer=is_conversational_answer
         )
@@ -91,7 +89,7 @@ class PandasAIReader(BaseReader):
             elif isinstance(result, (pd.Series, pd.DataFrame)):
                 pass
             else:
-                raise ValueError("Unexpected type for result: {}".format(type(result)))
+                raise ValueError(f"Unexpected type for result: {type(result)}")
             # if not conversational answer, use Pandas CSV Reader
             reader = PandasCSVReader(
                 concat_rows=self._concat_rows,
@@ -106,5 +104,4 @@ class PandasAIReader(BaseReader):
                     # TODO: add option to specify index=False
                     result.to_csv(f, index=False)
 
-                docs = reader.load_data(outpath)
-                return docs
+                return reader.load_data(outpath)

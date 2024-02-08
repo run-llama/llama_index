@@ -2,12 +2,12 @@
 import os
 from typing import Any, Dict, List
 
+from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.schema import TextNode, Document
 from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.retrievers import QueryFusionRetriever
+from llama_index.core.schema import Document, TextNode
 from llama_index.retrievers.bm25 import BM25Retriever
 
 

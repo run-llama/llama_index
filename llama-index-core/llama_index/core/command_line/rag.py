@@ -28,7 +28,7 @@ from llama_index.core.utils import get_cache_dir
 
 def _try_load_openai_llm():
     try:
-        from llama_index.llms.openai import OpenAI
+        from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
 
         return OpenAI(model="gpt-3.5-turbo", streaming=True)
     except ImportError:

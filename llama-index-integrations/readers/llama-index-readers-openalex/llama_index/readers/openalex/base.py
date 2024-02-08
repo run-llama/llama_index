@@ -1,9 +1,10 @@
 """
-Class for searching and importing data from OpenAlex
+Class for searching and importing data from OpenAlex.
 """
 
-from typing import List
 import logging
+from typing import List
+
 import requests
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -13,14 +14,14 @@ logging.basicConfig(level=logging.ERROR)
 
 class OpenAlexReader(BaseReader):
     """
-    This class is used to search and import data from OpenAlex
+    This class is used to search and import data from OpenAlex.
 
     Parameters
     ----------
     email : str
         Email address to use for OpenAlex API
 
-    Attributes
+    Attributes:
     ----------
     Works : pyalex.Works
         pyalex.Works object
@@ -75,7 +76,7 @@ class OpenAlexReader(BaseReader):
     def _invert_abstract(self, inv_index):
         if inv_index is not None:
             l_inv = [(w, p) for w, pos in inv_index.items() for p in pos]
-            return " ".join(map(lambda x: x[0], sorted(l_inv, key=lambda x: x[1])))
+            return " ".join(x[0] for x in sorted(l_inv, key=lambda x: x[1]))
         return None
 
     def load_data(self, query: str, full_text=False, fields=None) -> List[Document]:

@@ -9,17 +9,16 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
-from pydantic import Field
-
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms import LLM
 from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.output_parsers.base import ChainableOutputParser
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.query_engine.custom import CustomQueryEngine
 from llama_index.core.query_engine import PandasQueryEngine
+from llama_index.core.query_engine.custom import CustomQueryEngine
 from llama_index.core.query_pipeline.query import QueryPipeline as QP
-from llama_index.core.base.response.schema import RESPONSE_TYPE
+from pydantic import Field
 
 # ===== Textual Reasoning =====
 

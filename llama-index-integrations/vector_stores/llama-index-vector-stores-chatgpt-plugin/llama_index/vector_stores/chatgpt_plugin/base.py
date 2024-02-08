@@ -4,8 +4,6 @@ import os
 from typing import Any, Dict, List, Optional
 
 import requests
-from requests.adapters import HTTPAdapter, Retry
-
 from llama_index.core.schema import (
     BaseNode,
     MetadataMode,
@@ -19,6 +17,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from requests.adapters import HTTPAdapter, Retry
 
 
 def convert_docs_to_json(nodes: List[BaseNode]) -> List[Dict]:

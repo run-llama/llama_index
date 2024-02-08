@@ -1,4 +1,5 @@
 """Relevancy evaluation."""
+
 from __future__ import annotations
 
 from typing import Any, List, Sequence, Union
@@ -62,9 +63,23 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
         refine_template: Union[str, BasePromptTemplate, None] = None,
     ) -> None:
         """Init params."""
-        self._multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
-            model="gpt-4-vision-preview", max_new_tokens=1000
-        )
+        if multi_modal_llm is None:
+            try:
+                from llama_index.multi_modal_llms.openai import (
+                    OpenAIMultiModal,
+                )  # pants: no-infer-dep
+            except ImportError:
+                raise ImportError(
+                    "OpenAIMultiModal is not installed. "
+                    "Please install it using `pip install llama-index-multi-modal-llms-openai`"
+                )
+
+            self._multi_modal_llm = OpenAIMultiModal(
+                model="gpt-4-vision-preview", max_new_tokens=1000
+            )
+        else:
+            self._multi_modal_llm = multi_modal_llm
+
         self._raise_error = raise_error
 
         self._eval_template: BasePromptTemplate

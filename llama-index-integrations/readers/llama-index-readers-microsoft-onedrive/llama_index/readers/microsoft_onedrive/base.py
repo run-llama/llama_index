@@ -1,16 +1,15 @@
-"""OneDrive files reader"""
+"""OneDrive files reader."""
 
 import logging
 import os
 import tempfile
-import requests
 import time
-from typing import Any, List, Dict, Optional
+from typing import Any, Dict, List, Optional
 
+import requests
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,7 @@ class OneDriveReader(BaseReader):
         self.client_id = client_id
         self.tenant_id = tenant_id
         self.client_secret = client_secret
-        self._is_interactive_auth = False if self.client_secret else True
+        self._is_interactive_auth = not self.client_secret
 
     def _authenticate_with_msal(self) -> Any:
         """Authenticate with MSAL.
@@ -105,7 +104,6 @@ class OneDriveReader(BaseReader):
         Returns:
             str: A string representing the constructed endpoint.
         """
-
         if not self._is_interactive_auth and not userprincipalname:
             raise Exception(
                 "userprincipalname cannot be empty for App authentication. Provide the userprincipalname (email mostly) of user whose OneDrive needs to be accessed"
@@ -158,7 +156,6 @@ class OneDriveReader(BaseReader):
         Raises:
         Exception: On non-retriable status code.
         """
-
         endpoint = self._construct_endpoint(
             item_ref, isRelativePath, isFile, userprincipalname
         )
@@ -187,7 +184,7 @@ class OneDriveReader(BaseReader):
 
     def _download_file_by_url(self, item: Dict[str, Any], local_dir: str) -> str:
         """
-        Downloads a file from OneDrive using the provided item's download URL
+        Downloads a file from OneDrive using the provided item's download URL.
 
         Parameters:
         - item (Dict[str, str]): Dictionary containing file metadata and download URL.
@@ -197,7 +194,6 @@ class OneDriveReader(BaseReader):
         - str: The file path of the downloade file
 
         """
-
         # Extract download URL and filename from the provided item.
         file_download_url = item["@microsoft.graph.downloadUrl"]
         file_name = item["name"]
@@ -225,7 +221,7 @@ class OneDriveReader(BaseReader):
         # Extract the required metadata for file.
         created_by = item.get("createdBy", {})
         modified_by = item.get("lastModifiedBy", {})
-        props = {
+        return {
             "file_id": item.get("id"),
             "file_name": item.get("name"),
             "created_by_user": created_by.get("user", {}).get("displayName"),
@@ -237,8 +233,6 @@ class OneDriveReader(BaseReader):
             ),
             "last_modified_datetime": item.get("lastModifiedDateTime"),
         }
-
-        return props
 
     def _check_approved_mimetype_and_download_file(
         self,
@@ -311,7 +305,6 @@ class OneDriveReader(BaseReader):
         Raises:
         - Exception: If items can't be retrieved for the current item.
         """
-
         data = self._get_items_in_drive_with_maxretries(
             access_token,
             item_id,
@@ -468,8 +461,7 @@ class OneDriveReader(BaseReader):
         simple_loader = SimpleDirectoryReader(
             directory, file_metadata=get_metadata, recursive=recursive
         )
-        documents = simple_loader.load_data()
-        return documents
+        return simple_loader.load_data()
 
     def load_data(
         self,
@@ -482,6 +474,7 @@ class OneDriveReader(BaseReader):
         userprincipalname: Optional[str] = None,
     ) -> List[Document]:
         """Load data from the folder id / file ids, f both are not provided download from the root.
+
         Args:
             folder_id: folder id of the folder in OneDrive.
             file_ids: file ids of the files in OneDrive.
@@ -490,6 +483,8 @@ class OneDriveReader(BaseReader):
             mime_types: the mimeTypes you want to allow e.g.: "application/pdf", default is none, which loads all files found
             recursive: boolean value to traverse and read subfolder, default is True
             userprincipalname: str value indicating the userprincipalname(normally organization provided email id) whose ondrive needs to be accessed. Mandatory for App authentication scenarios.
+
+
         Returns:
             List[Document]: A list of documents.
         """
@@ -508,5 +503,5 @@ class OneDriveReader(BaseReader):
                 return self._load_documents_with_metadata(temp_dir, recursive=recursive)
         except Exception as e:
             logger.error(
-                "An error occurred while loading the data: {}".format(e), exc_info=True
+                f"An error occurred while loading the data: {e}", exc_info=True
             )

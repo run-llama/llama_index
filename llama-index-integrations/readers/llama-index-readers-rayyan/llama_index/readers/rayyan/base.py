@@ -1,6 +1,6 @@
 """Rayyan review reader."""
-from typing import List
 import logging
+from typing import List
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -34,18 +34,21 @@ class RayyanReader(BaseReader):
             review_id (int): Rayyan review ID.
             filters (dict, optional): Filters to apply to the review. Defaults to None. Passed to
                 the Rayyan review results method as is.
+
+
         Returns:
             List[Document]: List of documents.
         """
-        from rayyan.review import Review
-        from tqdm import tqdm
         from tenacity import (
             retry,
-            stop_all,
             stop_after_attempt,
             stop_after_delay,
+            stop_all,
             wait_random_exponential,
         )
+        from tqdm import tqdm
+
+        from rayyan.review import Review
 
         rayyan_review = Review(self.rayyan)
         my_review = rayyan_review.get(review_id)

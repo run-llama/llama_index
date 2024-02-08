@@ -1,4 +1,4 @@
-"""Feedly Rss Reader"""
+"""Feedly Rss Reader."""
 
 import json
 from pathlib import Path
@@ -24,7 +24,7 @@ class FeedlyRssReader(BaseReader):
         self, directory: Path = Path.home() / ".config/feedly", overwrite: bool = False
     ):
         """Modified from python-api-client/feedly/api_client/utils.py
-        Instead promopting for user input, we take the token as an argument
+        Instead promopting for user input, we take the token as an argument.
         """
         directory.mkdir(exist_ok=True, parents=True)
 
@@ -35,8 +35,7 @@ class FeedlyRssReader(BaseReader):
             auth_file.write_text(auth.strip())
 
     def load_data(self, category_name, max_count=100):
-        """Get the entries from a feedly category"""
-
+        """Get the entries from a feedly category."""
         from feedly.api_client.session import FeedlySession
         from feedly.api_client.stream import StreamOptions
 

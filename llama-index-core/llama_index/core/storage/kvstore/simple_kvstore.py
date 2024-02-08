@@ -4,7 +4,6 @@ import os
 from typing import Dict, Optional
 
 import fsspec
-
 from llama_index.core.storage.kvstore.types import (
     DEFAULT_COLLECTION,
     BaseInMemoryKVStore,

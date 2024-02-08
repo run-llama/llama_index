@@ -17,7 +17,6 @@ import logging
 from typing import Any, List, Optional, Tuple, Union, cast
 
 from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
-
 from llama_index.core.schema import BaseNode, Document, TextNode
 from llama_index.core.vector_stores.types import (
     VectorStore,

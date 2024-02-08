@@ -2,7 +2,6 @@ import re
 from typing import Any, Dict, Optional, Tuple
 
 import pytest
-
 from tests.mock_utils.mock_prompts import (
     MOCK_REFINE_PROMPT,
     MOCK_SCHEMA_EXTRACT_PROMPT,

@@ -1,11 +1,11 @@
-import requests
-from typing import Optional
 import os
+from typing import Optional
+
+import requests
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class CogniswitchToolSpec(BaseToolSpec):
-
     """Cogniswitch Tool Spec.
     A toolspec to have store_data and query_knowledge as tools to store the data from a file or a url
     and answer questions from the knowledge stored respectively.
@@ -23,7 +23,7 @@ class CogniswitchToolSpec(BaseToolSpec):
         Args:
             cs_token (str): Cogniswitch token.
             OAI_token (str): OpenAI token.
-            apiKey (str): Oauth token
+            apiKey (str): Oauth token.
         """
         self.cs_token = cs_token
         if OAI_token:
@@ -152,7 +152,6 @@ class CogniswitchToolSpec(BaseToolSpec):
         Returns:
             dict: Response JSON from the Cogniswitch service.
         """
-
         params = {"docName": document_name, "platformToken": self.cs_token}
         response = requests.get(
             self.knowledge_status_endpoint,

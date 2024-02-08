@@ -31,7 +31,7 @@ class AzureCVToolSpec(BaseToolSpec):
         This tool accepts an image url or file and can process and return a variety of text depending on the use case.
         You can use the features argument to configure what text you want returned.
 
-        args:
+        Args:
             url (str): The url for the image to caption
             features (List[str]): Instructions on how to process the image. Valid keys are tags, objects, read, caption
         """

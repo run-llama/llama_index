@@ -19,7 +19,7 @@ class CodeInterpreterToolSpec(BaseToolSpec):
 
     def code_interpreter(self, code: str):
         """
-        A function to execute python code, and return the stdout and stderr
+        A function to execute python code, and return the stdout and stderr.
 
         You should import any libraries that you wish to use. You have access to any libraries the user has installed.
 
@@ -30,7 +30,5 @@ class CodeInterpreterToolSpec(BaseToolSpec):
 
         It is not possible to return graphics or other complicated data from this function. If the user cannot see the output, save it to a file and tell the user.
         """
-        result = subprocess.run(
-            [sys.executable, "-c", code], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        result = subprocess.run([sys.executable, "-c", code], capture_output=True)
         return f"StdOut:\n{result.stdout}\nStdErr:\n{result.stderr}"

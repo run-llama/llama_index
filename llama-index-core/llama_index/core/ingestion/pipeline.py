@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any, Generator, List, Optional, Sequence, Union
 
 from fsspec import AbstractFileSystem
-
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
 from llama_index.core.node_parser import SentenceSplitter

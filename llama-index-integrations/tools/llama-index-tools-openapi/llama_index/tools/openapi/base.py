@@ -3,13 +3,12 @@
 from typing import List, Optional
 
 import requests
-
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class OpenAPIToolSpec(BaseToolSpec):
-    """OpenAPI Tool
+    """OpenAPI Tool.
 
     This tool can be used to parse an OpenAPI spec for endpoints and operations
     Use the RequestsToolSpec to automate requests to the openapi server
@@ -96,8 +95,7 @@ class OpenAPIToolSpec(BaseToolSpec):
                 else:
                     return obj
 
-            dereferenced_doc = _dereference(openapi_doc)
-            return dereferenced_doc
+            return _dereference(openapi_doc)
 
         spec = dereference_openapi(spec)
         endpoints = []

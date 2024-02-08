@@ -2,8 +2,6 @@
 
 from typing import Any, Dict, Optional, cast
 
-from sqlalchemy import Table
-
 from llama_index.core.data_structs.table import StructDatapoint
 from llama_index.core.indices.common.struct_store.base import (
     OUTPUT_PARSER_TYPE,
@@ -14,6 +12,7 @@ from llama_index.core.service_context_elements.llm_predictor import (
     LLMPredictorType,
 )
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
+from sqlalchemy import Table
 
 
 class SQLStructDatapointExtractor(BaseStructDatapointExtractor):

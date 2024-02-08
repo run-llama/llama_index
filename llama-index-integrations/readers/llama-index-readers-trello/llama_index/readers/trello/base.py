@@ -23,6 +23,8 @@ class TrelloReader(BaseReader):
 
         Args:
             board_id (str): Trello board ID.
+
+
         Returns:
             List[Document]: List of documents representing Trello cards.
         """

@@ -1,4 +1,4 @@
-"""Simple reader that reads weather data from OpenWeatherMap API"""
+"""Simple reader that reads weather data from OpenWeatherMap API."""
 from typing import List
 
 from llama_index.core.readers.base import BaseReader
@@ -33,12 +33,11 @@ class WeatherReader(BaseReader):
         OWM's One Call API provides the following weather data for any geographical coordinate:
         - Current weather
         - Hourly forecast for 48 hours
-        - Daily forecast for 7 days
+        - Daily forecast for 7 days.
 
         Args:
             places (List[str]) - places you want the weather data for.
         """
-
         try:
             import pyowm
         except ImportError:

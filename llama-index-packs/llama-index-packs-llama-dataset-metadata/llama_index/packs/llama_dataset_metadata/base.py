@@ -1,14 +1,13 @@
 import json
-
-import pandas as pd
 from typing import List, Optional
 
+import pandas as pd
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.download.module import LLAMA_HUB_URL
+from llama_index.core.download.utils import get_file_content
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.llama_dataset import LabelledRagDataset
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.download.utils import get_file_content
-from llama_index.core.download.module import LLAMA_HUB_URL
 
 
 class Readme(BaseModel):
@@ -98,7 +97,7 @@ class DatasetCard(BaseMetadata):
         Args:
             val (float): the value to format.
         """
-        return float("{:,.3f}".format(val))
+        return float(f"{val:,.3f}")
 
     @classmethod
     def from_rag_evaluation(
@@ -130,7 +129,6 @@ class DatasetCard(BaseMetadata):
         Returns:
             DatasetCard
         """
-
         # extract metadata from rag_dataset
         num_observations = len(rag_dataset.examples)
         contains_examples_by_humans = any(

@@ -49,7 +49,6 @@ class BingSearchToolSpec(BaseToolSpec):
 
         returns a url of the images found
         """
-
         return self._bing_request("images/search", query, ["name", "contentUrl"])
 
     def bing_video_search(self, query: str):
@@ -60,5 +59,4 @@ class BingSearchToolSpec(BaseToolSpec):
             query (str): The query to be passed to bing.
 
         """
-
         return self._bing_request("videos/search", query, ["name", "contentUrl"])

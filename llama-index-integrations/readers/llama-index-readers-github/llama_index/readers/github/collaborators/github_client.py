@@ -1,5 +1,5 @@
 """
-GitHub API client for collaborators
+GitHub API client for collaborators.
 """
 
 import os
@@ -141,7 +141,7 @@ class GitHubCollaboratorsClient:
                 response.raise_for_status()
             except httpx.HTTPError as excp:
                 print(f"HTTP Exception for {excp.request.url} - {excp}")
-                raise excp
+                raise excp  # noqa: TRY201
             return response
 
     async def get_collaborators(

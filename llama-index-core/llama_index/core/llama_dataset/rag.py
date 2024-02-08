@@ -4,8 +4,6 @@ import asyncio
 import time
 from typing import List, Optional
 
-from pandas import DataFrame as PandasDataFrame
-
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llama_dataset.base import (
@@ -15,6 +13,7 @@ from llama_index.core.llama_dataset.base import (
     BaseLlamaPredictionDataset,
     CreatedBy,
 )
+from pandas import DataFrame as PandasDataFrame
 
 
 class RagExamplePrediction(BaseLlamaExamplePrediction):

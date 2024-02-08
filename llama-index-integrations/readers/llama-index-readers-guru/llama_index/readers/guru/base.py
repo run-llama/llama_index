@@ -118,8 +118,7 @@ class GuruReader(BaseReader):
                 "guru_link": self._get_guru_link(card_id),
             }
 
-            doc = Document(text=content, extra_info=metadata)
-            return doc
+            return Document(text=content, extra_info=metadata)
         else:
             logger.warning(f"Could not get card info for {card_id}.")
             return None
@@ -136,14 +135,13 @@ class GuruReader(BaseReader):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 soup = BeautifulSoup(text, "html.parser")
-                cleaned_text = soup.get_text()
-            return cleaned_text
+                return soup.get_text()
 
         return str(text)
 
     def _get_guru_link(self, card_id) -> str:
         """
-        takes a guru "ExternalId" from meta data and returns the link to the guru card
+        takes a guru "ExternalId" from meta data and returns the link to the guru card.
         """
         url = f"https://api.getguru.com/api/v1/cards/{card_id}/extended"
         headers = {

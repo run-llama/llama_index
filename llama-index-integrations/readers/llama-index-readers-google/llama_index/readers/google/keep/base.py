@@ -52,7 +52,7 @@ class GoogleKeepReader(BaseReader):
         """Get a Google Keep object with login."""
         # Read username and password from keep_credentials.json
         if os.path.exists("keep_credentials.json"):
-            with open("keep_credentials.json", "r") as f:
+            with open("keep_credentials.json") as f:
                 credentials = json.load(f)
         else:
             raise RuntimeError("Failed to load keep_credentials.json.")

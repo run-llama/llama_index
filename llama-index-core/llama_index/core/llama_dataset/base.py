@@ -6,13 +6,12 @@ from enum import Enum
 from typing import Generator, Generic, List, Optional, Type, TypeVar, Union
 
 import tqdm
-from openai import RateLimitError
-from pandas import DataFrame as PandasDataFrame
-
 from llama_index.core.async_utils import asyncio_module
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.evaluation import BaseEvaluator
+from openai import RateLimitError
+from pandas import DataFrame as PandasDataFrame
 
 PredictorType = Union[BaseQueryEngine, BaseEvaluator]
 P = TypeVar("P", bound=PredictorType)

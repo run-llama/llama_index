@@ -1,20 +1,21 @@
 import asyncio
 import json
-import yaml
 from typing import Any, Dict, List, Optional
 
+import yaml
 from llama_index.core import Document, ServiceContext, VectorStoreIndex
-from llama_index.embeddings.openai import OpenAIEmbedding, BaseEmbedding
+from llama_index.core.async_utils import run_jobs
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.llms.openai import OpenAI
 from llama_index.core.node_parser.interface import TextSplitter
 from llama_index.core.node_parser.text import SentenceSplitter
-from llama_index.core.base.response.schema import RESPONSE_TYPE
-from llama_index.core.retrievers import RecursiveRetriever
-from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.schema import IndexNode, TextNode
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.async_utils import run_jobs
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.retrievers import RecursiveRetriever
+from llama_index.core.schema import IndexNode, TextNode
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.llms.openai import OpenAI
 
 # backwards compatibility
 try:
@@ -155,8 +156,7 @@ class DenseXRetrievalPack(BaseLlamaPack):
         assert isinstance(all_propositions, list)
         nodes = [TextNode(text=prop) for prop in all_propositions if prop]
 
-        sub_nodes = [IndexNode.from_text_node(n, node.node_id) for n in nodes]
-        return sub_nodes
+        return [IndexNode.from_text_node(n, node.node_id) for n in nodes]
 
     def _gen_propositions(self, nodes: List[TextNode]) -> List[TextNode]:
         """Get propositions."""

@@ -25,7 +25,7 @@ class AzureSpeechToolSpec(BaseToolSpec):
         This tool accepts a natural language string and will use Azure speech services to create an
         audio version of the text, and play it on the users computer.
 
-        args:
+        Args:
             text (str): The text to play
         """
         import azure.cognitiveservices.speech as speechsdk
@@ -38,16 +38,19 @@ class AzureSpeechToolSpec(BaseToolSpec):
             return "Audio playback complete."
         elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details
-            print("Speech synthesis canceled: {}".format(cancellation_details.reason))
+            print(f"Speech synthesis canceled: {cancellation_details.reason}")
             if cancellation_details.reason == speechsdk.CancellationReason.Error:
-                print("Error details: {}".format(cancellation_details.error_details))
+                print(f"Error details: {cancellation_details.error_details}")
+                return None
+            return None
+        return None
 
     def _transcribe(self, speech_recognizer) -> List[str]:
         done = False
         results = []
 
         def stop_cb(evt) -> None:
-            """callback that stop continuous recognition"""
+            """Callback that stop continuous recognition."""
             speech_recognizer.stop_continuous_recognition_async()
             nonlocal done
             done = True
@@ -67,9 +70,9 @@ class AzureSpeechToolSpec(BaseToolSpec):
 
     def speech_to_text(self, filename: str) -> List[str]:
         """
-        This tool accepts a filename for a speech audio file and uses Azure to transcribe it into text
+        This tool accepts a filename for a speech audio file and uses Azure to transcribe it into text.
 
-        args:
+        Args:
             filename (str): The name of the file to transcribe
         """
         import azure.cognitiveservices.speech as speechsdk

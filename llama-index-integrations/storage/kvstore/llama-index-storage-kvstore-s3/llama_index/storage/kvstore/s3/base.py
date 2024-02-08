@@ -25,7 +25,6 @@ class S3DBKVStore(BaseKVStore):
         path: Optional[str] = "./",
     ) -> None:
         """Init a S3DBKVStore."""
-
         self._bucket = bucket
         self._path = path or "./"
 

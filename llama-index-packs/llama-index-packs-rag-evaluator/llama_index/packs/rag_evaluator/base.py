@@ -1,29 +1,30 @@
-from typing import Optional, List, Any
-from tqdm.asyncio import tqdm_asyncio
-from llama_index.core.query_engine import BaseQueryEngine
-from llama_index.core.llama_dataset import BaseLlamaDataset, BaseLlamaPredictionDataset
-from llama_index.core.llama_pack.base import BaseLlamaPack
+import asyncio
+import json
+import time
+import warnings
+from collections import deque
+from typing import Any, List, Optional
+
+import pandas as pd
 import tqdm
-from llama_index.llms.openai import OpenAI
-from llama_index.core.llms import LLM
 from llama_index.core import ServiceContext
 from llama_index.core.evaluation import (
     CorrectnessEvaluator,
+    EvaluationResult,
     FaithfulnessEvaluator,
     RelevancyEvaluator,
     SemanticSimilarityEvaluator,
-    EvaluationResult,
 )
-import json
-import pandas as pd
 from llama_index.core.evaluation.notebook_utils import (
     get_eval_results_df,
 )
-from collections import deque
+from llama_index.core.llama_dataset import BaseLlamaDataset, BaseLlamaPredictionDataset
+from llama_index.core.llama_pack.base import BaseLlamaPack
+from llama_index.core.llms import LLM
+from llama_index.core.query_engine import BaseQueryEngine
+from llama_index.llms.openai import OpenAI
 from openai import RateLimitError
-import warnings
-import time
-import asyncio
+from tqdm.asyncio import tqdm_asyncio
 
 
 class RagEvaluatorPack(BaseLlamaPack):
@@ -300,8 +301,7 @@ class RagEvaluatorPack(BaseLlamaPack):
             time.sleep(sleep_time_in_seconds)
 
         self._save_evaluations()
-        benchmark_df = self._prepare_and_save_benchmark_results()
-        return benchmark_df
+        return self._prepare_and_save_benchmark_results()
 
     def _batch_examples_and_preds(
         self,
@@ -390,8 +390,7 @@ class RagEvaluatorPack(BaseLlamaPack):
                 batch_iterator.refresh()
 
         self._save_evaluations()
-        benchmark_df = self._prepare_and_save_benchmark_results()
-        return benchmark_df
+        return self._prepare_and_save_benchmark_results()
 
     def run(self, batch_size: int = 10, sleep_time_in_seconds: int = 1):
         if batch_size > 10:
@@ -411,10 +410,9 @@ class RagEvaluatorPack(BaseLlamaPack):
             sleep_time_in_seconds * 2
         )  # since we make 3 evaluator llm calls
         eval_batch_size = int(max(batch_size / 4, 1))
-        benchmark_df = self._make_evaluations(
+        return self._make_evaluations(
             batch_size=eval_batch_size, sleep_time_in_seconds=eval_sleep_time_in_seconds
         )
-        return benchmark_df
 
     async def arun(
         self,
@@ -441,7 +439,6 @@ class RagEvaluatorPack(BaseLlamaPack):
         )  # since we make 3 evaluator llm calls and default is gpt-4
         # which is heavily rate-limited
         eval_batch_size = int(max(batch_size / 4, 1))
-        benchmark_df = await self._amake_evaluations(
+        return await self._amake_evaluations(
             batch_size=eval_batch_size, sleep_time_in_seconds=eval_sleep_time_in_seconds
         )
-        return benchmark_df

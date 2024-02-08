@@ -21,7 +21,7 @@ class TextToImageToolSpec(BaseToolSpec):
         self, prompt: str, n: Optional[int] = 1, size: Optional[str] = "256x256"
     ) -> List[str]:
         """
-        Pass a prompt to OpenAIs text to image API to produce an image from the supplied query
+        Pass a prompt to OpenAIs text to image API to produce an image from the supplied query.
 
         Args:
             prompt (str): The prompt to generate an image(s) based on
@@ -32,8 +32,7 @@ class TextToImageToolSpec(BaseToolSpec):
         """
         try:
             response = openai.Image.create(prompt=prompt, n=n, size=size)
-            images = [image["url"] for image in response["data"]]
-            return images
+            return [image["url"] for image in response["data"]]
         except openai.error.OpenAIError as e:
             return e.error
 
@@ -54,8 +53,7 @@ class TextToImageToolSpec(BaseToolSpec):
             response = openai.Image.create_variation(
                 image=BytesIO(requests.get(url).content).getvalue(), n=n, size=size
             )
-            images = [image["url"] for image in response["data"]]
-            return images
+            return [image["url"] for image in response["data"]]
         except openai.error.OpenAIError as e:
             return e.error
 

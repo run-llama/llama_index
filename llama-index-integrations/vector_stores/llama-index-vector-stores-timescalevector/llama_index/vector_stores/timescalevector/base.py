@@ -3,8 +3,6 @@ import uuid
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
-from timescale_vector import client  # noqa
-
 from llama_index.core.constants import DEFAULT_EMBEDDING_DIM
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -17,6 +15,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from timescale_vector import client
 
 
 class IndexType(enum.Enum):

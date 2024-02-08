@@ -3,14 +3,13 @@
 See https://github.com/ShreyaR/guardrails.
 
 """
-from deprecated import deprecated
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
+from deprecated import deprecated
 from llama_index.core.output_parsers.base import ChainableOutputParser
 
 from guardrails import Guard
-
-from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Callable, Optional
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import BaseLLM

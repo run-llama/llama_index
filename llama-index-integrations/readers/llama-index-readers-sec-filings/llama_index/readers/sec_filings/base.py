@@ -1,5 +1,3 @@
-from llama_index.readers.sec_filings.sec_filings import SECExtractor
-
 import concurrent.futures
 import json
 import os
@@ -8,12 +6,13 @@ from collections import defaultdict
 from typing import List
 
 from llama_index.core.readers.base import BaseReader
+from llama_index.readers.sec_filings.sec_filings import SECExtractor
 
 
 class SECFilingsLoader(BaseReader):
     """
     SEC Filings loader
-    Get the SEC filings of multiple tickers
+    Get the SEC filings of multiple tickers.
     """
 
     def __init__(
@@ -76,7 +75,7 @@ class SECFilingsLoader(BaseReader):
             results = executor.map(self.multiprocess_run, self.tickers)
 
         for res in results:
-            curr_tic = list(res.keys())[0]
+            curr_tic = next(iter(res.keys()))
             for data in res[curr_tic]:
                 curr_year = data["year"]
                 curr_filing_type = data["filing_type"]

@@ -3,7 +3,6 @@
 from typing import Any, Dict, List
 
 import numpy as np
-
 from llama_index.readers.base import BaseReader
 from llama_index.schema import Document
 

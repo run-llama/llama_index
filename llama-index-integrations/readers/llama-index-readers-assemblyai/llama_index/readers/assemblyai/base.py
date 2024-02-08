@@ -3,10 +3,10 @@ from __future__ import annotations
 from enum import Enum
 from typing import List, Optional
 
-import assemblyai
-
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+
+import assemblyai
 
 
 class TranscriptFormat(Enum):

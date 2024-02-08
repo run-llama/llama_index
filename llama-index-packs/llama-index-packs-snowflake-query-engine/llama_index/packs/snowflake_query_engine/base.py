@@ -2,10 +2,11 @@
 
 import os
 from typing import Any, Dict, List
-from sqlalchemy import create_engine
-from llama_index.core import SQLDatabase, ServiceContext
-from llama_index.core.llama_pack.base import BaseLlamaPack
+
+from llama_index.core import ServiceContext, SQLDatabase
 from llama_index.core.indices.struct_store.sql_query import NLSQLTableQueryEngine
+from llama_index.core.llama_pack.base import BaseLlamaPack
+from sqlalchemy import create_engine
 
 
 class SnowflakeQueryEnginePack(BaseLlamaPack):
@@ -27,7 +28,6 @@ class SnowflakeQueryEnginePack(BaseLlamaPack):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-
         # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/380.
         try:
             snowflake_sqlalchemy_20_monkey_patches()
@@ -81,7 +81,7 @@ def snowflake_sqlalchemy_20_monkey_patches():
 
     def has_table(self, connection, table_name, schema=None, info_cache=None):
         """
-        Checks if the table exists
+        Checks if the table exists.
         """
         return self._has_object(connection, "TABLE", table_name, schema)
 

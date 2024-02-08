@@ -4,7 +4,6 @@ from collections import defaultdict
 from typing import List, Optional, Tuple
 
 import pandas as pd
-
 from llama_index.core.evaluation import EvaluationResult
 from llama_index.core.evaluation.retrieval.base import RetrievalEvalResult
 

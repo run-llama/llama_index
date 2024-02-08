@@ -142,7 +142,7 @@ class BaseElementNodeParser(NodeParser):
             llm = self.llm
         else:
             try:
-                from llama_index.llms.openai import OpenAI
+                from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
             except ImportError as e:
                 raise ImportError(
                     "`llama-index-llms-openai` package not found."
@@ -320,9 +320,11 @@ class BaseElementNodeParser(NodeParser):
                     id_=table_id,
                     metadata={
                         # serialize the table as a dictionary string for dataframe of perfect table
-                        "table_df": str(table_df.to_dict())
-                        if element.type == "table"
-                        else table_md,
+                        "table_df": (
+                            str(table_df.to_dict())
+                            if element.type == "table"
+                            else table_md
+                        ),
                         # add table summary for retrieval purposes
                         "table_summary": table_summary,
                     },

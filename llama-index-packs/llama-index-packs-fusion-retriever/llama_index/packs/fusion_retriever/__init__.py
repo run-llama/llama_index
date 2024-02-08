@@ -5,5 +5,4 @@ from llama_index.packs.fusion_retriever.query_rewrite.base import (
     QueryRewritingRetrieverPack,
 )
 
-
 __all__ = ["HybridFusionRetrieverPack", "QueryRewritingRetrieverPack"]

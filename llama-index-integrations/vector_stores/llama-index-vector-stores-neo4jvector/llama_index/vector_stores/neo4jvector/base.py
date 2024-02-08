@@ -1,8 +1,6 @@
 from typing import Any, Dict, List, Optional
 
 import neo4j
-from neo4j.exceptions import CypherSyntaxError
-
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     VectorStore,
@@ -13,6 +11,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from neo4j.exceptions import CypherSyntaxError
 
 
 def check_if_not_null(props: List[str], values: List[Any]) -> None:
@@ -321,7 +320,6 @@ class Neo4jVectorStore(VectorStore):
         Returns:
             List[Dict[str, Any]]: List of dictionaries containing the query results.
         """
-
         params = params or {}
         with self._driver.session(database=self._database) as session:
             try:

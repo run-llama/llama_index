@@ -42,7 +42,7 @@ class GmailToolSpec(BaseToolSpec):
             self.service = build("gmail", "v1", credentials=credentials)
 
     def load_data(self) -> List[Document]:
-        """Load emails from the user's account"""
+        """Load emails from the user's account."""
         self._cache_service()
 
         return self.search_messages()
@@ -180,8 +180,7 @@ class GmailToolSpec(BaseToolSpec):
 
         encoded_message = base64.urlsafe_b64encode(email_message.as_bytes()).decode()
 
-        message_template = {"message": {"raw": encoded_message}}
-        return message_template
+        return {"message": {"raw": encoded_message}}
 
     def create_draft(
         self,
@@ -201,14 +200,12 @@ class GmailToolSpec(BaseToolSpec):
         self._cache_service()
         service = self.service
 
-        draft = (
+        return (
             service.users()
             .drafts()
             .create(userId="me", body=self._build_draft(to, subject, message))
             .execute()
         )
-
-        return draft
 
     def update_draft(
         self,
@@ -246,7 +243,7 @@ class GmailToolSpec(BaseToolSpec):
             elif header["name"] == "Subject" and not subject:
                 subject = header["value"]
 
-        draft = (
+        return (
             service.users()
             .drafts()
             .update(
@@ -254,8 +251,6 @@ class GmailToolSpec(BaseToolSpec):
             )
             .execute()
         )
-
-        return draft
 
     def get_draft(self, draft_id: str = None) -> str:
         """Get a draft email.
@@ -267,8 +262,7 @@ class GmailToolSpec(BaseToolSpec):
         """
         self._cache_service()
         service = self.service
-        draft = service.users().drafts().get(userId="me", id=draft_id).execute()
-        return draft
+        return service.users().drafts().get(userId="me", id=draft_id).execute()
 
     def send_draft(self, draft_id: str = None) -> str:
         """Sends a draft email.
@@ -280,7 +274,6 @@ class GmailToolSpec(BaseToolSpec):
         """
         self._cache_service()
         service = self.service
-        message = (
+        return (
             service.users().drafts().send(userId="me", body={"id": draft_id}).execute()
         )
-        return message

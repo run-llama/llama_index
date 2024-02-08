@@ -1,4 +1,5 @@
 """Confluence reader."""
+
 import logging
 import os
 from typing import Dict, List, Optional
@@ -103,7 +104,6 @@ class ConfluenceReader(BaseReader):
             limit (int): Deprecated, use `max_num_results` instead.
             max_num_results (int): Maximum number of results to return.  If None, return all results.  Requests are made in batches to achieve the desired number of results.
         """
-
         num_space_key_parameter = 1 if space_key else 0
         num_page_ids_parameter = 1 if page_ids is not None else 0
         num_label_parameter = 1 if label else 0
@@ -313,7 +313,7 @@ class ConfluenceReader(BaseReader):
 
     def get_next_cursor(self):
         """
-        Returns: The last set cursor from a cql based search
+        Returns: The last set cursor from a cql based search.
         """
         return self._next_cursor
 

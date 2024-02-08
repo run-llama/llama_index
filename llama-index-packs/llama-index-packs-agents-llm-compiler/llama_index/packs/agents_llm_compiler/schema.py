@@ -1,8 +1,7 @@
 from typing import Any, Collection, List, Optional, Tuple, Union
 
-from pydantic import BaseModel
-
 from llama_index.core.tools.types import AsyncBaseTool
+from pydantic import BaseModel
 
 
 class LLMCompilerParseResult(BaseModel):

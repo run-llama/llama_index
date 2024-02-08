@@ -25,7 +25,6 @@ from typing import Dict, List, Optional, Tuple
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-
 from llama_index.readers.github.issues.github_client import (
     BaseGitHubIssuesClient,
     GitHubIssuesClient,

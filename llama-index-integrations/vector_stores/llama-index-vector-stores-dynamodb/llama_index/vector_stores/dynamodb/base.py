@@ -9,13 +9,13 @@ from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings_learner,
 )
 from llama_index.core.schema import BaseNode
-from llama_index.storage.kvstore.dynamodb import DynamoDBKVStore
 from llama_index.core.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
+from llama_index.storage.kvstore.dynamodb import DynamoDBKVStore
 
 logger = getLogger(__name__)
 

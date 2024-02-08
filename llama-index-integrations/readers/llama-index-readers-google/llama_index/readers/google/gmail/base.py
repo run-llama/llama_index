@@ -30,7 +30,7 @@ class GmailReader(BaseReader, BaseModel):
     results_per_page: Optional[int]
 
     def load_data(self) -> List[Document]:
-        """Load emails from the user's account"""
+        """Load emails from the user's account."""
         from googleapiclient.discovery import build
 
         credentials = self._get_credentials()
@@ -59,9 +59,10 @@ class GmailReader(BaseReader, BaseModel):
         """
         import os
 
+        from google_auth_oauthlib.flow import InstalledAppFlow
+
         from google.auth.transport.requests import Request
         from google.oauth2.credentials import Credentials
-        from google_auth_oauthlib.flow import InstalledAppFlow
 
         creds = None
         if os.path.exists("token.json"):

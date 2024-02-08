@@ -13,7 +13,7 @@ class SnscrapeTwitterReader(BaseReader):
         num_tweets (int): Number of tweets to fetch.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize SnscrapeTwitter reader."""
 
     def load_data(self, username: str, num_tweets: int) -> List[Document]:
@@ -22,6 +22,8 @@ class SnscrapeTwitterReader(BaseReader):
         Args:
             username (str): Twitter Username.
             num_tweets (int): Number of tweets to fetch.
+
+
         Returns:
             List[Document]: List of documents.
         """

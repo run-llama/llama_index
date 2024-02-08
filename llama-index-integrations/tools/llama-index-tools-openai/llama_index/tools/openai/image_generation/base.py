@@ -1,10 +1,10 @@
 """OpenAI Image Generation tool sppec.."""
 
-import os
 import base64
+import os
 import time
-
 from typing import Optional
+
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 DEFAULT_CACHE_DIR = "../../../img_cache"
@@ -33,8 +33,9 @@ class OpenAIImageGenerationToolSpec(BaseToolSpec):
 
     def save_base64_image(self, base64_str, image_name):
         try:
-            from PIL import Image
             from io import BytesIO
+
+            from PIL import Image
         except ImportError:
             raise ImportError(
                 "Please install Pillow with `pip install Pillow` to use this tool"
@@ -65,7 +66,7 @@ class OpenAIImageGenerationToolSpec(BaseToolSpec):
         """
         This tool accepts a natural language string and will use OpenAI's DALL-E model to generate an image.
 
-        args:
+        Args:
             text (str): The text to generate an image from.
             size (str): The size of the image to generate (1024x1024, 256x256, 512x512).
             model (str): The model to use to generate the image (dall-e-3, dall-e-2).
@@ -85,6 +86,4 @@ class OpenAIImageGenerationToolSpec(BaseToolSpec):
 
         filename = f"{time.time()}.jpg"
 
-        saved_image_path = self.save_base64_image(image_bytes, filename)
-
-        return saved_image_path
+        return self.save_base64_image(image_bytes, filename)

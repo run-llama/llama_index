@@ -1,7 +1,6 @@
 from typing import Any, List, Literal, Optional
 
 import fsspec
-
 from llama_index.vector_stores.docarray.base import DocArrayVectorStore
 
 

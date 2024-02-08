@@ -1,16 +1,16 @@
 """Lilac reader that loads enriched and labeled Lilac datasets into GPTIndex and LangChain."""
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
 if TYPE_CHECKING:
-    from lilac import FilterLike, Path, ColumnId
+    from lilac import ColumnId, FilterLike, Path
 
 
 class LilacReader(BaseReader):
     """
-    Lilac dataset reader
+    Lilac dataset reader.
     """
 
     def load_data(
@@ -23,7 +23,7 @@ class LilacReader(BaseReader):
         project_dir: Optional[str] = None,
     ) -> List[Document]:
         """
-        Load text from relevant posts and top-level comments in subreddit(s), given keyword(s) for search
+        Load text from relevant posts and top-level comments in subreddit(s), given keyword(s) for search.
 
         Args:
             project_dir (Optional[str]): The Lilac project dir to read from. If not defined, uses the `LILAC_PROJECT_DIR`
@@ -35,7 +35,6 @@ class LilacReader(BaseReader):
               for labeled data.
 
         """
-
         try:
             import lilac as ll
         except ImportError:
@@ -62,7 +61,7 @@ class LilacReader(BaseReader):
             )
 
         rows = lilac_dataset.select_rows(
-            columns=(columns + [text_field, doc_id_path]) if columns else ["*"],
+            columns=([*columns, text_field, doc_id_path]) if columns else ["*"],
             filters=filters,
             combine_columns=True,
         )

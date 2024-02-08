@@ -12,7 +12,7 @@ class SemanticScholarReader(BaseReader):
     A class to read and process data from Semantic Scholar API
     ...
 
-    Methods
+    Methods:
     -------
     __init__():
        Instantiate the SemanticScholar object
@@ -22,11 +22,12 @@ class SemanticScholarReader(BaseReader):
 
     """
 
-    def __init__(self, timeout=10, api_key=None, base_dir="pdfs"):
+    def __init__(self, timeout=10, api_key=None, base_dir="pdfs") -> None:
         """
-        Instantiate the SemanticScholar object
+        Instantiate the SemanticScholar object.
         """
         import arxiv
+
         from semanticscholar import SemanticScholar
 
         self.arxiv = arxiv
@@ -38,7 +39,7 @@ class SemanticScholarReader(BaseReader):
 
     def _clear_cache(self):
         """
-        delete the .citation* folder
+        delete the .citation* folder.
         """
         import shutil
 
@@ -159,7 +160,7 @@ class SemanticScholarReader(BaseReader):
         ],
     ) -> List[Document]:
         """
-        Loads data from Semantic Scholar based on the entered query and returned_fields
+        Loads data from Semantic Scholar based on the entered query and returned_fields.
 
         Parameters
         ----------
@@ -170,12 +171,12 @@ class SemanticScholarReader(BaseReader):
         returned_fields: list, optional
             The list of fields to be returned from the search
 
-        Returns
+        Returns:
         -------
         list
             The list of Document object that contains the search results
 
-        Raises
+        Raises:
         ------
         Exception
             If there is an error while performing the search

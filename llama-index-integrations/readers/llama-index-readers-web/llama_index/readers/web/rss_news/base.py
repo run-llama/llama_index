@@ -4,7 +4,6 @@ from typing import Any, List
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-
 from llama_index.readers.web.news.base import NewsArticleReader
 
 logger = logging.getLogger(__name__)

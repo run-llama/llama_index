@@ -20,9 +20,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Jerry Liu <jerry@llamaindex.ai>"]
 classifiers = [
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
-  "Topic :: Software Development :: Libraries :: Application Frameworks",
-  "Topic :: Software Development :: Libraries :: Python Modules"
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 description = "Interface between LLMs and your data"
 documentation = "https://docs.llamaindex.ai/en/stable/"
@@ -31,12 +31,12 @@ include = ["llama_index/core/_static"]
 keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
 license = "MIT"
 maintainers = [
-  "Andrei Fajardo <andrei@runllama.ai>",
-  "Haotian Zhang <ht@runllama.ai>",
-  "Jerry Liu <jerry@llamaindex.ai>",
-  "Logan Markewich <logan@llamaindex.ai>",
-  "Simon Suo <simon@llamaindex.ai>",
-  "Sourabh Desai <sourabh@llamaindex.ai>"
+    "Andrei Fajardo <andrei@runllama.ai>",
+    "Haotian Zhang <ht@runllama.ai>",
+    "Jerry Liu <jerry@llamaindex.ai>",
+    "Logan Markewich <logan@llamaindex.ai>",
+    "Simon Suo <simon@llamaindex.ai>",
+    "Sourabh Desai <sourabh@llamaindex.ai>",
 ]
 name = "llama-index-core"
 packages = [{include = "llama_index"}]
@@ -62,7 +62,7 @@ tenacity = ">=8.2.0,<9.0.0"
 tiktoken = ">=0.3.3"
 typing-extensions = ">=4.5.0"
 typing-inspect = ">=0.8.0"
-requests = ">=2.31.0" # Pin to avoid CVE-2023-32681 in requests 2.3 to 2.30
+requests = ">=2.31.0"  # Pin to avoid CVE-2023-32681 in requests 2.3 to 2.30
 gradientai = {optional = true, version = ">=1.4.0"}
 asyncpg = {optional = true, version = "^0.28.0"}
 pgvector = {optional = true, version = "^0.1.0"}
@@ -85,36 +85,36 @@ PyYAML = ">=6.0.1"
 
 [tool.poetry.extras]
 gradientai = [
-  "gradientai"
+    "gradientai",
 ]
 html = [
-  "beautifulsoup4"
+    "beautifulsoup4",
 ]
 langchain = [
-  "langchain"
+    "langchain",
 ]
 local_models = [
-  "optimum",
-  "sentencepiece",
-  "transformers"
+    "optimum",
+    "sentencepiece",
+    "transformers",
 ]
 postgres = [
-  "asyncpg",
-  "pgvector",
-  "psycopg2-binary"
+    "asyncpg",
+    "pgvector",
+    "psycopg2-binary",
 ]
 query_tools = [
-  "guidance",
-  "jsonpath-ng",
-  "lm-format-enforcer",
-  "rank-bm25",
-  "scikit-learn",
-  "spacy"
+    "guidance",
+    "jsonpath-ng",
+    "lm-format-enforcer",
+    "rank-bm25",
+    "scikit-learn",
+    "spacy",
 ]
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
-boto3 = "1.33.6" # needed for tests
+boto3 = "1.33.6"  # needed for tests
 botocore = ">=1.33.13"
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 docker = "^7.0.0"
@@ -125,7 +125,7 @@ motor = "^3.3.2"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
-pymongo = "^4.5.0" # needed for tests
+pymongo = "^4.5.0"  # needed for tests
 pypdf = "*"
 pytest = "7.2.1"
 pytest-asyncio = "0.21.0"
@@ -138,7 +138,7 @@ types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-protobuf = "^4.24.0.4"
 types-redis = "4.5.5.0"
-types-requests = "2.28.11.8" # TODO: unpin when mypy>0.991
+types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
 types-setuptools = "67.1.0.0"
 vellum-ai = "^0.0.42"
 
@@ -152,7 +152,7 @@ furo = ">=2023.3.27"
 m2r2 = "0.3.2"
 myst-nb = "0.17.2"
 myst-parser = "0.18.1"
-pydantic = "<2.0.0"
+pydantic = "*"
 sphinx = ">=4.3.0"
 sphinx-autobuild = "^2021.3.14"
 sphinx-automodapi = "^0.16.0"
@@ -170,98 +170,98 @@ url = "https://pypi.nvidia.com"
 
 [tool.ruff]
 exclude = [
-  "llama_index/core/_static",
-  "examples",
-  "notebooks"
+    "examples",
+    "llama_index/core/_static",
+    "notebooks",
 ]
 ignore = [
-  "COM812", # Too aggressive
-  "D212", # Using D213
-  "D417", # Too aggressive
-  "F541", # Messes with prompts.py
-  "TCH002",
-  "UP006", # Messes with pydantic
-  "UP007" # Wants | over Union, which breaks 3.8
+    "COM812",  # Too aggressive
+    "D212",  # Using D213
+    "D417",  # Too aggressive
+    "F541",  # Messes with prompts.py
+    "TCH002",
+    "UP006",  # Messes with pydantic
+    "UP007",  # Wants | over Union, which breaks 3.8
 ]
 # Feel free to add more here
 select = [
-  "ANN204",
-  "B009",
-  "B010",
-  "B011",
-  "B013",
-  "B014",
-  "C4",
-  "COM812",
-  "COM819",
-  "D201",
-  "D202",
-  "D203",
-  "D204",
-  "D207",
-  "D208",
-  "D209",
-  "D211",
-  "D213",
-  "D214",
-  "D215",
-  "D3",
-  "D4",
-  "E7",
-  "EXE004",
-  "F401",
-  "F504",
-  "F541",
-  "F632",
-  "FLY",
-  "G010",
-  "I",
-  "PERF1",
-  "PIE790",
-  "PIE794",
-  "PIE808",
-  "PIE810",
-  "PLC0414",
-  "PLE2510",
-  "PLE2512",
-  "PLE2513",
-  "PLE2514",
-  "PLE2515",
-  "PLR1701",
-  "PLR1711",
-  "PT001",
-  "PT003",
-  "PT006",
-  "PT02",
-  "PTH201",
-  "PYI",
-  "Q",
-  "RET501",
-  "RET502",
-  "RET503",
-  "RET504",
-  "RSE",
-  "RUF005",
-  "RUF010",
-  "RUF015",
-  "RUF1",
-  "SIM101",
-  "SIM103",
-  "SIM109",
-  "SIM118",
-  "SIM2",
-  "SIM300",
-  "SIM9",
-  "TCH005",
-  "TD006",
-  "TID",
-  "TRY201",
-  "UP",
-  "W"
+    "ANN204",
+    "B009",
+    "B010",
+    "B011",
+    "B013",
+    "B014",
+    "C4",
+    "COM812",
+    "COM819",
+    "D201",
+    "D202",
+    "D203",
+    "D204",
+    "D207",
+    "D208",
+    "D209",
+    "D211",
+    "D213",
+    "D214",
+    "D215",
+    "D3",
+    "D4",
+    "E7",
+    "EXE004",
+    "F401",
+    "F504",
+    "F541",
+    "F632",
+    "FLY",
+    "G010",
+    "I002",
+    "PERF1",
+    "PIE790",
+    "PIE794",
+    "PIE808",
+    "PIE810",
+    "PLC0414",
+    "PLE2510",
+    "PLE2512",
+    "PLE2513",
+    "PLE2514",
+    "PLE2515",
+    "PLR1701",
+    "PLR1711",
+    "PT001",
+    "PT003",
+    "PT006",
+    "PT02",
+    "PTH201",
+    "PYI",
+    "Q",
+    "RET501",
+    "RET502",
+    "RET503",
+    "RET504",
+    "RSE",
+    "RUF005",
+    "RUF010",
+    "RUF015",
+    "RUF1",
+    "SIM101",
+    "SIM103",
+    "SIM109",
+    "SIM118",
+    "SIM2",
+    "SIM300",
+    "SIM9",
+    "TCH005",
+    "TD006",
+    "TID",
+    "TRY201",
+    "UP",
+    "W",
 ]
 target-version = "py38"
 unfixable = [
-  "ERA001"
+    "ERA001",
 ]
 
 [tool.ruff.flake8-annotations]
@@ -273,8 +273,8 @@ convention = "google"
 [tool.tomlsort]
 all = true
 in_place = true
-spaces_before_inline_comment = 2 # Match Python PEP 8
-spaces_indent_inline_array = 4 # Match Python PEP 8
+spaces_before_inline_comment = 2  # Match Python PEP 8
+spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
 
 [tool.tomlsort.overrides."tool.poetry.dependencies"]

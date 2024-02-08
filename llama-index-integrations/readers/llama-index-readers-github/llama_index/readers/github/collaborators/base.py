@@ -24,7 +24,6 @@ from typing import Dict, List
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-
 from llama_index.readers.github.collaborators.github_client import (
     BaseGitHubCollaboratorsClient,
     GitHubCollaboratorsClient,

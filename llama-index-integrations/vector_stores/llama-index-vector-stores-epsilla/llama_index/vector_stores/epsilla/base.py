@@ -2,8 +2,6 @@
 import logging
 from typing import Any, List, Optional
 
-from pyepsilla import vectordb
-
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
@@ -20,6 +18,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from pyepsilla import vectordb
 
 logger = logging.getLogger(__name__)
 

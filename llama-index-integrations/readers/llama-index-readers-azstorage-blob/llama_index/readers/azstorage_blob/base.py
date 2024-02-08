@@ -5,16 +5,15 @@ A loader that fetches a file or iterates through a directory from Azure Storage 
 """
 import logging
 import math
+import os
 import tempfile
 import time
-import os
 from typing import Any, Dict, List, Optional, Union
 
 from azure.storage.blob import ContainerClient
-
+from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-from llama_index.core.readers import SimpleDirectoryReader
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +56,7 @@ class AzStorageBlobReader(BaseReader):
         credential: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
-        """Initializes Azure Storage Account"""
+        """Initializes Azure Storage Account."""
         super().__init__(*args, **kwargs)
 
         self.container_name = container_name
@@ -73,7 +72,7 @@ class AzStorageBlobReader(BaseReader):
         # self.preloaded_data_path = kwargs.get('preloaded_data_path', None)
 
     def load_data(self) -> List[Document]:
-        """Load file(s) from Azure Storage Blob"""
+        """Load file(s) from Azure Storage Blob."""
         if self.connection_string:
             container_client = ContainerClient.from_connection_string(
                 conn_str=self.connection_string,

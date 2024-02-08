@@ -1,15 +1,69 @@
-from typing import Any, List
+from typing import Any, List, Tuple
 from unittest.mock import patch
 
 from llama_index.core.graph_stores import SimpleGraphStore
+from llama_index.core.embeddings import BaseEmbedding
 from llama_index.core.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.core.indices.knowledge_graph.retrievers import KGTableRetriever
 from llama_index.core.schema import Document, QueryBundle
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.storage_context import StorageContext
-
-from tests.indices.knowledge_graph.test_base import MockEmbedding, mock_extract_triplets
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
+
+
+class MockEmbedding(BaseEmbedding):
+    @classmethod
+    def class_name(cls) -> str:
+        return "MockEmbedding"
+
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        del query
+        return [0, 0, 1, 0, 0]
+
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        # assume dimensions are 4
+        if text == "('foo', 'is', 'bar')":
+            return [1, 0, 0, 0]
+        elif text == "('hello', 'is not', 'world')":
+            return [0, 1, 0, 0]
+        elif text == "('Jane', 'is mother of', 'Bob')":
+            return [0, 0, 1, 0]
+        elif text == "foo":
+            return [0, 0, 0, 1]
+        else:
+            raise ValueError("Invalid text for `mock_get_text_embedding`.")
+
+    def _get_text_embedding(self, text: str) -> List[float]:
+        """Mock get text embedding."""
+        # assume dimensions are 4
+        if text == "('foo', 'is', 'bar')":
+            return [1, 0, 0, 0]
+        elif text == "('hello', 'is not', 'world')":
+            return [0, 1, 0, 0]
+        elif text == "('Jane', 'is mother of', 'Bob')":
+            return [0, 0, 1, 0]
+        elif text == "foo":
+            return [0, 0, 0, 1]
+        else:
+            raise ValueError("Invalid text for `mock_get_text_embedding`.")
+
+    def _get_query_embedding(self, query: str) -> List[float]:
+        """Mock get query embedding."""
+        del query
+        return [0, 0, 1, 0, 0]
+
+
+def mock_extract_triplets(text: str) -> List[Tuple[str, str, str]]:
+    """Mock extract triplets."""
+    lines = text.split("\n")
+    triplets: List[Tuple[str, str, str]] = []
+    for line in lines:
+        tokens = line[1:-1].split(",")
+        tokens = [t.strip() for t in tokens]
+
+        subj, pred, obj = tokens
+        triplets.append((subj, pred, obj))
+    return triplets
 
 
 @patch.object(

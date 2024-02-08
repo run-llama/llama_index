@@ -1,5 +1,5 @@
 """
-GitHub API client for issues
+GitHub API client for issues.
 """
 
 import os
@@ -142,7 +142,7 @@ class GitHubIssuesClient:
                 response.raise_for_status()
             except httpx.HTTPError as excp:
                 print(f"HTTP Exception for {excp.request.url} - {excp}")
-                raise excp
+                raise excp  # noqa: TRY201
             return response
 
     async def get_issues(

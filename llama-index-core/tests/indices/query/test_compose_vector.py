@@ -13,7 +13,6 @@ from llama_index.core.indices.keyword_table.simple_base import (
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.schema import Document
 from llama_index.core.service_context import ServiceContext
-
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
 
 

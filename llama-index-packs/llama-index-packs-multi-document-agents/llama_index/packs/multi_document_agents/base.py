@@ -1,14 +1,16 @@
 """Multi-document agents Pack."""
 
-from llama_index.core import ServiceContext, VectorStoreIndex, SummaryIndex
-from llama_index.llms.openai import OpenAI
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.agent.openai_legacy import FnRetrieverOpenAIAgent
+from llama_index.core import ServiceContext, SummaryIndex, VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.schema import Document
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.tools import QueryEngineTool, ToolMetadata
-from llama_index.agent.openai import OpenAIAgent, FnRetrieverOpenAIAgent
 from llama_index.core.objects import ObjectIndex, SimpleToolNodeMapping
+from llama_index.core.schema import Document
+from llama_index.core.tools import QueryEngineTool, ToolMetadata
+from llama_index.llms.openai import OpenAI
 
 
 class MultiDocumentAgentsPack(BaseLlamaPack):

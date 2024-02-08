@@ -27,9 +27,6 @@ from llama_index.core.utilities.token_counting import TokenCounter
 from llama_index.core.utils import get_tokenizer
 
 if TYPE_CHECKING:
-    from wandb import Settings as WBSettings  # type: ignore[attr-defined]
-    from wandb.sdk.data_types import trace_tree
-
     from llama_index.core.indices import (
         ComposableGraph,
         GPTEmptyIndex,
@@ -42,6 +39,9 @@ if TYPE_CHECKING:
         SummaryIndex,
     )
     from llama_index.core.storage.storage_context import StorageContext
+
+    from wandb import Settings as WBSettings  # type: ignore[attr-defined]
+    from wandb.sdk.data_types import trace_tree
 
     IndexType = Union[
         ComposableGraph,

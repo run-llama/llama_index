@@ -71,7 +71,7 @@ def set_google_config(
         set_google_config(auth_credentials=credentials)
     """
     try:
-        import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
+        import llama_index.vector_stores.google.genai_extension as genaix
     except ImportError:
         raise ImportError(_import_err_msg)
 
@@ -152,7 +152,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
             NoSuchCorpusException if no such corpus is found.
         """
         try:
-            import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
+            import llama_index.vector_stores.google.genai_extension as genaix
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -196,7 +196,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
             quota limit.
         """
         try:
-            import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
+            import llama_index.vector_stores.google.genai_extension as genaix
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -258,7 +258,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
         `Title for doc-456`. This document will house both nodes.
         """
         try:
-            import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
+            import llama_index.vector_stores.google.genai_extension as genaix
 
             import google.ai.generativelanguage as genai
         except ImportError:
@@ -306,7 +306,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
             ref_doc_id: The document ID to be deleted.
         """
         try:
-            import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
+            import llama_index.vector_stores.google.genai_extension as genaix
 
             import google.ai.generativelanguage as genai
         except ImportError:
@@ -344,10 +344,10 @@ class GoogleVectorStore(BasePydanticVectorStore):
             )
 
         Args:
-            query: See `llama_index.legacy.vector_stores.types.VectorStoreQuery`.
+            query: See `llama_index.core.vector_stores.types.VectorStoreQuery`.
         """
         try:
-            import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
+            import llama_index.vector_stores.google.genai_extension as genaix
 
             import google.ai.generativelanguage as genai
         except ImportError:
@@ -403,7 +403,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
 
 def _extract_chunk_id(entity_name: str) -> str:
     try:
-        import llama_index.legacy.vector_stores.google.generativeai.genai_extension as genaix
+        import llama_index.vector_stores.google.genai_extension as genaix
     except ImportError:
         raise ImportError(_import_err_msg)
 

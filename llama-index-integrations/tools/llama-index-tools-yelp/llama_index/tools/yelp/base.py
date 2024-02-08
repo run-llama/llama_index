@@ -41,7 +41,7 @@ class YelpToolSpec(BaseToolSpec):
 
     def business_search(self, location: str, term: str, radius: Optional[int] = None):
         """
-        Make a query to Yelp to find businesses given a location to search
+        Make a query to Yelp to find businesses given a location to search.
 
         Args:
             Businesses returned in the response may not be strictly within the specified location.

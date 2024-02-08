@@ -46,7 +46,9 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     ) -> "MultiModalLLMCompletionProgram":
         if multi_modal_llm is None:
             try:
-                from llama_index.multi_modal_llms.openai import OpenAIMultiModal
+                from llama_index.multi_modal_llms.openai import (
+                    OpenAIMultiModal,
+                )  # pants: no-infer-dep
 
                 multi_modal_llm = OpenAIMultiModal(
                     model="gpt-4-vision-preview", temperature=0

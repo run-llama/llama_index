@@ -5,7 +5,6 @@ import logging
 from typing import Dict, List, Optional
 
 import couchdb3
-
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 

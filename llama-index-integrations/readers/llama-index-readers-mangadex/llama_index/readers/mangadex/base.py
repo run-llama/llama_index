@@ -1,11 +1,12 @@
 """
-MangaDex info reader
+MangaDex info reader.
 
 Retrieves data about a particular manga by title.
 """
 
-from typing import List
 import logging
+from typing import List
+
 import requests
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class MangaDexReader(BaseReader):
-    def __init__(self):
+    def __init__(self) -> None:
         self.base_url = "https://api.mangadex.org"
 
     def _get_manga_info(self, title: str):
@@ -43,9 +44,7 @@ class MangaDexReader(BaseReader):
                 f"{self.base_url}/author", params={"ids[]": [id]}
             )
             author_response.raise_for_status()
-            author = author_response.json()["data"][0]
-
-            return author
+            return author_response.json()["data"][0]
         except requests.exceptions.HTTPError as http_error:
             logger.error(f"HTTP error: {http_error}")
         except requests.exceptions.RequestException as req_error:
@@ -62,9 +61,7 @@ class MangaDexReader(BaseReader):
                 },
             )
             chapter_response.raise_for_status()
-            chapters = chapter_response.json()
-
-            return chapters
+            return chapter_response.json()
         except requests.exceptions.HTTPError as http_error:
             logger.error(f"HTTP error: {http_error}")
         except requests.exceptions.RequestException as req_error:
@@ -73,9 +70,12 @@ class MangaDexReader(BaseReader):
 
     def load_data(self, titles: List[str], lang: str = "en") -> List[Document]:
         """Load data from the MangaDex API.
+
         Args:
             title (List[str]): List of manga titles
             lang (str, optional): ISO 639-1 language code. Defaults to 'en'.
+
+
         Returns:
             List[Document]: A list of Documents.
 
