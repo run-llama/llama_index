@@ -14,7 +14,7 @@ as the storage backend for `VectorStoreIndex`.
 
 - Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
-- Azure Cognitive Search (`CognitiveSearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
+- Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
@@ -34,6 +34,7 @@ as the storage backend for `VectorStoreIndex`.
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
+- Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
@@ -125,28 +126,26 @@ astra_db_store = AstraDBVectorStore(
 **Azure Cognitive Search**
 
 ```python
-from azure.search.documents import SearchClient
-from llama_index.vector_stores import ChromaVectorStore
 from azure.core.credentials import AzureKeyCredential
+from llama_index.vector_stores import AzureAISearchVectorStore
 
-service_endpoint = f"https://{search_service_name}.search.windows.net"
-index_name = "quickstart"
-cognitive_search_credential = AzureKeyCredential("<API key>")
+search_service_api_key = "YOUR-AZURE-SEARCH-SERVICE-ADMIN-KEY"
+search_service_endpoint = "YOUR-AZURE-SEARCH-SERVICE-ENDPOINT"
+search_service_api_version = "2023-11-01"
+credential = AzureKeyCredential(search_service_api_key)
 
-search_client = SearchClient(
-    endpoint=service_endpoint,
-    index_name=index_name,
-    credential=cognitive_search_credential,
+# Index name to use
+index_name = "llamaindex-vector-demo"
+
+client = SearchIndexClient(
+    endpoint=search_service_endpoint,
+    credential=credential,
 )
 
-# construct vector store
-vector_store = CognitiveSearchVectorStore(
-    search_client,
-    id_field_key="id",
-    chunk_field_key="content",
-    embedding_field_key="embedding",
-    metadata_field_key="li_jsonMetadata",
-    doc_id_field_key="li_doc_id",
+vector_store = AzureAISearchVectorStore(
+    search_or_index_client=client,
+    index_name=index_name,
+    embedding_dimensionality=1536,
 )
 ```
 
@@ -568,6 +567,14 @@ vector_store = TimescaleVectorStore.from_params(
 )
 ```
 
+**Upstash**
+
+```python
+from llama_index.vector_stores import UpstashVectorStore
+
+vector_store = UpstashVectorStore(url="YOUR_URL", token="YOUR_TOKEN")
+```
+
 **Weaviate**
 
 ```python
@@ -747,10 +754,10 @@ maxdepth: 1
 ---
 ../../examples/vector_stores/AstraDBIndexDemo.ipynb
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
+../../examples/vector_stores/AzureAISearchIndexDemo.ipynb
 ../../examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb
 ../../examples/vector_stores/CassandraIndexDemo.ipynb
 ../../examples/vector_stores/ChromaIndexDemo.ipynb
-../../examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 ../../examples/vector_stores/DashvectorIndexDemo.ipynb
 ../../examples/vector_stores/DashvectorIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/DeepLakeIndexDemo.ipynb
@@ -780,6 +787,7 @@ maxdepth: 1
 ../../examples/vector_stores/TairIndexDemo.ipynb
 ../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb
 ../../examples/vector_stores/Timescalevector.ipynb
+../../examples/vector_stores/UpstashVectorDemo.ipynb
 ../../examples/vector_stores/WeaviateIndexDemo.ipynb
 ../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
 ../../examples/vector_stores/ZepIndexDemo.ipynb
