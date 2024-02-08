@@ -44,7 +44,7 @@ def get_single_output(
 
 
 def add_output_to_module_inputs(
-    src_key: str,
+    src_key: Optional[str],
     dest_key: str,
     output_dict: Dict[str, Any],
     module: QueryComponent,
@@ -263,7 +263,7 @@ class QueryPipeline(QueryComponent):
         self,
         src: str,
         fn: Callable,
-        cond_dest_dict: Optional[Dict[str, Any]] = None,
+        cond_dest_dict: Dict[str, Any],
     ) -> None:
         """Add conditional links."""
         if src not in self.module_dict:
@@ -479,7 +479,7 @@ class QueryPipeline(QueryComponent):
         module_key: str,
         all_module_inputs: Dict[str, Dict[str, Any]],
         result_outputs: Dict[str, Any],
-    ) -> None:
+    ) -> List[str]:
         """Process component output."""
         new_queue = queue.copy()
         # if there's no more edges, add result to output
@@ -508,11 +508,15 @@ class QueryPipeline(QueryComponent):
             ]
             # in conditional edge list, find matches
             if len(conditional_edge_list) > 0:
-                match = [
-                    (src, dest, attr)
-                    for src, dest, attr in conditional_edge_list
-                    if conditional_val == attr["conditional"]
-                ][0]
+                match = next(
+                    iter(
+                        [
+                            (src, dest, attr)
+                            for src, dest, attr in conditional_edge_list
+                            if conditional_val == attr["conditional"]
+                        ]
+                    )
+                )
                 non_matches = [x for x in conditional_edge_list if x != match]
                 if len(non_matches) != len(conditional_edge_list) - 1:
                     raise ValueError("Multiple conditional matches found or None.")

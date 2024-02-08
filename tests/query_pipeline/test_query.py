@@ -362,7 +362,7 @@ def test_query_pipeline_chain_str() -> None:
 def test_query_pipeline_conditional_edges() -> None:
     """Test conditional edges."""
 
-    def choose_fn(input: int) -> str:
+    def choose_fn(input: int) -> Dict:
         """Choose."""
         if input == 1:
             toggle = "true"
