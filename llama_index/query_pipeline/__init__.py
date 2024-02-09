@@ -7,9 +7,9 @@ from llama_index.core.query_pipeline.components import (
     KwargPackComponent,
 )
 from llama_index.core.query_pipeline.query_component import (
+    ConditionalLinks,
     CustomQueryComponent,
     Link,
-    ConditionalLinks,
     QueryComponent,
 )
 from llama_index.query_pipeline.components.agent import (
@@ -41,5 +41,5 @@ __all__ = [
     "AgentFnComponent",
     "CustomAgentComponent",
     "Link",
-    "ConditionalLinks"
+    "ConditionalLinks",
 ]
