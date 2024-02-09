@@ -273,7 +273,7 @@ class QueryPipeline(QueryComponent):
             self.dag.add_edge(
                 src,
                 dest_dict["dest"],
-                dest_key=dest_dict["dest_key"],
+                dest_key=dest_dict.get("dest_key"),
                 conditional=conditional,
             )
 
