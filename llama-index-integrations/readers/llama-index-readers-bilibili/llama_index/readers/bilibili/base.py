@@ -1,4 +1,5 @@
 """Simple Reader that reads transcript and general info of Bilibili video."""
+
 import warnings
 from typing import Any, List
 
@@ -33,11 +34,10 @@ class BilibiliTranscriptReader(BaseReader):
             raw_sub_titles = json.loads(result.content)["body"]
             raw_transcript = " ".join([c["content"] for c in raw_sub_titles])
             # Add basic video info to transcript
-            raw_transcript_with_meta_info = (
+            return (
                 f"Video Title: {title}, description: {desc}\nTranscript:"
                 f" {raw_transcript}"
             )
-            return raw_transcript_with_meta_info
         else:
             raw_transcript = ""
             warnings.warn(
@@ -62,7 +62,7 @@ class BilibiliTranscriptReader(BaseReader):
                 results.append(Document(text=transcript))
             except Exception as e:
                 warnings.warn(
-                    f"Error loading transcript for video {bili_url}: {str(e)}. Skipping"
+                    f"Error loading transcript for video {bili_url}: {e!s}. Skipping"
                     " video."
                 )
         return results

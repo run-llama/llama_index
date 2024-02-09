@@ -9,7 +9,6 @@ from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import ImageNode
-from llama_index.multi_modal_llms.openai import OpenAIMultiModal
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Please tell if a given piece of information "

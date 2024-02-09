@@ -119,7 +119,9 @@ class DocugamiReader(BaseReader):
             return (
                 "table"
                 if node.tag == TABLE_NAME
-                else node.attrib["structure"] if "structure" in node.attrib else None
+                else node.attrib["structure"]
+                if "structure" in node.attrib
+                else None
             )
 
         def _build_framework_chunk(dg_chunk: Chunk) -> Document:
