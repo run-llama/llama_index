@@ -22,9 +22,13 @@ You can also [use one of many other available LLMs](/module_guides/models/llms/u
 need additional environment keys + tokens setup depending on the LLM provider.
 ```
 
+[Check out our OpenAI Starter Example](starter_example.md)
+
 ## Local Model Setup
 
 If you don't wish to use OpenAI, consider setting up a local LLM and embedding model in the service context.
+
+[Check out our Starter Example with Local Models](starter_example_local.md)
 
 A full guide to using and configuring LLMs available [here](/module_guides/models/llms.md).
 

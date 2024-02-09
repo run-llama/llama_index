@@ -69,8 +69,8 @@ class Cohere(LLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
-        self._client = cohere.Client(api_key)
-        self._aclient = cohere.AsyncClient(api_key)
+        self._client = cohere.Client(api_key, client_name="llama_index")
+        self._aclient = cohere.AsyncClient(api_key, client_name="llama_index")
 
         super().__init__(
             temperature=temperature,

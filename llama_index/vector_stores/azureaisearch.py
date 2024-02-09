@@ -1,4 +1,4 @@
-"""Azure Cognitive Search vector store."""
+"""Azure AI Search vector store."""
 import enum
 import json
 import logging
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class MetadataIndexFieldType(int, enum.Enum):
     """
     Enumeration representing the supported types for metadata fields in an
-    Azure Cognitive Search Index, corresponds with types supported in a flat
+    Azure AI Search Index, corresponds with types supported in a flat
     metadata dictionary.
     """
 
@@ -45,7 +45,7 @@ class IndexManagement(int, enum.Enum):
     CREATE_IF_NOT_EXISTS = auto()
 
 
-class CognitiveSearchVectorStore(VectorStore):
+class AzureAISearchVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
@@ -81,7 +81,9 @@ class CognitiveSearchVectorStore(VectorStore):
 
     def _create_index_if_not_exists(self, index_name: str) -> None:
         if index_name not in self._index_client.list_index_names():
-            logger.info(f"Index {index_name} does not exist, creating index")
+            logger.info(
+                f"Index {index_name} does not exist in Azure AI Search, creating index"
+            )
             self._create_index(index_name)
 
     def _create_metadata_index_fields(self) -> List[Any]:
@@ -116,21 +118,26 @@ class CognitiveSearchVectorStore(VectorStore):
         metadata filtering keys.
         """
         from azure.search.documents.indexes.models import (
+            ExhaustiveKnnAlgorithmConfiguration,
+            ExhaustiveKnnParameters,
+            HnswAlgorithmConfiguration,
             HnswParameters,
-            HnswVectorSearchAlgorithmConfiguration,
-            PrioritizedFields,
             SearchableField,
             SearchField,
             SearchFieldDataType,
             SearchIndex,
             SemanticConfiguration,
             SemanticField,
-            SemanticSettings,
+            SemanticPrioritizedFields,
+            SemanticSearch,
             SimpleField,
             VectorSearch,
+            VectorSearchAlgorithmKind,
+            VectorSearchAlgorithmMetric,
+            VectorSearchProfile,
         )
 
-        logger.info(f"Configuring {index_name} fields")
+        logger.info(f"Configuring {index_name} fields for Azure AI Search")
         fields = [
             SimpleField(name=self._field_mapping["id"], type="Edm.String", key=True),
             SearchableField(
@@ -141,68 +148,70 @@ class CognitiveSearchVectorStore(VectorStore):
             SearchField(
                 name=self._field_mapping["embedding"],
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
-                hidden=False,
                 searchable=True,
-                filterable=False,
-                sortable=False,
-                facetable=False,
                 vector_search_dimensions=self.embedding_dimensionality,
-                vector_search_configuration="default",
+                vector_search_profile_name="default",
             ),
             SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
                 name=self._field_mapping["doc_id"], type="Edm.String", filterable=True
             ),
         ]
-
         logger.info(f"Configuring {index_name} metadata fields")
-        # Add on the metadata fields
-
         metadata_index_fields = self._create_metadata_index_fields()
-
         fields.extend(metadata_index_fields)
-
         logger.info(f"Configuring {index_name} vector search")
-
-        hnsw_param = HnswParameters(
-            m=4,
-            ef_construction=500,
-            ef_search=1000,
-            metric="cosine",
-        )
-
+        # Configure the vector search algorithms and profiles
         vector_search = VectorSearch(
-            algorithm_configurations=[
-                HnswVectorSearchAlgorithmConfiguration(
-                    name="default",
-                    kind="hnsw",
-                    parameters=hnsw_param,
-                )
-            ]
+            algorithms=[
+                HnswAlgorithmConfiguration(
+                    name="myHnsw",
+                    kind=VectorSearchAlgorithmKind.HNSW,
+                    # For more information on HNSw parameters, visit https://learn.microsoft.com//azure/search/vector-search-ranking#creating-the-hnsw-graph
+                    parameters=HnswParameters(
+                        m=4,
+                        ef_construction=400,
+                        ef_search=500,
+                        metric=VectorSearchAlgorithmMetric.COSINE,
+                    ),
+                ),
+                ExhaustiveKnnAlgorithmConfiguration(
+                    name="myExhaustiveKnn",
+                    kind=VectorSearchAlgorithmKind.EXHAUSTIVE_KNN,
+                    parameters=ExhaustiveKnnParameters(
+                        metric=VectorSearchAlgorithmMetric.COSINE,
+                    ),
+                ),
+            ],
+            profiles=[
+                VectorSearchProfile(
+                    name="myHnswProfile",
+                    algorithm_configuration_name="myHnsw",
+                ),
+                # Add more profiles if needed
+                VectorSearchProfile(
+                    name="myExhaustiveKnnProfile",
+                    algorithm_configuration_name="myExhaustiveKnn",
+                ),
+                # Add more profiles if needed
+            ],
+        )
+        logger.info(f"Configuring {index_name} semantic search")
+        semantic_config = SemanticConfiguration(
+            name="mySemanticConfig",
+            prioritized_fields=SemanticPrioritizedFields(
+                content_fields=[SemanticField(field_name=self._field_mapping["chunk"])],
+            ),
         )
 
-        logger.info(f"Configuring {index_name} semantic search")
-        semantic_settings = SemanticSettings(
-            configurations=[
-                SemanticConfiguration(
-                    name="default",
-                    prioritized_fields=PrioritizedFields(
-                        title_field=None,
-                        prioritized_content_fields=[
-                            SemanticField(field_name=self._field_mapping["chunk"])
-                        ],
-                    ),
-                )
-            ]
-        )
+        semantic_search = SemanticSearch(configurations=[semantic_config])
 
         index = SearchIndex(
             name=index_name,
             fields=fields,
-            semantic_settings=semantic_settings,
             vector_search=vector_search,
+            semantic_search=semantic_search,
         )
-
         logger.debug(f"Creating {index_name} search index")
         self._index_client.create_index(index)
 
@@ -238,7 +247,7 @@ class CognitiveSearchVectorStore(VectorStore):
     ) -> None:
         # ruff: noqa: E501
         """
-        Embeddings and documents are stored in an Azure Cognitive Search index,
+        Embeddings and documents are stored in an Azure AI Search index,
         a merge or upload approach is used when adding embeddings.
         When adding multiple embeddings the index is updated by this vector store
         in batches of 10 documents, very large nodes may result in failure due to
@@ -259,7 +268,7 @@ class CognitiveSearchVectorStore(VectorStore):
             index_mapping:
                 Optional function with definition
                 (enriched_doc: Dict[str, str], metadata: Dict[str, Any]): Dict[str,str]
-                used to map document fields to the Cognitive search index fields
+                used to map document fields to the AI search index fields
                 (return value of function).
                 If none is specified a default mapping is provided which uses
                 the field keys. The keys in the enriched_doc are
@@ -283,7 +292,7 @@ class CognitiveSearchVectorStore(VectorStore):
         """
         import_err_msg = (
             "`azure-search-documents` package not found, please run "
-            "`pip install azure-search-documents==11.4.0b8`"
+            "`pip install azure-search-documents==11.4.0`"
         )
 
         try:
@@ -439,7 +448,7 @@ class CognitiveSearchVectorStore(VectorStore):
         return ids
 
     def _create_index_document(self, node: BaseNode) -> Dict[str, Any]:
-        """Create Cognitive Search index document from embedding result."""
+        """Create AI Search index document from embedding result."""
         doc: Dict[str, Any] = {}
         doc["id"] = node.node_id
         doc["chunk"] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
@@ -458,7 +467,7 @@ class CognitiveSearchVectorStore(VectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete documents from the Cognitive Search Index
+        Delete documents from the AI Search Index
         with doc_id_field_key field equal to ref_doc_id.
         """
         # Locate documents to delete
@@ -571,7 +580,7 @@ class AzureQueryResultSearchBase:
     ) -> VectorStoreQueryResult:
         results = self._search_client.search(
             search_text=search_query,
-            vectors=vectors,
+            vector_queries=vectors,
             top=self._query.similarity_top_k,
             select=self._select_fields,
             filter=self._odata_filter,
@@ -627,19 +636,19 @@ class AzureQueryResultSearchBase:
 class AzureQueryResultSearchDefault(AzureQueryResultSearchBase):
     def _create_query_vector(self) -> Optional[List[Any]]:
         """Query vector store."""
-        from azure.search.documents.models import Vector
+        from azure.search.documents.models import VectorizedQuery
 
         if not self._query.query_embedding:
             raise ValueError("Query missing embedding")
 
-        vector = Vector(
-            value=self._query.query_embedding,
-            k=self._query.similarity_top_k,
+        vectorized_query = VectorizedQuery(
+            vector=self._query.query_embedding,
+            k_nearest_neighbors=self._query.similarity_top_k,
             fields=self._field_mapping["embedding"],
         )
-        vectors = [vector]
+        vector_queries = [vectorized_query]
         logger.info("Vector search with supplied embedding")
-        return vectors
+        return vector_queries
 
 
 class AzureQueryResultSearchSparse(AzureQueryResultSearchBase):
@@ -666,32 +675,32 @@ class AzureQueryResultSearchHybrid(
 class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
     def _create_query_vector(self) -> Optional[List[Any]]:
         """Query vector store."""
-        from azure.search.documents.models import Vector
+        from azure.search.documents.models import VectorizedQuery
 
         if not self._query.query_embedding:
             raise ValueError("Query missing embedding")
         # k is set to 50 to align with the number of accept document in azure semantic reranking model.
-        # https://learn.microsoft.com/en-us/azure/search/semantic-search-overview
-        vector = Vector(
-            value=self._query.query_embedding,
-            k=50,
+        # https://learn.microsoft.com/azure/search/semantic-search-overview
+        vectorized_query = VectorizedQuery(
+            vector=self._query.query_embedding,
+            k_nearest_neighbors=50,
             fields=self._field_mapping["embedding"],
         )
-        vectors = [vector]
+        vector_queries = [vectorized_query]
         logger.info("Vector search with supplied embedding")
-        return vectors
+        return vector_queries
 
     def _create_query_result(
-        self, search_query: str, vectors: Optional[List[Any]]
+        self, search_query: str, vector_queries: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
         results = self._search_client.search(
             search_text=search_query,
-            vectors=vectors,
+            vector_queries=vector_queries,
             top=self._query.similarity_top_k,
             select=self._select_fields,
             filter=self._odata_filter,
             query_type="semantic",
-            semantic_configuration_name="default",
+            semantic_configuration_name="mySemanticConfig",
         )
 
         id_result = []
@@ -735,3 +744,6 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
         return VectorStoreQueryResult(
             nodes=node_result, similarities=score_result, ids=id_result
         )
+
+
+CognitiveSearchVectorStore = AzureAISearchVectorStore

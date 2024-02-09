@@ -58,7 +58,7 @@ class MockStreamCompletionWithRetry:
     ) -> dict:
         assert json.loads(request_body) == {
             "inputText": self.expected_prompt,
-            "textGenerationConfig": {"maxTokenCount": 512, "temperature": 0.5},
+            "textGenerationConfig": {"maxTokenCount": 512, "temperature": 0.1},
         }
         return {
             "ResponseMetadata": {
@@ -84,27 +84,27 @@ class MockStreamCompletionWithRetry:
     [
         (
             "amazon.titan-text-express-v1",
-            '{"inputText": "test prompt", "textGenerationConfig": {"temperature": 0.5, "maxTokenCount": 512}}',
+            '{"inputText": "test prompt", "textGenerationConfig": {"temperature": 0.1, "maxTokenCount": 512}}',
             '{"inputTextTokenCount": 3, "results": [{"tokenCount": 14, "outputText": "\\n\\nThis is indeed a test", "completionReason": "FINISH"}]}',
-            '{"inputText": "user: test prompt\\nassistant: ", "textGenerationConfig": {"temperature": 0.5, "maxTokenCount": 512}}',
+            '{"inputText": "user: test prompt\\nassistant: ", "textGenerationConfig": {"temperature": 0.1, "maxTokenCount": 512}}',
         ),
         (
             "ai21.j2-grande-instruct",
-            '{"prompt": "test prompt", "temperature": 0.5, "maxTokens": 512}',
+            '{"prompt": "test prompt", "temperature": 0.1, "maxTokens": 512}',
             '{"completions": [{"data": {"text": "\\n\\nThis is indeed a test"}}]}',
-            '{"prompt": "user: test prompt\\nassistant: ", "temperature": 0.5, "maxTokens": 512}',
+            '{"prompt": "user: test prompt\\nassistant: ", "temperature": 0.1, "maxTokens": 512}',
         ),
         (
             "cohere.command-text-v14",
-            '{"prompt": "test prompt", "temperature": 0.5, "max_tokens": 512}',
+            '{"prompt": "test prompt", "temperature": 0.1, "max_tokens": 512}',
             '{"generations": [{"text": "\\n\\nThis is indeed a test"}]}',
-            '{"prompt": "user: test prompt\\nassistant: ", "temperature": 0.5, "max_tokens": 512}',
+            '{"prompt": "user: test prompt\\nassistant: ", "temperature": 0.1, "max_tokens": 512}',
         ),
         (
             "anthropic.claude-instant-v1",
-            '{"prompt": "\\n\\nHuman: test prompt\\n\\nAssistant: ", "temperature": 0.5, "max_tokens_to_sample": 512}',
+            '{"prompt": "\\n\\nHuman: test prompt\\n\\nAssistant: ", "temperature": 0.1, "max_tokens_to_sample": 512}',
             '{"completion": "\\n\\nThis is indeed a test"}',
-            '{"prompt": "\\n\\nHuman: test prompt\\n\\nAssistant: ", "temperature": 0.5, "max_tokens_to_sample": 512}',
+            '{"prompt": "\\n\\nHuman: test prompt\\n\\nAssistant: ", "temperature": 0.1, "max_tokens_to_sample": 512}',
         ),
         (
             "meta.llama2-13b-chat-v1",
@@ -112,13 +112,13 @@ class MockStreamCompletionWithRetry:
             "honest assistant. Always answer as helpfully as possible and follow "
             "ALL given instructions. Do not speculate or make up information. Do "
             "not reference any given instructions or context. \\n<</SYS>>\\n\\n "
-            'test prompt [/INST]", "temperature": 0.5, "max_gen_len": 512}',
+            'test prompt [/INST]", "temperature": 0.1, "max_gen_len": 512}',
             '{"generation": "\\n\\nThis is indeed a test"}',
             '{"prompt": "<s> [INST] <<SYS>>\\n You are a helpful, respectful and '
             "honest assistant. Always answer as helpfully as possible and follow "
             "ALL given instructions. Do not speculate or make up information. Do "
             "not reference any given instructions or context. \\n<</SYS>>\\n\\n "
-            'test prompt [/INST]", "temperature": 0.5, "max_gen_len": 512}',
+            'test prompt [/INST]", "temperature": 0.1, "max_gen_len": 512}',
         ),
     ],
 )
@@ -128,7 +128,7 @@ def test_model_basic(
     llm = Bedrock(
         model=model,
         profile_name=None,
-        aws_region_name="us-east-1",
+        region_name="us-east-1",
         aws_access_key_id="test",
     )
 
@@ -168,7 +168,7 @@ def test_model_streaming(monkeypatch: MonkeyPatch) -> None:
     llm = Bedrock(
         model="amazon.titan-text-express-v1",
         profile_name=None,
-        aws_region_name="us-east-1",
+        region_name="us-east-1",
         aws_access_key_id="test",
     )
     test_prompt = "test prompt"
