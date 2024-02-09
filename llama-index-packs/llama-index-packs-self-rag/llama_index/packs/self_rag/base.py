@@ -6,7 +6,7 @@ from llama_index.core.response import Response
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.query_engine import CustomQueryEngine
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.schema import NodeWithScore, TextNode
 from llama_index.core.utils import print_text
 
@@ -64,9 +64,9 @@ class CriticOutput:
 
 
 def _format_prompt(input: str, paragraph: str = None) -> str:
-    prompt = "### Instruction:\n{0}\n\n### Response:\n".format(input)
+    prompt = f"### Instruction:\n{input}\n\n### Response:\n"
     if paragraph is not None:
-        prompt += "[Retrieval]<paragraph>{0}</paragraph>".format(paragraph)
+        prompt += f"[Retrieval]<paragraph>{paragraph}</paragraph>"
     return prompt
 
 
@@ -86,7 +86,7 @@ def _postprocess_answer(answer: str) -> str:
 
 
 def _relevance_score(pred_log_probs: Dict[str, float]) -> float:
-    """Compute relevance score
+    """Compute relevance score.
 
     Args:
         pred_log_probs (Dict[str, float]): log probabilities of tokens
@@ -102,7 +102,7 @@ def _relevance_score(pred_log_probs: Dict[str, float]) -> float:
 def _is_supported_score(
     pred_tokens: List[int], pred_log_probs_dict: List[Dict[str, float]]
 ) -> float:
-    """Compute support score
+    """Compute support score.
 
     Args:
         pred_tokens (List[int]): List of predicted tokens
@@ -132,7 +132,7 @@ def _is_supported_score(
 def _is_useful_score(
     pred_tokens: List[int], pred_log_probs_dict: List[Dict[str, float]]
 ) -> float:
-    """Compute usefulness score
+    """Compute usefulness score.
 
     Args:
         pred_tokens (List[int]): List of predicted tokens
@@ -156,7 +156,7 @@ def _is_useful_score(
         ut_weights = [-1, -0.5, 0, 0.5, 1]
         isUse_score = np.sum(
             [
-                ut_weights[i] * (ut_score_dict["[Utility:{}]".format(i + 1)] / ut_sum)
+                ut_weights[i] * (ut_score_dict[f"[Utility:{i + 1}]"] / ut_sum)
                 for i in range(len(ut_weights))
             ]
         )
@@ -185,14 +185,14 @@ class SelfRAGQueryEngine(CustomQueryEngine):
         model_kwargs = model_kwargs or _MODEL_KWARGS
         self.generate_kwargs = generate_kwargs or _GENERATE_KWARGS
         try:
-            from llama_cpp import Llama  # noqa: F401
+            from llama_cpp import Llama
         except ImportError:
             raise ImportError(_IMPORT_ERROR_MSG)
         self.llm = Llama(model_path=model_path, verbose=verbose, **model_kwargs)
         self.retriever = retriever
 
     def _run_critic(self, paragraphs: List[str]) -> CriticOutput:
-        """Run Critic component, the llm will generate responses based on the paragraphs and then evaluate them
+        """Run Critic component, the llm will generate responses based on the paragraphs and then evaluate them.
 
         Args:
             paragraphs (List[str]): List of paragraphs to evaluate
@@ -294,7 +294,6 @@ class SelfRAGPack(BaseLlamaPack):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-
         self.query_engine = SelfRAGQueryEngine(model_path, retriever, verbose)
 
     def get_modules(self) -> Dict[str, Any]:

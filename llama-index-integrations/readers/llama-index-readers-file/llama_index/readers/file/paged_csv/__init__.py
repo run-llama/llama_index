@@ -1,4 +1,4 @@
-from llama_hub.file.paged_csv.base import (
+from llama_index.readers.file.paged_csv.base import (
     PagedCSVReader,
 )
 

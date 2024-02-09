@@ -7,12 +7,8 @@ pants_version = "2.19.0"
 remote_cache_read = true
 remote_cache_write = true
 remote_instance_name = "main"
-remote_store_address = "grpc://54.91.212.143:9092"
 
 [black]
-config = "./pyproject.toml"
-
-[mypy]
 config = "./pyproject.toml"
 
 [python]
@@ -20,9 +16,6 @@ interpreter_constraints = ['>=3.8.1']
 
 [python-infer]
 ambiguity_resolution = "by_source_root"
-
-[ruff]
-config = "llama-index-core/pyproject.toml"
 
 [source]
 marker_filenames = ["pyproject.toml"]

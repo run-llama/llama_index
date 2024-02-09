@@ -33,7 +33,6 @@ llama-index-llms-gradient = "^0.0.1"
 llama-index-postprocessor-cohere-rerank = "^0.0.1"
 llama-index-embeddings-adapter = "^0.0.1"
 sentence-transformers = "^2.3.0"
-llama-index-llms-openai = "^0.0.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
