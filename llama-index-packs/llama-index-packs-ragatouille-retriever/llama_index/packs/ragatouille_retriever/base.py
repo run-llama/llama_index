@@ -96,7 +96,6 @@ class RAGatouilleRetrieverPack(BaseLlamaPack):
 
     def add_documents(self, documents: List[Document]) -> None:
         """Add documents."""
-
         doc_txts = [doc.get_content() for doc in documents]
         doc_ids = [doc.doc_id for doc in documents]
         doc_metadatas = [doc.metadata for doc in documents]
@@ -109,7 +108,6 @@ class RAGatouilleRetrieverPack(BaseLlamaPack):
 
     def delete_documents(self, documents: List[Document]) -> None:
         """Delete documents."""
-
         doc_ids = [doc.doc_id for doc in documents]
 
         self.RAG.delete_from_index(document_ids=doc_ids)

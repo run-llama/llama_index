@@ -53,7 +53,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
         heat_index = w.heat_index
         clouds = w.clouds
 
-        weather_text = (
+        return (
             f"In {place}, the current weather is as follows:\n"
             f"Detailed status: {detailed_status}\n"
             f"Wind speed: {wind['speed']} m/s, direction: {wind['deg']}°\n"
@@ -61,11 +61,9 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
             "Temperature: \n"
             f"{temp_str}\n"
             f"Rain: {rain}\n"
-            f"Heat index: {str(heat_index)}\n"
+            f"Heat index: {heat_index!s}\n"
             f"Cloud cover: {clouds}%"
         )
-
-        return weather_text
 
     def weather_at_location(self, location: str) -> List[Document]:
         """

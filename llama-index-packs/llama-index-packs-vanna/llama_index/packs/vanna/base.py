@@ -39,7 +39,7 @@ class VannaQueryEngine(CustomQueryEngine):
         from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
 
         class MyVanna(ChromaDB_VectorStore, OpenAI_Chat):
-            def __init__(self, config=None):
+            def __init__(self, config: Any = None) -> None:
                 ChromaDB_VectorStore.__init__(self, config=config)
                 OpenAI_Chat.__init__(self, config=config)
 
@@ -102,7 +102,6 @@ class VannaPack(BaseLlamaPack):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-
         self.vanna_query_engine = VannaQueryEngine(
             openai_api_key=openai_api_key, sql_db_url=sql_db_url, **kwargs
         )

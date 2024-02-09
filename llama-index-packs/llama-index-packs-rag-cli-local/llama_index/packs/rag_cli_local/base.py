@@ -30,7 +30,6 @@ def init_local_rag_cli(
     embed_model_name: str = "BAAI/bge-m3",
 ) -> RagCLI:
     """Init local RAG CLI."""
-
     docstore = SimpleDocumentStore()
     persist_dir = persist_dir or default_ragcli_persist_dir()
     chroma_client = chromadb.PersistentClient(path=persist_dir)
@@ -71,14 +70,13 @@ def init_local_rag_cli(
     query_pipeline.add_link("retriever", "summarizer", dest_key="nodes")
     query_pipeline.add_link("input", "summarizer", dest_key="query_str")
 
-    rag_cli_instance = RagCLI(
+    return RagCLI(
         ingestion_pipeline=ingestion_pipeline,
         llm=llm,  # optional
         persist_dir=persist_dir,
         query_pipeline=query_pipeline,
         verbose=False,
     )
-    return rag_cli_instance
 
 
 class LocalRAGCLIPack(BaseLlamaPack):

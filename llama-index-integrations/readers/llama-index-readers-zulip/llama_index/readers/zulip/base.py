@@ -65,8 +65,7 @@ class ZulipReader(BaseReader):
         response = self.client.get_streams()
         streams_data = response["streams"]
         # Collect the stream IDs
-        stream_names = [stream["name"] for stream in streams_data]
-        return stream_names
+        return [stream["name"] for stream in streams_data]
 
 
 if __name__ == "__main__":

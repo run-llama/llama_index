@@ -1,4 +1,5 @@
 """Notion reader."""
+
 import os
 from typing import Any, Dict, List, Optional
 
@@ -83,8 +84,7 @@ class NotionPageReader(BaseReader):
             else:
                 cur_block_id = data["next_cursor"]
 
-        result_lines = "\n".join(result_lines_arr)
-        return result_lines
+        return "\n".join(result_lines_arr)
 
     def read_page(self, page_id: str) -> str:
         """Read a page."""
@@ -117,8 +117,7 @@ class NotionPageReader(BaseReader):
             data = res.json()
             pages.extend(data.get("results"))
 
-        page_ids = [page["id"] for page in pages]
-        return page_ids
+        return [page["id"] for page in pages]
 
     def search(self, query: str) -> List[str]:
         """Search Notion page given a text query."""
