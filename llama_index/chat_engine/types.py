@@ -1,7 +1,7 @@
-import time
 import asyncio
 import logging
 import queue
+import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
@@ -142,6 +142,7 @@ class StreamingAgentChatResponse:
                 self._is_function = is_function(chat.message)
                 self.aput_in_queue(chat.delta)
                 final_text += chat.delta or ""
+                self._new_item_event.set()
                 if self._is_function is False:
                     self._is_function_false_event.set()
             if self._is_function is not None:  # if loop has gone through iteration
