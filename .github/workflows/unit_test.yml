@@ -8,7 +8,6 @@ on:
 
 env:
   POETRY_VERSION: "1.6.1"
-  PANTS_CI_URL: "grpc://54.91.212.143:9092"
 
 jobs:
   test:
