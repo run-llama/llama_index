@@ -351,6 +351,8 @@ class PGVectorStore(BasePydanticVectorStore):
             return ">="
         elif operator == FilterOperator.LTE:
             return "<="
+        elif operator == FilterOperator.IN:
+            return "@>"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -377,10 +379,18 @@ class PGVectorStore(BasePydanticVectorStore):
             stmt = stmt.where(  # type: ignore
                 sqlalchemy_conditions[metadata_filters.condition](
                     *(
-                        sqlalchemy.text(
-                            f"metadata_->>'{filter_.key}' "
-                            f"{self._to_postgres_operator(filter_.operator)} "
-                            f"'{filter_.value}'"
+                        (
+                            sqlalchemy.text(
+                                f"metadata_::jsonb->'{filter_.key}' "
+                                f"{self._to_postgres_operator(filter_.operator)} "
+                                f"'[\"{filter_.value}\"]'"
+                            )
+                            if filter_.operator == FilterOperator.IN
+                            else sqlalchemy.text(
+                                f"metadata_->>'{filter_.key}' "
+                                f"{self._to_postgres_operator(filter_.operator)} "
+                                f"'{filter_.value}'"
+                            )
                         )
                         for filter_ in metadata_filters.filters
                     )

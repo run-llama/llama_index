@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence
 
 from llama_index.legacy.bridge.pydantic import Field, PrivateAttr
 from llama_index.legacy.callbacks import CallbackManager
@@ -12,6 +12,7 @@ from llama_index.legacy.embeddings.huggingface_utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
     format_query,
     format_text,
+    get_pooling_mode,
 )
 from llama_index.legacy.embeddings.pooling import Pooling
 from llama_index.legacy.llms.huggingface import HuggingFaceInferenceAPI
@@ -28,7 +29,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
     max_length: int = Field(
         default=DEFAULT_HUGGINGFACE_LENGTH, description="Maximum length of input.", gt=0
     )
-    pooling: Pooling = Field(default=Pooling.CLS, description="Pooling strategy.")
+    pooling: Pooling = Field(default=None, description="Pooling strategy.")
     normalize: bool = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
@@ -48,7 +49,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         self,
         model_name: Optional[str] = None,
         tokenizer_name: Optional[str] = None,
-        pooling: Union[str, Pooling] = "cls",
+        pooling: Optional[str] = None,
         max_length: Optional[int] = None,
         query_instruction: Optional[str] = None,
         text_instruction: Optional[str] = None,
@@ -105,14 +106,15 @@ class HuggingFaceEmbedding(BaseEmbedding):
                     "Unable to find max_length from model config. Please specify max_length."
                 ) from exc
 
-        if isinstance(pooling, str):
-            try:
-                pooling = Pooling(pooling)
-            except ValueError as exc:
-                raise NotImplementedError(
-                    f"Pooling {pooling} unsupported, please pick one in"
-                    f" {[p.value for p in Pooling]}."
-                ) from exc
+        if not pooling:
+            pooling = get_pooling_mode(model_name)
+        try:
+            pooling = Pooling(pooling)
+        except ValueError as exc:
+            raise NotImplementedError(
+                f"Pooling {pooling} unsupported, please pick one in"
+                f" {[p.value for p in Pooling]}."
+            ) from exc
 
         super().__init__(
             embed_batch_size=embed_batch_size,

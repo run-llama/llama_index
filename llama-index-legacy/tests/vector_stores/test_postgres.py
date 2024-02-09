@@ -13,6 +13,8 @@ from llama_index.legacy.vector_stores import PGVectorStore
 from llama_index.legacy.vector_stores.loading import load_vector_store
 from llama_index.legacy.vector_stores.types import (
     ExactMatchFilter,
+    FilterOperator,
+    MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -122,6 +124,13 @@ def node_embeddings() -> List[TextNode]:
             id_="bbb",
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
             extra_info={"test_key": "test_value"},
+            embedding=_get_sample_vector(0.1),
+        ),
+        TextNode(
+            text="consectetur adipiscing elit",
+            id_="ccc",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
+            extra_info={"test_key_list": ["test_value"]},
             embedding=_get_sample_vector(0.1),
         ),
     ]
@@ -244,6 +253,37 @@ async def test_add_to_db_and_query_with_metadata_filters(
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "bbb"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
+    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg.async_add(node_embeddings)
+    else:
+        pg.add(node_embeddings)
+    assert isinstance(pg, PGVectorStore)
+    assert hasattr(pg, "_engine")
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_key_list", value="test_value", operator=FilterOperator.IN
+            )
+        ]
+    )
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
+    )
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == "ccc"
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")

@@ -6,7 +6,12 @@ from llama_index.legacy.core.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
 )
-from llama_index.legacy.embeddings.huggingface_utils import format_query, format_text
+from llama_index.legacy.embeddings.huggingface_utils import (
+    format_query,
+    format_text,
+    get_pooling_mode,
+)
+from llama_index.legacy.embeddings.pooling import Pooling
 from llama_index.legacy.utils import infer_torch_device
 
 
@@ -32,7 +37,7 @@ class OptimumEmbedding(BaseEmbedding):
     def __init__(
         self,
         folder_name: str,
-        pooling: str = "cls",
+        pooling: Optional[str] = None,
         max_length: Optional[int] = None,
         normalize: bool = True,
         query_instruction: Optional[str] = None,
@@ -66,8 +71,15 @@ class OptimumEmbedding(BaseEmbedding):
                     "Please provide max_length."
                 )
 
-        if pooling not in ["cls", "mean"]:
-            raise ValueError(f"Pooling {pooling} not supported.")
+        if not pooling:
+            pooling = get_pooling_mode(model)
+        try:
+            pooling = Pooling(pooling)
+        except ValueError as exc:
+            raise NotImplementedError(
+                f"Pooling {pooling} unsupported, please pick one in"
+                f" {[p.value for p in Pooling]}."
+            ) from exc
 
         super().__init__(
             embed_batch_size=embed_batch_size,
