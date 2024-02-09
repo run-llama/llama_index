@@ -38,7 +38,10 @@ except ImportError:
     pass
 
 # This lists the multi-modal models - see also llms.gemini for text models.
-GEMINI_MM_MODELS = ("models/gemini-pro-vision",)
+GEMINI_MM_MODELS = (
+    "models/gemini-pro-vision",
+    "models/gemini-ultra-vision",
+)
 
 
 class GeminiMultiModal(MultiModalLLM):
@@ -74,6 +77,7 @@ class GeminiMultiModal(MultiModalLLM):
         generation_config: Optional["genai.types.GenerationConfigDict"] = None,
         safety_settings: "genai.types.SafetySettingOptions" = None,
         api_base: Optional[str] = None,
+        transport: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **generate_kwargs: Any,
     ):
@@ -100,6 +104,9 @@ class GeminiMultiModal(MultiModalLLM):
         }
         if api_base:
             config_params["client_options"] = {"api_endpoint": api_base}
+        if transport:
+            config_params["transport"] = transport
+        # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
         genai.configure(**config_params)
 
         base_gen_config = generation_config if generation_config else {}

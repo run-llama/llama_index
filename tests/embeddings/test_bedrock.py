@@ -34,7 +34,7 @@ class TestBedrockEmbedding(TestCase):
         )
 
         bedrock_embedding = BedrockEmbedding(
-            model_name=Models.TITAN_EMBEDDING,
+            model=Models.TITAN_EMBEDDING,
             client=self.bedrock_client,
         )
 
@@ -63,7 +63,7 @@ class TestBedrockEmbedding(TestCase):
         )
 
         bedrock_embedding = BedrockEmbedding(
-            model_name=Models.COHERE_EMBED_ENGLISH_V3,
+            model=Models.COHERE_EMBED_ENGLISH_V3,
             client=self.bedrock_client,
         )
 
