@@ -39,7 +39,7 @@ nodes = parser.get_nodes_from_documents(html_docs)
 The `JSONNodeParser` parses raw JSON.
 
 ```python
-from llama_index import JSONNodeParser
+from llama_index.node_parser import JSONNodeParser
 
 parser = JSONNodeParser()
 
@@ -51,7 +51,7 @@ nodes = parser.get_nodes_from_documents(json_docs)
 The `MarkdownNodeParser` parses raw markdown text.
 
 ```python
-from llama_index import MarkdownNodeParser
+from llama_index.node_parser import MarkdownNodeParser
 
 parser = MarkdownNodeParser()
 
