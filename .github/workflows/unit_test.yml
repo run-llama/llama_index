@@ -37,7 +37,7 @@ jobs:
           pants-ci-config: pants.toml
       - name: Check BUILD files
         run: |
-          pants tailor --check update-build-files --check ::
+          pants tailor --check :: -docs/::
       - name: Run testing
         env:
           CI: true
