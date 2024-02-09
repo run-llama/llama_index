@@ -8,6 +8,7 @@ on:
 
 env:
   POETRY_VERSION: "1.6.1"
+  PANTS_CI_URL: ${{ secrets.PANTS_CI_URL }}
 
 jobs:
   test:
