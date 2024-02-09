@@ -4,7 +4,9 @@ backend_packages = [
     "pants.backend.python.lint.black",
     "pants.backend.python.typecheck.mypy",
 ]
-local_store_directories_max_size_bytes = 6000000000
+local_store_directories_max_size_bytes = 5000000000
+local_store_files_max_size_bytes = 5000000000
+local_store_processes_max_size_bytes = 5000000000
 pants_version = "2.19.0"
 remote_cache_read = true
 remote_cache_write = true
