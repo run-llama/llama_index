@@ -318,7 +318,7 @@ class Link(BaseModel):
 
 
 class ConditionalLinks(BaseModel):
-    """Conditional Links between source and mutiple destinations."""
+    """Conditional Links between source and multiple destinations."""
 
     src: str = Field(..., description="Source component name")
     fn: Callable = Field(
