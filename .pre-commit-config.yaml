@@ -26,14 +26,14 @@ repos:
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
-        exclude: ^(.*poetry.lock|_static|llama-index-core/llama_index/core/_static)
+        exclude: ".*poetry.lock|.*_static"
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
       - id: black-jupyter
         name: black-src
         alias: black
-        exclude: ^(docs/|llama-index-core/llama_index/core/_static)
+        exclude: "^docs|.*poetry.lock|.*_static"
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.0.1
     hooks:
@@ -101,8 +101,4 @@ repos:
     rev: v0.23.1
     hooks:
       - id: toml-sort-fix
-        exclude: |
-          (?x)^(
-            poetry.lock|
-            llama-index-core/llama_index/core/_static
-          )$
+        exclude: ".*poetry.lock|.*_static"

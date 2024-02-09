@@ -9,19 +9,6 @@ postgres = ["asyncpg", "pgvector", "psycopg2-binary"]
 query-tools = ["guidance", "jsonpath-ng", "lm-format-enforcer", "rank-bm25", "scikit-learn", "spacy"]
 
 [metadata]
-lock-version = "2.0"
-python-versions = ">=3.8.1,<4.0"
-content-hash = "126b80e4420c30dc740c71fac0c5801a79a16f1125497dbead4a6a8a4b47b090"
-
-[extras]
-gradientai = ["gradientai"]
-html = ["beautifulsoup4"]
-langchain = ["langchain"]
-local-models = ["optimum", "sentencepiece", "transformers"]
-postgres = ["asyncpg", "pgvector", "psycopg2-binary"]
-query-tools = ["guidance", "jsonpath-ng", "lm-format-enforcer", "rank-bm25", "scikit-learn", "spacy"]
-
-[metadata]
 content-hash = "31900080359c65d18c3965d9b5743559fb23bbb8aadd7a5e2da0ca8c100b5c1e"
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
