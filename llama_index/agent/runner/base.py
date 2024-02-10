@@ -208,6 +208,7 @@ class AgentRunner(BaseAgentRunner):
         init_task_state_kwargs: Optional[dict] = None,
         delete_task_on_finish: bool = False,
         default_tool_choice: str = "auto",
+        verbose: bool = False
     ) -> None:
         """Initialize."""
         self.agent_worker = agent_worker
@@ -217,6 +218,7 @@ class AgentRunner(BaseAgentRunner):
         self.init_task_state_kwargs = init_task_state_kwargs or {}
         self.delete_task_on_finish = delete_task_on_finish
         self.default_tool_choice = default_tool_choice
+        self.verbose = verbose
 
     @staticmethod
     def from_llm(
@@ -325,6 +327,9 @@ class AgentRunner(BaseAgentRunner):
         if input is not None:
             step.input = input
 
+        if self.verbose:
+            print(f"> Running step {step.step_id}. Step input: {step.input}")
+
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
 
@@ -358,6 +363,9 @@ class AgentRunner(BaseAgentRunner):
         step = step or step_queue.popleft()
         if input is not None:
             step.input = input
+
+        if self.verbose:
+            print(f"> Running step {step.step_id}. Step input: {step.input}")
 
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
