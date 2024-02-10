@@ -1,7 +1,7 @@
 """Test agent executor."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from llama_index.agent.runner.base import AgentRunner
 from llama_index.agent.runner.parallel import ParallelAgentRunner
@@ -77,7 +77,7 @@ class MockAgentWorkerWithMemory(MockAgentWorker):
         """Initialize step from task."""
         # counter will be set to the last value in memory
         if len(task.memory.get()) > 0:
-            start = int(task.memory.get()[-1].content)
+            start = int(cast(Any, task.memory.get()[-1].content))
         else:
             start = 0
         task.extra_state["counter"] = 0
