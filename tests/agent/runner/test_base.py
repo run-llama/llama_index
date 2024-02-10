@@ -65,7 +65,6 @@ class MockAgentWorker(BaseAgentWorker):
         """Finalize task, after all the steps are completed."""
 
 
-
 # define mock agent worker
 class MockAgentWorkerWithMemory(MockAgentWorker):
     """Mock agent worker with memory."""
@@ -107,8 +106,6 @@ class MockAgentWorkerWithMemory(MockAgentWorker):
             is_last=is_done,
             next_steps=new_steps,
         )
-
-
 
 
 # define mock agent worker
