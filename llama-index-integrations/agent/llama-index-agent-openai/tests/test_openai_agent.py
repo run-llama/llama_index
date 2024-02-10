@@ -2,19 +2,29 @@ from typing import Any, AsyncGenerator, Generator, List, Sequence
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.agent.openai.base import OpenAIAgent
-from llama_index.agent.openai.step import call_tool_with_error_handling
+from llama_index.core.agent.openai.step import call_tool_with_error_handling
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
     StreamingAgentChatResponse,
 )
+from llama_index.core.llms.base import ChatMessage, ChatResponse
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.tools.function_tool import FunctionTool
-from llama_index.llms.openai import OpenAI
+
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
+
+try:
+    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
+except ImportError:
+    OpenAI = None  # type: ignore
+
+try:
+    from llama_index.agent.openai import OpenAIAgent  # pants: no-infer-dep
+except ImportError:
+    OpenAIAgent = None  # type: ignore
 
 
 def mock_chat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
@@ -146,7 +156,8 @@ Answer: 2
 """
 
 
-@patch("llama_index.llms.openai.base.SyncOpenAI")
+@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
+@patch("llama_index.core.llms.openai.SyncOpenAI")
 def test_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
     mock_instance = MockSyncOpenAI.return_value
     mock_instance.chat.completions.create.return_value = mock_chat_completion()
@@ -162,7 +173,8 @@ def test_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
     assert response.response == "\n\nThis is a test!"
 
 
-@patch("llama_index.llms.openai.base.AsyncOpenAI")
+@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
+@patch("llama_index.core.llms.openai.AsyncOpenAI")
 @pytest.mark.asyncio()
 async def test_achat_basic(MockAsyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
     mock_instance = MockAsyncOpenAI.return_value
@@ -179,7 +191,8 @@ async def test_achat_basic(MockAsyncOpenAI: MagicMock, add_tool: FunctionTool) -
     assert response.response == "\n\nThis is a test!"
 
 
-@patch("llama_index.llms.openai.base.SyncOpenAI")
+@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
+@patch("llama_index.core.llms.openai.SyncOpenAI")
 def test_stream_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
     mock_instance = MockSyncOpenAI.return_value
     mock_instance.chat.completions.create.side_effect = mock_chat_stream
@@ -193,10 +206,11 @@ def test_stream_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) ->
     response = agent.stream_chat("What is 1 + 1?")
     assert isinstance(response, StreamingAgentChatResponse)
     # str() strips newline values
-    assert str(response) == "This is a test!" or str(response) == ""
+    assert str(response) == "This is a test!"
 
 
-@patch("llama_index.llms.openai.base.AsyncOpenAI")
+@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
+@patch("llama_index.core.llms.openai.AsyncOpenAI")
 @pytest.mark.asyncio()
 async def test_astream_chat_basic(
     MockAsyncOpenAI: MagicMock, add_tool: FunctionTool
@@ -218,7 +232,8 @@ async def test_astream_chat_basic(
     assert response == "\n\nThis is a test!"
 
 
-@patch("llama_index.llms.openai.base.SyncOpenAI")
+@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
+@patch("llama_index.core.llms.openai.SyncOpenAI")
 def test_chat_no_functions(MockSyncOpenAI: MagicMock) -> None:
     mock_instance = MockSyncOpenAI.return_value
     mock_instance.chat.completions.create.return_value = mock_chat_completion()
@@ -253,7 +268,8 @@ def test_call_tool_with_error_handling() -> None:
     assert output.content == "Error!"
 
 
-@patch("llama_index.llms.openai.base.SyncOpenAI")
+@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
+@patch("llama_index.core.llms.openai.SyncOpenAI")
 def test_add_step(
     MockSyncOpenAI: MagicMock,
     add_tool: FunctionTool,
@@ -276,7 +292,7 @@ def test_add_step(
 
     # add human input (not used but should be in memory)
     task = agent.create_task("What is 1 + 1?")
-    _step_output = agent.run_step(task.task_id, input="tmp")
+    step_output = agent.run_step(task.task_id, input="tmp")
     chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
     assert "tmp" in [m.content for m in chat_history]
 
@@ -294,7 +310,11 @@ def test_add_step(
     # assert "tmp" in [m.content for m in chat_history]
 
 
-@patch("llama_index.llms.openai.base.AsyncOpenAI")
+@pytest.mark.skipif(
+    (OpenAI is None) or (OpenAIAgent is None),
+    reason="llama-index-llms-openai not installed",
+)
+@patch("llama_index.core.llms.openai.AsyncOpenAI")
 @pytest.mark.asyncio()
 async def test_async_add_step(
     MockAsyncOpenAI: MagicMock,
@@ -311,11 +331,11 @@ async def test_async_add_step(
     task = agent.create_task("What is 1 + 1?")
     # first step
     mock_instance.chat.completions.create.return_value = mock_achat_completion()
-    _step_output = await agent.arun_step(task.task_id)
+    step_output = await agent.arun_step(task.task_id)
     # add human input (not used but should be in memory)
     task = agent.create_task("What is 1 + 1?")
     mock_instance.chat.completions.create.return_value = mock_achat_completion()
-    _step_output = await agent.arun_step(task.task_id, input="tmp")
+    step_output = await agent.arun_step(task.task_id, input="tmp")
     chat_history: List[ChatMessage] = task.extra_state["new_memory"].get_all()
     assert "tmp" in [m.content for m in chat_history]
 
@@ -327,10 +347,10 @@ async def test_async_add_step(
     task = agent.create_task("What is 1 + 1?")
     # first step
     mock_instance.chat.completions.create.side_effect = mock_achat_stream
-    _step_output = await agent.astream_step(task.task_id)
+    step_output = await agent.astream_step(task.task_id)
     # add human input (not used but should be in memory)
     task = agent.create_task("What is 1 + 1?")
     mock_instance.chat.completions.create.side_effect = mock_achat_stream
-    _step_output = await agent.astream_step(task.task_id, input="tmp")
+    step_output = await agent.astream_step(task.task_id, input="tmp")
     chat_history = task.extra_state["new_memory"].get_all()
     assert "tmp" in [m.content for m in chat_history]

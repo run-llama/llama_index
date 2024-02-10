@@ -6,8 +6,8 @@ import pytest
 from llama_index.core.embeddings.pooling import Pooling
 from llama_index.embeddings.huggingface import (
     HuggingFaceInferenceAPIEmbedding,
-)  # pants: no-infer-dep
-from tests.llms.test_huggingface import STUB_MODEL_NAME  # pants: no-infer-dep
+)
+from tests.llms.test_huggingface import STUB_MODEL_NAME
 
 
 @pytest.fixture(name="hf_inference_api_embedding")

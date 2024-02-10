@@ -8,17 +8,17 @@ from llama_index.embeddings.openai_utils import (
     from_openai_messages,
     to_openai_message_dicts,
     to_openai_tool,
-)  # pants: no-infer-dep
+)
 
 
 from openai.types.chat.chat_completion_assistant_message_param import (
     FunctionCall as FunctionCallParam,
-)  # pants: no-infer-dep
+)
 
 
 from openai.types.chat.chat_completion_message import (
     ChatCompletionMessage,
-)  # pants: no-infer-dep
+)
 
 
 from openai.types.chat.chat_completion_message_param import (
@@ -26,13 +26,13 @@ from openai.types.chat.chat_completion_message_param import (
     ChatCompletionFunctionMessageParam,
     ChatCompletionMessageParam,
     ChatCompletionUserMessageParam,
-)  # pants: no-infer-dep
+)
 
 
 from openai.types.chat.chat_completion_message_tool_call import (
     ChatCompletionMessageToolCall,
     Function,
-)  # pants: no-infer-dep
+)
 
 
 @pytest.fixture()

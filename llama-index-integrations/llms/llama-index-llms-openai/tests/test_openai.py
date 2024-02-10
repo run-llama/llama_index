@@ -15,9 +15,9 @@ from openai.types.completion import Completion, CompletionChoice, CompletionUsag
 from tests.conftest import CachedOpenAIApiKeys
 
 try:
-    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
+    from llama_index.llms.openai import OpenAI
 except ImportError:
-    OpenAI = None  # type: ignore
+    OpenAI = None
 
 
 def mock_completion(*args: Any, **kwargs: Any) -> dict:

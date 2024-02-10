@@ -3,16 +3,16 @@ from unittest.mock import MagicMock, call, patch
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms.localai import LOCALAI_DEFAULTS
-from llama_index.llms.openai import Tokenizer  # pants: no-infer-dep
-from llama_index.llms.openai_like import OpenAILike  # pants: no-infer-dep
-from openai.types import Completion, CompletionChoice  # pants: no-infer-dep
+from llama_index.llms.openai import Tokenizer
+from llama_index.llms.openai_like import OpenAILike
+from openai.types import Completion, CompletionChoice
 from openai.types.chat.chat_completion import (
     ChatCompletion,
     Choice,
-)  # pants: no-infer-dep
+)
 from openai.types.chat.chat_completion_message import (
     ChatCompletionMessage,
-)  # pants: no-infer-dep
+)
 
 
 class StubTokenizer(Tokenizer):
