@@ -8,6 +8,7 @@ local_store_directories_max_size_bytes = 4000000000
 local_store_files_max_size_bytes = 4000000000
 local_store_processes_max_size_bytes = 4000000000
 pants_version = "2.19.0"
+process_execution_local_parallelism = 2
 remote_cache_read = true
 remote_cache_write = true
 remote_instance_name = "main"
