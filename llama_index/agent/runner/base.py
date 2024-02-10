@@ -208,20 +208,29 @@ class AgentRunner(BaseAgentRunner):
         init_task_state_kwargs: Optional[dict] = None,
         delete_task_on_finish: bool = False,
         default_tool_choice: str = "auto",
-        verbose: bool = False
+        verbose: bool = False,
     ) -> None:
         """Initialize."""
         self.agent_worker = agent_worker
         self.state = state or AgentState()
         self.memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
-        
+
         # get and set callback manager
         if callback_manager is not None:
             self.agent_worker.set_callback_manager(callback_manager)
             self.callback_manager = callback_manager
         else:
-            self.callback_manager = self.agent_worker.callback_manager
-        
+            # TODO: This is *temporary*
+            # Stopgap before having a callback on the BaseAgentWorker interface.
+            # Doing that requires a bit more refactoring to make sure existing code
+            # doesn't break.
+            if hasattr(self.agent_worker, "callback_manager"):
+                self.callback_manager = (
+                    self.agent_worker.callback_manager or CallbackManager()
+                )
+            else:
+                self.callback_manager = CallbackManager()
+
         self.init_task_state_kwargs = init_task_state_kwargs or {}
         self.delete_task_on_finish = delete_task_on_finish
         self.default_tool_choice = default_tool_choice

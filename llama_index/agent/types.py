@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.callbacks import trace_method, CallbackManager
+from llama_index.callbacks import CallbackManager, trace_method
 from llama_index.chat_engine.types import BaseChatEngine, StreamingAgentChatResponse
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.llms.types import ChatMessage
@@ -233,4 +233,3 @@ class BaseAgentWorker(PromptMixin):
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
         # TODO: make this abstractmethod (right now will break some agent impls)
-        pass
