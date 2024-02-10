@@ -85,7 +85,7 @@ class LlamaCloudRetriever(BaseRetriever):
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Asynchronously retrieve from the platform."""
-        pipelines = self._client.pipeline.search_pipelines(
+        pipelines = await self._aclient.pipeline.search_pipelines(
             project_name=self.project_name, pipeline_name=self.name
         )
         assert len(pipelines) == 1
