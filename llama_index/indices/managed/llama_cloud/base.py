@@ -4,6 +4,7 @@ A managed Index - where the index is accessible via some API that
 interfaces a managed service.
 
 """
+import os
 import time
 from typing import Any, List, Optional, Sequence, Type
 
@@ -12,7 +13,7 @@ from llama_index_client import PipelineType, ProjectCreate, StatusEnum
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.base_retriever import BaseRetriever
 from llama_index.indices.managed.base import BaseManagedIndex
-from llama_index.indices.managed.llama_index.utils import (
+from llama_index.indices.managed.llama_cloud.utils import (
     default_transformations,
     get_aclient,
     get_client,
@@ -23,7 +24,7 @@ from llama_index.schema import BaseNode, Document, TransformComponent
 from llama_index.service_context import ServiceContext
 
 
-class PlatformIndex(BaseManagedIndex):
+class LlamaCloudIndex(BaseManagedIndex):
     """LlamaIndex Platform Index."""
 
     def __init__(
@@ -33,9 +34,9 @@ class PlatformIndex(BaseManagedIndex):
         transformations: Optional[List[TransformComponent]] = None,
         timeout: int = 60,
         project_name: str = DEFAULT_PROJECT_NAME,
-        platform_api_key: Optional[str] = None,
-        platform_base_url: Optional[str] = None,
-        platform_app_url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        app_url: Optional[str] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
         **kwargs: Any,
@@ -52,40 +53,35 @@ class PlatformIndex(BaseManagedIndex):
 
         if nodes is not None:
             # TODO: How to handle uploading nodes without running transforms on them?
-            raise ValueError("PlatformIndex does not support nodes on initialization")
+            raise ValueError("LlamaCloudIndex does not support nodes on initialization")
 
-        self._client = get_client(
-            platform_api_key, platform_base_url, platform_app_url, timeout
-        )
-        self._aclient = get_aclient(
-            platform_api_key, platform_base_url, platform_app_url, timeout
-        )
+        self._client = get_client(api_key, base_url, app_url, timeout)
+        self._aclient = get_aclient(api_key, base_url, app_url, timeout)
 
-        self._platform_api_key = platform_api_key
-        self._platform_base_url = platform_base_url
-        self._platform_app_url = platform_app_url
+        self._api_key = api_key
+        self._base_url = base_url
+        self._app_url = app_url
         self._timeout = timeout
         self._show_progress = show_progress
         self._service_context = service_context  # type: ignore
 
     @classmethod
     def from_documents(  # type: ignore
-        cls: Type["PlatformIndex"],
-        name: str,
+        cls: Type["LlamaCloudIndex"],
         documents: List[Document],
+        name: str,
         transformations: Optional[List[TransformComponent]] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
-        platform_api_key: Optional[str] = None,
-        platform_base_url: Optional[str] = None,
-        platform_app_url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        app_url: Optional[str] = None,
         timeout: int = 60,
         verbose: bool = False,
         **kwargs: Any,
-    ) -> "PlatformIndex":
+    ) -> "LlamaCloudIndex":
         """Build a Vectara index from a sequence of documents."""
-        client = get_client(
-            platform_api_key, platform_base_url, platform_app_url, timeout
-        )
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", None)
+        client = get_client(api_key, base_url, app_url, timeout)
 
         pipeline_create = get_pipeline_create(
             name,
@@ -176,36 +172,36 @@ class PlatformIndex(BaseManagedIndex):
                     print(".", end="")
                 time.sleep(0.5)
 
-        print(
-            f"Find your index at {platform_app_url}/project/{project.id}/deploy/{pipeline.id}"
-        )
+        print(f"Find your index at {app_url}/project/{project.id}/deploy/{pipeline.id}")
 
         return cls(
             name,
             transformations=transformations,
             project_name=project_name,
-            platform_api_key=platform_api_key,
-            platform_base_url=platform_base_url,
-            platform_app_url=platform_app_url,
+            api_key=api_key,
+            base_url=base_url,
+            app_url=app_url,
             timeout=timeout,
             **kwargs,
         )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
-        from llama_index.indices.managed.llama_index.retriever import PlatformRetriever
+        from llama_index.indices.managed.llama_cloud.retriever import (
+            LlamaCloudRetriever,
+        )
 
         similarity_top_k = kwargs.pop("similarity_top_k", None)
         dense_similarity_top_k = kwargs.pop("dense_similarity_top_k", None)
         if similarity_top_k is not None:
             dense_similarity_top_k = similarity_top_k
 
-        return PlatformRetriever(
+        return LlamaCloudRetriever(
             self.name,
             project_name=self.project_name,
-            platform_api_key=self._platform_api_key,
-            platform_base_url=self._platform_base_url,
-            platform_app_url=self._platform_app_url,
+            api_key=self._api_key,
+            base_url=self._base_url,
+            app_url=self._app_url,
             timeout=self._timeout,
             dense_similarity_top_k=dense_similarity_top_k,
             **kwargs,
@@ -221,14 +217,14 @@ class PlatformIndex(BaseManagedIndex):
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a set of documents (each a node)."""
-        raise NotImplementedError("_insert not implemented for PlatformIndex.")
+        raise NotImplementedError("_insert not implemented for LlamaCloudIndex.")
 
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
         """Delete a document and it's nodes by using ref_doc_id."""
-        raise NotImplementedError("delete_ref_doc not implemented for PlatformIndex.")
+        raise NotImplementedError("delete_ref_doc not implemented for LlamaCloudIndex.")
 
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
         """Update a document and it's corresponding nodes."""
-        raise NotImplementedError("update_ref_doc not implemented for PlatformIndex.")
+        raise NotImplementedError("update_ref_doc not implemented for LlamaCloudIndex.")

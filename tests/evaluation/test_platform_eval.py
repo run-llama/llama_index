@@ -5,8 +5,8 @@ import pytest
 from llama_index.evaluation.eval_utils import upload_eval_dataset
 from llama_index_client.client import PlatformApi
 
-base_url = os.environ.get("PLATFORM_BASE_URL", None)
-api_key = os.environ.get("PLATFORM_API_KEY", None)
+base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", None)
+api_key = os.environ.get("LLAMA_CLOUD_API_KEY", None)
 python_version = sys.version
 
 

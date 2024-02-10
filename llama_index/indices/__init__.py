@@ -32,6 +32,7 @@ from llama_index.indices.loading import (
     load_indices_from_storage,
 )
 from llama_index.indices.managed.colbert_index import ColbertIndex
+from llama_index.indices.managed.llama_cloud import LlamaCloudIndex
 from llama_index.indices.managed.vectara import VectaraIndex
 from llama_index.indices.managed.zilliz import ZillizCloudPipelineIndex
 from llama_index.indices.multi_modal import MultiModalVectorStoreIndex
@@ -54,6 +55,7 @@ __all__ = [
     "TreeIndex",
     "VectaraIndex",
     "ColbertIndex",
+    "LlamaCloudIndex",
     "ZillizCloudPipelineIndex",
     "DocumentSummaryIndex",
     "KnowledgeGraphIndex",
