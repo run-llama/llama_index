@@ -4,3 +4,5 @@ migration_scripts/
 venv/
 .ipynb_checkpoints
 .__pycache__
+dev_notebooks/
+llamaindex_registry.txt
