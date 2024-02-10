@@ -18,6 +18,11 @@ jobs:
       matrix:
         python-version: ["3.10"]
     steps:
+      - name: clear space
+        env:
+          CI: true
+        shell: bash
+        run: rm -rf /opt/hostedtoolcache/*
       - uses: actions/checkout@v3
       - name: Set up python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -42,4 +47,4 @@ jobs:
         env:
           CI: true
         shell: bash
-        run: rm -rf /opt/hostedtoolcache/CodeQL/*; rm -rf /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/*; rm -rf /opt/hostedtoolcache/Ruby/*; rm -rf /opt/hostedtoolcache/go/*; rm -rf /opt/hostedtoolcache/node/*; poetry run make -s test
+        run: poetry run make -s test
