@@ -214,7 +214,14 @@ class AgentRunner(BaseAgentRunner):
         self.agent_worker = agent_worker
         self.state = state or AgentState()
         self.memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
-        self.callback_manager = callback_manager or CallbackManager([])
+        
+        # get and set callback manager
+        if callback_manager is not None:
+            self.agent_worker.set_callback_manager(callback_manager)
+            self.callback_manager = callback_manager
+        else:
+            self.callback_manager = self.agent_worker.callback_manager
+        
         self.init_task_state_kwargs = init_task_state_kwargs or {}
         self.delete_task_on_finish = delete_task_on_finish
         self.default_tool_choice = default_tool_choice
@@ -265,10 +272,13 @@ class AgentRunner(BaseAgentRunner):
                 )
             else:
                 extra_state = self.init_task_state_kwargs
+
+        callback_manager = kwargs.pop("callback_manager", self.callback_manager)
         task = Task(
             input=input,
             memory=self.memory,
             extra_state=extra_state,
+            callback_manager=callback_manager,
             **kwargs,
         )
         # # put input into memory

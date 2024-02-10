@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from llama_index.bridge.pydantic import BaseModel, Field
-from llama_index.callbacks import trace_method
+from llama_index.callbacks import trace_method, CallbackManager
 from llama_index.chat_engine.types import BaseChatEngine, StreamingAgentChatResponse
 from llama_index.core.base_query_engine import BaseQueryEngine
 from llama_index.core.llms.types import ChatMessage
@@ -147,6 +147,9 @@ class Task(BaseModel):
 
     """
 
+    class Config:
+        arbitrary_types_allowed = True
+
     task_id: str = Field(
         default_factory=lambda: str(uuid.uuid4()), type=str, description="Task ID"
     )
@@ -159,6 +162,12 @@ class Task(BaseModel):
         description=(
             "Conversational Memory. Maintains state before execution of this task."
         ),
+    )
+
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager,
+        exclude=True,
+        description="Callback manager for the task.",
     )
 
     extra_state: Dict[str, Any] = Field(
@@ -220,3 +229,8 @@ class BaseAgentWorker(PromptMixin):
     @abstractmethod
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        # TODO: make this abstractmethod (right now will break some agent impls)
+        pass
