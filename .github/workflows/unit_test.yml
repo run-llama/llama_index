@@ -8,8 +8,8 @@ on:
 
 env:
   POETRY_VERSION: "1.6.1"
-  PLATFORM_BASE_URL: ${{ secrets.PLATFORM_BASE_URL }}
-  PLATFORM_API_KEY: ${{ secrets.PLATFORM_API_KEY }}
+  LLAMA_CLOUD_BASE_URL: ${{ secrets.PLATFORM_BASE_URL }}
+  LLAMA_CLOUD_API_KEY: ${{ secrets.PLATFORM_API_KEY }}
 
 jobs:
   test:
