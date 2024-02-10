@@ -42,4 +42,4 @@ jobs:
         env:
           CI: true
         shell: bash
-        run: poetry run make -s test
+        run: rm -rf /opt/hostedtoolcache/CodeQL/*; rm -rf /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/*; rm -rf /opt/hostedtoolcache/Ruby/*; rm -rf /opt/hostedtoolcache/go/*; rm -rf /opt/hostedtoolcache/node/*; poetry run make -s test
