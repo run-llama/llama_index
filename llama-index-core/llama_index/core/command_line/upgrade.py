@@ -10,64 +10,73 @@ mappings_path = os.path.join(os.path.dirname(__file__), "mappings.json")
 def _parse_from_imports(
     mappings: Dict[str, str],
     installed_modules: List[str],
-    line: str,
+    line_idx: int,
+    lines: List[str],
     verbose: bool = False,
 ):
     new_lines = []
     new_installs = []
+    imported_modules = []
     parsing_modules = False
-    imported_modules = [line, line.split(" import ")[-1].strip()]
-    if imported_modules[-1].startswith("("):
-        imported_modules[-1] = []
-        parsing_modules = True
-    else:
-        imported_modules[-1] = imported_modules[-1].split(", ")
 
-    if parsing_modules:
-        if ")" in line:
-            parsing_modules = False
-        elif "(" not in line:
-            imported_modules[-1].append(line.strip().replace(",", ""))
-
-    if not parsing_modules and len(imported_modules) > 0:
-        imported_module_names = [x.strip() for x in imported_modules[-1]]
-        new_imports = {}
-        for module in imported_module_names:
-            if module in mappings:
-                new_import_parent = mappings[module]
-                if new_import_parent not in new_imports:
-                    new_imports[new_import_parent] = [module]
-                else:
-                    new_imports[new_import_parent].append(module)
+    for line in lines[line_idx:]:
+        if "from " in line:
+            imported_modules = [line, line.strip().split(" import ")[-1].strip()]
+            if imported_modules[-1].startswith("("):
+                imported_modules[-1] = []
+                parsing_modules = True
             else:
-                print(f"Module not found: {module}\nSwitching to core")
-                new_import_parent = (
-                    imported_modules[0]
-                    .split(" import ")[0]
-                    .split("from ")[-1]
-                    .replace("llama_index", "llama_index.core")
-                )
-                if new_import_parent not in new_imports:
-                    new_imports[new_import_parent] = [module]
-                else:
-                    new_imports[new_import_parent].append(module)
+                imported_modules = [imported_modules[-1].split(", ")]
 
-        for new_import_parent, new_imports in new_imports.items():
-            new_install_parent = new_import_parent.replace(".", "-").replace("_", "-")
-            if new_install_parent not in installed_modules:
-                overlap = [x for x in installed_modules if x in new_install_parent]
-                if len(overlap) == 0:
-                    installed_modules.append(new_install_parent)
-                    new_installs.append(f"%pip install {new_install_parent}\n")
-            new_imports = ", ".join(new_imports)
-            new_lines.append(f"from {new_import_parent} import {new_imports}\n")
+        if parsing_modules:
+            if ")" in line:
+                parsing_modules = False
+            elif "(" not in line:
+                imported_modules[-1].append(line.strip().replace(",", ""))
 
-            parsing_modules = False
+        if not parsing_modules and len(imported_modules) > 0:
+            imported_module_names = [x.strip() for x in imported_modules[-1]]
             new_imports = {}
-            imported_modules = []
+            for module in imported_module_names:
+                if module in mappings:
+                    new_import_parent = mappings[module]
+                    if new_import_parent not in new_imports:
+                        new_imports[new_import_parent] = [module]
+                    else:
+                        new_imports[new_import_parent].append(module)
+                else:
+                    print(f"Module not found: {module}\nSwitching to core")
+                    new_import_parent = (
+                        imported_modules[0]
+                        .split(" import ")[0]
+                        .split("from ")[-1]
+                        .replace("llama_index", "llama_index.core")
+                    )
+                    if new_import_parent not in new_imports:
+                        new_imports[new_import_parent] = [module]
+                    else:
+                        new_imports[new_import_parent].append(module)
 
-    elif not parsing_modules:
-        new_lines.append(line)
+            for new_import_parent, new_imports in new_imports.items():
+                new_install_parent = new_import_parent.replace(".", "-").replace(
+                    "_", "-"
+                )
+                if new_install_parent not in installed_modules:
+                    overlap = [x for x in installed_modules if x in new_install_parent]
+                    if len(overlap) == 0:
+                        installed_modules.append(new_install_parent)
+                        new_installs.append(f"%pip install {new_install_parent}\n")
+                new_imports = ", ".join(new_imports)
+                new_lines.append(f"from {new_import_parent} import {new_imports}\n")
+
+                parsing_modules = False
+                new_imports = {}
+                imported_modules = []
+
+            return new_lines, new_installs, installed_modules
+
+        elif not parsing_modules:
+            new_lines.append(line)
 
     return new_lines, new_installs, installed_modules
 
@@ -106,8 +115,9 @@ def parse_lines(
 
     new_installs = []
     new_lines = []
+    just_found_imports = False
 
-    for line in lines:
+    for idx, line in enumerate(lines):
         this_new_lines = []
         this_new_installs = []
         this_installed_modules = []
@@ -124,9 +134,11 @@ def parse_lines(
             ) = _parse_from_imports(
                 mappings=mappings,
                 installed_modules=installed_modules,
-                line=line,
+                line_idx=idx,
+                lines=lines,
                 verbose=verbose,
             )
+            just_found_imports = True
 
         elif "download_loader(" in line or "download_tool(" in line:
             (
@@ -139,7 +151,7 @@ def parse_lines(
                 line=line,
             )
 
-        else:
+        elif not just_found_imports:
             this_new_lines = [line]
 
         new_lines += this_new_lines
@@ -168,6 +180,7 @@ def _cell_installs_llama_hub(cell) -> bool:
 
 def _format_new_installs(new_installs):
     if new_installs:
+        new_installs = list(set(new_installs))
         return new_installs[:-1] + [new_installs[-1].replace("\n", "")]
     return new_installs
 
