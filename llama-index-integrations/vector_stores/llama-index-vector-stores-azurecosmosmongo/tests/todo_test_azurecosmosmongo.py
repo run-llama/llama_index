@@ -1,8 +1,10 @@
 """Test Azue CosmosDB MongoDB vCore Vector Search functionality."""
+
 from __future__ import annotations
 
 import os
 from time import sleep
+from typing import List
 
 import pytest
 
@@ -106,7 +108,7 @@ class TestAzureMongovCoreVectorSearch:
 
         assert collection.count_documents({}) == 0
 
-    def test_query(self, node_embeddings: list[TextNode]) -> None:
+    def test_query(self, node_embeddings: List[TextNode]) -> None:
         vector_store = AzureCosmosDBMongoDBVectorSearch(
             mongodb_client=test_client,  # type: ignore
             db_name=DB_NAME,

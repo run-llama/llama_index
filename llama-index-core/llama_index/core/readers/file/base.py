@@ -113,7 +113,7 @@ class SimpleDirectoryReader(BaseReader):
             Default is None.
     """
 
-    supported_suffix: list[str] = []
+    supported_suffix: List[str] = []
 
     def __init__(
         self,
