@@ -9,9 +9,9 @@ LlamaIndex offers key modules to measure the quality of generated results. We al
 Does the response match the retrieved context? Does it also match the query? Does it match the reference answer or guidelines? Here's a simple example that evaluates a single response for Faithfulness, i.e. whether the response is aligned to the context, such as being free from hallucinations:
 
 ```python
-from llama_index import VectorStoreIndex
-from llama_index.llms import OpenAI
-from llama_index.evaluation import FaithfulnessEvaluator
+from llama_index.core import VectorStoreIndex
+from llama_index.llms.openai import OpenAI
+from llama_index.core.evaluation import FaithfulnessEvaluator
 
 # create llm
 llm = OpenAI(model="gpt-4", temperature=0.0)
@@ -41,7 +41,7 @@ You can learn more in our module guides about [response evaluation](/module_guid
 Are the retrieved sources relevant to the query? This is a simple example that evaluates a single retrieval:
 
 ```python
-from llama_index.evaluation import RetrieverEvaluator
+from llama_index.core.evaluation import RetrieverEvaluator
 
 # define retriever somewhere (e.g. from index)
 # retriever = index.as_retriever(similarity_top_k=2)

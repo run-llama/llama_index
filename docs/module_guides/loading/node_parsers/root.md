@@ -9,8 +9,8 @@ Node parsers are a simple abstraction that take a list of documents, and chunk t
 Node parsers can be used on their own:
 
 ```python
-from llama_index import Document
-from llama_index.node_parser import SentenceSplitter
+from llama_index.core import Document
+from llama_index.core.node_parser import SentenceSplitter
 
 node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
 
@@ -24,9 +24,9 @@ nodes = node_parser.get_nodes_from_documents(
 Node parsers can be included in any set of transformations with an ingestion pipeline.
 
 ```python
-from llama_index import SimpleDirectoryReader
-from llama_index.ingestion import IngestionPipeline
-from llama_index.node_parser import TokenTextSplitter
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.node_parser import TokenTextSplitter
 
 documents = SimpleDirectoryReader("./data").load_data()
 
@@ -40,8 +40,8 @@ nodes = pipeline.run(documents=documents)
 Or set inside a `transformations` or global settings to be used automatically when an index is constructed using `.from_documents()`:
 
 ```python
-from llama_index import SimpleDirectoryReader, VectorStoreIndex
-from llama_index.text_splitter import SentenceSplitter
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core.node_parser import SentenceSplitter
 
 documents = SimpleDirectoryReader("./data").load_data()
 

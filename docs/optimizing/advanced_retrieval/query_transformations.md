@@ -26,11 +26,11 @@ Query transformations have multiple use cases:
 To use HyDE, an example code snippet is shown below.
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.indices.query.query_transform.base import HyDEQueryTransform
-from llama_index.query_engine.transform_query_engine import (
-    TransformQueryEngine,
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.indices.query.query_transform.base import (
+    HyDEQueryTransform,
 )
+from llama_index.core.query_engine import TransformQueryEngine
 
 # load documents, build index
 documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
@@ -61,7 +61,7 @@ An example image is shown below.
 Here's a corresponding example code snippet.
 
 ```python
-from llama_index.indices.query.query_transform.base import (
+from llama_index.core.indices.query.query_transform.base import (
     StepDecomposeQueryTransform,
 )
 

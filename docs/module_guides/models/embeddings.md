@@ -15,7 +15,7 @@ There are many embedding models to pick from. By default, LlamaIndex uses `text-
 Most commonly in LlamaIndex, embedding models will be specified in the `Settings` object, and then used in a vector index. The embedding model will be used to embed the documents used during index construction, as well as embedding any queries you make using the query engine later on. You can also specify embedding models per-index.
 
 ```python
-from llama_index.embeddings import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import Settings
 
 # global
@@ -28,7 +28,7 @@ index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
 To save costs, you may want to use a local model.
 
 ```python
-from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
 
 Settings.embed_model = HuggingFaceEmbedding(
@@ -47,8 +47,8 @@ The most common usage for an embedding model will be setting it in the global `S
 By default, LlamaIndex will use `text-embedding-ada-002`, which is what the example below manually sets up for you.
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.embeddings import OpenAIEmbedding
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import Settings
 
 # global default
@@ -83,8 +83,8 @@ embed_model = OpenAIEmbedding(embed_batch_size=42)
 The easiest way to use a local model is:
 
 ```python
-from llama_index.embeddings import HuggingFaceEmbedding
-from llama_index import Settings
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.core import Settings
 
 Settings.embed_model = HuggingFaceEmbedding(
     model_name="BAAI/bge-small-en-v1.5"
@@ -104,7 +104,7 @@ pip install transformers optimum[exporters]
 Creation with specifying the model and output path:
 
 ```python
-from llama_index.embeddings import OptimumEmbedding
+from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
 
 OptimumEmbedding.create_and_save_optimum_model(
     "BAAI/bge-small-en-v1.5", "./bge_onnx"
@@ -141,7 +141,7 @@ The example below uses Instructor Embeddings ([install/setup details here](https
 ```python
 from typing import Any, List
 from InstructorEmbedding import INSTRUCTOR
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.core.embeddings import BaseEmbedding
 
 
 class InstructorEmbeddings(BaseEmbedding):

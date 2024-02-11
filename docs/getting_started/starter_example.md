@@ -35,7 +35,7 @@ set OPENAI_API_KEY=XXXXX
 In the same folder where you created the `data` folder, create a file called `starter.py` file with the following:
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("data").load_data()
 index = VectorStoreIndex.from_documents(documents)
@@ -91,7 +91,7 @@ Of course, you don't get the benefits of persisting unless you load the data. So
 
 ```python
 import os.path
-from llama_index import (
+from llama_index.core import (
     VectorStoreIndex,
     SimpleDirectoryReader,
     StorageContext,

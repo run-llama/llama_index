@@ -7,7 +7,7 @@
 The most basic example usage of LlamaIndex is through semantic search. We provide a simple in-memory vector store for you to get started, but you can also choose to use any one of our [vector store integrations](/community/integrations/vector_stores.md):
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("data").load_data()
 index = VectorStoreIndex.from_documents(documents)
@@ -72,8 +72,8 @@ To do this, first build the sub-indices over different data sources.
 Then construct the corresponding query engines, and give each query engine a description to obtain a `QueryEngineTool`.
 
 ```python
-from llama_index import TreeIndex, VectorStoreIndex
-from llama_index.tools import QueryEngineTool
+from llama_index.core import TreeIndex, VectorStoreIndex
+from llama_index.core.tools import QueryEngineTool
 
 ...
 
@@ -96,7 +96,7 @@ Then, we define a `RouterQueryEngine` over them.
 By default, this uses a `LLMSingleSelector` as the router, which uses the LLM to choose the best sub-index to router the query to, given the descriptions.
 
 ```python
-from llama_index.query_engine import RouterQueryEngine
+from llama_index.core.query_engine import RouterQueryEngine
 
 query_engine = RouterQueryEngine.from_defaults(
     query_engine_tools=[tool1, tool2]
@@ -116,9 +116,7 @@ response = query_engine.query(
 You can explicitly perform compare/contrast queries with a **query transformation** module within a ComposableGraph.
 
 ```python
-from llama_index.indices.query.query_transform.base import (
-    DecomposeQueryTransform,
-)
+from llama_index.core.query.query_transform.base import DecomposeQueryTransform
 
 decompose_transform = DecomposeQueryTransform(
     service_context.llm, verbose=True
@@ -144,7 +142,7 @@ sub-queries against sub-documents before synthesizing the final answer.
 To do this, first define an index for each document/data source, and wrap it with a `QueryEngineTool` (similar to above):
 
 ```python
-from llama_index.tools import QueryEngineTool, ToolMetadata
+from llama_index.core.tools import QueryEngineTool, ToolMetadata
 
 query_engine_tools = [
     QueryEngineTool(
@@ -174,7 +172,7 @@ query_engine_tools = [
 Then, we define a `SubQuestionQueryEngine` over these tools:
 
 ```python
-from llama_index.query_engine import SubQuestionQueryEngine
+from llama_index.core.query_engine import SubQuestionQueryEngine
 
 query_engine = SubQuestionQueryEngine.from_defaults(
     query_engine_tools=query_engine_tools

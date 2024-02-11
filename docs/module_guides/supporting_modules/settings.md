@@ -13,7 +13,7 @@ The following attributes can be configured on the `Settings` object:
 The LLM is used to respond to prompts and queries, and is responsible for writing natural language responses.
 
 ```python
-from llama_index.llms import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 
 Settings.llm = OpenAI(model="gpt-3.5-turbo", temperature=0.1)
@@ -24,7 +24,7 @@ Settings.llm = OpenAI(model="gpt-3.5-turbo", temperature=0.1)
 The embedding model is used to convert text to numerical representationss, used for calculating similarity and top-k retrieval.
 
 ```python
-from llama_index.embeddings import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import Settings
 
 Settings.embed_model = OpenAIEmbedding(
@@ -37,7 +37,7 @@ Settings.embed_model = OpenAIEmbedding(
 The node parser / text splitter is used to parse documents into smaller chunks, called nodes.
 
 ```python
-from llama_index.text_splitter import SentenceSplitter
+from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import Settings
 
 Settings.text_splitter = SentenceSplitter(chunk_size=1024)
@@ -55,7 +55,7 @@ Settings.chunk_overlap = 20
 Transformations are applied to `Document`s during ingestion. By default, the `node_parser`/`text_splitter` is used, but this can be overridden and customized further.
 
 ```python
-from llama_index.text_splitter import SentenceSplitter
+from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import Settings
 
 Settings.transformations = [SentenceSplitter(chunk_size=1024)]
@@ -86,7 +86,7 @@ Settings.tokenzier = AutoTokenizer.from_pretrained(
 You can set a global callback manager, which can be used to observe and consume events generated throughout the llama-index code
 
 ```python
-from llama_index.callbacks import TokenCountingHandler, CallbackManager
+from llama_index.core.callbacks import TokenCountingHandler, CallbackManager
 from llama_index.core import Settings
 
 token_counter = TokenCountingHandler()

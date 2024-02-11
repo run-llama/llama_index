@@ -27,9 +27,9 @@ To load in a Mistral-7B model just do `ollama pull mistral`
 In the same folder where you created the `data` folder, create a file called `starter.py` file with the following:
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader, Settings
-from llama_index.embeddings import resolve_embed_model
-from llama_index.llms import Ollama
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.core.embeddings import resolve_embed_model
+from llama_index.llms.ollama import Ollama
 
 documents = SimpleDirectoryReader("data").load_data()
 

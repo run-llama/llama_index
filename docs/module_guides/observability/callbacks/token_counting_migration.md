@@ -12,8 +12,8 @@ Here is a minimum example of using the new `TokenCountingHandler` with an OpenAI
 
 ```python
 import tiktoken
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.callbacks import CallbackManager, TokenCountingHandler
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.core import Settings
 
 # you can set a tokenizer directly, or optionally let it default

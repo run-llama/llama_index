@@ -60,10 +60,7 @@ Furthermore, when changing the chunk size for a vector index, you may also want 
 Here is a full example:
 
 ```
-from llama_index import (
-    SimpleDirectoryReader,
-    VectorStoreIndex,
-)
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
 from llama_index.core import Settings
 
 documents = SimpleDirectoryReader("./data").load_data()
@@ -110,8 +107,8 @@ Before throwing your documents into a vector index, it can be useful to attach m
 Metadata filters can be set manually, so that only nodes with the matching metadata are returned:
 
 ```python
-from llama_index import VectorStoreIndex, Document
-from llama_index.vector_stores import MetadataFilters, ExactMatchFilter
+from llama_index.core import VectorStoreIndex, Document
+from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
 
 documents = [
     Document(text="text", metadata={"author": "LlamaIndex"}),

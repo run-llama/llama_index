@@ -17,11 +17,9 @@ Confused about where response synthesizer fits in the pipeline? Read the [high-l
 Use a response synthesizer on it's own:
 
 ```python
-from llama_index.schema import Node
-from llama_index.response_synthesizers import (
-    ResponseMode,
-    get_response_synthesizer,
-)
+from llama_index.core.data_structs import Node
+from llama_index.core.response_synthesizers import ResponseMode
+from llama_index.core import get_response_synthesizer
 
 response_synthesizer = get_response_synthesizer(
     response_mode=ResponseMode.COMPACT
@@ -48,8 +46,9 @@ You can find more details on all available response synthesizers, modes, and how
 Configuring the response synthesizer for a query engine using `response_mode`:
 
 ```python
-from llama_index.schema import Node, NodeWithScore
-from llama_index.response_synthesizers import get_response_synthesizer
+from llama_index.core.data_structs import Node
+from llama_index.core.schema import NodeWithScore
+from llama_index.core import get_response_synthesizer
 
 response_synthesizer = get_response_synthesizer(response_mode="compact")
 
@@ -176,7 +175,7 @@ class BaseSynthesizer(ABC):
 When using either the `"refine"` or `"compact"` response synthesis modules, you may find it beneficial to experiment with the `structured_answer_filtering` option.
 
 ```
-from llama_index.response_synthesizers import get_response_synthesizer
+from llama_index.core import get_response_synthesizer
 
 response_synthesizer = get_response_synthesizer(structured_answer_filtering=True)
 ```
@@ -194,8 +193,8 @@ You can specify these additional variables in the `**kwargs` for `get_response`.
 For example,
 
 ```python
-from llama_index import PromptTemplate
-from llama_index.response_synthesizers import TreeSummarize
+from llama_index.core import PromptTemplate
+from llama_index.core.response_synthesizers import TreeSummarize
 
 # NOTE: we add an extra tone_name variable here
 qa_prompt_tmpl = (

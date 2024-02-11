@@ -16,7 +16,7 @@ LLMs are used at multiple different stages of your pipeline:
 LlamaIndex provides a single interface to a large number of different LLMs, allowing you to pass in any LLM you choose to any stage of the pipeline. It can be as simple as this:
 
 ```python
-from llama_index.llms import OpenAI
+from llama_index.llms.openai import OpenAI
 
 response = OpenAI().complete("Paul Graham is ")
 print(response)
@@ -25,9 +25,9 @@ print(response)
 Usually you will instantiate an LLM and pass it to `Settings`, which you then pass to other stages of the pipeline, as in this example:
 
 ```python
-from llama_index.llms import OpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 Settings.llm = OpenAI(temperature=0.2, model="gpt-4")
 
@@ -54,7 +54,7 @@ LlamaIndex doesn't just supported hosted LLM APIs; you can also [run a local mod
 For example, if you have [Ollama](https://github.com/ollama/ollama) installed and running:
 
 ```python
-from llama_index.llms import Ollama
+from llama_index.llms.ollama import Ollama
 from llama_index.core import Settings
 
 Settings.llm = Ollama(model="llama2", request_timeout=60.0)

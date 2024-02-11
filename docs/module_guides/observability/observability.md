@@ -19,7 +19,7 @@ Each provider has similarities and differences. Take a look below for the full s
 To toggle, you will generally just need to do the following:
 
 ```python
-from llama_index import set_global_handler
+from llama_index.core import set_global_handler
 
 # general usage
 set_global_handler("<handler_name>", **kwargs)
@@ -57,7 +57,7 @@ We offer a rich set of integrations with our partners. A short description + usa
 #### Usage Pattern
 
 ```python
-from llama_index import set_global_handler
+from llama_index.core import set_global_handler
 
 set_global_handler("deepeval")
 
@@ -76,13 +76,15 @@ Prompts allows users to log/trace/inspect the execution flow of LlamaIndex durin
 #### Usage Pattern
 
 ```python
-from llama_index import set_global_handler
+from llama_index.core import set_global_handler
 
 set_global_handler("wandb", run_args={"project": "llamaindex"})
 
 # NOTE: No need to do the following
-# from llama_index.callbacks import WandbCallbackHandler, CallbackManager
-# from llama_index.core import Settings
+from llama_index.callbacks.wandb import WandbCallbackHandler
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core import Settings
+
 # wandb_callback = WandbCallbackHandler(run_args={"project": "llamaindex"})
 # Settings.callback_manager = CallbackManager([wandb_callback])
 
@@ -183,8 +185,10 @@ import llama_index.core
 llama_index.core.set_global_handler("openinference")
 
 # NOTE: No need to do the following
-# from llama_index.callbacks import OpenInferenceCallbackHandler, CallbackManager
-# from llama_index.core import Settings
+from llama_index.callbacks.openinference import OpenInferenceCallbackHandler
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core import Settings
+
 # callback_handler = OpenInferenceCallbackHandler()
 # Settings.callback_manager = CallbackManager([callback_handler])
 
@@ -193,7 +197,7 @@ for query in queries:
     query_engine.query(query)
 
 # View your LLM app data as a dataframe in OpenInference format.
-from llama_index.callbacks.open_inference_callback import as_dataframe
+from llama_index.core.callbacks.open_inference_callback import as_dataframe
 
 query_data_buffer = llama_index.core.global_handler.flush_query_data_buffer()
 query_dataframe = as_dataframe(query_data_buffer)
@@ -247,7 +251,7 @@ HoneyHive allows users to trace the execution flow of any LLM pipeline. Users ca
 #### Usage Pattern
 
 ```python
-from llama_index import set_global_handler
+from llama_index.core import set_global_handler
 
 set_global_handler(
     "honeyhive",
@@ -257,9 +261,11 @@ set_global_handler(
 )
 
 # NOTE: No need to do the following
-# from llama_index.callbacks import CallbackManager
+from llama_index.core.callbacks import CallbackManager
+
 # from honeyhive.utils.llamaindex_tracer import HoneyHiveLlamaIndexTracer
-# from llama_index.core import Settings
+from llama_index.core import Settings
+
 # hh_tracer = HoneyHiveLlamaIndexTracer(
 #     project="My HoneyHive Project",
 #     name="My LLM Pipeline Name",
@@ -292,7 +298,7 @@ import os
 
 os.environ["PROMPTLAYER_API_KEY"] = "pl_7db888a22d8171fb58aab3738aa525a7"
 
-from llama_index import set_global_handler
+from llama_index.core import set_global_handler
 
 # pl_tags are optional, to help you organize your prompts and apps
 set_global_handler("promptlayer", pl_tags=["paul graham", "essay"])

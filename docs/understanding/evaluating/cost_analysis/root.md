@@ -60,7 +60,7 @@ Tokens are counted using the `TokenCountingHandler` callback. See the [example n
 To predict token usage of LLM calls, import and instantiate the MockLLM as shown below. The `max_tokens` parameter is used as a "worst case" prediction, where each LLM response will contain exactly that number of tokens. If `max_tokens` is not specified, then it will simply predict back the prompt.
 
 ```python
-from llama_index.llms import MockLLM
+from llama_index.core.llms import MockLLM
 from llama_index.core import Settings
 
 # use a mock llm globally
@@ -74,7 +74,7 @@ You can then use this predictor during both index construction and querying.
 You may also predict the token usage of embedding calls with `MockEmbedding`.
 
 ```python
-from llama_index import MockEmbedding
+from llama_index.core import MockEmbedding
 from llama_index.core import Settings
 
 # use a mock embedding globally

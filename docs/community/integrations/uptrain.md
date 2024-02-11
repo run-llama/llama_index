@@ -25,7 +25,7 @@ import os
 import openai
 import pandas as pd
 
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from uptrain import Evals, EvalLlamaIndex, Settings
 ```
 

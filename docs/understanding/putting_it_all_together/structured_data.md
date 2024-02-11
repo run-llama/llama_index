@@ -74,7 +74,7 @@ Finally, we can wrap the SQLAlchemy engine with our SQLDatabase wrapper;
 this allows the db to be used within LlamaIndex:
 
 ```python
-from llama_index import SQLDatabase
+from llama_index.core import SQLDatabase
 
 sql_database = SQLDatabase(engine, include_tables=["city_stats"])
 ```
@@ -89,7 +89,7 @@ If we don't the query engine will pull all the schema context, which could
 overflow the context window of the LLM.
 
 ```python
-from llama_index.indices.struct_store import NLSQLTableQueryEngine
+from llama_index.core.query_engine import NLSQLTableQueryEngine
 
 query_engine = NLSQLTableQueryEngine(
     sql_database=sql_database,
@@ -114,7 +114,7 @@ SQLDatabase and produces a Node object for each SQLTableSchema object passed
 into the ObjectIndex constructor.
 
 ```python
-from llama_index.objects import (
+from llama_index.core.objects import (
     SQLTableNodeMapping,
     ObjectIndex,
     SQLTableSchema,
@@ -159,7 +159,7 @@ Once we have defined our table schema index obj_index, we can construct a SQLTab
 by passing in our SQLDatabase, and a retriever constructed from our object index.
 
 ```python
-from llama_index.indices.struct_store import SQLTableRetrieverQueryEngine
+from llama_index.core.indices.struct_store import SQLTableRetrieverQueryEngine
 
 query_engine = SQLTableRetrieverQueryEngine(
     sql_database, obj_index.as_retriever(similarity_top_k=1)

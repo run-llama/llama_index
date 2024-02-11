@@ -18,7 +18,7 @@ don't have to write the boilerplate code of defining the LLM interface yourself.
 The following code snippet shows how you can get started using LLMs.
 
 ```python
-from llama_index.llms import OpenAI
+from llama_index.llms.openai import OpenAI
 
 # non-streaming
 resp = OpenAI().complete("Paul Graham is ")
@@ -44,7 +44,7 @@ The single requirement for a tokenizer is that it is a callable function, that t
 You can set a global tokenizer like so:
 
 ```python
-from llama_index import set_global_tokenizer
+from llama_index.core import set_global_tokenizer
 
 # tiktoken
 import tiktoken

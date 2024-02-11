@@ -47,7 +47,7 @@ Alternatively:
 
 ```py
 from llama_index.core import Settings
-from llama_index.llms import OpenAI
+from llama_index.llms.openai import OpenAI
 
 llm = OpenAI(system_prompt="Always respond in Italian.")
 

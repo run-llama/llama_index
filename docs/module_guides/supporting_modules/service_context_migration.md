@@ -9,8 +9,8 @@ Previously with the service context, various modules often did not use it, and i
 Configuring the global settings means you are change the default for EVERY module in LlamaIndex. This means if you aren't using OpenAI, an example config might look like:
 
 ```python
-from llama_index.llms import Ollama
-from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index.llms.ollama import Ollama
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
 
 Settings.llm = Ollama(model="llama2", request_timeout=120.0)
@@ -30,10 +30,10 @@ Below is an example of completely migrating from `ServiceContext` to `Settings`:
 **Before**
 
 ```python
-from llama_index.embeddings import OpenAIEmbedding
-from llama_index.node_parser import SentenceSplitter
-from llama_index.llms import OpenAI
-from llama_index import ServiceContext, set_global_service_context
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.llms.openai import OpenAI
+from llama_index.core import ServiceContext, set_global_service_context
 
 service_context = ServiceContext.from_defaults(
     llm=OpenAI(model="gpt-3.5-turbo"),
@@ -48,9 +48,9 @@ set_global_service_context(service_context)
 **After**
 
 ```python
-from llama_index.embeddings import OpenAIEmbedding
-from llama_index.node_parser import SentenceSplitter
-from llama_index.llms import OpenAI
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 
 Settings.llm = OpenAI(model="gpt-3.5-turbo")
