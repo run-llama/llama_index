@@ -30,8 +30,8 @@ index = load_index_from_storage(storage_context)
 
 ```{tip}
 Important: if you had initialized your index with a custom
-`ServiceContext` object, you will need to pass in the same
-ServiceContext during `load_index_from_storage`, or have it set as the [global service context](/module_guides/supporting_modules/service_context.md).
+`transformations`, `embed_model`, etc., you will need to pass in the same
+options during `load_index_from_storage`, or have it set as the [global settings](/module_guides/supporting_modules/settings.md).
 ```
 
 ## Using Vector Stores

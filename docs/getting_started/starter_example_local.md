@@ -27,24 +27,20 @@ To load in a Mistral-7B model just do `ollama pull mistral`
 In the same folder where you created the `data` folder, create a file called `starter.py` file with the following:
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
+from llama_index import VectorStoreIndex, SimpleDirectoryReader, Settings
 from llama_index.embeddings import resolve_embed_model
 from llama_index.llms import Ollama
 
 documents = SimpleDirectoryReader("data").load_data()
 
 # bge-m3 embedding model
-embed_model = resolve_embed_model("local:BAAI/bge-small-en-v1.5")
+Settings.embed_model = resolve_embed_model("local:BAAI/bge-small-en-v1.5")
 
 # ollama
-llm = Ollama(model="mistral", request_timeout=30.0)
-
-service_context = ServiceContext.from_defaults(
-    embed_model=embed_model, llm=llm
-)
+Settings.llm = Ollama(model="mistral", request_timeout=30.0)
 
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents,
 )
 ```
 

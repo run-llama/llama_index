@@ -56,11 +56,7 @@ output_parser = GuardrailsOutputParser.from_rail_string(
 llm = OpenAI(output_parser=output_parser)
 
 # obtain a structured response
-from llama_index import ServiceContext
-
-ctx = ServiceContext.from_defaults(llm=llm)
-
-query_engine = index.as_query_engine(service_context=ctx)
+query_engine = index.as_query_engine(llm=llm)
 response = query_engine.query(
     "What are the three items the author did growing up?",
 )
@@ -110,11 +106,7 @@ output_parser = LangchainOutputParser(lc_output_parser)
 llm = OpenAI(output_parser=output_parser)
 
 # obtain a structured response
-from llama_index import ServiceContext
-
-ctx = ServiceContext.from_defaults(llm=llm)
-
-query_engine = index.as_query_engine(service_context=ctx)
+query_engine = index.as_query_engine(llm=llm)
 response = query_engine.query(
     "What are a few things the author did growing up?",
 )

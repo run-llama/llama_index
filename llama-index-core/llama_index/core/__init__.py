@@ -74,6 +74,9 @@ from llama_index.core.utilities.sql_wrapper import SQLDatabase
 # global tokenizer
 from llama_index.core.utils import get_tokenizer, set_global_tokenizer
 
+# global settings
+from llama_index.core.settings import Settings
+
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
 logging.getLogger(__name__).addHandler(NullHandler())
@@ -135,6 +138,7 @@ __all__ = [
     "set_global_handler",
     "set_global_tokenizer",
     "get_tokenizer",
+    "Settings",
 ]
 
 # eval global toggle

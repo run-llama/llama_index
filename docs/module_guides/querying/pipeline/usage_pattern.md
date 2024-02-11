@@ -39,7 +39,6 @@ module inputs.
 ```python
 from llama_index.postprocessor import CohereRerank
 from llama_index.response_synthesizers import TreeSummarize
-from llama_index import ServiceContext
 
 # define modules
 prompt_str = "Please generate a question about Paul Graham's life regarding the following topic {topic}"
@@ -47,9 +46,7 @@ prompt_tmpl = PromptTemplate(prompt_str)
 llm = OpenAI(model="gpt-3.5-turbo")
 retriever = index.as_retriever(similarity_top_k=3)
 reranker = CohereRerank()
-summarizer = TreeSummarize(
-    service_context=ServiceContext.from_defaults(llm=llm)
-)
+summarizer = TreeSummarize(llm=llm)
 
 # define query pipeline
 p = QueryPipeline(verbose=True)
@@ -108,9 +105,7 @@ You may need to convert a module via `as_query_component`.
 Here's an example:
 
 ```python
-summarizer = TreeSummarize(
-    service_context=ServiceContext.from_defaults(llm=llm)
-)
+summarizer = TreeSummarize(llm=llm)
 summarizer_c = summarizer.as_query_component(partial={"nodes": nodes})
 # can define a chain because llm output goes into query_str, nodes is pre-filled
 p = QueryPipeline(chain=[prompt_tmpl, llm, summarizer_c])
