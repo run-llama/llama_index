@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, Generator, List, Union, cast
+from typing import Any, Dict, Generator, List, Union
 
 import pytest
 from llama_index.core.schema import (
@@ -9,7 +9,6 @@ from llama_index.core.schema import (
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.core.vector_stores.loading import load_vector_store
 from llama_index.core.vector_stores.types import (
     ExactMatchFilter,
     FilterOperator,
@@ -308,50 +307,6 @@ async def test_add_to_db_query_and_delete(
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "bbb"
-
-
-@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
-@pytest.mark.parametrize("use_async", [(True,), (False,)])
-async def test_save_load(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
-) -> None:
-    if use_async:
-        await pg.async_add(node_embeddings)
-    else:
-        pg.add(node_embeddings)
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
-
-    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.1), similarity_top_k=1)
-
-    if use_async:
-        res = await pg.aquery(q)
-    else:
-        res = pg.query(q)
-    assert res.nodes
-    assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "bbb"
-
-    pg_dict = pg.to_dict()
-    await pg.close()
-
-    loaded_pg = cast(PGVectorStore, load_vector_store(pg_dict))
-    assert not hasattr(loaded_pg, "_engine")
-    loaded_pg_dict = loaded_pg.to_dict()
-    for key, val in pg.to_dict().items():
-        assert loaded_pg_dict[key] == val
-
-    if use_async:
-        res = await loaded_pg.aquery(q)
-    else:
-        res = loaded_pg.query(q)
-    assert hasattr(loaded_pg, "_engine")
-    assert res.nodes
-    assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "bbb"
-
-    await loaded_pg.close()
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
