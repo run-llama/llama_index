@@ -461,7 +461,7 @@ class IngestionPipeline(BaseModel):
                         repeat(cache_collection),
                     ),
                 )
-                nodes = reduce(lambda x, y: x + y, nodes_parallel)
+                nodes = reduce(lambda x, y: x + y, nodes_parallel, [])
         else:
             nodes = run_transformations(
                 nodes_to_run,
@@ -623,7 +623,7 @@ class IngestionPipeline(BaseModel):
                     for batch in node_batches
                 ]
                 result: List[List[BaseNode]] = await asyncio.gather(*tasks)
-                nodes = reduce(lambda x, y: x + y, result)
+                nodes = reduce(lambda x, y: x + y, result, [])
         else:
             nodes = await arun_transformations(
                 nodes_to_run,

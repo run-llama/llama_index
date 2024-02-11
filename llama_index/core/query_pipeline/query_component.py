@@ -305,45 +305,34 @@ class Link(BaseModel):
         default=None, description="Destination component input key"
     )
 
+    condition_fn: Optional[Callable] = Field(
+        default=None, description="Condition to determine if link should be followed"
+    )
+    input_fn: Optional[Callable] = Field(
+        default=None, description="Input to destination component"
+    )
+
     def __init__(
         self,
         src: str,
         dest: str,
         src_key: Optional[str] = None,
         dest_key: Optional[str] = None,
+        condition_fn: Optional[Callable] = None,
+        input_fn: Optional[Callable] = None,
     ) -> None:
         """Init params."""
         # NOTE: This is to enable positional args.
-        super().__init__(src=src, dest=dest, src_key=src_key, dest_key=dest_key)
-
-
-class ConditionalLinks(BaseModel):
-    """Conditional Links between source and multiple destinations."""
-
-    src: str = Field(..., description="Source component name")
-    fn: Callable = Field(
-        ..., description="Function to determine which destination to go to"
-    )
-    cond_dest_dict: Dict[str, Any] = Field(
-        ..., description="dictionary of value to destination component name"
-    )
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    def __init__(
-        self,
-        src: str,
-        fn: Callable,
-        cond_dest_dict: Dict[str, Any],
-    ) -> None:
-        """Init params."""
-        # NOTE: This is to enable positional args.
-        super().__init__(src=src, fn=fn, cond_dest_dict=cond_dest_dict)
+        super().__init__(
+            src=src,
+            dest=dest,
+            src_key=src_key,
+            dest_key=dest_key,
+            condition_fn=condition_fn,
+            input_fn=input_fn,
+        )
 
 
 # accept both QueryComponent and ChainableMixin as inputs to query pipeline
 # ChainableMixin modules will be converted to components via `as_query_component`
 QUERY_COMPONENT_TYPE = Union[QueryComponent, ChainableMixin]
-
-LINK_TYPE = Union[Link, ConditionalLinks]

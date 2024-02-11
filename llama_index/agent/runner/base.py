@@ -173,6 +173,10 @@ class AgentState(BaseModel):
         """Get step queue."""
         return self.task_dict[task_id].step_queue
 
+    def reset(self) -> None:
+        """Reset."""
+        self.task_dict = {}
+
 
 class AgentRunner(BaseAgentRunner):
     """Agent runner.
@@ -246,6 +250,7 @@ class AgentRunner(BaseAgentRunner):
 
     def reset(self) -> None:
         self.memory.reset()
+        self.state.reset()
 
     def create_task(self, input: str, **kwargs: Any) -> Task:
         """Create task."""
