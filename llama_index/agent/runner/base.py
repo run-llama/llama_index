@@ -208,15 +208,33 @@ class AgentRunner(BaseAgentRunner):
         init_task_state_kwargs: Optional[dict] = None,
         delete_task_on_finish: bool = False,
         default_tool_choice: str = "auto",
+        verbose: bool = False,
     ) -> None:
         """Initialize."""
         self.agent_worker = agent_worker
         self.state = state or AgentState()
         self.memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
-        self.callback_manager = callback_manager or CallbackManager([])
+
+        # get and set callback manager
+        if callback_manager is not None:
+            self.agent_worker.set_callback_manager(callback_manager)
+            self.callback_manager = callback_manager
+        else:
+            # TODO: This is *temporary*
+            # Stopgap before having a callback on the BaseAgentWorker interface.
+            # Doing that requires a bit more refactoring to make sure existing code
+            # doesn't break.
+            if hasattr(self.agent_worker, "callback_manager"):
+                self.callback_manager = (
+                    self.agent_worker.callback_manager or CallbackManager()
+                )
+            else:
+                self.callback_manager = CallbackManager()
+
         self.init_task_state_kwargs = init_task_state_kwargs or {}
         self.delete_task_on_finish = delete_task_on_finish
         self.default_tool_choice = default_tool_choice
+        self.verbose = verbose
 
     @staticmethod
     def from_llm(
@@ -263,10 +281,13 @@ class AgentRunner(BaseAgentRunner):
                 )
             else:
                 extra_state = self.init_task_state_kwargs
+
+        callback_manager = kwargs.pop("callback_manager", self.callback_manager)
         task = Task(
             input=input,
             memory=self.memory,
             extra_state=extra_state,
+            callback_manager=callback_manager,
             **kwargs,
         )
         # # put input into memory
@@ -325,6 +346,9 @@ class AgentRunner(BaseAgentRunner):
         if input is not None:
             step.input = input
 
+        if self.verbose:
+            print(f"> Running step {step.step_id}. Step input: {step.input}")
+
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
 
@@ -358,6 +382,9 @@ class AgentRunner(BaseAgentRunner):
         step = step or step_queue.popleft()
         if input is not None:
             step.input = input
+
+        if self.verbose:
+            print(f"> Running step {step.step_id}. Step input: {step.input}")
 
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
