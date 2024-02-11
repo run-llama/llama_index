@@ -22,10 +22,8 @@ from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.base.query_pipeline.query import (
-    LINK_TYPE,
     QUERY_COMPONENT_TYPE,
     ChainableMixin,
-    ConditionalLinks,
     InputKeys,
     Link,
     OutputKeys,
@@ -34,22 +32,10 @@ from llama_index.core.base.query_pipeline.query import (
 from llama_index.core.utils import print_text
 
 
-def get_single_output(
+def get_output(
+    src_key: Optional[str],
     output_dict: Dict[str, Any],
 ) -> Any:
-    """Get single output."""
-    if len(output_dict) != 1:
-        raise ValueError("Output dict must have exactly one key.")
-    return next(iter(output_dict.values()))
-
-
-def add_output_to_module_inputs(
-    src_key: Optional[str],
-    dest_key: str,
-    output_dict: Dict[str, Any],
-    module: QueryComponent,
-    module_inputs: Dict[str, Any],
-) -> None:
     """Add input to module deps inputs."""
     # get relevant output from link
     if src_key is None:
@@ -59,7 +45,16 @@ def add_output_to_module_inputs(
         output = next(iter(output_dict.values()))
     else:
         output = output_dict[src_key]
+    return output
 
+
+def add_output_to_module_inputs(
+    dest_key: str,
+    output: Any,
+    module: QueryComponent,
+    module_inputs: Dict[str, Any],
+) -> None:
+    """Add input to module deps inputs."""
     # now attach output to relevant input key for module
     if dest_key is None:
         free_keys = module.free_req_input_keys
@@ -116,6 +111,27 @@ def print_debug_input_multi(
     print_text(output + "\n", color="llama_lavender")
 
 
+# Function to clean non-serializable attributes and return a copy of the graph
+# https://stackoverflow.com/questions/23268421/networkx-how-to-access-attributes-of-objects-as-nodes
+def clean_graph_attributes_copy(graph: networkx.MultiDiGraph) -> networkx.MultiDiGraph:
+    # Create a deep copy of the graph to preserve the original
+    graph_copy = graph.copy()
+
+    # Iterate over nodes and clean attributes
+    for node, attributes in graph_copy.nodes(data=True):
+        for key, value in list(attributes.items()):
+            if callable(value):  # Checks if the value is a function
+                del attributes[key]  # Remove the attribute if it's non-serializable
+
+    # Similarly, you can extend this to clean edge attributes if necessary
+    for u, v, attributes in graph_copy.edges(data=True):
+        for key, value in list(attributes.items()):
+            if callable(value):  # Checks if the value is a function
+                del attributes[key]  # Remove the attribute if it's non-serializable
+
+    return graph_copy
+
+
 CHAIN_COMPONENT_TYPE = Union[QUERY_COMPONENT_TYPE, str]
 
 
@@ -132,16 +148,6 @@ class QueryPipeline(QueryComponent):
 
     module_dict: Dict[str, QueryComponent] = Field(
         default_factory=dict, description="The modules in the pipeline."
-    )
-    conditional_dict: Dict[str, Callable] = Field(
-        default_factory=dict,
-        description=(
-            "Mapping from module key to conditional function."
-            "Specifically used in the case of conditional links. "
-            "The conditional function should take in the output of the source module and "
-            "return a value that will then be mapped to the relevant destination module "
-            "in the conditional link."
-        ),
     )
     dag: networkx.MultiDiGraph = Field(
         default_factory=networkx.MultiDiGraph, description="The DAG of the pipeline."
@@ -217,14 +223,12 @@ class QueryPipeline(QueryComponent):
 
     def add_links(
         self,
-        links: List[LINK_TYPE],
+        links: List[Link],
     ) -> None:
         """Add links to the pipeline."""
         for link in links:
             if isinstance(link, Link):
                 self.add_link(**link.dict())
-            elif isinstance(link, ConditionalLinks):
-                self.add_conditional_links(**link.dict())
             else:
                 raise ValueError("Link must be of type `Link` or `ConditionalLinks`.")
 
@@ -253,29 +257,20 @@ class QueryPipeline(QueryComponent):
         dest: str,
         src_key: Optional[str] = None,
         dest_key: Optional[str] = None,
+        condition_fn: Optional[Callable] = None,
+        input_fn: Optional[Callable] = None,
     ) -> None:
         """Add a link between two modules."""
         if src not in self.module_dict:
             raise ValueError(f"Module {src} does not exist in pipeline.")
-        self.dag.add_edge(src, dest, src_key=src_key, dest_key=dest_key)
-
-    def add_conditional_links(
-        self,
-        src: str,
-        fn: Callable,
-        cond_dest_dict: Dict[str, Any],
-    ) -> None:
-        """Add conditional links."""
-        if src not in self.module_dict:
-            raise ValueError(f"Module {src} does not exist in pipeline.")
-        self.conditional_dict[src] = fn
-        for conditional, dest_dict in cond_dest_dict.items():
-            self.dag.add_edge(
-                src,
-                dest_dict["dest"],
-                dest_key=dest_dict["dest_key"],
-                conditional=conditional,
-            )
+        self.dag.add_edge(
+            src,
+            dest,
+            src_key=src_key,
+            dest_key=dest_key,
+            condition_fn=condition_fn,
+            input_fn=input_fn,
+        )
 
     def get_root_keys(self) -> List[str]:
         """Get root keys."""
@@ -486,68 +481,33 @@ class QueryPipeline(QueryComponent):
         if module_key in self._get_leaf_keys():
             result_outputs[module_key] = output_dict
         else:
-            # first, process conditional edges. find the conditional edge
-            # that matches, and then remove all other edges from queue
-            # after, process regular edges
-
-            conditional_val: Optional[Any] = None
-            if module_key in self.conditional_dict:
-                # NOTE: we assume that the output of the module is a single key
-                single_output = get_single_output(output_dict)
-                # the conditional_val determines which edge to take
-                # new_output is the output that will be passed to the next module
-                conditional_val, new_output = self.conditional_dict[module_key](
-                    single_output
-                )
             edge_list = list(self.dag.edges(module_key, data=True))
-            # get conditional edge list
-            conditional_edge_list = [
-                (src, dest, attr)
-                for src, dest, attr in edge_list
-                if "conditional" in attr
-            ]
-            # in conditional edge list, find matches
-            if len(conditional_edge_list) > 0:
-                match = next(
-                    iter(
-                        [
-                            (src, dest, attr)
-                            for src, dest, attr in conditional_edge_list
-                            if conditional_val == attr["conditional"]
-                        ]
-                    )
-                )
-                non_matches = [x for x in conditional_edge_list if x != match]
-                if len(non_matches) != len(conditional_edge_list) - 1:
-                    raise ValueError("Multiple conditional matches found or None.")
-                # remove all non-matches from queue
-                for non_match in non_matches:
-                    new_queue.remove(non_match[1])
-                # add match to module inputs
-                add_output_to_module_inputs(
-                    None,  # no src_key for conditional link
-                    match[2].get("dest_key"),
-                    {"output": new_output},
-                    self.module_dict[match[1]],
-                    all_module_inputs[match[1]],
-                )
-
             # everything not in conditional_edge_list is regular
-            regular_edge_list = [
-                (src, dest, attr)
-                for src, dest, attr in edge_list
-                if "conditional" not in attr
-            ]
-            for _, dest, attr in regular_edge_list:
-                # if conditional link, check if it should be added
-                # add input to module_deps_inputs
-                add_output_to_module_inputs(
-                    attr.get("src_key"),
-                    attr.get("dest_key"),
-                    output_dict,
-                    self.module_dict[dest],
-                    all_module_inputs[dest],
-                )
+            for _, dest, attr in edge_list:
+                output = get_output(attr.get("src_key"), output_dict)
+
+                # if input_fn is not None, use it to modify the input
+                if attr["input_fn"] is not None:
+                    dest_output = attr["input_fn"](output)
+                else:
+                    dest_output = output
+
+                add_edge = True
+                if attr["condition_fn"] is not None:
+                    conditional_val = attr["condition_fn"](output)
+                    if not conditional_val:
+                        add_edge = False
+
+                if add_edge:
+                    add_output_to_module_inputs(
+                        attr.get("dest_key"),
+                        dest_output,
+                        self.module_dict[dest],
+                        all_module_inputs[dest],
+                    )
+                else:
+                    # remove dest from queue
+                    new_queue.remove(dest)
 
         return new_queue
 
@@ -705,3 +665,8 @@ class QueryPipeline(QueryComponent):
     def sub_query_components(self) -> List[QueryComponent]:
         """Sub query components."""
         return list(self.module_dict.values())
+
+    @property
+    def clean_dag(self) -> networkx.DiGraph:
+        """Clean dag."""
+        return clean_graph_attributes_copy(self.dag)

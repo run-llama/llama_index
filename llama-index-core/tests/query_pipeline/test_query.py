@@ -7,7 +7,6 @@ from llama_index.core.query_pipeline.components.function import FnComponent
 from llama_index.core.query_pipeline.components.input import InputComponent
 from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
-    ConditionalLinks,
     InputKeys,
     Link,
     OutputKeys,
@@ -386,13 +385,19 @@ def test_query_pipeline_conditional_edges() -> None:
             Link("input", "fn", src_key="inp1", dest_key="input"),
             Link("input", "a", src_key="inp2", dest_key="input1"),
             Link("input", "b", src_key="inp2", dest_key="input1"),
-            ConditionalLinks(
+            Link(
                 "fn",
-                lambda x: (x["toggle"], x["input"]),
-                {
-                    "true": {"dest": "a", "dest_key": "input2"},
-                    "false": {"dest": "b", "dest_key": "input2"},
-                },
+                "a",
+                dest_key="input2",
+                condition_fn=lambda x: x["toggle"] == "true",
+                input_fn=lambda x: x["input"],
+            ),
+            Link(
+                "fn",
+                "b",
+                dest_key="input2",
+                condition_fn=lambda x: x["toggle"] == "false",
+                input_fn=lambda x: x["input"],
             ),
         ]
     )
