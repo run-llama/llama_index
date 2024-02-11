@@ -133,10 +133,6 @@ class BaseIndex(Generic[IS], ABC):
         you will need to explicitly call `add_index_struct` on the `index_store`
         to update the index store.
 
-        .. code-block:: python
-            index.index_struct.index_id = index_id
-            index.storage_context.index_store.add_index_struct(index.index_struct)
-
         Args:
             index_id (str): Index id to set.
 

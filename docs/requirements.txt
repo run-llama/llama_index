@@ -9,7 +9,7 @@ myst-nb
 sphinx-autobuild
 sphinx_rtd_theme
 pydantic<2.0.0
-autodoc_pydantic
+autodoc_pydantic<=1.9.0
 sphinx-reredirects>=0.1.2
 sphinx-automodapi==0.16.0
 sphinxcontrib-gtagjs==0.2.1

@@ -227,7 +227,6 @@ maxdepth: 1
 hidden: true
 ---
 /understanding/putting_it_all_together/q_and_a/terms_definitions_tutorial.md
-/understanding/putting_it_all_together/q_and_a/unified_query.md
 /understanding/putting_it_all_together/graphs.md
 /understanding/putting_it_all_together/structured_data.md
 /understanding/putting_it_all_together/structured_data/Airbyte_demo.ipynb

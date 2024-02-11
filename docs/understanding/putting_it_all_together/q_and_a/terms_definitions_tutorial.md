@@ -438,7 +438,7 @@ If you get an import error about PIL, install it using `pip install Pillow` firs
 
 ```python
 from PIL import Image
-from llama_index.core.readers.file.base import (
+from llama_index.readers.file import (
     DEFAULT_FILE_EXTRACTOR,
     ImageParser,
 )
