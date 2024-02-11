@@ -252,7 +252,6 @@ def upgrade_py_md_file(file_path: str) -> None:
     new_lines, new_installs = parse_lines(lines, installed_modules)
 
     with open(file_path, "w") as f:
-        f.write("".join(_format_new_installs(new_installs)))
         f.write("".join(new_lines))
 
     if len(new_installs) > 0:
