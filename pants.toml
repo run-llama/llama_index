@@ -15,7 +15,7 @@ remote_store_address = "grpc://44.204.50.6:9092"
 config = "./pyproject.toml"
 
 [python]
-interpreter_constraints = [">=3.8.1"]
+interpreter_constraints = ["==3.10.*", "==3.8.*", "==3.9.*"]
 
 [python-infer]
 ambiguity_resolution = "by_source_root"

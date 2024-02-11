@@ -21,8 +21,6 @@ from llama_index.core.schema import Document
 __all__ = [
     "SimpleDirectoryReader",
     "ReaderConfig",
-    "PDFReader",
-    "HTMLTagReader",
     "Document",
     "StringIterableReader",
     "download_loader",

@@ -4,5 +4,5 @@ poetry_requirements(
 
 python_sources(
     name="py310",
-    interpreter_constraints=[">=3.10"],
+    interpreter_constraints=["==3.10.*"],
 )

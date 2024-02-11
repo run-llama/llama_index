@@ -1,13 +1,14 @@
--e llama-index
-sphinx>=4.3.0
+./llama-index-core/
+./llama-index-integrations/readers/llama-index-readers-file
+sphinx>6
 furo>=2023.3.27
-docutils<0.17
+docutils<0.19,>=0.15
 m2r2
-myst-parser
+myst-parser==0.18.0
 myst-nb
 sphinx-autobuild
 sphinx_rtd_theme
-# pydantic<2.0.0
+pydantic<2.0.0
 autodoc_pydantic
 sphinx-reredirects>=0.1.2
 sphinx-automodapi==0.16.0

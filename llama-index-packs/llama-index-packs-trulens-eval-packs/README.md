@@ -48,7 +48,7 @@ os.environ["OPENAI_API_KEY"] = "sk-..."
 
 from tqdm.auto import tqdm
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.readers import SimpleWebPageReader
+from llama_index.readers.web import SimpleWebPageReader
 
 documents = SimpleWebPageReader(html_to_text=True).load_data(
     ["http://paulgraham.com/worked.html"]

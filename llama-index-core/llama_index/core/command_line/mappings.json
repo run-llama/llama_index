@@ -128,7 +128,7 @@
   "BaseExtractor": "llama_index.core.extractors",
   "PydanticProgramExtractor": "llama_index.core.extractors",
   "SimpleGraphStore": "llama_index.core.graph_stores",
-  "SummaryIndex": "llama_index.core.indices",
+  "SummaryIndex": "llama_index.core",
   "PandasIndex": "llama_index.core.indices",
   "SQLStructStoreIndex": "llama_index.core.indices",
   "MultiModalVectorStoreIndex": "llama_index.core.indices",

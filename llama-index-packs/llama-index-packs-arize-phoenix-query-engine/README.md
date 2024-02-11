@@ -31,7 +31,7 @@ You can then inspect the files at `./arize_pack` or continue on to use the modul
 import os
 
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.readers import SimpleWebPageReader
+from llama_index.readers.web import SimpleWebPageReader
 from tqdm.auto import tqdm
 ```
 
