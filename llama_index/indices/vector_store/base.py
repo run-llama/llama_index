@@ -1,6 +1,6 @@
 """Base vector store index.
 
-An index that that is built on top of an existing vector store.
+An index that is built on top of an existing vector store.
 
 """
 import logging
@@ -299,7 +299,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """Delete a list of nodes from the index.
 
         Args:
-            doc_ids (List[str]): A list of doc_ids from the nodes to delete
+            node_ids (List[str]): A list of node_ids from the nodes to delete
 
         """
         raise NotImplementedError(

@@ -72,11 +72,7 @@ class RagDatasetGenerator(PromptMixin):
         self.text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
         self.question_gen_query = (
             question_gen_query
-            or f"You are a Teacher/Professor. Your task is to setup \
-                        {num_questions_per_chunk} questions for an upcoming \
-                        quiz/examination. The questions should be diverse in nature \
-                            across the document. Restrict the questions to the \
-                                context information provided."
+            or f"You are a Teacher/Professor. Your task is to setup {num_questions_per_chunk} questions for an upcoming quiz/examination. The questions should be diverse in nature across the document. Restrict the questions to the context information provided."
         )
         self.nodes = nodes
         self._metadata_mode = metadata_mode
@@ -145,6 +141,9 @@ class RagDatasetGenerator(PromptMixin):
                     Document(
                         text=node.get_content(metadata_mode=self._metadata_mode),
                         metadata=node.metadata,
+                        excluded_llm_metadata_keys=node.excluded_llm_metadata_keys,
+                        excluded_embed_metadata_keys=node.excluded_embed_metadata_keys,
+                        relationships=node.relationships,
                     )
                 ],
                 service_context=self.service_context,
@@ -172,7 +171,8 @@ class RagDatasetGenerator(PromptMixin):
             ]
             index = summary_indices[idx]
             reference_context = nodes[idx].text
-
+            model_name = self.service_context.llm.metadata.model_name
+            created_by = CreatedBy(type=CreatedByType.AI, model_name=model_name)
             if labelled:
                 index = summary_indices[idx]
                 qr_tasks = []
@@ -190,8 +190,6 @@ class RagDatasetGenerator(PromptMixin):
                 for question, answer_response in zip(
                     cleaned_questions, answer_responses
                 ):
-                    model_name = self.service_context.llm.metadata.model_name
-                    created_by = CreatedBy(type=CreatedByType.AI, model_name=model_name)
                     example = LabelledRagDataExample(
                         query=question,
                         reference_answer=str(answer_response),
@@ -201,22 +199,29 @@ class RagDatasetGenerator(PromptMixin):
                     )
                     examples.append(example)
             else:
-                pass
+                for query in cleaned_questions:
+                    example = LabelledRagDataExample(
+                        query=query,
+                        reference_answer="",
+                        reference_contexts=[reference_context],
+                        reference_answer_by=None,
+                        query_by=created_by,
+                    )
+                    examples.append(example)
 
         # split train/test
         return LabelledRagDataset(examples=examples)
 
-    async def agenerate_questions_from_nodes(self) -> List[str]:
-        """Generates questions for each document."""
-        dataset = await self._agenerate_dataset(self.nodes, labelled=False)
-        return dataset.questions
+    async def agenerate_questions_from_nodes(self) -> LabelledRagDataset:
+        """Generates questions but not the reference answers."""
+        return await self._agenerate_dataset(self.nodes, labelled=False)
 
     async def agenerate_dataset_from_nodes(self) -> LabelledRagDataset:
         """Generates questions for each document."""
         return await self._agenerate_dataset(self.nodes, labelled=True)
 
-    def generate_questions_from_nodes(self) -> List[str]:
-        """Generates questions for each document."""
+    def generate_questions_from_nodes(self) -> LabelledRagDataset:
+        """Generates questions but not the reference answers."""
         return asyncio.run(self.agenerate_questions_from_nodes())
 
     def generate_dataset_from_nodes(self) -> LabelledRagDataset:

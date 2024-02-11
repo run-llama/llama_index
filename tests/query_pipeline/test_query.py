@@ -3,7 +3,7 @@
 from typing import Any, Dict
 
 import pytest
-from llama_index.core.query_pipeline.components import InputComponent
+from llama_index.core.query_pipeline.components import FnComponent, InputComponent
 from llama_index.core.query_pipeline.query_component import (
     ChainableMixin,
     InputKeys,
@@ -356,3 +356,53 @@ def test_query_pipeline_chain_str() -> None:
     p.add_chain(["a", "b", "c"])
     output = p.run(inp1=1, inp2=3)
     assert output == 11
+
+
+def test_query_pipeline_conditional_edges() -> None:
+    """Test conditional edges."""
+
+    def choose_fn(input: int) -> Dict:
+        """Choose."""
+        if input == 1:
+            toggle = "true"
+        else:
+            toggle = "false"
+        return {"toggle": toggle, "input": input}
+
+    p = QueryPipeline(
+        modules={
+            "input": InputComponent(),
+            "fn": FnComponent(fn=choose_fn),
+            "a": QueryComponent1(),
+            "b": QueryComponent2(),
+        },
+    )
+
+    p.add_links(
+        [
+            Link("input", "fn", src_key="inp1", dest_key="input"),
+            Link("input", "a", src_key="inp2", dest_key="input1"),
+            Link("input", "b", src_key="inp2", dest_key="input1"),
+            Link(
+                "fn",
+                "a",
+                dest_key="input2",
+                condition_fn=lambda x: x["toggle"] == "true",
+                input_fn=lambda x: x["input"],
+            ),
+            Link(
+                "fn",
+                "b",
+                dest_key="input2",
+                condition_fn=lambda x: x["toggle"] == "false",
+                input_fn=lambda x: x["input"],
+            ),
+        ]
+    )
+    output = p.run(inp1=1, inp2=3)
+    # should go to a
+    assert output == 4
+
+    output = p.run(inp1=2, inp2=3)
+    # should go to b
+    assert output == "3:2"

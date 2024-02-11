@@ -108,7 +108,7 @@ Associated projects
    :caption: Use Cases
    :hidden:
 
-   use_cases/q_and_a.md
+   use_cases/q_and_a/root.md
    use_cases/chatbots.md
    use_cases/agents.md
    use_cases/extraction.md
@@ -153,6 +153,7 @@ Associated projects
    module_guides/indexing/indexing.md
    module_guides/storing/storing.md
    module_guides/querying/querying.md
+   module_guides/deploying/agents/root.md
    module_guides/observability/observability.md
    module_guides/evaluating/root.md
    module_guides/supporting_modules/supporting_modules.md

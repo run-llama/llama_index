@@ -11,7 +11,7 @@ from llama_index.bridge.pydantic import BaseModel
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.vector_store import VectorStoreIndex
 from llama_index.tools.function_tool import FunctionTool
-from llama_index.tools.tool_spec.base import BaseToolSpec
+from llama_index.tools.tool_spec.base import SPEC_FUNCTION_TYPE, BaseToolSpec
 from llama_index.tools.types import ToolMetadata
 from llama_index.tools.utils import create_schema_from_function
 
@@ -115,6 +115,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
 
     def to_tool_list(
         self,
+        spec_functions: Optional[List[SPEC_FUNCTION_TYPE]] = None,
         func_to_metadata_mapping: Optional[Dict[str, ToolMetadata]] = None,
     ) -> List[FunctionTool]:
         return self._tool_list

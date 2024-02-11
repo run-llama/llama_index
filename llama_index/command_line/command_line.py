@@ -1,14 +1,18 @@
 import argparse
-import os
 from typing import Any, Optional
 
-from llama_index import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.command_line.rag import RagCLI, default_ragcli_persist_dir
+from llama_index.embeddings import OpenAIEmbedding
+from llama_index.ingestion import IngestionCache, IngestionPipeline
 from llama_index.llama_dataset.download import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     download_llama_dataset,
 )
 from llama_index.llama_pack.download import LLAMA_HUB_URL, download_llama_pack
+from llama_index.storage.docstore import SimpleDocumentStore
+from llama_index.text_splitter import SentenceSplitter
+from llama_index.vector_stores import ChromaVectorStore
 
 
 def handle_download_llama_pack(
@@ -52,23 +56,33 @@ def handle_download_llama_dataset(
     print(f"Successfully downloaded {llama_dataset_class} to {download_dir}")
 
 
-def handle_question(
-    file_path: str,
-    question: str,
-    **kwargs: Any,
-) -> None:
-    assert file_path is not None
-    assert question is not None
+def default_rag_cli() -> RagCLI:
+    import chromadb
 
-    # check if path is dir
-    if os.path.isdir(file_path):
-        documents = SimpleDirectoryReader(file_path).load_data()
-    else:
-        documents = SimpleDirectoryReader(input_files=[file_path]).load_data()
-    index = VectorStoreIndex.from_documents(documents)
-    query_engine = index.as_query_engine()
-    response = query_engine.query(question)
-    print(response)
+    persist_dir = default_ragcli_persist_dir()
+    chroma_client = chromadb.PersistentClient(path=persist_dir)
+    chroma_collection = chroma_client.create_collection("default", get_or_create=True)
+    vector_store = ChromaVectorStore(
+        chroma_collection=chroma_collection, persist_dir=persist_dir
+    )
+    docstore = SimpleDocumentStore()
+
+    ingestion_pipeline = IngestionPipeline(
+        transformations=[SentenceSplitter(), OpenAIEmbedding()],
+        vector_store=vector_store,
+        docstore=docstore,
+        cache=IngestionCache(),
+    )
+    try:
+        ingestion_pipeline.load(persist_dir=persist_dir)
+    except FileNotFoundError:
+        pass
+
+    return RagCLI(
+        ingestion_pipeline=ingestion_pipeline,
+        verbose=False,
+        persist_dir=persist_dir,
+    )
 
 
 def main() -> None:
@@ -77,27 +91,11 @@ def main() -> None:
     # Subparsers for the main commands
     subparsers = parser.add_subparsers(title="commands", dest="command", required=True)
 
-    # llama ask command
-    llamaask_parser = subparsers.add_parser(
-        "ask", help="Ask a question to a document / a directory of documents."
+    # llama rag command
+    llamarag_parser = subparsers.add_parser(
+        "rag", help="Ask a question to a document / a directory of documents."
     )
-
-    llamaask_parser.add_argument(
-        "file_path",
-        type=str,
-        help=(
-            "The name of the file or directory you want to ask a question about,"
-            "such as `file.pdf`."
-        ),
-    )
-
-    llamaask_parser.add_argument(
-        "-q",
-        "--question",
-        type=str,
-        help="The question you want to ask.",
-    )
-    llamaask_parser.set_defaults(func=lambda args: handle_question(**vars(args)))
+    RagCLI.add_parser_args(llamarag_parser, default_rag_cli)
 
     # download llamapacks command
     llamapack_parser = subparsers.add_parser(

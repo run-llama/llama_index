@@ -50,15 +50,12 @@ class RecursiveRetriever(BaseRetriever):
         self._retriever_dict = retriever_dict
         self._query_engine_dict = query_engine_dict or {}
         self._node_dict = node_dict or {}
-        super().__init__(callback_manager)
-
         # make sure keys don't overlap
         if set(self._retriever_dict.keys()) & set(self._query_engine_dict.keys()):
             raise ValueError("Retriever and query engine ids must not overlap.")
 
         self._query_response_tmpl = query_response_tmpl or DEFAULT_QUERY_RESPONSE_TMPL
-        self._verbose = verbose
-        super().__init__(callback_manager)
+        super().__init__(callback_manager, verbose=verbose)
 
     def _query_retrieved_nodes(
         self, query_bundle: QueryBundle, nodes_with_score: List[NodeWithScore]

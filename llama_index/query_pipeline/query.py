@@ -2,7 +2,18 @@
 
 import json
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast, get_args
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+    get_args,
+)
 
 import networkx
 
@@ -21,13 +32,10 @@ from llama_index.core.query_pipeline.query_component import (
 from llama_index.utils import print_text
 
 
-def add_output_to_module_inputs(
-    src_key: str,
-    dest_key: str,
+def get_output(
+    src_key: Optional[str],
     output_dict: Dict[str, Any],
-    module: QueryComponent,
-    module_inputs: Dict[str, Any],
-) -> None:
+) -> Any:
     """Add input to module deps inputs."""
     # get relevant output from link
     if src_key is None:
@@ -37,7 +45,16 @@ def add_output_to_module_inputs(
         output = next(iter(output_dict.values()))
     else:
         output = output_dict[src_key]
+    return output
 
+
+def add_output_to_module_inputs(
+    dest_key: str,
+    output: Any,
+    module: QueryComponent,
+    module_inputs: Dict[str, Any],
+) -> None:
+    """Add input to module deps inputs."""
     # now attach output to relevant input key for module
     if dest_key is None:
         free_keys = module.free_req_input_keys
@@ -92,6 +109,27 @@ def print_debug_input_multi(
         output += cur_output + "\n"
 
     print_text(output + "\n", color="llama_lavender")
+
+
+# Function to clean non-serializable attributes and return a copy of the graph
+# https://stackoverflow.com/questions/23268421/networkx-how-to-access-attributes-of-objects-as-nodes
+def clean_graph_attributes_copy(graph: networkx.MultiDiGraph) -> networkx.MultiDiGraph:
+    # Create a deep copy of the graph to preserve the original
+    graph_copy = graph.copy()
+
+    # Iterate over nodes and clean attributes
+    for node, attributes in graph_copy.nodes(data=True):
+        for key, value in list(attributes.items()):
+            if callable(value):  # Checks if the value is a function
+                del attributes[key]  # Remove the attribute if it's non-serializable
+
+    # Similarly, you can extend this to clean edge attributes if necessary
+    for u, v, attributes in graph_copy.edges(data=True):
+        for key, value in list(attributes.items()):
+            if callable(value):  # Checks if the value is a function
+                del attributes[key]  # Remove the attribute if it's non-serializable
+
+    return graph_copy
 
 
 CHAIN_COMPONENT_TYPE = Union[QUERY_COMPONENT_TYPE, str]
@@ -189,7 +227,10 @@ class QueryPipeline(QueryComponent):
     ) -> None:
         """Add links to the pipeline."""
         for link in links:
-            self.add_link(**link.dict())
+            if isinstance(link, Link):
+                self.add_link(**link.dict())
+            else:
+                raise ValueError("Link must be of type `Link` or `ConditionalLinks`.")
 
     def add_modules(self, module_dict: Dict[str, QUERY_COMPONENT_TYPE]) -> None:
         """Add modules to the pipeline."""
@@ -216,11 +257,20 @@ class QueryPipeline(QueryComponent):
         dest: str,
         src_key: Optional[str] = None,
         dest_key: Optional[str] = None,
+        condition_fn: Optional[Callable] = None,
+        input_fn: Optional[Callable] = None,
     ) -> None:
         """Add a link between two modules."""
         if src not in self.module_dict:
             raise ValueError(f"Module {src} does not exist in pipeline.")
-        self.dag.add_edge(src, dest, src_key=src_key, dest_key=dest_key)
+        self.dag.add_edge(
+            src,
+            dest,
+            src_key=src_key,
+            dest_key=dest_key,
+            condition_fn=condition_fn,
+            input_fn=input_fn,
+        )
 
     def get_root_keys(self) -> List[str]:
         """Get root keys."""
@@ -419,27 +469,47 @@ class QueryPipeline(QueryComponent):
 
     def _process_component_output(
         self,
+        queue: List[str],
         output_dict: Dict[str, Any],
         module_key: str,
         all_module_inputs: Dict[str, Dict[str, Any]],
         result_outputs: Dict[str, Any],
-    ) -> None:
+    ) -> List[str]:
         """Process component output."""
+        new_queue = queue.copy()
         # if there's no more edges, add result to output
         if module_key in self._get_leaf_keys():
             result_outputs[module_key] = output_dict
         else:
-            for _, dest, attr in self.dag.edges(module_key, data=True):
-                edge_module = self.module_dict[dest]
+            edge_list = list(self.dag.edges(module_key, data=True))
+            # everything not in conditional_edge_list is regular
+            for _, dest, attr in edge_list:
+                output = get_output(attr.get("src_key"), output_dict)
 
-                # add input to module_deps_inputs
-                add_output_to_module_inputs(
-                    attr.get("src_key"),
-                    attr.get("dest_key"),
-                    output_dict,
-                    edge_module,
-                    all_module_inputs[dest],
-                )
+                # if input_fn is not None, use it to modify the input
+                if attr["input_fn"] is not None:
+                    dest_output = attr["input_fn"](output)
+                else:
+                    dest_output = output
+
+                add_edge = True
+                if attr["condition_fn"] is not None:
+                    conditional_val = attr["condition_fn"](output)
+                    if not conditional_val:
+                        add_edge = False
+
+                if add_edge:
+                    add_output_to_module_inputs(
+                        attr.get("dest_key"),
+                        dest_output,
+                        self.module_dict[dest],
+                        all_module_inputs[dest],
+                    )
+                else:
+                    # remove dest from queue
+                    new_queue.remove(dest)
+
+        return new_queue
 
     def _run_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Run the pipeline for multiple roots.
@@ -474,8 +544,8 @@ class QueryPipeline(QueryComponent):
             output_dict = module.run_component(**module_input)
 
             # get new nodes and is_leaf
-            self._process_component_output(
-                output_dict, module_key, all_module_inputs, result_outputs
+            queue = self._process_component_output(
+                queue, output_dict, module_key, all_module_inputs, result_outputs
             )
 
         return result_outputs
@@ -541,8 +611,8 @@ class QueryPipeline(QueryComponent):
 
             for output_dict, module_key in zip(output_dicts, popped_nodes):
                 # get new nodes and is_leaf
-                self._process_component_output(
-                    output_dict, module_key, all_module_inputs, result_outputs
+                queue = self._process_component_output(
+                    queue, output_dict, module_key, all_module_inputs, result_outputs
                 )
 
         return result_outputs
@@ -595,3 +665,8 @@ class QueryPipeline(QueryComponent):
     def sub_query_components(self) -> List[QueryComponent]:
         """Sub query components."""
         return list(self.module_dict.values())
+
+    @property
+    def clean_dag(self) -> networkx.DiGraph:
+        """Clean dag."""
+        return clean_graph_attributes_copy(self.dag)

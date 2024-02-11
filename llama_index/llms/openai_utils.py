@@ -34,8 +34,10 @@ GPT4_MODELS: Dict[str, int] = {
     #   resolves to gpt-4-0613 after
     "gpt-4": 8192,
     "gpt-4-32k": 32768,
-    # 1106 model (Turbo, JSON mode)
+    # turbo models (Turbo, JSON mode)
     "gpt-4-1106-preview": 128000,
+    "gpt-4-0125-preview": 128000,
+    "gpt-4-turbo-preview": 128000,
     # multimodal model
     "gpt-4-vision-preview": 128000,
     # 0613 models (function calling):
@@ -66,6 +68,8 @@ TURBO_MODELS: Dict[str, int] = {
     # resolves to gpt-3.5-turbo-16k-0613 until 2023-12-11
     # resolves to gpt-3.5-turbo-1106 after
     "gpt-3.5-turbo-16k": 16384,
+    # 0125 (2024) model (JSON mode)
+    "gpt-3.5-turbo-0125": 16385,
     # 1106 model (JSON mode)
     "gpt-3.5-turbo-1106": 16384,
     # 0613 models (function calling):

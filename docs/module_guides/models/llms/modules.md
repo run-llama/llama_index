@@ -47,6 +47,15 @@ maxdepth: 1
 /examples/llm/clarifai.ipynb
 ```
 
+## Cohere
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/cohere.ipynb
+```
+
 ## EverlyAI
 
 ```{toctree}
@@ -267,6 +276,15 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/rungpt.ipynb
+```
+
+## SageMaker
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/sagemaker_endpoint_llm.ipynb
 ```
 
 ## Together.ai

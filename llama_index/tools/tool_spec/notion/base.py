@@ -6,7 +6,7 @@ import requests
 
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.readers.notion import NotionPageReader
-from llama_index.tools.tool_spec.base import BaseToolSpec
+from llama_index.tools.tool_spec.base import SPEC_FUNCTION_TYPE, BaseToolSpec
 
 SEARCH_URL = "https://api.notion.com/v1/search"
 
@@ -43,7 +43,9 @@ class NotionToolSpec(BaseToolSpec):
         """Initialize with parameters."""
         self.reader = NotionPageReader(integration_token=integration_token)
 
-    def get_fn_schema_from_fn_name(self, fn_name: str) -> Optional[Type[BaseModel]]:
+    def get_fn_schema_from_fn_name(
+        self, fn_name: str, spec_functions: Optional[List[SPEC_FUNCTION_TYPE]] = None
+    ) -> Optional[Type[BaseModel]]:
         """Return map from function name."""
         if fn_name == "load_data":
             return NotionLoadDataSchema

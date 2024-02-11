@@ -47,6 +47,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
     Args:
         collection_name: (str): name of the Qdrant collection
         client (Optional[Any]): QdrantClient instance from `qdrant-client` package
+        aclient (Optional[Any]): AsyncQdrantClient instance from `qdrant-client` package
+        url (Optional[str]): url of the Qdrant instance
+        api_key (Optional[str]): API key for authenticating with Qdrant
+        batch_size (int): number of points to upload in a single request to Qdrant. Defaults to 64
+        parallel (int): number of parallel processes to use during upload. Defaults to 1
+        max_retries (int): maximum number of retries in case of a failure. Defaults to 3
+        client_kwargs (Optional[dict]): additional kwargs for QdrantClient and AsyncQdrantClient
+        enable_hybrid (bool): whether to enable hybrid search using dense and sparse vectors
+        sparse_doc_fn (Optional[SparseEncoderCallable]): function to encode sparse vectors
+        sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
+        hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
     """
 
     stores_text: bool = True
@@ -57,6 +68,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     url: Optional[str]
     api_key: Optional[str]
     batch_size: int
+    parallel: int
+    max_retries: int
     client_kwargs: dict = Field(default_factory=dict)
     enable_hybrid: bool
 
@@ -74,7 +87,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
         aclient: Optional[Any] = None,
         url: Optional[str] = None,
         api_key: Optional[str] = None,
-        batch_size: int = 100,
+        batch_size: int = 64,
+        parallel: int = 1,
+        max_retries: int = 3,
         client_kwargs: Optional[dict] = None,
         enable_hybrid: bool = False,
         sparse_doc_fn: Optional[SparseEncoderCallable] = None,
@@ -138,6 +153,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             url=url,
             api_key=api_key,
             batch_size=batch_size,
+            parallel=parallel,
+            max_retries=max_retries,
             client_kwargs=client_kwargs or {},
             enable_hybrid=enable_hybrid,
         )
@@ -171,15 +188,26 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 node_ids.append(node.node_id)
 
                 if self.enable_hybrid:
-                    vectors.append(
-                        {
-                            "text-sparse": rest.SparseVector(
-                                indices=sparse_indices[i],
-                                values=sparse_vectors[i],
-                            ),
-                            "text-dense": node.get_embedding(),
-                        }
-                    )
+                    if (
+                        len(sparse_vectors) > 0
+                        and len(sparse_indices) > 0
+                        and len(sparse_vectors) == len(sparse_indices)
+                    ):
+                        vectors.append(
+                            {
+                                "text-sparse": rest.SparseVector(
+                                    indices=sparse_indices[i],
+                                    values=sparse_vectors[i],
+                                ),
+                                "text-dense": node.get_embedding(),
+                            }
+                        )
+                    else:
+                        vectors.append(
+                            {
+                                "text-dense": node.get_embedding(),
+                            }
+                        )
                 else:
                     vectors.append(node.get_embedding())
 
@@ -216,12 +244,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         points, ids = self._build_points(nodes)
 
-        # batch upsert the points into Qdrant collection to avoid large payloads
-        for points_batch in iter_batch(points, self.batch_size):
-            self._client.upsert(
-                collection_name=self.collection_name,
-                points=points_batch,
-            )
+        self._client.upload_points(
+            collection_name=self.collection_name,
+            points=points,
+            batch_size=self.batch_size,
+            parallel=self.parallel,
+            max_retries=self.max_retries,
+            wait=True,
+        )
 
         return ids
 
@@ -248,12 +278,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         points, ids = self._build_points(nodes)
 
-        # batch upsert the points into Qdrant collection to avoid large payloads
-        for points_batch in iter_batch(points, self.batch_size):
-            await self._aclient.upsert(
-                collection_name=self.collection_name,
-                points=points_batch,
-            )
+        await self._aclient.upload_points(
+            collection_name=self.collection_name,
+            points=points,
+            batch_size=self.batch_size,
+            parallel=self.parallel,
+            max_retries=self.max_retries,
+            wait=True,
+        )
 
         return ids
 
@@ -307,6 +339,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def _create_collection(self, collection_name: str, vector_size: int) -> None:
         """Create a Qdrant collection."""
         from qdrant_client.http import models as rest
+        from qdrant_client.http.exceptions import UnexpectedResponse
 
         try:
             if self.enable_hybrid:
@@ -332,7 +365,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except ValueError as exc:
+        except (ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
             logger.warning(
@@ -344,6 +377,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     async def _acreate_collection(self, collection_name: str, vector_size: int) -> None:
         """Asynchronous method to create a Qdrant collection."""
         from qdrant_client.http import models as rest
+        from qdrant_client.http.exceptions import UnexpectedResponse
 
         try:
             if self.enable_hybrid:
@@ -369,7 +403,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except ValueError as exc:
+        except (ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
             logger.warning(

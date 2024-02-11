@@ -68,7 +68,7 @@ def extract_float_given_response(response: str, n: int = 1) -> Optional[float]:
         if new_numbers is None:
             return None
         else:
-            return float(numbers[0])
+            return float(new_numbers[0])
     else:
         return float(numbers[0])
 

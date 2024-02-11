@@ -49,7 +49,9 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
     def get_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
         """Get nodes from node."""
         elements = self.extract_elements(
-            node.get_content(), table_filters=[self.filter_table]
+            node.get_content(),
+            table_filters=[self.filter_table],
+            node_id=node.id_,
         )
         table_elements = self.get_table_elements(elements)
         # extract summaries over table elements
@@ -59,8 +61,13 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         return self.get_nodes_from_elements(elements)
 
     def extract_elements(
-        self, text: str, table_filters: Optional[List[Callable]] = None, **kwargs: Any
+        self,
+        text: str,
+        node_id: Optional[str] = None,
+        table_filters: Optional[List[Callable]] = None,
+        **kwargs: Any,
     ) -> List[Element]:
+        # get node id for each node so that we can avoid using the same id for different nodes
         """Extract elements from text."""
         lines = text.split("\n")
         currentElement = None
@@ -144,37 +151,54 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         for idx, element in enumerate(elements):
             if element.type == "table":
                 should_keep = True
+                perfect_table = True
 
                 # verify that the table (markdown) have the same number of columns on each rows
                 table_lines = element.element.split("\n")
                 table_columns = [len(line.split("|")) for line in table_lines]
                 if len(set(table_columns)) > 1:
-                    should_keep = False
+                    # if the table have different number of columns on each rows, it's not a perfect table
+                    # we will store the raw text for such tables instead of converting them to a dataframe
+                    perfect_table = False
 
                 # verify that the table (markdown) have at least 2 rows
                 if len(table_lines) < 2:
                     should_keep = False
 
                 # apply the table filter, now only filter empty tables
-                if should_keep and table_filters is not None:
+                if should_keep and perfect_table and table_filters is not None:
                     should_keep = all(tf(element) for tf in table_filters)
 
                 # if the element is a table, convert it to a dataframe
                 if should_keep:
-                    table = md_to_df(element.element)
-                    elements[idx] = Element(
-                        id=f"id_{idx}", type="table", element=element, table=table
-                    )
+                    if perfect_table:
+                        table = md_to_df(element.element)
+
+                        elements[idx] = Element(
+                            id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
+                            type="table",
+                            element=element,
+                            table=table,
+                        )
+                    else:
+                        # for non-perfect tables, we will store the raw text
+                        # and give it a different type to differentiate it from perfect tables
+                        elements[idx] = Element(
+                            id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
+                            type="table_text",
+                            element=element.element,
+                            # table=table
+                        )
                 else:
                     elements[idx] = Element(
-                        id=f"id_{idx}",
+                        id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
                         type="text",
                         element=element.element,
                     )
             else:
                 # if the element is not a table, keep it as to text
                 elements[idx] = Element(
-                    id=f"id_{idx}",
+                    id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
                     type="text",
                     element=element.element,
                 )

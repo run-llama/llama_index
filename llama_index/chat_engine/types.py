@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import queue
+import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
@@ -98,7 +99,9 @@ class StreamingAgentChatResponse:
         self._aqueue.put_nowait(delta)
         self._new_item_event.set()
 
-    def write_response_to_history(self, memory: BaseMemory) -> None:
+    def write_response_to_history(
+        self, memory: BaseMemory, raise_error: bool = False
+    ) -> None:
         if self.chat_stream is None:
             raise ValueError(
                 "chat_stream is None. Cannot write to history without chat_stream."
@@ -117,7 +120,12 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            logger.warning(f"Encountered exception writing response to history: {e}")
+            if not raise_error:
+                logger.warning(
+                    f"Encountered exception writing response to history: {e}"
+                )
+            else:
+                raise
 
         self._is_done = True
 
@@ -141,6 +149,7 @@ class StreamingAgentChatResponse:
                 self._is_function = is_function(chat.message)
                 self.aput_in_queue(chat.delta)
                 final_text += chat.delta or ""
+                self._new_item_event.set()
                 if self._is_function is False:
                     self._is_function_false_event.set()
             if self._is_function is not None:  # if loop has gone through iteration
@@ -165,7 +174,7 @@ class StreamingAgentChatResponse:
                 yield delta
             except queue.Empty:
                 # Queue is empty, but we're not done yet
-                continue
+                time.sleep(0.01)
         self.response = self._unformatted_response.strip()
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
@@ -231,6 +240,19 @@ class BaseChatEngine(ABC):
         while message != "exit":
             response = self.chat(message)
             print(f"Assistant: {response}\n")
+            message = input("Human: ")
+
+    def streaming_chat_repl(self) -> None:
+        """Enter interactive chat REPL with streaming responses."""
+        print("===== Entering Chat REPL =====")
+        print('Type "exit" to exit.\n')
+        self.reset()
+        message = input("Human: ")
+        while message != "exit":
+            response = self.stream_chat(message)
+            print("Assistant: ", end="", flush=True)
+            response.print_response_stream()
+            print("\n")
             message = input("Human: ")
 
     @property
