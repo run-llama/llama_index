@@ -13,5 +13,20 @@ lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
 test:	## Run tests via pants
 	pants --no-local-cache test llama-index-core/:: llama-index-integrations/:: llama-index-finetuning/:: llama-index-experimental/:: llama-index-packs/::
 
+test-core:	## Run tests via pants
+	pants --no-local-cache test llama-index-core/::
+
+test-integrations:	## Run tests via pants
+	pants --no-local-cache test llama-index-integrations/::
+
+test-finetuning:	## Run tests via pants
+	pants --no-local-cache test llama-index-finetuning/::
+
+test-experimental:	## Run tests via pants
+	pants --no-local-cache test llama-index-experimental/::
+
+test-packs:	## Run tests via pants
+	pants --no-local-cache test llama-index-packs/::
+
 watch-docs:	## Build and watch documentation.
 	sphinx-autobuild docs/ docs/_build/html --open-browser --watch $(GIT_ROOT)/llama_index/
