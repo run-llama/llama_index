@@ -6,7 +6,7 @@ https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetc
 """
 
 import asyncio
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Collection, Dict, List, Set, Tuple, Union
 
 from llama_index.core.utils import print_text
 from pydantic import BaseModel
@@ -138,9 +138,7 @@ class TaskFetchingUnit(BaseModel):
 
             await asyncio.sleep(SCHEDULING_INTERVAL)
 
-    async def aschedule(
-        self, task_queue: asyncio.Queue[Optional[LLMCompilerTask]]
-    ) -> None:
+    async def aschedule(self, task_queue: asyncio.Queue) -> None:
         """Asynchronously listen to task_queue and schedule tasks as they arrive."""
         no_more_tasks = False  # Flag to check if all tasks are received
 
