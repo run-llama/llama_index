@@ -18,8 +18,10 @@ def _parse_from_imports(
     new_installs = []
     imported_modules = []
     parsing_modules = False
+    skipped_lines = 0
 
     for line in lines[line_idx:]:
+        skipped_lines += 1
         if "from " in line:
             imported_modules = [line, line.strip().split(" import ")[-1].strip()]
             if imported_modules[-1].startswith("("):
@@ -73,12 +75,12 @@ def _parse_from_imports(
                 new_imports = {}
                 imported_modules = []
 
-            return new_lines, new_installs, installed_modules
+            return new_lines, new_installs, installed_modules, skipped_lines
 
         elif not parsing_modules:
             new_lines.append(line)
 
-    return new_lines, new_installs, installed_modules
+    return new_lines, new_installs, installed_modules, skipped_lines
 
 
 def _parse_hub_downloads(
@@ -116,11 +118,20 @@ def parse_lines(
     new_installs = []
     new_lines = []
     just_found_imports = False
+    skipped_lines = 0
 
     for idx, line in enumerate(lines):
         this_new_lines = []
         this_new_installs = []
         this_installed_modules = []
+
+        if skipped_lines != 0:
+            skipped_lines -= 1
+
+        if just_found_imports and skipped_lines > 0:
+            continue
+        else:
+            just_found_imports = False
 
         if (
             "from llama_index." in line
@@ -131,6 +142,7 @@ def parse_lines(
                 this_new_lines,
                 this_new_installs,
                 this_installed_modules,
+                skipped_lines,
             ) = _parse_from_imports(
                 mappings=mappings,
                 installed_modules=installed_modules,
@@ -157,6 +169,7 @@ def parse_lines(
         new_lines += this_new_lines
         new_installs += this_new_installs
         installed_modules += this_installed_modules
+        installed_modules = list(set(installed_modules))
 
     return new_lines, list(set(new_installs))
 
