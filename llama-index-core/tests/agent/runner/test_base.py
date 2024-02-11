@@ -1,7 +1,7 @@
 """Test agent executor."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from llama_index.core.agent.runner.base import AgentRunner
 from llama_index.core.agent.runner.parallel import ParallelAgentRunner
@@ -11,6 +11,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.chat_engine.types import AgentChatResponse
 
 
@@ -67,6 +68,48 @@ class MockAgentWorker(BaseAgentWorker):
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
+
+
+class MockAgentWorkerWithMemory(MockAgentWorker):
+    """Mock agent worker with memory."""
+
+    def __init__(self, limit: int = 2):
+        """Initialize."""
+        self.limit = limit
+
+    def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
+        """Initialize step from task."""
+        # counter will be set to the last value in memory
+        if len(task.memory.get()) > 0:
+            start = int(cast(Any, task.memory.get()[-1].content))
+        else:
+            start = 0
+        task.extra_state["counter"] = 0
+        task.extra_state["start"] = start
+        return TaskStep(
+            task_id=task.task_id,
+            step_id=str(uuid.uuid4()),
+            input=task.input,
+            memory=task.memory,
+        )
+
+    def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
+        """Run step."""
+        task.extra_state["counter"] += 1
+        counter = task.extra_state["counter"] + task.extra_state["start"]
+        is_done = task.extra_state["counter"] >= self.limit
+
+        new_steps = [step.get_next_step(step_id=str(uuid.uuid4()))]
+
+        if is_done:
+            task.memory.put(ChatMessage(role=MessageRole.USER, content=str(counter)))
+
+        return TaskStepOutput(
+            output=AgentChatResponse(response=f"counter: {counter}"),
+            task_step=step,
+            is_last=is_done,
+            next_steps=new_steps,
+        )
 
 
 # define mock agent worker
@@ -170,6 +213,26 @@ def test_agent() -> None:
     response = agent_runner.chat("hello world")
     assert str(response) == "counter: 10"
     assert len(agent_runner.state.task_dict) == 1
+
+
+def test_agent_with_reset() -> None:
+    """Test agents with reset."""
+    # test e2e chat
+    # NOTE: to use chat, output needs to be AgentChatResponse
+    agent_runner = AgentRunner(agent_worker=MockAgentWorkerWithMemory(limit=10))
+    for idx in range(4):
+        if idx % 2 == 0:
+            agent_runner.reset()
+
+        response = agent_runner.chat("hello world")
+        if idx % 2 == 0:
+            assert str(response) == "counter: 10"
+            assert len(agent_runner.state.task_dict) == 1
+            assert len(agent_runner.memory.get()) == 1
+        elif idx % 2 == 1:
+            assert str(response) == "counter: 20"
+            assert len(agent_runner.state.task_dict) == 2
+            assert len(agent_runner.memory.get()) == 2
 
 
 def test_dag_agent() -> None:
