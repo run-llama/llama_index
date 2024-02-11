@@ -1,9 +1,12 @@
 import os
-from typing import Any, AsyncGenerator, Generator
+from typing import Any, AsyncGenerator, Generator, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage
+from llama_index.llms.openai import OpenAI
+
+import openai
 from openai.types.chat.chat_completion import (
     ChatCompletion,
     ChatCompletionMessage,
@@ -12,12 +15,48 @@ from openai.types.chat.chat_completion import (
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
 from openai.types.completion import Completion, CompletionChoice, CompletionUsage
-from tests.conftest import CachedOpenAIApiKeys
 
-try:
-    from llama_index.llms.openai import OpenAI
-except ImportError:
-    OpenAI = None
+
+class CachedOpenAIApiKeys:
+    """
+    Saves the users' OpenAI API key and OpenAI API type either in
+    the environment variable or set to the library itself.
+    This allows us to run tests by setting it without plowing over
+    the local environment.
+    """
+
+    def __init__(
+        self,
+        set_env_key_to: Optional[str] = "",
+        set_library_key_to: Optional[str] = None,
+        set_fake_key: bool = False,
+        set_env_type_to: Optional[str] = "",
+        set_library_type_to: str = "open_ai",  # default value in openai package
+    ):
+        self.set_env_key_to = set_env_key_to
+        self.set_library_key_to = set_library_key_to
+        self.set_fake_key = set_fake_key
+        self.set_env_type_to = set_env_type_to
+        self.set_library_type_to = set_library_type_to
+
+    def __enter__(self) -> None:
+        self.api_env_variable_was = os.environ.get("OPENAI_API_KEY", "")
+        self.api_env_type_was = os.environ.get("OPENAI_API_TYPE", "")
+        self.openai_api_key_was = openai.api_key
+        self.openai_api_type_was = openai.api_type
+
+        os.environ["OPENAI_API_KEY"] = str(self.set_env_key_to)
+        os.environ["OPENAI_API_TYPE"] = str(self.set_env_type_to)
+
+        if self.set_fake_key:
+            os.environ["OPENAI_API_KEY"] = "sk-" + "a" * 48
+
+    # No matter what, set the environment variable back to what it was
+    def __exit__(self, *exc: object) -> None:
+        os.environ["OPENAI_API_KEY"] = str(self.api_env_variable_was)
+        os.environ["OPENAI_API_TYPE"] = str(self.api_env_type_was)
+        openai.api_key = self.openai_api_key_was
+        openai.api_type = self.openai_api_type_was
 
 
 def mock_completion(*args: Any, **kwargs: Any) -> dict:
@@ -252,8 +291,7 @@ def mock_chat_completion_stream_v1(
     yield from responses
 
 
-@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
-@patch("llama_index.core.llms.openai.SyncOpenAI")
+@patch("llama_index.llms.openai.base.SyncOpenAI")
 def test_completion_model_basic(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -270,8 +308,7 @@ def test_completion_model_basic(MockSyncOpenAI: MagicMock) -> None:
         assert chat_response.message.content == "\n\nThis is indeed a test"
 
 
-@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
-@patch("llama_index.core.llms.openai.SyncOpenAI")
+@patch("llama_index.llms.openai.base.SyncOpenAI")
 def test_chat_model_basic(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -288,8 +325,7 @@ def test_chat_model_basic(MockSyncOpenAI: MagicMock) -> None:
         assert chat_response.message.content == "\n\nThis is a test!"
 
 
-@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
-@patch("llama_index.core.llms.openai.SyncOpenAI")
+@patch("llama_index.llms.openai.base.SyncOpenAI")
 def test_completion_model_streaming(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -309,8 +345,7 @@ def test_completion_model_streaming(MockSyncOpenAI: MagicMock) -> None:
         assert chat_responses[-1].message.content == "12"
 
 
-@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
-@patch("llama_index.core.llms.openai.SyncOpenAI")
+@patch("llama_index.llms.openai.base.SyncOpenAI")
 def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
     with CachedOpenAIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -335,9 +370,8 @@ def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
         assert chat_responses[-1].message.role == "assistant"
 
 
-@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
 @pytest.mark.asyncio()
-@patch("llama_index.core.llms.openai.AsyncOpenAI")
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_completion_model_async(MockAsyncOpenAI: MagicMock) -> None:
     mock_instance = MockAsyncOpenAI.return_value
     create_fn = AsyncMock()
@@ -355,9 +389,8 @@ async def test_completion_model_async(MockAsyncOpenAI: MagicMock) -> None:
     assert chat_response.message.content == "\n\nThis is indeed a test"
 
 
-@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
 @pytest.mark.asyncio()
-@patch("llama_index.core.llms.openai.AsyncOpenAI")
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_completion_model_async_streaming(MockAsyncOpenAI: MagicMock) -> None:
     mock_instance = MockAsyncOpenAI.return_value
     create_fn = AsyncMock()
@@ -377,7 +410,6 @@ async def test_completion_model_async_streaming(MockAsyncOpenAI: MagicMock) -> N
     assert chat_responses[-1].message.content == "12"
 
 
-@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
 def test_validates_api_key_is_present() -> None:
     with CachedOpenAIApiKeys():
         os.environ["OPENAI_API_KEY"] = "sk-" + ("a" * 48)

@@ -1,8 +1,8 @@
-from typing import Dict, Union
+from typing import Dict, Generator, Union
 
 import pytest
 from docker.models.containers import Container
-from llama_index.core.storage.kvstore.postgres_kvstore import PostgresKVStore
+from llama_index.storage.kvstore.postgres import PostgresKVStore
 
 try:
     import asyncpg  # noqa
@@ -12,6 +12,27 @@ try:
     no_packages = False
 except ImportError:
     no_packages = True
+
+
+@pytest.fixture()
+def postgres_kvstore(
+    postgres_container: Dict[str, Union[str, Container]],
+) -> Generator[PostgresKVStore, None, None]:
+    kvstore = None
+    try:
+        kvstore = PostgresKVStore(
+            connection_string=postgres_container["connection_string"],
+            async_connection_string=postgres_container["async_connection_string"],
+            table_name="test_kvstore",
+            schema_name="test_schema",
+            use_jsonb=True,
+        )
+        yield kvstore
+    finally:
+        if kvstore:
+            keys = kvstore.get_all().keys()
+            for key in keys:
+                kvstore.delete(key)
 
 
 @pytest.mark.skipif(

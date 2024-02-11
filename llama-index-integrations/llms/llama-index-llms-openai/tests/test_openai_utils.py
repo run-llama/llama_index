@@ -3,7 +3,7 @@ from typing import List
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.embeddings.openai_utils import (
+from llama_index.llms.openai.utils import (
     from_openai_message_dicts,
     from_openai_messages,
     to_openai_message_dicts,
@@ -18,6 +18,7 @@ from openai.types.chat.chat_completion_assistant_message_param import (
 
 from openai.types.chat.chat_completion_message import (
     ChatCompletionMessage,
+    ChatCompletionMessageToolCall,
 )
 
 
@@ -115,14 +116,14 @@ def azure_chat_messages_with_function_calling() -> List[ChatMessage]:
             content=None,
             additional_kwargs={
                 "tool_calls": [
-                    {
-                        "id": "0123",
-                        "type": "function",
-                        "function": {
-                            "name": "search_hotels",
-                            "arguments": '{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
-                        },
-                    },
+                    ChatCompletionMessageToolCall(
+                        id="0123",
+                        type="function",
+                        function=Function(
+                            name="search_hotels",
+                            arguments='{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
+                        ),
+                    )
                 ],
             },
         ),

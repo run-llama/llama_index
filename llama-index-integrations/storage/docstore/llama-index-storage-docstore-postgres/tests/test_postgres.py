@@ -2,10 +2,10 @@ from typing import List
 
 import pytest
 from llama_index.core.schema import BaseNode, Document
-from llama_index.core.storage.docstore.postgres_docstore import (
+from llama_index.storage.docstore.postgres import (
     PostgresDocumentStore,
 )
-from llama_index.core.storage.kvstore.postgres_kvstore import PostgresKVStore
+from llama_index.storage.kvstore.postgres import PostgresKVStore
 
 try:
     import asyncpg  # noqa

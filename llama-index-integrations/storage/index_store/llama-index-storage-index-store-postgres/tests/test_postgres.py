@@ -1,9 +1,9 @@
 import pytest
 from llama_index.core.data_structs.data_structs import IndexGraph
-from llama_index.core.storage.index_store.postgres_index_store import (
+from llama_index.storage.index_store.postgres import (
     PostgresIndexStore,
 )
-from llama_index.core.storage.kvstore.postgres_kvstore import PostgresKVStore
+from llama_index.storage.kvstore.postgres import PostgresKVStore
 
 try:
     import asyncpg  # noqa

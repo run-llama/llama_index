@@ -1,11 +1,36 @@
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import httpx
-from llama_index.core.llms.azure_openai import AzureOpenAI
-from tests.llms.test_openai import mock_chat_completion_v1
+from llama_index.llms.azure_openai import AzureOpenAI
+from openai.types.chat.chat_completion import (
+    ChatCompletion,
+    ChatCompletionMessage,
+    Choice,
+)
+from openai.types.completion import CompletionUsage
 
 
-@patch("llama_index.core.llms.azure_openai.SyncAzureOpenAI")
+def mock_chat_completion_v1(*args: Any, **kwargs: Any) -> ChatCompletion:
+    return ChatCompletion(
+        id="chatcmpl-abc123",
+        object="chat.completion",
+        created=1677858242,
+        model="gpt-3.5-turbo-0301",
+        usage=CompletionUsage(prompt_tokens=13, completion_tokens=7, total_tokens=20),
+        choices=[
+            Choice(
+                message=ChatCompletionMessage(
+                    role="assistant", content="\n\nThis is a test!"
+                ),
+                finish_reason="stop",
+                index=0,
+            )
+        ],
+    )
+
+
+@patch("llama_index.llms.azure_openai.base.SyncAzureOpenAI")
 def test_custom_http_client(sync_azure_openai_mock: MagicMock) -> None:
     """
     Verify that a custom http_client set for AzureOpenAI.

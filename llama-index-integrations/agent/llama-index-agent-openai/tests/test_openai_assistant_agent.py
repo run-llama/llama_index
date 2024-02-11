@@ -1,8 +1,10 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from llama_index.core.agent import OpenAIAssistantAgent
-from llama_index.core.agent.openai_assistant_agent import acall_function
+from llama_index.agent.openai.openai_assistant_agent import (
+    OpenAIAssistantAgent,
+    acall_function,
+)
 from llama_index.core.llms import ChatMessage
 from llama_index.core.tools import FunctionTool, ToolOutput
 
