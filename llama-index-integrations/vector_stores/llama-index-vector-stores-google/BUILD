@@ -3,6 +3,6 @@ poetry_requirements(
 )
 
 python_sources(
-    name="python39_target",
+    name="py39",
     interpreter_constraints=[">=3.9"],
 )

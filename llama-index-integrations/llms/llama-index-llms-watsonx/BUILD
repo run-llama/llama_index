@@ -3,6 +3,6 @@ poetry_requirements(
 )
 
 python_sources(
-    name="python310_target",
+    name="py310",
     interpreter_constraints=[">=3.10"],
 )
