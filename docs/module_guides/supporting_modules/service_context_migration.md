@@ -11,7 +11,7 @@ Configuring the global settings means you are change the default for EVERY modul
 ```python
 from llama_index.llms import Ollama
 from llama_index.embeddings import HuggingFaceEmbedding
-from llama_index.settings import Settings
+from llama_index.core import Settings
 
 Settings.llm = Ollama(model="llama2", request_timeout=120.0)
 Settings.embed_model = HuggingFaceEmbedding(
@@ -51,7 +51,7 @@ set_global_service_context(service_context)
 from llama_index.embeddings import OpenAIEmbedding
 from llama_index.node_parser import SentenceSplitter
 from llama_index.llms import OpenAI
-from llama_index.settings import Settings
+from llama_index.core import Settings
 
 Settings.llm = OpenAI(model="gpt-3.5-turbo")
 Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")

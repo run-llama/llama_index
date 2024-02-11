@@ -1,5 +1,5 @@
 from llama_index.schema import TextNode
-from llama_index.settings import Settings
+from llama_index.core import Settings
 from llama_index import VectorStoreIndex
 import pandas as pd
 from tqdm import tqdm
