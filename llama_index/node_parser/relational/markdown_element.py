@@ -63,13 +63,11 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
     def extract_elements(
         self,
         text: str,
+        node_id: Optional[str] = None,
         table_filters: Optional[List[Callable]] = None,
         **kwargs: Any,
     ) -> List[Element]:
         # get node id for each node so that we can avoid using the same id for different nodes
-        node_id = None
-        if "node_id" in kwargs:
-            node_id = kwargs.pop("node_id")
         """Extract elements from text."""
         lines = text.split("\n")
         currentElement = None
