@@ -75,7 +75,7 @@ nebulagraph_pack = NebulaGraphQueryEnginePack(
 Optionally, you can pass in the `query_engine_type` from `NebulaGraphQueryEngineType` to construct `NebulaGraphQueryEnginePack`. If `query_engine_type` is not defined, it defaults to Knowledge Graph vector based entity retrieval.
 
 ```python
-from llama_hub.llama_packs.nebulagraph_query_engine.base import (
+from llama_index.packs.nebulagraph_query_engine.base import (
     NebulaGraphQueryEngineType,
 )
 

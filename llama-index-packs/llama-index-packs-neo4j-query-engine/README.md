@@ -63,7 +63,7 @@ neo4j_pack = Neo4jQueryEnginePack(
 Optionally, you can pass in the `query_engine_type` from `Neo4jQueryEngineType` to construct `Neo4jQueryEnginePack`. If `query_engine_type` is not defined, it defaults to Knowledge Graph vector based entity retrieval.
 
 ```python
-from llama_hub.llama_packs.neo4j_query_engine.base import Neo4jQueryEngineType
+from llama_index.packs.neo4j_query_engine.base import Neo4jQueryEngineType
 
 # create the pack
 neo4j_pack = Neo4jQueryEnginePack(
