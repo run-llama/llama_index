@@ -2,14 +2,16 @@
 
 ## [0.9.47] - 2024-02-11
 
-Last patch before v0.10! 
+Last patch before v0.10!
 
 ### New Features
-- add conditional links to query pipeline  (#10520)
+
+- add conditional links to query pipeline (#10520)
 - refactor conditional links + add to cookbook (#10544)
-- agent + query pipeline cleanups  (#10563) 
+- agent + query pipeline cleanups (#10563)
 
 ### Bug Fixes / Nits
+
 - Add sleep to fix lag in chat stream (#10339)
 - OllamaMultiModal kwargs (#10541)
 - Update Ingestion Pipeline to handle empty documents (#10543)
