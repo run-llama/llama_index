@@ -3,6 +3,9 @@ Welcome to LlamaIndex 🦙 !
 
 LlamaIndex is a data framework for `LLM <https://en.wikipedia.org/wiki/Large_language_model>`_-based applications to ingest, structure, and access private or domain-specific data. It's available in Python (these docs) and `Typescript <https://ts.llamaindex.ai/>`_.
 
+.. tip::
+   Updating to LlamaIndex v0.10.0? Check out the `migration guide <./getting_started/v0_10_0_migration.html>`_.
+
 🚀 Why LlamaIndex?
 ******************
 
