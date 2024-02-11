@@ -14,6 +14,14 @@ There are many embedding models to pick from. By default, LlamaIndex uses `text-
 
 Most commonly in LlamaIndex, embedding models will be specified in the `Settings` object, and then used in a vector index. The embedding model will be used to embed the documents used during index construction, as well as embedding any queries you make using the query engine later on. You can also specify embedding models per-index.
 
+If you don't already have your embeddings installed:
+
+```
+pip install llama-index-embeddings-openai
+```
+
+Then:
+
 ```python
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import Settings
@@ -26,6 +34,10 @@ index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
 ```
 
 To save costs, you may want to use a local model.
+
+```
+pip install llama-index-embeddings-huggingface
+```
 
 ```python
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
@@ -99,6 +111,7 @@ Some prerequisites:
 
 ```
 pip install transformers optimum[exporters]
+pip install llama-index-embeddings-huggingface-optimum
 ```
 
 Creation with specifying the model and output path:
@@ -122,6 +135,10 @@ Settings.embed_model = OptimumEmbedding(folder_name="./bge_onnx")
 We also support any embeddings offered by Langchain [here](https://python.langchain.com/docs/modules/data_connection/text_embedding/).
 
 The example below loads a model from Hugging Face, using Langchain's embedding class.
+
+```
+pip install llama-index-embeddings-langchain
+```
 
 ```python
 from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
@@ -168,6 +185,12 @@ class InstructorEmbeddings(BaseEmbedding):
                 [[self._instruction, text] for text in texts]
             )
             return embeddings
+
+        async def _get_query_embedding(self, query: str) -> List[float]:
+            return self._get_query_embedding(query)
+
+        async def _get_text_embedding(self, text: str) -> List[float]:
+            return self._get_text_embedding(text)
 ```
 
 ## Standalone Usage

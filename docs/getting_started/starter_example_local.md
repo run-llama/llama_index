@@ -1,7 +1,7 @@
 # Starter Tutorial (Local Models)
 
 ```{tip}
-Make sure you've followed the [installation](installation.md) steps first.
+Make sure you've followed the [custom installation](installation.md) steps first.
 ```
 
 This is our famous "5 lines of code" starter example with local LLM and embedding models. We will use `BAAI/bge-m3` as our embedding model and `Mistral-7B` served through `Ollama` as our LLM.

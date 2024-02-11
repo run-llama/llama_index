@@ -17,6 +17,14 @@ don't have to write the boilerplate code of defining the LLM interface yourself.
 
 The following code snippet shows how you can get started using LLMs.
 
+If you don't already have it, install your LLM:
+
+```
+pip install llama-index-llms-openai
+```
+
+Then:
+
 ```python
 from llama_index.llms.openai import OpenAI
 
@@ -44,18 +52,18 @@ The single requirement for a tokenizer is that it is a callable function, that t
 You can set a global tokenizer like so:
 
 ```python
-from llama_index.core import set_global_tokenizer
+from llama_index.core import Settings
 
 # tiktoken
 import tiktoken
 
-set_global_tokenizer(tiktoken.encoding_for_model("gpt-3.5-turbo").encode)
+Settings.tokenizer = tiktoken.encoding_for_model("gpt-3.5-turbo").encode
 
 # huggingface
 from transformers import AutoTokenizer
 
-set_global_tokenizer(
-    AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta").encode
+Settings.tokenizer = AutoTokenizer.from_pretrained(
+    "HuggingFaceH4/zephyr-7b-beta"
 )
 ```
 
