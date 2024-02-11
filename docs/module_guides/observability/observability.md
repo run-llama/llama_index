@@ -41,9 +41,9 @@ This simple observability tool prints every LLM input/output pair to the termina
 #### Usage Pattern
 
 ```python
-import llama_index
+import llama_index.core
 
-llama_index.set_global_handler("simple")
+llama_index.core.set_global_handler("simple")
 ```
 
 ## Partner `One-Click` Integrations
@@ -87,12 +87,12 @@ set_global_handler("wandb", run_args={"project": "llamaindex"})
 # Settings.callback_manager = CallbackManager([wandb_callback])
 
 # access additional methods on handler to persist index + load index
-import llama_index
+import llama_index.core
 
 # persist index
-llama_index.global_handler.persist_index(graph, index_name="my_index")
+llama_index.core.global_handler.persist_index(graph, index_name="my_index")
 # load storage context
-storage_context = llama_index.global_handler.load_storage_context(
+storage_context = llama_index.core.global_handler.load_storage_context(
     artifact_url="ayut/llamaindex/my_index:v0"
 )
 ```
@@ -151,9 +151,9 @@ px.launch_app()
 # The App is initially empty, but as you proceed with the steps below,
 # traces will appear automatically as your LlamaIndex application runs.
 
-import llama_index
+import llama_index.core
 
-llama_index.set_global_handler("arize_phoenix")
+llama_index.core.set_global_handler("arize_phoenix")
 
 # Run all of your LlamaIndex applications as usual and traces
 # will be collected and displayed in Phoenix.
@@ -178,9 +178,9 @@ Arize Phoenix Tracing Tutorial <https://colab.research.google.com/github/Arize-a
 #### Usage Pattern
 
 ```python
-import llama_index
+import llama_index.core
 
-llama_index.set_global_handler("openinference")
+llama_index.core.set_global_handler("openinference")
 
 # NOTE: No need to do the following
 # from llama_index.callbacks import OpenInferenceCallbackHandler, CallbackManager
@@ -195,7 +195,7 @@ for query in queries:
 # View your LLM app data as a dataframe in OpenInference format.
 from llama_index.callbacks.open_inference_callback import as_dataframe
 
-query_data_buffer = llama_index.global_handler.flush_query_data_buffer()
+query_data_buffer = llama_index.core.global_handler.flush_query_data_buffer()
 query_dataframe = as_dataframe(query_data_buffer)
 ```
 
