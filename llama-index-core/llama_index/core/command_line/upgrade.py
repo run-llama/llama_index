@@ -26,7 +26,7 @@ def _parse_from_imports(
                 imported_modules[-1] = []
                 parsing_modules = True
             else:
-                imported_modules = [imported_modules[-1].split(", ")]
+                imported_modules = [line, imported_modules[-1].split(", ")]
 
         if parsing_modules:
             if ")" in line:
