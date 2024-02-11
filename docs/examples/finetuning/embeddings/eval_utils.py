@@ -1,6 +1,6 @@
-from llama_index.schema import TextNode
-from llama_index.core import Settings
-from llama_index import VectorStoreIndex
+from llama_index.core.schema import TextNode
+from llama_index.core.core import Settings
+from llama_index.core import VectorStoreIndex
 import pandas as pd
 from tqdm import tqdm
 
