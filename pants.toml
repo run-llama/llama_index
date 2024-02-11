@@ -2,6 +2,7 @@
 backend_packages = [
     "pants.backend.python",
     "pants.backend.python.lint.black",
+    "pants.backend.python.mixed_interpreter_constraints",
     "pants.backend.python.typecheck.mypy",
 ]
 pants_version = "2.19.0"
@@ -14,7 +15,7 @@ remote_store_address = "grpc://44.204.50.6:9092"
 config = "./pyproject.toml"
 
 [python]
-interpreter_constraints = ['>=3.8.1']
+interpreter_constraints = [">=3.8.1"]
 
 [python-infer]
 ambiguity_resolution = "by_source_root"
