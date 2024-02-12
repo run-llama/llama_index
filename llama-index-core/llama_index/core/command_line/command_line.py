@@ -17,6 +17,15 @@ from llama_index.core.llama_pack.download import (
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.text_splitter import SentenceSplitter
 
+from llama_index.core.command_line.new_package.base import init_new_package
+
+
+def handle_init_package(
+    name: str, kind: str, prefix: Optional[str] = None, **kwargs: Any
+):
+    init_new_package(integration_name=name, integration_type=kind, prefix=prefix)
+    print(f"Successfully initialized package")
+
 
 def handle_download_llama_pack(
     llama_pack_class: Optional[str] = None,
@@ -227,6 +236,31 @@ def main() -> None:
         help="The directory to upgrade. Will run on only .ipynb or .py files.",
     )
     upgrade_file_parser.set_defaults(func=lambda args: upgrade_file(args.path))
+
+    # init package command
+    new_package_parser = subparsers.add_parser(
+        "new-package", help="Initialize a new llama-index package"
+    )
+    new_package_parser.add_argument(
+        "-k",
+        "--kind",
+        type=str,
+        help="Kind of package, e.g., llm, embedding, pack, etc.",
+    )
+    new_package_parser.add_argument(
+        "-n",
+        "--name",
+        type=str,
+        help="Name of python package",
+    )
+    new_package_parser.add_argument(
+        "-p",
+        "--prefix",
+        type=str,
+        required=False,
+        help="Name of prefix package",
+    )
+    new_package_parser.set_defaults(func=lambda args: handle_init_package(**vars(args)))
 
     # Parse the command-line arguments
     args = parser.parse_args()
