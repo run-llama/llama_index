@@ -156,6 +156,12 @@ class BaseTool(ChainableMixin):
         )
 
 
+class BaseToolComponent(QueryComponent):
+    """Base tool component."""
+    
+    tool: BaseTool = Field(..., description="Tool")
+
+
 class AsyncBaseTool(BaseTool):
     """
     Base-level tool class that is backwards compatible with the old tool spec but also

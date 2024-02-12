@@ -16,12 +16,12 @@ from llama_index.core.query_pipeline.query_component import (
     validate_and_convert_stringable,
 )
 from llama_index.tools import AsyncBaseTool, adapt_to_async_tool
-
+from llama_index.tools.types import BaseToolComponent
 
 class ToolRunnerComponent(QueryComponent):
     """Tool runner component that takes in a set of tools."""
 
-    tool_dict: Dict[str, AsyncBaseTool] = Field(
+    tool_dict: Dict[str, BaseToolComponent] = Field(
         ..., description="Dictionary of tool names to tools."
     )
     callback_manager: CallbackManager = Field(
@@ -36,7 +36,9 @@ class ToolRunnerComponent(QueryComponent):
     ) -> None:
         """Initialize."""
         # determine parameters
-        tool_dict = {tool.metadata.name: adapt_to_async_tool(tool) for tool in tools}
+        raw_tool_dict: Dict[str, AsyncBaseTool] = {tool.metadata.name: adapt_to_async_tool(tool) for tool in tools}
+        tool_dict: Dict[str, BaseToolComponent] = {tool.metadata.name: tool.as_query_component() for tool in raw_tool_dict}
+        
         callback_manager = callback_manager or CallbackManager([])
         super().__init__(
             tool_dict=tool_dict, callback_manager=callback_manager, **kwargs

@@ -6,7 +6,7 @@ from llama_index.callbacks.base import CallbackManager
 if TYPE_CHECKING:
     from llama_index.bridge.langchain import StructuredTool, Tool
 from llama_index.bridge.pydantic import BaseModel
-from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
+from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput, BaseToolComponent
 from llama_index.core.query_pipeline.query_component import ChainableMixin, QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 from llama_index.tools.utils import create_schema_from_function
 from llama_index.bridge.pydantic import Field
@@ -135,7 +135,7 @@ class FunctionTool(AsyncBaseTool):
         )
 
 
-class FunctionToolComponent(QueryComponent):
+class FunctionToolComponent(BaseToolComponent):
     """Query engine tool component."""
     
     tool: FunctionTool = Field(..., description="Query engine tool")

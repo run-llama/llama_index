@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from llama_index.langchain_helpers.agents.tools import (
         LlamaIndexTool,
     )
-from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
+from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput, BaseToolComponent
 from llama_index.core.query_pipeline.query_component import ChainableMixin, QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 from llama_index.bridge.pydantic import Field
 
@@ -125,7 +125,7 @@ class QueryEngineTool(AsyncBaseTool):
 
 
 
-class QueryEngineToolComponent(QueryComponent):
+class QueryEngineToolComponent(BaseToolComponent):
     """Query engine tool component."""
     
     tool: QueryEngineTool = Field(..., description="Query engine tool")
