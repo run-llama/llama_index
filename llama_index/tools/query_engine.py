@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
+from llama_index.callbacks.base import CallbackManager
 
 from llama_index.core.base_query_engine import BaseQueryEngine
 
@@ -7,6 +8,8 @@ if TYPE_CHECKING:
         LlamaIndexTool,
     )
 from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
+from llama_index.core.query_pipeline.query_component import ChainableMixin, QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
+from llama_index.bridge.pydantic import Field
 
 DEFAULT_NAME = "query_engine_tool"
 DEFAULT_DESCRIPTION = """Useful for running a natural language query
@@ -112,3 +115,51 @@ class QueryEngineTool(AsyncBaseTool):
             description=self.metadata.description,
         )
         return LlamaIndexTool.from_tool_config(tool_config=tool_config)
+
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """As query component."""
+        raise NotImplementedError(
+            "The base tool does not support being used as a query component. "
+            "Please use a supported tool type: FunctionTool, QueryEngineTool, etc.."
+        )
+
+
+
+class QueryEngineToolComponent(QueryComponent):
+    """Query engine tool component."""
+    
+    tool: QueryEngineTool = Field(..., description="Query engine tool")
+    
+    class Config:
+        arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        self.tool.query_engine.callback_manager = callback_manager
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        if "input" in input:
+            input["input"] = validate_and_convert_stringable(input["input"])
+        return input
+
+    def _run_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        return self.tool.call(kwargs["input"])
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # NOTE: no native async for prompt
+        return await self.tool.acall(kwargs["input"])
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        return InputKeys.from_keys({"input"})
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"output"})
+
+
+    

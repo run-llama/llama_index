@@ -3,6 +3,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
+from llama_index.core.query_pipeline.query_component import ChainableMixin, QueryComponent
+
 if TYPE_CHECKING:
     from llama_index.bridge.langchain import StructuredTool, Tool
 from deprecated import deprecated
@@ -93,7 +95,7 @@ class ToolOutput(BaseModel):
         return str(self.content)
 
 
-class BaseTool:
+class BaseTool(ChainableMixin):
     @property
     @abstractmethod
     def metadata(self) -> ToolMetadata:
@@ -144,6 +146,13 @@ class BaseTool:
         return StructuredTool.from_function(
             func=self.__call__,
             **langchain_tool_kwargs,
+        )
+
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """As query component."""
+        raise NotImplementedError(
+            "The base tool does not support being used as a query component. "
+            "Please use a supported tool type: FunctionTool, QueryEngineTool, etc.."
         )
 
 

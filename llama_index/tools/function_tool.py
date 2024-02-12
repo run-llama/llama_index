@@ -1,12 +1,15 @@
 import asyncio
 from inspect import signature
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type, Dict
+from llama_index.callbacks.base import CallbackManager
 
 if TYPE_CHECKING:
     from llama_index.bridge.langchain import StructuredTool, Tool
 from llama_index.bridge.pydantic import BaseModel
 from llama_index.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
+from llama_index.core.query_pipeline.query_component import ChainableMixin, QueryComponent, validate_and_convert_stringable, InputKeys, OutputKeys
 from llama_index.tools.utils import create_schema_from_function
+from llama_index.bridge.pydantic import Field
 
 AsyncCallable = Callable[..., Awaitable[Any]]
 
@@ -130,3 +133,46 @@ class FunctionTool(AsyncBaseTool):
             coroutine=self.async_fn,
             **langchain_tool_kwargs,
         )
+
+
+class FunctionToolComponent(QueryComponent):
+    """Query engine tool component."""
+    
+    tool: FunctionTool = Field(..., description="Query engine tool")
+    
+    class Config:
+        arbitrary_types_allowed = True
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        # empty for now
+        pass
+
+    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate component inputs during run_component."""
+        pass
+        # self.tool.fn_schema.schema()
+        # parameters = {
+        #     k: v
+        #     for k, v in parameters.items()
+        #     if k in ["type", "properties", "required", "definitions"]
+        # }
+
+    def _run_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        return self.tool.call(**kwargs)
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Run component."""
+        # NOTE: no native async for prompt
+        return await self.tool.acall(**kwargs)
+
+    @property
+    def input_keys(self) -> InputKeys:
+        """Input keys."""
+        return InputKeys.from_keys({"input"})
+
+    @property
+    def output_keys(self) -> OutputKeys:
+        """Output keys."""
+        return OutputKeys.from_keys({"output"})
