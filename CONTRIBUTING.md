@@ -34,7 +34,11 @@ Contributing an integration involves submitting the source code for a new Python
 package. For now, these integrations will live in the LlamaIndex Github repository
 and the team will be responsible for publishing the package to PyPi. (Having
 these packages live outside of this repository and maintained by our community
-members is in consideration.) Both `llama-index` and `llama-index-core` come equipped
+members is in consideration.)
+
+#### Creating A New Integration Package
+
+Both `llama-index` and `llama-index-core` come equipped
 with a command-line tool that can be used to initialize a new integration package.
 
 ```shell
