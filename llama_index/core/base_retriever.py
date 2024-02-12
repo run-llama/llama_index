@@ -74,28 +74,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 color="llama_pink",
             )
 
-        if isinstance(obj, str):
-            return [
-                NodeWithScore(
-                    node=TextNode(text=obj),
-                    score=score,
-                )
-            ]
-        elif isinstance(obj, dict):
-            from llama_index.storage.docstore.utils import json_to_doc
-
-            # check if its a node, else assume string
-            try:
-                node = json_to_doc(obj)
-                return [NodeWithScore(node=node, score=score)]
-            except Exception:
-                return [
-                    NodeWithScore(
-                        node=TextNode(text=str(obj)),
-                        score=score,
-                    )
-                ]
-        elif isinstance(obj, NodeWithScore):
+        if isinstance(obj, NodeWithScore):
             return [obj]
         elif isinstance(obj, BaseNode):
             return [NodeWithScore(node=obj, score=score)]
