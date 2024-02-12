@@ -67,11 +67,11 @@ def test_build_deeplake(
     node_with_embedding.embedding = [1.0 for i in range(EMBEDDING_DIM)]
     new_nodes = [node_with_embedding for i in range(NUMBER_OF_DATA)]
     vector_store.add(new_nodes)
-    assert len(vector_store.vectorstore) == 14
+    assert len(vector_store._vectorstore) == 14
 
     ref_doc_id = str(node.ref_doc_id)
     vector_store.delete(ref_doc_id)
-    assert len(vector_store.vectorstore) == 3
+    assert len(vector_store._vectorstore) == 3
     deeplake.delete(dataset_path)
 
 
@@ -146,5 +146,5 @@ def test_backwards_compatibility() -> None:
     )
 
     vectorstore.add(nodes)
-    assert len(vectorstore.vectorstore) == 20
+    assert len(vectorstore._vectorstore) == 20
     deeplake.delete(dataset_path)
