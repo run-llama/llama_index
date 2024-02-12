@@ -252,3 +252,8 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         # reset new memory
         task.extra_state["memory"].reset()
         self._finalize_task(task.extra_state, **kwargs)
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        # TODO: make this abstractmethod (right now will break some agent impls)
+        self.callback_manager = callback_manager

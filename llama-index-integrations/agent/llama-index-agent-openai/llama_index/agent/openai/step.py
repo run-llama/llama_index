@@ -636,3 +636,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
         # #         break
 
         # # while cast(AgentChatResponse, last_step_output.output).response !=
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        # TODO: make this abstractmethod (right now will break some agent impls)
+        self.callback_manager = callback_manager
