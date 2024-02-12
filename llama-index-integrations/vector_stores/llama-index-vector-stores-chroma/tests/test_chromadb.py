@@ -106,7 +106,7 @@ def node_embeddings() -> List[TextNode]:
             text="I was taught that the way of progress was neither swift nor easy.",
             id_="0b31ae71-b797-4e88-8495-031371a7752e",
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="text-3")},
-            metadate={
+            metadata={
                 "author": "Marie Curie",
             },
             embedding=[0.0, 0.0, 0.9],
@@ -118,7 +118,7 @@ def node_embeddings() -> List[TextNode]:
             ),
             id_="bd2e080b-159a-4030-acc3-d98afd2ba49b",
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="text-4")},
-            metadate={
+            metadata={
                 "author": "Albert Einstein",
             },
             embedding=[0.0, 0.0, 0.5],
@@ -130,7 +130,7 @@ def node_embeddings() -> List[TextNode]:
             ),
             id_="f658de3b-8cef-4d1c-8bed-9a263c907251",
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="text-5")},
-            metadate={
+            metadata={
                 "author": "Charlotte Bronte",
             },
             embedding=[0.0, 0.0, 0.3],
