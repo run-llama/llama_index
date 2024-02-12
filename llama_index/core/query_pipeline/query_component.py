@@ -1,7 +1,18 @@
 """Pipeline schema."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Set, Union, cast, get_args
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Set,
+    Union,
+    cast,
+    get_args,
+)
 
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
@@ -294,16 +305,32 @@ class Link(BaseModel):
         default=None, description="Destination component input key"
     )
 
+    condition_fn: Optional[Callable] = Field(
+        default=None, description="Condition to determine if link should be followed"
+    )
+    input_fn: Optional[Callable] = Field(
+        default=None, description="Input to destination component"
+    )
+
     def __init__(
         self,
         src: str,
         dest: str,
         src_key: Optional[str] = None,
         dest_key: Optional[str] = None,
+        condition_fn: Optional[Callable] = None,
+        input_fn: Optional[Callable] = None,
     ) -> None:
         """Init params."""
         # NOTE: This is to enable positional args.
-        super().__init__(src=src, dest=dest, src_key=src_key, dest_key=dest_key)
+        super().__init__(
+            src=src,
+            dest=dest,
+            src_key=src_key,
+            dest_key=dest_key,
+            condition_fn=condition_fn,
+            input_fn=input_fn,
+        )
 
 
 # accept both QueryComponent and ChainableMixin as inputs to query pipeline

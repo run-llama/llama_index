@@ -191,3 +191,9 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         task.memory.set(task.memory.get() + task.extra_state["memory"].get_all())
         # reset new memory
         task.extra_state["memory"].reset()
+
+    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
+        """Set callback manager."""
+        # TODO: make this abstractmethod (right now will break some agent impls)
+        self.callback_manager = callback_manager
+        self.pipeline.set_callback_manager(callback_manager)

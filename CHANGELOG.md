@@ -1,5 +1,53 @@
 # ChangeLog
 
+## [0.9.47] - 2024-02-11
+
+Last patch before v0.10!
+
+### New Features
+
+- add conditional links to query pipeline (#10520)
+- refactor conditional links + add to cookbook (#10544)
+- agent + query pipeline cleanups (#10563)
+
+### Bug Fixes / Nits
+
+- Add sleep to fix lag in chat stream (#10339)
+- OllamaMultiModal kwargs (#10541)
+- Update Ingestion Pipeline to handle empty documents (#10543)
+- Fixing minor spelling error (#10516)
+- fix elasticsearch async check (#10549)
+- Docs/update slack demo colab (#10534)
+- Adding the possibility to use the IN operator for PGVectorStore (#10547)
+- fix agent reset (#10562)
+- Fix MD duplicated Node id from multiple docs (#10564)
+
+## [0.9.46] - 2024-02-08
+
+### New Features
+
+- Update pooling strategy for embedding models (#10536)
+- Add Multimodal Video RAG example (#10530)
+- Add SECURITY.md (#10531)
+- Move agent module guide up one-level (#10519)
+
+### Bug Fixes / Nits
+
+- Deeplake fixes (#10529)
+- Add Cohere section for llamaindex (#10523)
+- Fix md element (#10510)
+
+## [0.9.45.post1] - 2024-02-07
+
+### New Features
+
+- Upgraded deeplake vector database to use BasePydanticVectorStore (#10504)
+
+### Bug Fixes / Nits
+
+- Fix MD parser for inconsistency tables (#10488)
+- Fix ImportError for pypdf in MetadataExtractionSEC.ipynb (#10491)
+
 ## [0.9.45] - 2024-02-07
 
 ### New Features
