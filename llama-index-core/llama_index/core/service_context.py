@@ -2,14 +2,21 @@ import logging
 from dataclasses import dataclass
 from typing import Any, List, Optional, cast
 
+from deprecated import deprecated
+
 import llama_index.core
-from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.service_context_elements.llm_predictor import (
+    LLMPredictor,
+    BaseLLMPredictor,
+)
 from llama_index.core.llms.base import LLMMetadata
 from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.utils import LLMType, resolve_llm
+from llama_index.core.service_context_elements.llama_logger import LlamaLogger
 from llama_index.core.node_parser.interface import NodeParser, TextSplitter
 from llama_index.core.node_parser.text.sentence import (
     DEFAULT_CHUNK_SIZE,
@@ -18,11 +25,6 @@ from llama_index.core.node_parser.text.sentence import (
 )
 from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.schema import TransformComponent
-from llama_index.core.service_context_elements.llama_logger import LlamaLogger
-from llama_index.core.service_context_elements.llm_predictor import (
-    BaseLLMPredictor,
-    LLMPredictor,
-)
 from llama_index.core.types import PydanticProgramMode
 
 logger = logging.getLogger(__name__)
@@ -85,6 +87,10 @@ class ServiceContext:
     callback_manager: CallbackManager
 
     @classmethod
+    @deprecated(
+        version="0.10.0",
+        reason="ServiceContext is deprecated, please use `llama_index.settings.Settings` instead.",
+    )
     def from_defaults(
         cls,
         llm_predictor: Optional[BaseLLMPredictor] = None,
@@ -113,7 +119,7 @@ class ServiceContext:
         If an argument is specified, then use the argument value provided for that
         parameter. If an argument is not specified, then use the default value.
 
-        You can change the base defaults by setting llama_index.core.global_service_context
+        You can change the base defaults by setting llama_index.global_service_context
         to a ServiceContext object with your desired settings.
 
         Args:
@@ -134,10 +140,7 @@ class ServiceContext:
             chunk_size_limit (Optional[int]): renamed to chunk_size
 
         """
-        from llama_index.core.embeddings.utils import (
-            EmbedType,
-            resolve_embed_model,
-        )
+        from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 
         embed_model = cast(EmbedType, embed_model)
 
@@ -254,10 +257,7 @@ class ServiceContext:
         chunk_size_limit: Optional[int] = None,
     ) -> "ServiceContext":
         """Instantiate a new service context using a previous as the defaults."""
-        from llama_index.core.embeddings.utils import (
-            EmbedType,
-            resolve_embed_model,
-        )
+        from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 
         embed_model = cast(EmbedType, embed_model)
 
@@ -399,3 +399,13 @@ class ServiceContext:
 def set_global_service_context(service_context: Optional[ServiceContext]) -> None:
     """Helper function to set the global service context."""
     llama_index.core.global_service_context = service_context
+
+    if service_context is not None:
+        from llama_index.core.settings import Settings
+
+        Settings.llm = service_context.llm
+        Settings.embed_model = service_context.embed_model
+        Settings.prompt_helper = service_context.prompt_helper
+        Settings.transformations = service_context.transformations
+        Settings.node_parser = service_context.node_parser
+        Settings.callback_manager = service_context.callback_manager
