@@ -34,7 +34,16 @@ Contributing an integration involves submitting the source code for a new Python
 package. For now, these integrations will live in the LlamaIndex Github repository
 and the team will be responsible for publishing the package to PyPi. (Having
 these packages live outside of this repository and maintained by our community
-members is in consideration.)
+members is in consideration.) Both `llama-index` and `llama-index-core` come equipped
+with a command-line tool that can be used to initialize a new integration package.
+
+```shell
+cd ./llama-index-integrations/llms
+llamaindex-cli new-package --kind "llms" --name "gemini"
+```
+
+Executing the above commands will create a new folder called `llama-index-llms-gemini`
+within the `llama-index-integrations/llms` directory.
 
 **NOTE**: We are making rapid improvements to the project, and as a result,
 some interfaces are still volatile. Specifically, we are actively working on making the following components more modular and extensible (uncolored boxes above): core indexes, document stores, index queries, query runner
@@ -267,6 +276,20 @@ migrated here in the near future.
 Contributing a new Reader or Tool involves submitting a new package within
 the [llama-index-integrations/readers](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) and [llama-index-integrations/tools](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools),
 folders respectively.
+
+The LlamaIndex command-line tool can be used to initialize new Packs and Integrations.
+
+```shell
+cd ./llama-index-packs
+llamaindex-cli new-package --kind "packs" --name "my new pack"
+
+cd ./llama-index-integrations/readers
+llamaindex-cli new-pacakge --kind "readers" --name "new reader"
+```
+
+Executing the first set of shell commands will create a new folder called `llama-index-packs-my-new-pack`
+within the `llama-index-packs` directory. While the second set will create a new
+package directory called `llama-index-readers-new-reader` within the `llama-index-integrations/readers` directory.
 
 ### 3. 🧠 Add new capabilities to core
 
