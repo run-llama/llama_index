@@ -9,10 +9,12 @@ except ImportError:
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores import QdrantVectorStore
+from llama_index.vector_stores.qdrant_utils import relative_score_fusion
 from llama_index.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,
+    VectorStoreQueryResult,
 )
 
 
@@ -51,6 +53,21 @@ def test_add_stores_data(node_embeddings: List[TextNode]) -> None:
         client.count("test")  # That indicates the collection does not exist
 
     qdrant_vector_store.add(node_embeddings)
+
+    assert client.count("test").count == 2
+
+
+@pytest.mark.skipif(qdrant_client is None, reason="qdrant-client not installed")
+def test_add_stores_data_multiple_connections(node_embeddings: List[TextNode]) -> None:
+    client = qdrant_client.QdrantClient(":memory:")
+    qdrant_vector_store_a = QdrantVectorStore(collection_name="test", client=client)
+    qdrant_vector_store_b = QdrantVectorStore(collection_name="test", client=client)
+
+    with pytest.raises(ValueError):
+        client.count("test")  # That indicates the collection does not exist
+
+    qdrant_vector_store_a.add([node_embeddings[0]])
+    qdrant_vector_store_b.add([node_embeddings[1]])
 
     assert client.count("test").count == 2
 
@@ -144,3 +161,109 @@ def test_build_query_filter_returns_combined_filter() -> None:
     assert isinstance(query_filter.must[3].range, Range)  # type: ignore[index]
     assert query_filter.must[3].range.gte == 3.5  # type: ignore[index]
     assert query_filter.must[3].range.lte == 3.5  # type: ignore[index]
+
+
+def test_relative_score_fusion() -> None:
+    nodes = [
+        TextNode(
+            text="lorem ipsum",
+            id_="1",
+        ),
+        TextNode(
+            text="lorem ipsum",
+            id_="2",
+        ),
+        TextNode(
+            text="lorem ipsum",
+            id_="3",
+        ),
+    ]
+
+    sparse_result = VectorStoreQueryResult(
+        ids=["1", "2", "3"],
+        similarities=[0.2, 0.3, 0.4],
+        nodes=nodes,
+    )
+
+    dense_result = VectorStoreQueryResult(
+        ids=["3", "2", "1"],
+        similarities=[0.8, 0.5, 0.6],
+        nodes=nodes[::-1],
+    )
+
+    fused_result = relative_score_fusion(dense_result, sparse_result, top_k=3)
+    assert fused_result.ids == ["3", "2", "1"]
+
+    # make sparse result empty
+    sparse_result = VectorStoreQueryResult(
+        ids=[],
+        similarities=[],
+        nodes=[],
+    )
+
+    fused_result = relative_score_fusion(dense_result, sparse_result, top_k=3)
+    assert fused_result.ids == ["3", "2", "1"]
+
+    # make both results a single node
+    sparse_result = VectorStoreQueryResult(
+        ids=["1"],
+        similarities=[0.2],
+        nodes=[nodes[0]],
+    )
+
+    dense_result = VectorStoreQueryResult(
+        ids=["1"],
+        similarities=[0.8],
+        nodes=[nodes[0]],
+    )
+
+    fused_result = relative_score_fusion(dense_result, sparse_result, top_k=3)
+    assert fused_result.ids == ["1"]
+
+    # test only dense result
+    sparse_result = VectorStoreQueryResult(
+        ids=[],
+        similarities=[],
+        nodes=[],
+    )
+
+    dense_result = VectorStoreQueryResult(
+        ids=["1"],
+        similarities=[0.8],
+        nodes=[nodes[0]],
+    )
+
+    fused_result = relative_score_fusion(dense_result, sparse_result, top_k=3)
+    assert fused_result.ids == ["1"]
+
+    # test only sparse result
+    sparse_result = VectorStoreQueryResult(
+        ids=["1"],
+        similarities=[0.88],
+        nodes=[nodes[0]],
+    )
+
+    dense_result = VectorStoreQueryResult(
+        ids=[],
+        similarities=[],
+        nodes=[],
+    )
+
+    fused_result = relative_score_fusion(dense_result, sparse_result, top_k=3)
+    assert fused_result.ids == ["1"]
+
+    # test both sparse result and dense result are empty
+    sparse_result = VectorStoreQueryResult(
+        ids=[],
+        similarities=[],
+        nodes=[],
+    )
+
+    dense_result = VectorStoreQueryResult(
+        ids=[],
+        similarities=[],
+        nodes=[],
+    )
+
+    fused_result = relative_score_fusion(dense_result, sparse_result, top_k=3)
+    assert fused_result.ids is None

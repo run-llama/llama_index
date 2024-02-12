@@ -52,9 +52,9 @@ class HierarchicalNodeParser(NodeParser):
     For instance, this may return a list of nodes like:
     - list of top-level nodes with chunk size 2048
     - list of second-level nodes, where each node is a child of a top-level node,
-        chunk size 512
+      chunk size 512
     - list of third-level nodes, where each node is a child of a second-level node,
-        chunk size 128
+      chunk size 128
     """
 
     chunk_sizes: Optional[List[int]] = Field(
@@ -98,6 +98,8 @@ class HierarchicalNodeParser(NodeParser):
                     chunk_size=chunk_size,
                     callback_manager=callback_manager,
                     chunk_overlap=chunk_overlap,
+                    include_metadata=include_metadata,
+                    include_prev_next_rel=include_prev_next_rel,
                 )
         else:
             if chunk_sizes is not None:

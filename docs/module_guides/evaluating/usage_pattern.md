@@ -211,5 +211,53 @@ eval_results = await runner.aevaluate_queries(
 
 We also integrate with community evaluation tools.
 
-- [DeepEval](../../../community/integrations/deepeval.md)
+- [UpTrain](https://github.com/uptrain-ai/uptrain)
+- [DeepEval](https://github.com/confident-ai/deepeval)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
+
+### DeepEval
+
+[DeepEval](https://github.com/confident-ai/deepeval) offers 6 evaluators (including 3 RAG evaluators, for both retriever and generator evaluation) powered by its proprietary evaluation metrics. To being, install `deepeval`:
+
+```
+pip install -U deepeval
+```
+
+You can then import and use evaluators from `deepeval`. Full example:
+
+```python
+from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from deepeval.integrations.llama_index import DeepEvalAnswerRelevancyEvaluator
+
+documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()
+index = VectorStoreIndex.from_documents(documents)
+rag_application = index.as_query_engine()
+
+# An example input to your RAG application
+user_input = "What is LlamaIndex?"
+
+# LlamaIndex returns a response object that contains
+# both the output string and retrieved nodes
+response_object = rag_application.query(user_input)
+
+evaluator = DeepEvalAnswerRelevancyEvaluator()
+evaluation_result = evaluator.evaluate_response(
+    query=user_input, response=response_object
+)
+print(evaluation_result)
+```
+
+Here is how you can import all 6 evaluators from `deepeval`:
+
+```python
+from deepeval.integrations.llama_index import (
+    DeepEvalAnswerRelevancyEvaluator,
+    DeepEvalFaithfulnessEvaluator,
+    DeepEvalContextualRelevancyEvaluator,
+    DeepEvalSummarizationEvaluator,
+    DeepEvalBiasEvaluator,
+    DeepEvalToxicityEvaluator,
+)
+```
+
+To learn more on how to use `deepeval`'s evaluation metrics with LlamaIndex and take advantage of its full LLM testing suite, visit the [docs.](https://docs.confident-ai.com/docs/integrations-llamaindex)

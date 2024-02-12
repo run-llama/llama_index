@@ -3,12 +3,15 @@
 
 from llama_index.vector_stores.astra import AstraDBVectorStore
 from llama_index.vector_stores.awadb import AwaDBVectorStore
+from llama_index.vector_stores.azureaisearch import (
+    AzureAISearchVectorStore,
+    CognitiveSearchVectorStore,
+)
 from llama_index.vector_stores.azurecosmosmongo import AzureCosmosDBMongoDBVectorSearch
 from llama_index.vector_stores.bagel import BagelVectorStore
 from llama_index.vector_stores.cassandra import CassandraVectorStore
 from llama_index.vector_stores.chatgpt_plugin import ChatGPTRetrievalPluginClient
 from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.vector_stores.cogsearch import CognitiveSearchVectorStore
 from llama_index.vector_stores.dashvector import DashVectorStore
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.vector_stores.docarray import (
@@ -24,6 +27,7 @@ from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.vector_stores.lantern import LanternVectorStore
 from llama_index.vector_stores.metal import MetalVectorStore
 from llama_index.vector_stores.milvus import MilvusVectorStore
+from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
 from llama_index.vector_stores.myscale import MyScaleVectorStore
 from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
 from llama_index.vector_stores.opensearch import (
@@ -42,11 +46,17 @@ from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.vector_stores.tair import TairVectorStore
 from llama_index.vector_stores.tencentvectordb import TencentVectorDB
 from llama_index.vector_stores.timescalevector import TimescaleVectorStore
+from llama_index.vector_stores.txtai import TxtaiVectorStore
 from llama_index.vector_stores.types import (
+    ExactMatchFilter,
+    FilterCondition,
+    FilterOperator,
+    MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.upstash import UpstashVectorStore
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from llama_index.vector_stores.zep import ZepVectorStore
 
@@ -56,6 +66,7 @@ __all__ = [
     "RedisVectorStore",
     "RocksetVectorStore",
     "FaissVectorStore",
+    "TxtaiVectorStore",
     "PineconeVectorStore",
     "WeaviateVectorStore",
     "QdrantVectorStore",
@@ -80,15 +91,22 @@ __all__ = [
     "AwaDBVectorStore",
     "BagelVectorStore",
     "Neo4jVectorStore",
+    "AzureAISearchVectorStore",
     "CognitiveSearchVectorStore",
     "EpsillaVectorStore",
     "SingleStoreVectorStore",
     "VectorStoreQuery",
     "VectorStoreQueryResult",
     "MetadataFilters",
+    "MetadataFilter",
+    "ExactMatchFilter",
+    "FilterCondition",
+    "FilterOperator",
     "DashVectorStore",
     "TencentVectorDB",
     "AstraDBVectorStore",
     "AzureCosmosDBMongoDBVectorSearch",
     "LanternVectorStore",
+    "MongoDBAtlasVectorSearch",
+    "UpstashVectorStore",
 ]

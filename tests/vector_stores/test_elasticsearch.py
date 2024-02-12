@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import uuid
-from typing import Any, Dict, Generator, List, Union
+from typing import Dict, Generator, List, Union
 
 import pandas as pd
 import pytest
@@ -17,8 +17,8 @@ from llama_index.vector_stores.types import (
 
 ##
 # Start Elasticsearch locally
-# cd tests/vector_stores/docker-compose
-# docker-compose -f elasticsearch.yml up
+# cd tests
+# docker-compose up
 #
 # Run tests
 # cd tests/vector_stores
@@ -40,13 +40,6 @@ try:
 except (ImportError, Exception):
     elasticsearch_not_available = True
     basic_license = True
-
-
-@pytest.fixture(scope="session")
-def conn() -> Any:
-    import elasticsearch
-
-    return elasticsearch.Elasticsearch("http://localhost:9200")
 
 
 @pytest.fixture()
@@ -87,6 +80,7 @@ def elasticsearch_connection() -> Union[dict, Generator[dict, None, None]]:
         if index_name.startswith("test_"):
             es.indices.delete(index=index_name)
     es.indices.refresh(index="_all")
+    return {}
 
 
 @pytest.fixture(scope="session")
@@ -463,7 +457,7 @@ def test_check_user_agent(
     user_agent = es_client_instance.transport.requests[0]["headers"][  # type: ignore
         "user-agent"
     ]
-    pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+$"
+    pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+(\.post\d+)?$"
     match = re.match(pattern, user_agent)
 
     assert (

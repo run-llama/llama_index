@@ -2,11 +2,12 @@ from typing import Any, List, Optional
 
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.response.schema import RESPONSE_TYPE, Response
 from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 from llama_index.postprocessor.types import BaseNodePostprocessor
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE, Response
 from llama_index.schema import NodeWithScore, QueryBundle
 
 
@@ -96,16 +97,16 @@ class VectaraQueryEngine(BaseQueryEngine):
         with self.callback_manager.event(
             CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
-            nodes, response = self._retriever._vectara_query(
-                query_bundle,
-                kwargs={
+            kwargs = (
+                {
                     "summary_response_lang": self._summary_response_lang,
                     "summary_num_results": self._summary_num_results,
                     "summary_prompt_name": self._summary_prompt_name,
                 }
                 if self._summary_enabled
-                else {},
+                else {}
             )
+            nodes, response = self._retriever._vectara_query(query_bundle, **kwargs)
             query_event.on_end(payload={EventPayload.RESPONSE: response})
         return Response(response=response, source_nodes=nodes)
 

@@ -1,20 +1,21 @@
 """Base vector store index.
 
-An index that that is built on top of an existing vector store.
+An index that is built on top of an existing vector store.
 
 """
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.async_utils import run_async_tasks
-from llama_index.core import BaseRetriever
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.utils import async_embed_nodes, embed_nodes
-from llama_index.schema import BaseNode, ImageNode, IndexNode
+from llama_index.schema import BaseNode, ImageNode, IndexNode, MetadataMode
 from llama_index.service_context import ServiceContext
 from llama_index.storage.docstore.types import RefDocInfo
 from llama_index.storage.storage_context import StorageContext
+from llama_index.utils import iter_batch
 from llama_index.vector_stores.types import VectorStore
 
 logger = logging.getLogger(__name__)
@@ -35,23 +36,27 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     def __init__(
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
+        objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexDict] = None,
         service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
         use_async: bool = False,
         store_nodes_override: bool = False,
+        insert_batch_size: int = 2048,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         self._use_async = use_async
         self._store_nodes_override = store_nodes_override
+        self._insert_batch_size = insert_batch_size
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
             service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
+            objects=objects,
             **kwargs,
         )
 
@@ -84,6 +89,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
             callback_manager=self._service_context.callback_manager,
+            object_map=self._object_map,
             **kwargs,
         )
 
@@ -146,26 +152,16 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not nodes:
             return
 
-        nodes = await self._aget_node_with_embedding(nodes, show_progress)
-        new_ids = await self._vector_store.async_add(nodes, **insert_kwargs)
+        for nodes_batch in iter_batch(nodes, self._insert_batch_size):
+            nodes_batch = await self._aget_node_with_embedding(
+                nodes_batch, show_progress
+            )
+            new_ids = await self._vector_store.async_add(nodes_batch, **insert_kwargs)
 
-        # if the vector store doesn't store text, we need to add the nodes to the
-        # index struct and document store
-        if not self._vector_store.stores_text or self._store_nodes_override:
-            for node, new_id in zip(nodes, new_ids):
-                # NOTE: remove embedding from node to avoid duplication
-                node_without_embedding = node.copy()
-                node_without_embedding.embedding = None
-
-                index_struct.add_node(node_without_embedding, text_id=new_id)
-                self._docstore.add_documents(
-                    [node_without_embedding], allow_update=True
-                )
-        else:
-            # NOTE: if the vector store keeps text,
-            # we only need to add image and index nodes
-            for node, new_id in zip(nodes, new_ids):
-                if isinstance(node, (ImageNode, IndexNode)):
+            # if the vector store doesn't store text, we need to add the nodes to the
+            # index struct and document store
+            if not self._vector_store.stores_text or self._store_nodes_override:
+                for node, new_id in zip(nodes_batch, new_ids):
                     # NOTE: remove embedding from node to avoid duplication
                     node_without_embedding = node.copy()
                     node_without_embedding.embedding = None
@@ -174,6 +170,19 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                     self._docstore.add_documents(
                         [node_without_embedding], allow_update=True
                     )
+            else:
+                # NOTE: if the vector store keeps text,
+                # we only need to add image and index nodes
+                for node, new_id in zip(nodes_batch, new_ids):
+                    if isinstance(node, (ImageNode, IndexNode)):
+                        # NOTE: remove embedding from node to avoid duplication
+                        node_without_embedding = node.copy()
+                        node_without_embedding.embedding = None
+
+                        index_struct.add_node(node_without_embedding, text_id=new_id)
+                        self._docstore.add_documents(
+                            [node_without_embedding], allow_update=True
+                        )
 
     def _add_nodes_to_index(
         self,
@@ -186,26 +195,14 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not nodes:
             return
 
-        nodes = self._get_node_with_embedding(nodes, show_progress)
-        new_ids = self._vector_store.add(nodes, **insert_kwargs)
+        for nodes_batch in iter_batch(nodes, self._insert_batch_size):
+            nodes_batch = self._get_node_with_embedding(nodes_batch, show_progress)
+            new_ids = self._vector_store.add(nodes_batch, **insert_kwargs)
 
-        if not self._vector_store.stores_text or self._store_nodes_override:
-            # NOTE: if the vector store doesn't store text,
-            # we need to add the nodes to the index struct and document store
-            for node, new_id in zip(nodes, new_ids):
-                # NOTE: remove embedding from node to avoid duplication
-                node_without_embedding = node.copy()
-                node_without_embedding.embedding = None
-
-                index_struct.add_node(node_without_embedding, text_id=new_id)
-                self._docstore.add_documents(
-                    [node_without_embedding], allow_update=True
-                )
-        else:
-            # NOTE: if the vector store keeps text,
-            # we only need to add image and index nodes
-            for node, new_id in zip(nodes, new_ids):
-                if isinstance(node, (ImageNode, IndexNode)):
+            if not self._vector_store.stores_text or self._store_nodes_override:
+                # NOTE: if the vector store doesn't store text,
+                # we need to add the nodes to the index struct and document store
+                for node, new_id in zip(nodes_batch, new_ids):
                     # NOTE: remove embedding from node to avoid duplication
                     node_without_embedding = node.copy()
                     node_without_embedding.embedding = None
@@ -214,6 +211,19 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                     self._docstore.add_documents(
                         [node_without_embedding], allow_update=True
                     )
+            else:
+                # NOTE: if the vector store keeps text,
+                # we only need to add image and index nodes
+                for node, new_id in zip(nodes_batch, new_ids):
+                    if isinstance(node, (ImageNode, IndexNode)):
+                        # NOTE: remove embedding from node to avoid duplication
+                        node_without_embedding = node.copy()
+                        node_without_embedding.embedding = None
+
+                        index_struct.add_node(node_without_embedding, text_id=new_id)
+                        self._docstore.add_documents(
+                            [node_without_embedding], allow_update=True
+                        )
 
     def _build_index_from_nodes(
         self,
@@ -252,6 +262,15 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             VectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
+        # raise an error if even one node has no content
+        if any(
+            node.get_content(metadata_mode=MetadataMode.EMBED) == "" for node in nodes
+        ):
+            raise ValueError(
+                "Cannot build index from nodes with no content. "
+                "Please ensure all nodes have content."
+            )
+
         return self._build_index_from_nodes(nodes, **insert_kwargs)
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
@@ -280,7 +299,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """Delete a list of nodes from the index.
 
         Args:
-            doc_ids (List[str]): A list of doc_ids from the nodes to delete
+            node_ids (List[str]): A list of node_ids from the nodes to delete
 
         """
         raise NotImplementedError(
@@ -292,7 +311,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
         """Delete a document and it's nodes by using ref_doc_id."""
-        self._vector_store.delete(ref_doc_id)
+        self._vector_store.delete(ref_doc_id, **delete_kwargs)
 
         # delete from index_struct only if needed
         if not self._vector_store.stores_text or self._store_nodes_override:

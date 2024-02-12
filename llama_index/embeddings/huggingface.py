@@ -1,9 +1,9 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence
 
 from llama_index.bridge.pydantic import Field, PrivateAttr
 from llama_index.callbacks import CallbackManager
-from llama_index.embeddings.base import (
+from llama_index.core.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
     Embedding,
@@ -12,6 +12,7 @@ from llama_index.embeddings.huggingface_utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
     format_query,
     format_text,
+    get_pooling_mode,
 )
 from llama_index.embeddings.pooling import Pooling
 from llama_index.llms.huggingface import HuggingFaceInferenceAPI
@@ -28,7 +29,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
     max_length: int = Field(
         default=DEFAULT_HUGGINGFACE_LENGTH, description="Maximum length of input.", gt=0
     )
-    pooling: Pooling = Field(default=Pooling.CLS, description="Pooling strategy.")
+    pooling: Pooling = Field(default=None, description="Pooling strategy.")
     normalize: bool = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
@@ -48,7 +49,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         self,
         model_name: Optional[str] = None,
         tokenizer_name: Optional[str] = None,
-        pooling: Union[str, Pooling] = "cls",
+        pooling: Optional[str] = None,
         max_length: Optional[int] = None,
         query_instruction: Optional[str] = None,
         text_instruction: Optional[str] = None,
@@ -105,14 +106,15 @@ class HuggingFaceEmbedding(BaseEmbedding):
                     "Unable to find max_length from model config. Please specify max_length."
                 ) from exc
 
-        if isinstance(pooling, str):
-            try:
-                pooling = Pooling(pooling)
-            except ValueError as exc:
-                raise NotImplementedError(
-                    f"Pooling {pooling} unsupported, please pick one in"
-                    f" {[p.value for p in Pooling]}."
-                ) from exc
+        if not pooling:
+            pooling = get_pooling_mode(model_name)
+        try:
+            pooling = Pooling(pooling)
+        except ValueError as exc:
+            raise NotImplementedError(
+                f"Pooling {pooling} unsupported, please pick one in"
+                f" {[p.value for p in Pooling]}."
+            ) from exc
 
         super().__init__(
             embed_batch_size=embed_batch_size,
@@ -149,6 +151,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
             truncation=True,
             return_tensors="pt",
         )
+
+        # pop token_type_ids
+        encoded_input.pop("token_type_ids", None)
 
         # move tokenizer inputs to device
         encoded_input = {
@@ -236,11 +241,14 @@ class HuggingFaceInferenceAPIEmbedding(HuggingFaceInferenceAPI, BaseEmbedding): 
         return "HuggingFaceInferenceAPIEmbedding"
 
     async def _async_embed_single(self, text: str) -> Embedding:
-        embedding = (await self._async_client.feature_extraction(text)).squeeze(axis=0)
+        embedding = await self._async_client.feature_extraction(text)
+        if len(embedding.shape) == 1:
+            return embedding.tolist()
+        embedding = embedding.squeeze(axis=0)
         if len(embedding.shape) == 1:  # Some models pool internally
-            return list(embedding)
+            return embedding.tolist()
         try:
-            return list(self.pooling(embedding))  # type: ignore[misc]
+            return self.pooling(embedding).tolist()  # type: ignore[misc]
         except TypeError as exc:
             raise ValueError(
                 f"Pooling is required for {self.model_name} because it returned"

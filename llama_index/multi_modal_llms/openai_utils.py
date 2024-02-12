@@ -1,9 +1,6 @@
 import logging
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, Optional, Sequence
 
-from openai.types.chat import ChatCompletionMessageParam
-
-from llama_index.llms.openai_utils import to_openai_message_dicts
 from llama_index.multi_modal_llms.base import ChatMessage
 from llama_index.multi_modal_llms.generic_utils import encode_image
 from llama_index.schema import ImageDocument
@@ -27,13 +24,30 @@ https://platform.openai.com/account/api-keys
 logger = logging.getLogger(__name__)
 
 
-def to_openai_multi_modal_payload(
-    prompt: str, image_documents: Sequence[ImageDocument], image_detail: str
-) -> List[ChatCompletionMessageParam]:
+def generate_openai_multi_modal_chat_message(
+    prompt: str,
+    role: str,
+    image_documents: Optional[Sequence[ImageDocument]] = None,
+    image_detail: Optional[str] = "low",
+) -> ChatMessage:
+    # if image_documents is empty, return text only chat message
+    if image_documents is None:
+        return ChatMessage(role=role, content=prompt)
+
+    # if image_documents is not empty, return text with images chat message
     completion_content = [{"type": "text", "text": prompt}]
     for image_document in image_documents:
         image_content: Dict[str, Any] = {}
-        if image_document.image_url and image_document.image_url != "":
+        mimetype = image_document.image_mimetype or "image/jpeg"
+        if image_document.image and image_document.image != "":
+            image_content = {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{mimetype};base64,{image_document.image}",
+                    "detail": image_detail,
+                },
+            }
+        elif image_document.image_url and image_document.image_url != "":
             image_content = {
                 "type": "image_url",
                 "image_url": image_document.image_url,
@@ -43,7 +57,7 @@ def to_openai_multi_modal_payload(
             image_content = {
                 "type": "image_url",
                 "image_url": {
-                    "url": f"data:image/jpeg;base64,{base64_image}",
+                    "url": f"data:{mimetype};base64,{base64_image}",
                     "detail": image_detail,
                 },
             }
@@ -61,6 +75,4 @@ def to_openai_multi_modal_payload(
             }
 
         completion_content.append(image_content)
-    return to_openai_message_dicts(
-        [ChatMessage(role="user", content=completion_content)]
-    )
+    return ChatMessage(role=role, content=completion_content)

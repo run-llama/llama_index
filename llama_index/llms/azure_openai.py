@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Sequence
 
 import httpx
 from openai import AsyncAzureOpenAI
@@ -6,12 +6,14 @@ from openai import AzureOpenAI as SyncAzureOpenAI
 
 from llama_index.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.callbacks import CallbackManager
+from llama_index.core.llms.types import ChatMessage
 from llama_index.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai_utils import (
     refresh_openai_azuread_token,
     resolve_from_aliases,
 )
+from llama_index.types import BaseOutputParser, PydanticProgramMode
 
 
 class AzureOpenAI(OpenAI):
@@ -52,7 +54,6 @@ class AzureOpenAI(OpenAI):
     _azure_ad_token: Any = PrivateAttr()
     _client: SyncAzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
-    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -63,6 +64,7 @@ class AzureOpenAI(OpenAI):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 3,
         timeout: float = 60.0,
+        reuse_client: bool = True,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
         # azure specific
@@ -76,13 +78,16 @@ class AzureOpenAI(OpenAI):
         deployment: Optional[str] = None,
         # custom httpx client
         http_client: Optional[httpx.Client] = None,
+        # base class
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
         engine = resolve_from_aliases(
-            engine,
-            deployment_name,
-            deployment_id,
-            deployment,
+            engine, deployment_name, deployment_id, deployment, azure_deployment
         )
 
         if engine is None:
@@ -92,10 +97,6 @@ class AzureOpenAI(OpenAI):
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
         )
 
-        # Use the custom httpx client if provided.
-        # Otherwise the value will be None.
-        self._http_client = http_client
-
         super().__init__(
             engine=engine,
             model=model,
@@ -104,12 +105,19 @@ class AzureOpenAI(OpenAI):
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             timeout=timeout,
+            reuse_client=reuse_client,
             api_key=api_key,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
             use_azure_ad=use_azure_ad,
             api_version=api_version,
             callback_manager=callback_manager,
+            http_client=http_client,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
             **kwargs,
         )
 
@@ -129,14 +137,25 @@ class AzureOpenAI(OpenAI):
 
         return values
 
-    def _get_clients(self, **kwargs: Any) -> Tuple[SyncAzureOpenAI, AsyncAzureOpenAI]:
-        client = SyncAzureOpenAI(
-            **self._get_credential_kwargs(),
-        )
-        aclient = AsyncAzureOpenAI(
-            **self._get_credential_kwargs(),
-        )
-        return client, aclient
+    def _get_client(self) -> SyncAzureOpenAI:
+        if not self.reuse_client:
+            return SyncAzureOpenAI(**self._get_credential_kwargs())
+
+        if self._client is None:
+            self._client = SyncAzureOpenAI(
+                **self._get_credential_kwargs(),
+            )
+        return self._client
+
+    def _get_aclient(self) -> AsyncAzureOpenAI:
+        if not self.reuse_client:
+            return AsyncAzureOpenAI(**self._get_credential_kwargs())
+
+        if self._aclient is None:
+            self._aclient = AsyncAzureOpenAI(
+                **self._get_credential_kwargs(),
+            )
+        return self._aclient
 
     def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         if self.use_azure_ad:
@@ -145,11 +164,14 @@ class AzureOpenAI(OpenAI):
 
         return {
             "api_key": self.api_key,
+            "max_retries": self.max_retries,
+            "timeout": self.timeout,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
             "http_client": self._http_client,
+            **kwargs,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:

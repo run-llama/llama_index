@@ -1,12 +1,13 @@
 """Multi Modal Vector Store Index.
 
-An index that that is built on top of multiple vector stores for different modalities.
+An index that is built on top of multiple vector stores for different modalities.
 
 """
 import logging
 from typing import Any, List, Optional, Sequence, cast
 
-from llama_index.core import BaseQueryEngine, BaseRetriever
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.base_retriever import BaseRetriever
 from llama_index.data_structs.data_structs import IndexDict, MultiModelIndexDict
 from llama_index.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.embeddings.utils import EmbedType, resolve_embed_model
@@ -49,9 +50,15 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         store_nodes_override: bool = False,
         show_progress: bool = False,
         # Image-related kwargs
+        # image_vector_store going to be deprecated. image_store can be passed from storage_context
+        # keep image_vector_store here for backward compatibility
         image_vector_store: Optional[VectorStore] = None,
         image_embed_model: EmbedType = "clip",
         is_image_to_text: bool = False,
+        # is_image_vector_store_empty is used to indicate whether image_vector_store is empty
+        # those flags are used for cases when only one vector store is used
+        is_image_vector_store_empty: bool = False,
+        is_text_vector_store_empty: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -59,10 +66,18 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         assert isinstance(image_embed_model, MultiModalEmbedding)
         self._image_embed_model = image_embed_model
         self._is_image_to_text = is_image_to_text
+        self._is_image_vector_store_empty = is_image_vector_store_empty
+        self._is_text_vector_store_empty = is_text_vector_store_empty
         storage_context = storage_context or StorageContext.from_defaults()
 
         if image_vector_store is not None:
-            storage_context.add_vector_store(image_vector_store, self.image_namespace)
+            if self.image_namespace not in storage_context.vector_stores:
+                storage_context.add_vector_store(
+                    image_vector_store, self.image_namespace
+                )
+            else:
+                # overwrite image_store from storage_context
+                storage_context.vector_stores[self.image_namespace] = image_vector_store
 
         if self.image_namespace not in storage_context.vector_stores:
             storage_context.add_vector_store(SimpleVectorStore(), self.image_namespace)
@@ -88,6 +103,14 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     def image_embed_model(self) -> MultiModalEmbedding:
         return self._image_embed_model
 
+    @property
+    def is_image_vector_store_empty(self) -> bool:
+        return self._is_image_vector_store_empty
+
+    @property
+    def is_text_vector_store_empty(self) -> bool:
+        return self._is_text_vector_store_empty
+
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         # NOTE: lazy import
         from llama_index.indices.multi_modal.retriever import (
@@ -107,7 +130,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         )
         from llama_index.query_engine.multi_modal import SimpleMultiModalQueryEngine
 
-        retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever())
+        retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 
         return SimpleMultiModalQueryEngine(
             retriever,
@@ -255,6 +278,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         image_nodes: List[ImageNode] = []
         text_nodes: List[BaseNode] = []
+        new_text_ids: List[str] = []
+        new_img_ids: List[str] = []
 
         for node in nodes:
             if isinstance(node, ImageNode):
@@ -262,23 +287,29 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             if node.text:
                 text_nodes.append(node)
 
-        # embed all nodes as text - incclude image nodes that have text attached
-        text_nodes = await self._aget_node_with_embedding(
-            text_nodes, show_progress, is_image=False
-        )
-        new_text_ids = await self.storage_context.vector_stores[
-            DEFAULT_VECTOR_STORE
-        ].async_add(text_nodes, **insert_kwargs)
+        if len(text_nodes) > 0:
+            # embed all nodes as text - include image nodes that have text attached
+            text_nodes = await self._aget_node_with_embedding(
+                text_nodes, show_progress, is_image=False
+            )
+            new_text_ids = await self.storage_context.vector_stores[
+                DEFAULT_VECTOR_STORE
+            ].async_add(text_nodes, **insert_kwargs)
+        else:
+            self._is_text_vector_store_empty = True
 
-        # embed image nodes as images directly
-        image_nodes = await self._aget_node_with_embedding(
-            image_nodes,
-            show_progress,
-            is_image=True,
-        )
-        new_img_ids = await self.storage_context.vector_stores[
-            self.image_namespace
-        ].async_add(image_nodes, **insert_kwargs)
+        if len(image_nodes) > 0:
+            # embed image nodes as images directly
+            image_nodes = await self._aget_node_with_embedding(
+                image_nodes,
+                show_progress,
+                is_image=True,
+            )
+            new_img_ids = await self.storage_context.vector_stores[
+                self.image_namespace
+            ].async_add(image_nodes, **insert_kwargs)
+        else:
+            self._is_image_vector_store_empty = True
 
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store
@@ -308,6 +339,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         image_nodes: List[ImageNode] = []
         text_nodes: List[BaseNode] = []
+        new_text_ids: List[str] = []
+        new_img_ids: List[str] = []
 
         for node in nodes:
             if isinstance(node, ImageNode):
@@ -315,24 +348,30 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             if node.text:
                 text_nodes.append(node)
 
-        # embed all nodes as text - incclude image nodes that have text attached
-        text_nodes = self._get_node_with_embedding(
-            text_nodes, show_progress, is_image=False
-        )
-        new_text_ids = self.storage_context.vector_stores[DEFAULT_VECTOR_STORE].add(
-            text_nodes, **insert_kwargs
-        )
+        if len(text_nodes) > 0:
+            # embed all nodes as text - include image nodes that have text attached
+            text_nodes = self._get_node_with_embedding(
+                text_nodes, show_progress, is_image=False
+            )
+            new_text_ids = self.storage_context.vector_stores[DEFAULT_VECTOR_STORE].add(
+                text_nodes, **insert_kwargs
+            )
+        else:
+            self._is_text_vector_store_empty = True
 
-        # embed image nodes as images directly
-        # check if we should use text embedding for images instead of default
-        image_nodes = self._get_node_with_embedding(
-            image_nodes,
-            show_progress,
-            is_image=True,
-        )
-        new_img_ids = self.storage_context.vector_stores[self.image_namespace].add(
-            image_nodes, **insert_kwargs
-        )
+        if len(image_nodes) > 0:
+            # embed image nodes as images directly
+            # check if we should use text embedding for images instead of default
+            image_nodes = self._get_node_with_embedding(
+                image_nodes,
+                show_progress,
+                is_image=True,
+            )
+            new_img_ids = self.storage_context.vector_stores[self.image_namespace].add(
+                image_nodes, **insert_kwargs
+            )
+        else:
+            self._is_image_vector_store_empty = True
 
         # if the vector store doesn't store text, we need to add the nodes to the
         # index struct and document store

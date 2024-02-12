@@ -31,12 +31,7 @@ class MockPalmPackage(MagicMock):
         return self._mock_models()
 
 
-sys.modules["google.generativeai"] = MockPalmPackage()
-
-
-from typing import Any
-
-from llama_index.llms.base import CompletionResponse
+from llama_index.core.llms.types import CompletionResponse
 from llama_index.llms.palm import PaLM
 
 
@@ -45,6 +40,9 @@ from llama_index.llms.palm import PaLM
 )
 def test_palm() -> None:
     """Test palm."""
+    # Set up fake package here, as test_gemini uses the same package.
+    sys.modules["google.generativeai"] = MockPalmPackage()
+
     palm = PaLM(api_key="test_api_key", model_name="palm_model")
     response = palm.complete("hello world")
     assert isinstance(response, CompletionResponse)

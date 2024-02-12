@@ -71,7 +71,7 @@ class PGVectoRsStore(BasePydanticVectorStore):
             embedding=query.query_embedding,
             top_k=query.similarity_top_k,
             filter=meta_contains(
-                {pair.key: pair.value for pair in query.filters.filters}
+                {pair.key: pair.value for pair in query.filters.legacy_filters()}
             )
             if query.filters is not None
             else None,

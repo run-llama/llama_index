@@ -66,6 +66,12 @@ class MockMongoCollection:
         insert_result.inserted_ids = inserted_ids
         return insert_result
 
+    def bulk_write(self, operations: List[Any]) -> Any:
+        for operation in operations:
+            obj = operation._doc["$set"]
+            _id = obj.pop("_id")
+            self.insert_one(obj, _id)
+
 
 class MockMongoDB:
     def __init__(self) -> None:

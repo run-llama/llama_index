@@ -21,11 +21,62 @@ from llama_index.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
-def _to_chroma_filter(standard_filters: MetadataFilters) -> dict:
+def _transform_chroma_filter_condition(condition: str) -> str:
+    """Translate standard metadata filter op to Chroma specific spec."""
+    if condition == "and":
+        return "$and"
+    elif condition == "or":
+        return "$or"
+    else:
+        raise ValueError(f"Filter condition {condition} not supported")
+
+
+def _transform_chroma_filter_operator(operator: str) -> str:
+    """Translate standard metadata filter operator to Chroma specific spec."""
+    if operator == "!=":
+        return "$ne"
+    elif operator == "==":
+        return "$eq"
+    elif operator == ">":
+        return "$gt"
+    elif operator == "<":
+        return "$lt"
+    elif operator == ">=":
+        return "$gte"
+    elif operator == "<=":
+        return "$lte"
+    else:
+        raise ValueError(f"Filter operator {operator} not supported")
+
+
+def _to_chroma_filter(
+    standard_filters: MetadataFilters,
+) -> dict:
     """Translate standard metadata filters to Chroma specific spec."""
     filters = {}
-    for filter in standard_filters.filters:
-        filters[filter.key] = filter.value
+    filters_list = []
+    condition = standard_filters.condition or "and"
+    condition = _transform_chroma_filter_condition(condition)
+    if standard_filters.filters:
+        for filter in standard_filters.filters:
+            if filter.operator:
+                filters_list.append(
+                    {
+                        filter.key: {
+                            _transform_chroma_filter_operator(
+                                filter.operator
+                            ): filter.value
+                        }
+                    }
+                )
+            else:
+                filters_list.append({filter.key: filter.value})
+
+    if len(filters_list) == 1:
+        # If there is only one filter, return it directly
+        return filters_list[0]
+    elif len(filters_list) > 1:
+        filters[condition] = filters_list
     return filters
 
 
@@ -115,6 +166,18 @@ class ChromaVectorStore(BasePydanticVectorStore):
         )
 
     @classmethod
+    def from_collection(cls, collection: Any) -> "ChromaVectorStore":
+        try:
+            from chromadb import Collection
+        except ImportError:
+            raise ImportError(import_err_msg)
+
+        if not isinstance(collection, Collection):
+            raise Exception("argument is not chromadb collection instance")
+
+        return cls(chroma_collection=collection)
+
+    @classmethod
     def from_params(
         cls,
         collection_name: str,
@@ -123,7 +186,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
         persist_dir: Optional[str] = None,
-        collection_kwargs: Optional[dict] = {},
+        collection_kwargs: dict = {},
         **kwargs: Any,
     ) -> "ChromaVectorStore":
         try:
@@ -183,8 +246,9 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 metadata_dict = node_to_metadata_dict(
                     node, remove_text=True, flat_metadata=self.flat_metadata
                 )
-                if "context" in metadata_dict and metadata_dict["context"] is None:
-                    metadata_dict["context"] = ""
+                for key in metadata_dict:
+                    if metadata_dict[key] is None:
+                        metadata_dict[key] = ""
                 metadatas.append(metadata_dict)
                 ids.append(node.node_id)
                 documents.append(node.get_content(metadata_mode=MetadataMode.NONE))

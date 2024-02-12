@@ -1,9 +1,9 @@
 from typing import Any, Optional, Sequence
 
+from llama_index.core.response.schema import NodeWithScore, Response
 from llama_index.evaluation import BaseEvaluator
 from llama_index.evaluation.base import EvaluationResult
 from llama_index.prompts.mixin import PromptDictType
-from llama_index.response.schema import NodeWithScore, Response
 from llama_index.schema import TextNode
 
 

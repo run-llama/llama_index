@@ -4,14 +4,14 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.graph_stores.registry import (
     GRAPH_STORE_CLASS_TO_GRAPH_STORE_TYPE,
     GraphStoreType,
 )
 from llama_index.prompts.base import BasePromptTemplate, PromptTemplate, PromptType
 from llama_index.prompts.mixin import PromptDictType, PromptMixinType
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.service_context import ServiceContext
@@ -183,7 +183,7 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         """Generate a Graph Store Query from a query bundle."""
         # Get the query engine query string
 
-        graph_store_query: str = self._service_context.llm_predictor.predict(
+        graph_store_query: str = self._service_context.llm.predict(
             self._graph_query_synthesis_prompt,
             query_str=query_str,
             schema=self._graph_schema,
@@ -195,7 +195,7 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         """Generate a Graph Store Query from a query bundle."""
         # Get the query engine query string
 
-        graph_store_query: str = await self._service_context.llm_predictor.apredict(
+        graph_store_query: str = await self._service_context.llm.apredict(
             self._graph_query_synthesis_prompt,
             query_str=query_str,
             schema=self._graph_schema,

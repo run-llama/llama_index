@@ -4,6 +4,17 @@ from itertools import zip_longest
 from typing import Any, Coroutine, Iterable, List
 
 
+def asyncio_module(show_progress: bool = False) -> Any:
+    if show_progress:
+        from tqdm.asyncio import tqdm_asyncio
+
+        module = tqdm_asyncio
+    else:
+        module = asyncio
+
+    return module
+
+
 def run_async_tasks(
     tasks: List[Coroutine],
     show_progress: bool = False,

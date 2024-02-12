@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import tempfile
 from pathlib import Path
@@ -58,6 +59,11 @@ def html_str() -> str:
 """
 
 
+@pytest.mark.xfail(
+    raises=ImportError,
+    reason="Requires beautifulsoup4.",
+    condition=importlib.util.find_spec("beautifulsoup4") is None,
+)
 def test_html_tag_reader(html_str: str) -> None:
     with tempfile.NamedTemporaryFile(
         mode="w", delete=False, suffix=".html"

@@ -1,8 +1,9 @@
 import pytest
 from llama_index.bridge.pydantic import BaseModel
+from llama_index.output_parsers.base import OutputParserException
 
 try:
-    from guidance.llms import Mock as MockLLM
+    from guidance.models import Mock as MockLLM
 except ImportError:
     MockLLM = None  # type: ignore
 from llama_index.program.guidance_program import GuidancePydanticProgram
@@ -21,5 +22,5 @@ def test_guidance_pydantic_program() -> None:
 
     assert program.output_cls == TestModel
 
-    output = program(test_input="test_arg")
-    assert isinstance(output, TestModel)
+    with pytest.raises(OutputParserException):
+        _ = program(tools_str="test_tools", query_str="test_query")

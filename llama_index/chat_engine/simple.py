@@ -8,8 +8,8 @@ from llama_index.chat_engine.types import (
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
-from llama_index.llm_predictor.base import LLMPredictor
-from llama_index.llms.base import LLM, ChatMessage
+from llama_index.core.llms.types import ChatMessage
+from llama_index.llms.llm import LLM
 from llama_index.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.service_context import ServiceContext
 
@@ -46,9 +46,7 @@ class SimpleChatEngine(BaseChatEngine):
     ) -> "SimpleChatEngine":
         """Initialize a SimpleChatEngine from default parameters."""
         service_context = service_context or ServiceContext.from_defaults()
-        if not isinstance(service_context.llm_predictor, LLMPredictor):
-            raise ValueError("llm_predictor must be a LLMPredictor instance")
-        llm = service_context.llm_predictor.llm
+        llm = service_context.llm
 
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
@@ -58,7 +56,9 @@ class SimpleChatEngine(BaseChatEngine):
                 raise ValueError(
                     "Cannot specify both system_prompt and prefix_messages"
                 )
-            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+            prefix_messages = [
+                ChatMessage(content=system_prompt, role=llm.metadata.system_role)
+            ]
 
         prefix_messages = prefix_messages or []
 

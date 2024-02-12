@@ -194,12 +194,15 @@ class CassandraVectorStore(VectorStore):
 
     @staticmethod
     def _query_filters_to_dict(query_filters: MetadataFilters) -> Dict[str, Any]:
-        if any(not isinstance(f, ExactMatchFilter) for f in query_filters.filters):
+        if any(
+            not isinstance(f, ExactMatchFilter) for f in query_filters.legacy_filters()
+        ):
             raise NotImplementedError("Only `ExactMatchFilter` filters are supported")
         return {f.key: f.value for f in query_filters.filters}
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Supported query modes: 'default' (most similar vectors) and 'mmr'.
 
@@ -219,7 +222,6 @@ class CassandraVectorStore(VectorStore):
                 for prefetch pool size. Defaults to 4.0
             mmr_prefetch_k (Optional[int]): prefetch pool size. This cannot be
                 passed together with mmr_prefetch_factor
-
         """
         _available_query_modes = [
             VectorStoreQueryMode.DEFAULT,

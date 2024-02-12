@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 from llama_index.bridge.pydantic import Field
 from llama_index.callbacks import CallbackManager
-from llama_index.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.core.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
 
 
 # Enums for validation and type safety
@@ -111,7 +111,7 @@ class CohereEmbedding(BaseEmbedding):
             raise ValueError(f"truncate must be one of {VALID_TRUNCATE_OPTIONS}")
 
         super().__init__(
-            cohere_client=cohere.Client(cohere_api_key),
+            cohere_client=cohere.Client(cohere_api_key, client_name="llama_index"),
             cohere_api_key=cohere_api_key,
             model_name=model_name,
             truncate=truncate,

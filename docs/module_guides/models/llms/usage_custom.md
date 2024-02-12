@@ -24,7 +24,6 @@ you may also plug in any LLM shown on Langchain's
 from llama_index import (
     KeywordTableIndex,
     SimpleDirectoryReader,
-    LLMPredictor,
     ServiceContext,
 )
 from llama_index.llms import OpenAI
@@ -169,6 +168,8 @@ Several example notebooks are also listed below:
 
 - [StableLM](/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
 - [Camel](/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
+
+(using-custom-llm-advanced)=
 
 ## Example: Using a Custom LLM Model - Advanced
 

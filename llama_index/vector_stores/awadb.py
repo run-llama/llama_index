@@ -148,7 +148,7 @@ class AwaDBVectorStore(VectorStore):
         """
         meta_filters = {}
         if query.filters is not None:
-            for filter in query.filters.filters:
+            for filter in query.filters.legacy_filters():
                 meta_filters[filter.key] = filter.value
 
         not_include_fields: Set[str] = {"text_embedding"}

@@ -6,12 +6,12 @@ from llama_index.async_utils import run_async_tasks
 from llama_index.bridge.pydantic import BaseModel, Field
 from llama_index.callbacks.base import CallbackManager
 from llama_index.callbacks.schema import CBEventType, EventPayload
-from llama_index.core import BaseQueryEngine
+from llama_index.core.base_query_engine import BaseQueryEngine
+from llama_index.core.response.schema import RESPONSE_TYPE
 from llama_index.prompts.mixin import PromptMixinType
 from llama_index.question_gen.llm_generators import LLMQuestionGenerator
 from llama_index.question_gen.openai_generator import OpenAIQuestionGenerator
 from llama_index.question_gen.types import BaseQuestionGenerator, SubQuestion
-from llama_index.response.schema import RESPONSE_TYPE
 from llama_index.response_synthesizers import BaseSynthesizer, get_response_synthesizer
 from llama_index.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.service_context import ServiceContext
@@ -94,21 +94,18 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         elif len(query_engine_tools) > 0:
             callback_manager = query_engine_tools[0].query_engine.callback_manager
 
+        service_context = service_context or ServiceContext.from_defaults()
         if question_gen is None:
-            if service_context is None:
-                # use default openai model that supports function calling API
-                question_gen = OpenAIQuestionGenerator.from_defaults()
-            else:
-                # try to use OpenAI function calling based question generator.
-                # if incompatible, use general LLM question generator
-                try:
-                    question_gen = OpenAIQuestionGenerator.from_defaults(
-                        llm=service_context.llm
-                    )
-                except ValueError:
-                    question_gen = LLMQuestionGenerator.from_defaults(
-                        service_context=service_context
-                    )
+            # try to use OpenAI function calling based question generator.
+            # if incompatible, use general LLM question generator
+            try:
+                question_gen = OpenAIQuestionGenerator.from_defaults(
+                    llm=service_context.llm
+                )
+            except ValueError:
+                question_gen = LLMQuestionGenerator.from_defaults(
+                    service_context=service_context
+                )
 
         synth = response_synthesizer or get_response_synthesizer(
             callback_manager=callback_manager,

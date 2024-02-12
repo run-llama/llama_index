@@ -1,8 +1,14 @@
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
-from llama_index.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVStore
+from llama_index.storage.kvstore.types import (
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_COLLECTION,
+    BaseKVStore,
+)
 
-IMPORT_ERROR_MSG = "`pymongo` package not found, please run `pip install pymongo`"
+IMPORT_ERROR_MSG = (
+    "`pymongo` or `motor` package not found, please run `pip install pymongo motor`"
+)
 
 
 class MongoDBKVStore(BaseKVStore):
@@ -20,6 +26,7 @@ class MongoDBKVStore(BaseKVStore):
     def __init__(
         self,
         mongo_client: Any,
+        mongo_aclient: Optional[Any] = None,
         uri: Optional[str] = None,
         host: Optional[str] = None,
         port: Optional[int] = None,
@@ -27,11 +34,15 @@ class MongoDBKVStore(BaseKVStore):
     ) -> None:
         """Init a MongoDBKVStore."""
         try:
+            from motor.motor_asyncio import AsyncIOMotorClient
             from pymongo import MongoClient
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         self._client = cast(MongoClient, mongo_client)
+        self._aclient = (
+            cast(AsyncIOMotorClient, mongo_aclient) if mongo_aclient else None
+        )
 
         self._uri = uri
         self._host = host
@@ -39,6 +50,7 @@ class MongoDBKVStore(BaseKVStore):
 
         self._db_name = db_name or "db_docstore"
         self._db = self._client[self._db_name]
+        self._adb = self._aclient[self._db_name] if self._aclient else None
 
     @classmethod
     def from_uri(
@@ -54,13 +66,16 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         try:
+            from motor.motor_asyncio import AsyncIOMotorClient
             from pymongo import MongoClient
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         mongo_client: MongoClient = MongoClient(uri)
+        mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(uri)
         return cls(
             mongo_client=mongo_client,
+            mongo_aclient=mongo_aclient,
             db_name=db_name,
             uri=uri,
         )
@@ -81,17 +96,24 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         try:
+            from motor.motor_asyncio import AsyncIOMotorClient
             from pymongo import MongoClient
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         mongo_client: MongoClient = MongoClient(host, port)
+        mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(host, port)
         return cls(
             mongo_client=mongo_client,
+            mongo_aclient=mongo_aclient,
             db_name=db_name,
             host=host,
             port=port,
         )
+
+    def _check_async_client(self) -> None:
+        if self._adb is None:
+            raise ValueError("MongoDBKVStore was not initialized with an async client")
 
     def put(
         self,
@@ -107,13 +129,71 @@ class MongoDBKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        val = val.copy()
-        val["_id"] = key
-        self._db[collection].replace_one(
-            {"_id": key},
-            val,
-            upsert=True,
-        )
+        self.put_all([(key, val)], collection=collection)
+
+    async def aput(
+        self,
+        key: str,
+        val: dict,
+        collection: str = DEFAULT_COLLECTION,
+    ) -> None:
+        """Put a key-value pair into the store.
+
+        Args:
+            key (str): key
+            val (dict): value
+            collection (str): collection name
+
+        """
+        await self.aput_all([(key, val)], collection=collection)
+
+    def put_all(
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+    ) -> None:
+        from pymongo import UpdateOne
+
+        # Prepare documents with '_id' set to the key for batch insertion
+        docs = [{"_id": key, **value} for key, value in kv_pairs]
+
+        # Insert documents in batches
+        for batch in (
+            docs[i : i + batch_size] for i in range(0, len(docs), batch_size)
+        ):
+            new_docs = []
+            for doc in batch:
+                new_docs.append(
+                    UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True)
+                )
+
+            self._db[collection].bulk_write(new_docs)
+
+    async def aput_all(
+        self,
+        kv_pairs: List[Tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+    ) -> None:
+        from pymongo import UpdateOne
+
+        self._check_async_client()
+
+        # Prepare documents with '_id' set to the key for batch insertion
+        docs = [{"_id": key, **value} for key, value in kv_pairs]
+
+        # Insert documents in batches
+        for batch in (
+            docs[i : i + batch_size] for i in range(0, len(docs), batch_size)
+        ):
+            new_docs = []
+            for doc in batch:
+                new_docs.append(
+                    UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True)
+                )
+
+            await self._adb[collection].bulk_write(new_docs)
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a value from the store.
@@ -124,6 +204,24 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         result = self._db[collection].find_one({"_id": key})
+        if result is not None:
+            result.pop("_id")
+            return result
+        return None
+
+    async def aget(
+        self, key: str, collection: str = DEFAULT_COLLECTION
+    ) -> Optional[dict]:
+        """Get a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+
+        """
+        self._check_async_client()
+
+        result = await self._adb[collection].find_one({"_id": key})
         if result is not None:
             result.pop("_id")
             return result
@@ -143,6 +241,22 @@ class MongoDBKVStore(BaseKVStore):
             output[key] = result
         return output
 
+    async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+        """Get all values from the store.
+
+        Args:
+            collection (str): collection name
+
+        """
+        self._check_async_client()
+
+        results = self._adb[collection].find()
+        output = {}
+        for result in await results.to_list(length=None):
+            key = result.pop("_id")
+            output[key] = result
+        return output
+
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the store.
 
@@ -152,4 +266,17 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         result = self._db[collection].delete_one({"_id": key})
+        return result.deleted_count > 0
+
+    async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        """Delete a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+
+        """
+        self._check_async_client()
+
+        result = await self._adb[collection].delete_one({"_id": key})
         return result.deleted_count > 0

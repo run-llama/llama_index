@@ -84,13 +84,14 @@ Most of our vector store integrations store the entire index (vectors + text) in
 
 The vector stores that support this practice are:
 
-- CognitiveSearchVectorStore
+- AzureAISearchVectorStore
 - ChatGPTRetrievalPluginClient
 - CassandraVectorStore
 - ChromaVectorStore
 - EpsillaVectorStore
 - DocArrayHnswVectorStore
 - DocArrayInMemoryVectorStore
+- JaguarVectorStore
 - LanceDBVectorStore
 - MetalVectorStore
 - MilvusVectorStore
@@ -99,6 +100,7 @@ The vector stores that support this practice are:
 - PineconeVectorStore
 - QdrantVectorStore
 - RedisVectorStore
+- UpstashVectorStore
 - WeaviateVectorStore
 
 A small example using Pinecone is below:

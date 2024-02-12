@@ -7,7 +7,7 @@ from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
 
 # Create a fixture for the database instance
 @pytest.fixture()
-def sql_database() -> Generator[SQLDatabase, None, None]:
+def sql_database(request: pytest.FixtureRequest) -> Generator[SQLDatabase, None, None]:
     engine = create_engine("sqlite:///:memory:")
     metadata = MetaData()
     table_name = "test_table"
@@ -19,7 +19,15 @@ def sql_database() -> Generator[SQLDatabase, None, None]:
     )
     metadata.create_all(engine)
 
-    yield SQLDatabase(engine=engine, metadata=metadata, sample_rows_in_table_info=1)
+    max_string_length = getattr(
+        request, "param", 300
+    )  # Default value for max_string_length
+    yield SQLDatabase(
+        engine=engine,
+        metadata=metadata,
+        sample_rows_in_table_info=1,
+        max_string_length=max_string_length,
+    )
 
     metadata.drop_all(engine)
 
@@ -64,3 +72,30 @@ def test_insert_and_run_sql(sql_database: SQLDatabase) -> None:
     result_str, _ = sql_database.run_sql("SELECT * FROM test_table;")
 
     assert result_str == "[(1, 'Paul McCartney')]"
+
+
+# Test query results truncation
+@pytest.mark.parametrize("sql_database", [7], indirect=True)
+def test_run_sql_truncation(sql_database: SQLDatabase) -> None:
+    result_str, _ = sql_database.run_sql("SELECT * FROM test_table;")
+    assert result_str == "[]"
+
+    sql_database.insert_into_table("test_table", {"id": 1, "name": "Paul McCartney"})
+
+    result_str, _ = sql_database.run_sql("SELECT * FROM test_table;")
+
+    assert result_str == "[(1, 'Paul...')]"
+
+
+# Test if long strings are not being truncated with large max_string_length
+@pytest.mark.parametrize("sql_database", [10000], indirect=True)
+def test_long_string_no_truncation(sql_database: SQLDatabase) -> None:
+    result_str, _ = sql_database.run_sql("SELECT * FROM test_table;")
+    assert result_str == "[]"
+
+    long_string = "a" * (500)
+    sql_database.insert_into_table("test_table", {"id": 1, "name": long_string})
+
+    result_str, _ = sql_database.run_sql("SELECT * FROM test_table;")
+
+    assert result_str == f"[(1, '{long_string}')]"

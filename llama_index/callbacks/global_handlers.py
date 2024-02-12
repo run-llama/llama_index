@@ -2,10 +2,13 @@
 
 from typing import Any
 
+from llama_index.callbacks.argilla_callback import argilla_callback_handler
 from llama_index.callbacks.arize_phoenix_callback import arize_phoenix_callback_handler
 from llama_index.callbacks.base_handler import BaseCallbackHandler
+from llama_index.callbacks.deepeval_callback import deepeval_callback_handler
 from llama_index.callbacks.honeyhive_callback import honeyhive_callback_handler
 from llama_index.callbacks.open_inference_callback import OpenInferenceCallbackHandler
+from llama_index.callbacks.promptlayer_handler import PromptLayerHandler
 from llama_index.callbacks.simple_llm_handler import SimpleLLMHandler
 from llama_index.callbacks.wandb_callback import WandbCallbackHandler
 
@@ -27,8 +30,14 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
         handler = arize_phoenix_callback_handler(**eval_params)
     elif eval_mode == "honeyhive":
         handler = honeyhive_callback_handler(**eval_params)
+    elif eval_mode == "promptlayer":
+        handler = PromptLayerHandler(**eval_params)
+    elif eval_mode == "deepeval":
+        handler = deepeval_callback_handler(**eval_params)
     elif eval_mode == "simple":
         handler = SimpleLLMHandler(**eval_params)
+    elif eval_mode == "argilla":
+        handler = argilla_callback_handler(**eval_params)
     else:
         raise ValueError(f"Eval mode {eval_mode} not supported.")
 
