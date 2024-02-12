@@ -6,3 +6,4 @@ venv/
 .__pycache__
 dev_notebooks/
 llamaindex_registry.txt
+.idea

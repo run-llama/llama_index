@@ -45,6 +45,9 @@ class IndexStructType(str, Enum):
         MYSCALE ("myscale"): MyScale Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the MyScale vector store index.
+        CLICKHOUSE ("clickhouse"): ClickHouse Vector Store Index.
+            See :ref:`Ref-Indices-VectorStore`
+            for more information on the ClickHouse vector store index.
         EPSILLA ("epsilla"): Epsilla Vector Store Index.
             See :ref:`Ref-Indices-VectorStore`
             for more information on the Epsilla vector store index.
@@ -81,6 +84,7 @@ class IndexStructType(str, Enum):
     MILVUS = "milvus"
     CHROMA = "chroma"
     MYSCALE = "myscale"
+    CLICKHOUSE = "clickhouse"
     VECTOR_STORE = "vector_store"
     OPENSEARCH = "opensearch"
     DASHVECTOR = "dashvector"
