@@ -1,0 +1,2 @@
+azure-search-documents
+azure-identity

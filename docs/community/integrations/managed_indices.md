@@ -14,8 +14,8 @@ If the Index has been previously populated with documents - it can also be used 
 Google's Semantic Retrieve provides both querying and retrieval capabilities. Create a managed index, insert documents, and use a query engine or retriever anywhere in LlamaIndex!
 
 ```python
-from llama_index import SimpleDirectoryReader
-from llama_index.indices.managed.google.generativeai import GoogleIndex
+from llama_index.core import SimpleDirectoryReader
+from llama_index.indices.managed.google import GoogleIndex
 
 # Create a corpus
 index = GoogleIndex.create_corpus(display_name="My first corpus!")
@@ -52,8 +52,8 @@ Then put the customer id, corpus id, and API key in your environment.
 Then construct the Vectara Index and query it as follows:
 
 ```python
-from llama_index import ManagedIndex, SimpleDirectoryReade
-from llama_index.indices import VectaraIndex
+from llama_index.core import ManagedIndex, SimpleDirectoryReade
+from llama_index.indices.managed.vectara import VectaraIndex
 
 # Load documents and build index
 vectara_customer_id = os.environ.get("VECTARA_CUSTOMER_ID")
@@ -75,8 +75,8 @@ response = query_engine.query("What did the author do growing up?")
 Note that if the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY` are in the environment already, you do not have to explicitly specifying them in your call and the VectaraIndex class will read them from the environment. For example this should be equivalent to the above, if these variables are in the environment already:
 
 ```python
-from llama_index import ManagedIndex, SimpleDirectoryReade
-from llama_index.indices import VectaraIndex
+from llama_index.core import ManagedIndex, SimpleDirectoryReade
+from llama_index.indices.managed.vectara import VectaraIndex
 
 # Load documents and build index
 documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
@@ -114,8 +114,8 @@ Now you can construct `ZillizCloudPipelineIndex` to index docs and query as foll
 ```python
 import os
 
-from llama_index import ManagedIndex
-from llama_index.indices import ZillizCloudPipelineIndex
+from llama_index.core import ManagedIndex
+from llama_index.indices.managed.zilliz import ZillizCloudPipelineIndex
 
 # Load documents from url and build document index
 zcp_index = ZillizCloudPipelineIndex.from_document_url(
@@ -133,7 +133,7 @@ zcp_index.insert_doc_url(
 )
 
 # Query index
-from llama_index.vector_stores.types import ExactMatchFilter, MetadataFilters
+from llama_index.core.vector_stores import ExactMatchFilter, MetadataFilters
 
 query_engine_milvus23 = zcp_index.as_query_engine(
     search_top_k=3,

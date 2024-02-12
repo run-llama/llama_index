@@ -3,7 +3,7 @@
 By default, LlamaIndex hides away the complexities and let you query your data in under 5 lines of code:
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("data").load_data()
 index = VectorStoreIndex.from_documents(documents)
@@ -26,10 +26,10 @@ index = VectorStoreIndex.from_documents(documents)
 we use a lower-level API that gives more granular control:
 
 ```python
-from llama_index.storage.docstore import SimpleDocumentStore
-from llama_index.storage.index_store import SimpleIndexStore
-from llama_index.vector_stores import SimpleVectorStore
-from llama_index.node_parser import SentenceSplitter
+from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.core.storage.index_store import SimpleIndexStore
+from llama_index.core.vector_stores import SimpleVectorStore
+from llama_index.core.node_parser import SentenceSplitter
 
 # create parser and parse document into nodes
 parser = SentenceSplitter()
@@ -60,7 +60,7 @@ index.storage_context.persist(persist_dir="<persist_dir>")
 storage_context = StorageContext.from_defaults(persist_dir="<persist_dir>")
 
 # then load the index object
-from llama_index import load_index_from_storage
+from llama_index.core import load_index_from_storage
 
 loaded_index = load_index_from_storage(storage_context)
 
@@ -75,8 +75,6 @@ loaded_indicies = load_index_from_storage(
 
 You can customize the underlying storage with a one-line change to instantiate different document stores, index stores, and vector stores.
 See [Document Stores](./docstores.md), [Vector Stores](./vector_stores.md), [Index Stores](./index_stores.md) guides for more details.
-
-For saving and loading a graph/composable index, see the [full guide](/module_guides/indexing/composability.md).
 
 ### Vector Store Integrations and Storage
 
@@ -107,8 +105,8 @@ A small example using Pinecone is below:
 
 ```python
 import pinecone
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.vector_stores import PineconeVectorStore
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.vector_stores.pinecone import PineconeVectorStore
 
 # Creating a Pinecone index
 api_key = "api_key"

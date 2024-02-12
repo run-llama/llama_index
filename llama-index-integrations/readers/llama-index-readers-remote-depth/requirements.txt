@@ -1,0 +1,2 @@
+tqdm~=4.64
+beautifulsoup4~=4.11

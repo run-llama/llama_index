@@ -3,6 +3,6 @@
 Loading Indices
 =====================
 
-.. automodule:: llama_index.indices.loading
+.. automodule:: llama_index.core.indices.loading
    :members:
    :inherited-members:
