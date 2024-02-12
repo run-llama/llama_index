@@ -6,7 +6,7 @@ LlamaIndex is a data framework for `LLM <https://en.wikipedia.org/wiki/Large_lan
 .. tip::
    Updating to LlamaIndex v0.10.0? Check out the `migration guide <./getting_started/v0_10_0_migration.html>`_.
 
-🚀 Why RAG?
+🚀 Why Context Augmentation?
 ******************
 
 LLMs offer a natural language interface between humans and data. Widely available models come pre-trained on huge amounts of publicly available data like Wikipedia, mailing lists, textbooks, source code and more.
@@ -19,7 +19,7 @@ You may choose to **fine-tune** a LLM with your data, but:
 - Due to the cost to train, it's **hard to update** a LLM with latest information.
 - **Observability** is lacking. When you ask a LLM a question, it's not obvious how the LLM arrived at its answer.
 
-Instead of fine-tuning, one can use the `Retrieval-Augmented Generation (RAG) <./getting_started/concepts.html>`_ methodology to obtain more accurate text generation relevant to your specific data. RAG involves the following high level steps:
+Instead of fine-tuning, one can a context augmentation pattern called `Retrieval-Augmented Generation (RAG) <./getting_started/concepts.html>`_ to obtain more accurate text generation relevant to your specific data. RAG involves the following high level steps:
 
 1. Retrieve information from your data sources first,
 2. Add it to your question as context, and
@@ -31,7 +31,7 @@ In doing so, RAG overcomes all three weaknesses of the fine-tuning approach:
 - Data is fetched only when you ask for them, so it's **always up to date**.
 - LlamaIndex can show you the retrieved documents, so it's **more trustworthy**.
 
-🦙 Why LlamaIndex for RAG?
+🦙 Why LlamaIndex for Context Augmentation?
 ***************************
 
 Firstly, LlamaIndex imposes no restriction on how you use LLMs. You can still use LLMs as auto-complete, chatbots, semi-autonomous agents, and more (see Use Cases on the left). It only makes LLMs more relevant to you.
