@@ -2,9 +2,9 @@ import os
 from typing import Dict, List, Generator
 
 import pytest
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.vector_stores import ChromaVectorStore
-from llama_index.vector_stores.types import VectorStoreQuery
+from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core.vector_stores.types import VectorStoreQuery
 
 ##
 # Run tests
