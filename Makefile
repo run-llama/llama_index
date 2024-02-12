@@ -11,7 +11,7 @@ lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
 	pre-commit install && git ls-files | xargs pre-commit run --show-diff-on-failure --files
 
 test:	## Run tests via pants
-	pants --no-local-cache test llama-index-core/:: llama-index-integrations/:: llama-index-finetuning/:: llama-index-experimental/:: llama-index-packs/::
+	pants --no-local-cache --changed-since=origin/main test
 
 test-core:	## Run tests via pants
 	pants --no-local-cache test llama-index-core/::
