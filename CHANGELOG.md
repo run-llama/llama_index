@@ -1,5 +1,11 @@
 # ChangeLog
 
+## [0.9.48] - 2024-02-12
+
+### Bug Fixes / Nits
+
+- Add back deprecated API for BedrockEmbdding (#10581)
+
 ## [0.9.47] - 2024-02-11
 
 Last patch before v0.10!
