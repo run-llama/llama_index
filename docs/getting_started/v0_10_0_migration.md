@@ -2,7 +2,7 @@
 
 With the introduction of LlamaIndex v0.10.0, there were several changes
 
-- integrations have seperate `pip install`s (See the [full registry](https://pretty-sodium-5e0.notion.site/ce81b247649a44e4b6b35dfb24af28a6?v=53b3c2ced7bb4c9996b81b83c9f01139))
+- integrations have separate `pip installs (See the [full registry](https://pretty-sodium-5e0.notion.site/ce81b247649a44e4b6b35dfb24af28a6?v=53b3c2ced7bb4c9996b81b83c9f01139))
 - many imports changed
 - the service context was deprecated
 
@@ -46,13 +46,13 @@ llamaindex-cli upgrade-file <file_path>
 llamaindex-cli upgrade <folder_path>
 ```
 
-For notebooks, new `pip install` statements are inserting and imports are updated.
+For notebooks, new `pip install` statements are inserted and imports are updated.
 
 For `.py` and `.md` files, import statements are also updated, and new requirements are printed to the terminal.
 
 ## Deprecated ServiceContext
 
-In addition to import changes, the existing `ServiceContext` has been deprecated. While it will be supported for a limited time, the preffered way of setting up the same options will be either globally in the `Settings` object or locally in the APIs that use certain modules.
+In addition to import changes, the existing `ServiceContext` has been deprecated. While it will be supported for a limited time, the preferred way of setting up the same options will be either globally in the `Settings` object or locally in the APIs that use certain modules.
 
 For example, before you might have had:
 
