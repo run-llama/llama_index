@@ -1,11 +1,11 @@
 from pathlib import Path
 from typing import Dict, Sequence, Set, Tuple
-from llama_index import PromptTemplate
-from llama_index.langchain_helpers.agents import LlamaIndexTool
-from llama_index.query_engine import CustomQueryEngine
-from llama_index.schema import BaseNode
+from llama_index.core import PromptTemplate
+from llama_index.core.langchain_helpers.agents import LlamaIndexTool
+from llama_index.core.query_engine import CustomQueryEngine
+from llama_index.core.schema import BaseNode
 import re
-from llama_hub.file.code.code_hierarchy import CodeHierarchyNodeParser
+from llama_index.readers.file.code.code_hierarchy import CodeHierarchyNodeParser
 
 
 class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
@@ -38,7 +38,7 @@ class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
         keywords = self._extract_uuid_from_node(node)
         keywords |= self._extract_module_from_node(node)
         keywords |= self._extract_name_from_node(node)
-        return {k for k in keywords}
+        return keywords
 
     def _extract_uuid_from_node(self, node) -> Set[str]:
         """Extract the uuid from the node."""
