@@ -1,5 +1,19 @@
 # ChangeLog
 
+## [0.10.3] - 2024-02-13
+
+### Bug Fixes / Nits
+
+- Fixed passing in LLM to `as_chat_engine` (#10605)
+- Fixed system prompt formatting for anthropic (#10603)
+- Fixed elasticsearch vector store error on `__version__` (#10656)
+- Fixed import on openai pydantic program (#10657)
+- Added client back to opensearch vector store exports (#10660)
+- Fixed bug in SimpleDirectoryReader not using file loaders properly (#10655)
+- Added lazy LLM initialization to RankGPT (#10648)
+- Fixed bedrock embedding `from_credentials` passing ing the model name (#10640)
+- Added back recent changes to TelegramReader (#10625)
+
 ## [0.10.0, 0.10.1] - 2024-02-12
 
 ### Breaking Changes
