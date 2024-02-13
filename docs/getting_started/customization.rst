@@ -7,7 +7,7 @@ In this tutorial, we start with the code you wrote for the `starter example <sta
 
 .. code-block:: python
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
@@ -21,7 +21,7 @@ In this tutorial, we start with the code you wrote for the `starter example <sta
 
 .. code-block:: python
 
-    from llama_index import ServiceContext
+    from llama_index.core import ServiceContext
 
     service_context = ServiceContext.from_defaults(chunk_size=1000)
 
@@ -30,7 +30,7 @@ The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_
 .. code-block:: python
     :emphasize-lines: 4
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(
@@ -47,8 +47,8 @@ The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_
 .. code-block:: python
 
     import chromadb
-    from llama_index.vector_stores import ChromaVectorStore
-    from llama_index import StorageContext
+    from llama_index.vector_stores.chroma import ChromaVectorStore
+    from llama_index.core import StorageContext
 
     chroma_client = chromadb.PersistentClient()
     chroma_collection = chroma_client.create_collection("quickstart")
@@ -60,7 +60,7 @@ The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_
 .. code-block:: python
     :emphasize-lines: 4
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(
@@ -77,7 +77,7 @@ The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_
 .. code-block:: python
     :emphasize-lines: 5
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
@@ -93,8 +93,8 @@ The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_
 
 .. code-block:: python
 
-    from llama_index import ServiceContext
-    from llama_index.llms import PaLM
+    from llama_index.core import ServiceContext
+    from llama_index.llms.palm import PaLM
 
     service_context = ServiceContext.from_defaults(llm=PaLM())
 
@@ -103,7 +103,7 @@ You can learn more about `customizing LLMs <../module_guides/models/llms.html>`_
 .. code-block:: python
     :emphasize-lines: 5
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
@@ -119,7 +119,7 @@ You can learn more about `customizing LLMs <../module_guides/models/llms.html>`_
 .. code-block:: python
     :emphasize-lines: 5
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
@@ -137,7 +137,7 @@ You can learn more about `query engines <../module_guides/querying/querying.html
 .. code-block:: python
     :emphasize-lines: 5, 7
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
@@ -154,7 +154,7 @@ You can learn more about `streaming responses <../module_guides/deploying/query_
 .. code-block:: python
     :emphasize-lines: 5, 6, 9
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)

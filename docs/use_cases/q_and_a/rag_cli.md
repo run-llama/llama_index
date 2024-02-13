@@ -2,7 +2,7 @@
 
 One common use case is chatting with an LLM about files you have saved locally on your computer.
 
-We have written a CLI tool do help you do just that! You can point the rag CLI tool to a set of files you've saved locally, and it will ingest those files into a local vector database that is then used for a Chat Q&A repl within your terminal.
+We have written a CLI tool to help you do just that! You can point the rag CLI tool to a set of files you've saved locally, and it will ingest those files into a local vector database that is then used for a Chat Q&A repl within your terminal.
 
 By default, this tool uses OpenAI for the embeddings & LLM as well as a local Chroma Vector DB instance. **Warning**: this means that, by default, the local data you ingest with this tool _will_ be sent to OpenAI's API.
 
@@ -22,7 +22,7 @@ After that, you can start using the tool:
 
 ```shell
 $ llamaindex-cli rag -h
-usage: llamaindex-cli rag [-h] [-q QUESTION] [-f FILES] [-c] [-v] [--clear]
+usage: llamaindex-cli rag [-h] [-q QUESTION] [-f FILES] [-c] [-v] [--clear] [--create-llama]
 
 options:
   -h, --help            show this help message and exit
@@ -33,6 +33,7 @@ options:
   -c, --chat            If flag is present, opens a chat REPL.
   -v, --verbose         Whether to print out verbose information during execution.
   --clear               Clears out all currently embedded data.
+  --create-llama        Create a LlamaIndex application based on the selected files.
 ```
 
 ## Usage
@@ -58,6 +59,35 @@ Here are some high level steps to get you started:
    ```
 1. **Open a Chat REPL**: You can even open a chat interface within your terminal! Just run `$ llamaindex-cli rag --chat` and start asking questions about the files you've ingested.
 
+### Create a LlamaIndex chat application
+
+You can also create a full-stack chat application with a FastAPI backend and NextJS frontend based on the files that you have selected.
+
+To bootstrap the application, make sure you have NodeJS and npx installed on your machine. If not, please refer to the [LlamaIndex.TS](https://ts.llamaindex.ai/getting_started/installation) documentation for instructions.
+
+Once you have everything set up, creating a new application is easy. Simply run the following command:
+
+`$ llamaindex-cli rag --create-llama`
+
+It will call our `create-llama` tool, so you will need to provide several pieces of information to create the app. You can find more information about the `create-llama` on [npmjs - create-llama](https://www.npmjs.com/package/create-llama#example)
+
+```shell
+❯ llamaindex-cli rag --create-llama
+
+Calling create-llama using data from /tmp/rag-data/...
+
+✔ What is your project named? … my-app
+✔ Which model would you like to use? › gpt-3.5-turbo
+✔ Please provide your OpenAI API key (leave blank to skip): …
+? How would you like to proceed? › - Use arrow-keys. Return to submit.
+   Just generate code (~1 sec)
+   Generate code and install dependencies (~2 min)
+❯  Generate code, install dependencies, and run the app (~2 min)
+...
+```
+
+If you choose the option `Generate code, install dependencies, and run the app (~2 min)`, all dependencies will be installed and the app will run automatically. You can then access the application by going to this address: http://localhost:3000.
+
 ### Supported File Types
 
 Internally, the `rag` CLI tool uses the [SimpleDirectoryReader](/api/llama_index.readers.SimpleDirectoryReader.rst) to parse the raw files in your local filesystem into strings.
@@ -79,9 +109,9 @@ Here's some high-level code to show the general setup:
 ```python
 #!/path/to/your/virtualenv/bin/python
 import os
-from llama_index.ingestion import IngestionPipeline, IngestionCache
-from llama_index.query_pipeline.query import QueryPipeline
-from llama_index.storage.docstore import SimpleDocumentStore
+from llama_index.core.ingestion import IngestionPipeline, IngestionCache
+from llama_index.core.query_pipeline import QueryPipeline
+from llama_index.core.storage.docstore import SimpleDocumentStore
 
 # optional, set any API keys your script may need (perhaps using python-dotenv library instead)
 os.environ["OPENAI_API_KEY"] = "sk-xxx"

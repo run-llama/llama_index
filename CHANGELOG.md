@@ -1,5 +1,132 @@
 # ChangeLog
 
+## [0.10.0, 0.10.1] - 2024-02-12
+
+### Breaking Changes
+
+- Several changes are introduced. See the [full blog post](https://blog.llamaindex.ai/llamaindex-v0-10-838e735948f8) for complete deatils.
+
+## [0.9.48] - 2024-02-12
+
+### Bug Fixes / Nits
+
+- Add back deprecated API for BedrockEmbdding (#10581)
+
+## [0.9.47] - 2024-02-11
+
+Last patch before v0.10!
+
+### New Features
+
+- add conditional links to query pipeline (#10520)
+- refactor conditional links + add to cookbook (#10544)
+- agent + query pipeline cleanups (#10563)
+
+### Bug Fixes / Nits
+
+- Add sleep to fix lag in chat stream (#10339)
+- OllamaMultiModal kwargs (#10541)
+- Update Ingestion Pipeline to handle empty documents (#10543)
+- Fixing minor spelling error (#10516)
+- fix elasticsearch async check (#10549)
+- Docs/update slack demo colab (#10534)
+- Adding the possibility to use the IN operator for PGVectorStore (#10547)
+- fix agent reset (#10562)
+- Fix MD duplicated Node id from multiple docs (#10564)
+
+## [0.9.46] - 2024-02-08
+
+### New Features
+
+- Update pooling strategy for embedding models (#10536)
+- Add Multimodal Video RAG example (#10530)
+- Add SECURITY.md (#10531)
+- Move agent module guide up one-level (#10519)
+
+### Bug Fixes / Nits
+
+- Deeplake fixes (#10529)
+- Add Cohere section for llamaindex (#10523)
+- Fix md element (#10510)
+
+## [0.9.45.post1] - 2024-02-07
+
+### New Features
+
+- Upgraded deeplake vector database to use BasePydanticVectorStore (#10504)
+
+### Bug Fixes / Nits
+
+- Fix MD parser for inconsistency tables (#10488)
+- Fix ImportError for pypdf in MetadataExtractionSEC.ipynb (#10491)
+
+## [0.9.45] - 2024-02-07
+
+### New Features
+
+- Refactor: add AgentRunner.from_llm method (#10452)
+- Support custom prompt formatting for non-chat LLMS (#10466)
+- Bump cryptography from 41.0.7 to 42.0.0 (#10467)
+- Add persist and load method for Colbert Index (#10477)
+- Allow custom agent to take in user inputs (#10450)
+
+### Bug Fixes / Nits
+
+- remove exporter from arize-phoenix global callback handler (#10465)
+- Fixing Dashscope qwen llm bug (#10471)
+- Fix: calling AWS Bedrock models (#10443)
+- Update Azure AI Search (fka Azure Cognitive Search) vector store integration to latest client SDK 11.4.0 stable + updating jupyter notebook sample (#10416)
+- fix some imports (#10485)
+
+## [0.9.44] - 2024-02-05
+
+### New Features
+
+- ollama vision cookbook (#10438)
+- Support Gemini "transport" configuration (#10457)
+- Add Upstash Vector (#10451)
+
+## [0.9.43] - 2024-02-03
+
+### New Features
+
+- Add multi-modal ollama (#10434)
+
+### Bug Fixes / Nits
+
+- update base class for astradb (#10435)
+
+## [0.9.42.post1] - 2024-02-02
+
+### New Features
+
+- Add Async support for Base nodes parser (#10418)
+
+## [0.9.42] - 2024-02-02
+
+### New Features
+
+- Add support for `gpt-3.5-turbo-0125` (#10412)
+- Added `create-llama` support to rag cli (#10405)
+
+### Bug Fixes / Nits
+
+- Fixed minor bugs in lance-db vector store (#10404)
+- Fixed streaming bug in ollama (#10407)
+
+## [0.9.41] - 2024-02-01
+
+### New Features
+
+- Nomic Embedding (#10388)
+- Dashvector support sparse vector (#10386)
+- Table QA with MarkDownParser and Benchmarking (#10382)
+- Simple web page reader (#10395)
+
+### Bug Fixes / Nits
+
+- fix full node content in KeywordExtractor (#10398)
+
 ## [0.9.40] - 2024-01-30
 
 ### New Features

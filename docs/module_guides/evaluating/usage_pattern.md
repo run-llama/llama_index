@@ -47,19 +47,18 @@ Different evaluators may populate a subset of the result fields.
 The `FaithfulnessEvaluator` evaluates if the answer is faithful to the retrieved contexts (in other words, whether if there's hallucination).
 
 ```python
-from llama_index import VectorStoreIndex, ServiceContext
-from llama_index.llms import OpenAI
-from llama_index.evaluation import FaithfulnessEvaluator
+from llama_index.core import VectorStoreIndex
+from llama_index.llms.openai import OpenAI
+from llama_index.core.evaluation import FaithfulnessEvaluator
 
-# build service context
+# create llm
 llm = OpenAI(model="gpt-4", temperature=0.0)
-service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
 ...
 
 # define evaluator
-evaluator = FaithfulnessEvaluator(service_context=service_context)
+evaluator = FaithfulnessEvaluator(llm=llm)
 
 # query index
 query_engine = vector_index.as_query_engine()
@@ -75,19 +74,18 @@ print(str(eval_result.passing))
 You can also choose to evaluate each source context individually:
 
 ```python
-from llama_index import VectorStoreIndex, ServiceContext
-from llama_index.llms import OpenAI
-from llama_index.evaluation import FaithfulnessEvaluator
+from llama_index.core import VectorStoreIndex
+from llama_index.llms.openai import OpenAI
+from llama_index.core.evaluation import FaithfulnessEvaluator
 
-# build service context
+# create llm
 llm = OpenAI(model="gpt-4", temperature=0.0)
-service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
 ...
 
 # define evaluator
-evaluator = FaithfulnessEvaluator(service_context=service_context)
+evaluator = FaithfulnessEvaluator(llm=llm)
 
 # query index
 query_engine = vector_index.as_query_engine()
@@ -111,19 +109,18 @@ The `RelevancyEvaluator` evaluates if the retrieved context and the answer is re
 Note that this evaluator requires the `query` to be passed in, in addition to the `Response` object.
 
 ```python
-from llama_index import VectorStoreIndex, ServiceContext
-from llama_index.llms import OpenAI
-from llama_index.evaluation import RelevancyEvaluator
+from llama_index.core import VectorStoreIndex
+from llama_index.llms.openai import OpenAI
+from llama_index.core.evaluation import RelevancyEvaluator
 
-# build service context
+# create llm
 llm = OpenAI(model="gpt-4", temperature=0.0)
-service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
 ...
 
 # define evaluator
-evaluator = RelevancyEvaluator(service_context=service_context)
+evaluator = RelevancyEvaluator(llm=llm)
 
 # query index
 query_engine = vector_index.as_query_engine()
@@ -138,19 +135,18 @@ print(str(eval_result))
 Similarly, you can also evaluate on a specific source node.
 
 ```python
-from llama_index import VectorStoreIndex, ServiceContext
-from llama_index.llms import OpenAI
-from llama_index.evaluation import RelevancyEvaluator
+from llama_index.core import VectorStoreIndex
+from llama_index.llms.openai import OpenAI
+from llama_index.core.evaluation import RelevancyEvaluator
 
-# build service context
+# create llm
 llm = OpenAI(model="gpt-4", temperature=0.0)
-service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
 ...
 
 # define evaluator
-evaluator = RelevancyEvaluator(service_context=service_context)
+evaluator = RelevancyEvaluator(llm=llm)
 
 # query index
 query_engine = vector_index.as_query_engine()
@@ -173,21 +169,25 @@ for source_node in response.source_nodes:
 LlamaIndex can also generate questions to answer using your data. Using in combination with the above evaluators, you can create a fully automated evaluation pipeline over your data.
 
 ```python
-from llama_index import SimpleDirectoryReader, ServiceContext
-from llama_index.llms import OpenAI
-from llama_index.evaluation import DatasetGenerator
+from llama_index.core import SimpleDirectoryReader
+from llama_index.llms.openai import OpenAI
+from llama_index.core.llama_dataset.generator import RagDatasetGenerator
 
-# build service context
+# create llm
 llm = OpenAI(model="gpt-4", temperature=0.0)
-service_context = ServiceContext.from_defaults(llm=llm)
 
 # build documents
 documents = SimpleDirectoryReader("./data").load_data()
 
 # define generator, generate questions
-data_generator = DatasetGenerator.from_documents(documents)
+dataset_generator = RagDatasetGenerator.from_documents(
+    documents=documents,
+    llm=llm,
+    num_questions_per_chunk=10,  # set the number of questions per nodes
+)
 
-eval_questions = data_generator.generate_questions_from_nodes()
+rag_dataset = dataset_generator.generate_questions_from_nodes()
+questions = [e.query for e in rag_dataset.examples]
 ```
 
 ## Batch Evaluation
@@ -195,7 +195,7 @@ eval_questions = data_generator.generate_questions_from_nodes()
 We also provide a batch evaluation runner for running a set of evaluators across many questions.
 
 ```python
-from llama_index.evaluation import BatchEvalRunner
+from llama_index.core.evaluation import BatchEvalRunner
 
 runner = BatchEvalRunner(
     {"faithfulness": faithfulness_evaluator, "relevancy": relevancy_evaluator},
@@ -226,7 +226,7 @@ pip install -U deepeval
 You can then import and use evaluators from `deepeval`. Full example:
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from deepeval.integrations.llama_index import DeepEvalAnswerRelevancyEvaluator
 
 documents = SimpleDirectoryReader("YOUR_DATA_DIRECTORY").load_data()

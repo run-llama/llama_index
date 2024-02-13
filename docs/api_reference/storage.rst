@@ -35,6 +35,6 @@ We show the API references for the Storage Classes, loading indices from the Sto
 
 ------------
 
-.. automodule:: llama_index.storage.storage_context
+.. automodule:: llama_index.core.storage.storage_context
    :members:
    :inherited-members:
