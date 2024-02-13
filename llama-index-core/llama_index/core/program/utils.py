@@ -44,7 +44,7 @@ def get_program_for_llm(
         # in default mode, we try to use the OpenAI program if available else
         # we fall back to the LLM program
         try:
-            from llama_index.program.openai_program import (
+            from rom llama_index.program.openai import (
                 OpenAIPydanticProgram,
             )  # pants: no-infer-dep
 
