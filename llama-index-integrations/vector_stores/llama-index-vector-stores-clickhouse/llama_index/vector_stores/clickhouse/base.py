@@ -4,6 +4,7 @@ An index that is built on top of an existing ClickHouse cluster.
 
 """
 import importlib
+import json
 import logging
 import re
 from typing import Any, Dict, List, Optional, cast
@@ -139,8 +140,8 @@ class ClickHouseVectorStore(VectorStore):
                 "extract_func": lambda x: x.get_node_info(),
             },
             "metadata": {
-                "type": "JSON",
-                "extract_func": lambda x: x.metadata,
+                "type": "String",
+                "extract_func": lambda x: json.dumps(x.metadata),
             },
         }
         self.column_names = list(self.column_config.keys())
@@ -241,8 +242,8 @@ class ClickHouseVectorStore(VectorStore):
         self, where_str: Optional[str], exact_match_filter: list
     ) -> str:
         filter_str = " AND ".join(
-            f"JSONExtractString(toJSONString("
-            f"{self.metadata_column}), '{filter_item.key}') "
+            f"JSONExtractString("
+            f"{self.metadata_column}, '{filter_item.key}') "
             f"= '{filter_item.value}'"
             for filter_item in exact_match_filter
         )
@@ -365,7 +366,7 @@ class ClickHouseVectorStore(VectorStore):
             node = TextNode(
                 id_=r[id_idx],
                 text=r[text_idx],
-                metadata=r[metadata_idx],
+                metadata=json.loads(r[metadata_idx]),
                 start_char_idx=start_char_idx,
                 end_char_idx=end_char_idx,
                 relationships={
