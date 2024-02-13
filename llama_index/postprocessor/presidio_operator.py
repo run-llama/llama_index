@@ -38,6 +38,8 @@ class EntityTypeCountAnonymizer(Operator):
             raise ValueError("An input Dict called `entity_mapping` is required.")
         if "entity_type" not in params:
             raise ValueError("An entity_type param is required.")
+        if "deanonymize_mapping" not in params:
+            raise ValueError("A deanonymize_mapping param is required.")
 
     def operator_name(self) -> str:
         return self.__class__.__name__
