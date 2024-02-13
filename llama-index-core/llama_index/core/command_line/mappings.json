@@ -531,6 +531,7 @@
   "AugmentationPrecisionEvaluator": "llama_index.evaluation.tonic_validate",
   "RetrievalPrecisionEvaluator": "llama_index.evaluation.tonic_validate",
   "TonicValidateEvaluator": "llama_index.evaluation.tonic_validate",
+  "BaseReader": "llama_index.core.readers.base",
   "DocugamiReader": "llama_index.readers.docugami",
   "SlackReader": "llama_index.readers.slack",
   "GeniusReader": "llama_index.readers.genius",
