@@ -20,16 +20,19 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = [
+    {email = "oss@arize.com", name = "OpenInference Authors"},
+    {email = "phoenix-devs@arize.com", name = "Arize AI"},
+]
 description = "llama-index callbacks arize-phoenix integration"
 license = "MIT"
 name = "llama-index-callbacks-arize-phoenix"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
-arize-phoenix = ">=3.0.0"
+arize-phoenix = ">=3.0.3"
 openinference-instrumentation-llama-index = ">=1.0.0"
 llama-index-core = "^0.10.1"
 
