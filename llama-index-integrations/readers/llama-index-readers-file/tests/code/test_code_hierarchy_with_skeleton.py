@@ -2,8 +2,8 @@
 import os
 from typing import List, cast
 
-from llama_hub.file.code.code_hierarchy import CodeHierarchyNodeParser
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.readers.file.code import CodeHierarchyNodeParser
+from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 
 
 def test_python_code_splitter() -> None:

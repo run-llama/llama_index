@@ -1,5 +1,5 @@
 import pytest
-from llama_hub.file.code.code_hierarchy import CodeHierarchyNodeParser
+from llama_index.readers.file.code import CodeHierarchyNodeParser
 
 
 def test_space_indentation() -> None:

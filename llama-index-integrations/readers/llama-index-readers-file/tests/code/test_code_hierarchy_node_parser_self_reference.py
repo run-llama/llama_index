@@ -2,14 +2,14 @@
 from typing import Sequence
 from llama_index import SimpleDirectoryReader
 from pytest import fixture
-from llama_hub.file.code.code_hierarchy import CodeHierarchyNodeParser
-from llama_index.text_splitter import CodeSplitter
+from llama_index.readers.file.code import CodeHierarchyNodeParser
+from llama_index.core.text_splitter import CodeSplitter
 from pathlib import Path
-from llama_index.schema import BaseNode
+from llama_index.core.schema import BaseNode
 
 from IPython.display import Markdown, display
 
-from llama_hub.file.code.index import CodeHierarchyKeywordQueryEngine
+from llama_index.readers.file.code import CodeHierarchyKeywordQueryEngine
 
 
 def print_python(python_text: str) -> None:
@@ -20,11 +20,11 @@ def print_python(python_text: str) -> None:
 @fixture()
 def code_hierarchy_nodes():
     reader = SimpleDirectoryReader(
-        input_files=[Path("../../../llama_hub/file/code/code_hierarchy.py")],
+        input_files=[Path("../../llama_index/readers/file/code/code_hierarchy.py")],
         file_metadata=lambda x: {"filepath": x},
     )
     nodes = reader.load_data()
-    split_nodes = CodeHierarchyNodeParser(
+    return CodeHierarchyNodeParser(
         language="python",
         # You can further parameterize the CodeSplitter to split the code
         # into "chunks" that match your context window size using
@@ -32,13 +32,11 @@ def code_hierarchy_nodes():
         code_splitter=CodeSplitter(language="python", max_chars=1000, chunk_lines=10),
     ).get_nodes_from_documents(nodes)
 
-    return split_nodes
-
 
 def test_code_splitter_NEXT_relationship_indention(
     code_hierarchy_nodes: Sequence[BaseNode],
 ) -> None:
-    """When using jupyter I found that the final brevity comment was indented when it shouldnt be"""
+    """When using jupyter I found that the final brevity comment was indented when it shouldnt be."""
     print_python(code_hierarchy_nodes[0].text)
     assert (
         not code_hierarchy_nodes[0].split("\n")[-1].starts_with(" ")
