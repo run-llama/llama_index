@@ -28,7 +28,7 @@ In the same folder where you created the `data` folder, create a file called `st
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
-from llama_index.core.embeddings import resolve_embed_model
+from llama_index.core.embeddings.utils import resolve_embed_model
 from llama_index.llms.ollama import Ollama
 
 documents = SimpleDirectoryReader("data").load_data()
