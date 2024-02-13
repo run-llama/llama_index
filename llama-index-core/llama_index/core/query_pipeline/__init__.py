@@ -11,6 +11,7 @@ from llama_index.core.query_pipeline.components.input import InputComponent
 from llama_index.core.query_pipeline.components.router import RouterComponent
 from llama_index.core.query_pipeline.components.tool_runner import ToolRunnerComponent
 from llama_index.core.query_pipeline.query import QueryPipeline, Link, ChainableMixin, QueryComponent
+from llama_index.core.base.query_pipeline.query import CustomQueryComponent, InputKeys, OutputKeys
 
 __all__ = [
     "AgentFnComponent",
@@ -25,5 +26,6 @@ __all__ = [
     "QueryComponent",
     "Link",
     "ChainableMixin",
-    "QueryComponent"
+    "QueryComponent",
+    "CustomQueryComponent"
 ]
