@@ -1,6 +1,7 @@
-from typing import Dict
+from typing import Any, Dict
 
-from presidio_anonymizer.operators import OperatorType, Operator
+from presidio_anonymizer.operators import Operator, OperatorType
+
 
 class EntityTypeCountAnonymizer(Operator):
     """
@@ -10,12 +11,11 @@ class EntityTypeCountAnonymizer(Operator):
 
     REPLACING_FORMAT = "<{entity_type}_{index}>"
 
-    def operate(self, text: str, params: Dict = None) -> str:
+    def operate(self, text: str, params: Dict[str, Any]) -> str:
         """Anonymize the input text."""
-
         entity_type: str = params["entity_type"]
-        entity_mapping: Dict[str:Dict] = params["entity_mapping"]
-        deanonymize_mapping: Dict[str:str] = params["deanonymize_mapping"]
+        entity_mapping: Dict[str, Dict] = params["entity_mapping"]
+        deanonymize_mapping: Dict[str, str] = params["deanonymize_mapping"]
 
         entity_mapping_for_type = entity_mapping.get(entity_type)
         if not entity_mapping_for_type:
@@ -31,9 +31,8 @@ class EntityTypeCountAnonymizer(Operator):
         deanonymize_mapping[new_text] = text
         return new_text
 
-    def validate(self, params: Dict = None) -> None:
+    def validate(self, params: Dict[str, Any]) -> None:
         """Validate operator parameters."""
-
         if "entity_mapping" not in params:
             raise ValueError("An input Dict called `entity_mapping` is required.")
         if "entity_type" not in params:

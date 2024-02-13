@@ -147,16 +147,17 @@ class NERPIINodePostprocessor(BaseNodePostprocessor):
 
         return new_nodes
 
+
 class PresidioPIINodePostprocessor(BaseNodePostprocessor):
     """presidio PII Node processor.
 
     Uses a presidio to analyse PIIs.
-ß
+
     """
 
     pii_node_info_key: str = "__pii_node_info__"
-    entity_mapping = dict()
-    mapping = dict()
+    entity_mapping: Dict[str, Dict] = {}
+    mapping: Dict[str, str] = {}
 
     @classmethod
     def class_name(cls) -> str:
@@ -166,21 +167,29 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
         from presidio_analyzer import AnalyzerEngine
         from presidio_anonymizer import AnonymizerEngine
         from presidio_anonymizer.entities import OperatorConfig
-        from llama_index.postprocessor.presidio_operator import EntityTypeCountAnonymizer
+
+        from llama_index.postprocessor.presidio_operator import (
+            EntityTypeCountAnonymizer,
+        )
 
         analyzer = AnalyzerEngine()
-        results = analyzer.analyze(text=text, language='en')
+        results = analyzer.analyze(text=text, language="en")
         engine = AnonymizerEngine()
         engine.add_anonymizer(EntityTypeCountAnonymizer)
 
-        new_text = engine.anonymize(text=text, 
-                                    analyzer_results=results, 
-                                    operators={
-                                        "DEFAULT": OperatorConfig("EntityTypeCountAnonymizer", {
-                                                                      "entity_mapping": self.entity_mapping,
-                                                                      "deanonymize_mapping": self.mapping
-                                                                      })
-                                    })
+        new_text = engine.anonymize(
+            text=text,
+            analyzer_results=results,
+            operators={
+                "DEFAULT": OperatorConfig(
+                    "EntityTypeCountAnonymizer",
+                    {
+                        "entity_mapping": self.entity_mapping,
+                        "deanonymize_mapping": self.mapping,
+                    },
+                )
+            },
+        )
 
         return new_text.text
 
@@ -194,9 +203,7 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
         new_nodes = []
         for node_with_score in nodes:
             node = node_with_score.node
-            new_text = self.mask_pii(
-                node.get_content(metadata_mode=MetadataMode.LLM)
-            )
+            new_text = self.mask_pii(node.get_content(metadata_mode=MetadataMode.LLM))
             new_node = deepcopy(node)
             new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
             new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)

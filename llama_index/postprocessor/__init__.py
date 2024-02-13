@@ -24,7 +24,7 @@ from llama_index.postprocessor.optimizer import SentenceEmbeddingOptimizer
 from llama_index.postprocessor.pii import (
     NERPIINodePostprocessor,
     PIINodePostprocessor,
-    PresidioPIINodePostprocessor
+    PresidioPIINodePostprocessor,
 )
 from llama_index.postprocessor.rankGPT_rerank import RankGPTRerank
 from llama_index.postprocessor.sbert_rerank import SentenceTransformerRerank
