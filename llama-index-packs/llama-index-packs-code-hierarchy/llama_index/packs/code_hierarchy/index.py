@@ -5,7 +5,7 @@ from llama_index.core.langchain_helpers.agents import LlamaIndexTool
 from llama_index.core.query_engine import CustomQueryEngine
 from llama_index.core.schema import BaseNode
 import re
-from llama_index.readers.file.code.code_hierarchy import CodeHierarchyNodeParser
+from llama_index.packs.code_hierarchy.code_hierarchy import CodeHierarchyNodeParser
 
 
 class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):

@@ -1,15 +1,15 @@
 """Test CodeHierarchyNodeParser reading itself."""
 from typing import Sequence
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 from pytest import fixture
-from llama_index.readers.file.code import CodeHierarchyNodeParser
+from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from llama_index.core.text_splitter import CodeSplitter
 from pathlib import Path
 from llama_index.core.schema import BaseNode
 
 from IPython.display import Markdown, display
 
-from llama_index.readers.file.code import CodeHierarchyKeywordQueryEngine
+from llama_index.packs.code_hierarchy import CodeHierarchyKeywordQueryEngine
 
 
 def print_python(python_text: str) -> None:
@@ -20,7 +20,7 @@ def print_python(python_text: str) -> None:
 @fixture()
 def code_hierarchy_nodes():
     reader = SimpleDirectoryReader(
-        input_files=[Path("../../llama_index/readers/file/code/code_hierarchy.py")],
+        input_files=[Path("../llama_index/packs/code_hierarchy/code_hierarchy.py")],
         file_metadata=lambda x: {"filepath": x},
     )
     nodes = reader.load_data()
