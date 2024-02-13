@@ -3,6 +3,6 @@
 PromptHelper
 =================
 
-.. automodule:: llama_index.indices.prompt_helper
+.. automodule:: llama_index.core.indices.prompt_helper
    :members:
    :inherited-members:

@@ -30,7 +30,7 @@ llamaindex-cli download-llamapack <pack_name> --download-dir <pack_directory>
 Python:
 
 ```python
-from llama_index.llama_pack import download_llama_pack
+from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
 pack_cls = download_llama_pack("<pack_name>", "<pack_directory>")

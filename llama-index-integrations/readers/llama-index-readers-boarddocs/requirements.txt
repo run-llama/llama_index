@@ -1,0 +1,3 @@
+bs4
+html2text
+requests

@@ -1,8 +1,8 @@
 .. _Ref-Node-Postprocessor:
 
-Node Postprocessor
+Node Postprocessors
 ===================
 
-.. automodule:: llama_index.indices.postprocessor
+.. automodule:: llama_index.core.postprocessor
    :members:
    :inherited-members:
