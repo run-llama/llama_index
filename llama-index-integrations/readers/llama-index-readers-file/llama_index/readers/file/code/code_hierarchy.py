@@ -10,7 +10,6 @@ try:
 except ImportError:
     from pydantic import BaseModel, Field
 
-
 from tree_sitter import Node
 
 from llama_index.callbacks.base import CallbackManager
