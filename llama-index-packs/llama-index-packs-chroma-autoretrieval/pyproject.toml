@@ -7,6 +7,11 @@ check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+classes = ["ChromaAutoretrievalPack"]
+contains_example = false
+import_path = "llama_index.packs.chroma_autoretrieval"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

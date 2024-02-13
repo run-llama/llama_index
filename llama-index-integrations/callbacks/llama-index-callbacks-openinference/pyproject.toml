@@ -8,6 +8,11 @@ check-hidden = true
 ignore-words-list = "Gere"
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+classes = ["OpenInferenceCallbackHandler"]
+contains_example = false
+import_path = "llama_index.callbacks.openinference"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
