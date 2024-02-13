@@ -35,7 +35,7 @@ except (ImportError, Exception):
 # docker-compose up
 #
 @pytest.mark.skipif(
-    http_client_chromadb_mode == False,
+    http_client_chromadb_mode is False,
     reason="chromadb is not running in http client mode",
 )
 def test_instance_creation_from_http_params() -> None:
