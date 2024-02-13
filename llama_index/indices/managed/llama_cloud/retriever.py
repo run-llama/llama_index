@@ -60,7 +60,11 @@ class LlamaCloudRetriever(BaseRetriever):
         pipelines = self._client.pipeline.search_pipelines(
             project_name=self.project_name, pipeline_name=self.name
         )
-        assert len(pipelines) == 1
+        if len(pipelines) != 1:
+            raise ValueError(
+                f"Unknown index name {self.name}. Please confirm a "
+                "managed index with this name exists."
+            )
         pipeline = pipelines[0]
 
         if pipeline.id is None:

@@ -19,7 +19,7 @@ from llama_index.indices.managed.llama_cloud.utils import (
     get_client,
     get_pipeline_create,
 )
-from llama_index.ingestion.pipeline import DEFAULT_PROJECT_NAME
+from llama_index.ingestion.pipeline import DEFAULT_APP_URL, DEFAULT_PROJECT_NAME
 from llama_index.schema import BaseNode, Document, TransformComponent
 from llama_index.service_context import ServiceContext
 
@@ -80,7 +80,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         **kwargs: Any,
     ) -> "LlamaCloudIndex":
         """Build a Vectara index from a sequence of documents."""
-        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", None)
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
         client = get_client(api_key, base_url, app_url, timeout)
 
         pipeline_create = get_pipeline_create(
@@ -95,7 +95,8 @@ class LlamaCloudIndex(BaseManagedIndex):
         project = client.project.upsert_project(
             request=ProjectCreate(name=project_name)
         )
-        assert project.id is not None
+        if project.id is None:
+            raise ValueError(f"Failed to create/get project {project_name}")
 
         if verbose:
             print(f"Created project {project.id} with name {project.name}")
@@ -103,7 +104,8 @@ class LlamaCloudIndex(BaseManagedIndex):
         pipeline = client.project.upsert_pipeline_for_project(
             project_id=project.id, request=pipeline_create
         )
-        assert pipeline.id is not None
+        if pipeline.id is None:
+            raise ValueError(f"Failed to create/get pipeline {name}")
 
         if verbose:
             print(f"Created pipeline {pipeline.id} with name {pipeline.name}")
