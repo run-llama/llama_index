@@ -96,6 +96,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     def from_defaults(
         cls,
         retriever: BaseRetriever,
+        llm: Optional[LLM] = None,
         service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
@@ -108,7 +109,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
-        llm = llm_from_settings_or_context(Settings, service_context)
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
 
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(
