@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers spotify integration"
+keywords = ["music", "spotify"]
 license = "MIT"
+maintainers = ["ong"]
 name = "llama-index-readers-spotify"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs stock_market_data_query_engine integration"
+keywords = ["data", "engine", "finance", "market", "query", "stock", "yahoo finance", "yahoo"]
 license = "MIT"
+maintainers = ["anoopshrma"]
 name = "llama-index-packs-stock-market-data-query-engine"
 readme = "README.md"
 version = "0.1.1"

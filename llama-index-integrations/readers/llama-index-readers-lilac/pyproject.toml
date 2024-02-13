@@ -22,6 +22,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers lilac integration"
 license = "MIT"
+maintainers = ["nsthorat"]
 name = "llama-index-readers-lilac"
 readme = "README.md"
 version = "0.1.1"

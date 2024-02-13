@@ -22,6 +22,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers obsidian integration"
 license = "MIT"
+maintainers = ["hursh-desai"]
 name = "llama-index-readers-obsidian"
 readme = "README.md"
 version = "0.1.1"

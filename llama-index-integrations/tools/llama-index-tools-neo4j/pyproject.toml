@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index tools neo4j integration"
+keywords = ["cypher", "graph", "neo4j"]
 license = "MIT"
+maintainers = ["shahafp"]
 name = "llama-index-tools-neo4j"
 readme = "README.md"
 version = "0.1.1"

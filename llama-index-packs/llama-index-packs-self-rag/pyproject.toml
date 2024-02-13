@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs self rag integration"
+keywords = ["llm", "self-RAG", "smart-retreiver"]
 license = "MIT"
+maintainers = ["mmaatouk"]
 name = "llama-index-packs-self-rag"
 readme = "README.md"
 version = "0.1.1"

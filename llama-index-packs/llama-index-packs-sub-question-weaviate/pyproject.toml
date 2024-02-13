@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs sub_question_weaviate integration"
+keywords = ["index", "query", "weaviate"]
 license = "MIT"
+maintainers = ["erika-cardenas"]
 name = "llama-index-packs-sub-question-weaviate"
 readme = "README.md"
 version = "0.1.1"

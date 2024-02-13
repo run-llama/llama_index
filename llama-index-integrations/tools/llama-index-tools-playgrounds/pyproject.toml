@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index tools playgrounds integration"
+keywords = ["blockchain", "decentralized", "graphql", "playgroundsapi", "subgraph", "thegraph"]
 license = "MIT"
+maintainers = ["tachi"]
 name = "llama-index-tools-playgrounds"
 readme = "README.md"
 version = "0.1.1"

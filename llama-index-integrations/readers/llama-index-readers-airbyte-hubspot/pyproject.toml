@@ -22,6 +22,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers airbyte_hubspot integration"
 license = "MIT"
+maintainers = ["flash1293"]
 name = "llama-index-readers-airbyte-hubspot"
 readme = "README.md"
 version = "0.1.1"

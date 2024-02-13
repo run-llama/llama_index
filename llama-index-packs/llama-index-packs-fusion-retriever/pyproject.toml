@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs fusion_retriever integration"
+keywords = ["fusion", "hybrid", "query", "retriever", "rewriting"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-packs-fusion-retriever"
 readme = "README.md"
 version = "0.1.1"

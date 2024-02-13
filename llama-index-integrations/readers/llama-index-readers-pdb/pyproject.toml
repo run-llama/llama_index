@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers pdb integration"
+keywords = ["Protein Data Bank", "academic papers", "pdb", "proteins"]
 license = "MIT"
+maintainers = ["joshuakto"]
 name = "llama-index-readers-pdb"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers opendal_reader integration"
+keywords = ["azblob", "gcs", "s3", "storage"]
 license = "MIT"
+maintainers = ["OpenDAL Contributors"]
 name = "llama-index-readers-opendal-reader"
 readme = "README.md"
 version = "0.1.1"

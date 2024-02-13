@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers s3 integration"
+keywords = ["amazon web services", "aws s3", "bucket"]
 license = "MIT"
+maintainers = ["thejessezhang"]
 name = "llama-index-readers-s3"
 readme = "README.md"
 version = "0.1.1"

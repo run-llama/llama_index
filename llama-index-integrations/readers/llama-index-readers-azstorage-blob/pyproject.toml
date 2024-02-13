@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers azstorage_blob integration"
+keywords = ["azure storage", "azure", "blob", "container"]
 license = "MIT"
+maintainers = ["rivms"]
 name = "llama-index-readers-azstorage-blob"
 readme = "README.md"
 version = "0.1.1"

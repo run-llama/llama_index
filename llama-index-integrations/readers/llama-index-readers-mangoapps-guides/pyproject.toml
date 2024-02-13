@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers mangoapps_guides integration"
+keywords = ["mangoapps"]
 license = "MIT"
+maintainers = ["mangoapps"]
 name = "llama-index-readers-mangoapps-guides"
 readme = "README.md"
 version = "0.1.1"

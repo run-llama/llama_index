@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs gmail_openai_agent integration"
+keywords = ["math", "research", "science"]
 license = "MIT"
+maintainers = ["logan-markewich"]
 name = "llama-index-packs-gmail-openai-agent"
 readme = "README.md"
 version = "0.1.1"

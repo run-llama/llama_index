@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers zendesk integration"
+keywords = ["help center", "knowledge base", "zendesk"]
 license = "MIT"
+maintainers = ["bbornsztein"]
 name = "llama-index-readers-zendesk"
 readme = "README.md"
 version = "0.1.1"

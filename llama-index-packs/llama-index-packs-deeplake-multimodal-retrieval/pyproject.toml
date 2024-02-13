@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs deeplake_multimodal_retrieval integration"
+keywords = ["deeplake", "multimodal", "retriever"]
 license = "MIT"
+maintainers = ["AdkSarsen"]
 name = "llama-index-packs-deeplake-multimodal-retrieval"
 readme = "README.md"
 version = "0.1.1"

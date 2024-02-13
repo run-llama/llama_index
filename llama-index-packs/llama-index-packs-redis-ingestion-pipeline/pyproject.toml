@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs redis_ingestion_pipeline integration"
+keywords = ["index", "ingestion", "pipeline", "redis"]
 license = "MIT"
+maintainers = ["logan-markewich"]
 name = "llama-index-packs-redis-ingestion-pipeline"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers huggingface fs integration"
+keywords = ["face", "filesystem", "fs", "hugging", "huggingface"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-readers-huggingface-fs"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index tools database integration"
+keywords = ["aws rds", "postgres", "snowflake", "sql"]
 license = "MIT"
+maintainers = ["ajhofmann"]
 name = "llama-index-tools-database"
 readme = "README.md"
 version = "0.1.1"

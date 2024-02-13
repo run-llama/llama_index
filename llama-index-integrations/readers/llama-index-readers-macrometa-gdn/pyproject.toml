@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers macrometa_gdn integration"
+keywords = ["macrometa"]
 license = "MIT"
+maintainers = ["Dain Im"]
 name = "llama-index-readers-macrometa-gdn"
 readme = "README.md"
 version = "0.1.1"
