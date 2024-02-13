@@ -113,7 +113,7 @@ class SimpleDirectoryReader(BaseReader):
             Default is None.
     """
 
-    supported_suffix: List[str] = []
+    supported_suffix_fn: Callable = _try_loading_included_file_formats
 
     def __init__(
         self,
@@ -132,9 +132,6 @@ class SimpleDirectoryReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         super().__init__()
-
-        # load starter file readers
-        self.supported_suffix = list(_try_loading_included_file_formats().keys())
 
         if not input_dir and not input_files:
             raise ValueError("Must provide either `input_dir` or `input_files`.")
@@ -303,7 +300,8 @@ class SimpleDirectoryReader(BaseReader):
             List[Document]: loaded documents
         """
         # TODO: make this less redundant
-        default_file_reader_cls = _try_loading_included_file_formats()
+        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
+        default_file_reader_suffix = list(default_file_reader_cls.keys())
         metadata: Optional[dict] = None
         documents: List[Document] = []
 
@@ -311,10 +309,7 @@ class SimpleDirectoryReader(BaseReader):
             metadata = file_metadata(str(input_file))
 
         file_suffix = input_file.suffix.lower()
-        if (
-            file_suffix in SimpleDirectoryReader.supported_suffix
-            or file_suffix in file_extractor
-        ):
+        if file_suffix in default_file_reader_suffix or file_suffix in file_extractor:
             # use file readers
             if file_suffix not in file_extractor:
                 # instantiate file reader if not already
