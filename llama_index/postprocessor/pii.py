@@ -151,10 +151,12 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
     """presidio PII Node processor.
 
     Uses a presidio to analyse PIIs.
-
+ß
     """
 
     pii_node_info_key: str = "__pii_node_info__"
+    entity_mapping = dict()
+    mapping = dict()
 
     @classmethod
     def class_name(cls) -> str:
@@ -163,30 +165,24 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
     def mask_pii(self, text: str) -> Tuple[str, Dict]:
         from presidio_analyzer import AnalyzerEngine
         from presidio_anonymizer import AnonymizerEngine
-        from presidio_anonymizer.entities import (OperatorConfig)
+        from presidio_anonymizer.entities import OperatorConfig
+        from llama_index.postprocessor.presidio_operator import EntityTypeCountAnonymizer
 
         analyzer = AnalyzerEngine()
         results = analyzer.analyze(text=text, language='en')
-        
         engine = AnonymizerEngine()
+        engine.add_anonymizer(EntityTypeCountAnonymizer)
 
-        anonymized_text = engine.anonymize(
-            text=text,
-            analyzer_results=results
-        )
-        # mapping = dict([(result.entity_type, text[result.start:result.end]) for result in results])
-        # new_text = anonymized_text.text
-        mapping = dict([(f"<{result.entity_type}_{result.start}>", text[result.start:result.end]) for result in results])
-        mapping = {value:key for key, value in  mapping.items()}
+        new_text = engine.anonymize(text=text, 
+                                    analyzer_results=results, 
+                                    operators={
+                                        "DEFAULT": OperatorConfig("EntityTypeCountAnonymizer", {
+                                                                      "entity_mapping": self.entity_mapping,
+                                                                      "deanonymize_mapping": self.mapping
+                                                                      })
+                                    })
 
-        new_text = text
-        for result in results:
-            # new_text = new_text.replace(text[result.start:result.end], mapping[f"<{result.entity_type}_{result.start}>"])
-            new_text = new_text.replace(text[result.start:result.end], mapping[text[result.start:result.end]])
-
-        mapping = {value:key for key, value in  mapping.items()}
-
-        return new_text, mapping
+        return new_text.text
 
     def _postprocess_nodes(
         self,
@@ -198,13 +194,13 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
         new_nodes = []
         for node_with_score in nodes:
             node = node_with_score.node
-            new_text, mapping_info = self.mask_pii(
+            new_text = self.mask_pii(
                 node.get_content(metadata_mode=MetadataMode.LLM)
             )
             new_node = deepcopy(node)
             new_node.excluded_embed_metadata_keys.append(self.pii_node_info_key)
             new_node.excluded_llm_metadata_keys.append(self.pii_node_info_key)
-            new_node.metadata[self.pii_node_info_key] = mapping_info
+            new_node.metadata[self.pii_node_info_key] = self.mapping
             new_node.set_content(new_text)
             new_nodes.append(NodeWithScore(node=new_node, score=node_with_score.score))
 
