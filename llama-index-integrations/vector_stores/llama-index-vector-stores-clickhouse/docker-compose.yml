@@ -1,7 +1,6 @@
 version: "3"
 
 services:
-
   clickhouse:
     image: clickhouse/clickhouse-server:24.1
     user: "101:101"

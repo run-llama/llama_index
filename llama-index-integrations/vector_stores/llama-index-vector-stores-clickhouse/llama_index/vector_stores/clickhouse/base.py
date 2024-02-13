@@ -50,6 +50,7 @@ class ClickHouseVectorStore(VectorStore):
     ClickHouse cluster.
     During query time, the index uses ClickHouse to query for the top
     k most similar nodes.
+
     Args:
         clickhouse_client (httpclient): clickhouse-connect httpclient of
             an existing ClickHouse cluster.
@@ -80,18 +81,18 @@ class ClickHouseVectorStore(VectorStore):
     AMPLIFY_RATIO_GT50 = 10
 
     def __init__(
-            self,
-            clickhouse_client: Optional[Any] = None,
-            table: str = "llama_index",
-            database: str = "default",
-            engine: str = "MergeTree",
-            index_type: str = "NONE",
-            metric: str = "cosine",
-            batch_size: int = 1000,
-            index_params: Optional[dict] = None,
-            search_params: Optional[dict] = None,
-            service_context: Optional[ServiceContext] = None,
-            **kwargs: Any,
+        self,
+        clickhouse_client: Optional[Any] = None,
+        table: str = "llama_index",
+        database: str = "default",
+        engine: str = "MergeTree",
+        index_type: str = "NONE",
+        metric: str = "cosine",
+        batch_size: int = 1000,
+        index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
+        service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize params."""
         import_err_msg = """
@@ -186,8 +187,8 @@ class ClickHouseVectorStore(VectorStore):
         self._table_existed = True
 
     def _upload_batch(
-            self,
-            batch: List[BaseNode],
+        self,
+        batch: List[BaseNode],
     ) -> None:
         _data = []
         # we assume all rows have all columns
@@ -205,7 +206,7 @@ class ClickHouseVectorStore(VectorStore):
         )
 
     def _build_text_search_statement(
-            self, query_str: str, similarity_top_k: int
+        self, query_str: str, similarity_top_k: int
     ) -> str:
         # TODO: We could make this overridable
         tokens = _default_tokenizer(query_str)
@@ -221,7 +222,7 @@ class ClickHouseVectorStore(VectorStore):
         )
 
     def _build_hybrid_search_statement(
-            self, stage_one_sql: str, query_str: str, similarity_top_k: int
+        self, stage_one_sql: str, query_str: str, similarity_top_k: int
     ) -> str:
         # TODO: We could make this overridable
         tokens = _default_tokenizer(query_str)
@@ -237,7 +238,7 @@ class ClickHouseVectorStore(VectorStore):
         )
 
     def _append_meta_filter_condition(
-            self, where_str: Optional[str], exact_match_filter: list
+        self, where_str: Optional[str], exact_match_filter: list
     ) -> str:
         filter_str = " AND ".join(
             f"JSONExtractString(toJSONString("
@@ -252,11 +253,12 @@ class ClickHouseVectorStore(VectorStore):
         return where_str
 
     def add(
-            self,
-            nodes: List[BaseNode],
-            **add_kwargs: Any,
+        self,
+        nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
+
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
         """
@@ -274,6 +276,7 @@ class ClickHouseVectorStore(VectorStore):
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id.
+
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
         """
@@ -289,6 +292,7 @@ class ClickHouseVectorStore(VectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
+
         Args:
             query (VectorStoreQuery): query
         """

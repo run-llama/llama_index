@@ -29,15 +29,16 @@ DISTANCE_MAPPING = {
 
 class ClickHouseSettings:
     """ClickHouse Client Configuration.
-    Attribute:
-        table (str) : Table name to operate on.
-        database (str) : Database name to find the table.
-        engine (str) : Engine. Options are "MergeTree" and "Memory". Default is "MergeTree".
-        index_type (str): index type string
-        metric (str) : metric type to compute distance e.g. cosine, l3 or dot
-        batch_size (int): the size of documents to insert
-        index_params (dict, optional): index build parameter
-        search_params (dict, optional): index search parameters for ClickHouse query
+
+    Attributes:
+        table (str): Table name to operate on.
+        database (str): Database name to find the table.
+        engine (str): Engine. Options are "MergeTree" and "Memory". Default is "MergeTree".
+        index_type (str): Index type string.
+        metric (str): Metric type to compute distance e.g., cosine, l3, or dot.
+        batch_size (int): The size of documents to insert.
+        index_params (dict, optional): Index build parameter.
+        search_params (dict, optional): Index search parameters for ClickHouse query.
     """
 
     def __init__(
@@ -81,6 +82,7 @@ class ClickHouseSettings:
 
 class ClickHouseReader(BaseReader):
     """ClickHouse reader.
+
     Args:
         clickhouse_host (str) : An URL to connect to ClickHouse backend. Default to "localhost".
         username (str) : Username to login. Defaults to "default".
@@ -141,11 +143,13 @@ class ClickHouseReader(BaseReader):
         limit: int = 10,
     ) -> List[Document]:
         """Load data from ClickHouse.
+
         Args:
             query_vector (List[float]): Query vector.
             where_str (Optional[str], optional): where condition string.
                 Defaults to None.
             limit (int): Number of results to return.
+
         Returns:
             List[Document]: A list of documents.
         """

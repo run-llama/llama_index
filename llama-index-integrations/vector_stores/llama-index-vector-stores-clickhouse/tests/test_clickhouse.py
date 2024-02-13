@@ -114,8 +114,8 @@ def node_embeddings() -> List[TextNode]:
         ),
         TextNode(
             text=(
-                    "The important thing is not to stop questioning."
-                    + " Curiosity has its own reason for existing."
+                "The important thing is not to stop questioning."
+                + " Curiosity has its own reason for existing."
             ),
             id_="bd2e080b-159a-4030-acc3-d98afd2ba49b",
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="text-4")},
@@ -126,8 +126,8 @@ def node_embeddings() -> List[TextNode]:
         ),
         TextNode(
             text=(
-                    "I am no bird; and no net ensnares me;"
-                    + " I am a free human being with an independent will."
+                "I am no bird; and no net ensnares me;"
+                + " I am a free human being with an independent will."
             ),
             id_="f658de3b-8cef-4d1c-8bed-9a263c907251",
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="text-5")},
@@ -162,8 +162,8 @@ def test_table_creation(table_name: str, clickhouse_client: Any) -> None:
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_and_query(
-        clickhouse_store: ClickHouseVectorStore,
-        node_embeddings: List[TextNode],
+    clickhouse_store: ClickHouseVectorStore,
+    node_embeddings: List[TextNode],
 ) -> None:
     clickhouse_store.add(node_embeddings)
     res = clickhouse_store.query(
@@ -175,8 +175,8 @@ def test_add_to_ch_and_query(
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_and_text_query(
-        clickhouse_store: ClickHouseVectorStore,
-        node_embeddings: List[TextNode],
+    clickhouse_store: ClickHouseVectorStore,
+    node_embeddings: List[TextNode],
 ) -> None:
     clickhouse_store.add(node_embeddings)
     res = clickhouse_store.query(
@@ -193,9 +193,9 @@ def test_add_to_ch_and_text_query(
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 @pytest.mark.skipif(sys.platform == "darwin", reason="annoy not supported on osx")
 def test_add_to_ch_and_text_query_annoy(
-        clickhouse_client: Any,
-        table_name: str,
-        node_embeddings: List[TextNode],
+    clickhouse_client: Any,
+    table_name: str,
+    node_embeddings: List[TextNode],
 ) -> None:
     clickhouse_store = ClickHouseVectorStore(
         clickhouse_client,
@@ -219,9 +219,9 @@ def test_add_to_ch_and_text_query_annoy(
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_and_text_query_hnsw(
-        clickhouse_client: Any,
-        table_name: str,
-        node_embeddings: List[TextNode],
+    clickhouse_client: Any,
+    table_name: str,
+    node_embeddings: List[TextNode],
 ) -> None:
     clickhouse_store = ClickHouseVectorStore(
         clickhouse_client,
@@ -245,8 +245,8 @@ def test_add_to_ch_and_text_query_hnsw(
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_and_hybrid_query(
-        clickhouse_store: ClickHouseVectorStore,
-        node_embeddings: List[TextNode],
+    clickhouse_store: ClickHouseVectorStore,
+    node_embeddings: List[TextNode],
 ) -> None:
     clickhouse_store.add(node_embeddings)
     res = clickhouse_store.query(
@@ -263,8 +263,8 @@ def test_add_to_ch_and_hybrid_query(
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_query_with_filters(
-        clickhouse_store: ClickHouseVectorStore,
-        node_embeddings: List[TextNode],
+    clickhouse_store: ClickHouseVectorStore,
+    node_embeddings: List[TextNode],
 ) -> None:
     filters = MetadataFilters(
         filters=[ExactMatchFilter(key="author", value="Stephen King")]
@@ -281,8 +281,8 @@ def test_add_to_ch_query_with_filters(
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_query_and_delete(
-        clickhouse_store: ClickHouseVectorStore,
-        node_embeddings: List[TextNode],
+    clickhouse_store: ClickHouseVectorStore,
+    node_embeddings: List[TextNode],
 ) -> None:
     q = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
 
@@ -301,8 +301,8 @@ def test_add_to_ch_query_and_delete(
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_and_embed_query_ranked(
-        clickhouse_store: ClickHouseVectorStore,
-        node_embeddings: List[TextNode],
+    clickhouse_store: ClickHouseVectorStore,
+    node_embeddings: List[TextNode],
 ) -> None:
     einstein_bronte_curie = [
         "bd2e080b-159a-4030-acc3-d98afd2ba49b",
@@ -318,8 +318,8 @@ def test_add_to_ch_and_embed_query_ranked(
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_and_text_query_ranked(
-        clickhouse_store: ClickHouseVectorStore,
-        node_embeddings: List[TextNode],
+    clickhouse_store: ClickHouseVectorStore,
+    node_embeddings: List[TextNode],
 ) -> None:
     node1 = "0b31ae71-b797-4e88-8495-031371a7752e"
     node2 = "f658de3b-8cef-4d1c-8bed-9a263c907251"
@@ -337,8 +337,8 @@ def test_add_to_ch_and_text_query_ranked(
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_add_to_ch_and_text_query_ranked_hybrid(
-        clickhouse_store: ClickHouseVectorStore,
-        node_embeddings: List[TextNode],
+    clickhouse_store: ClickHouseVectorStore,
+    node_embeddings: List[TextNode],
 ) -> None:
     node1 = "0b31ae71-b797-4e88-8495-031371a7752e"
     node2 = "f658de3b-8cef-4d1c-8bed-9a263c907251"
@@ -355,7 +355,7 @@ def test_add_to_ch_and_text_query_ranked_hybrid(
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
 def test_invalid_query_modes(
-        clickhouse_store: ClickHouseVectorStore,
+    clickhouse_store: ClickHouseVectorStore,
 ) -> None:
     query_sparse = VectorStoreQuery(
         query_str="I was",
@@ -370,9 +370,9 @@ def test_invalid_query_modes(
 
 
 def check_top_match(
-        clickhouse_store: ClickHouseVectorStore,
-        query: VectorStoreQuery,
-        *expected_nodes: str,
+    clickhouse_store: ClickHouseVectorStore,
+    query: VectorStoreQuery,
+    *expected_nodes: str,
 ) -> None:
     res = clickhouse_store.query(query)
     assert res.nodes
