@@ -136,7 +136,7 @@ class ClickHouseVectorStore(VectorStore):
                 "extract_func": lambda x: x.get_embedding(),
             },
             "node_info": {
-                "type": "JSON",
+                "type": "Tuple(start Nullable(UInt64), end Nullable(UInt64))",
                 "extract_func": lambda x: x.get_node_info(),
             },
             "metadata": {
