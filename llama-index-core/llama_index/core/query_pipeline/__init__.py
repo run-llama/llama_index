@@ -16,6 +16,9 @@ from llama_index.core.query_pipeline.query import (
     ChainableMixin,
     QueryComponent,
 )
+from llama_index.core.base.query_pipeline.query import (
+    CustomQueryComponent,
+)
 
 __all__ = [
     "AgentFnComponent",
@@ -31,4 +34,5 @@ __all__ = [
     "Link",
     "ChainableMixin",
     "QueryComponent",
+    "CustomQueryComponent",
 ]
