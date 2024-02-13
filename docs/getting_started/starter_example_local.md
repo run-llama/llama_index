@@ -14,7 +14,7 @@ The easiest way to get it is to [download it via this link](https://raw.githubus
 
 ## Setup
 
-Ollama is a tool to help you get setup with LLMs locally (currently supported on OSX and Linux. You can install Ollama on Windows through WSL 2).
+Ollama is a tool to help you get set up with LLMs locally (currently supported on OSX and Linux. You can install Ollama on Windows through WSL 2).
 
 Follow the [README](https://github.com/jmorganca/ollama) to learn how to install it.
 

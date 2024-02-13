@@ -52,7 +52,7 @@ pip install llama-index-core llama-index-readers-file llama-index-llms-ollama ll
 
 [Check out our Starter Example with Local Models](starter_example_local.md)
 
-A full guide to using and configuring LLMs available [here](/module_guides/models/llms.md).
+A full guide to using and configuring LLMs is available [here](/module_guides/models/llms.md).
 
 A full guide to using and configuring embedding models is available [here](/module_guides/models/embeddings.md).
 
@@ -63,7 +63,7 @@ Git clone this repository: `git clone https://github.com/jerryjliu/llama_index.g
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
 - `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
 - `poetry install` - this will install the core starter package requirements
-- (Optional) `poetry install --with dev,docs` - this will install all dependencies needed for most local development
+- (Optional) `poetry install --with dev, docs` - this will install all dependencies needed for most local development
 
 From there, you can install integrations as needed with `pip`, For example:
 
