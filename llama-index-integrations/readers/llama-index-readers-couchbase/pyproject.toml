@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers couchbase integration"
+keywords = ["Capella", "Couchbase", "NoSQL"]
 license = "MIT"
+maintainers = ["nithishr"]
 name = "llama-index-readers-couchbase"
 readme = "README.md"
 version = "0.1.1"

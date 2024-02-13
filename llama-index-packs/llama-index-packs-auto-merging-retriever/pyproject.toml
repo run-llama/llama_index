@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs auto_merging_retriever integration"
+keywords = ["auto", "automerging", "index", "merging", "retriever"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-packs-auto-merging-retriever"
 readme = "README.md"
 version = "0.1.1"

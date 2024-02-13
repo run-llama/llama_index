@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers wordlift integration"
+keywords = ["graphql", "knowledge graph", "seo", "structured data", "wordlift"]
 license = "MIT"
+maintainers = ["msftwarelab"]
 name = "llama-index-readers-wordlift"
 readme = "README.md"
 version = "0.1.1"

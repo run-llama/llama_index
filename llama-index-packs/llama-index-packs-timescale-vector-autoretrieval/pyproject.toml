@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs timescale_vector_autoretrieval integration"
+keywords = ["autoretrieval", "index", "timescale", "vector"]
 license = "MIT"
+maintainers = ["cevian"]
 name = "llama-index-packs-timescale-vector-autoretrieval"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs llava_completion integration"
+keywords = ["image", "llava", "multimodal"]
 license = "MIT"
+maintainers = ["wenqiglantz"]
 name = "llama-index-packs-llava-completion"
 readme = "README.md"
 version = "0.1.1"

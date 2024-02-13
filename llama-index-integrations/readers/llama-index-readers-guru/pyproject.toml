@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers guru integration"
+keywords = ["getguru", "guru", "knowledge base"]
 license = "MIT"
+maintainers = ["mcclain-thiel"]
 name = "llama-index-readers-guru"
 readme = "README.md"
 version = "0.1.1"

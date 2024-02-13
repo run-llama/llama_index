@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers wordpress integration"
+keywords = ["blog", "wordpress"]
 license = "MIT"
+maintainers = ["bbornsztein"]
 name = "llama-index-readers-wordpress"
 readme = "README.md"
 version = "0.1.1"

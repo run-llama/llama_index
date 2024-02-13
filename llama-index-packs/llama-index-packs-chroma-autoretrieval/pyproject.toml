@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs chroma_autoretrieval integration"
+keywords = ["chroma", "retrieval", "vector"]
 license = "MIT"
+maintainers = ["logan-markewich"]
 name = "llama-index-packs-chroma-autoretrieval"
 readme = "README.md"
 version = "0.1.1"

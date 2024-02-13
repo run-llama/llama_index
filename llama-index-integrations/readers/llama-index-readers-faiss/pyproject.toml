@@ -22,6 +22,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers faiss integration"
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-readers-faiss"
 readme = "README.md"
 version = "0.1.1"

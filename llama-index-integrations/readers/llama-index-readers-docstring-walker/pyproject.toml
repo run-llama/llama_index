@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers docstring_walker integration"
+keywords = ["code", "docstring", "python", "source code"]
 license = "MIT"
+maintainers = ["Filip Wojcik"]
 name = "llama-index-readers-docstring-walker"
 readme = "README.md"
 version = "0.1.1"

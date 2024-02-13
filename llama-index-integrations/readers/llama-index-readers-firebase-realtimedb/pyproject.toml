@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers firebase_realtimedb integration"
+keywords = ["database", "firebase", "realtimedb"]
 license = "MIT"
+maintainers = ["ajay"]
 name = "llama-index-readers-firebase-realtimedb"
 readme = "README.md"
 version = "0.1.1"

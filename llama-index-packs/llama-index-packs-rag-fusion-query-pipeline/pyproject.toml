@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs query integration"
+keywords = ["fusion", "pipeline", "query", "rag"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-packs-query"
 readme = "README.md"
 version = "0.1.1"

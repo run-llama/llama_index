@@ -22,6 +22,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers gpt_repo integration"
 license = "MIT"
+maintainers = ["mpoon"]
 name = "llama-index-readers-gpt-repo"
 readme = "README.md"
 version = "0.1.1"

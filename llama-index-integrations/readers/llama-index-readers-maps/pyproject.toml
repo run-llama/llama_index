@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers maps integration"
+keywords = ["geo", "maps", "open maps", "open street maps", "overpass api"]
 license = "MIT"
+maintainers = ["carrotpy"]
 name = "llama-index-readers-maps"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers singlestore integration"
+keywords = ["memsql", "singlestore"]
 license = "MIT"
+maintainers = ["singlestore"]
 name = "llama-index-readers-singlestore"
 readme = "README.md"
 version = "0.1.1"

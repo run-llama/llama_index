@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs infer retrieve rerank integration"
+keywords = ["infer", "rag", "rerank", "retrieve", "retriever"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-packs-infer-retrieve-rerank"
 readme = "README.md"
 version = "0.1.1"

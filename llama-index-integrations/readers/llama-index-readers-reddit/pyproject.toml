@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers reddit integration"
+keywords = ["comments", "reddit", "search", "subreddit"]
 license = "MIT"
+maintainers = ["vanessahlyan"]
 name = "llama-index-readers-reddit"
 readme = "README.md"
 version = "0.1.1"

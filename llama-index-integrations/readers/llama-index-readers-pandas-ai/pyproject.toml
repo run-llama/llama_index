@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers pandas_ai integration"
+keywords = ["ai", "pandas"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-readers-pandas-ai"
 readme = "README.md"
 version = "0.1.1"

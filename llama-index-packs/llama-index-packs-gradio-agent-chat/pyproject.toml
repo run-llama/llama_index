@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs gradio_agent_chat integration"
+keywords = ["agent", "chatbot", "gradio", "tools"]
 license = "MIT"
+maintainers = ["nerdai"]
 name = "llama-index-packs-gradio-agent-chat"
 readme = "README.md"
 version = "0.1.1"

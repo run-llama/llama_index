@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers zep integration"
+keywords = ["memory", "retriever", "storage", "zep"]
 license = "MIT"
+maintainers = ["zep"]
 name = "llama-index-readers-zep"
 readme = "README.md"
 version = "0.1.1"

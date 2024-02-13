@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers dad_jokes integration"
+keywords = ["dad jokes", "jokes"]
 license = "MIT"
+maintainers = ["sidu"]
 name = "llama-index-readers-dad-jokes"
 readme = "README.md"
 version = "0.1.1"

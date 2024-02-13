@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers weather integration"
+keywords = ["openweather", "weather"]
 license = "MIT"
+maintainers = ["iamadhee"]
 name = "llama-index-readers-weather"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs vectara_rag integration"
+keywords = ["embeddings", "rag", "retrieval", "vectara"]
 license = "MIT"
+maintainers = ["ofermend"]
 name = "llama-index-packs-vectara-rag"
 readme = "README.md"
 version = "0.1.1"

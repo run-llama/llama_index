@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers graphql integration"
+keywords = ["apollo", "gql", "graphql"]
 license = "MIT"
+maintainers = ["jexp"]
 name = "llama-index-readers-graphql"
 readme = "README.md"
 version = "0.1.1"

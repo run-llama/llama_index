@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers mangadex integration"
+keywords = ["anime", "manga"]
 license = "MIT"
+maintainers = ["choombaa"]
 name = "llama-index-readers-mangadex"
 readme = "README.md"
 version = "0.1.1"

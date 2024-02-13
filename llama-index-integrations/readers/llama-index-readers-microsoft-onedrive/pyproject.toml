@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers microsoft_onedrive integration"
+keywords = ["microsoft 365", "microsoft onedrive", "microsoft365", "onedrive for business", "onedrive personal", "onedrive"]
 license = "MIT"
+maintainers = ["godwin3737"]
 name = "llama-index-readers-microsoft-onedrive"
 readme = "README.md"
 version = "0.1.1"

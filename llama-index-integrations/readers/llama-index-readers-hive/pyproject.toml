@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers hive integration"
+keywords = ["HDFS", "Hadoop", "Hive"]
 license = "MIT"
+maintainers = ["kasen"]
 name = "llama-index-readers-hive"
 readme = "README.md"
 version = "0.1.1"

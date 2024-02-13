@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers bagel integration"
+keywords = ["bagelDB", "database", "storage", "vector"]
 license = "MIT"
+maintainers = ["asif"]
 name = "llama-index-readers-bagel"
 readme = "README.md"
 version = "0.1.1"

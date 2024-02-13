@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers memos integration"
+keywords = ["memos", "note"]
 license = "MIT"
+maintainers = ["bubu"]
 name = "llama-index-readers-memos"
 readme = "README.md"
 version = "0.1.1"

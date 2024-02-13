@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs arize_phoenix_query_engine integration"
+keywords = ["arize", "engine", "index", "phoenix", "query"]
 license = "MIT"
+maintainers = ["axiomofjoy"]
 name = "llama-index-packs-arize-phoenix-query-engine"
 readme = "README.md"
 version = "0.1.1"

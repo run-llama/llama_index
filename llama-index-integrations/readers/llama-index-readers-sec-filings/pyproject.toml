@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers sec_filings integration"
+keywords = ["10-K", "10-Q", "SEC Filings", "finance"]
 license = "MIT"
+maintainers = ["Athe-kunal"]
 name = "llama-index-readers-sec-filings"
 readme = "README.md"
 version = "0.1.1"
