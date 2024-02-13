@@ -19,11 +19,11 @@ description = "llama-index llms watsonx integration"
 license = "MIT"
 name = "llama-index-llms-watsonx"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
-llama-index-core = "0.10.0"
+llama-index-core = "^0.10.1"
 ibm-watson-machine-learning = "^1.0.342"
 
 [tool.poetry.group.dev.dependencies]

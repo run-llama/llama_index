@@ -19,7 +19,7 @@ description = "llama-index packs self rag integration"
 license = "MIT"
 name = "llama-index-packs-self-rag"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"

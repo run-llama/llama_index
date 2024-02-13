@@ -19,11 +19,11 @@ description = "llama-index vector stores google integration"
 license = "MIT"
 name = "llama-index-vector-stores-google"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
-llama-index-core = "0.10.0"
+llama-index-core = "^0.10.1"
 google-generativeai = "^0.3.2"
 
 [tool.poetry.group.dev.dependencies]

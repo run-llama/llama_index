@@ -19,11 +19,11 @@ description = "llama-index readers microsoft_onedrive integration"
 license = "MIT"
 name = "llama-index-readers-microsoft-onedrive"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
-llama-index-core = "0.10.0"
+llama-index-core = "^0.10.1"
 msal = "^1.26.0"
 
 [tool.poetry.group.dev.dependencies]

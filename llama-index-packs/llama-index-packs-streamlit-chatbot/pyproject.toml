@@ -19,17 +19,17 @@ description = "llama-index packs streamlit_chatbot integration"
 license = "MIT"
 name = "llama-index-packs-streamlit-chatbot"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">3.9.7,<3.12"
-llama-index-core = "0.10.0"
+llama-index-core = "^0.10.1"
 streamlit = "^1.30.0"
 wikipedia = "^1.4.0"
 openai = "^1.10.0"
 nltk = "^3.8.1"
 streamlit-pills = "^0.3.0"
-llama-index-readers-wikipedia = "0.1.0"
+llama-index-readers-wikipedia = "^0.1.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

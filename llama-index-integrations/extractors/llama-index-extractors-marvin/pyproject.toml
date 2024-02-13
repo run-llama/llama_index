@@ -19,11 +19,11 @@ description = "llama-index extractors marvin integration"
 license = "MIT"
 name = "llama-index-extractors-marvin"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
-llama-index-core = "0.10.0"
+llama-index-core = "^0.10.1"
 marvin = "^2.1.2"
 
 [tool.poetry.group.dev.dependencies]
