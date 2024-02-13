@@ -2,7 +2,9 @@
 dist/
 migration_scripts/
 venv/
+.venv/
 .ipynb_checkpoints
 .__pycache__
+__pycache__
 dev_notebooks/
 llamaindex_registry.txt
