@@ -160,6 +160,21 @@ maxdepth: 1
 /examples/multi_modal/multi_modal_pydantic.ipynb
 /examples/multi_modal/gpt4v_experiments_cot.ipynb
 /examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
+/examples/multi_modal/image_to_image_retrieval.ipynb
+/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
+/examples/multi_modal/gpt4v_experiments_cot.ipynb
+/examples/multi_modal/ChromaMultiModalDemo.ipynb
+```
+
+## Evaluation
+
+We support basic evaluation for Multi-Modal LLM and RAG.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb
 ```
 
 ## Multi-Modal Retrieval Augmented Generation

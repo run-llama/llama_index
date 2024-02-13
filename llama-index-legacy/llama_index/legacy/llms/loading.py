@@ -1,5 +1,6 @@
 from typing import Dict, Type
 
+from llama_index.legacy.llm_predictor import LLMPredictor
 from llama_index.legacy.llms.bedrock import Bedrock
 from llama_index.legacy.llms.custom import CustomLLM
 from llama_index.legacy.llms.gradient import (
@@ -43,6 +44,13 @@ def load_llm(data: dict) -> LLM:
     llm_name = data.get("class_name", None)
     if llm_name is None:
         raise ValueError("LLM loading requires a class_name")
+
+    # backwards compatibility to handle deprecated LLMPredictor
+    if llm_name == LLMPredictor.class_name():
+        from llama_index.llm_predictor.loading import load_predictor
+
+        predictor = load_predictor(data)
+        return predictor.llm
 
     if llm_name not in RECOGNIZED_LLMS:
         raise ValueError(f"Invalid LLM name: {llm_name}")

@@ -351,7 +351,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         for node in nodes:
             if isinstance(node, ImageNode):
                 image_nodes.append(node)
-            if node.text:
+            if node.get_content():
                 text_nodes.append(node)
 
         if len(text_nodes) > 0:

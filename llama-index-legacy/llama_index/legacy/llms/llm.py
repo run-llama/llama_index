@@ -1,6 +1,7 @@
 from collections import ChainMap
 from typing import (
     Any,
+    Callable,
     Dict,
     List,
     Optional,
@@ -112,14 +113,14 @@ class LLM(BaseLLM):
     system_prompt: Optional[str] = Field(
         default=None, description="System prompt for LLM calls."
     )
-    messages_to_prompt: MessagesToPromptType = Field(
+    messages_to_prompt: Callable = Field(
         description="Function to convert a list of messages to an LLM prompt.",
-        default=generic_messages_to_prompt,
+        default=None,
         exclude=True,
     )
-    completion_to_prompt: CompletionToPromptType = Field(
+    completion_to_prompt: Callable = Field(
         description="Function to convert a completion to an LLM prompt.",
-        default=default_completion_to_prompt,
+        default=None,
         exclude=True,
     )
     output_parser: Optional[BaseOutputParser] = Field(
@@ -147,6 +148,14 @@ class LLM(BaseLLM):
         cls, completion_to_prompt: Optional[CompletionToPromptType]
     ) -> CompletionToPromptType:
         return completion_to_prompt or default_completion_to_prompt
+
+    @root_validator
+    def check_prompts(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if values.get("completion_to_prompt") is None:
+            values["completion_to_prompt"] = default_completion_to_prompt
+        if values.get("messages_to_prompt") is None:
+            values["messages_to_prompt"] = generic_messages_to_prompt
+        return values
 
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any

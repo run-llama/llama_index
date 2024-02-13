@@ -30,6 +30,8 @@ from llama_index.core.ingestion import IngestionPipeline
 pipeline = IngestionPipeline(
     transformations=[text_splitter, title_extractor, qa_extractor]
 )
+title_extractor = TitleExtractor(nodes=5)
+qa_extractor = QuestionsAnsweredExtractor(questions=3)
 
 nodes = pipeline.run(
     documents=documents,

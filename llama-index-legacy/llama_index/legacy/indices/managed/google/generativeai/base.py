@@ -23,6 +23,7 @@ from llama_index.legacy.indices.base_retriever import BaseRetriever
 from llama_index.legacy.indices.managed.base import BaseManagedIndex
 from llama_index.legacy.indices.query.base import BaseQueryEngine
 from llama_index.legacy.indices.service_context import ServiceContext
+from llama_index.legacy.ingestion.pipeline import DEFAULT_PROJECT_NAME
 from llama_index.legacy.response_synthesizers.google.generativeai import (
     GoogleTextSynthesizer,
 )
@@ -118,6 +119,9 @@ class GoogleIndex(BaseManagedIndex):
         storage_context: Optional[StorageContext] = None,
         service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
+        from_pipeline_name: Optional[str] = None,
+        remote_pipeline_name: Optional[str] = None,
+        project_name: str = DEFAULT_PROJECT_NAME,
         **kwargs: Any,
     ) -> IndexType:
         """Build an index from a sequence of documents."""

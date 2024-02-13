@@ -1,3 +1,4 @@
+import sys
 from multiprocessing import cpu_count
 
 from llama_index.legacy.embeddings import OpenAIEmbedding
@@ -9,6 +10,8 @@ from llama_index.legacy.readers import ReaderConfig, StringIterableReader
 from llama_index.legacy.schema import Document
 from llama_index.legacy.storage.docstore import SimpleDocumentStore
 
+python_version = sys.version
+
 
 # clean up folders after tests
 def teardown_function() -> None:
@@ -19,9 +22,13 @@ def teardown_function() -> None:
 
 def test_build_pipeline() -> None:
     pipeline = IngestionPipeline(
-        reader=ReaderConfig(
-            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
-        ),
+        name="Test",
+        readers=[
+            ReaderConfig(
+                reader=StringIterableReader(),
+                reader_kwargs={"texts": ["This is a test."]},
+            )
+        ],
         documents=[Document.example()],
         transformations=[
             SentenceSplitter(),
@@ -31,13 +38,18 @@ def test_build_pipeline() -> None:
     )
 
     assert len(pipeline.transformations) == 3
+    assert pipeline.name == "Test"
 
 
-def test_run_pipeline() -> None:
+def test_run_local_pipeline() -> None:
     pipeline = IngestionPipeline(
-        reader=ReaderConfig(
-            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
-        ),
+        name="Test",
+        readers=[
+            ReaderConfig(
+                reader=StringIterableReader(),
+                reader_kwargs={"texts": ["This is a test."]},
+            )
+        ],
         documents=[Document.example()],
         transformations=[
             SentenceSplitter(),
@@ -51,96 +63,78 @@ def test_run_pipeline() -> None:
     assert len(nodes[0].metadata) > 0
 
 
-def test_save_load_pipeline() -> None:
-    documents = [
-        Document(text="one", doc_id="1"),
-        Document(text="two", doc_id="2"),
-        Document(text="one", doc_id="1"),
-    ]
-
+@pytest.mark.integration()
+def test_register() -> None:
     pipeline = IngestionPipeline(
-        transformations=[
-            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        name="Test" + python_version,
+        project_name="test_project" + python_version,
+        readers=[
+            ReaderConfig(
+                reader=StringIterableReader(),
+                reader_kwargs={"texts": ["This is a test."]},
+            )
         ],
-        docstore=SimpleDocumentStore(),
-    )
-
-    nodes = pipeline.run(documents=documents)
-    assert len(nodes) == 2
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 2
-
-    # dedup will catch the last node
-    nodes = pipeline.run(documents=[documents[-1]])
-    assert len(nodes) == 0
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 2
-
-    # test save/load
-    pipeline.persist("./test_pipeline")
-
-    pipeline2 = IngestionPipeline(
+        documents=[Document.example()],
         transformations=[
-            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+            SentenceSplitter(),
+            KeywordExtractor(llm=MockLLM()),
         ],
     )
 
-    pipeline2.load("./test_pipeline")
+    pipeline_id = pipeline.register()
 
-    # dedup will catch the last node
-    nodes = pipeline.run(documents=[documents[-1]])
-    assert len(nodes) == 0
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 2
+    # update pipeline
+    updated_pipeline = IngestionPipeline(
+        name="Test" + python_version,
+        project_name="test_project" + python_version,
+        readers=[
+            ReaderConfig(
+                reader=StringIterableReader(),
+                reader_kwargs={"texts": ["This is another test."]},
+            )
+        ],
+        documents=[Document.example()],
+        transformations=[
+            SentenceSplitter(),
+            KeywordExtractor(llm=MockLLM()),
+        ],
+    )
+
+    new_pipeline_id = updated_pipeline.register()
+
+    # make sure we are updating the same pipeline instead of creating a new one
+    assert pipeline_id == new_pipeline_id
 
 
-def test_pipeline_update() -> None:
-    document1 = Document.example()
-    document1.id_ = "1"
-
+@pytest.mark.integration()
+def test_from_pipeline_name() -> None:
     pipeline = IngestionPipeline(
-        transformations=[
-            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        name="Test" + python_version,
+        project_name="test_project" + python_version,
+        readers=[
+            ReaderConfig(
+                reader=StringIterableReader(),
+                reader_kwargs={"texts": ["This is a test."]},
+            )
         ],
-        docstore=SimpleDocumentStore(),
+        documents=[Document.example()],
+        transformations=[
+            SentenceSplitter(),
+            KeywordExtractor(llm=MockLLM()),
+        ],
     )
 
-    nodes = pipeline.run(documents=[document1])
-    assert len(nodes) == 19
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 1
+    pipeline.register()
 
-    # adjust document content
-    document1 = Document(text="test", doc_id="1")
-
-    # run pipeline again
-    nodes = pipeline.run(documents=[document1])
-
-    assert len(nodes) == 1
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 1
-    assert next(iter(pipeline.docstore.docs.values())).text == "test"  # type: ignore
-
-
-def test_pipeline_dedup_duplicates_only() -> None:
-    documents = [
-        Document(text="one", doc_id="1"),
-        Document(text="two", doc_id="2"),
-        Document(text="three", doc_id="3"),
-    ]
-
-    pipeline = IngestionPipeline(
-        transformations=[
-            SentenceSplitter(chunk_size=25, chunk_overlap=0),
-        ],
-        docstore=SimpleDocumentStore(),
+    new_pipeline = IngestionPipeline.from_pipeline_name(
+        name="Test" + python_version, project_name="test_project" + python_version
     )
+    assert len(new_pipeline.transformations) == 2
 
-    nodes = pipeline.run(documents=documents)
-    assert len(nodes) == 3
-
-    nodes = pipeline.run(documents=documents)
-    assert len(nodes) == 0
+    # TODO: nodes are stored on AWS, how to get them?
+    # nodes = new_pipeline.run()
+    # assert len(nodes) == 2
+    # assert len(nodes[0].metadata) > 0
 
 
 def test_pipeline_parallel() -> None:

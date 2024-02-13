@@ -14,11 +14,6 @@ def mock_hf_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
     return
 
 
-def mock_openai_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
-    """Mock OpenAIEmbedding."""
-    return
-
-
 def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         "llama_index.legacy.embeddings.huggingface.HuggingFaceEmbedding.__init__",
@@ -40,6 +35,6 @@ def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
     embed_model = resolve_embed_model(HuggingFaceEmbedding())
     assert isinstance(embed_model, HuggingFaceEmbedding)
 
-    # Test BaseEmbedding
-    embed_model = resolve_embed_model(OpenAIEmbedding())
-    assert isinstance(embed_model, OpenAIEmbedding)
+    # Test OpenAIEmbedding raises ValueError
+    with pytest.raises(ValueError):
+        resolve_embed_model(OpenAIEmbedding(api_key="fake"))

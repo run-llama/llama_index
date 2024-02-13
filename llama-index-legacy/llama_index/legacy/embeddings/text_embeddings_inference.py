@@ -91,6 +91,7 @@ class TextEmbeddingsInference(BaseEmbedding):
                 timeout=self.timeout,
             )
 
+        print(str(response))
         return response.json()
 
     async def _acall_api(self, texts: List[str]) -> List[List[float]]:

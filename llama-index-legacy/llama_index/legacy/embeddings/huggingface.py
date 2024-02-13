@@ -214,26 +214,15 @@ class HuggingFaceInferenceAPIEmbedding(HuggingFaceInferenceAPI, BaseEmbedding): 
 
     pooling: Optional[Pooling] = Field(
         default=Pooling.CLS,
-        description=(
-            "Optional pooling technique to use with embeddings capability, if"
-            " the model's raw output needs pooling."
-        ),
+        description=("Pooling technique to use with embeddings capability."),
     )
     query_instruction: Optional[str] = Field(
         default=None,
-        description=(
-            "Instruction to prepend during query embedding."
-            " Use of None means infer the instruction based on the model."
-            " Use of empty string will defeat instruction prepending entirely."
-        ),
+        description=("Instruction to prepend during query embedding."),
     )
     text_instruction: Optional[str] = Field(
         default=None,
-        description=(
-            "Instruction to prepend during text embedding."
-            " Use of None means infer the instruction based on the model."
-            " Use of empty string will defeat instruction prepending entirely."
-        ),
+        description=("Instruction to prepend during text embedding."),
     )
 
     @classmethod

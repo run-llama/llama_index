@@ -18,6 +18,7 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.core.indices.managed.base import BaseManagedIndex, IndexType
+from llama_index.core.ingestion.pipeline import DEFAULT_PROJECT_NAME
 from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.schema import (
     BaseNode,
@@ -372,6 +373,9 @@ class VectaraIndex(BaseManagedIndex):
         show_progress: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
+        from_pipeline_name: Optional[str] = None,
+        remote_pipeline_name: Optional[str] = None,
+        project_name: str = DEFAULT_PROJECT_NAME,
         # deprecated
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
