@@ -403,7 +403,11 @@ class BaseIndex(Generic[IS], ABC):
         service_context = kwargs.get("service_context", self.service_context)
 
         if service_context is not None:
-            llm = service_context.llm
+            llm = (
+                resolve_llm(llm, callback_manager=self._callback_manager)
+                if llm
+                else service_context.llm
+            )
         else:
             llm = (
                 resolve_llm(llm, callback_manager=self._callback_manager)
