@@ -31,7 +31,7 @@ If the `.session` file already existed, it will not login again, so be aware of 
 To use this loader, you simply need to pass in a entity name.
 
 ```python
-from llama_index import download_loader
+from llama_index.core import download_loader
 
 TelegramReader = download_loader("TelegramReader")
 loader = TelegramReader(
