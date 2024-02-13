@@ -312,7 +312,7 @@ class BedrockEmbedding(BaseEmbedding):
             client = session.client("bedrock")
         return cls(
             client=client,
-            model_name=model_name,
+            model=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             verbose=verbose,
