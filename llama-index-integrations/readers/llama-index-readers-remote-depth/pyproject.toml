@@ -7,6 +7,11 @@ check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+classes = ["RemoteDepthReader"]
+contains_example = false
+import_path = "llama_index.readers.remote_depth"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

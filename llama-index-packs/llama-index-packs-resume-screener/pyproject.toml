@@ -7,6 +7,11 @@ check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+classes = ["ResumeScreenerPack"]
+contains_example = false
+import_path = "llama_index.packs.resume_screener"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
