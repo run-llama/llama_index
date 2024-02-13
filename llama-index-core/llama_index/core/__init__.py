@@ -1,4 +1,5 @@
 """Init file of LlamaIndex."""
+
 import logging
 from logging import NullHandler
 from typing import Callable, Optional
@@ -53,9 +54,7 @@ from llama_index.core.prompts import (
     PromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.core.readers import (
-    SimpleDirectoryReader,
-)
+from llama_index.core.readers import SimpleDirectoryReader, download_loader
 
 # Response Synthesizer
 from llama_index.core.response_synthesizers.factory import get_response_synthesizer
