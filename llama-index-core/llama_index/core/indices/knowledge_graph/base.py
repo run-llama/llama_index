@@ -138,6 +138,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             object_map=self._object_map,
             llm=self._llm,
             embed_model=embed_model or self._embed_model,
+            retriever_mode=retriever_mode,
             **kwargs,
         )
 
