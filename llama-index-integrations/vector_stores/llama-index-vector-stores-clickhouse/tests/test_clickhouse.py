@@ -33,7 +33,7 @@ clickhouse_not_available = True
 
 try:
     client = clickhouse_connect.get_client(
-        host="localhost", port=8123, username="default", password=""
+        host="localhost", port=8124, username="default", password=""
     )
     client.ping()
     clickhouse_not_available = False
@@ -274,6 +274,26 @@ def test_add_to_ch_query_with_filters(
     )
     clickhouse_store.add(node_embeddings)
     res = clickhouse_store.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
+
+
+@pytest.mark.skipif(clickhouse_not_available, reason="clickhouse is not available")
+def test_add_to_ch_query_with_where_filters(
+    clickhouse_store: ClickHouseVectorStore,
+    node_embeddings: List[TextNode],
+) -> None:
+    filters = MetadataFilters(
+        filters=[ExactMatchFilter(key="author", value="Stephen King")]
+    )
+    q = VectorStoreQuery(
+        query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10, filters=filters
+    )
+    clickhouse_store.add(node_embeddings)
+    res = clickhouse_store.query(
+        q, where="JSONExtractString(metadata, 'theme')='Friendship'"
+    )
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"

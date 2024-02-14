@@ -250,7 +250,7 @@ class ClickHouseVectorStore(VectorStore):
         if where_str is None:
             where_str = filter_str
         else:
-            where_str = " AND " + filter_str
+            where_str = f"{where_str} AND " + filter_str
         return where_str
 
     def add(
@@ -291,18 +291,23 @@ class ClickHouseVectorStore(VectorStore):
             f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
         )
 
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    def query(
+        self, query: VectorStoreQuery, where: Optional[str] = None, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
+            where (str): additional where filter
         """
         query_embedding = cast(List[float], query.query_embedding)
-        where_str = (
-            f"doc_id IN {format_list_to_string(query.doc_ids)}"
-            if query.doc_ids
-            else None
-        )
+        where_str = where
+        if query.doc_ids:
+            if where_str is not None:
+                where_str = f"{where_str} AND {f'doc_id IN {format_list_to_string(query.doc_ids)}'}"
+            else:
+                where_str = f"doc_id IN {format_list_to_string(query.doc_ids)}"
+
         # TODO: Support other filter types
         if query.filters is not None and len(query.filters.legacy_filters()) > 0:
             where_str = self._append_meta_filter_condition(
