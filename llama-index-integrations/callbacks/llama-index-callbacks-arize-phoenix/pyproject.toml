@@ -21,8 +21,8 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = [
-    {email = "oss@arize.com", name = "OpenInference Authors"},
-    {email = "phoenix-devs@arize.com", name = "Arize AI"},
+    "Arize AI <phoenix-devs@arize.com>",
+    "OpenInference Authors <oss@arize.com>",
 ]
 description = "llama-index callbacks arize-phoenix integration"
 license = "MIT"
