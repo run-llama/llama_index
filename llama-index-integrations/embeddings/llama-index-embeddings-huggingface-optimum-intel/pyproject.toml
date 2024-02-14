@@ -8,9 +8,9 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["OptimumEmbedding"]
+classes = ["IntelEmbedding"]
 contains_example = false
-import_path = "llama_index.embeddings.huggingface_optimum"
+import_path = "llama_index.embeddings.huggingface_optimum_intel"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -20,9 +20,9 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index embeddings huggingface optimum integration"
+description = "llama-index embeddings Optimum Intel integration"
 license = "MIT"
-name = "llama-index-embeddings-huggingface-optimum"
+name = "llama-index-embeddings-huggingface-optimum-intel"
 readme = "README.md"
 version = "0.1.1"
 
@@ -30,6 +30,8 @@ version = "0.1.1"
 python = ">=3.8.1,<3.12"
 llama-index-core = "^0.10.1"
 llama-index-embeddings-huggingface = "^0.1.1"
+optimum-intel = "^1.14.0"
+neural-compressor = "^2.4.1"
 
 [tool.poetry.dependencies.optimum]
 extras = ["exporters"]
