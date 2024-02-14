@@ -3,5 +3,5 @@
 Vector Store
 =====================
 
-.. automodapi:: llama_index.vector_stores
+.. automodapi:: llama_index.core.vector_stores
    :no-inheritance-diagram:

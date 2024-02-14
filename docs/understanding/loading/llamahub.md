@@ -10,9 +10,10 @@ LlamaHub contains a registry of open-source data connectors that you can easily 
 Get started with:
 
 ```python
-from llama_index import download_loader
+from llama_index.core import download_loader
 
-GoogleDocsReader = download_loader("GoogleDocsReader")
+from llama_index.readers.google import GoogleDocsReader
+
 loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=[...])
 ```
@@ -22,7 +23,7 @@ documents = loader.load_data(document_ids=[...])
 `SimpleDirectoryReader`. Can support parsing a wide range of file types including `.md`, `.pdf`, `.jpg`, `.png`, `.docx`, as well as audio and video types. It is available directly as part of LlamaIndex:
 
 ```python
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("./data").load_data()
 ```

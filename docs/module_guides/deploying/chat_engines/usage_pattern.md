@@ -70,11 +70,9 @@ Here's an example where we configure the following:
 - print verbose debug message.
 
 ```python
-from llama_index.prompts import PromptTemplate
-from llama_index.llms import ChatMessage, MessageRole
-from llama_index.chat_engine.condense_question import (
-    CondenseQuestionChatEngine,
-)
+from llama_index.core import PromptTemplate
+from llama_index.core.llms import ChatMessage, MessageRole
+from llama_index.core.chat_engine import CondenseQuestionChatEngine
 
 custom_prompt = PromptTemplate(
     """\

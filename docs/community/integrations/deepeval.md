@@ -69,7 +69,7 @@ DeepEval presents an opinionated framework for unit testing RAG applications. It
 DeepEval integrates nicely with LlamaIndex's `BaseEvaluator` class. Below is an example usage of DeepEval's evaluation metrics in the form of a LlamaIndex evaluator.
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from deepeval.integrations.llama_index import DeepEvalAnswerRelevancyEvaluator
 
 # Read LlamaIndex's quickstart on more details

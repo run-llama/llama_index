@@ -84,7 +84,7 @@ You can use the low-level composition API if you need more granular control.
 To achieve the same outcome as above, you can directly import and construct the desired retriever class:
 
 ```python
-from llama_index.indices.list import SummaryIndexLLMRetriever
+from llama_index.core.retrievers import SummaryIndexLLMRetriever
 
 retriever = SummaryIndexLLMRetriever(
     index=summary_index,

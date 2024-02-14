@@ -7,6 +7,6 @@ This doc shows our agent classes - both the high-level and lower-level component
 
 There are also legacy classes (e.g. `OldOpenAIAgent`, and `OldReActAgent`) that still work but are deprecated.
 
-.. automodule:: llama_index.agent
+.. automodule:: llama_index.core.agent
    :members:
    :inherited-members:
