@@ -5,7 +5,6 @@ from typing import Any, Callable, List, Sequence
 from llama_index.core.bridge.pydantic import Field, validator
 from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.core.node_parser.node_utils import (
-    IdFuncCallable,
     build_nodes_from_splits,
     default_id_func,
 )
