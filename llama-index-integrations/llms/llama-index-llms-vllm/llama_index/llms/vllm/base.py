@@ -273,7 +273,8 @@ class Vllm(LLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        raise (ValueError("Not Implemented"))
+        kwargs = kwargs if kwargs else {}
+        return self.complete(prompt, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
