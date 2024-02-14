@@ -93,7 +93,7 @@ class CorrectiveRAGPack(BaseLlamaPack):
 
     def search_with_transformed_query(self, query_str: str) -> str:
         """Search the transformed query with Tavily API."""
-        search_results = self.tavily_tool.search(query_str, max_results=2)
+        search_results = self.tavily_tool.search(query_str, max_results=5)
         return "\n".join([result.text for result in search_results])
 
     def get_result(self, relevant_text: str, search_text: str, query_str: str) -> Any:
@@ -110,7 +110,6 @@ class CorrectiveRAGPack(BaseLlamaPack):
 
         # Evaluate the relevancy of each retrieved document in relation to the query string.
         relevancy_results = self.evaluate_relevancy(retrieved_nodes, query_str)
-
         # Extract texts from documents that are deemed relevant based on the evaluation.
         relevant_text = self.extract_relevant_texts(retrieved_nodes, relevancy_results)
 
@@ -122,7 +121,6 @@ class CorrectiveRAGPack(BaseLlamaPack):
             transformed_query_str = self.transform_query_pipeline.run(
                 query_str=query_str
             ).message.content
-
             # Conduct a search with the transformed query string and collect the results.
             search_text = self.search_with_transformed_query(transformed_query_str)
 
