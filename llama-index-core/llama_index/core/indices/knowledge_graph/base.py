@@ -14,12 +14,13 @@ from llama_index.core.data_structs.data_structs import KG
 from llama_index.core.graph_stores.simple import SimpleGraphStore
 from llama_index.core.graph_stores.types import GraphStore
 from llama_index.core.indices.base import BaseIndex
+from llama_index.core.ingestion import run_transformations
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
 )
-from llama_index.core.schema import BaseNode, IndexNode, MetadataMode
+from llama_index.core.schema import BaseNode, IndexNode, MetadataMode, Document
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import (
     Settings,
@@ -222,7 +223,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         return index_struct
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
-        """Insert a document."""
+        """Insert a Node."""
         for n in nodes:
             triplets = self._extract_triplets(
                 n.get_content(metadata_mode=MetadataMode.LLM)
@@ -239,6 +240,19 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                 ):
                     rel_embedding = self._embed_model.get_text_embedding(triplet_str)
                     self._index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
+
+    def insert(self, document: Document, **insert_kwargs: Any) -> None:
+        """Insert a document."""
+        with self._service_context.callback_manager.as_trace("insert_document"):
+            for doc in document:
+                self._docstore.set_document_hash(doc.get_doc_id(), doc.hash)
+            nodes = run_transformations(
+                document,
+                self._service_context.transformations,
+                show_progress=self._show_progress,
+            )
+            self._docstore.add_documents(nodes, allow_update=True)
+            self._insert(nodes, **insert_kwargs)
 
     def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:
         """Insert triplets.
