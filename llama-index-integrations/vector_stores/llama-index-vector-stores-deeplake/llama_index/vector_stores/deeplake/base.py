@@ -56,16 +56,16 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
     _id_tensor_name: str = PrivateAttr()
 
     def __init__(
-            self,
-            dataset_path: str = "llama_index",
-            token: Optional[str] = None,
-            read_only: Optional[bool] = False,
-            ingestion_batch_size: int = 1024,
-            ingestion_num_workers: int = 4,
-            overwrite: bool = False,
-            exec_option: Optional[str] = None,
-            verbose: bool = True,
-            **kwargs: Any,
+        self,
+        dataset_path: str = "llama_index",
+        token: Optional[str] = None,
+        read_only: Optional[bool] = False,
+        ingestion_batch_size: int = 1024,
+        ingestion_num_workers: int = 4,
+        overwrite: bool = False,
+        exec_option: Optional[str] = None,
+        verbose: bool = True,
+        **kwargs: Any,
     ) -> None:
         """
         Args:
@@ -87,8 +87,6 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
                 - ``python`` - Pure-python implementation that runs on the client and can be used for data stored anywhere. WARNING: using this option with big datasets is discouraged because it can lead to memory issues.
                 - ``compute_engine`` - Performant C++ implementation of the Deep Lake Compute Engine that runs on the client and can be used for any data stored in or connected to Deep Lake. It cannot be used with in-memory or local datasets.
                 - ``tensor_db`` - Performant and fully-hosted Managed Tensor Database that is responsible for storage and query execution. Only available for data stored in the Deep Lake Managed Database. Store datasets in this database by specifying runtime = {"tensor_db": True} during dataset creation.
-            verbose (bool): Specify if verbose output is enabled. Default is True.
-            **kwargs (Any): Additional keyword arguments.
 
         Raises:
             ImportError: Unable to import `deeplake`.
