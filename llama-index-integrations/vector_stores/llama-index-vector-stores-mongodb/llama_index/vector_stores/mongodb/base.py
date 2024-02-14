@@ -49,6 +49,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    _mongodb_client: Any = PrivateAttr()
     _collection: Any = PrivateAttr()
     _index_name: str = PrivateAttr()
     _embedding_key: str = PrivateAttr()
@@ -105,6 +106,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         self._text_key = text_key
         self._metadata_key = metadata_key
         self._insert_kwargs = insert_kwargs or {}
+
+        super().__init__()
 
     def add(
         self,
