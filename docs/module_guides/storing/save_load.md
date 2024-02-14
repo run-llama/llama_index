@@ -32,7 +32,7 @@ storage_context = StorageContext.from_defaults(
 We can then load specific indices from the `StorageContext` through some convenience functions below.
 
 ```python
-from llama_index import (
+from llama_index.core import (
     load_index_from_storage,
     load_indices_from_storage,
     load_graph_from_storage,

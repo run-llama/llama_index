@@ -43,7 +43,7 @@ Here we show the base retriever class, which contains the `retrieve`
 method which is shared amongst all retrievers.
 
 
-.. automodule:: llama_index.indices.base_retriever
+.. automodule:: llama_index.core.indices.base_retriever
    :members:
    :inherited-members:
 ..    :exclude-members: index_struct, query, set_llm_predictor, set_prompt_helper
