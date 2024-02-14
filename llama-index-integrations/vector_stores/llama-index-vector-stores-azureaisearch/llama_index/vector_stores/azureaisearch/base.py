@@ -244,8 +244,6 @@ class AzureAISearchVectorStore(VectorStore):
         index_management: IndexManagement = IndexManagement.NO_VALIDATION,
         embedding_dimensionality: int = 1536,
         vector_algorithm_type: str = "exhaustiveKnn",
-        # If we have content in other languages, it is better to enable the language analyzer to be adjusted in searchable fields.
-        # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
         **kwargs: Any,
     ) -> None:
@@ -271,7 +269,7 @@ class AzureAISearchVectorStore(VectorStore):
             doc_id_field_key (str): Index field storing doc_id
             index_mapping:
                 Optional function with definition
-                (enriched_doc: Dict[str, str], metadata: Dict[str, Any]): Dict[str,str]
+                (enriched_doc: Dict[str, str], metadata: Dict[str, Any]) -> Dict[str,str]
                 used to map document fields to the AI search index fields
                 (return value of function).
                 If none is specified a default mapping is provided which uses
@@ -282,7 +280,11 @@ class AzureAISearchVectorStore(VectorStore):
                     - "chunk" to chunk_field_key
                     - "embedding" to embedding_field_key
                     - "metadata" to metadata_field_key
-            *kwargs (Any): Additional keyword arguments.
+            index_management (IndexManagement): Enumeration representing the supported index management operations.
+            embedding_dimensionality (int): Dimensionality of the embedding vectors.
+            vector_algorithm_type (str): Type of vector algorithm used. Supported values are "exhaustiveKnn" and "hnsw".
+            language_analyzer (str): Language analyzer used for adjusting searchable fields.
+            **kwargs (Any): Additional keyword arguments.
 
         Raises:
             ImportError: Unable to import `azure-search-documents`
