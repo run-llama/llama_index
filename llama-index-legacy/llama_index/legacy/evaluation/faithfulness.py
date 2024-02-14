@@ -1,169 +1,96 @@
-"""Faithfulness evaluation."""
+"""Embedding utils for LlamaIndex."""
 
-from __future__ import annotations
+import os
+from typing import TYPE_CHECKING, List, Optional, Union
 
-import asyncio
-import re
-from typing import Any, Sequence
-
-from llama_index.legacy import ServiceContext
-from llama_index.legacy.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.legacy.indices import SummaryIndex
-from llama_index.legacy.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.legacy.prompts.mixin import PromptDictType
-from llama_index.legacy.schema import Document
-
-DEFAULT_EVAL_TEMPLATE = PromptTemplate(
-    "Please determine if a given piece of information "
-    "is supported by the context and provide a brief reasoning for your answer.\n"
-    "You need to provide your answer in a structured format with two sections: 'Answer' and 'Reasoning'.\n"
-    "In the 'Answer' section, write either 'YES' or 'NO'.\n"
-    "In the 'Reasoning' section, provide a brief explanation for your answer.\n"
-    "Some examples are provided below. \n\n"
-    "Information: Apple pie is generally double-crusted.\n"
-    "Context: An apple pie is a fruit pie in which the principal filling "
-    "ingredient is apples. \n"
-    "Apple pie is often served with whipped cream, ice cream "
-    "('apple pie à la mode'), custard or cheddar cheese.\n"
-    "It is generally double-crusted, with pastry both above "
-    "and below the filling; the upper crust may be solid or "
-    "latticed (woven of crosswise strips).\n"
-    "Answer: YES\n"
-    "Reasoning: The context specifically states that apple pie is generally double-crusted.\n"
-    "Information: Apple pies taste bad.\n"
-    "Context: An apple pie is a fruit pie in which the principal filling "
-    "ingredient is apples. \n"
-    "Apple pie is often served with whipped cream, ice cream "
-    "('apple pie à la mode'), custard or cheddar cheese.\n"
-    "It is generally double-crusted, with pastry both above "
-    "and below the filling; the upper crust may be solid or "
-    "latticed (woven of crosswise strips).\n"
-    "Answer: NO\n"
-    "Reasoning: The context does not provide any information about the taste of apple pies.\n"
-    "Information: {query_str}\n"
-    "Context: {context_str}\n"
+if TYPE_CHECKING:
+    from llama_index.legacy.bridge.langchain import Embeddings as LCEmbeddings
+from llama_index.legacy.embeddings.base import BaseEmbedding
+from llama_index.legacy.embeddings.clip import ClipEmbedding
+from llama_index.legacy.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.legacy.embeddings.huggingface_utils import (
+    INSTRUCTOR_MODELS,
 )
+from llama_index.legacy.embeddings.instructor import InstructorEmbedding
+from llama_index.legacy.embeddings.langchain import LangchainEmbedding
+from llama_index.legacy.embeddings.openai import OpenAIEmbedding
+from llama_index.legacy.llms.openai_utils import validate_openai_api_key
+from llama_index.legacy.token_counter.mock_embed_model import MockEmbedding
+from llama_index.legacy.utils import get_cache_dir
+
+EmbedType = Union[BaseEmbedding, "LCEmbeddings", str]
 
 
-DEFAULT_REFINE_TEMPLATE = PromptTemplate(
-    "We want to understand if the following information is present "
-    "in the context information: {query_str}\n"
-    "We have provided an existing YES/NO answer with reasoning: {existing_answer}\n"
-    "We have the opportunity to refine the existing answer "
-    "(only if needed) with some more context below.\n"
-    "------------\n"
-    "{context_msg}\n"
-    "------------\n"
-    "If the existing answer was already YES, still answer YES. "
-    "If the information is present in the new context, answer YES. "
-    "Otherwise answer NO.\n"
-    "Make sure to update the reasoning if needed.\n"
-)
+def save_embedding(embedding: List[float], file_path: str) -> None:
+    """Save embedding to file."""
+    with open(file_path, "w") as f:
+        f.write(",".join([str(x) for x in embedding]))
 
 
-class FaithfulnessEvaluator(BaseEvaluator):
-    """Faithfulness evaluator.
+def load_embedding(file_path: str) -> List[float]:
+    """Load embedding from file. Will only return first embedding in file."""
+    with open(file_path) as f:
+        for line in f:
+            embedding = [float(x) for x in line.strip().split(",")]
+            break
+        return embedding
 
-    Evaluates whether a response is faithful to the contexts
-    (i.e. whether the response is supported by the contexts or hallucinated.)
 
-    This evaluator only considers the response string and the list of context strings.
+def resolve_embed_model(embed_model: Optional[EmbedType] = None) -> BaseEmbedding:
+    """Resolve embed model."""
+    try:
+        from llama_index.legacy.bridge.langchain import Embeddings as LCEmbeddings
+    except ImportError:
+        LCEmbeddings = None  # type: ignore
 
-    Args:
-        service_context(Optional[ServiceContext]):
-            The service context to use for evaluation.
-        raise_error(bool): Whether to raise an error when the response is invalid.
-            Defaults to False.
-        eval_template(Optional[Union[str, BasePromptTemplate]]):
-            The template to use for evaluation.
-        refine_template(Optional[Union[str, BasePromptTemplate]]):
-            The template to use for refining the evaluation.
-    """
+    if embed_model == "default":
+        try:
+            embed_model = OpenAIEmbedding()
+            validate_openai_api_key(embed_model.api_key)
+        except ValueError as e:
+            raise ValueError(
+                "\n******\n"
+                "Could not load OpenAI embedding model. "
+                "If you intended to use OpenAI, please check your OPENAI_API_KEY.\n"
+                "Original error:\n"
+                f"{e!s}"
+                "\nConsider using embed_model='local'.\n"
+                "Visit our documentation for more embedding options: "
+                "https://docs.llamaindex.ai/en/stable/module_guides/models/"
+                "embeddings.html#modules"
+                "\n******"
+            )
 
-    def __init__(
-        self,
-        service_context: ServiceContext | None = None,
-        raise_error: bool = False,
-        eval_template: str | BasePromptTemplate | None = None,
-        refine_template: str | BasePromptTemplate | None = None,
-    ) -> None:
-        """Init params."""
-        self._service_context = service_context or ServiceContext.from_defaults()
-        self._raise_error = raise_error
+    # for image embeddings
+    if embed_model == "clip":
+        embed_model = ClipEmbedding()
 
-        self._eval_template: BasePromptTemplate
-        if isinstance(eval_template, str):
-            self._eval_template = PromptTemplate(eval_template)
+    if isinstance(embed_model, str):
+        splits = embed_model.split(":", 1)
+        is_local = splits[0]
+        model_name = splits[1] if len(splits) > 1 else None
+        if is_local != "local":
+            raise ValueError(
+                "embed_model must start with str 'local' or of type BaseEmbedding"
+            )
+
+        cache_folder = os.path.join(get_cache_dir(), "models")
+        os.makedirs(cache_folder, exist_ok=True)
+
+        if model_name in INSTRUCTOR_MODELS:
+            embed_model = InstructorEmbedding(
+                model_name=model_name, cache_folder=cache_folder
+            )
         else:
-            self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
+            embed_model = HuggingFaceEmbedding(
+                model_name=model_name, cache_folder=cache_folder
+            )
 
-        self._refine_template: BasePromptTemplate
-        if isinstance(refine_template, str):
-            self._refine_template = PromptTemplate(refine_template)
-        else:
-            self._refine_template = refine_template or DEFAULT_REFINE_TEMPLATE
+    if LCEmbeddings is not None and isinstance(embed_model, LCEmbeddings):
+        embed_model = LangchainEmbedding(embed_model)
 
-    def _get_prompts(self) -> PromptDictType:
-        """Get prompts."""
-        return {
-            "eval_template": self._eval_template,
-            "refine_template": self._refine_template,
-        }
+    if embed_model is None:
+        print("Embeddings have been explicitly disabled. Using MockEmbedding.")
+        embed_model = MockEmbedding(embed_dim=1)
 
-    def _update_prompts(self, prompts: PromptDictType) -> None:
-        """Update prompts."""
-        if "eval_template" in prompts:
-            self._eval_template = prompts["eval_template"]
-        if "refine_template" in prompts:
-            self._refine_template = prompts["refine_template"]
-
-    async def aevaluate(
-        self,
-        query: str | None = None,
-        response: str | None = None,
-        contexts: Sequence[str] | None = None,
-        sleep_time_in_seconds: int = 0,
-        **kwargs: Any,
-    ) -> EvaluationResult:
-        """Evaluate whether the response is faithful to the contexts."""
-        del query  # Unused
-        del kwargs  # Unused
-
-        await asyncio.sleep(sleep_time_in_seconds)
-
-        if contexts is None or response is None:
-            raise ValueError("contexts and response must be provided")
-
-        docs = [Document(text=context) for context in contexts]
-        index = SummaryIndex.from_documents(docs, service_context=self._service_context)
-
-        query_engine = index.as_query_engine(
-            text_qa_template=self._eval_template,
-            refine_template=self._refine_template,
-        )
-        response_obj = await query_engine.aquery(response)
-
-        raw_response_txt = str(response_obj)
-
-        if "yes" in raw_response_txt.lower():
-            passing = True
-        else:
-            passing = False
-            if self._raise_error:
-                raise ValueError("The response is invalid")
-
-        reasoning_pattern = re.compile(r"^Reasoning: (.+)$", re.MULTILINE)
-        reasoning_match = reasoning_pattern.search(raw_response_txt)
-        reasoning = reasoning_match.group(1) if reasoning_match else None
-
-        return EvaluationResult(
-            response=response,
-            contexts=contexts,
-            passing=passing,
-            score=1.0 if passing else 0.0,
-            feedback=reasoning,
-        )
-
-
-# legacy: backward compatibility
-ResponseEvaluator = FaithfulnessEvaluator
+    return embed_model
