@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, cast
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -35,7 +35,7 @@ def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
     return filters
 
 
-class MongoDBAtlasVectorSearch(VectorStore):
+class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     """MongoDB Atlas Vector Store.
 
     To use, you should have both:
