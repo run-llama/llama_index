@@ -27,7 +27,7 @@ You can then inspect the files at `./corrective_rag_pack` and use them as a temp
 You can download the pack to a the `./corrective_rag_pack` directory:
 
 ```python
-from llama_index.llama_pack import download_llama_pack
+from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
 CorrectiveRAGPack = download_llama_pack(
