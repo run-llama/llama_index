@@ -7,6 +7,7 @@ from typing import Any, Sequence
 
 from llama_index.legacy import ServiceContext
 from llama_index.legacy.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.legacy.indices import SummaryIndex
 from llama_index.legacy.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.legacy.prompts.mixin import PromptDictType
 from llama_index.legacy.schema import Document
