@@ -8,7 +8,6 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.utils import infer_torch_device
 from llama_index.embeddings.huggingface.utils import format_query, format_text
-from optimum.onnxruntime import ORTModelForFeatureExtraction
 from transformers import AutoTokenizer
 
 
@@ -45,7 +44,15 @@ class IntelEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         device: Optional[str] = None,
     ):
-        self._model = model or ORTModelForFeatureExtraction.from_pretrained(folder_name)
+        try:
+            from optimum.intel import INCModel
+        except ImportError:
+            raise ImportError(
+                "Optimum-Intel requires the following dependencies; please install with "
+                "`pip install optimum[exporters] optimum-intel neural-compressor`."
+            )
+
+        self._model = model or INCModel.from_pretrained(folder_name)
         self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
         self._device = device or infer_torch_device()
 
@@ -74,37 +81,7 @@ class IntelEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        return "OptimumEmbedding"
-
-    @classmethod
-    def create_and_save_optimum_model(
-        cls,
-        model_name_or_path: str,
-        output_path: str,
-        export_kwargs: Optional[dict] = None,
-    ) -> None:
-        try:
-            from optimum.onnxruntime import ORTModelForFeatureExtraction
-            from transformers import AutoTokenizer
-        except ImportError:
-            raise ImportError(
-                "OptimumEmbedding requires transformers to be installed.\n"
-                "Please install transformers with "
-                "`pip install transformers optimum[exporters]`."
-            )
-
-        export_kwargs = export_kwargs or {}
-        model = ORTModelForFeatureExtraction.from_pretrained(
-            model_name_or_path, export=True, **export_kwargs
-        )
-        tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-
-        model.save_pretrained(output_path)
-        tokenizer.save_pretrained(output_path)
-        print(
-            f"Saved optimum model to {output_path}. Use it with "
-            f"`embed_model = OptimumEmbedding(folder_name='{output_path}')`."
-        )
+        return "IntelEmbedding"
 
     def _mean_pooling(self, model_output: Any, attention_mask: Any) -> Any:
         """Mean Pooling - Take attention mask into account for correct averaging."""
@@ -121,7 +98,11 @@ class IntelEmbedding(BaseEmbedding):
 
     def _cls_pooling(self, model_output: list) -> Any:
         """Use the CLS token as the pooling token."""
-        return model_output[0][:, 0]
+        if isinstance(model_output, dict):
+            token_embeddings = model_output["last_hidden_state"]
+        else:
+            token_embeddings = model_output[0]
+        return token_embeddings[:, 0]
 
     def _embed(self, sentences: List[str]) -> List[List[float]]:
         """Embed sentences."""
@@ -132,11 +113,10 @@ class IntelEmbedding(BaseEmbedding):
             truncation=True,
             return_tensors="pt",
         )
+        import torch
 
-        # pop token_type_ids
-        encoded_input.pop("token_type_ids", None)
-
-        model_output = self._model(**encoded_input)
+        with torch.inference_mode(), torch.cpu.amp.autocast():
+            model_output = self._model(**encoded_input)
 
         if self.pooling == "cls":
             embeddings = self._cls_pooling(model_output)
@@ -146,8 +126,6 @@ class IntelEmbedding(BaseEmbedding):
             )
 
         if self.normalize:
-            import torch
-
             embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
 
         return embeddings.tolist()
