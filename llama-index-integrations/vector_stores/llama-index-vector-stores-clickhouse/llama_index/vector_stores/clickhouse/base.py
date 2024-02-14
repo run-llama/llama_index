@@ -9,6 +9,8 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, cast
 
+from pydantic import PrivateAttr
+
 from llama_index.core import ServiceContext
 from llama_index.core.schema import (
     BaseNode,
@@ -19,10 +21,10 @@ from llama_index.core.schema import (
 )
 from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import (
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
+    BasePydanticVectorStore,
 )
 from llama_index.readers.clickhouse.base import (
     DISTANCE_MAPPING,
@@ -45,7 +47,7 @@ def _default_tokenizer(text: str) -> List[str]:
     return result
 
 
-class ClickHouseVectorStore(VectorStore):
+class ClickHouseVectorStore(BasePydanticVectorStore):
     """ClickHouse Vector Store.
     In this vector store, embeddings and docs are stored within an existing
     ClickHouse cluster.
@@ -72,11 +74,16 @@ class ClickHouseVectorStore(VectorStore):
             Defaults to None
     """
 
-    stores_text: bool = True
-    _table_existed: bool = False
+    stores_text = True
+    flat_metadata = False
+    _table_existed: bool = PrivateAttr(default=False)
+    _client: Any = PrivateAttr()
+    _config: Any = PrivateAttr()
+    _dim: Any = PrivateAttr()
+    _column_config: Any = PrivateAttr()
+    _column_names: List[str] = PrivateAttr()
+    _column_type_names: List[str] = PrivateAttr()
     metadata_column: str = "metadata"
-    column_names: List[str]
-    column_type_names: List[str]
     AMPLIFY_RATIO_LE5 = 100
     AMPLIFY_RATIO_GT5 = 20
     AMPLIFY_RATIO_GT50 = 10
@@ -109,7 +116,7 @@ class ClickHouseVectorStore(VectorStore):
         if clickhouse_client is None:
             raise ValueError("Missing ClickHouse client!")
         self._client = clickhouse_client
-        self.config = ClickHouseSettings(
+        self._config = ClickHouseSettings(
             table=table,
             database=database,
             engine=engine,
@@ -122,7 +129,7 @@ class ClickHouseVectorStore(VectorStore):
         )
 
         # schema column name, type, and construct format method
-        self.column_config: Dict = {
+        self._column_config: Dict = {
             "id": {"type": "String", "extract_func": lambda x: x.node_id},
             "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
@@ -144,9 +151,10 @@ class ClickHouseVectorStore(VectorStore):
                 "extract_func": lambda x: json.dumps(x.metadata),
             },
         }
-        self.column_names = list(self.column_config.keys())
-        self.column_type_names = [
-            self.column_config[column_name]["type"] for column_name in self.column_names
+        self._column_names = list(self._column_config.keys())
+        self._column_type_names = [
+            self._column_config[column_name]["type"]
+            for column_name in self._column_names
         ]
 
         if service_context is not None:
@@ -155,6 +163,18 @@ class ClickHouseVectorStore(VectorStore):
                 service_context.embed_model.get_query_embedding("try this out")
             )
             self.create_table(dimension)
+        super().__init__(
+            clickhouse_client=clickhouse_client,
+            table=table,
+            database=database,
+            engine=engine,
+            index_type=index_type,
+            metric=metric,
+            batch_size=batch_size,
+            index_params=index_params,
+            search_params=search_params,
+            service_context=service_context,
+        )
 
     @property
     def client(self) -> Any:
@@ -164,26 +184,26 @@ class ClickHouseVectorStore(VectorStore):
     def create_table(self, dimension: int) -> None:
         index = ""
         settings = {"allow_experimental_object_type": "1"}
-        if self.config.index_type.lower() == "hnsw":
+        if self._config.index_type.lower() == "hnsw":
             scalarKind = "f32"
-            if self.config.index_params and "ScalarKind" in self.config.index_params:
-                scalarKind = self.config.index_params["ScalarKind"]
-            index = f"INDEX hnsw_indx vector TYPE usearch('{DISTANCE_MAPPING[self.config.metric]}', '{scalarKind}')"
+            if self._config.index_params and "ScalarKind" in self._config.index_params:
+                scalarKind = self._config.index_params["ScalarKind"]
+            index = f"INDEX hnsw_indx vector TYPE usearch('{DISTANCE_MAPPING[self._config.metric]}', '{scalarKind}')"
             settings["allow_experimental_usearch_index"] = "1"
-        elif self.config.index_type.lower() == "annoy":
+        elif self._config.index_type.lower() == "annoy":
             numTrees = 100
-            if self.config.index_params and "NumTrees" in self.config.index_params:
-                numTrees = self.config.index_params["NumTrees"]
-            index = f"INDEX annoy_indx vector TYPE annoy('{DISTANCE_MAPPING[self.config.metric]}', {numTrees})"
+            if self._config.index_params and "NumTrees" in self._config.index_params:
+                numTrees = self._config.index_params["NumTrees"]
+            index = f"INDEX annoy_indx vector TYPE annoy('{DISTANCE_MAPPING[self._config.metric]}', {numTrees})"
             settings["allow_experimental_annoy_index"] = "1"
         schema_ = f"""
-            CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
-                {",".join([f'{k} {v["type"]}' for k, v in self.column_config.items()])},
+            CREATE TABLE IF NOT EXISTS {self._config.database}.{self._config.table}(
+                {",".join([f'{k} {v["type"]}' for k, v in self._column_config.items()])},
                 CONSTRAINT vector_length CHECK length(vector) = {dimension},
                 {index}
             ) ENGINE = MergeTree ORDER BY id
             """
-        self.dim = dimension
+        self._dim = dimension
         self._client.command(schema_, settings=settings)
         self._table_existed = True
 
@@ -195,15 +215,15 @@ class ClickHouseVectorStore(VectorStore):
         # we assume all rows have all columns
         for idx, item in enumerate(batch):
             _row = []
-            for column_name in self.column_names:
-                _row.append(self.column_config[column_name]["extract_func"](item))
+            for column_name in self._column_names:
+                _row.append(self._column_config[column_name]["extract_func"](item))
             _data.append(_row)
 
         self._client.insert(
-            f"{self.config.database}.{self.config.table}",
+            f"{self._config.database}.{self._config.table}",
             data=_data,
-            column_names=self.column_names,
-            column_type_names=self.column_type_names,
+            column_names=self._column_names,
+            column_type_names=self._column_type_names,
         )
 
     def _build_text_search_statement(
@@ -212,10 +232,10 @@ class ClickHouseVectorStore(VectorStore):
         # TODO: We could make this overridable
         tokens = _default_tokenizer(query_str)
         terms_pattern = [f"\\b(?i){x}\\b" for x in tokens]
-        column_keys = self.column_config.keys()
+        column_keys = self._column_config.keys()
         return (
             f"SELECT {','.join(filter(lambda k: k != 'vector', column_keys))}, "
-            f"score FROM {self.config.database}.{self.config.table} WHERE score > 0 "
+            f"score FROM {self._config.database}.{self._config.table} WHERE score > 0 "
             f"ORDER BY length(multiMatchAllIndices(text, {terms_pattern})) "
             f"AS score DESC, "
             f"log(1 + countMatches(text, '\\b(?i)({'|'.join(tokens)})\\b')) "
@@ -228,7 +248,7 @@ class ClickHouseVectorStore(VectorStore):
         # TODO: We could make this overridable
         tokens = _default_tokenizer(query_str)
         terms_pattern = [f"\\b(?i){x}\\b" for x in tokens]
-        column_keys = self.column_config.keys()
+        column_keys = self._column_config.keys()
         return (
             f"SELECT {','.join(filter(lambda k: k != 'vector', column_keys))}, "
             f"score FROM ({stage_one_sql}) tempt "
@@ -269,7 +289,7 @@ class ClickHouseVectorStore(VectorStore):
         if not self._table_existed:
             self.create_table(len(nodes[0].get_embedding()))
 
-        for batch in iter_batch(nodes, self.config.batch_size):
+        for batch in iter_batch(nodes, self._config.batch_size):
             self._upload_batch(batch=batch)
 
         return [result.node_id for result in nodes]
@@ -282,13 +302,13 @@ class ClickHouseVectorStore(VectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
         """
         self._client.command(
-            f"DELETE FROM {self.config.database}.{self.config.table} WHERE doc_id='{ref_doc_id}'"
+            f"DELETE FROM {self._config.database}.{self._config.table} WHERE doc_id='{ref_doc_id}'"
         )
 
     def drop(self) -> None:
         """Drop ClickHouse table."""
         self._client.command(
-            f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
+            f"DROP TABLE IF EXISTS {self._config.database}.{self._config.table}"
         )
 
     def query(
@@ -316,7 +336,7 @@ class ClickHouseVectorStore(VectorStore):
 
         # build query sql
         if query.mode == VectorStoreQueryMode.DEFAULT:
-            query_statement = self.config.build_query_statement(
+            query_statement = self._config.build_query_statement(
                 query_embed=query_embedding,
                 where_str=where_str,
                 limit=query.similarity_top_k,
@@ -329,7 +349,7 @@ class ClickHouseVectorStore(VectorStore):
                 if query.similarity_top_k > 50:
                     amplify_ratio = self.AMPLIFY_RATIO_GT50
                 query_statement = self._build_hybrid_search_statement(
-                    self.config.build_query_statement(
+                    self._config.build_query_statement(
                         query_embed=query_embedding,
                         where_str=where_str,
                         limit=query.similarity_top_k * amplify_ratio,

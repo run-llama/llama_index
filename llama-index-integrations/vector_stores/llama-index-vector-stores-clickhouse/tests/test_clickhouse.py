@@ -52,7 +52,7 @@ def clickhouse_client() -> Generator:
     import clickhouse_connect
 
     clickhouse_client = clickhouse_connect.get_client(
-        host="localhost", port=8123, username="default", password=""
+        host="localhost", port=8124, username="default", password=""
     )
     clickhouse_client.command(f"DROP DATABASE IF EXISTS {TEST_DB}")
     clickhouse_client.command(f"CREATE DATABASE {TEST_DB}")
