@@ -26,7 +26,7 @@ license = "MIT"
 maintainers = ["joshreini1"]
 name = "llama-index-packs-trulens-eval-packs"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">3.9.7,<3.12"
