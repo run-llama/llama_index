@@ -421,11 +421,19 @@ class HuggingFaceInferenceAPI(CustomLLM):
     # Corresponds with huggingface_hub.InferenceClient
     model_name: Optional[str] = Field(
         default=None,
-        description=("The model to run inference with. Can be a model id or URL."),
+        description=(
+            "The model to run inference with. Can be a model id hosted on the Hugging"
+            " Face Hub, e.g. bigcode/starcoder or a URL to a deployed Inference"
+            " Endpoint. Defaults to None, in which case a recommended model is"
+            " automatically selected for the task (see Field below)."
+        ),
     )
-    token: Optional[str] = Field(
+    token: Union[str, bool, None] = Field(
         default=None,
-        description=("Hugging Face API token."),
+        description=(
+            "Hugging Face token. Will default to the locally saved token. Pass "
+            "token=False if you don’t want to send your token to the server."
+        ),
     )
     timeout: Optional[float] = Field(
         default=None,

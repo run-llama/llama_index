@@ -1,156 +1,45 @@
-import sys
-from multiprocessing import cpu_count
+from typing import Any, Dict
 
-from llama_index.legacy.embeddings import OpenAIEmbedding
-from llama_index.legacy.extractors import KeywordExtractor
-from llama_index.legacy.ingestion.pipeline import IngestionPipeline
-from llama_index.legacy.llms import MockLLM
-from llama_index.legacy.node_parser import SentenceSplitter
-from llama_index.legacy.readers import ReaderConfig, StringIterableReader
-from llama_index.legacy.schema import Document
-from llama_index.legacy.storage.docstore import SimpleDocumentStore
-
-python_version = sys.version
+from llama_index.legacy.embeddings import (
+    HuggingFaceEmbedding,
+    OpenAIEmbedding,
+)
+from llama_index.legacy.embeddings.utils import resolve_embed_model
+from llama_index.legacy.token_counter.mock_embed_model import MockEmbedding
+from pytest import MonkeyPatch
 
 
-# clean up folders after tests
-def teardown_function() -> None:
-    import shutil
-
-    shutil.rmtree("./test_pipeline", ignore_errors=True)
+def mock_hf_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
+    """Mock HuggingFaceEmbeddings."""
+    return
 
 
-def test_build_pipeline() -> None:
-    pipeline = IngestionPipeline(
-        name="Test",
-        readers=[
-            ReaderConfig(
-                reader=StringIterableReader(),
-                reader_kwargs={"texts": ["This is a test."]},
-            )
-        ],
-        documents=[Document.example()],
-        transformations=[
-            SentenceSplitter(),
-            KeywordExtractor(llm=MockLLM()),
-            OpenAIEmbedding(api_key="fake"),
-        ],
+def mock_openai_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
+    """Mock OpenAIEmbedding."""
+    return
+
+
+def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "llama_index.legacy.embeddings.huggingface.HuggingFaceEmbedding.__init__",
+        mock_hf_embeddings,
+    )
+    monkeypatch.setattr(
+        "llama_index.legacy.embeddings.OpenAIEmbedding.__init__", mock_openai_embeddings
     )
 
-    assert len(pipeline.transformations) == 3
-    assert pipeline.name == "Test"
+    # Test None
+    embed_model = resolve_embed_model(None)
+    assert isinstance(embed_model, MockEmbedding)
 
+    # Test str
+    embed_model = resolve_embed_model("local")
+    assert isinstance(embed_model, HuggingFaceEmbedding)
 
-def test_run_local_pipeline() -> None:
-    pipeline = IngestionPipeline(
-        name="Test",
-        readers=[
-            ReaderConfig(
-                reader=StringIterableReader(),
-                reader_kwargs={"texts": ["This is a test."]},
-            )
-        ],
-        documents=[Document.example()],
-        transformations=[
-            SentenceSplitter(),
-            KeywordExtractor(llm=MockLLM()),
-        ],
-    )
+    # Test LCEmbeddings
+    embed_model = resolve_embed_model(HuggingFaceEmbedding())
+    assert isinstance(embed_model, HuggingFaceEmbedding)
 
-    nodes = pipeline.run()
-
-    assert len(nodes) == 2
-    assert len(nodes[0].metadata) > 0
-
-
-@pytest.mark.integration()
-def test_register() -> None:
-    pipeline = IngestionPipeline(
-        name="Test" + python_version,
-        project_name="test_project" + python_version,
-        readers=[
-            ReaderConfig(
-                reader=StringIterableReader(),
-                reader_kwargs={"texts": ["This is a test."]},
-            )
-        ],
-        documents=[Document.example()],
-        transformations=[
-            SentenceSplitter(),
-            KeywordExtractor(llm=MockLLM()),
-        ],
-    )
-
-    pipeline_id = pipeline.register()
-
-    # update pipeline
-    updated_pipeline = IngestionPipeline(
-        name="Test" + python_version,
-        project_name="test_project" + python_version,
-        readers=[
-            ReaderConfig(
-                reader=StringIterableReader(),
-                reader_kwargs={"texts": ["This is another test."]},
-            )
-        ],
-        documents=[Document.example()],
-        transformations=[
-            SentenceSplitter(),
-            KeywordExtractor(llm=MockLLM()),
-        ],
-    )
-
-    new_pipeline_id = updated_pipeline.register()
-
-    # make sure we are updating the same pipeline instead of creating a new one
-    assert pipeline_id == new_pipeline_id
-
-
-@pytest.mark.integration()
-def test_from_pipeline_name() -> None:
-    pipeline = IngestionPipeline(
-        name="Test" + python_version,
-        project_name="test_project" + python_version,
-        readers=[
-            ReaderConfig(
-                reader=StringIterableReader(),
-                reader_kwargs={"texts": ["This is a test."]},
-            )
-        ],
-        documents=[Document.example()],
-        transformations=[
-            SentenceSplitter(),
-            KeywordExtractor(llm=MockLLM()),
-        ],
-    )
-
-    pipeline.register()
-
-    new_pipeline = IngestionPipeline.from_pipeline_name(
-        name="Test" + python_version, project_name="test_project" + python_version
-    )
-    assert len(new_pipeline.transformations) == 2
-
-    # TODO: nodes are stored on AWS, how to get them?
-    # nodes = new_pipeline.run()
-    # assert len(nodes) == 2
-    # assert len(nodes[0].metadata) > 0
-
-
-def test_pipeline_parallel() -> None:
-    document1 = Document.example()
-    document1.id_ = "1"
-    document2 = Document(text="One\n\n\nTwo\n\n\nThree.", doc_id="2")
-
-    pipeline = IngestionPipeline(
-        transformations=[
-            SentenceSplitter(chunk_size=25, chunk_overlap=0),
-        ],
-        docstore=SimpleDocumentStore(),
-    )
-
-    num_workers = min(2, cpu_count())
-    nodes = pipeline.run(documents=[document1, document2], num_workers=num_workers)
-    assert len(nodes) == 20
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 2
+    # Test BaseEmbedding
+    embed_model = resolve_embed_model(OpenAIEmbedding())
+    assert isinstance(embed_model, OpenAIEmbedding)

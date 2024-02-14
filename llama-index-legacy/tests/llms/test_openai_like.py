@@ -134,6 +134,7 @@ def test_serialization() -> None:
 
     serialized = llm.to_dict()
     # Check OpenAI base class specifics
+    assert "api_key" not in serialized
     assert serialized["max_tokens"] == 42
     # Check OpenAILike subclass specifics
     assert serialized["context_window"] == 43
