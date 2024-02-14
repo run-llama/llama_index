@@ -3,8 +3,8 @@ from typing import Any, DefaultDict, Dict, List, Literal, Optional, Set
 
 import nest_asyncio
 
-from llama_index.callbacks.base_handler import BaseCallbackHandler
-from llama_index.callbacks.schema import (
+from llama_index.core.callbacks.base_handler import BaseCallbackHandler
+from llama_index.core.callbacks.schema import (
     CBEvent,
     CBEventType,
 )
@@ -117,6 +117,8 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             for column in columns:
                 if column == "question":
                     print(f"\nQuestion: {row[column]}")
+                elif column == "response":
+                    print(f"Response: {row[column]}")
                 elif column.startswith("score"):
                     if column in score_name_map:
                         print(f"{score_name_map[column]}: {row[column]}")

@@ -2,7 +2,6 @@
 
 from typing import Any
 
-from llama_index.callbacks.uptrain_callback import UpTrainCallbackHandler
 from llama_index.legacy.callbacks.argilla_callback import argilla_callback_handler
 from llama_index.legacy.callbacks.arize_phoenix_callback import (
     arize_phoenix_callback_handler,
@@ -15,6 +14,7 @@ from llama_index.legacy.callbacks.open_inference_callback import (
 )
 from llama_index.legacy.callbacks.promptlayer_handler import PromptLayerHandler
 from llama_index.legacy.callbacks.simple_llm_handler import SimpleLLMHandler
+from llama_index.legacy.callbacks.uptrain_callback import UpTrainCallbackHandler
 from llama_index.legacy.callbacks.wandb_callback import WandbCallbackHandler
 
 
