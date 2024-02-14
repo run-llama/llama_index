@@ -240,6 +240,9 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                     rel_embedding = self._embed_model.get_text_embedding(triplet_str)
                     self._index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
 
+        # Update the storage context's index_store
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+
     def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:
         """Insert triplets.
 
