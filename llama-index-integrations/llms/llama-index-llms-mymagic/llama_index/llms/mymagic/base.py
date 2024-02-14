@@ -15,17 +15,19 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.llm import LLM
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 class MyMagicAI(LLM):
-    base_url_template: str = "https://{model}.mymagic.ai/submit_question"
+    base_url_template: str = "https://{model}.mymagic.ai"
     default_model: str = "mistral7b"
-    DEFAULT_NUM_OUTPUTS = 10
-    model: str = Field(
-        default="mistral7b", description="The MyMagicAi model to use."
-    )    
-    api_key: str = Field(
-        default="",description="The MyMagicAi model to use."
-    )
+    DEFAULT_NUM_OUTPUTS: int = 10
+    model: str = "mistral7b"    
+    api_key: str = "test______________________Vitai"
+    
     def __init__(
         self,
         api_key: str,
@@ -45,31 +47,40 @@ class MyMagicAI(LLM):
     
     async def _submit_question(self, question_data: Dict[str, Any]) -> Dict[str, Any]:
         async with httpx.AsyncClient() as client:
-            resp = await client.post(f"{self.base_url}/submit_question", json=question_data)
+            url = f"{self._construct_url(self.model)}/submit_question"
+            resp = await client.post(url, json=question_data)
             resp.raise_for_status()
             return resp.json()
 
     def _submit_question_sync(self, question_data: Dict[str, Any]) -> Dict[str, Any]:
         """Submits a question to the model synchronously."""
-        url = self._construct_url(self.model)
+        url = f"{self._construct_url(self.model)}/submit_question"
         resp = requests.post(url, json=question_data)
         resp.raise_for_status()
         return resp.json()
     
     def _get_result_sync(self, task_id: str) -> Dict[str, Any]:
         """Polls for the result of a task synchronously."""
-        url = f"{self.base_url}/get_result/{task_id}"
+        url = f"{self._construct_url(self.model)}/get_result/{task_id}"
         response = requests.get(url)
         response.raise_for_status()
         return response.json()
 
     async def _get_result(self, task_id: str) -> Dict[str, Any]:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{self.base_url}/get_result/{task_id}")
+            resp = await client.get(f"{self._construct_url(self.model)}/get_result/{task_id}")
             resp.raise_for_status()
             return resp.json()
 
-    async def acomplete(self, question_data: Dict[str, Any], poll_interval: float = 1.0) -> Dict[str, Any]:
+    async def acomplete(self, question: str, poll_interval: float = 1.0) -> CompletionResponse:
+        question_data = {
+            "question": question,
+            "personal_access_token": self.api_key,
+            "storage_provider": "gcs",
+            "bucket_name": "vitali-mymagic", 
+            "session": "test-session", 
+            "max_tokens": 20
+        }
         task_response = await self._submit_question(question_data)
         task_id = task_response.get("task_id")
         while True:
@@ -84,7 +95,7 @@ class MyMagicAI(LLM):
         question_data = {
             "question": question,
             "personal_access_token": self.api_key,
-            "storage_provider": "s3",
+            "storage_provider": "gcs",
             "bucket_name": "vitali-mymagic", 
             "session": "test-session", 
             "max_tokens": 20
