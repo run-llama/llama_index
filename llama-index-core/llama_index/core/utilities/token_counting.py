@@ -3,12 +3,13 @@
 
 from typing import Any, Callable, Dict, List, Optional
 
-from llama_index.core.llms import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.utils import get_tokenizer
 
 
 class TokenCounter:
-    """Token counter class.
+    """
+    Token counter class.
 
     Attributes:
         model (Optional[str]): The model to use for token counting.
@@ -18,7 +19,8 @@ class TokenCounter:
         self.tokenizer = tokenizer or get_tokenizer()
 
     def get_string_tokens(self, string: str) -> int:
-        """Get the token count for a string.
+        """
+        Get the token count for a string.
 
         Args:
             string (str): The string to count.
@@ -29,7 +31,8 @@ class TokenCounter:
         return len(self.tokenizer(string))
 
     def estimate_tokens_in_messages(self, messages: List[ChatMessage]) -> int:
-        """Estimate token count for a single message.
+        """
+        Estimate token count for a single message.
 
         Args:
             message (OpenAIMessage): The message to estimate the token count for.
@@ -66,7 +69,8 @@ class TokenCounter:
         return tokens
 
     def estimate_tokens_in_functions(self, functions: List[Dict[str, Any]]) -> int:
-        """Estimate token count for the functions.
+        """
+        Estimate token count for the functions.
 
         We take here a list of functions created using the `to_openai_spec` function (or similar).
 
