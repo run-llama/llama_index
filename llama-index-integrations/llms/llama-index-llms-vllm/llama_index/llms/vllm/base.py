@@ -212,6 +212,17 @@ class Vllm(LLM):
         }
         return {**base_kwargs}
 
+    def __del__(self) -> None:
+        import torch
+        from vllm.model_executor.parallel_utils.parallel_state import (
+            destroy_model_parallel,
+        )
+
+        destroy_model_parallel()
+        del self._client
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
             **self._model_kwargs,
