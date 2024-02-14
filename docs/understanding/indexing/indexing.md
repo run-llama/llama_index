@@ -41,7 +41,7 @@ Top-k retrieval is the simplest form of querying a vector index; you will learn 
 To use the Vector Store Index, pass it the list of Documents you created during the loading stage:
 
 ```python
-from llama_index import VectorStoreIndex
+from llama_index.core import VectorStoreIndex
 
 index = VectorStoreIndex.from_documents(documents)
 ```
@@ -53,7 +53,7 @@ index = VectorStoreIndex.from_documents(documents)
 You can also choose to build an index over a list of Node objects directly:
 
 ```python
-from llama_index import VectorStoreIndex
+from llama_index.core import VectorStoreIndex
 
 index = VectorStoreIndex(nodes)
 ```

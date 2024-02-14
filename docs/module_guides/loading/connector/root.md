@@ -20,9 +20,10 @@ LlamaHub is an open-source repository containing data loaders that you can easil
 Get started with:
 
 ```python
-from llama_index import download_loader
+from llama_index.core import download_loader
 
-GoogleDocsReader = download_loader("GoogleDocsReader")
+from llama_index.readers.google import GoogleDocsReader
+
 loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=[...])
 ```

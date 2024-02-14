@@ -1,18 +1,34 @@
 # Installation and Setup
 
-## Installation from Pip
+The LlamaIndex ecosystem is structured using a collection of namespaced packages.
 
-Install from pip:
+What this means for users is that LlamaIndex comes with a core starter bundle, and additional integrations can be installed as needed.
+
+A complete list of packages and available integrations is available in our [temporary registry](https://pretty-sodium-5e0.notion.site/ce81b247649a44e4b6b35dfb24af28a6?v=53b3c2ced7bb4c9996b81b83c9f01139), which will be moving to [LlamaHub](https://llamahub.ai/) soon!
+
+## Quickstart Installation from Pip
+
+To get started quickly, you can install with:
 
 ```
 pip install llama-index
 ```
 
+This is a starter bundle of packages, containing
+
+- `llama-index-core`
+- `llama-index-legacy  # temporarily included`
+- `llama-index-llms-openai`
+- `llama-index-embeddings-openai`
+- `llama-index-program-openai`
+- `llama-index-question-gen-openai`
+- `llama-index-agent-openai`
+- `llama-index-readers-file`
+- `llama-index-multi-modal-llms-openai`
+
 **NOTE:** LlamaIndex may download and store local files for various packages (NLTK, HuggingFace, ...). Use the environment variable "LLAMA_INDEX_CACHE_DIR" to control where these files are saved.
 
-If you prefer to install from source, see below.
-
-## Important: OpenAI Environment Setup
+### Important: OpenAI Environment Setup
 
 By default, we use the OpenAI `gpt-3.5-turbo` model for text generation and `text-embedding-ada-002` for retrieval and embeddings. In order to use this, you must have an OPENAI_API_KEY set up as an environment variable.
 You can obtain an API key by logging into your OpenAI account and [and creating a new API key](https://platform.openai.com/account/api-keys).
@@ -24,13 +40,19 @@ need additional environment keys + tokens setup depending on the LLM provider.
 
 [Check out our OpenAI Starter Example](starter_example.md)
 
-## Local Model Setup
+## Custom Installation from Pip
 
-If you don't wish to use OpenAI, consider setting up a local LLM and embedding model in the service context.
+If you aren't using OpenAI, or want a more selective installation, you can install individual packages as needed.
+
+For example, for a local setup with Ollama and HuggingFace embeddings, the installation might look like:
+
+```
+pip install llama-index-core llama-index-readers-file llama-index-llms-ollama llama-index-embeddings-huggingface
+```
 
 [Check out our Starter Example with Local Models](starter_example_local.md)
 
-A full guide to using and configuring LLMs available [here](/module_guides/models/llms.md).
+A full guide to using and configuring LLMs is available [here](/module_guides/models/llms.md).
 
 A full guide to using and configuring embedding models is available [here](/module_guides/models/embeddings.md).
 
@@ -40,13 +62,11 @@ Git clone this repository: `git clone https://github.com/jerryjliu/llama_index.g
 
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
 - `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
-- `poetry install` - this will install the core package requirements
-- (Optional) `poetry install --with dev,docs` - this will install all dependencies needed for most local development
+- `poetry install` - this will install the core starter package requirements
+- (Optional) `poetry install --with dev, docs` - this will install all dependencies needed for most local development
 
-## Optional Dependencies
+From there, you can install integrations as needed with `pip`, For example:
 
-By default LlamaIndex installs a core set of dependencies; we also provide a convenient way to install commonly-required optional dependencies. These are currently in three sets:
-
-- `pip install llama-index[local_models]` installs tools useful for private LLMs, local inference, and HuggingFace models
-- `pip install llama-index[postgres]` is useful if you are working with Postgres, PGVector or Supabase
-- `pip install llama-index[query_tools]` gives you tools for hybrid search, structured outputs, and node post-processing
+```
+pip install -e llama-index-integrations/llms/llama-index-llms-ollama
+```

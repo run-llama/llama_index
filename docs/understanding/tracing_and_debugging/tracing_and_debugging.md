@@ -26,9 +26,9 @@ Furthermore, a trace map of events is also recorded, and callbacks can use this 
 You can get a simple callback handler like this:
 
 ```python
-import llama_index
+import llama_index.core
 
-llama_index.set_global_handler("simple")
+llama_index.core.set_global_handler("simple")
 ```
 
 You can also learn how to [build you own custom callback handler](/module_guides/observability/callbacks/root.md).

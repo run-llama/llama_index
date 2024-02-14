@@ -6,5 +6,5 @@ LlamaHub is an open-source repository containing data loaders that you can easil
 
 The following data connectors are still available in the core repo.
 
-.. automodapi:: llama_index.readers
+.. automodapi:: llama_index.core.readers.base
    :no-inheritance-diagram:

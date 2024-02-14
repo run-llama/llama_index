@@ -19,7 +19,7 @@ Before your chosen LLM can act on your data you need to load it. The way LlamaIn
 The easiest reader to use is our SimpleDirectoryReader, which creates documents out of every file in a given directory. It is built in to LlamaIndex and can read a variety of formats including Markdown, PDFs, Word documents, PowerPoint decks, images, audio and video.
 
 ```python
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("./data").load_data()
 ```
@@ -31,9 +31,9 @@ Because there are so many possible places to get data, they are not all built-in
 In this example LlamaIndex downloads and installs the connector called [DatabaseReader](https://llamahub.ai/l/database), which runs a query against a SQL database and returns every row of the results as a `Document`:
 
 ```python
-from llama_index import download_loader
+from llama_index.core import download_loader
 
-DatabaseReader = download_loader("DatabaseReader")
+from llama_index.readers.database import DatabaseReader
 
 reader = DatabaseReader(
     scheme=os.getenv("DB_SCHEME"),
@@ -55,7 +55,7 @@ There are hundreds of connectors to use on [LlamaHub](https://llamahub.ai)!
 Instead of using a loader, you can also use a Document directly.
 
 ```python
-from llama_index.schema import Document
+from llama_index.core import Document
 
 doc = Document(text="text")
 ```
@@ -73,7 +73,7 @@ We have both a high-level and lower-level API for transforming documents.
 Indexes have a `.from_documents()` method which accepts an array of Document objects and will correctly parse and chunk them up. However, sometimes you will want greater control over how your documents are split up.
 
 ```python
-from llama_index import VectorStoreIndex
+from llama_index.core import VectorStoreIndex
 
 vector_index = VectorStoreIndex.from_documents(documents)
 vector_index.as_query_engine()
@@ -81,14 +81,19 @@ vector_index.as_query_engine()
 
 Under the hood, this splits your Document into Node objects, which are similar to Documents (they contain text and metadata) but have a relationship to their parent Document.
 
-If you want to customize core components, like the text splitter, through this abstraction you can pass in a custom `ServiceContext` object:
+If you want to customize core components, like the text splitter, through this abstraction you can pass in a custom `transformations` list or apply to the global `Settings`:
 
 ```python
 text_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=10)
-service_context = ServiceContext.from_defaults(text_splitter=text_splitter)
 
+# global
+from llama_index.core import Settings
+
+Settings.text_splitter = text_splitter
+
+# per-index
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents, transformations=[text_splitter]
 )
 ```
 
@@ -109,9 +114,9 @@ LlamaIndex has support for a wide range of [text splitters](/module_guides/loadi
 These can be [used on their own or as part of an ingestion pipeline](/module_guides/loading/node_parsers/root.md).
 
 ```python
-from llama_index import SimpleDirectoryReader
-from llama_index.ingestion import IngestionPipeline
-from llama_index.node_parser import TokenTextSplitter
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.node_parser import TokenTextSplitter
 
 documents = SimpleDirectoryReader("./data").load_data()
 
@@ -142,7 +147,7 @@ To insert a node into a vector index, it should have an embedding. See our [inge
 If you want to, you can create nodes directly and pass a list of Nodes directly to an indexer:
 
 ```python
-from llama_index.schema import TextNode
+from llama_index.core.schema import TextNode
 
 node1 = TextNode(text="<text_chunk>", id_="<node_id>")
 node2 = TextNode(text="<text_chunk>", id_="<node_id>")
