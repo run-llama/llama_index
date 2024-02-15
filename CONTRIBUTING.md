@@ -288,7 +288,7 @@ cd ./llama-index-packs
 llamaindex-cli new-package --kind "packs" --name "my new pack"
 
 cd ./llama-index-integrations/readers
-llamaindex-cli new-pacakge --kind "readers" --name "new reader"
+llamaindex-cli new-package --kind "readers" --name "new reader"
 ```
 
 Executing the first set of shell commands will create a new folder called `llama-index-packs-my-new-pack`

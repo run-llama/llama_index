@@ -22,6 +22,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers snscrape_twitter integration"
 license = "MIT"
+maintainers = ["smyja"]
 name = "llama-index-readers-snscrape-twitter"
 readme = "README.md"
 version = "0.1.1"

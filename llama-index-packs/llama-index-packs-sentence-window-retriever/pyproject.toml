@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs sentence_window_retriever integration"
+keywords = ["retriever", "sentence", "window"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-packs-sentence-window-retriever"
 readme = "README.md"
 version = "0.1.1"

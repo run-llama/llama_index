@@ -22,6 +22,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers azcognitive_search integration"
 license = "MIT"
+maintainers = ["mrcabellom"]
 name = "llama-index-readers-azcognitive-search"
 readme = "README.md"
 version = "0.1.1"

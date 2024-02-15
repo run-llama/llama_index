@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers web integration"
+keywords = ["BFS", "article", "atom", "documentation", "feed", "main content extractor", "news", "readthedocs", "rss", "scraper", "selenium", "seo", "sitemap", "substack", "trafilatura", "unstructured.io", "url", "web reader", "web", "website"]
 license = "MIT"
+maintainers = ["HawkClaws", "Hironsan", "NA", "an-bluecat", "bborn", "jasonwcfan", "kravetsmic", "pandazki", "ruze00", "selamanse", "thejessezhang"]
 name = "llama-index-readers-web"
 readme = "README.md"
 version = "0.1.1"

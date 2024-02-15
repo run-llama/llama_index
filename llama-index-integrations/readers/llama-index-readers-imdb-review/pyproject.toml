@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers imdb_review integration"
+keywords = ["IMDB", "movies", "reviews"]
 license = "MIT"
+maintainers = ["Athe-kunal"]
 name = "llama-index-readers-imdb-review"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs retry_engine_weaviate integration"
+keywords = ["engine", "retry", "weaviate"]
 license = "MIT"
+maintainers = ["erika-cardenas"]
 name = "llama-index-packs-retry-engine-weaviate"
 readme = "README.md"
 version = "0.1.1"

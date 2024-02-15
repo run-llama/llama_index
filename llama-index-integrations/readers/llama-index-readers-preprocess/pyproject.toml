@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers preprocess integration"
+keywords = ["chunk", "chunking", "documents", "preprocess"]
 license = "MIT"
+maintainers = ["preprocess"]
 name = "llama-index-readers-preprocess"
 readme = "README.md"
 version = "0.1.1"

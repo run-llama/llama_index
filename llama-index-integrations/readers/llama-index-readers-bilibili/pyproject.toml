@@ -22,6 +22,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers bilibili integration"
 license = "MIT"
+maintainers = ["alexzhangji"]
 name = "llama-index-readers-bilibili"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs resume_screener integration"
+keywords = ["document", "pdf", "resume", "structured output"]
 license = "MIT"
+maintainers = ["Disiok"]
 name = "llama-index-packs-resume-screener"
 readme = "README.md"
 version = "0.1.1"

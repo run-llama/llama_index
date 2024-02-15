@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers firestore integration"
+keywords = ["datastore", "firestore"]
 license = "MIT"
+maintainers = ["rayzhudev"]
 name = "llama-index-readers-firestore"
 readme = "README.md"
 version = "0.1.1"

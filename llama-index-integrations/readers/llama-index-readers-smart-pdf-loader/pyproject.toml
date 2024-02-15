@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers smart_pdf_loader integration"
+keywords = ["pdf layout", "pdf table", "pdf"]
 license = "MIT"
+maintainers = ["ansukla"]
 name = "llama-index-readers-smart-pdf-loader"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs multidoc_autoretrieval integration"
+keywords = ["autoretrieval", "document", "multi", "multidoc", "retrieval"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-packs-multidoc-autoretrieval"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs voyage_query_engine integration"
+keywords = ["embeddings", "query", "retrieval", "voyage"]
 license = "MIT"
+maintainers = ["Liuhong99"]
 name = "llama-index-packs-voyage-query-engine"
 readme = "README.md"
 version = "0.1.1"

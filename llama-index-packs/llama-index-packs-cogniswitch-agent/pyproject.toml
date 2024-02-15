@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs cogniswitch_agent integration"
+keywords = ["embedding", "graph", "knowledge graph", "neural", "symbolic"]
 license = "MIT"
+maintainers = ["cogniswitch"]
 name = "llama-index-packs-cogniswitch-agent"
 readme = "README.md"
 version = "0.1.1"

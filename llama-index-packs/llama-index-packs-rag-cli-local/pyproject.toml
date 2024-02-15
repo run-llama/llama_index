@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs rag cli local integration"
+keywords = ["cli", "local", "rag"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-packs-rag-cli-local"
 readme = "README.md"
 version = "0.1.1"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs llama_guard_moderator integration"
+keywords = ["llama guard", "llm security", "prompt injection", "purple llama"]
 license = "MIT"
+maintainers = ["wenqiglantz"]
 name = "llama-index-packs-llama-guard-moderator"
 readme = "README.md"
 version = "0.1.1"

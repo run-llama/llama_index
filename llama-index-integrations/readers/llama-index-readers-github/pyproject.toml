@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers github integration"
+keywords = ["code", "collaborators", "git", "github", "issues", "placeholder", "repository", "source code"]
 license = "MIT"
+maintainers = ["ahmetkca", "moncho", "rwood-97"]
 name = "llama-index-readers-github"
 readme = "README.md"
 version = "0.1.1"

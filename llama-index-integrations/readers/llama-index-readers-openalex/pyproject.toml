@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers openalex integration"
+keywords = ["academic papers", "open access", "openalex", "scientific papers"]
 license = "MIT"
+maintainers = ["shauryr"]
 name = "llama-index-readers-openalex"
 readme = "README.md"
 version = "0.1.1"

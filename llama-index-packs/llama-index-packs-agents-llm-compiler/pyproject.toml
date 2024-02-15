@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs agents llm compiler"
+keywords = ["agent", "compiler", "llm"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-packs-agents-llm-compiler"
 readme = "README.md"
 version = "0.1.1"

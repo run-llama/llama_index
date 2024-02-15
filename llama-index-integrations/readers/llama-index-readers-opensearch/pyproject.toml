@@ -22,6 +22,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers opensearch integration"
 license = "MIT"
+maintainers = ["chnsagitchen"]
 name = "llama-index-readers-opensearch"
 readme = "README.md"
 version = "0.1.1"

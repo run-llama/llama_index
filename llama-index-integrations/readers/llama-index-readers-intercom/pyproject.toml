@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers intercom integration"
+keywords = ["help center", "intercom", "knowledge base"]
 license = "MIT"
+maintainers = ["bbornsztein"]
 name = "llama-index-readers-intercom"
 readme = "README.md"
 version = "0.1.1"

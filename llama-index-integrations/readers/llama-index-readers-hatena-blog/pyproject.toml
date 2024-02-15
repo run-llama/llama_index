@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers hatena_blog integration"
+keywords = ["blog", "hatena"]
 license = "MIT"
+maintainers = ["Shoya SHIRAKI"]
 name = "llama-index-readers-hatena-blog"
 readme = "README.md"
 version = "0.1.1"

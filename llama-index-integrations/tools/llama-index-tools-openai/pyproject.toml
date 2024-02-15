@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index tools openai_image_generation integration"
+keywords = ["cv", "gpt-3", "image", "openai", "vision"]
 license = "MIT"
+maintainers = ["manelferreira_"]
 name = "llama-index-tools-openai-image-generation"
 readme = "README.md"
 version = "0.1.1"

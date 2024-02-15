@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers metal integration"
+keywords = ["metal", "retriever", "storage"]
 license = "MIT"
+maintainers = ["getmetal"]
 name = "llama-index-readers-metal"
 readme = "README.md"
 version = "0.1.1"

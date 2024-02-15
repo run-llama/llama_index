@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers linear integration"
+keywords = ["linear"]
 license = "MIT"
+maintainers = ["Sushmithamallesh"]
 name = "llama-index-readers-linear"
 readme = "README.md"
 version = "0.1.1"

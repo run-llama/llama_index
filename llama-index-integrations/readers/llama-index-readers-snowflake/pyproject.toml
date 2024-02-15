@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers snowflake integration"
+keywords = ["data warehouse", "database", "snowflake", "warehouse"]
 license = "MIT"
+maintainers = ["godwin3737"]
 name = "llama-index-readers-snowflake"
 readme = "README.md"
 version = "0.1.1"

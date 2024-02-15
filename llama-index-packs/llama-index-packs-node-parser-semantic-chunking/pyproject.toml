@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs node_parser integration"
+keywords = ["chunk", "chunking", "embedding", "node", "parser", "semantic"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-packs-node-parser"
 readme = "README.md"
 version = "0.1.1"
