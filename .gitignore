@@ -6,3 +6,4 @@ venv/
 .__pycache__
 dev_notebooks/
 llamaindex_registry.txt
+packages_to_bump_deduped.txt

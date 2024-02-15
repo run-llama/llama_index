@@ -1,3 +1,3 @@
-from llama_index.llms.vllm.base import Vllm
+from llama_index.llms.vllm.base import Vllm, VllmServer
 
-__all__ = ["Vllm"]
+__all__ = ["Vllm", "VllmServer"]
