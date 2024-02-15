@@ -5,15 +5,15 @@ from typing import Any, Type
 from llama_index import (
     LLMPredictor,
     ServiceContext,
-    SimpleKeywordTableIndex,
     VectorStoreIndex,
 )
 from llama_index.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.indices import SimpleKeywordTableIndex
 from llama_index.indices.base import BaseIndex
 from llama_index.indices.loading import load_index_from_storage
 from llama_index.llm_predictor import StructuredLLMPredictor
-from llama_index.llms.base import LLM
+from llama_index.llms.llm import LLM
 from llama_index.llms.openai import OpenAI
 from llama_index.storage.storage_context import StorageContext
 

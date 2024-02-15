@@ -3,9 +3,9 @@
 By default, LlamaIndex hides away the complexities and let you query your data in under 5 lines of code:
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
-documents = SimpleDirectoryReader('data').load_data()
+documents = SimpleDirectoryReader("data").load_data()
 index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()
 response = query_engine.query("Summarize the documents.")
@@ -26,13 +26,13 @@ index = VectorStoreIndex.from_documents(documents)
 we use a lower-level API that gives more granular control:
 
 ```python
-from llama_index.storage.docstore import SimpleDocumentStore
-from llama_index.storage.index_store import SimpleIndexStore
-from llama_index.vector_stores import SimpleVectorStore
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.core.storage.index_store import SimpleIndexStore
+from llama_index.core.vector_stores import SimpleVectorStore
+from llama_index.core.node_parser import SentenceSplitter
 
 # create parser and parse document into nodes
-parser = SimpleNodeParser.from_defaults()
+parser = SentenceSplitter()
 nodes = parser.get_nodes_from_documents(documents)
 
 # create storage context using default stores
@@ -57,25 +57,24 @@ index.storage_context.persist(persist_dir="<persist_dir>")
 
 # to load index later, make sure you setup the storage context
 # this will loaded the persisted stores from persist_dir
-storage_context = StorageContext.from_defaults(
-    persist_dir="<persist_dir>"
-)
+storage_context = StorageContext.from_defaults(persist_dir="<persist_dir>")
 
 # then load the index object
-from llama_index import load_index_from_storage
+from llama_index.core import load_index_from_storage
+
 loaded_index = load_index_from_storage(storage_context)
 
 # if loading an index from a persist_dir containing multiple indexes
 loaded_index = load_index_from_storage(storage_context, index_id="<index_id>")
 
 # if loading multiple indexes from a persist dir
-loaded_indicies = load_index_from_storage(storage_context, index_ids=["<index_id>", ...])
+loaded_indicies = load_index_from_storage(
+    storage_context, index_ids=["<index_id>", ...]
+)
 ```
 
 You can customize the underlying storage with a one-line change to instantiate different document stores, index stores, and vector stores.
 See [Document Stores](./docstores.md), [Vector Stores](./vector_stores.md), [Index Stores](./index_stores.md) guides for more details.
-
-For saving and loading a graph/composable index, see the [full guide](/module_guides/indexing/composability.md).
 
 ### Vector Store Integrations and Storage
 
@@ -83,13 +82,14 @@ Most of our vector store integrations store the entire index (vectors + text) in
 
 The vector stores that support this practice are:
 
-- CognitiveSearchVectorStore
+- AzureAISearchVectorStore
 - ChatGPTRetrievalPluginClient
 - CassandraVectorStore
 - ChromaVectorStore
 - EpsillaVectorStore
 - DocArrayHnswVectorStore
 - DocArrayInMemoryVectorStore
+- JaguarVectorStore
 - LanceDBVectorStore
 - MetalVectorStore
 - MilvusVectorStore
@@ -98,23 +98,21 @@ The vector stores that support this practice are:
 - PineconeVectorStore
 - QdrantVectorStore
 - RedisVectorStore
+- UpstashVectorStore
 - WeaviateVectorStore
 
 A small example using Pinecone is below:
 
 ```python
 import pinecone
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.vector_stores import PineconeVectorStore
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.vector_stores.pinecone import PineconeVectorStore
 
 # Creating a Pinecone index
 api_key = "api_key"
 pinecone.init(api_key=api_key, environment="us-west1-gcp")
 pinecone.create_index(
-    "quickstart",
-    dimension=1536,
-    metric="euclidean",
-    pod_type="p1"
+    "quickstart", dimension=1536, metric="euclidean", pod_type="p1"
 )
 index = pinecone.Index("quickstart")
 
@@ -128,7 +126,9 @@ storage_context = StorageContext.from_defaults(vector_store=vector_store)
 documents = SimpleDirectoryReader("./data").load_data()
 
 # create index, which will insert documents/vectors to pinecone
-index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(
+    documents, storage_context=storage_context
+)
 ```
 
 If you have an existing vector store with data already loaded in,

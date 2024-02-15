@@ -3,10 +3,10 @@
 ## A guide for docs contributors
 
 The `docs` directory contains the sphinx source text for LlamaIndex docs, visit
-https://gpt-index.readthedocs.io/ to read the full documentation.
+https://docs.llamaindex.ai/en/stable/ to read the full documentation.
 
 This guide is made for anyone who's interested in running LlamaIndex documentation locally,
-making changes to it and make contributions. LlamaIndex is made by the thriving community
+making changes to it and making contributions. LlamaIndex is made by the thriving community
 behind it, and you're always welcome to make contributions to the project and the
 documentation.
 

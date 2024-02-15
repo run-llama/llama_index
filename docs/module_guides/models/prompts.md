@@ -16,7 +16,7 @@ Users may also provide their own prompt templates to further customize the behav
 Using prompts is simple.
 
 ```python
-from llama_index.prompts import PromptTemplate
+from llama_index.core import PromptTemplate
 
 template = (
     "We have provided context information below. \n"
@@ -64,4 +64,14 @@ maxdepth: 1
 /examples/prompts/prompt_mixin.ipynb
 /examples/prompts/advanced_prompts.ipynb
 /examples/prompts/prompts_rag.ipynb
+```
+
+Experimental
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/prompts/prompt_optimization.ipynb
+/examples/prompts/emotion_prompt.ipynb
 ```

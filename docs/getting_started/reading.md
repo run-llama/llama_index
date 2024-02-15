@@ -14,7 +14,7 @@ Our docs are structured so you should be able to roughly progress simply by movi
 
 1. **Getting started**
 
-   The section you're in right now. We can get you going from knowing nothing about LlamaIndex and LLMs. [Install the library](installation.md), write your first demo in [five lines of code](starter_example.md), learn more about the [high level concepts](concepts.md) of LLM applications and then see how you can [customize the five-line example](customization.rst) to meet your needs.
+   The section you're in right now. We can get you going from knowing nothing about LlamaIndex and LLMs. [Install the library](installation.md), write your first demo in [five lines of code](starter_example.md), learn more about the [high level concepts](concepts.md) of LLM applications, and then see how you can [customize the five-line example](customization.rst) to meet your needs.
 
 2. **Use cases**
 
@@ -22,7 +22,7 @@ Our docs are structured so you should be able to roughly progress simply by movi
 
 3. **Understanding LlamaIndex**
 
-   Once you've completed the Getting Started section, this is the next place to go. In a series of bite-sized tutorials we'll walk you through every stage of building a production LlamaIndex application and help you level up on the concepts of the library and LLMs in general as you go.
+   Once you've completed the Getting Started section, this is the next place to go. In a series of bite-sized tutorials, we'll walk you through every stage of building a production LlamaIndex application and help you level up on the concepts of the library and LLMs in general as you go.
 
 4. **Optimizing**
 

@@ -1,6 +1,6 @@
 # How to Build a Chatbot
 
-LlamaIndex serves as a bridge between your data and Language Learning Models (LLMs), providing a toolkit that enables you to establish a query interface around your data for a variety of tasks, such as question-answering and summarization.
+LlamaIndex serves as a bridge between your data and Large Language Models (LLMs), providing a toolkit that enables you to establish a query interface around your data for a variety of tasks, such as question-answering and summarization.
 
 In this tutorial, we'll walk you through building a context-augmented chatbot using a [Data Agent](https://gpt-index.readthedocs.io/en/stable/core_modules/agent_modules/agents/root.html). This agent, powered by LLMs, is capable of intelligently executing tasks over your data. The end result is a chatbot agent equipped with a robust set of data interface tools provided by LlamaIndex to answer queries about your data.
 
@@ -28,7 +28,7 @@ nest_asyncio.apply()
 
 Let's first download the raw 10-k files, from 2019-2022.
 
-```python
+```
 # NOTE: the code examples assume you're operating within a Jupyter notebook.
 # download files
 !mkdir data
@@ -40,14 +40,14 @@ To parse the HTML files into formatted text, we use the [Unstructured](https://g
 
 First we install the necessary packages:
 
-```python
+```
 !pip install llama-hub unstructured
 ```
 
 Then we can use the `UnstructuredReader` to parse the HTML files into a list of `Document` objects.
 
 ```python
-from llama_hub.file.unstructured.base import UnstructuredReader
+from llama_index.readers.file import UnstructuredReader
 from pathlib import Path
 
 years = [2022, 2021, 2020, 2019]
@@ -75,15 +75,15 @@ We build each index and save it to disk.
 
 ```python
 # initialize simple vector indices
-from llama_index import VectorStoreIndex, ServiceContext, StorageContext
+from llama_index.core import VectorStoreIndex, StorageContext
+from llama_index.core import Settings
 
+Settings.chunk_size = 512
 index_set = {}
-service_context = ServiceContext.from_defaults(chunk_size=512)
 for year in years:
     storage_context = StorageContext.from_defaults()
     cur_index = VectorStoreIndex.from_documents(
         doc_set[year],
-        service_context=service_context,
         storage_context=storage_context,
     )
     index_set[year] = cur_index
@@ -94,13 +94,15 @@ To load an index from disk, do the following
 
 ```python
 # Load indices from disk
-from llama_index import load_index_from_storage
+from llama_index.core import load_index_from_storage
 
 index_set = {}
 for year in years:
-    storage_context = StorageContext.from_defaults(persist_dir=f"./storage/{year}")
+    storage_context = StorageContext.from_defaults(
+        persist_dir=f"./storage/{year}"
+    )
     cur_index = load_index_from_storage(
-        storage_context, service_context=service_context
+        storage_context,
     )
     index_set[year] = cur_index
 ```
@@ -115,7 +117,7 @@ LlamaIndex provides some wrappers around indices (and query engines) so that the
 Each tool has a name and a description; these are what the LLM agent sees to decide which tool to choose.
 
 ```python
-from llama_index.tools import QueryEngineTool, ToolMetadata
+from llama_index.core.tools import QueryEngineTool, ToolMetadata
 
 individual_query_engine_tools = [
     QueryEngineTool(
@@ -129,14 +131,15 @@ individual_query_engine_tools = [
 ]
 ```
 
-Now we can create the Sub Question Query Engine, which will allow us to synthesize answers across the 10-K filings. We pass in the `individual_query_engine_tools` we defined above, as well as a `service_context` that will be used to run the subqueries.
+Now we can create the Sub Question Query Engine, which will allow us to synthesize answers across the 10-K filings. We pass in the `individual_query_engine_tools` we defined above, as well as an `llm` that will be used to run the subqueries.
 
 ```python
-from llama_index.query_engine import SubQuestionQueryEngine
+from llama_index.llms.openai import OpenAI
+from llama_index.core.query_engine import SubQuestionQueryEngine
 
 query_engine = SubQuestionQueryEngine.from_defaults(
     query_engine_tools=individual_query_engine_tools,
-    service_context=service_context,
+    llm=OpenAI(model="gpt-3.5-turbo"),
 )
 ```
 
@@ -165,7 +168,7 @@ tools = individual_query_engine_tools + [query_engine_tool]
 Finally, we call `OpenAIAgent.from_tools` to create the agent, passing in the list of tools we defined above.
 
 ```python
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 agent = OpenAIAgent.from_tools(tools, verbose=True)
 ```
@@ -189,7 +192,9 @@ If we test it with a query regarding the 10-k of a given year, the agent will us
 the relevant vector index Tool.
 
 ```python
-response = agent.chat("What were some of the biggest risk factors in 2020 for Uber?")
+response = agent.chat(
+    "What were some of the biggest risk factors in 2020 for Uber?"
+)
 print(str(response))
 ```
 

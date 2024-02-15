@@ -23,15 +23,17 @@ Here is a sample code snippet of showing how to load a document from LlamaHub
 into the JSON format that `/upsert` expects:
 
 ```python
-from llama_index import download_loader, Document
+from llama_index.core import download_loader, Document
 from typing import Dict, List
 import json
 
 # download loader, load documents
-SimpleWebPageReader = download_loader("SimpleWebPageReader")
+from llama_index.readers.web import SimpleWebPageReader
+
 loader = SimpleWebPageReader(html_to_text=True)
 url = "http://www.paulgraham.com/worked.html"
 documents = loader.load_data(urls=[url])
+
 
 # Convert LlamaIndex Documents to JSON format
 def dump_docs_to_json(documents: List[Document], out_path: str) -> Dict:
@@ -51,8 +53,7 @@ def dump_docs_to_json(documents: List[Document], out_path: str) -> Dict:
         }
         result_json.append(cur_dict)
 
-    json.dump(result_json, open(out_path, 'w'))
-
+    json.dump(result_json, open(out_path, "w"))
 ```
 
 For more details, check out the [full example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/chatgpt_plugin/ChatGPT_Retrieval_Plugin_Upload.ipynb).
@@ -66,28 +67,25 @@ It allows you to easily load data from any docstore that implements the plugin A
 Example code:
 
 ```python
-from llama_index.readers import ChatGPTRetrievalPluginReader
+from llama_index.readers.chatgpt_plugin import ChatGPTRetrievalPluginReader
 import os
 
 # load documents
 bearer_token = os.getenv("BEARER_TOKEN")
 reader = ChatGPTRetrievalPluginReader(
-    endpoint_url="http://localhost:8000",
-    bearer_token=bearer_token
+    endpoint_url="http://localhost:8000", bearer_token=bearer_token
 )
 documents = reader.load_data("What did the author do growing up?")
 
 # build and query index
-from llama_index import SummaryIndex
+from llama_index.core import SummaryIndex
+
 index = SummaryIndex.from_documents(documents)
 # set Logging to DEBUG for more detailed outputs
-query_engine = vector_index.as_query_engine(
-    response_mode="compact"
-)
+query_engine = vector_index.as_query_engine(response_mode="compact")
 response = query_engine.query(
     "Summarize the retrieved content and describe what the author did growing up",
 )
-
 ```
 
 For more details, check out the [full example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/chatgpt_plugin/ChatGPTRetrievalPluginReaderDemo.ipynb).
@@ -102,12 +100,12 @@ Note: this index is a vector index, allowing top-k retrieval.
 Example code:
 
 ```python
-from llama_index.indices.vector_store import ChatGPTRetrievalPluginIndex
-from llama_index import SimpleDirectoryReader
+from llama_index.core.indices.vector_store import ChatGPTRetrievalPluginIndex
+from llama_index.core import SimpleDirectoryReader
 import os
 
 # load documents
-documents = SimpleDirectoryReader('../paul_graham_essay/data').load_data()
+documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 
 # build index
 bearer_token = os.getenv("BEARER_TOKEN")
@@ -124,7 +122,6 @@ query_engine = vector_index.as_query_engine(
     response_mode="compact",
 )
 response = query_engine.query("What did the author do growing up?")
-
 ```
 
 For more details, check out the [full example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/chatgpt_plugin/ChatGPTRetrievalPluginIndexDemo.ipynb).

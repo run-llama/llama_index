@@ -1,9 +1,8 @@
 from typing import Callable, Dict
 
 from eval import contains_expected_response
-from task import Task
-
 from llama_index.tools.function_tool import FunctionTool
+from task import Task
 
 
 def add(a: int, b: int) -> int:

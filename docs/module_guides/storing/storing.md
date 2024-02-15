@@ -10,6 +10,7 @@ Under the hood, LlamaIndex also supports swappable **storage components** that a
 - **Index stores**: where index metadata are stored,
 - **Vector stores**: where embedding vectors are stored.
 - **Graph stores**: where knowledge graphs are stored (i.e. for `KnowledgeGraphIndex`).
+- **Chat Stores**: where chat messages are stored and organized.
 
 The Document/Index stores rely on a common Key-Value store abstraction, which is also detailed below.
 
@@ -27,17 +28,17 @@ We have confirmed support for the following storage backends:
 Many vector stores (except FAISS) will store both the data as well as the index (embeddings). This means that you will not need to use a separate document store or index store. This _also_ means that you will not need to explicitly persist this data - this happens automatically. Usage would look something like the following to build a new index / reload an existing one.
 
 ```python
-
 ## build a new index
-from llama_index import VectorStoreIndex, StorageContext
-from llama_index.vector_stores import DeepLakeVectorStore
+from llama_index.core import VectorStoreIndex, StorageContext
+from llama_index.vector_stores.deeplake import DeepLakeVectorStore
+
 # construct vector store and customize storage context
 vector_store = DeepLakeVectorStore(dataset_path="<dataset_path>")
-storage_context = StorageContext.from_defaults(
-    vector_store = vector_store
-)
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
 # Load documents and build index
-index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+index = VectorStoreIndex.from_documents(
+    documents, storage_context=storage_context
+)
 
 
 ## reload an existing one
@@ -49,10 +50,10 @@ See our [Vector Store Module Guide](vector_stores.md) below for more details.
 Note that in general to use storage abstractions, you need to define a `StorageContext` object:
 
 ```python
-from llama_index.storage.docstore import SimpleDocumentStore
-from llama_index.storage.index_store import SimpleIndexStore
-from llama_index.vector_stores import SimpleVectorStore
-from llama_index.storage import StorageContext
+from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.core.storage.index_store import SimpleIndexStore
+from llama_index.core.vector_stores import SimpleVectorStore
+from llama_index.core import StorageContext
 
 # create storage context using default stores
 storage_context = StorageContext.from_defaults(
@@ -85,4 +86,5 @@ docstores.md
 index_stores.md
 kv_stores.md
 /community/integrations/graph_stores.md
+chat_stores.md
 ```

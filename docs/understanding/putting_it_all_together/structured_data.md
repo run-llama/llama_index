@@ -20,7 +20,16 @@ A notebook for this tutorial is [available here](../../examples/index_structs/st
 First, we use SQLAlchemy to setup a simple sqlite db:
 
 ```python
-from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, select, column
+from sqlalchemy import (
+    create_engine,
+    MetaData,
+    Table,
+    Column,
+    String,
+    Integer,
+    select,
+    column,
+)
 
 engine = create_engine("sqlite:///:memory:")
 metadata_obj = MetaData()
@@ -49,6 +58,7 @@ to directly populate this table:
 
 ```python
 from sqlalchemy import insert
+
 rows = [
     {"city_name": "Toronto", "population": 2731571, "country": "Canada"},
     {"city_name": "Tokyo", "population": 13929286, "country": "Japan"},
@@ -56,7 +66,7 @@ rows = [
 ]
 for row in rows:
     stmt = insert(city_stats_table).values(**row)
-    with engine.connect() as connection:
+    with engine.begin() as connection:
         cursor = connection.execute(stmt)
 ```
 
@@ -64,7 +74,7 @@ Finally, we can wrap the SQLAlchemy engine with our SQLDatabase wrapper;
 this allows the db to be used within LlamaIndex:
 
 ```python
-from llama_index import SQLDatabase
+from llama_index.core import SQLDatabase
 
 sql_database = SQLDatabase(engine, include_tables=["city_stats"])
 ```
@@ -79,15 +89,13 @@ If we don't the query engine will pull all the schema context, which could
 overflow the context window of the LLM.
 
 ```python
-from llama_index.indices.struct_store import NLSQLTableQueryEngine
+from llama_index.core.query_engine import NLSQLTableQueryEngine
 
 query_engine = NLSQLTableQueryEngine(
     sql_database=sql_database,
     tables=["city_stats"],
 )
-query_str = (
-    "Which city has the highest population?"
-)
+query_str = "Which city has the highest population?"
 response = query_engine.query(query_str)
 ```
 
@@ -106,10 +114,17 @@ SQLDatabase and produces a Node object for each SQLTableSchema object passed
 into the ObjectIndex constructor.
 
 ```python
-from llama_index.objects import SQLTableNodeMapping, ObjectIndex, SQLTableSchema
+from llama_index.core.objects import (
+    SQLTableNodeMapping,
+    ObjectIndex,
+    SQLTableSchema,
+)
 
 table_node_mapping = SQLTableNodeMapping(sql_database)
-table_schema_objs = [(SQLTableSchema(table_name="city_stats")), ...] # one SQLTableSchema for each table
+table_schema_objs = [
+    (SQLTableSchema(table_name="city_stats")),
+    ...,
+]  # one SQLTableSchema for each table
 
 obj_index = ObjectIndex.from_objects(
     table_schema_objs,
@@ -133,7 +148,9 @@ city_stats_text = (
 )
 
 table_node_mapping = SQLTableNodeMapping(sql_database)
-table_schema_objs = [(SQLTableSchema(table_name="city_stats", context_str=city_stats_text))]
+table_schema_objs = [
+    (SQLTableSchema(table_name="city_stats", context_str=city_stats_text))
+]
 ```
 
 ## Using natural language SQL queries
@@ -142,7 +159,7 @@ Once we have defined our table schema index obj_index, we can construct a SQLTab
 by passing in our SQLDatabase, and a retriever constructed from our object index.
 
 ```python
-from llama_index.indices.struct_store import SQLTableRetrieverQueryEngine
+from llama_index.core.indices.struct_store import SQLTableRetrieverQueryEngine
 
 query_engine = SQLTableRetrieverQueryEngine(
     sql_database, obj_index.as_retriever(similarity_top_k=1)

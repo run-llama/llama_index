@@ -5,7 +5,7 @@
 Defining a custom prompt is as simple as creating a format string
 
 ```python
-from llama_index.prompts import PromptTemplate
+from llama_index.core import PromptTemplate
 
 template = (
     "We have provided context information below. \n"
@@ -28,7 +28,8 @@ messages = qa_template.format_messages(context_str=..., query_str=...)
 You can also define a template from chat messages
 
 ```python
-from llama_index.prompts import ChatPromptTemplate, ChatMessage, MessageRole
+from llama_index.core import ChatPromptTemplate
+from llama_index.core.llms import ChatMessage, MessageRole
 
 message_templates = [
     ChatMessage(content="You are an expert system.", role=MessageRole.SYSTEM),
@@ -71,7 +72,6 @@ For instance, take a look at the following snippet.
 query_engine = index.as_query_engine(response_mode="compact")
 prompts_dict = query_engine.get_prompts()
 print(list(prompts_dict.keys()))
-
 ```
 
 You might get back the following keys:
@@ -90,7 +90,6 @@ obtained through `get_prompts`.
 e.g. regarding the example above, we might do the following
 
 ```python
-
 # shakespeare!
 qa_prompt_tmpl_str = (
     "Context information is below.\n"
@@ -107,7 +106,6 @@ qa_prompt_tmpl = PromptTemplate(qa_prompt_tmpl_str)
 query_engine.update_prompts(
     {"response_synthesizer:text_qa_template": qa_prompt_tmpl}
 )
-
 ```
 
 #### Modify prompts used in query engine
@@ -120,8 +118,7 @@ There are also two equivalent ways to override the prompts:
 
 ```python
 query_engine = index.as_query_engine(
-    text_qa_template=<custom_qa_prompt>,
-    refine_template=<custom_refine_prompt>
+    text_qa_template=custom_qa_prompt, refine_template=custom_refine_prompt
 )
 ```
 
@@ -130,8 +127,7 @@ query_engine = index.as_query_engine(
 ```python
 retriever = index.as_retriever()
 synth = get_response_synthesizer(
-    text_qa_template=<custom_qa_prompt>,
-    refine_template=<custom_refine_prompt>
+    text_qa_template=custom_qa_prompt, refine_template=custom_refine_prompt
 )
 query_engine = RetrieverQueryEngine(retriever, response_synthesizer)
 ```
@@ -156,13 +152,13 @@ There are two equivalent ways to override the prompts:
 1. via the default nodes constructor
 
 ```python
-index = TreeIndex(nodes, summary_template=<custom_prompt>)
+index = TreeIndex(nodes, summary_template=custom_prompt)
 ```
 
 2. via the documents constructor.
 
 ```python
-index = TreeIndex.from_documents(docs, summary_template=<custom_prompt>)
+index = TreeIndex.from_documents(docs, summary_template=custom_prompt)
 ```
 
 For more details on which index uses which prompts, please visit
@@ -182,14 +178,13 @@ Related Guides:
 Partially format a prompt, filling in some variables while leaving others to be filled in later.
 
 ```python
-from llama_index.prompts import PromptTemplate
+from llama_index.core import PromptTemplate
 
 prompt_tmpl_str = "{foo} {bar}"
 prompt_tmpl = PromptTemplate(prompt_tmpl_str)
 partial_prompt_tmpl = prompt_tmpl.partial_format(foo="abc")
 
 fmt_str = partial_prompt_tmpl.format(bar="def")
-
 ```
 
 #### Template Variable Mappings
@@ -201,13 +196,11 @@ But if you're trying to adapt a string template for use with LlamaIndex, it can 
 Instead, define `template_var_mappings`:
 
 ```python
-
 template_var_mappings = {"context_str": "my_context", "query_str": "my_query"}
 
 prompt_tmpl = PromptTemplate(
     qa_prompt_tmpl_str, template_var_mappings=template_var_mappings
 )
-
 ```
 
 #### Function Mappings
@@ -225,10 +218,10 @@ def format_context_fn(**kwargs):
     fmtted_context = "\n\n".join([f"- {c}" for c in context_list])
     return fmtted_context
 
+
 prompt_tmpl = PromptTemplate(
     qa_prompt_tmpl_str, function_mappings={"context_str": format_context_fn}
 )
 
-prompt_tmpl.format(context_str="<context>", query_str="<query>")
-
+prompt_tmpl.format(context_str="context", query_str="query")
 ```

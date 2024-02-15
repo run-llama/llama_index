@@ -39,10 +39,7 @@ Configuring a chat engine is very similar to configuring a query engine.
 You can directly build and configure a chat engine from an index in 1 line of code:
 
 ```python
-chat_engine = index.as_chat_engine(
-    chat_mode='condense_question',
-    verbose=True
-)
+chat_engine = index.as_chat_engine(chat_mode="condense_question", verbose=True)
 ```
 
 > Note: you can access different chat engines by specifying the `chat_mode` as a kwarg. `condense_question` corresponds to `CondenseQuestionChatEngine`, `react` corresponds to `ReActChatEngine`, `context` corresponds to a `ContextChatEngine`.
@@ -52,8 +49,9 @@ chat_engine = index.as_chat_engine(
 #### Available Chat Modes
 
 - `best` - Turn the query engine into a tool, for use with a `ReAct` data agent or an `OpenAI` data agent, depending on what your LLM supports. `OpenAI` data agents require `gpt-3.5-turbo` or `gpt-4` as they use the function calling API from OpenAI.
-- `context` - Retrieve nodes from the index using every user message. The retrieved text is inserted into the system prompt, so that the chat engine can either respond naturally or use the context from the query engine.
 - `condense_question` - Look at the chat history and re-write the user message to be a query for the index. Return the response after reading the response from the query engine.
+- `context` - Retrieve nodes from the index using every user message. The retrieved text is inserted into the system prompt, so that the chat engine can either respond naturally or use the context from the query engine.
+- `condense_plus_context` - A combination of `condense_question` and `context`. Look at the chat history and re-write the user message to be a retrieval query for the index. The retrieved text is inserted into the system prompt, so that the chat engine can either respond naturally or use the context from the query engine.
 - `simple` - A simple chat with the LLM directly, no query engine involved.
 - `react` - Same as `best`, but forces a `ReAct` data agent.
 - `openai` - Same as `best`, but forces an `OpenAI` data agent.
@@ -72,11 +70,12 @@ Here's an example where we configure the following:
 - print verbose debug message.
 
 ```python
-from llama_index.prompts  import PromptTemplate
-from llama_index.llms import ChatMessage, MessageRole
-from llama_index.chat_engine.condense_question import CondenseQuestionChatEngine
+from llama_index.core import PromptTemplate
+from llama_index.core.llms import ChatMessage, MessageRole
+from llama_index.core.chat_engine import CondenseQuestionChatEngine
 
-custom_prompt = PromptTemplate("""\
+custom_prompt = PromptTemplate(
+    """\
 Given a conversation (between Human and Assistant) and a follow up message from Human, \
 rewrite the message to be a standalone question that captures all relevant context \
 from the conversation.
@@ -88,18 +87,16 @@ from the conversation.
 {question}
 
 <Standalone question>
-""")
+"""
+)
 
 # list of `ChatMessage` objects
 custom_chat_history = [
     ChatMessage(
         role=MessageRole.USER,
-        content='Hello assistant, we are having a insightful discussion about Paul Graham today.'
+        content="Hello assistant, we are having a insightful discussion about Paul Graham today.",
     ),
-    ChatMessage(
-        role=MessageRole.ASSISTANT,
-        content='Okay, sounds good.'
-    )
+    ChatMessage(role=MessageRole.ASSISTANT, content="Okay, sounds good."),
 ]
 
 query_engine = index.as_query_engine()
@@ -107,7 +104,7 @@ chat_engine = CondenseQuestionChatEngine.from_defaults(
     query_engine=query_engine,
     condense_question_prompt=custom_prompt,
     chat_history=custom_chat_history,
-    verbose=True
+    verbose=True,
 )
 ```
 

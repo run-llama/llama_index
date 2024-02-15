@@ -22,30 +22,40 @@ Here are some simple snippets to get started with Documents and Nodes.
 #### Documents
 
 ```python
-from llama_index import Document, VectorStoreIndex
+from llama_index.core import Document, VectorStoreIndex
 
 text_list = [text1, text2, ...]
 documents = [Document(text=t) for t in text_list]
 
 # build index
 index = VectorStoreIndex.from_documents(documents)
-
 ```
 
 #### Nodes
 
 ```python
-
-from llama_index.node_parser import SimpleNodeParser
+from llama_index.core.node_parser import SentenceSplitter
 
 # load documents
 ...
 
 # parse nodes
-parser = SimpleNodeParser.from_defaults()
+parser = SentenceSplitter()
 nodes = parser.get_nodes_from_documents(documents)
 
 # build index
 index = VectorStoreIndex(nodes)
+```
 
+### Document/Node Usage
+
+Take a look at our in-depth guides for more details on how to use Documents/Nodes.
+
+```{toctree}
+---
+maxdepth: 1
+---
+usage_documents.md
+usage_nodes.md
+../ingestion_pipeline/transformations.md
 ```

@@ -16,9 +16,10 @@ Below we show specific chat engine implementations.
 
    chat_engines/simple_chat_engine.rst
    chat_engines/condense_question_chat_engine.rst
+   chat_engines/condense_plus_context_chat_engine.rst
 
 Chat Engine Types
 ^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: llama_index.chat_engine.types
+.. automodule:: llama_index.core.chat_engine.types
    :members:
    :inherited-members:

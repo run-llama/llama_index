@@ -16,30 +16,37 @@ The following shows the setup for utilizing all kwargs.
 In the `synthesize`/`asyntheszie` functions, you can optionally provide additional source nodes, which will be added to the `response.source_nodes` list.
 
 ```python
-from llama_index.schema import Node, NodeWithScore
-from llama_index import get_response_synthesizer
+from llama_index.core.data_structs import Node
+from llama_index.core.schema import NodeWithScore
+from llama_index.core import get_response_synthesizer
 
 response_synthesizer = get_response_synthesizer(
-  response_mode="refine",
-  service_context=service_context,
-  text_qa_template=text_qa_template,
-  refine_template=refine_template,
-  use_async=False,
-  streaming=False
+    response_mode="refine",
+    service_context=service_context,
+    text_qa_template=text_qa_template,
+    refine_template=refine_template,
+    use_async=False,
+    streaming=False,
 )
 
 # synchronous
 response = response_synthesizer.synthesize(
-  "query string",
-  nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..],
-  additional_source_nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..],
+    "query string",
+    nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ...],
+    additional_source_nodes=[
+        NodeWithScore(node=Node(text="text"), score=1.0),
+        ...,
+    ],
 )
 
 # asynchronous
 response = await response_synthesizer.asynthesize(
-  "query string",
-  nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..],
-  additional_source_nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ..],
+    "query string",
+    nodes=[NodeWithScore(node=Node(text="text"), score=1.0), ...],
+    additional_source_nodes=[
+        NodeWithScore(node=Node(text="text"), score=1.0),
+        ...,
+    ],
 )
 ```
 
@@ -47,8 +54,7 @@ You can also directly return a string, using the lower-level `get_response` and 
 
 ```python
 response_str = response_synthesizer.get_response(
-  "query string",
-  text_chunks=["text1", "text2", ...]
+    "query string", text_chunks=["text1", "text2", ...]
 )
 ```
 
