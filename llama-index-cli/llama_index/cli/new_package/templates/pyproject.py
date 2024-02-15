@@ -26,7 +26,7 @@ readme = "README.md"
 packages = [{{include = "llama_index/"}}]
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
 
 [tool.poetry.group.dev.dependencies]

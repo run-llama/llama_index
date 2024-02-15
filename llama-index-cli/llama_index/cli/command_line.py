@@ -146,7 +146,7 @@ def main() -> None:
 
     # llama rag command
     llamarag_parser = subparsers.add_parser(
-        "rag", help="Ask a question to a document / a directory of documents."
+        "rag", help="Ask a question to a document or a directory of documents."
     )
     RagCLI.add_parser_args(llamarag_parser, default_rag_cli)
 
