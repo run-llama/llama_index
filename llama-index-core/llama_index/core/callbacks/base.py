@@ -141,6 +141,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
     @classmethod
     def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+        """Avoids serialization errors."""
         schema.update(type="object", default={})
 
     @contextmanager

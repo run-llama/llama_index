@@ -32,6 +32,7 @@ class BaseOutputParser(Protocol):
 
     @classmethod
     def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+        """Avoids serialization issues."""
         schema.update(type="object", default={})
 
     @abstractmethod

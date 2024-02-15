@@ -21,7 +21,6 @@ from llama_index.core.ingestion.api_utils import (
     get_pipeline_create,
 )
 from llama_index.core.schema import BaseNode, Document, TransformComponent
-from llama_index.core.service_context import ServiceContext
 
 
 class LlamaCloudIndex(BaseManagedIndex):
@@ -37,7 +36,6 @@ class LlamaCloudIndex(BaseManagedIndex):
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         app_url: Optional[str] = None,
-        service_context: Optional[ServiceContext] = None,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -45,11 +43,6 @@ class LlamaCloudIndex(BaseManagedIndex):
         self.name = name
         self.project_name = project_name
         self.transformations = transformations or []
-
-        if not service_context and len(self.transformations) == 0:
-            self.transformations = default_transformations()
-        elif service_context and len(self.transformations) == 0:
-            self.transformations = service_context.transformations
 
         if nodes is not None:
             # TODO: How to handle uploading nodes without running transforms on them?
@@ -63,7 +56,6 @@ class LlamaCloudIndex(BaseManagedIndex):
         self._app_url = app_url
         self._timeout = timeout
         self._show_progress = show_progress
-        self._service_context = service_context  # type: ignore
 
     @classmethod
     def from_documents(  # type: ignore
