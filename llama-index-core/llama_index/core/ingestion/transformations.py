@@ -271,7 +271,9 @@ def build_configurable_transformation_enum():
         pass
 
     try:
-        from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
+        from llama_index.embeddings.azure_openai import (
+            AzureOpenAIEmbedding,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -287,7 +289,9 @@ def build_configurable_transformation_enum():
         pass
 
     try:
-        from llama_index.embeddings.huggingface import HuggingFaceInferenceAPIEmbedding
+        from llama_index.embeddings.huggingface import (
+            HuggingFaceInferenceAPIEmbedding,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (

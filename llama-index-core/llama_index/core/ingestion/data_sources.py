@@ -92,7 +92,7 @@ def build_conifurable_data_source_enum():
     enum_members = []
 
     try:
-        from llama_index.readers.discord import DiscordReader
+        from llama_index.readers.discord import DiscordReader  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -107,7 +107,9 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.elasticsearch import ElasticsearchReader
+        from llama_index.readers.elasticsearch import (
+            ElasticsearchReader,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -122,7 +124,7 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.notion import NotionPageReader
+        from llama_index.readers.notion import NotionPageReader  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -137,7 +139,7 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.slack import SlackReader
+        from llama_index.readers.slack import SlackReader  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -152,7 +154,9 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.twitter import TwitterTweetReader
+        from llama_index.readers.twitter import (
+            TwitterTweetReader,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -167,7 +171,7 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.web import SimpleWebPageReader
+        from llama_index.readers.web import SimpleWebPageReader  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -182,7 +186,7 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.web import TrafilaturaWebReader
+        from llama_index.readers.web import TrafilaturaWebReader  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -197,7 +201,9 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.web import BeautifulSoupWebReader
+        from llama_index.readers.web import (
+            BeautifulSoupWebReader,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -212,7 +218,7 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.web import RssReader
+        from llama_index.readers.web import RssReader  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -227,7 +233,7 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.wikipedia import WikipediaReader
+        from llama_index.readers.wikipedia import WikipediaReader  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -242,7 +248,9 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
+        from llama_index.readers.youtube_transcript import (
+            YoutubeTranscriptReader,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -257,7 +265,7 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.google import GoogleDocsReader
+        from llama_index.readers.google import GoogleDocsReader  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -272,7 +280,7 @@ def build_conifurable_data_source_enum():
         pass
 
     try:
-        from llama_index.readers.google import GoogleSheetsReader
+        from llama_index.readers.google import GoogleSheetsReader  # pants: no-infer-dep
 
         enum_members.append(
             (

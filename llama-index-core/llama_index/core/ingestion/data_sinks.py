@@ -53,7 +53,9 @@ def build_conifurable_data_sink_enum():
     enum_members = []
 
     try:
-        from llama_index.vector_stores.chroma import ChromaVectorStore
+        from llama_index.vector_stores.chroma import (
+            ChromaVectorStore,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -68,7 +70,9 @@ def build_conifurable_data_sink_enum():
         pass
 
     try:
-        from llama_index.vector_stores.pinecone import PineconeVectorStore
+        from llama_index.vector_stores.pinecone import (
+            PineconeVectorStore,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -83,7 +87,9 @@ def build_conifurable_data_sink_enum():
         pass
 
     try:
-        from llama_index.vector_stores.postgres import PGVectorStore
+        from llama_index.vector_stores.postgres import (
+            PGVectorStore,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -98,7 +104,9 @@ def build_conifurable_data_sink_enum():
         pass
 
     try:
-        from llama_index.vector_stores.qdrant import QdrantVectorStore
+        from llama_index.vector_stores.qdrant import (
+            QdrantVectorStore,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (
@@ -113,7 +121,9 @@ def build_conifurable_data_sink_enum():
         pass
 
     try:
-        from llama_index.vector_stores.weaviate import WeaviateVectorStore
+        from llama_index.vector_stores.weaviate import (
+            WeaviateVectorStore,
+        )  # pants: no-infer-dep
 
         enum_members.append(
             (
