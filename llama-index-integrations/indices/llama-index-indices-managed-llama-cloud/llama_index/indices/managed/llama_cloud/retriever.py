@@ -5,8 +5,8 @@ from llama_index_client.resources.retrieval.client import OMIT
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.constants import DEFAULT_PROJECT_NAME
+from llama_index.core.ingestion.api_utils import get_aclient, get_client
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.indices.managed.llama_cloud.utils import get_aclient, get_client
 
 
 class LlamaCloudRetriever(BaseRetriever):

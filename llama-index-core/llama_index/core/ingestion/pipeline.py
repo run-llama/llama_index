@@ -16,7 +16,9 @@ from llama_index_client import (
     ConfigurableDataSourceNames,
     ConfigurableTransformationNames,
     Pipeline,
+    PipelineType,
     Project,
+    ProjectCreate,
 )
 from llama_index_client.client import PlatformApi
 
@@ -213,7 +215,9 @@ class IngestionPipeline(BaseModel):
     )
 
     documents: Optional[Sequence[Document]] = Field(description="Documents to ingest")
-    reader: Optional[ReaderConfig] = Field(description="Reader to use to read the data")
+    readers: Optional[List[ReaderConfig]] = Field(
+        description="Reader to use to read the data"
+    )
     vector_store: Optional[BasePydanticVectorStore] = Field(
         description="Vector store to use to store the data"
     )
@@ -246,7 +250,7 @@ class IngestionPipeline(BaseModel):
         name: str = DEFAULT_PIPELINE_NAME,
         project_name: str = DEFAULT_PROJECT_NAME,
         transformations: Optional[List[TransformComponent]] = None,
-        reader: Optional[ReaderConfig] = None,
+        readers: Optional[List[ReaderConfig]] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
@@ -260,18 +264,20 @@ class IngestionPipeline(BaseModel):
         if transformations is None:
             transformations = self._get_default_transformations()
 
+        api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
+
         super().__init__(
             name=name,
             project_name=project_name,
             transformations=transformations,
-            reader=reader,
+            readers=readers,
             documents=documents,
             vector_store=vector_store,
             cache=cache or IngestionCache(),
             docstore=docstore,
             docstore_strategy=docstore_strategy,
-            base_url=base_url,
-            app_url=app_url,
+            base_url=base_url or DEFAULT_BASE_URL,
+            app_url=app_url or DEFAULT_APP_URL,
             api_key=api_key,
             disable_cache=disable_cache,
         )
@@ -441,6 +447,49 @@ class IngestionPipeline(BaseModel):
             api_key=api_key,
             app_url=app_url,
         )
+
+    def register(
+        self,
+        verbose: bool = True,
+        documents: Optional[List[Document]] = None,
+        nodes: Optional[List[BaseNode]] = None,
+    ) -> str:
+        client = PlatformApi(base_url=self.base_url, token=self.api_key)
+
+        input_nodes = self._prepare_inputs(documents, nodes)
+
+        project = client.project.upsert_project(
+            request=ProjectCreate(name=self.project_name)
+        )
+        assert project.id is not None, "Project ID should not be None"
+
+        # avoid circular import
+        from llama_index.core.ingestion.api_utils import get_pipeline_create
+
+        pipeline_create = get_pipeline_create(
+            self.name,
+            client,
+            PipelineType.PLAYGROUND,
+            project_name=self.project_name,
+            transformations=self.transformations,
+            input_nodes=input_nodes,
+            readers=self.readers,
+        )
+
+        # upload
+        pipeline = client.project.upsert_pipeline_for_project(
+            project.id,
+            request=pipeline_create,
+        )
+        assert pipeline.id is not None, "Pipeline ID should not be None"
+
+        # Print playground URL if not running remote
+        if verbose:
+            print(
+                f"Pipeline available at: {self.app_url}/project/{project.id}/playground/{pipeline.id}"
+            )
+
+        return pipeline.id
 
     def run_remote(
         self,
@@ -530,8 +579,9 @@ class IngestionPipeline(BaseModel):
         if self.documents is not None:
             input_nodes += self.documents
 
-        if self.reader is not None:
-            input_nodes += self.reader.read()
+        if self.readers is not None:
+            for reader in self.readers:
+                input_nodes += reader.read()
 
         return input_nodes
 

@@ -5,19 +5,14 @@ This module maintains the list of transformations that are supported by the syst
 from enum import Enum
 from typing import Generic, Sequence, Type, TypeVar
 
-from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.embeddings import (
-    AzureOpenAIEmbedding,
-    HuggingFaceInferenceAPIEmbedding,
-    OpenAIEmbedding,
-)
-from llama_index.extractors import (
+from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.extractors import (
     KeywordExtractor,
     QuestionsAnsweredExtractor,
     SummaryExtractor,
     TitleExtractor,
 )
-from llama_index.node_parser import (
+from llama_index.core.node_parser import (
     CodeSplitter,
     HTMLNodeParser,
     JSONNodeParser,
@@ -26,7 +21,7 @@ from llama_index.node_parser import (
     SimpleFileNodeParser,
     TokenTextSplitter,
 )
-from llama_index.schema import BaseComponent, BaseNode, Document
+from llama_index.core.schema import BaseComponent, BaseNode, Document
 
 
 # Transform Input/Output Types
@@ -101,110 +96,216 @@ class ConfigurableTransformation(BaseModel):
     )
 
 
-class ConfigurableTransformations(Enum):
+def build_configurable_transformation_enum():
     """
-    Enumeration of all supported ConfigurableTransformation instances.
+    Build an enum of configurable transformations.
+    But conditional on if the corresponding component is available.
     """
 
-    ## Metadata Extractors
-    KEYWORD_EXTRACTOR = ConfigurableTransformation(
-        name="Keyword Extractor",
-        transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-        component_type=KeywordExtractor,
-    )
-    TITLE_EXTRACTOR = ConfigurableTransformation(
-        name="Title Extractor",
-        transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-        component_type=TitleExtractor,
-    )
-    SUMMARY_EXTRACTOR = ConfigurableTransformation(
-        name="Summary Extractor",
-        transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-        component_type=SummaryExtractor,
-    )
-    QUESTIONS_ANSWERED_EXTRACTOR = ConfigurableTransformation(
-        name="Questions Answered Extractor",
-        transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-        component_type=QuestionsAnsweredExtractor,
-    )
-
-    ## Node Parsers
-    CODE_NODE_PARSER = ConfigurableTransformation(
-        name="Code Splitter",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=CodeSplitter,
-    )
-    SENTENCE_AWARE_NODE_PARSER = ConfigurableTransformation(
-        name="Sentence Splitter",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=SentenceSplitter,
-    )
-    TOKEN_AWARE_NODE_PARSER = ConfigurableTransformation(
-        name="Token Text Splitter",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=TokenTextSplitter,
-    )
-    HTML_NODE_PARSER = ConfigurableTransformation(
-        name="HTML Node Parser",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=HTMLNodeParser,
-    )
-    MARKDOWN_NODE_PARSER = ConfigurableTransformation(
-        name="Markdown Node Parser",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=MarkdownNodeParser,
-    )
-    JSON_NODE_PARSER = ConfigurableTransformation(
-        name="JSON Node Parser",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=JSONNodeParser,
-    )
-    SIMPLE_FILE_NODE_PARSER = ConfigurableTransformation(
-        name="Simple File Node Parser",
-        transformation_category=TransformationCategories.NODE_PARSER,
-        component_type=SimpleFileNodeParser,
-    )
-
-    ## Embeddings
-    OPENAI_EMBEDDING = ConfigurableTransformation(
-        name="OpenAI Embedding",
-        transformation_category=TransformationCategories.EMBEDDING,
-        component_type=OpenAIEmbedding,
-    )
-    AZURE_EMBEDDING = ConfigurableTransformation(
-        name="Azure OpenAI Embedding",
-        transformation_category=TransformationCategories.EMBEDDING,
-        component_type=AzureOpenAIEmbedding,
-    )
-    HUGGINGFACE_API_EMBEDDING = ConfigurableTransformation(
-        name="HuggingFace API Embedding",
-        transformation_category=TransformationCategories.EMBEDDING,
-        component_type=HuggingFaceInferenceAPIEmbedding,
-    )
-
-    @classmethod
-    def from_component(cls, component: BaseComponent) -> "ConfigurableTransformations":
-        component_class = type(component)
-        for component_type in cls:
-            if component_type.value.component_type == component_class:
-                return component_type
-        raise ValueError(
-            f"Component {component} is not a supported transformation component."
-        )
-
-    def build_configured_transformation(
-        self, component: BaseComponent
-    ) -> "ConfiguredTransformation":
-        component_type = self.value.component_type
-        if not isinstance(component, component_type):
+    class ConfigurableComponent(Enum):
+        @classmethod
+        def from_component(
+            cls, component: BaseComponent
+        ) -> "ConfigurableTransformations":
+            component_class = type(component)
+            for component_type in cls:
+                if component_type.value.component_type == component_class:
+                    return component_type
             raise ValueError(
-                f"The enum value {self} is not compatible with component of "
-                f"type {type(component)}"
+                f"Component {component} is not a supported transformation component."
             )
-        return ConfiguredTransformation[component_type](  # type: ignore
-            component=component, name=self.value.name
-        )
 
+        def build_configured_transformation(
+            self, component: BaseComponent
+        ) -> "ConfiguredTransformation":
+            component_type = self.value.component_type
+            if not isinstance(component, component_type):
+                raise ValueError(
+                    f"The enum value {self} is not compatible with component of "
+                    f"type {type(component)}"
+                )
+            return ConfiguredTransformation[component_type](  # type: ignore
+                component=component, name=self.value.name
+            )
+
+    enum_members = []
+
+    # Metadata extractors
+    enum_members.append(
+        (
+            "KEYWORD_EXTRACTOR",
+            ConfigurableTransformation(
+                name="Keyword Extractor",
+                transformation_category=TransformationCategories.METADATA_EXTRACTOR,
+                component_type=KeywordExtractor,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "TITLE_EXTRACTOR",
+            ConfigurableTransformation(
+                name="Title Extractor",
+                transformation_category=TransformationCategories.METADATA_EXTRACTOR,
+                component_type=TitleExtractor,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "SUMMARY_EXTRACTOR",
+            ConfigurableTransformation(
+                name="Summary Extractor",
+                transformation_category=TransformationCategories.METADATA_EXTRACTOR,
+                component_type=SummaryExtractor,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "QUESTIONS_ANSWERED_EXTRACTOR",
+            ConfigurableTransformation(
+                name="Questions Answered Extractor",
+                transformation_category=TransformationCategories.METADATA_EXTRACTOR,
+                component_type=QuestionsAnsweredExtractor,
+            ),
+        )
+    )
+
+    # Node parsers
+    enum_members.append(
+        (
+            "CODE_NODE_PARSER",
+            ConfigurableTransformation(
+                name="Code Splitter",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=CodeSplitter,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "SENTENCE_AWARE_NODE_PARSER",
+            ConfigurableTransformation(
+                name="Sentence Splitter",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=SentenceSplitter,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "TOKEN_AWARE_NODE_PARSER",
+            ConfigurableTransformation(
+                name="Token Text Splitter",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=TokenTextSplitter,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "HTML_NODE_PARSER",
+            ConfigurableTransformation(
+                name="HTML Node Parser",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=HTMLNodeParser,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "MARKDOWN_NODE_PARSER",
+            ConfigurableTransformation(
+                name="Markdown Node Parser",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=MarkdownNodeParser,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "JSON_NODE_PARSER",
+            ConfigurableTransformation(
+                name="JSON Node Parser",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=JSONNodeParser,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "SIMPLE_FILE_NODE_PARSER",
+            ConfigurableTransformation(
+                name="Simple File Node Parser",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=SimpleFileNodeParser,
+            ),
+        )
+    )
+
+    # Embeddings
+    try:
+        from llama_index.embeddings.openai import OpenAIEmbedding
+
+        enum_members.append(
+            (
+                "OPENAI_EMBEDDING",
+                ConfigurableTransformation(
+                    name="OpenAI Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=OpenAIEmbedding,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
+
+        enum_members.append(
+            (
+                "AZURE_EMBEDDING",
+                ConfigurableTransformation(
+                    name="Azure OpenAI Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=AzureOpenAIEmbedding,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.embeddings.huggingface import HuggingFaceInferenceAPIEmbedding
+
+        enum_members.append(
+            (
+                "HUGGINGFACE_API_EMBEDDING",
+                ConfigurableTransformation(
+                    name="HuggingFace API Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=HuggingFaceInferenceAPIEmbedding,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    return ConfigurableComponent("ConfigurableTransformations", enum_members)
+
+
+ConfigurableTransformations = build_configurable_transformation_enum()
 
 T = TypeVar("T", bound=BaseComponent)
 

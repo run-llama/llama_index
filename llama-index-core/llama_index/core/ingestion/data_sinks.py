@@ -1,15 +1,8 @@
 from enum import Enum
 from typing import Generic, Type, TypeVar
 
-from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.vector_stores import (
-    ChromaVectorStore,
-    PGVectorStore,
-    PineconeVectorStore,
-    QdrantVectorStore,
-    WeaviateVectorStore,
-)
-from llama_index.vector_stores.types import BasePydanticVectorStore
+from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 
 class DataSink(BaseModel):
@@ -25,60 +18,119 @@ class DataSink(BaseModel):
     )
 
 
-class ConfigurableDataSinks(Enum):
+def build_conifurable_data_sink_enum():
     """
-    Enumeration of all supported DataSink instances.
+    Build an enum of configurable data sinks.
+    But conditional on if the corresponding vector store is available.
     """
 
-    CHROMA = DataSink(
-        name="Chroma",
-        component_type=ChromaVectorStore,
-    )
-
-    PINECONE = DataSink(
-        name="Pinecone",
-        component_type=PineconeVectorStore,
-    )
-
-    POSTGRES = DataSink(
-        name="PostgreSQL",
-        component_type=PGVectorStore,
-    )
-
-    QDRANT = DataSink(
-        name="Qdrant",
-        component_type=QdrantVectorStore,
-    )
-
-    WEAVIATE = DataSink(
-        name="Weaviate",
-        component_type=WeaviateVectorStore,
-    )
-
-    @classmethod
-    def from_component(
-        cls, component: BasePydanticVectorStore
-    ) -> "ConfigurableDataSinks":
-        component_class = type(component)
-        for component_type in cls:
-            if component_type.value.component_type == component_class:
-                return component_type
-        raise ValueError(
-            f"Component {component} is not a supported data sink component."
-        )
-
-    def build_configured_data_sink(
-        self, component: BasePydanticVectorStore
-    ) -> "ConfiguredDataSink":
-        component_type = self.value.component_type
-        if not isinstance(component, component_type):
+    class ConfigurableComponent(Enum):
+        @classmethod
+        def from_component(
+            cls, component: BasePydanticVectorStore
+        ) -> "ConfigurableDataSinks":
+            component_class = type(component)
+            for component_type in cls:
+                if component_type.value.component_type == component_class:
+                    return component_type
             raise ValueError(
-                f"The enum value {self} is not compatible with component of "
-                f"type {type(component)}"
+                f"Component {component} is not a supported data sink component."
             )
-        return ConfiguredDataSink[component_type](  # type: ignore
-            component=component, name=self.value.name
+
+        def build_configured_data_sink(
+            self, component: BasePydanticVectorStore
+        ) -> "ConfiguredDataSink":
+            component_type = self.value.component_type
+            if not isinstance(component, component_type):
+                raise ValueError(
+                    f"The enum value {self} is not compatible with component of "
+                    f"type {type(component)}"
+                )
+            return ConfiguredDataSink[component_type](  # type: ignore
+                component=component, name=self.value.name
+            )
+
+    enum_members = []
+
+    try:
+        from llama_index.vector_stores.chroma import ChromaVectorStore
+
+        enum_members.append(
+            (
+                "CHROMA",
+                DataSink(
+                    name="Chroma",
+                    component_type=ChromaVectorStore,
+                ),
+            )
         )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.vector_stores.pinecone import PineconeVectorStore
+
+        enum_members.append(
+            (
+                "PINECONE",
+                DataSink(
+                    name="Pinecone",
+                    component_type=PineconeVectorStore,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.vector_stores.postgres import PGVectorStore
+
+        enum_members.append(
+            (
+                "POSTGRES",
+                DataSink(
+                    name="PostgreSQL",
+                    component_type=PGVectorStore,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.vector_stores.qdrant import QdrantVectorStore
+
+        enum_members.append(
+            (
+                "QDRANT",
+                DataSink(
+                    name="Qdrant",
+                    component_type=QdrantVectorStore,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.vector_stores.weaviate import WeaviateVectorStore
+
+        enum_members.append(
+            (
+                "WEAVIATE",
+                DataSink(
+                    name="Weaviate",
+                    component_type=WeaviateVectorStore,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    return ConfigurableComponent("ConfigurableDataSinks", enum_members)
+
+
+ConfigurableDataSinks = build_conifurable_data_sink_enum()
 
 
 T = TypeVar("T", bound=BasePydanticVectorStore)

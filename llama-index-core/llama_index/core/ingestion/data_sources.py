@@ -1,35 +1,11 @@
+import uuid
 from enum import Enum
 from pathlib import Path
 from typing import Any, Generic, Iterable, List, Optional, Type, TypeVar, cast
 
-from unique_names_generator import get_random_name
-from unique_names_generator.data import (
-    ADJECTIVES,
-    ANIMALS,
-    COLORS,
-)
-
-from llama_index.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.readers import (
-    BeautifulSoupWebReader,
-    DiscordReader,
-    ElasticsearchReader,
-    NotionPageReader,
-    RssReader,
-    SimpleWebPageReader,
-    SlackReader,
-    TrafilaturaWebReader,
-    TwitterTweetReader,
-    WikipediaReader,
-    YoutubeTranscriptReader,
-)
-from llama_index.readers.base import BasePydanticReader, ReaderConfig
-from llama_index.readers.google_readers.gdocs import GoogleDocsReader
-from llama_index.readers.google_readers.gsheets import GoogleSheetsReader
-from llama_index.schema import BaseComponent, Document, TextNode
-
-# used for generating random names for data sources
-name_combo = [ADJECTIVES, COLORS, ANIMALS]
+from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.readers.base import BasePydanticReader, ReaderConfig
+from llama_index.core.schema import BaseComponent, Document, TextNode
 
 
 class DataSource(BaseModel):
@@ -68,134 +44,292 @@ class DocumentGroup(BasePydanticReader):
         return self.documents
 
 
-class ConfigurableDataSources(Enum):
+def build_conifurable_data_source_enum():
     """
-    Enumeration of all supported DataSource instances.
+    Build an enum of configurable data sources.
+    But conditional on if the corresponding reader is available.
     """
 
-    DOCUMENT = DataSource(
-        name="Document",
-        component_type=Document,
-    )
-
-    TEXT_NODE = DataSource(
-        name="TextNode",
-        component_type=TextNode,
-    )
-
-    DISCORD = DataSource(
-        name="Discord",
-        component_type=DiscordReader,
-    )
-
-    ELASTICSEARCH = DataSource(
-        name="Elasticsearch",
-        component_type=ElasticsearchReader,
-    )
-
-    NOTION_PAGE = DataSource(
-        name="Notion Page",
-        component_type=NotionPageReader,
-    )
-
-    SLACK = DataSource(
-        name="Slack",
-        component_type=SlackReader,
-    )
-
-    TWITTER = DataSource(
-        name="Twitter",
-        component_type=TwitterTweetReader,
-    )
-
-    SIMPLE_WEB_PAGE = DataSource(
-        name="Simple Web Page",
-        component_type=SimpleWebPageReader,
-    )
-
-    TRAFILATURA_WEB_PAGE = DataSource(
-        name="Trafilatura Web Page",
-        component_type=TrafilaturaWebReader,
-    )
-
-    BEAUTIFUL_SOUP_WEB_PAGE = DataSource(
-        name="Beautiful Soup Web Page",
-        component_type=BeautifulSoupWebReader,
-    )
-
-    RSS = DataSource(
-        name="RSS",
-        component_type=RssReader,
-    )
-
-    WIKIPEDIA = DataSource(
-        name="Wikipedia",
-        component_type=WikipediaReader,
-    )
-
-    YOUTUBE_TRANSCRIPT = DataSource(
-        name="Youtube Transcript",
-        component_type=YoutubeTranscriptReader,
-    )
-
-    GOOGLE_DOCS = DataSource(
-        name="Google Docs",
-        component_type=GoogleDocsReader,
-    )
-
-    GOOGLE_SHEETS = DataSource(
-        name="Google Sheets",
-        component_type=GoogleSheetsReader,
-    )
-
-    READER = DataSource(
-        name="Reader",
-        component_type=ReaderConfig,
-    )
-
-    DOCUMENT_GROUP = DataSource(
-        name="Document Group",
-        component_type=DocumentGroup,
-    )
-
-    @classmethod
-    def from_component(cls, component: BaseComponent) -> "ConfigurableDataSources":
-        component_class = type(component)
-        for component_type in cls:
-            if component_type.value.component_type == component_class:
-                return component_type
-        raise ValueError(
-            f"Component {component} is not a supported data source component."
-        )
-
-    def build_configured_data_source(
-        self, component: BaseComponent, name: Optional[str] = None
-    ) -> "ConfiguredDataSource":
-        component_type = self.value.component_type
-        if not isinstance(component, component_type):
+    class ConfigurableComponent(Enum):
+        @classmethod
+        def from_component(cls, component: BaseComponent) -> "ConfigurableDataSources":
+            component_class = type(component)
+            for component_type in cls:
+                if component_type.value.component_type == component_class:
+                    return component_type
             raise ValueError(
-                f"The enum value {self} is not compatible with component of "
-                f"type {type(component)}"
+                f"Component {component} is not a supported data source component."
             )
-        elif isinstance(component, BasePydanticReader):
-            reader_config = ReaderConfig(loader=component)
-            return ConfiguredDataSource[ReaderConfig](
-                component=reader_config
-            )  # type: ignore
 
-        if isinstance(component, DocumentGroup) and name is None:
-            # if the component is a DocumentGroup, we want to use the
-            # full file path as the name of the data source
-            component = cast(DocumentGroup, component)
-            name = component.file_path
+        def build_configured_data_source(
+            self, component: BaseComponent, name: Optional[str] = None
+        ) -> "ConfiguredDataSource":
+            component_type = self.value.component_type
+            if not isinstance(component, component_type):
+                raise ValueError(
+                    f"The enum value {self} is not compatible with component of "
+                    f"type {type(component)}"
+                )
+            elif isinstance(component, BasePydanticReader):
+                reader_config = ReaderConfig(loader=component)
+                return ConfiguredDataSource[ReaderConfig](
+                    component=reader_config
+                )  # type: ignore
 
-        if name is None:
-            suffix = get_random_name(combo=name_combo, separator="-", style="lowercase")
-            name = self.value.name + f" [{suffix}]]"
-        return ConfiguredDataSource[component_type](  # type: ignore
-            component=component, name=name
+            if isinstance(component, DocumentGroup) and name is None:
+                # if the component is a DocumentGroup, we want to use the
+                # full file path as the name of the data source
+                component = cast(DocumentGroup, component)
+                name = component.file_path
+
+            if name is None:
+                suffix = uuid.uuid1()
+                name = self.value.name + f" [{suffix}]]"
+            return ConfiguredDataSource[component_type](  # type: ignore
+                component=component, name=name
+            )
+
+    enum_members = []
+
+    try:
+        from llama_index.readers.discord import DiscordReader
+
+        enum_members.append(
+            (
+                "DISCORD",
+                DataSource(
+                    name="Discord",
+                    component_type=DiscordReader,
+                ),
+            )
         )
+    except ImportError:
+        pass
 
+    try:
+        from llama_index.readers.elasticsearch import ElasticsearchReader
+
+        enum_members.append(
+            (
+                "ELASTICSEARCH",
+                DataSource(
+                    name="Elasticsearch",
+                    component_type=ElasticsearchReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.notion import NotionPageReader
+
+        enum_members.append(
+            (
+                "NOTION_PAGE",
+                DataSource(
+                    name="Notion Page",
+                    component_type=NotionPageReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.slack import SlackReader
+
+        enum_members.append(
+            (
+                "SLACK",
+                DataSource(
+                    name="Slack",
+                    component_type=SlackReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.twitter import TwitterTweetReader
+
+        enum_members.append(
+            (
+                "TWITTER",
+                DataSource(
+                    name="Twitter",
+                    component_type=TwitterTweetReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.web import SimpleWebPageReader
+
+        enum_members.append(
+            (
+                "SIMPLE_WEB_PAGE",
+                DataSource(
+                    name="Simple Web Page",
+                    component_type=SimpleWebPageReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.web import TrafilaturaWebReader
+
+        enum_members.append(
+            (
+                "TRAFILATURA_WEB_PAGE",
+                DataSource(
+                    name="Trafilatura Web Page",
+                    component_type=TrafilaturaWebReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.web import BeautifulSoupWebReader
+
+        enum_members.append(
+            (
+                "BEAUTIFUL_SOUP_WEB_PAGE",
+                DataSource(
+                    name="Beautiful Soup Web Page",
+                    component_type=BeautifulSoupWebReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.web import RssReader
+
+        enum_members.append(
+            (
+                "RSS",
+                DataSource(
+                    name="RSS",
+                    component_type=RssReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.wikipedia import WikipediaReader
+
+        enum_members.append(
+            (
+                "WIKIPEDIA",
+                DataSource(
+                    name="Wikipedia",
+                    component_type=WikipediaReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.youtube_transcript import YoutubeTranscriptReader
+
+        enum_members.append(
+            (
+                "YOUTUBE_TRANSCRIPT",
+                DataSource(
+                    name="Youtube Transcript",
+                    component_type=YoutubeTranscriptReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.google import GoogleDocsReader
+
+        enum_members.append(
+            (
+                "GOOGLE_DOCS",
+                DataSource(
+                    name="Google Docs",
+                    component_type=GoogleDocsReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.google import GoogleSheetsReader
+
+        enum_members.append(
+            (
+                "GOOGLE_SHEETS",
+                DataSource(
+                    name="Google Sheets",
+                    component_type=GoogleSheetsReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    enum_members.append(
+        (
+            "READER",
+            DataSource(
+                name="Reader",
+                component_type=ReaderConfig,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "DOCUMENT_GROUP",
+            DataSource(
+                name="Document Group",
+                component_type=DocumentGroup,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "TEXT_NODE",
+            DataSource(
+                name="Text Node",
+                component_type=TextNode,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "DOCUMENT",
+            DataSource(
+                name="Document",
+                component_type=Document,
+            ),
+        )
+    )
+
+    return ConfigurableComponent("ConfigurableDataSources", enum_members)
+
+
+ConfigurableDataSources = build_conifurable_data_source_enum()
 
 T = TypeVar("T", bound=BaseComponent)
 

@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -131,7 +131,7 @@ DEFAULT_WEBSITE_EXTRACTOR: Dict[
 }
 
 
-class BeautifulSoupWebReader(BaseReader):
+class BeautifulSoupWebReader(BasePydanticReader):
     """BeautifulSoup web page reader.
 
     Reads pages from the web.
@@ -143,12 +143,8 @@ class BeautifulSoupWebReader(BaseReader):
             extract text from the BeautifulSoup obj. See DEFAULT_WEBSITE_EXTRACTOR.
     """
 
-    def __init__(
-        self,
-        website_extractor: Optional[Dict[str, Callable]] = None,
-    ) -> None:
-        """Initialize with parameters."""
-        self.website_extractor = website_extractor or DEFAULT_WEBSITE_EXTRACTOR
+    is_remote: bool = True
+    website_extractor: Dict[str, Callable] = DEFAULT_WEBSITE_EXTRACTOR
 
     def load_data(
         self,
@@ -195,6 +191,6 @@ class BeautifulSoupWebReader(BaseReader):
             else:
                 data = soup.getText()
 
-            documents.append(Document(text=data, extra_info=extra_info))
+            documents.append(Document(text=data, id_=url, extra_info=extra_info))
 
         return documents

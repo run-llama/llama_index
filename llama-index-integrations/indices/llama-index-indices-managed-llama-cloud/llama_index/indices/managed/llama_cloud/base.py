@@ -12,14 +12,14 @@ from llama_index_client import PipelineType, ProjectCreate, StatusEnum
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.constants import DEFAULT_APP_URL, DEFAULT_PROJECT_NAME
 from llama_index.core.indices.managed.base import BaseManagedIndex
-from llama_index.indices.managed.llama_cloud.utils import (
+from llama_index.core.ingestion.api_utils import (
     default_transformations,
     get_aclient,
     get_client,
     get_pipeline_create,
 )
-from llama_index.core.constants import DEFAULT_APP_URL, DEFAULT_PROJECT_NAME
 from llama_index.core.schema import BaseNode, Document, TransformComponent
 from llama_index.core.service_context import ServiceContext
 

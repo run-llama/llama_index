@@ -11,13 +11,14 @@ from llama_index_client import (
     ProjectCreate,
 )
 from llama_index_client.client import AsyncPlatformApi, PlatformApi
-from llama_index.core.ingestion.data_sources import (
-    ConfiguredDataSource,
-)
+
 from llama_index.core.constants import (
     DEFAULT_APP_URL,
     DEFAULT_BASE_URL,
     DEFAULT_PROJECT_NAME,
+)
+from llama_index.core.ingestion.data_sources import (
+    ConfiguredDataSource,
 )
 from llama_index.core.ingestion.transformations import (
     ConfiguredTransformation,
@@ -29,13 +30,7 @@ from llama_index.core.schema import BaseNode, TransformComponent
 
 def default_transformations() -> List[TransformComponent]:
     """Default transformations."""
-    try:
-        from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
-    except ImportError:
-        raise ImportError(
-            "OpenAIEmbedding not found. Please run `pip install "
-            "llama-index-embeddings-openai` or provide transformations."
-        )
+    from llama_index.embeddings.openai import OpenAIEmbedding
 
     return [
         SentenceSplitter(),

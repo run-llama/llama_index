@@ -1,11 +1,10 @@
-from importlib.util import find_spec
 from typing import List
 
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
 
-class TrafilaturaWebReader(BaseReader):
+class TrafilaturaWebReader(BasePydanticReader):
     """Trafilatura web page reader.
 
     Reads pages from the web.
@@ -13,12 +12,7 @@ class TrafilaturaWebReader(BaseReader):
 
     """
 
-    def __init__(self) -> None:
-        if find_spec("trafilatura") is None:
-            raise ImportError(
-                "Missing package: trafilatura.\n"
-                "Please `pip install trafilatura` to use this Reader"
-            )
+    is_remote: bool = True
 
     def load_data(
         self,
@@ -61,6 +55,6 @@ class TrafilaturaWebReader(BaseReader):
                 include_formatting=include_formatting,
                 include_links=include_links,
             )
-            documents.append(Document(text=response))
+            documents.append(Document(text=response, id_=url))
 
         return documents
