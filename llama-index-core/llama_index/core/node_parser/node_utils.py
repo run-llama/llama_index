@@ -41,9 +41,7 @@ def build_nodes_from_splits(
     """Calling as_related_node_info() on a document recomputes the hash for the whole text and metadata"""
     """It is not that bad, when creating relationships between the nodes, but is terrible when adding a relationship"""
     """between the node and a document, hence we create the relationship only once here and pass it to the nodes"""
-    relationships = {
-      NodeRelationship.SOURCE: ref_doc.as_related_node_info()
-    }
+    relationships = {NodeRelationship.SOURCE: ref_doc.as_related_node_info()}
     for i, text_chunk in enumerate(text_splits):
         logger.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
 
