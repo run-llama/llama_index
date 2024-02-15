@@ -178,10 +178,10 @@ vector_store = ChromaVectorStore(
 import clickhouse_connect
 from llama_index.vector_stores import ClickHouseVectorStore
 
-# Creating a MyScale client
+# Creating a ClickHouse client
 client = clickhouse_connect.get_client(
     host="YOUR_CLUSTER_HOST",
-    port=8443,
+    port=8123,
     username="YOUR_USERNAME",
     password="YOUR_CLUSTER_PASSWORD",
 )
