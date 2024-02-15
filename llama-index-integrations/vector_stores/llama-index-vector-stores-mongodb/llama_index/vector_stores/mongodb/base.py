@@ -9,10 +9,11 @@ import os
 from importlib.metadata import version
 from typing import Any, Dict, List, Optional, cast
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -35,7 +36,7 @@ def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
     return filters
 
 
-class MongoDBAtlasVectorSearch(VectorStore):
+class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     """MongoDB Atlas Vector Store.
 
     To use, you should have both:
@@ -47,6 +48,15 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     stores_text: bool = True
     flat_metadata: bool = True
+
+    _mongodb_client: Any = PrivateAttr()
+    _collection: Any = PrivateAttr()
+    _index_name: str = PrivateAttr()
+    _embedding_key: str = PrivateAttr()
+    _id_key: str = PrivateAttr()
+    _text_key: str = PrivateAttr()
+    _metadata_key: str = PrivateAttr()
+    _insert_kwargs: Dict = PrivateAttr()
 
     def __init__(
         self,
@@ -96,6 +106,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self._text_key = text_key
         self._metadata_key = metadata_key
         self._insert_kwargs = insert_kwargs or {}
+
+        super().__init__()
 
     def add(
         self,

@@ -24,7 +24,7 @@ description = "llama-index vector_stores mongodb integration"
 license = "MIT"
 name = "llama-index-vector-stores-mongodb"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
