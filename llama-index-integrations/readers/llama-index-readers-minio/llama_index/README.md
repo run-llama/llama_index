@@ -37,7 +37,7 @@ To use this loader, you need to pass in the name of your Minio Bucket. After tha
 
 Otherwise, you may specify a prefix if you only want to parse certain files in the Bucket, or a subdirectory.
 
-You can now use the client with a TLS-secured MinIO instance (`minio_secure=True`), **even if the certificate isn't trusted** (`minio_cert_check=False`).
+You can now use the client with a TLS-secured MinIO instance (`minio_secure=True`), even if server's certificate isn't trusted (`minio_cert_check=False`).
 
 ```python
 from llama_index import download_loader
