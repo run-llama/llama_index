@@ -29,7 +29,7 @@ class MinioReader(BaseReader):
         file_metadata: Optional[Callable[[str], Dict]] = None,
         minio_endpoint: Optional[str] = None,
         minio_secure: bool = False,
-        minio_cert_check: bool = False,
+        minio_cert_check: bool = True,
         minio_access_key: Optional[str] = None,
         minio_secret_key: Optional[str] = None,
         minio_session_token: Optional[str] = None,
