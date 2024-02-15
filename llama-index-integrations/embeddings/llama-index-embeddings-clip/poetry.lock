@@ -629,24 +629,6 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
-name = "clip"
-version = "1.0"
-description = ""
-optional = false
-python-versions = "*"
-files = []
-develop = false
-
-[package.extras]
-dev = ["pytest"]
-
-[package.source]
-type = "git"
-url = "https://github.com/openai/CLIP.git"
-reference = "HEAD"
-resolved_reference = "a1d071733d7111c9c014f024669f959182114e33"
-
-[[package]]
 name = "codespell"
 version = "2.2.6"
 description = "Codespell"
@@ -4871,4 +4853,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "f1c86833b4b8a7309bf940dda85c7f39a3eaeaa046d40ece9f3077033fa3663d"
+content-hash = "e2bd79c371ca89fac9c2d487015226085d5b67eef7e86941360f8f7b809dec2c"

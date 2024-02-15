@@ -31,7 +31,6 @@ python = ">=3.8.1,<3.12"
 llama-index-core = "^0.10.1"
 torch = "^2.1.2"
 pillow = "^10.2.0"
-clip = {git = "https://github.com/openai/CLIP.git"}
 torchvision = "^0.17.0"
 ftfy = "^6.1.3"
 
