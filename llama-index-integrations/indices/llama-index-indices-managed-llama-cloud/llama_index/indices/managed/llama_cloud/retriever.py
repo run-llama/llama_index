@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from llama_index_client import TextNodeWithScore
-from llama_index_client.resources.retrieval.client import OMIT
+from llama_index_client.resources.pipeline.client import OMIT
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.constants import DEFAULT_PROJECT_NAME
@@ -72,7 +72,7 @@ class LlamaCloudRetriever(BaseRetriever):
                 f"No pipeline found with name {self.name} in project {self.project_name}"
             )
 
-        results = self._client.retrieval.run_search(
+        results = self._client.pipeline.run_search(
             query=query_bundle.query_str,
             pipeline_id=pipeline.id,
             dense_similarity_top_k=self._dense_similarity_top_k,
@@ -100,7 +100,7 @@ class LlamaCloudRetriever(BaseRetriever):
                 f"No pipeline found with name {self.name} in project {self.project_name}"
             )
 
-        results = await self._aclient.retrieval.run_search(
+        results = await self._aclient.pipeline.run_search(
             query=query_bundle.query_str,
             pipeline_id=pipeline.id,
             dense_similarity_top_k=self._dense_similarity_top_k,
