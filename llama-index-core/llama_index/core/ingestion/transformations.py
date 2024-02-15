@@ -255,7 +255,7 @@ def build_configurable_transformation_enum():
 
     # Embeddings
     try:
-        from llama_index.embeddings.openai import OpenAIEmbedding
+        from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
 
         enum_members.append(
             (

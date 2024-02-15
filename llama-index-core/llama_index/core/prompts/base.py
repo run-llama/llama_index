@@ -451,7 +451,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
 
     def format(self, llm: Optional[BaseLLM] = None, **kwargs: Any) -> str:
         """Format the prompt into a string."""
-        from llama_index.llms.langchain import LangChainLLM
+        from llama_index.llms.langchain import LangChainLLM  # pants: no-infer-dep
 
         if llm is not None:
             # if llamaindex LLM is provided, and we require a langchain LLM,
@@ -474,8 +474,10 @@ class LangchainPromptTemplate(BasePromptTemplate):
         self, llm: Optional[BaseLLM] = None, **kwargs: Any
     ) -> List[ChatMessage]:
         """Format the prompt into a list of chat messages."""
-        from llama_index.llms.langchain import LangChainLLM
-        from llama_index.llms.langchain.utils import from_lc_messages
+        from llama_index.llms.langchain import LangChainLLM  # pants: no-infer-dep
+        from llama_index.llms.langchain.utils import (
+            from_lc_messages,
+        )  # pants: no-infer-dep
 
         if llm is not None:
             # if llamaindex LLM is provided, and we require a langchain LLM,
@@ -497,7 +499,7 @@ class LangchainPromptTemplate(BasePromptTemplate):
         return from_lc_messages(lc_messages)
 
     def get_template(self, llm: Optional[BaseLLM] = None) -> str:
-        from llama_index.llms.langchain import LangChainLLM
+        from llama_index.llms.langchain import LangChainLLM  # pants: no-infer-dep
 
         if llm is not None:
             # if llamaindex LLM is provided, and we require a langchain LLM,
