@@ -29,6 +29,7 @@ class MinioReader(BaseReader):
         file_metadata: Optional[Callable[[str], Dict]] = None,
         minio_endpoint: Optional[str] = None,
         minio_secure: bool = False,
+        minio_cert_check: bool = True,
         minio_access_key: Optional[str] = None,
         minio_secret_key: Optional[str] = None,
         minio_session_token: Optional[str] = None,
@@ -59,6 +60,8 @@ class MinioReader(BaseReader):
         minio_access_key (Optional[str]): The Minio access key. Default is None.
         minio_secret_key (Optional[str]): The Minio secret key. Default is None.
         minio_session_token (Optional[str]): The Minio session token.
+        minio_secure: MinIO server runs in TLS mode
+        minio_cert_check: allows the usage of a self-signed cert for MinIO server
         """
         super().__init__(*args, **kwargs)
 
@@ -74,6 +77,7 @@ class MinioReader(BaseReader):
 
         self.minio_endpoint = minio_endpoint
         self.minio_secure = minio_secure
+        self.minio_cert_check = minio_cert_check
         self.minio_access_key = minio_access_key
         self.minio_secret_key = minio_secret_key
         self.minio_session_token = minio_session_token
@@ -85,6 +89,7 @@ class MinioReader(BaseReader):
         minio_client = Minio(
             self.minio_endpoint,
             secure=self.minio_secure,
+            cert_check=self.minio_cert_check,
             access_key=self.minio_access_key,
             secret_key=self.minio_secret_key,
             session_token=self.minio_session_token,

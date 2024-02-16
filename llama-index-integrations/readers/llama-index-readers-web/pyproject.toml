@@ -21,10 +21,12 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers web integration"
+keywords = ["BFS", "article", "atom", "documentation", "feed", "main content extractor", "news", "readthedocs", "rss", "scraper", "selenium", "seo", "sitemap", "substack", "trafilatura", "unstructured.io", "url", "web reader", "web", "website"]
 license = "MIT"
+maintainers = ["HawkClaws", "Hironsan", "NA", "an-bluecat", "bborn", "jasonwcfan", "kravetsmic", "pandazki", "ruze00", "selamanse", "thejessezhang"]
 name = "llama-index-readers-web"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
@@ -35,7 +37,7 @@ html2text = "^2020.1.16"
 aiohttp = "^3.9.1"
 beautifulsoup4 = "^4.12.3"
 requests = "^2.31.0"
-urllib3 = "^2.1.0"
+urllib3 = ">=1.1.0"
 playwright = ">=1.30,<2.0"
 newspaper3k = "^0.2.8"
 

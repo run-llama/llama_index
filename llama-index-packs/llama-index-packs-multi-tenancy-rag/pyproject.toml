@@ -21,10 +21,12 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs multi_tenancy_rag integration"
+keywords = ["multi", "multi-tenancy", "rag", "tenancy"]
 license = "MIT"
+maintainers = ["ravi03071991"]
 name = "llama-index-packs-multi-tenancy-rag"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"

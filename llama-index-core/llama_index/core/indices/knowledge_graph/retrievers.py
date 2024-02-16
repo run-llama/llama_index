@@ -1,4 +1,5 @@
 """KG Retrievers."""
+
 import logging
 from collections import defaultdict
 from enum import Enum
@@ -120,7 +121,11 @@ class KGTableRetriever(BaseRetriever):
         self.query_keyword_extract_template = query_keyword_extract_template or DQKET
         self.similarity_top_k = similarity_top_k
         self._include_text = include_text
-        self._retriever_mode = KGRetrieverMode(retriever_mode)
+        self._retriever_mode = (
+            KGRetrieverMode(retriever_mode)
+            if retriever_mode
+            else KGRetrieverMode.KEYWORD
+        )
 
         self._llm = llm or llm_from_settings_or_context(Settings, index.service_context)
         self._embed_model = embed_model or embed_model_from_settings_or_context(

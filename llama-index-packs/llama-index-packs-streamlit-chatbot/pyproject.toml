@@ -21,10 +21,12 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs streamlit_chatbot integration"
+keywords = ["chatbot", "snowflake", "streamlit", "wikipedia"]
 license = "MIT"
+maintainers = ["carolinedlu"]
 name = "llama-index-packs-streamlit-chatbot"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">3.9.7,<3.12"

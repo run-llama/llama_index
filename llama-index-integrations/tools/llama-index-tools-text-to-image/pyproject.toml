@@ -22,9 +22,10 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index tools text_to_image integration"
 license = "MIT"
+maintainers = ["ajhofmann"]
 name = "llama-index-tools-text-to-image"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"

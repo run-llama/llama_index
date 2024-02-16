@@ -338,6 +338,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             )
 
         self._language_analyzer = language_analyzer
+
         # Validate search_or_index_client
         if search_or_index_client is not None:
             if isinstance(search_or_index_client, SearchIndexClient):

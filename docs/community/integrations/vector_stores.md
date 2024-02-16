@@ -16,6 +16,7 @@ as the storage backend for `VectorStoreIndex`.
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
+- ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
@@ -169,6 +170,24 @@ chroma_collection = chroma_client.create_collection("quickstart")
 vector_store = ChromaVectorStore(
     chroma_collection=chroma_collection,
 )
+```
+
+**ClickHouse**
+
+```python
+import clickhouse_connect
+from llama_index.vector_stores import ClickHouseVectorStore
+
+# Creating a ClickHouse client
+client = clickhouse_connect.get_client(
+    host="YOUR_CLUSTER_HOST",
+    port=8123,
+    username="YOUR_USERNAME",
+    password="YOUR_CLUSTER_PASSWORD",
+)
+
+# construct vector store
+vector_store = ClickHouseVectorStore(clickhouse_client=client)
 ```
 
 **DashVector**
