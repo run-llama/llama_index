@@ -146,6 +146,11 @@ class BeautifulSoupWebReader(BasePydanticReader):
     is_remote: bool = True
     website_extractor: Dict[str, Callable] = DEFAULT_WEBSITE_EXTRACTOR
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "BeautifulSoupWebReader"
+
     def load_data(
         self,
         urls: List[str],
