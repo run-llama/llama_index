@@ -21,6 +21,9 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
+from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents import SearchClient
+
 logger = logging.getLogger(__name__)
 
 
@@ -49,9 +52,6 @@ class IndexManagement(int, enum.Enum):
 class AzureAISearchVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
-
-    from azure.search.documents.indexes import SearchIndexClient
-    from azure.search.documents import SearchClient
 
     _index_client: SearchIndexClient = PrivateAttr()
     _search_client: SearchClient = PrivateAttr()
