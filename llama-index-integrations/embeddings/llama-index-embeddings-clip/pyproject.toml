@@ -24,14 +24,15 @@ description = "llama-index embeddings clip integration"
 license = "MIT"
 name = "llama-index-embeddings-clip"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
 llama-index-core = "^0.10.1"
-clip = "^0.2.0"
 torch = "^2.1.2"
 pillow = "^10.2.0"
+torchvision = "^0.17.0"
+ftfy = "^6.1.3"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

@@ -21,7 +21,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs zephyr_query_engine integration"
+keywords = ["engine", "huggingface", "index", "local", "query", "zephyr"]
 license = "MIT"
+maintainers = ["logan-markewich"]
 name = "llama-index-packs-zephyr-query-engine"
 readme = "README.md"
 version = "0.1.1"

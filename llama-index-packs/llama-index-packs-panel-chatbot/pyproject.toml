@@ -21,10 +21,12 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs panel_chatbot integration"
+keywords = ["chatbot", "github", "index", "openai", "panel"]
 license = "MIT"
+maintainers = ["MarcSkovMadsen"]
 name = "llama-index-packs-panel-chatbot"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"

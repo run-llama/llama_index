@@ -1,13 +1,15 @@
 import json
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 import pandas as pd
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.download.module import LLAMA_HUB_URL
 from llama_index.core.download.utils import get_file_content
 from llama_index.core.indices.base import BaseIndex
-from llama_index.core.llama_dataset import LabelledRagDataset
 from llama_index.core.llama_pack.base import BaseLlamaPack
+
+if TYPE_CHECKING:
+    from llama_index.core.llama_dataset import LabelledRagDataset
 
 
 class Readme(BaseModel):
@@ -104,7 +106,7 @@ class DatasetCard(BaseMetadata):
         cls,
         index: BaseIndex,
         benchmark_df: pd.DataFrame,
-        rag_dataset: LabelledRagDataset,
+        rag_dataset: "LabelledRagDataset",
         name: str,
         baseline_name: str,
         description: str,
@@ -203,7 +205,7 @@ class LlamaDatasetMetadataPack(BaseLlamaPack):
         self,
         index: BaseIndex,
         benchmark_df: pd.DataFrame,
-        rag_dataset: LabelledRagDataset,
+        rag_dataset: "LabelledRagDataset",
         name: str,
         description: str,
         baseline_name: str,
