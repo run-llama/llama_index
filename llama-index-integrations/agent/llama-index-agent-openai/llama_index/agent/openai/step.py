@@ -80,7 +80,7 @@ def call_function(
     tools: List[BaseTool],
     tool_call: OpenAIToolCall,
     verbose: bool = False,
-    get_tool_by: Calla
+    get_tool_by: Callable[[List[BaseTool], str], BaseTool] = get_function_by_name,
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     # validations to get passed mypy

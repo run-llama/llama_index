@@ -92,7 +92,6 @@ llamaindex-cli = 'llama_index.core.command_line.command_line:main'
 
 [[tool.poetry.source]]
 name = "nvidia-pypi"
-priority = "supplemental"
 url = "https://pypi.nvidia.com"
 
 [tool.ruff]
