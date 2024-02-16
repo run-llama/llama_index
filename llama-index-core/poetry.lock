@@ -2800,17 +2800,17 @@ tornado = {version = "*", markers = "python_version > \"2.7\""}
 
 [[package]]
 name = "llamaindex-py-client"
-version = "0.1.9"
+version = "0.1.11"
 description = ""
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "llamaindex_py_client-0.1.9-py3-none-any.whl", hash = "sha256:b710999b4045cd7888c75c4fb0b0f583dbd3db106796a80d6403a53261e54096"},
-    {file = "llamaindex_py_client-0.1.9.tar.gz", hash = "sha256:60e1a0b61f7679836d2027d973f62956525bf3374cb4a0eafd5e94e839fa25d5"},
+    {file = "llamaindex_py_client-0.1.11-py3-none-any.whl", hash = "sha256:61a5ba37c34779abcb9452e3e70710fb808667b9ac665a0ffa21e9c0464c55c0"},
+    {file = "llamaindex_py_client-0.1.11.tar.gz", hash = "sha256:a1849682d3637af9734fdc05601207e4cce7b6c97d605924d83a77ef476ab7ec"},
 ]
 
 [package.dependencies]
-httpx = ">=0.20.0,<0.25.0"
+httpx = ">=0.20.0"
 pydantic = "1.10.12"
 
 [[package]]
@@ -3941,7 +3941,7 @@ files = [
 [package.dependencies]
 coloredlogs = "*"
 datasets = [
-    {version = "*", optional = true, markers = "extra != \"onnxruntime\""},
+    {version = "*"},
     {version = ">=1.2.1", optional = true, markers = "extra == \"onnxruntime\""},
 ]
 evaluate = {version = "*", optional = true, markers = "extra == \"onnxruntime\""}
@@ -7971,4 +7971,4 @@ query-tools = ["guidance", "jsonpath-ng", "lm-format-enforcer", "rank-bm25", "sc
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "151bb1c39e2a01b50886889e6c26a3c7a6f4b2f6f5fd2ec29913e02ceec49516"
+content-hash = "4603f2e930d9e686f237686fb5487d92d3ccef004aa38e2d39935f0b3d30f54a"
