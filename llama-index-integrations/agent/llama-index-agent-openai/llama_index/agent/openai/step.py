@@ -464,6 +464,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             # TODO: return response
         else:
             is_done = False
+            threads: List[Thread] = []
             for tool_call in latest_tool_calls:
                 # Some validation
                 if not isinstance(tool_call, get_args(OpenAIToolCall)):
@@ -472,17 +473,24 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 if tool_call.type != "function":
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
                 # TODO: maybe execute this with multi-threading
-                self._call_function(
-                    tools,
-                    tool_call,
-                    task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                thread = Thread(
+                    target=self._call_function,
+                    args=(
+                        tools,
+                        tool_call,
+                        task.extra_state["new_memory"],
+                        task.extra_state["sources"],
+                    ),
                 )
+                thread.start()
+                threads.append(thread)
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
                 if tool_choice not in ("auto", "none"):
                     tool_choice = "auto"
                 task.extra_state["n_function_calls"] += 1
+            for thread in threads:
+                thread.join()
             new_steps = [
                 step.get_next_step(
                     step_id=str(uuid.uuid4()),
