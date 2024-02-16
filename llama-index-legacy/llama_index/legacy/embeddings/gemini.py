@@ -47,7 +47,17 @@ class GeminiEmbedding(BaseEmbedding):
                 "google-generativeai package not found, install with"
                 "'pip install google-generativeai'"
             )
-        gemini.configure(api_key=api_key)
+        # API keys are optional. The API can be authorised via OAuth (detected
+        # environmentally) or by the GOOGLE_API_KEY environment variable.
+        config_params: Dict[str, Any] = {
+            "api_key": api_key or os.getenv("GOOGLE_API_KEY"),
+        }
+        if api_base:
+            config_params["client_options"] = {"api_endpoint": api_base}
+        if transport:
+            config_params["transport"] = transport
+        # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
+        gemini.configure(**config_params)
         self._model = gemini
 
         super().__init__(
