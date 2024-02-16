@@ -14,7 +14,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name dale@clickhouse.com"]
+authors = ["ClickHouse <info@clickhouse.com>"]
 description = "llama-index vector_stores clickhouse integration"
 license = "MIT"
 name = "llama-index-vector-stores-clickhouse"
