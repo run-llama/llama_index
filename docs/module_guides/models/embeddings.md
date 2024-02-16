@@ -233,4 +233,5 @@ maxdepth: 1
 /examples/embeddings/text_embedding_inference.ipynb
 /examples/embeddings/together.ipynb
 /examples/embeddings/voyageai.ipynb
+/examples/embeddings/nomic.ipynb
 ```
