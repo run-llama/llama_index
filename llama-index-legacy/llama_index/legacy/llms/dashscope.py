@@ -1,11 +1,12 @@
 """DashScope llm api."""
+
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.bridge.pydantic import Field
-from llama_index.callbacks import CallbackManager
-from llama_index.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
-from llama_index.core.llms.types import (
+from llama_index.legacy.bridge.pydantic import Field
+from llama_index.legacy.callbacks import CallbackManager
+from llama_index.legacy.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
+from llama_index.legacy.core.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
@@ -14,12 +15,12 @@ from llama_index.core.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.llms.base import (
+from llama_index.legacy.llms.base import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.llms.custom import CustomLLM
-from llama_index.llms.dashscope_utils import (
+from llama_index.legacy.llms.custom import CustomLLM
+from llama_index.legacy.llms.dashscope_utils import (
     chat_message_to_dashscope_messages,
     dashscope_response_to_chat_response,
     dashscope_response_to_completion_response,
