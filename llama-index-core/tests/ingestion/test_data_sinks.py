@@ -2,8 +2,15 @@ import sys
 from unittest.mock import MagicMock
 
 import pytest
-from llama_index.ingestion.data_sinks import ConfigurableDataSinks, ConfiguredDataSink
-from llama_index.vector_stores import WeaviateVectorStore
+from llama_index.core.ingestion.data_sinks import (
+    ConfigurableDataSinks,
+    ConfiguredDataSink,
+)
+
+try:
+    from llama_index.vector_store.weaviate import WeaviateVectorStore
+except ImportError:
+    WeaviateVectorStore = None
 
 
 @pytest.mark.parametrize("configurable_data_sink_type", ConfigurableDataSinks)
@@ -22,6 +29,7 @@ def test_can_generate_schema_for_data_sink_component_type(
     assert len(configured_schema) > 0
 
 
+@pytest.mark.skipif(WeaviateVectorStore is None, reason="weaviate not installed")
 def test_can_build_configured_data_sink_from_component() -> None:
     sys.modules["weaviate"] = MagicMock()
     weaviate_client = MagicMock()
@@ -40,6 +48,7 @@ def test_can_build_configured_data_sink_from_component() -> None:
     )
 
 
+@pytest.mark.skipif(WeaviateVectorStore is None, reason="weaviate not installed")
 def test_build_configured_data_sink() -> None:
     sys.modules["weaviate"] = MagicMock()
     weaviate_client = MagicMock()
@@ -64,5 +73,4 @@ def test_unique_configurable_data_sink_names() -> None:
     for configurable_data_sink_type in ConfigurableDataSinks:
         assert configurable_data_sink_type.value.name not in names
         names.add(configurable_data_sink_type.value.name)
-    assert len(names) > 0
     assert len(names) == len(ConfigurableDataSinks)

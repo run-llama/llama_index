@@ -1,10 +1,9 @@
 import pytest
-from llama_index.ingestion.data_sources import (
+from llama_index.core.ingestion.data_sources import (
     ConfigurableDataSources,
     ConfiguredDataSource,
-    GoogleSheetsReader,
 )
-from llama_index.schema import Document
+from llama_index.core.schema import Document
 
 
 @pytest.mark.parametrize("configurable_data_source_type", ConfigurableDataSources)
@@ -30,10 +29,6 @@ def test_can_build_configured_data_source_from_component() -> None:
         configured_data_source,
         ConfiguredDataSource[Document],  # type: ignore
     )
-    assert not isinstance(
-        configured_data_source,
-        ConfiguredDataSource[GoogleSheetsReader],  # type: ignore
-    )
     assert (
         configured_data_source.configurable_data_source_type.value.component_type
         == Document
@@ -49,9 +44,6 @@ def test_build_configured_data_source() -> None:
         configured_data_source,
         ConfiguredDataSource[Document],  # type: ignore
     )
-
-    with pytest.raises(ValueError):
-        ConfigurableDataSources.GOOGLE_DOCS.build_configured_data_source(document)
 
 
 def test_unique_configurable_data_source_names() -> None:

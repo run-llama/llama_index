@@ -1,9 +1,9 @@
 import pytest
-from llama_index.ingestion.transformations import (
+from llama_index.core.ingestion.transformations import (
     ConfigurableTransformations,
     ConfiguredTransformation,
 )
-from llama_index.node_parser.text import SentenceSplitter, TokenTextSplitter
+from llama_index.core.node_parser.text import SentenceSplitter, TokenTextSplitter
 
 
 @pytest.mark.parametrize(
