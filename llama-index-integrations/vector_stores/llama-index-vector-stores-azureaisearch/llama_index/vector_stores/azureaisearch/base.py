@@ -4,12 +4,13 @@ import json
 import logging
 from enum import auto
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
-
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+
 from llama_index.core.vector_stores.types import (
     ExactMatchFilter,
+    BasePydanticVectorStore,
     MetadataFilters,
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -45,9 +46,26 @@ class IndexManagement(int, enum.Enum):
     CREATE_IF_NOT_EXISTS = auto()
 
 
-class AzureAISearchVectorStore(VectorStore):
+class AzureAISearchVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
+
+    from azure.search.documents.indexes import SearchIndexClient
+    from azure.search.documents import SearchClient
+
+    _index_client: SearchIndexClient = PrivateAttr()
+    _search_client: SearchClient = PrivateAttr()
+    _embedding_dimensionality: int = PrivateAttr()
+    _language_analyzer: str = PrivateAttr()
+    _field_mapping: Dict[str, str] = PrivateAttr()
+    _index_management: IndexManagement = PrivateAttr()
+    _index_mapping: Callable[
+        [Dict[str, str], Dict[str, Any]], Dict[str, str]
+    ] = PrivateAttr()
+    _metadata_to_index_field_map: Dict[
+        str, Tuple[str, MetadataIndexFieldType]
+    ] = PrivateAttr()
+    _vector_profile_name: str = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
         self,
@@ -244,6 +262,8 @@ class AzureAISearchVectorStore(VectorStore):
         index_management: IndexManagement = IndexManagement.NO_VALIDATION,
         embedding_dimensionality: int = 1536,
         vector_algorithm_type: str = "exhaustiveKnn",
+        # If we have content in other languages, it is better to enable the language analyzer to be adjusted in searchable fields.
+        # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
         **kwargs: Any,
     ) -> None:
@@ -269,7 +289,7 @@ class AzureAISearchVectorStore(VectorStore):
             doc_id_field_key (str): Index field storing doc_id
             index_mapping:
                 Optional function with definition
-                (enriched_doc: Dict[str, str], metadata: Dict[str, Any]) -> Dict[str,str]
+                (enriched_doc: Dict[str, str], metadata: Dict[str, Any]): Dict[str,str]
                 used to map document fields to the AI search index fields
                 (return value of function).
                 If none is specified a default mapping is provided which uses
@@ -280,11 +300,7 @@ class AzureAISearchVectorStore(VectorStore):
                     - "chunk" to chunk_field_key
                     - "embedding" to embedding_field_key
                     - "metadata" to metadata_field_key
-            index_management (IndexManagement): Enumeration representing the supported index management operations.
-            embedding_dimensionality (int): Dimensionality of the embedding vectors.
-            vector_algorithm_type (str): Type of vector algorithm used. Supported values are "exhaustiveKnn" and "hnsw".
-            language_analyzer (str): Language analyzer used for adjusting searchable fields.
-            **kwargs (Any): Additional keyword arguments.
+            *kwargs (Any): Additional keyword arguments.
 
         Raises:
             ImportError: Unable to import `azure-search-documents`
@@ -310,18 +326,18 @@ class AzureAISearchVectorStore(VectorStore):
 
         self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
         self._search_client: SearchClient = cast(SearchClient, None)
-        self.embedding_dimensionality = embedding_dimensionality
+        self._embedding_dimensionality = embedding_dimensionality
 
         if vector_algorithm_type == "exhaustiveKnn":
-            self.vector_profile_name = "myExhaustiveKnnProfile"
+            self._vector_profile_name = "myExhaustiveKnnProfile"
         elif vector_algorithm_type == "hnsw":
-            self.vector_profile_name = "myHnswProfile"
+            self._vector_profile_name = "myHnswProfile"
         else:
             raise ValueError(
                 "Only 'exhaustiveKnn' and 'hnsw' are supported for vector_algorithm_type"
             )
 
-        self.language_analyzer = language_analyzer
+        self._language_analyzer = language_analyzer
         # Validate search_or_index_client
         if search_or_index_client is not None:
             if isinstance(search_or_index_client, SearchIndexClient):
@@ -395,6 +411,8 @@ class AzureAISearchVectorStore(VectorStore):
 
         if self._index_management == IndexManagement.VALIDATE_INDEX:
             self._validate_index(index_name)
+
+        super().__init__()
 
     @property
     def client(self) -> Any:
