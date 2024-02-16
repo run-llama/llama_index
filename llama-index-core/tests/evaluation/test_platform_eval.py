@@ -2,7 +2,7 @@ import os
 import sys
 
 import pytest
-from llama_index.evaluation.eval_utils import upload_eval_dataset
+from llama_index.core.evaluation.eval_utils import upload_eval_dataset
 from llama_index_client.client import PlatformApi
 
 base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", None)
