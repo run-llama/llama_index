@@ -17,7 +17,9 @@ def _add_parent_child_relationship(parent_node: BaseNode, child_node: BaseNode) 
     child_list.append(child_node.as_related_node_info())
     parent_node.relationships[NodeRelationship.CHILD] = child_list
 
-    child_node.relationships[NodeRelationship.PARENT] = parent_node.as_related_node_info()
+    child_node.relationships[
+        NodeRelationship.PARENT
+    ] = parent_node.as_related_node_info()
 
 
 def get_leaf_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
@@ -45,7 +47,9 @@ def get_child_nodes(nodes: List[BaseNode], all_nodes: List[BaseNode]) -> List[Ba
         if NodeRelationship.CHILD not in node.relationships:
             continue
 
-        children_ids.extend([r.node_id for r in node.relationships[NodeRelationship.CHILD]])
+        children_ids.extend(
+            [r.node_id for r in node.relationships[NodeRelationship.CHILD]]
+        )
 
     child_nodes = []
     for candidate_node in all_nodes:
@@ -90,7 +94,9 @@ class HierarchicalNodeParser(NodeParser):
 
     chunk_sizes: Optional[List[int]] = Field(
         default=None,
-        description=("The chunk sizes to use when splitting documents, in order of level."),
+        description=(
+            "The chunk sizes to use when splitting documents, in order of level."
+        ),
     )
     node_parser_ids: List[str] = Field(
         default_factory=list,
@@ -134,7 +140,9 @@ class HierarchicalNodeParser(NodeParser):
             if chunk_sizes is not None:
                 raise ValueError("Cannot specify both node_parser_ids and chunk_sizes.")
             if node_parser_map is None:
-                raise ValueError("Must specify node_parser_map if using node_parser_ids.")
+                raise ValueError(
+                    "Must specify node_parser_map if using node_parser_ids."
+                )
 
         return cls(
             chunk_sizes=chunk_sizes,
@@ -158,14 +166,19 @@ class HierarchicalNodeParser(NodeParser):
         """Recursively get nodes from nodes."""
         if level >= len(self.node_parser_ids):
             raise ValueError(
-                f"Level {level} is greater than number of text " f"splitters ({len(self.node_parser_ids)})."
+                f"Level {level} is greater than number of text "
+                f"splitters ({len(self.node_parser_ids)})."
             )
 
         # first split current nodes into sub-nodes
-        nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing documents into nodes")
+        nodes_with_progress = get_tqdm_iterable(
+            nodes, show_progress, "Parsing documents into nodes"
+        )
         sub_nodes = []
         for node in nodes_with_progress:
-            cur_sub_nodes = self.node_parser_map[self.node_parser_ids[level]].get_nodes_from_documents([node])
+            cur_sub_nodes = self.node_parser_map[
+                self.node_parser_ids[level]
+            ].get_nodes_from_documents([node])
             # add parent relationship from sub node to parent node
             # add child relationship from parent node to sub node
             # NOTE: Only add relationships if level > 0, since we don't want to add
@@ -208,7 +221,9 @@ class HierarchicalNodeParser(NodeParser):
             CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
         ) as event:
             all_nodes: List[BaseNode] = []
-            documents_with_progress = get_tqdm_iterable(documents, show_progress, "Parsing documents into nodes")
+            documents_with_progress = get_tqdm_iterable(
+                documents, show_progress, "Parsing documents into nodes"
+            )
 
             # TODO: a bit of a hack rn for tqdm
             for doc in documents_with_progress:
