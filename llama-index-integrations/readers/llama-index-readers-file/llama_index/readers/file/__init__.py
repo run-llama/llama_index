@@ -12,9 +12,8 @@ from llama_index.readers.file.mbox import MboxReader
 from llama_index.readers.file.paged_csv import PagedCSVReader
 from llama_index.readers.file.pymu_pdf import PyMuPDFReader
 from llama_index.readers.file.slides import PptxReader
-from llama_index.readers.file.tabular import PandasCSVReader, 
-
-from llama_index.readers.file.unstructured import UnstructuredReader
+from llama_index.readers.file.tabular import PandasCSVReader,CSVReader
+llama_index.readers.file.unstructured import UnstructuredReader
 from llama_index.readers.file.video_audio import VideoAudioReader
 from llama_index.readers.file.xml import XMLReader
 
