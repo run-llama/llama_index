@@ -5,7 +5,7 @@ import json
 import logging
 import uuid
 from threading import Thread
-from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
+from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args, Callable
 
 from llama_index.agent.openai.utils import resolve_tool_choice
 from llama_index.core.agent.types import (
@@ -80,6 +80,7 @@ def call_function(
     tools: List[BaseTool],
     tool_call: OpenAIToolCall,
     verbose: bool = False,
+    get_tool_by: Calla
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     # validations to get passed mypy

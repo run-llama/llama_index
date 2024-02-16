@@ -59,7 +59,7 @@ def from_openai_thread_messages(thread_messages: List[Any]) -> List[ChatMessage]
 
 
 def call_function(
-    tools: List[BaseTool], fn_obj: Any, verbose: bool = False
+    tools: List[BaseTool], fn_obj: Any, verbose: bool = False, get_tool_by: function = get_function_by_name
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     from openai.types.beta.threads.required_action_function_tool_call import Function
@@ -71,7 +71,7 @@ def call_function(
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
-    tool = get_function_by_name(tools, name)
+    get_tool_by(tools, name)
     argument_dict = json.loads(arguments_str)
     output = tool(**argument_dict)
     if verbose:
@@ -90,7 +90,7 @@ def call_function(
 
 
 async def acall_function(
-    tools: List[BaseTool], fn_obj: Any, verbose: bool = False
+    tools: List[BaseTool], fn_obj: Any, verbose: bool = False, get_tool_by: function = get_function_by_name
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call an async function and return the output as a string."""
     from openai.types.beta.threads.required_action_function_tool_call import Function
@@ -102,7 +102,7 @@ async def acall_function(
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
-    tool = get_function_by_name(tools, name)
+    get_tool_by(tools, name)
     argument_dict = json.loads(arguments_str)
     async_tool = adapt_to_async_tool(tool)
     output = await async_tool.acall(**argument_dict)
@@ -152,6 +152,7 @@ class OpenAIAssistantAgent(BaseAgent):
         run_retrieve_sleep_time: float = 0.1,
         file_dict: Dict[str, str] = {},
         verbose: bool = False,
+        get_tool_by: function = get_function_by_name,
     ) -> None:
         """Init params."""
         from openai import OpenAI
@@ -168,6 +169,7 @@ class OpenAIAssistantAgent(BaseAgent):
         self._run_retrieve_sleep_time = run_retrieve_sleep_time
         self._verbose = verbose
         self.file_dict = file_dict
+        self._get_tool_by = get_tool_by
 
         self.callback_manager = callback_manager or CallbackManager([])
 
@@ -187,6 +189,7 @@ class OpenAIAssistantAgent(BaseAgent):
         verbose: bool = False,
         file_ids: Optional[List[str]] = None,
         api_key: Optional[str] = None,
+        get_tool_by: function = get_function_by_name,
     ) -> "OpenAIAssistantAgent":
         """From new assistant.
 
@@ -204,6 +207,7 @@ class OpenAIAssistantAgent(BaseAgent):
             verbose: verbose
             file_ids: list of file ids
             api_key: OpenAI API key
+            get_tool_by: Function to get tool by name, format: get_tool_by(tools, name)
 
         """
         from openai import OpenAI
@@ -244,6 +248,7 @@ class OpenAIAssistantAgent(BaseAgent):
             file_dict=file_dict,
             run_retrieve_sleep_time=run_retrieve_sleep_time,
             verbose=verbose,
+            get_tool_by=get_tool_by,
         )
 
     @classmethod
@@ -257,6 +262,7 @@ class OpenAIAssistantAgent(BaseAgent):
         callback_manager: Optional[CallbackManager] = None,
         api_key: Optional[str] = None,
         verbose: bool = False,
+        get_tool_by: function = get_function_by_name,
     ) -> "OpenAIAssistantAgent":
         """From existing assistant id.
 
@@ -269,6 +275,7 @@ class OpenAIAssistantAgent(BaseAgent):
             callback_manager: callback manager
             api_key: OpenAI API key
             verbose: verbose
+            get_tool_by: Function to get tool by name, format: get_tool_by(tools, name)
 
         """
         from openai import OpenAI
@@ -289,6 +296,7 @@ class OpenAIAssistantAgent(BaseAgent):
             instructions_prefix=instructions_prefix,
             run_retrieve_sleep_time=run_retrieve_sleep_time,
             verbose=verbose,
+            get_tool_by=get_tool_by,
         )
 
     @property
@@ -350,7 +358,7 @@ class OpenAIAssistantAgent(BaseAgent):
         tool_output_objs: List[ToolOutput] = []
         for tool_call in tool_calls:
             fn_obj = tool_call.function
-            _, tool_output = call_function(self._tools, fn_obj, verbose=self._verbose)
+            _, tool_output = call_function(self._tools, fn_obj, verbose=self._verbose, get_tool_by=self._get_tool_by)
             tool_output_dicts.append(
                 {"tool_call_id": tool_call.id, "output": str(tool_output)}
             )
@@ -373,7 +381,7 @@ class OpenAIAssistantAgent(BaseAgent):
         for tool_call in tool_calls:
             fn_obj = tool_call.function
             _, tool_output = await acall_function(
-                self._tools, fn_obj, verbose=self._verbose
+                self._tools, fn_obj, verbose=self._verbose, get_tool_by=self._get_tool_by
             )
             tool_output_dicts.append(
                 {"tool_call_id": tool_call.id, "output": str(tool_output)}
