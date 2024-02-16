@@ -47,4 +47,4 @@ class IOHandler(BaseIOHandler):
 
     def deserialize_output(self, response: "StreamingBody") -> List[List[float]]:
         response_json = json.loads(response.read().decode("utf-8"))
-        return response_json["vectors"]
+        return response_json
