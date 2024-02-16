@@ -96,7 +96,7 @@ def call_function(
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
-    tool = get_function_by_name(tools, name)
+    tool = get_tool_by(tools, name)
     argument_dict = json.loads(arguments_str)
 
     # Call tool
@@ -119,7 +119,8 @@ def call_function(
 
 
 async def acall_function(
-    tools: List[BaseTool], tool_call: OpenAIToolCall, verbose: bool = False
+    tools: List[BaseTool], tool_call: OpenAIToolCall, verbose: bool = False,
+    get_tool_by: Callable[[List[BaseTool], str], BaseTool] = get_function_by_name,
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     # validations to get passed mypy
@@ -135,7 +136,7 @@ async def acall_function(
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
-    tool = get_function_by_name(tools, name)
+    tool = get_tool_by(tools, name)
     async_tool = adapt_to_async_tool(tool)
     argument_dict = json.loads(arguments_str)
     output = await async_tool.acall(**argument_dict)
@@ -167,12 +168,14 @@ class OpenAIAgentWorker(BaseAgentWorker):
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        get_tool_by: Callable[[List[BaseTool], str], BaseTool] = get_function_by_name,
     ):
         self._llm = llm
         self._verbose = verbose
         self._max_function_calls = max_function_calls
         self.prefix_messages = prefix_messages
         self.callback_manager = callback_manager or self._llm.callback_manager
+        self._get_tools_fn = get_tool_by
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -196,6 +199,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
+        get_tool_by: Callable[[List[BaseTool], str], BaseTool] = get_function_by_name,
         **kwargs: Any,
     ) -> "OpenAIAgentWorker":
         """Create an OpenAIAgent from a list of tools.
@@ -236,6 +240,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
+            get_tool_by=get_tool_by,
         )
 
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
@@ -354,13 +359,13 @@ class OpenAIAgentWorker(BaseAgentWorker):
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: get_function_by_name(
+                EventPayload.TOOL: self._get_tools_fn(
                     tools, function_call.name
                 ).metadata,
             },
         ) as event:
             function_message, tool_output = call_function(
-                tools, tool_call, verbose=self._verbose
+                tools, tool_call, verbose=self._verbose, get_tool_by=self._get_tools_fn
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         sources.append(tool_output)
@@ -383,13 +388,13 @@ class OpenAIAgentWorker(BaseAgentWorker):
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: get_function_by_name(
+                EventPayload.TOOL: self._get_tools_fn(
                     tools, function_call.name
                 ).metadata,
             },
         ) as event:
             function_message, tool_output = await acall_function(
-                tools, tool_call, verbose=self._verbose
+                tools, tool_call, verbose=self._verbose, get_tool_by=self._get_tools_fn
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         sources.append(tool_output)
