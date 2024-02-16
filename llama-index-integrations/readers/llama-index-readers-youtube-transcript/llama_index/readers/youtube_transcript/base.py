@@ -14,6 +14,11 @@ class YoutubeTranscriptReader(BasePydanticReader):
 
     is_remote: bool = True
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "YoutubeTranscriptReader"
+
     def load_data(
         self,
         ytlinks: List[str],
