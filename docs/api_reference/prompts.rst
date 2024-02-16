@@ -22,15 +22,15 @@ Default Prompts
 Prompt Classes
 ^^^^^^^^^^^^^^^^^
 
-.. autopydantic_model:: llama_index.prompts.base.BasePromptTemplate
+.. autopydantic_model:: llama_index.core.prompts.base.BasePromptTemplate
 
-.. autopydantic_model:: llama_index.prompts.base.PromptTemplate
+.. autopydantic_model:: llama_index.core.prompts.base.PromptTemplate
 
-.. autopydantic_model:: llama_index.prompts.base.ChatPromptTemplate
+.. autopydantic_model:: llama_index.core.prompts.base.ChatPromptTemplate
 
-.. autopydantic_model:: llama_index.prompts.base.SelectorPromptTemplate
+.. autopydantic_model:: llama_index.core.prompts.base.SelectorPromptTemplate
 
-.. autopydantic_model:: llama_index.prompts.base.LangchainPromptTemplate
+.. autopydantic_model:: llama_index.core.prompts.base.LangchainPromptTemplate
 
 
 Subclass Prompts (deprecated)

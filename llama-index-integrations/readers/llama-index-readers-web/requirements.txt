@@ -1,0 +1,9 @@
+html2text
+aiohttp
+beautifulsoup4
+requests
+urllib3
+playwright~=1.30
+newspaper3k
+selenium
+chromedriver-autoinstaller

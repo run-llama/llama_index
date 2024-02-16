@@ -19,7 +19,7 @@ graph.root_index.storage_context.persist(persist_dir="<persist_dir>")
 You can then avoid re-loading and re-indexing your data by loading the persisted index like this:
 
 ```python
-from llama_index import StorageContext, load_index_from_storage
+from llama_index.core import StorageContext, load_index_from_storage
 
 # rebuild storage context
 storage_context = StorageContext.from_defaults(persist_dir="<persist_dir>")
@@ -30,8 +30,8 @@ index = load_index_from_storage(storage_context)
 
 ```{tip}
 Important: if you had initialized your index with a custom
-`ServiceContext` object, you will need to pass in the same
-ServiceContext during `load_index_from_storage`, or have it set as the [global service context](/module_guides/supporting_modules/service_context.md).
+`transformations`, `embed_model`, etc., you will need to pass in the same
+options during `load_index_from_storage`, or have it set as the [global settings](/module_guides/supporting_modules/settings.md).
 ```
 
 ## Using Vector Stores
@@ -57,9 +57,9 @@ Here's what that looks like, with a sneak peek at actually querying the data:
 
 ```python
 import chromadb
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.vector_stores import ChromaVectorStore
-from llama_index.storage.storage_context import StorageContext
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core import StorageContext
 
 # load some documents
 documents = SimpleDirectoryReader("./data").load_data()
@@ -89,9 +89,9 @@ If you've already created and stored your embeddings, you'll want to load them d
 
 ```python
 import chromadb
-from llama_index import VectorStoreIndex
-from llama_index.vector_stores import ChromaVectorStore
-from llama_index.storage.storage_context import StorageContext
+from llama_index.core import VectorStoreIndex
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core import StorageContext
 
 # initialize client
 db = chromadb.PersistentClient(path="./chroma_db")
@@ -127,7 +127,7 @@ Now you have loaded data, indexed it, and stored that index, you're ready to [qu
 If you've already created an index, you can add new documents to your index using the `insert` method.
 
 ```python
-from llama_index import VectorStoreIndex
+from llama_index.core import VectorStoreIndex
 
 index = VectorStoreIndex([])
 for doc in documents:
