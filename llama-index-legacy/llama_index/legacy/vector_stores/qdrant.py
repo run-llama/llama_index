@@ -717,9 +717,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         similarities = []
         ids = []
 
-        import pdb
-
-        pdb.set_trace()
         for point in response:
             payload = cast(Payload, point.payload)
             try:
