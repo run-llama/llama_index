@@ -503,7 +503,7 @@ class IndexNode(TextNode):
     obj: Any = None
 
     def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        from llama_index.storage.docstore.utils import doc_to_json
+        from llama_index.core.storage.docstore.utils import doc_to_json
 
         data = super().dict(**kwargs)
 
@@ -542,11 +542,11 @@ class IndexNode(TextNode):
         obj = data.get("obj", None)
         parsed_obj = None
         if isinstance(obj, str):
-            parsed_obj = (TextNode(text=obj),)
+            parsed_obj = TextNode(text=obj)
         elif isinstance(obj, dict):
-            from llama_index.storage.docstore.utils import json_to_doc
+            from llama_index.core.storage.docstore.utils import json_to_doc
 
-            # check if its a node, else assume string
+            # check if its a node, else assume stringable
             try:
                 parsed_obj = json_to_doc(obj)
             except Exception:
