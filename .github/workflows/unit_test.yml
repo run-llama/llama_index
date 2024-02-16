@@ -38,8 +38,8 @@ jobs:
         with:
           # v0 makes it easy to bust the cache if needed
           # just increase the integer to start with a fresh cache
-          gha-cache-key: v0-py${{ matrix.python_version }}
-          named-caches-hash: v0-py${{ matrix.python_version }}
+          gha-cache-key: v1-py${{ matrix.python_version }}
+          named-caches-hash: v1-py${{ matrix.python_version }}
           pants-python-version: ${{ matrix.python-version }}
           pants-ci-config: pants.toml
       - name: Check BUILD files

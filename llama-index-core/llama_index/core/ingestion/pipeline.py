@@ -1,5 +1,6 @@
 import asyncio
 import multiprocessing
+import os
 import re
 import warnings
 from concurrent.futures import ProcessPoolExecutor
@@ -8,14 +9,37 @@ from functools import partial, reduce
 from hashlib import sha256
 from itertools import repeat
 from pathlib import Path
-from typing import Any, Generator, List, Optional, Sequence, Union
+from typing import Any, Generator, List, Optional, Sequence, Union, cast
 
 from fsspec import AbstractFileSystem
+from llama_index_client import (
+    ConfigurableDataSourceNames,
+    ConfigurableTransformationNames,
+    Pipeline,
+    PipelineType,
+    Project,
+    ProjectCreate,
+)
+from llama_index_client.client import PlatformApi
+
+from llama_index.core.constants import (
+    DEFAULT_APP_URL,
+    DEFAULT_BASE_URL,
+    DEFAULT_PIPELINE_NAME,
+    DEFAULT_PROJECT_NAME,
+)
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
+from llama_index.core.ingestion.data_sources import (
+    ConfigurableDataSources,
+)
+from llama_index.core.ingestion.transformations import (
+    ConfigurableTransformations,
+)
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.readers.base import ReaderConfig
 from llama_index.core.schema import (
+    BaseComponent,
     BaseNode,
     Document,
     MetadataMode,
@@ -29,6 +53,20 @@ from llama_index.core.storage.docstore import (
 from llama_index.core.storage.storage_context import DOCSTORE_FNAME
 from llama_index.core.utils import concat_dirs
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
+
+
+def deserialize_transformation_component(
+    component_dict: dict, component_type: ConfigurableTransformationNames
+) -> BaseComponent:
+    component_cls = ConfigurableTransformations[component_type].value.component_type
+    return component_cls.from_dict(component_dict)
+
+
+def deserialize_source_component(
+    component_dict: dict, component_type: ConfigurableDataSourceNames
+) -> BaseComponent:
+    component_cls = ConfigurableDataSources[component_type].value.component_type
+    return component_cls.from_dict(component_dict)
 
 
 def remove_unstable_values(s: str) -> str:
@@ -164,12 +202,22 @@ class DocstoreStrategy(str, Enum):
 class IngestionPipeline(BaseModel):
     """An ingestion pipeline that can be applied to data."""
 
+    name: str = Field(
+        default=DEFAULT_PIPELINE_NAME,
+        description="Unique name of the ingestion pipeline",
+    )
+    project_name: str = Field(
+        default=DEFAULT_PROJECT_NAME, description="Unique name of the project"
+    )
+
     transformations: List[TransformComponent] = Field(
         description="Transformations to apply to the data"
     )
 
     documents: Optional[Sequence[Document]] = Field(description="Documents to ingest")
-    reader: Optional[ReaderConfig] = Field(description="Reader to use to read the data")
+    readers: Optional[List[ReaderConfig]] = Field(
+        description="Reader to use to read the data"
+    )
     vector_store: Optional[BasePydanticVectorStore] = Field(
         description="Vector store to use to store the data"
     )
@@ -186,33 +234,286 @@ class IngestionPipeline(BaseModel):
     )
     disable_cache: bool = Field(default=False, description="Disable the cache")
 
+    base_url: str = Field(
+        default=DEFAULT_BASE_URL, description="Base URL for the LlamaCloud API"
+    )
+    app_url: str = Field(
+        default=DEFAULT_APP_URL, description="Base URL for the LlamaCloud app"
+    )
+    api_key: Optional[str] = Field(default=None, description="LlamaCloud API key")
+
     class Config:
         arbitrary_types_allowed = True
 
     def __init__(
         self,
+        name: str = DEFAULT_PIPELINE_NAME,
+        project_name: str = DEFAULT_PROJECT_NAME,
         transformations: Optional[List[TransformComponent]] = None,
-        reader: Optional[ReaderConfig] = None,
+        readers: Optional[List[ReaderConfig]] = None,
         documents: Optional[Sequence[Document]] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         cache: Optional[IngestionCache] = None,
         docstore: Optional[BaseDocumentStore] = None,
         docstore_strategy: DocstoreStrategy = DocstoreStrategy.UPSERTS,
+        base_url: Optional[str] = None,
+        app_url: Optional[str] = None,
+        api_key: Optional[str] = None,
         disable_cache: bool = False,
     ) -> None:
         if transformations is None:
             transformations = self._get_default_transformations()
 
+        api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
+
         super().__init__(
+            name=name,
+            project_name=project_name,
             transformations=transformations,
-            reader=reader,
+            readers=readers,
             documents=documents,
             vector_store=vector_store,
             cache=cache or IngestionCache(),
             docstore=docstore,
             docstore_strategy=docstore_strategy,
+            base_url=base_url or DEFAULT_BASE_URL,
+            app_url=app_url or DEFAULT_APP_URL,
+            api_key=api_key,
             disable_cache=disable_cache,
         )
+
+    @classmethod
+    def from_pipeline_name(
+        cls,
+        name: str,
+        project_name: str = DEFAULT_PROJECT_NAME,
+        base_url: Optional[str] = None,
+        cache: Optional[IngestionCache] = None,
+        api_key: Optional[str] = None,
+        app_url: Optional[str] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
+        disable_cache: bool = False,
+    ) -> "IngestionPipeline":
+        base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
+        assert base_url is not None
+
+        api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", None)
+
+        client = PlatformApi(base_url=base_url, token=api_key)
+
+        projects: List[Project] = client.project.list_projects(
+            project_name=project_name
+        )
+        if len(projects) < 0:
+            raise ValueError(f"Project with name {project_name} not found")
+
+        project = projects[0]
+        assert project.id is not None, "Project ID should not be None"
+
+        pipelines: List[Pipeline] = client.pipeline.search_pipelines(
+            project_name=project_name, pipeline_name=name
+        )
+        if len(pipelines) < 0:
+            raise ValueError(f"Pipeline with name {name} not found")
+
+        pipeline = pipelines[0]
+
+        transformations: List[TransformComponent] = []
+        for configured_transformation in pipeline.configured_transformations:
+            component_dict = cast(dict, configured_transformation.component)
+            transformation_component_type = (
+                configured_transformation.configurable_transformation_type
+            )
+            transformation = deserialize_transformation_component(
+                component_dict, transformation_component_type
+            )
+            transformations.append(transformation)
+
+        documents = []
+        readers = []
+        for data_source in pipeline.data_sources:
+            component_dict = cast(dict, data_source.component)
+            source_component_type = data_source.source_type
+
+            if data_source.source_type == ConfigurableDataSourceNames.READER:
+                source_component = deserialize_source_component(
+                    component_dict, source_component_type
+                )
+                readers.append(source_component)
+            elif data_source.source_type == ConfigurableDataSourceNames.DOCUMENT:
+                source_component = deserialize_source_component(
+                    component_dict, source_component_type
+                )
+                if (
+                    isinstance(source_component, BaseNode)
+                    and source_component.get_content()
+                ):
+                    documents.append(source_component)
+
+        return cls(
+            name=name,
+            project_name=project_name,
+            transformations=transformations,
+            readers=readers,
+            documents=documents,
+            vector_store=vector_store,
+            base_url=base_url,
+            cache=cache,
+            disable_cache=disable_cache,
+            api_key=api_key,
+            app_url=app_url,
+        )
+
+    @classmethod
+    def from_pipeline_name(
+        cls,
+        name: str,
+        project_name: str = DEFAULT_PROJECT_NAME,
+        base_url: Optional[str] = None,
+        cache: Optional[IngestionCache] = None,
+        api_key: Optional[str] = None,
+        app_url: Optional[str] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
+        disable_cache: bool = False,
+    ) -> "IngestionPipeline":
+        base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
+        assert base_url is not None
+
+        api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", None)
+
+        client = PlatformApi(base_url=base_url, token=api_key)
+
+        projects: List[Project] = client.project.list_projects(
+            project_name=project_name
+        )
+        if len(projects) < 0:
+            raise ValueError(f"Project with name {project_name} not found")
+
+        project = projects[0]
+        assert project.id is not None, "Project ID should not be None"
+
+        pipelines: List[Pipeline] = client.pipeline.search_pipelines(
+            project_name=project_name, pipeline_name=name
+        )
+        if len(pipelines) < 0:
+            raise ValueError(f"Pipeline with name {name} not found")
+
+        pipeline = pipelines[0]
+
+        transformations: List[TransformComponent] = []
+        for configured_transformation in pipeline.configured_transformations:
+            component_dict = cast(dict, configured_transformation.component)
+            transformation_component_type = (
+                configured_transformation.configurable_transformation_type
+            )
+            transformation = deserialize_transformation_component(
+                component_dict, transformation_component_type
+            )
+            transformations.append(transformation)
+
+        documents = []
+        readers = []
+        for data_source in pipeline.data_sources:
+            component_dict = cast(dict, data_source.component)
+            source_component_type = data_source.source_type
+
+            if data_source.source_type == ConfigurableDataSourceNames.READER:
+                source_component = deserialize_source_component(
+                    component_dict, source_component_type
+                )
+                readers.append(source_component)
+            elif data_source.source_type == ConfigurableDataSourceNames.DOCUMENT:
+                source_component = deserialize_source_component(
+                    component_dict, source_component_type
+                )
+                if (
+                    isinstance(source_component, BaseNode)
+                    and source_component.get_content()
+                ):
+                    documents.append(source_component)
+
+        return cls(
+            name=name,
+            project_name=project_name,
+            transformations=transformations,
+            readers=readers,
+            documents=documents,
+            vector_store=vector_store,
+            base_url=base_url,
+            cache=cache,
+            disable_cache=disable_cache,
+            api_key=api_key,
+            app_url=app_url,
+        )
+
+    def register(
+        self,
+        verbose: bool = True,
+        documents: Optional[List[Document]] = None,
+        nodes: Optional[List[BaseNode]] = None,
+    ) -> str:
+        client = PlatformApi(base_url=self.base_url, token=self.api_key)
+
+        input_nodes = self._prepare_inputs(documents, nodes)
+
+        project = client.project.upsert_project(
+            request=ProjectCreate(name=self.project_name)
+        )
+        assert project.id is not None, "Project ID should not be None"
+
+        # avoid circular import
+        from llama_index.core.ingestion.api_utils import get_pipeline_create
+
+        pipeline_create = get_pipeline_create(
+            self.name,
+            client,
+            PipelineType.PLAYGROUND,
+            project_name=self.project_name,
+            transformations=self.transformations,
+            input_nodes=input_nodes,
+            readers=self.readers,
+        )
+
+        # upload
+        pipeline = client.project.upsert_pipeline_for_project(
+            project.id,
+            request=pipeline_create,
+        )
+        assert pipeline.id is not None, "Pipeline ID should not be None"
+
+        # Print playground URL if not running remote
+        if verbose:
+            print(
+                f"Pipeline available at: {self.app_url}/project/{project.id}/playground/{pipeline.id}"
+            )
+
+        return pipeline.id
+
+    def run_remote(
+        self,
+        documents: Optional[List[Document]] = None,
+        nodes: Optional[List[BaseNode]] = None,
+    ) -> str:
+        client = PlatformApi(base_url=self.base_url, token=self.api_key)
+
+        pipeline_id = self.register(documents=documents, nodes=nodes, verbose=False)
+
+        # start pipeline?
+        # the `PipeLineExecution` object should likely generate a URL at some point
+        pipeline_execution = client.pipeline.create_playground_job(pipeline_id)
+
+        assert (
+            pipeline_execution.id is not None
+        ), "Pipeline execution ID should not be None"
+
+        print(
+            f"Find your remote results here: {self.app_url}/"
+            f"pipelines/execution?id={pipeline_execution.id}"
+        )
+
+        return pipeline_execution.id
 
     def persist(
         self,
@@ -278,8 +579,9 @@ class IngestionPipeline(BaseModel):
         if self.documents is not None:
             input_nodes += self.documents
 
-        if self.reader is not None:
-            input_nodes += self.reader.read()
+        if self.readers is not None:
+            for reader in self.readers:
+                input_nodes += reader.read()
 
         return input_nodes
 

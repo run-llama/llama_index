@@ -22,6 +22,11 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         default=None, description="The Azure deployment to use."
     )
 
+    api_base: str = Field(default="", description="The base URL for Azure deployment.")
+    api_version: str = Field(
+        default="", description="The version for Azure OpenAI API."
+    )
+
     _client: AzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
 

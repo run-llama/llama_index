@@ -4,7 +4,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 import requests  # type: ignore
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
@@ -14,7 +14,7 @@ SEARCH_URL = "https://api.notion.com/v1/search"
 
 
 # TODO: Notion DB reader coming soon!
-class NotionPageReader(BaseReader):
+class NotionPageReader(BasePydanticReader):
     """Notion Page reader.
 
     Reads a set of Notion pages.
@@ -23,6 +23,10 @@ class NotionPageReader(BaseReader):
         integration_token (str): Notion integration token.
 
     """
+
+    is_remote: bool = True
+    token: str
+    headers: Dict[str, str]
 
     def __init__(self, integration_token: Optional[str] = None) -> None:
         """Initialize with parameters."""
@@ -33,12 +37,15 @@ class NotionPageReader(BaseReader):
                     "Must specify `integration_token` or set environment "
                     "variable `NOTION_INTEGRATION_TOKEN`."
                 )
-        self.token = integration_token
-        self.headers = {
+
+        token = integration_token
+        headers = {
             "Authorization": "Bearer " + self.token,
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28",
         }
+
+        super().__init__(token=token, headers=headers)
 
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
         """Read a block."""
