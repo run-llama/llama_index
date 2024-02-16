@@ -26,12 +26,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
     BasePydanticVectorStore,
 )
-from llama_index.readers.clickhouse.base import (
-    DISTANCE_MAPPING,
-    ClickHouseSettings,
-    escape_str,
-    format_list_to_string,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +39,78 @@ def _default_tokenizer(text: str) -> List[str]:
             continue
         result.append(token.strip())
     return result
+
+
+def escape_str(value: str) -> str:
+    BS = "\\"
+    must_escape = (BS, "'")
+    return (
+        "".join(f"{BS}{c}" if c in must_escape else c for c in value) if value else ""
+    )
+
+
+def format_list_to_string(lst: List) -> str:
+    return "[" + ",".join(str(item) for item in lst) + "]"
+
+
+DISTANCE_MAPPING = {
+    "l2": "L2Distance",
+    "cosine": "cosineDistance",
+    "dot": "dotProduct",
+}
+
+
+class ClickHouseSettings:
+    """ClickHouse Client Configuration.
+
+    Attributes:
+        table (str): Table name to operate on.
+        database (str): Database name to find the table.
+        engine (str): Engine. Options are "MergeTree" and "Memory". Default is "MergeTree".
+        index_type (str): Index type string.
+        metric (str): Metric type to compute distance e.g., cosine, l3, or dot.
+        batch_size (int): The size of documents to insert.
+        index_params (dict, optional): Index build parameter.
+        search_params (dict, optional): Index search parameters for ClickHouse query.
+    """
+
+    def __init__(
+        self,
+        table: str,
+        database: str,
+        engine: str,
+        index_type: str,
+        metric: str,
+        batch_size: int,
+        index_params: Optional[dict] = None,
+        search_params: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> None:
+        self.table = table
+        self.database = database
+        self.engine = engine
+        self.index_type = index_type
+        self.metric = metric
+        self.batch_size = batch_size
+        self.index_params = index_params
+        self.search_params = search_params
+
+    def build_query_statement(
+        self,
+        query_embed: List[float],
+        where_str: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> str:
+        query_embed_str = format_list_to_string(query_embed)
+        where_str = f"WHERE {where_str}" if where_str else ""
+        distance = DISTANCE_MAPPING[self.metric]
+        return f"""
+            SELECT id, doc_id, text, node_info, metadata,
+            {distance}(vector, {query_embed_str}) AS score
+            FROM {self.database}.{self.table} {where_str}
+            ORDER BY score ASC
+            LIMIT {limit}
+            """
 
 
 class ClickHouseVectorStore(BasePydanticVectorStore):
