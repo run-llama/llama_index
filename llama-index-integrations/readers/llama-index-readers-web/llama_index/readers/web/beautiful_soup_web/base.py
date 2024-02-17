@@ -4,6 +4,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
@@ -144,7 +145,11 @@ class BeautifulSoupWebReader(BasePydanticReader):
     """
 
     is_remote: bool = True
-    website_extractor: Dict[str, Callable] = DEFAULT_WEBSITE_EXTRACTOR
+    _website_extractor: Dict[str, Callable] = PrivateAttr()
+
+    def __init__(self, website_extractor: Optional[Dict[str, Callable]] = None) -> None:
+        self._website_extractor = website_extractor or DEFAULT_WEBSITE_EXTRACTOR
+        super().__init__()
 
     @classmethod
     def class_name(cls) -> str:
@@ -187,8 +192,8 @@ class BeautifulSoupWebReader(BasePydanticReader):
 
             data = ""
             extra_info = {"URL": url}
-            if hostname in self.website_extractor:
-                data, metadata = self.website_extractor[hostname](
+            if hostname in self._website_extractor:
+                data, metadata = self._website_extractor[hostname](
                     soup=soup, url=url, include_url_in_text=include_url_in_text
                 )
                 extra_info.update(metadata)
