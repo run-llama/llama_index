@@ -9,6 +9,11 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+classes = ["DuckDBVectorStore"]
+contains_example = true
+import_path = "llama_index.vector_stores.duckdb"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -20,13 +25,14 @@ python_version = "3.8"
 authors = ["Adithya Krishnan <me@krishadi.com>"]
 description = "llama-index vector_stores duckdb integration"
 license = "MIT"
+maintainers = ["krish-adi"]
 name = "llama-index-vector-stores-duckdb"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1<4.0"
 llama-index-core = "^0.10.0"
 duckdb = "0.9.2"
 
