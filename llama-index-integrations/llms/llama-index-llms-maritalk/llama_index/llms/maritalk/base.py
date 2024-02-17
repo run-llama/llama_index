@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Optional, Sequence
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -8,11 +8,12 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.callbacks import llm_chat_callback
-
 import requests
+import os
+
 
 class Maritalk(LLM):
-    api_key: str = Field(description="Your MariTalk API key.")
+    api_key: Optional[str] = Field(default=None, description="Your MariTalk API key.")
     temperature: float = Field(
         default=0.7, gt=0.0, lt=1.0, description="Run inference with this temperature. Must be in the closed interval [0.0, 1.0]."
     )
@@ -26,10 +27,17 @@ class Maritalk(LLM):
         default=0.95, gt=0.0, lt=1.0, description="Nucleus sampling parameter controlling the size of the probability mass considered for sampling."
     )
     system_message_workaround: bool = Field(
-        default=True, description="Whether to include a workaround for system messages by adding them as a user message."
+        default=True, description="Whether to include a workaround for system message by adding it as a user message."
     )
 
     _endpoint: str = PrivateAttr("https://chat.maritaca.ai/api/chat/inference")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # If an API key is not provided during instantiation, fall back to the MARITALK_API_KEY environment variable
+        self.api_key = self.api_key or os.getenv('MARITALK_API_KEY')
+        if not self.api_key:
+            raise ValueError("An API key must be provided or set in the 'MARITALK_API_KEY' environment variable.")
 
     @classmethod
     def class_name(cls) -> str:
