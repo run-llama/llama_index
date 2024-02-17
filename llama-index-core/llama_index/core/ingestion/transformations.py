@@ -6,12 +6,6 @@ from enum import Enum
 from typing import Generic, Sequence, Type, TypeVar
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
-from llama_index.core.extractors import (
-    KeywordExtractor,
-    QuestionsAnsweredExtractor,
-    SummaryExtractor,
-    TitleExtractor,
-)
 from llama_index.core.node_parser import (
     CodeSplitter,
     HTMLNodeParser,
@@ -60,12 +54,6 @@ class TransformationCategory(BaseModel):
 class TransformationCategories(Enum):
     """Supported transformation categories."""
 
-    METADATA_EXTRACTOR = TransformationCategory(
-        name="MetadataExtractor",
-        description="Applies a function to extract metadata from nodes",
-        input_type=TransformationIOTypes.NODES.value,
-        output_type=TransformationIOTypes.NODES.value,
-    )
     NODE_PARSER = TransformationCategory(
         name="NodeParser",
         description="Applies a function to parse nodes from documents",
@@ -129,51 +117,6 @@ def build_configurable_transformation_enum():
             )
 
     enum_members = []
-
-    # Metadata extractors
-    enum_members.append(
-        (
-            "KEYWORD_EXTRACTOR",
-            ConfigurableTransformation(
-                name="Keyword Extractor",
-                transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-                component_type=KeywordExtractor,
-            ),
-        )
-    )
-
-    enum_members.append(
-        (
-            "TITLE_EXTRACTOR",
-            ConfigurableTransformation(
-                name="Title Extractor",
-                transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-                component_type=TitleExtractor,
-            ),
-        )
-    )
-
-    enum_members.append(
-        (
-            "SUMMARY_EXTRACTOR",
-            ConfigurableTransformation(
-                name="Summary Extractor",
-                transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-                component_type=SummaryExtractor,
-            ),
-        )
-    )
-
-    enum_members.append(
-        (
-            "QUESTIONS_ANSWERED_EXTRACTOR",
-            ConfigurableTransformation(
-                name="Questions Answered Extractor",
-                transformation_category=TransformationCategories.METADATA_EXTRACTOR,
-                component_type=QuestionsAnsweredExtractor,
-            ),
-        )
-    )
 
     # Node parsers
     enum_members.append(

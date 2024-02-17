@@ -1,4 +1,5 @@
 """Base schema for data structures."""
+
 import json
 import textwrap
 import uuid
@@ -499,7 +500,26 @@ class IndexNode(TextNode):
     """
 
     index_id: str
-    obj: Any = Field(exclude=True)
+    obj: Any = None
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        from llama_index.core.storage.docstore.utils import doc_to_json
+
+        data = super().dict(**kwargs)
+
+        try:
+            if self.obj is None:
+                data["obj"] = None
+            elif isinstance(self.obj, BaseNode):
+                data["obj"] = doc_to_json(self.obj)
+            elif isinstance(self.obj, BaseModel):
+                data["obj"] = self.obj.dict()
+            else:
+                data["obj"] = json.dumps(self.obj)
+        except Exception:
+            raise ValueError("IndexNode obj is not serializable: " + str(self.obj))
+
+        return data
 
     @classmethod
     def from_text_node(
@@ -513,6 +533,28 @@ class IndexNode(TextNode):
             **node.dict(),
             index_id=index_id,
         )
+
+    # TODO: return type here not supported by current mypy version
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+        output = super().from_dict(data, **kwargs)
+
+        obj = data.get("obj", None)
+        parsed_obj = None
+        if isinstance(obj, str):
+            parsed_obj = TextNode(text=obj)
+        elif isinstance(obj, dict):
+            from llama_index.core.storage.docstore.utils import json_to_doc
+
+            # check if its a node, else assume stringable
+            try:
+                parsed_obj = json_to_doc(obj)
+            except Exception:
+                parsed_obj = TextNode(text=str(obj))
+
+        output.obj = parsed_obj
+
+        return output
 
     @classmethod
     def get_type(cls) -> str:

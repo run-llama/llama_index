@@ -58,6 +58,7 @@ def process_repository(
     ignore_list,
     concatenate: bool = False,
     extensions: Optional[List[str]] = None,
+    encoding: Optional[str] = "utf-8",
 ) -> List[str]:
     """Process repository."""
     result_texts = []
@@ -74,7 +75,7 @@ def process_repository(
                 not should_ignore(relative_file_path, ignore_list)
                 and is_correct_extension
             ):
-                with open(file_path, errors="ignore") as file:
+                with open(file_path, errors="ignore", encoding=encoding) as file:
                     contents = file.read()
                 result_text += "-" * 4 + "\n"
                 result_text += f"{relative_file_path}\n"
@@ -105,6 +106,7 @@ class GPTRepoReader(BaseReader):
         repo_path: str,
         preamble_str: Optional[str] = None,
         extensions: Optional[List[str]] = None,
+        encoding: Optional[str] = "utf-8",
     ) -> List[Document]:
         """Load data from the input directory.
 
@@ -146,7 +148,11 @@ class GPTRepoReader(BaseReader):
                 "aforementioned file as context.\n"
             )
         text_list = process_repository(
-            repo_path, ignore_list, concatenate=self.concatenate, extensions=extensions
+            repo_path,
+            ignore_list,
+            concatenate=self.concatenate,
+            extensions=extensions,
+            encoding=encoding,
         )
         docs = []
         for text in text_list:
