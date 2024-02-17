@@ -161,14 +161,14 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             SearchableField(
                 name=self._field_mapping["chunk"],
                 type="Edm.String",
-                analyzer_name=self.language_analyzer,
+                analyzer_name=self._language_analyzer,
             ),
             SearchField(
                 name=self._field_mapping["embedding"],
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
-                vector_search_dimensions=self.embedding_dimensionality,
-                vector_search_profile_name=self.vector_profile_name,
+                vector_search_dimensions=self._embedding_dimensionality,
+                vector_search_profile_name=self._vector_profile_name,
             ),
             SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
