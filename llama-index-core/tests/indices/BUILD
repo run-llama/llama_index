@@ -1,3 +1,5 @@
+python_sources()
+
 python_test_utils(
     name="test_utils",
     dependencies=[
@@ -12,5 +14,3 @@ python_test_utils(
 python_tests(
     name="tests",
 )
-
-python_sources()

@@ -1,3 +1,5 @@
+python_sources()
+
 python_tests(
     name="tests",
     skip_tests=True,
@@ -90,5 +92,3 @@ python_tests(
         "!!llama-index-integrations/vector_stores/llama-index-vector-stores-weaviate:poetry#weaviate-client",
     ],
 )
-
-python_sources()
