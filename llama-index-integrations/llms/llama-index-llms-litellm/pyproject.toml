@@ -27,7 +27,7 @@ readme = "README.md"
 version = "0.1.1"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.9,<3.12"
 llama-index-core = "^0.10.1"
 litellm = "^1.18.13"
 
