@@ -148,7 +148,11 @@ class GPTRepoReader(BaseReader):
                 "aforementioned file as context.\n"
             )
         text_list = process_repository(
-            repo_path, ignore_list, concatenate=self.concatenate, extensions=extensions, encoding=encoding
+            repo_path,
+            ignore_list,
+            concatenate=self.concatenate,
+            extensions=extensions,
+            encoding=encoding,
         )
         docs = []
         for text in text_list:
