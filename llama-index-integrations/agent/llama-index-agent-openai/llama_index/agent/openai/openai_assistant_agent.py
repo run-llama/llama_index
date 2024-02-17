@@ -59,8 +59,10 @@ def from_openai_thread_messages(thread_messages: List[Any]) -> List[ChatMessage]
 
 
 def call_function(
-    tools: List[BaseTool], fn_obj: Any, verbose: bool = False,
-    get_tool_by: Callable[[List[BaseTool], str], BaseTool] = get_function_by_name
+    tools: List[BaseTool],
+    fn_obj: Any,
+    verbose: bool = False,
+    get_tool_by: Callable[[List[BaseTool], str], BaseTool] = get_function_by_name,
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     from openai.types.beta.threads.required_action_function_tool_call import Function
@@ -91,8 +93,10 @@ def call_function(
 
 
 async def acall_function(
-    tools: List[BaseTool], fn_obj: Any, verbose: bool = False,
-    get_tool_by: Callable[[List[BaseTool], str], BaseTool] = get_function_by_name
+    tools: List[BaseTool],
+    fn_obj: Any,
+    verbose: bool = False,
+    get_tool_by: Callable[[List[BaseTool], str], BaseTool] = get_function_by_name,
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call an async function and return the output as a string."""
     from openai.types.beta.threads.required_action_function_tool_call import Function
@@ -360,8 +364,12 @@ class OpenAIAssistantAgent(BaseAgent):
         tool_output_objs: List[ToolOutput] = []
         for tool_call in tool_calls:
             fn_obj = tool_call.function
-            _, tool_output = call_function(self._tools, fn_obj, verbose=self._verbose,
-                                           get_tool_by=self._get_tool_fn)
+            _, tool_output = call_function(
+                self._tools,
+                fn_obj,
+                verbose=self._verbose,
+                get_tool_by=self._get_tool_fn,
+            )
             tool_output_dicts.append(
                 {"tool_call_id": tool_call.id, "output": str(tool_output)}
             )
@@ -384,7 +392,10 @@ class OpenAIAssistantAgent(BaseAgent):
         for tool_call in tool_calls:
             fn_obj = tool_call.function
             _, tool_output = await acall_function(
-                self._tools, fn_obj, verbose=self._verbose, get_tool_by=self._get_tool_fn
+                self._tools,
+                fn_obj,
+                verbose=self._verbose,
+                get_tool_by=self._get_tool_fn,
             )
             tool_output_dicts.append(
                 {"tool_call_id": tool_call.id, "output": str(tool_output)}
