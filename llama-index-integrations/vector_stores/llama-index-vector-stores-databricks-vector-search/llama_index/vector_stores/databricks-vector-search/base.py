@@ -31,8 +31,6 @@ from llama_index.core.vector_stores.utils import node_to_metadata_dict
 from llama_index.core.schema import TextNode, BaseNode
 from llama_index.core.bridge.pydantic import PrivateAttr
 
-from llama_index.vector_stores.databricks_vector_search.utils import _import_databricks
-
 
 if TYPE_CHECKING:
     from databricks.vector_search.client import VectorSearchIndex
@@ -131,8 +129,13 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         text_column: Optional[str] = None,
         columns: Optional[List[str]] = None,
     ) -> None:
-        _import_databricks()
-
+        try:
+            from databricks.vector_search.client import VectorSearchIndex
+        except ImportError:
+            raise ImportError(
+                "`databricks-vectorsearch` package not found: "
+                "please run `pip install databricks-vectorsearch`"
+            )
         if not isinstance(index, VectorSearchIndex):
             raise TypeError(
                 f"index must be of type `VectorSearchIndex`, not {type(index)}"
