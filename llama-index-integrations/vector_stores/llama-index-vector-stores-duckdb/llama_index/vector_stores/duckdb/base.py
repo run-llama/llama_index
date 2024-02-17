@@ -1,13 +1,11 @@
 """DuckDB vector store."""
 
 import logging
-import math
 import json
-from typing import Any, Dict, Generator, List, Optional, cast
+from typing import Any, List, Optional
 import os
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
-from llama_index.core.utils import truncate_text
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -15,8 +13,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
-    metadata_dict_to_node,
     node_to_metadata_dict,
 )
 
@@ -29,7 +25,7 @@ class DuckDBLocalContext:
         self.database_path = database_path
         self._conn = None
 
-    def __enter__(self):
+    def __enter__(self) -> "duckdb.DuckDBPyConnection":
         try:
             import duckdb
         except ImportError:
@@ -51,7 +47,7 @@ class DuckDBLocalContext:
 
         return self._conn
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self._conn.close()
 
         if self._conn:
@@ -143,7 +139,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         cls, database_path: str, table_name: str = "documents"
     ) -> "DuckDBVectorStore":
         """Load a DuckDB vector store from a local file."""
-
         with DuckDBLocalContext(database_path) as _conn:
             try:
                 _table_info = _conn.execute(f"SHOW {table_name};").fetchall()
@@ -190,7 +185,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         persist_dir: Optional[str] = "./storage",
         **kwargs: Any,
     ) -> "DuckDBVectorStore":
-
         return cls(
             database_name=database_name,
             table_name=table_name,
@@ -212,7 +206,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         return self._conn
 
     def _initialize(self) -> None:
-
         if not self._is_initialized:
             # TODO: schema.table also.
             # Check if table and type is present
@@ -261,12 +254,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
-
-        try:
-            import duckdb
-        except ImportError:
-            raise ImportError(import_err_msg)
-
         self._initialize()
 
         ids = []
@@ -295,7 +282,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-
         _ddb_query = f"""
             DELETE FROM {self.table_name}
             WHERE json_extract_string(metadata_, '$.ref_doc_id') = '{ref_doc_id}';
@@ -311,7 +297,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         standard_filters: MetadataFilters,
     ) -> dict:
         """Translate standard metadata filters to DuckDB SQL specification."""
-
         filters_list = []
         # condition = standard_filters.condition or "and"  ## and/or as strings.
         condition = "AND"
@@ -357,7 +342,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             query.similarity_top_k (int): top k most similar nodes
 
         """
-
         nodes = []
         similarities = []
         ids = []
@@ -371,7 +355,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                 SELECT *, list_cosine_similarity(embedding, {query.query_embedding}) AS score
                 FROM {self.table_name}
                 WHERE {_filter_string}
-            ) sq            
+            ) sq
             WHERE score IS NOT NULL
             ORDER BY score DESC LIMIT {query.similarity_top_k};
             """
