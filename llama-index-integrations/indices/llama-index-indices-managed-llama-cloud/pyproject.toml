@@ -9,6 +9,11 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+classes = ["LlamaCloudIndex", "LlamaCloudRetriever"]
+contains_example = false
+import_path = "llama_index.indices.managed.llama_cloud"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -20,7 +25,7 @@ python_version = "3.8"
 authors = ["Logan Markewich <logan@llamaindex.ai>"]
 description = "llama-index indices llama-cloud integration"
 license = "MIT"
-name = "llama-index-indices-llama-cloud"
+name = "llama-index-indices-managed-llama-cloud"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
