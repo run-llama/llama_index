@@ -30,7 +30,7 @@ class SharePointReader(BaseReader):
 
         Args:
             client_id: The Application ID for the app registered in Microsoft Azure Portal.
-                       The application must alse be configured with MS Graph permissions "Files.ReadAll", "Sites.ReadAll" and BrowserSiteLists.Read.All.
+                       The application must also be configured with MS Graph permissions "Files.ReadAll", "Sites.ReadAll" and BrowserSiteLists.Read.All.
             client_secret: The application secret for the app registered in Azure.
             tenant_id: Unique identifier of the Azure Active Directory Instance.
         """
@@ -134,7 +134,7 @@ class SharePointReader(BaseReader):
                 return response.json()["value"][0]["id"]
             else:
                 raise ValueError(
-                    "Error occured while fetching the drives for the sharepoint site."
+                    "Error occurred while fetching the drives for the sharepoint site."
                 )
         else:
             logger.error(response.json()["error"])
@@ -226,7 +226,7 @@ class SharePointReader(BaseReader):
         Returns:
             str: The path of the downloaded file in the temporary directory.
         """
-        # Get the donwload URL for the file.
+        # Get the download URL for the file.
         file_download_url = item["@microsoft.graph.downloadUrl"]
         file_name = item["name"]
 

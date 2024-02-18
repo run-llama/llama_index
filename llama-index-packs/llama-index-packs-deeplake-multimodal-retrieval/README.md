@@ -1,6 +1,6 @@
 # DeepLake DeepMemory Pack
 
-This LlamaPack inserts your multimodal data (texts, images) into deeplake and insantiates an deeplake retriever, which will use clip for embedding images and GPT4-V during runtime.
+This LlamaPack inserts your multimodal data (texts, images) into deeplake and instantiates an deeplake retriever, which will use clip for embedding images and GPT4-V during runtime.
 
 ## CLI Usage
 
@@ -51,7 +51,7 @@ response = deeplake_pack.run("Tell me a bout a Music celebritiy.")
 You can also use modules individually.
 
 ```python
-# use the retreiver
+# use the retriever
 retriever = deeplake_pack.retriever
 nodes = retriever.retrieve("query_str")
 

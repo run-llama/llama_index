@@ -7,7 +7,7 @@ For any subreddit(s) you're interested in, search for relevant posts using keywo
 1. Visit Reddit App Preferences (https://www.reddit.com/prefs/apps) or [https://old.reddit.com/prefs/apps/](https://old.reddit.com/prefs/apps/)
 2. Scroll to the bottom and click "create another app..."
 3. Fill out the name, description, and redirect url for your app, then click "create app"
-4. Now you should be able to see the personal use script, secret, and name of your app. Store those as environment variables REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, and REDDIT_USER_AGENT respecitvely.
+4. Now you should be able to see the personal use script, secret, and name of your app. Store those as environment variables REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, and REDDIT_USER_AGENT respectively.
 5. Additionally store the environment variables REDDIT_USERNAME and REDDIT_PASSWORD, which correspond to the credentials for your Reddit account.
 
 ## Usage

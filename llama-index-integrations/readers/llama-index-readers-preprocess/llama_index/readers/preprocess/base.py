@@ -1,4 +1,5 @@
 """Preprocess Reader."""
+
 import hashlib
 import os
 from typing import List
@@ -144,13 +145,13 @@ class PreprocessReader(BaseReader):
         pp_response = self._preprocess.chunk()
         if pp_response.status == "OK" and pp_response.success is True:
             self._process_id = pp_response.data["process"]["id"]
-            reponse = self._preprocess.wait()
-            if reponse.status == "OK" and reponse.success is True:
-                # self._filepath = reponse.data['info']['file']['name']
-                self._chunks = reponse.data["chunks"]
+            response = self._preprocess.wait()
+            if response.status == "OK" and response.success is True:
+                # self._filepath = response.data['info']['file']['name']
+                self._chunks = response.data["chunks"]
 
     def _get_data_by_process(self) -> None:
-        reponse = self._preprocess.wait()
-        if reponse.status == "OK" and reponse.success is True:
-            self._filepath = reponse.data["info"]["file"]["name"]
-            self._chunks = reponse.data["chunks"]
+        response = self._preprocess.wait()
+        if response.status == "OK" and response.success is True:
+            self._filepath = response.data["info"]["file"]["name"]
+            self._chunks = response.data["chunks"]
