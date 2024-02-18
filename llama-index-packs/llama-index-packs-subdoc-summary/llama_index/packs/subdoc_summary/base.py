@@ -1,12 +1,9 @@
 """Subdoc Summary."""
 
-from enum import Enum
 from typing import Any, Dict, List, Optional, List
 
-from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.llama_pack import BaseLlamaPack
-from llama_index.core.schema import NodeWithScore, TextNode, Document
+from llama_index.core.schema import Document
 from llama_index.core.text_splitter import SentenceSplitter
 from llama_index.core.utils import print_text
 from llama_index.core import SummaryIndex, VectorStoreIndex
@@ -17,6 +14,7 @@ from llama_index.core.llms import LLM
 DEFAULT_SUMMARY_PROMPT_STR = """\
 Please give a concise summary of the context in 1-2 sentences.
 """
+
 
 class SubDocSummaryPack(BaseLlamaPack):
     """Pack for injecting sub-doc metadata into each chunk."""
@@ -53,7 +51,10 @@ class SubDocSummaryPack(BaseLlamaPack):
         # For each parent node, extract the child nodes and print the text
         for idx, parent_node in enumerate(parent_nodes):
             if verbose:
-                print_text(f"> Processing parent chunk {idx + 1} of {len(parent_nodes)}\n", color="blue")
+                print_text(
+                    f"> Processing parent chunk {idx + 1} of {len(parent_nodes)}\n",
+                    color="blue",
+                )
             # get summary
             summary_index = SummaryIndex([parent_node])
             summary_query_engine = summary_index.as_query_engine(
@@ -62,7 +63,7 @@ class SubDocSummaryPack(BaseLlamaPack):
             parent_summary = summary_query_engine.query(DEFAULT_SUMMARY_PROMPT_STR)
             if verbose:
                 print_text(f"Extracted summary: {parent_summary}\n", color="pink")
-            
+
             # attach summary to all child nodes
             child_nodes = self.child_splitter.get_nodes_from_documents([parent_node])
             for child_node in child_nodes:
@@ -78,7 +79,6 @@ class SubDocSummaryPack(BaseLlamaPack):
         self.vector_query_engine = self.vector_index.as_query_engine(llm=llm)
 
         self.verbose = verbose
-
 
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""
