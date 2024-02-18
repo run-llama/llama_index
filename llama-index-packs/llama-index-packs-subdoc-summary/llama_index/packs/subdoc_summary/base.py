@@ -66,7 +66,7 @@ class SubDocSummaryPack(BaseLlamaPack):
             # attach summary to all child nodes
             child_nodes = self.child_splitter.get_nodes_from_documents([parent_node])
             for child_node in child_nodes:
-                child_node.metadata["summary"] = str(parent_summary)
+                child_node.metadata["context_summary"] = str(parent_summary)
 
             all_child_nodes.extend(child_nodes)
 
