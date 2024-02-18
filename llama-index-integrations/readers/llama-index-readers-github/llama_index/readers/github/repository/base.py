@@ -21,6 +21,7 @@ from llama_index.core.readers.file.base import _try_loading_included_file_format
 from llama_index.core.schema import Document
 
 from llama_index.readers.github.repository.github_client import (
+    BaseGithubClient,
     GitBranchResponseModel,
     GitCommitResponseModel,
     GithubClient,
@@ -68,7 +69,7 @@ class GithubRepositoryReader(BaseReader):
 
     def __init__(
         self,
-        github_client: GithubClient,
+        github_client: BaseGithubClient,
         owner: str,
         repo: str,
         use_parser: bool = False,
@@ -548,7 +549,7 @@ if __name__ == "__main__":
 
     reader1 = GithubRepositoryReader(
         github_client=github_client,
-        owner="jerryjliu",
+        owner="run-llama",
         repo="llama_index",
         use_parser=False,
         verbose=True,
@@ -575,7 +576,7 @@ if __name__ == "__main__":
     def load_data_from_commit() -> None:
         """Load data from a commit."""
         documents = reader1.load_data(
-            commit_sha="22e198b3b166b5facd2843d6a62ac0db07894a13"
+            commit_sha="23a0f76cbaf663de67f9951c59400e9d0644970a"
         )
         for document in documents:
             print(document.extra_info)
