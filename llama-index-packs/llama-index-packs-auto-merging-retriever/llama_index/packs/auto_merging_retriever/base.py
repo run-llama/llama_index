@@ -19,7 +19,7 @@ from llama_index.llms.openai import OpenAI
 class AutoMergingRetrieverPack(BaseLlamaPack):
     """Auto-merging Retriever pack.
 
-    Build a hiearchical node graph from a set of documents, and
+    Build a hierarchical node graph from a set of documents, and
     run our auto-merging retriever.
 
     """

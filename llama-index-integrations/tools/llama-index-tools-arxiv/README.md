@@ -16,7 +16,7 @@ tool_spec = ArxivToolSpec()
 
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
 
-agent.chat("Whats going on with the superconductor lk-99")
+agent.chat("What's going on with the superconductor lk-99")
 agent.chat("what are the latest developments in machine learning")
 ```
 

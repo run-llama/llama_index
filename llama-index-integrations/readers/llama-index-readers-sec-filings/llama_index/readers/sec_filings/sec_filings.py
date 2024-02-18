@@ -264,7 +264,7 @@ class SECExtractor:
             ValueError: Invalid section names
 
         Returns:
-                section and correspoding texts
+                section and corresponding texts
         """
         validate_section_names(m_section)
 

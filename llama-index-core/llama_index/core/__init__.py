@@ -1,4 +1,5 @@
 """Init file of LlamaIndex."""
+
 __version__ = "0.10.6"
 
 import logging
