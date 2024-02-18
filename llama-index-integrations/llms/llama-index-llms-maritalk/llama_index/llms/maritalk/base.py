@@ -75,6 +75,9 @@ class Maritalk(LLM):
             "top_p": self.top_p,
         }
 
+        # Update data payload with additional kwargs if any
+        data.update(kwargs)
+
         headers = {"authorization": f"Key {self.api_key}"}
 
         response = requests.post(self._endpoint, json=data, headers=headers)
@@ -104,6 +107,9 @@ class Maritalk(LLM):
             "chat_mode": False,
         }
 
+        # Update data payload with additional kwargs if any
+        data.update(kwargs)
+        
         headers = {"authorization": f"Key {self.api_key}"}
 
         response = requests.post(self._endpoint, json=data, headers=headers)
