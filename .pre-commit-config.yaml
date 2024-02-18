@@ -87,11 +87,11 @@ repos:
       - id: codespell
         additional_dependencies: [tomli]
         exclude: |
-          (?x)^(
-            poetry.lock|
-            (\/.*?\.[\w:]+)/pyproject.toml|
-            llama-index-core/llama_index/core/_static
-          )$
+          poetry.lock|
+          (\/.*?\.[\w:]+)/pyproject.toml|
+          llama-index-core/llama_index/core/_static|
+          llama-index-legacy/llama_index/legacy/_static|
+          (\/.*?\.[\w:]+)/poetry.lock
         args:
           [
             "--ignore-words-list",
