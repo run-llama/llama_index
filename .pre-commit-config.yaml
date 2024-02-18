@@ -56,6 +56,7 @@ repos:
             --ignore-missing-imports,
             --python-version=3.8,
           ]
+        entry: bash -c "export MYPYPATH=llama_index"
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:

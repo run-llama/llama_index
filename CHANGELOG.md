@@ -2,7 +2,7 @@
 
 ## [0.10.6] - 2024-02-17
 
-First, appologies for missing the changelog the last few versions. Trying to figure out the best process with 400+ packages.
+First, apologies for missing the changelog the last few versions. Trying to figure out the best process with 400+ packages.
 
 At some point, each package will have a dedicated changelog.
 
@@ -43,7 +43,7 @@ But for now, onto the "master" changelog.
 
 ### Breaking Changes
 
-- Several changes are introduced. See the [full blog post](https://blog.llamaindex.ai/llamaindex-v0-10-838e735948f8) for complete deatils.
+- Several changes are introduced. See the [full blog post](https://blog.llamaindex.ai/llamaindex-v0-10-838e735948f8) for complete details.
 
 ## [0.9.48] - 2024-02-12
 
