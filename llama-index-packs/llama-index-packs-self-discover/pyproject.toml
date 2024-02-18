@@ -24,6 +24,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Ravi Theja <ravi03071991@gmail.com>"]
 description = "llama-index packs self_discover paper implementation"
+keywords = ["discover", "self", "self-discover", "task"]
 license = "MIT"
 name = "llama-index-packs-self-discover"
 packages = [{include = "llama_index/"}]

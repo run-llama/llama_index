@@ -28,6 +28,13 @@ You can then inspect the files at `./self_discover_pack` and use them as a templ
 
 ## Code Usage
 
+There are two ways using LlamaPack:
+
+1. Do `download_llama_pack` to load the Self-Discover LlamaPack.
+2. Directly use `SelfDiscoverPack`
+
+### Using `download_llama_pack`
+
 ```python
 from llama_index.llama_pack import download_llama_pack
 
@@ -35,17 +42,15 @@ from llama_index.llama_pack import download_llama_pack
 SelfDiscoverPack = download_llama_pack(
     "SelfDiscoverPack", "./self_discover_pack"
 )
+
+self_discover_pack = SelfDiscoverPack(verbose=True, llm=llm)
 ```
 
-From here, you can use the pack. You can import the relevant modules from the download folder (in the example below we assume it's a relative import or the directory has been added to your system path) or directly use `SelfDiscoverPack`.
+### Directly use `SelfRAGPack`
 
 ```python
-from self_discover_pack.base import SelfDiscoverPack
+from llama_index.packs.self_discover import SelfDiscoverPack
 
-self_discover_pack = SelfRAGPack(llm=llm, verbose=True)
-```
-
-```python
 self_discover_pack = SelfRAGPack(llm=llm, verbose=True)
 ```
 
