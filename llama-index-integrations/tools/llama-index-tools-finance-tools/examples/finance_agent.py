@@ -35,4 +35,4 @@ if __name__ == "__main__":
         NEWSAPI_API_KEY,
         OPENAI_API_KEY,
     )
-    print(agent.chat(sys.argv[1]))
+    print(agent.chat("Find similar companies to Rivian!"))
