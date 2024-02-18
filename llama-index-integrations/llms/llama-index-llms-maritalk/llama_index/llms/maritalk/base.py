@@ -2,12 +2,20 @@ from typing import Any, Optional, Sequence
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
     LLMMetadata,
     MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms.llm import LLM
-from llama_index.core.llms.callbacks import llm_chat_callback
+from llama_index.core.llms.callbacks import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
 import requests
 import os
 
@@ -83,3 +91,47 @@ class Maritalk(LLM):
             )
         else:
             response.raise_for_status()
+
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        raise NotImplementedError(
+            "Maritalk does not currently support streaming completion."
+        )
+
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        raise NotImplementedError(
+            "Maritalk does not currently support streaming completion."
+        )
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        raise NotImplementedError(
+            "Maritalk does not currently support streaming completion."
+        )
+
+    @llm_completion_callback()
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        return self.complete(prompt, **kwargs)
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        raise NotImplementedError(
+            "Maritalk does not currently support streaming completion."
+        )
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        raise NotImplementedError(
+            "Maritalk does not currently support streaming completion."
+        )
