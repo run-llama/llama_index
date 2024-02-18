@@ -17,7 +17,7 @@ import tempfile
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.readers.file.base import default_file_metadata_func
+from llama_index.core.readers.file.base import _try_loading_included_file_formats
 from llama_index.core.schema import Document
 
 from llama_index.readers.github.repository.github_client import (
@@ -34,7 +34,7 @@ from llama_index.readers.github.repository.utils import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_FILE_READER_CLS = default_file_metadata_func()
+DEFAULT_FILE_READER_CLS = _try_loading_included_file_formats()
 
 
 class GithubRepositoryReader(BaseReader):
