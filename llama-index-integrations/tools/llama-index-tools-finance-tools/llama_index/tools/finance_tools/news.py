@@ -7,8 +7,8 @@ from pytrends.request import TrendReq
 from typing import List, Dict, Optional, Any
 from newsapi import NewsApiClient
 
-from util import get_df
-from util import request
+from .util import get_df
+from .util import request
 
 
 def get_current_gainer_stocks() -> pd.DataFrame:

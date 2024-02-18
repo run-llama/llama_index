@@ -3,6 +3,8 @@ import requests
 import pandas as pd
 import yfinance as yf
 
+from typing import Dict
+
 
 def get_earnings_history(api_key: Dict[str, str], symbol: str) -> pd.DataFrame:
     """

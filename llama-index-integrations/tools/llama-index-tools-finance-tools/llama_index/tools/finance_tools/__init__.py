@@ -1,5 +1,5 @@
 ## init
-from llama_index.tools.finance_agent.base import (
+from llama_index.tools.finance_tools.base import (
     FinanceAgentToolSpec,
 )
 

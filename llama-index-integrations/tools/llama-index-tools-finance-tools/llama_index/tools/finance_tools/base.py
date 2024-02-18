@@ -1,10 +1,8 @@
 import pandas as pd
 
-import news
-import comparisons
-import earnings
-
-from llama_index.tool_spec.base import BaseToolSpec
+from . import news, comparisons, earnings
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from typing import List, Optional, Any, Dict
 
 
 class FinanceAgentToolSpec(BaseToolSpec):
