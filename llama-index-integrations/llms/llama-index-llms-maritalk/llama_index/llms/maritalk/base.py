@@ -92,6 +92,35 @@ class Maritalk(LLM):
         else:
             response.raise_for_status()
 
+    @llm_completion_callback()
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any ) -> CompletionResponse:
+        # Prepare the data payload for the Maritalk API
+        data = {
+            "messages": prompt,
+            "do_sample": self.do_sample,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "chat_mode": False,
+        }
+
+        headers = {"authorization": f"Key {self.api_key}"}
+
+        response = requests.post(self._endpoint, json=data, headers=headers)
+        if response.status_code == 429:
+            return CompletionResponse(
+                text="Rate limited, please try again soon",
+                raw=response.text,
+            )
+        elif response.ok:
+            answer = response.json()["answer"]
+            return CompletionResponse(
+                text=answer,
+                raw=response.json(),
+            )
+        else:
+            response.raise_for_status()
+
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -110,15 +139,13 @@ class Maritalk(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        raise NotImplementedError(
-            "Maritalk does not currently support streaming completion."
-        )
+        return self.chat(messages, **kwargs)
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        return self.complete(prompt, **kwargs)
+        return self.complete(prompt, formatted, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
