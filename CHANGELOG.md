@@ -1,5 +1,30 @@
 # ChangeLog
 
+## [0.10.6] - 2024-02-17
+
+First, appologies for missing the changelog the last few versions. Trying to figure out the best process with 400+ packages.
+
+At some point, each package will have a dedicated changelog.
+
+But for now, onto the "master" changelog.
+
+### New Features
+
+- Added `NomicHFEmbedding` (#10762)
+- Added `MinioReader` (#10744)
+
+### Bug Fixes / Nits
+
+- Various fixes for clickhouse vector store (#10799)
+- Fix index name in neo4j vector store (#10749)
+- Fixes to sagemaker embeddings (#10778)
+- Fixed performance issues when splitting nodes (#10766)
+- Fix non-float values in reranker + b25 (#10930)
+- OpenAI-agent should be a dep of openai program (#10930)
+- Add missing shortcut imports for query pipeline components (#10930)
+- Fix NLTK and tiktoken not being bundled properly with core (#10930)
+- Add back `llama_index.core.__version__` (#10930)
+
 ## [0.10.3] - 2024-02-13
 
 ### Bug Fixes / Nits
