@@ -7,6 +7,34 @@ RECOGNIZED_EMBEDDINGS: Dict[str, Type[BaseEmbedding]] = {
     MockEmbedding.class_name(): MockEmbedding,
 }
 
+# conditionals for llama-cloud support
+try:
+    from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
+
+    RECOGNIZED_EMBEDDINGS[OpenAIEmbedding.class_name()] = OpenAIEmbedding
+except ImportError:
+    pass
+
+try:
+    from llama_index.embeddings.azure_openai import (
+        AzureOpenAIEmbedding,
+    )  # pants: no-infer-dep
+
+    RECOGNIZED_EMBEDDINGS[AzureOpenAIEmbedding.class_name()] = AzureOpenAIEmbedding
+except ImportError:
+    pass
+
+try:
+    from llama_index.embeddings.huggingface import (
+        HuggingFaceInferenceAPIEmbedding,
+    )  # pants: no-infer-dep
+
+    RECOGNIZED_EMBEDDINGS[
+        HuggingFaceInferenceAPIEmbedding.class_name()
+    ] = HuggingFaceInferenceAPIEmbedding
+except ImportError:
+    pass
+
 
 def load_embed_model(data: dict) -> BaseEmbedding:
     """Load Embedding by name."""

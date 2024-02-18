@@ -13,6 +13,8 @@ from llama_index.core.node_parser.relational.hierarchical import (
     HierarchicalNodeParser,
     get_leaf_nodes,
     get_root_nodes,
+    get_child_nodes,
+    get_deeper_nodes,
 )
 from llama_index.core.node_parser.relational.markdown_element import (
     MarkdownElementNodeParser,
@@ -53,6 +55,8 @@ __all__ = [
     "UnstructuredElementNodeParser",
     "get_leaf_nodes",
     "get_root_nodes",
+    "get_child_nodes",
+    "get_deeper_nodes",
     # deprecated, for backwards compatibility
     "SimpleNodeParser",
 ]
