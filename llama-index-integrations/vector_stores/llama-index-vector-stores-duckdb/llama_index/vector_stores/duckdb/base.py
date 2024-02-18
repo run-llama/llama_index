@@ -24,6 +24,7 @@ class DuckDBLocalContext:
     def __init__(self, database_path: str):
         self.database_path = database_path
         self._conn = None
+        self._home_dir = os.path.expanduser("~")
 
     def __enter__(self) -> "duckdb.DuckDBPyConnection":
         try:
@@ -40,6 +41,7 @@ class DuckDBLocalContext:
         #     raise ValueError(f"Database path {self.database_path} is not a valid file.")
 
         self._conn = duckdb.connect(self.database_path)
+        self._conn.execute(f"SET home_directory='{self._home_dir}';")
         self._conn.install_extension("json")
         self._conn.load_extension("json")
         self._conn.install_extension("fts")
@@ -107,7 +109,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         self._is_initialized = False
 
         if database_name == ":memory:":
+            _home_dir = os.path.expanduser("~")
             self._conn = duckdb.connect(database_name)
+            self._conn.execute(f"SET home_directory='{_home_dir}';")
             self._conn.install_extension("json")
             self._conn.load_extension("json")
             self._conn.install_extension("fts")
