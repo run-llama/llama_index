@@ -132,6 +132,7 @@ class ClipEmbedding(MultiModalEmbedding):
 
     def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:
         import torch
+
         with torch.no_grad():
             image = (
                 self._preprocess(Image.open(img_file_path))
