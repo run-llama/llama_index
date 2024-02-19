@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["MongoIndexStore"]
 contains_example = false
 import_path = "llama_index.storage.index_store.mongodb"
+
+[tool.llamahub.class_authors]
+MongoIndexStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

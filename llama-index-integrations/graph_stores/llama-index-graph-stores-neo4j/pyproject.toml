@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["Neo4jGraphStore"]
 contains_example = false
 import_path = "llama_index.graph_stores.neo4j"
+
+[tool.llamahub.class_authors]
+Neo4jGraphStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

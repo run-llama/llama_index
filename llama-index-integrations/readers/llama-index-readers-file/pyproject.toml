@@ -8,27 +8,31 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["DocxReader", "EpubReader", "FlatReader", "HTMLTagReader", "HWPReader", "IPYNBReader", "ImageCaptionReader", "ImageReader", "ImageTabularChartReader", "ImageVisionLLMReader", "MarkdownReader", "MboxReader", "PDFReader", "PagedCSVReader", "PandasCSVReader", "PptxReader", "PyMuPDFReader", "UnstructuredReader", "VideoAudioReader", "XMLReader"]
 contains_example = false
 import_path = "llama_index.readers.file"
 
 [tool.llamahub.class_authors]
-DocxReader = "thejessezhang"
-EpubReader = "Haowjy"
-HWPReader = "sangwongenip"
-IPYNBReader = "FarisHijazi"
-ImageCaptionReader = "FarisHijazi"
-ImageReader = "ravi03071991"
-ImageTabularChartReader = "jon-chuang"
-ImageVisionLLMReader = "FarisHijazi"
-MarkdownReader = "hursh-desai"
-PDFReader = "ravi03071991"
-PagedCSVReader = "thejessezhang"
-PandasCSVReader = "ephe-meral"
-PptxReader = "thejessezhang"
-PyMuPDFReader = "iamarunbrahma"
-UnstructuredReader = "thejessezhang"
-XMLReader = "mmaatouk"
+CSVReader = "llama-index"
+DocxReader = "llama-index"
+EpubReader = "llama-index"
+FlatReader = "llama-index"
+HTMLTagReader = "llama-index"
+HWPReader = "llama-index"
+IPYNBReader = "llama-index"
+ImageCaptionReader = "llama-index"
+ImageReader = "llama-index"
+ImageTabularChartReader = "llama-index"
+ImageVisionLLMReader = "llama-index"
+MarkdownReader = "llama-index"
+MboxReader = "llama-index"
+PDFReader = "llama-index"
+PagedCSVReader = "llama-index"
+PandasCSVReader = "llama-index"
+PptxReader = "llama-index"
+PyMuPDFReader = "llama-index"
+UnstructuredReader = "llama-index"
+VideoAudioReader = "llama-index"
+XMLReader = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AstraDBVectorStore"]
 contains_example = false
 import_path = "llama_index.vector_stores.astra"
+
+[tool.llamahub.class_authors]
+AstraDBVectorStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

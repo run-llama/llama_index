@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["Perplexity"]
 contains_example = false
 import_path = "llama_index.llms.perplexity"
+
+[tool.llamahub.class_authors]
+Perplexity = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
