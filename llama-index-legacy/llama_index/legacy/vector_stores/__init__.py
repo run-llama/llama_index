@@ -19,9 +19,7 @@ from llama_index.legacy.vector_stores.docarray import (
     DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
 )
-from llama_index.legacy.vector_stores.elasticsearch import (
-    ElasticsearchStore,
-)
+from llama_index.legacy.vector_stores.elasticsearch import ElasticsearchStore
 from llama_index.legacy.vector_stores.epsilla import EpsillaVectorStore
 from llama_index.legacy.vector_stores.faiss import FaissVectorStore
 from llama_index.legacy.vector_stores.lancedb import LanceDBVectorStore
@@ -58,6 +56,7 @@ from llama_index.legacy.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.legacy.vector_stores.upstash import UpstashVectorStore
+from llama_index.legacy.vector_stores.vearchdb import VearchVectorStore
 from llama_index.legacy.vector_stores.weaviate import WeaviateVectorStore
 from llama_index.legacy.vector_stores.zep import ZepVectorStore
 
@@ -110,4 +109,5 @@ __all__ = [
     "LanternVectorStore",
     "MongoDBAtlasVectorSearch",
     "UpstashVectorStore",
+    "VearchVectorStore",
 ]
