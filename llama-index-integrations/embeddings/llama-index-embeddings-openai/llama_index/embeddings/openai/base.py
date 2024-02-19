@@ -303,7 +303,7 @@ class OpenAIEmbedding(BaseEmbedding):
         if dimensions is not None:
             additional_kwargs["dimensions"] = dimensions
 
-        api_key, api_base, api_version = resolve_openai_credentials(
+        api_key, api_base, api_version = self._resolve_credentials(
             api_key=api_key,
             api_base=api_base,
             api_version=api_version,
@@ -337,6 +337,14 @@ class OpenAIEmbedding(BaseEmbedding):
         self._client = None
         self._aclient = None
         self._http_client = http_client
+
+    def _resolve_credentials(
+        self,
+        api_key: Optional[str] = None,
+        api_base: Optional[str] = None,
+        api_version: Optional[str] = None,
+    ) -> Tuple[Optional[str], str, str]:
+        return resolve_openai_credentials(api_key, api_base, api_version)
 
     def _get_client(self) -> OpenAI:
         if not self.reuse_client:
