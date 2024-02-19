@@ -12,10 +12,8 @@ contains_example = false
 import_path = "llama_index.readers.github"
 
 [tool.llamahub.class_authors]
-GitHubIssuesClient = "llama-index"
 GitHubRepositoryCollaboratorsReader = "rwood-97"
 GitHubRepositoryIssuesReader = "moncho"
-GithubClient = "llama-index"
 GithubRepositoryReader = "ahmetkca"
 
 [tool.mypy]
