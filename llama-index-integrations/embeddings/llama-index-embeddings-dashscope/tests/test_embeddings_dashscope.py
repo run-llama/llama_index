@@ -1,4 +1,4 @@
-from llama_index.core.base.embeddings.base import MultiModalEmbedding
+from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.embeddings.dashscope import DashScopeEmbedding
 
 
