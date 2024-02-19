@@ -60,7 +60,7 @@ class LlamaCloudRetriever(BaseRetriever):
         pipelines = self._client.pipeline.search_pipelines(
             project_name=self.project_name,
             pipeline_name=self.name,
-            pipeline_type=PipelineType.MANAGED,
+            pipeline_type=PipelineType.MANAGED.value,
         )
         if len(pipelines) == 0:
             raise ValueError(
@@ -98,7 +98,7 @@ class LlamaCloudRetriever(BaseRetriever):
         pipelines = await self._aclient.pipeline.search_pipelines(
             project_name=self.project_name,
             pipeline_name=self.name,
-            pipeline_type=PipelineType.MANAGED,
+            pipeline_type=PipelineType.MANAGED.value,
         )
         if len(pipelines) == 0:
             raise ValueError(
