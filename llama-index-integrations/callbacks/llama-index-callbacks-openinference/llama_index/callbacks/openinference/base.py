@@ -165,7 +165,7 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         self._node_data_buffer: List[NodeData] = []
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
-        if trace_id == "query":
+        if trace_id == "query" or trace_id == "chat":
             self._trace_data = TraceData()
             self._trace_data.query_data.timestamp = datetime.now().isoformat()
             self._trace_data.query_data.id = _generate_random_id()
@@ -175,7 +175,7 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         trace_id: Optional[str] = None,
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
-        if trace_id == "query":
+        if trace_id == "query" or trace_id == "chat":
             self._query_data_buffer.append(self._trace_data.query_data)
             self._node_data_buffer.extend(self._trace_data.node_datas)
             self._trace_data = TraceData()
