@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.bitbucket"
 
 [tool.llamahub.class_authors]
-BitbucketReader = "llama-index"
+BitbucketReader = "lejdiprifti"
 
 [tool.mypy]
 disallow_untyped_defs = true

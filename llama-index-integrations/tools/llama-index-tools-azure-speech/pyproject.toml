@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.azure_speech"
 
 [tool.llamahub.class_authors]
-AzureSpeechToolSpec = "llama-index"
+AzureSpeechToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

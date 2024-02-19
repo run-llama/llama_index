@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.spotify"
 
 [tool.llamahub.class_authors]
-SpotifyReader = "llama-index"
+SpotifyReader = "ong"
 
 [tool.mypy]
 disallow_untyped_defs = true

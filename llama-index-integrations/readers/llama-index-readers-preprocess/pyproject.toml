@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.preprocess"
 
 [tool.llamahub.class_authors]
-PreprocessReader = "llama-index"
+PreprocessReader = "preprocess"
 
 [tool.mypy]
 disallow_untyped_defs = true

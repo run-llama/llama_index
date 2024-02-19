@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.semanticscholar"
 
 [tool.llamahub.class_authors]
-SemanticScholarReader = "llama-index"
+SemanticScholarReader = "shauryr"
 
 [tool.mypy]
 disallow_untyped_defs = true

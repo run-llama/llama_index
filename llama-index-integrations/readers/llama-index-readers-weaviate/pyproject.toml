@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.weaviate"
 
 [tool.llamahub.class_authors]
-WeaviateReader = "llama-index"
+WeaviateReader = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

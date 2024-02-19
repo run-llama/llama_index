@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.feishu_docs"
 
 [tool.llamahub.class_authors]
-FeishuDocsReader = "llama-index"
+FeishuDocsReader = "ma-chengcheng"
 
 [tool.mypy]
 disallow_untyped_defs = true

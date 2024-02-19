@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.streamlit_chatbot"
 
 [tool.llamahub.class_authors]
-StreamlitChatPack = "llama-index"
+StreamlitChatPack = "carolinedlu"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.chatgpt_plugin"
 
 [tool.llamahub.class_authors]
-ChatGPTPluginToolSpec = "llama-index"
+ChatGPTPluginToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

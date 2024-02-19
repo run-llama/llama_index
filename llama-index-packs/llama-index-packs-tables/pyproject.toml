@@ -12,8 +12,8 @@ contains_example = false
 import_path = "llama_index.packs.tables"
 
 [tool.llamahub.class_authors]
-ChainOfTablePack = "llama-index"
-MixSelfConsistencyPack = "llama-index"
+ChainOfTablePack = "jerryjliu"
+MixSelfConsistencyPack = "Disiok"
 
 [tool.mypy]
 disallow_untyped_defs = true

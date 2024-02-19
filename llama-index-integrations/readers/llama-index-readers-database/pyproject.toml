@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.database"
 
 [tool.llamahub.class_authors]
-DatabaseReader = "llama-index"
+DatabaseReader = "kevinqz"
 
 [tool.mypy]
 disallow_untyped_defs = true

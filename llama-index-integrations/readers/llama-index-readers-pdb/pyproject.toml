@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.pdb"
 
 [tool.llamahub.class_authors]
-PdbAbstractReader = "llama-index"
+PdbAbstractReader = "joshuakto"
 
 [tool.mypy]
 disallow_untyped_defs = true

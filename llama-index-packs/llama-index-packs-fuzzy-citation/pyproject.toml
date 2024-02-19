@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.fuzzy_citation"
 
 [tool.llamahub.class_authors]
-FuzzyCitationEnginePack = "llama-index"
+FuzzyCitationEnginePack = "logan-markewich"
 
 [tool.mypy]
 disallow_untyped_defs = true

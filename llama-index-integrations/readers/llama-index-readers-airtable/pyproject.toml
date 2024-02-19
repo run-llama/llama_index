@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.airtable"
 
 [tool.llamahub.class_authors]
-AirtableReader = "llama-index"
+AirtableReader = "smyja"
 
 [tool.mypy]
 disallow_untyped_defs = true

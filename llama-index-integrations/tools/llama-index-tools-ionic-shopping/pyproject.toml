@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.ionic_shopping"
 
 [tool.llamahub.class_authors]
-IonicShoppingToolSpec = "llama-index"
+IonicShoppingToolSpec = "stewartjarod"
 
 [tool.mypy]
 disallow_untyped_defs = true

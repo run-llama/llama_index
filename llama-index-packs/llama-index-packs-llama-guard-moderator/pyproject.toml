@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.llama_guard_moderator"
 
 [tool.llamahub.class_authors]
-LlamaGuardModeratorPack = "llama-index"
+LlamaGuardModeratorPack = "wenqiglantz"
 
 [tool.mypy]
 disallow_untyped_defs = true

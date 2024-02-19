@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.memos"
 
 [tool.llamahub.class_authors]
-MemosReader = "llama-index"
+MemosReader = "bubu"
 
 [tool.mypy]
 disallow_untyped_defs = true

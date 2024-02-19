@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.gradio_react_agent_chatbot"
 
 [tool.llamahub.class_authors]
-GradioReActAgentPack = "llama-index"
+GradioReActAgentPack = "nerdai"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.llama_dataset_metadata"
 
 [tool.llamahub.class_authors]
-LlamaDatasetMetadataPack = "llama-index"
+LlamaDatasetMetadataPack = "nerdai"
 
 [tool.mypy]
 disallow_untyped_defs = true

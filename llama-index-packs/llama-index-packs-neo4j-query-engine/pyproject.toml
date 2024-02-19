@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.neo4j_query_engine"
 
 [tool.llamahub.class_authors]
-Neo4jQueryEnginePack = "llama-index"
+Neo4jQueryEnginePack = "wenqiglantz"
 
 [tool.mypy]
 disallow_untyped_defs = true

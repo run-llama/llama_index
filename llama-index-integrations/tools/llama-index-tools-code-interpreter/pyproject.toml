@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.code_interpreter"
 
 [tool.llamahub.class_authors]
-CodeInterpreterToolSpec = "llama-index"
+CodeInterpreterToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

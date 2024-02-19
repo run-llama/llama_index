@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.wordlift"
 
 [tool.llamahub.class_authors]
-WordLiftLoader = "llama-index"
+WordLiftLoader = "msftwarelab"
 
 [tool.mypy]
 disallow_untyped_defs = true

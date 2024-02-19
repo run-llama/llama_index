@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.rayyan"
 
 [tool.llamahub.class_authors]
-RayyanReader = "llama-index"
+RayyanReader = "hammady"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -13,7 +13,7 @@ import_path = "llama_index.packs.agent_search_retriever"
 
 [tool.llamahub.class_authors]
 AgentSearchRetriever = "llama-index"
-AgentSearchRetrieverPack = "llama-index"
+AgentSearchRetrieverPack = "logan-markewich"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.metaphor"
 
 [tool.llamahub.class_authors]
-MetaphorToolSpec = "llama-index"
+MetaphorToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

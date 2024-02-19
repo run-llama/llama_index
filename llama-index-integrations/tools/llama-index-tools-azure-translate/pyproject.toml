@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.azure_translate"
 
 [tool.llamahub.class_authors]
-AzureTranslateToolSpec = "llama-index"
+AzureTranslateToolSpec = "ajhofmann"
 ENDPOINT_BASE_URL = "llama-index"
 
 [tool.mypy]

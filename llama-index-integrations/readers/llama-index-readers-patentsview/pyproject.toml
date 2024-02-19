@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.patentsview"
 
 [tool.llamahub.class_authors]
-PatentsviewReader = "llama-index"
+PatentsviewReader = "shao-shuai"
 
 [tool.mypy]
 disallow_untyped_defs = true

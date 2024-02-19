@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.deeplake_deepmemory_retriever"
 
 [tool.llamahub.class_authors]
-DeepMemoryRetrieverPack = "llama-index"
+DeepMemoryRetrieverPack = "AdkSarsen"
 
 [tool.mypy]
 disallow_untyped_defs = true

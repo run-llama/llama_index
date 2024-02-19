@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.firestore"
 
 [tool.llamahub.class_authors]
-FirestoreReader = "llama-index"
+FirestoreReader = "rayzhudev"
 
 [tool.mypy]
 disallow_untyped_defs = true

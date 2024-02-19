@@ -12,8 +12,8 @@ contains_example = false
 import_path = "llama_index.packs.fusion_retriever"
 
 [tool.llamahub.class_authors]
-HybridFusionRetrieverPack = "llama-index"
-QueryRewritingRetrieverPack = "llama-index"
+HybridFusionRetrieverPack = "jerryjliu"
+QueryRewritingRetrieverPack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

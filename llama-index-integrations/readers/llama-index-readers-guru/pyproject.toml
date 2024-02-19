@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.guru"
 
 [tool.llamahub.class_authors]
-GuruReader = "llama-index"
+GuruReader = "mcclain-thiel"
 
 [tool.mypy]
 disallow_untyped_defs = true

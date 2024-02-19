@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.snowflake"
 
 [tool.llamahub.class_authors]
-SnowflakeReader = "llama-index"
+SnowflakeReader = "godwin3737"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.shopify"
 
 [tool.llamahub.class_authors]
-ShopifyToolSpec = "llama-index"
+ShopifyToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

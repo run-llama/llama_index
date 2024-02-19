@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.panel_chatbot"
 
 [tool.llamahub.class_authors]
-PanelChatPack = "llama-index"
+PanelChatPack = "MarcSkovMadsen"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = true
 import_path = "llama_index.packs.dense_x_retrieval"
 
 [tool.llamahub.class_authors]
-DenseXRetrievalPack = "llama-index"
+DenseXRetrievalPack = "logan-markewich"
 
 [tool.mypy]
 disallow_untyped_defs = true

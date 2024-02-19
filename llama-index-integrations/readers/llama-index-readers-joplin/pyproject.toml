@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.joplin"
 
 [tool.llamahub.class_authors]
-JoplinReader = "llama-index"
+JoplinReader = "alondmnt"
 LINK_NOTE_TEMPLATE = "llama-index"
 
 [tool.mypy]

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.bagel"
 
 [tool.llamahub.class_authors]
-BagelReader = "llama-index"
+BagelReader = "asif"
 
 [tool.mypy]
 disallow_untyped_defs = true

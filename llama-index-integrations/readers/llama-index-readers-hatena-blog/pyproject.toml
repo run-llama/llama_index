@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.hatena_blog"
 
 [tool.llamahub.class_authors]
-HatenaBlogReader = "llama-index"
+HatenaBlogReader = "Shoya SHIRAKI"
 
 [tool.mypy]
 disallow_untyped_defs = true

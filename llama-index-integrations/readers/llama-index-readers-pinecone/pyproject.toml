@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.pinecone"
 
 [tool.llamahub.class_authors]
-PineconeReader = "llama-index"
+PineconeReader = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

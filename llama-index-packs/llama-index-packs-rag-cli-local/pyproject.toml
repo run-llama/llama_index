@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.rag_cli_local"
 
 [tool.llamahub.class_authors]
-LocalRAGCLIPack = "llama-index"
+LocalRAGCLIPack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

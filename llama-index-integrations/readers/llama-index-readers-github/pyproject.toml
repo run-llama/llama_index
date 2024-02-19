@@ -13,10 +13,10 @@ import_path = "llama_index.readers.github"
 
 [tool.llamahub.class_authors]
 GitHubIssuesClient = "llama-index"
-GitHubRepositoryCollaboratorsReader = "llama-index"
-GitHubRepositoryIssuesReader = "llama-index"
+GitHubRepositoryCollaboratorsReader = "rwood-97"
+GitHubRepositoryIssuesReader = "moncho"
 GithubClient = "llama-index"
-GithubRepositoryReader = "llama-index"
+GithubRepositoryReader = "ahmetkca"
 
 [tool.mypy]
 disallow_untyped_defs = true

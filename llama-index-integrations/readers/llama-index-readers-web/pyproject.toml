@@ -12,19 +12,19 @@ contains_example = false
 import_path = "llama_index.readers.web"
 
 [tool.llamahub.class_authors]
-AsyncWebPageReader = "llama-index"
-BeautifulSoupWebReader = "llama-index"
-KnowledgeBaseWebReader = "llama-index"
-MainContentExtractorReader = "llama-index"
-NewsArticleReader = "llama-index"
-ReadabilityWebPageReader = "llama-index"
-RssNewsReader = "llama-index"
-RssReader = "llama-index"
-SimpleWebPageReader = "llama-index"
-SitemapReader = "llama-index"
-TrafilaturaWebReader = "llama-index"
-UnstructuredURLLoader = "llama-index"
-WholeSiteReader = "llama-index"
+AsyncWebPageReader = "Hironsan"
+BeautifulSoupWebReader = "thejessezhang"
+KnowledgeBaseWebReader = "jasonwcfan"
+MainContentExtractorReader = "HawkClaws"
+NewsArticleReader = "ruze00"
+ReadabilityWebPageReader = "pandazki"
+RssNewsReader = "ruze00"
+RssReader = "bborn"
+SimpleWebPageReader = "thejessezhang"
+SitemapReader = "selamanse"
+TrafilaturaWebReader = "NA"
+UnstructuredURLLoader = "kravetsmic"
+WholeSiteReader = "an-bluecat"
 
 [tool.mypy]
 disallow_untyped_defs = true

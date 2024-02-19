@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.s3"
 
 [tool.llamahub.class_authors]
-S3Reader = "llama-index"
+S3Reader = "thejessezhang"
 
 [tool.mypy]
 disallow_untyped_defs = true

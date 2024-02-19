@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.airbyte_shopify"
 
 [tool.llamahub.class_authors]
-AirbyteShopifyReader = "llama-index"
+AirbyteShopifyReader = "flash1293"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,8 +12,8 @@ contains_example = false
 import_path = "llama_index.tools.playgrounds"
 
 [tool.llamahub.class_authors]
-PlaygroundsSubgraphConnectorToolSpec = "llama-index"
-PlaygroundsSubgraphInspectorToolSpec = "llama-index"
+PlaygroundsSubgraphConnectorToolSpec = "tachi"
+PlaygroundsSubgraphInspectorToolSpec = "tachi"
 
 [tool.mypy]
 disallow_untyped_defs = true

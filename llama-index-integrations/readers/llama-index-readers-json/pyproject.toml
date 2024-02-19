@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.json"
 
 [tool.llamahub.class_authors]
-JSONReader = "llama-index"
+JSONReader = "yisding"
 
 [tool.mypy]
 disallow_untyped_defs = true

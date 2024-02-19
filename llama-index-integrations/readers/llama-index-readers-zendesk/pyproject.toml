@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.zendesk"
 
 [tool.llamahub.class_authors]
-ZendeskReader = "llama-index"
+ZendeskReader = "bbornsztein"
 
 [tool.mypy]
 disallow_untyped_defs = true

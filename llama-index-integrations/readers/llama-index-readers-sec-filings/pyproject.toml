@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.sec_filings"
 
 [tool.llamahub.class_authors]
-SECFilingsLoader = "llama-index"
+SECFilingsLoader = "Athe-kunal"
 
 [tool.mypy]
 disallow_untyped_defs = true

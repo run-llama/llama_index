@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.azure_cv"
 
 [tool.llamahub.class_authors]
-AzureCVToolSpec = "llama-index"
+AzureCVToolSpec = "ajhofmann"
 CV_URL_TMPL = "llama-index"
 
 [tool.mypy]

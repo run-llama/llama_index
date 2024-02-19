@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.zulip"
 
 [tool.llamahub.class_authors]
-ZulipReader = "llama-index"
+ZulipReader = "plurigrid"
 
 [tool.mypy]
 disallow_untyped_defs = true

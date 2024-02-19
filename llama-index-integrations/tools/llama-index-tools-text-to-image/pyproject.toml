@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.text_to_image"
 
 [tool.llamahub.class_authors]
-TextToImageToolSpec = "llama-index"
+TextToImageToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

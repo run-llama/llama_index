@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.graphql"
 
 [tool.llamahub.class_authors]
-GraphQLReader = "llama-index"
+GraphQLReader = "jexp"
 
 [tool.mypy]
 disallow_untyped_defs = true

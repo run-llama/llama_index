@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.node_parser_semantic_chunking"
 
 [tool.llamahub.class_authors]
-SemanticChunkingQueryEnginePack = "llama-index"
+SemanticChunkingQueryEnginePack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.multidoc_autoretrieval"
 
 [tool.llamahub.class_authors]
-MultiDocAutoRetrieverPack = "llama-index"
+MultiDocAutoRetrieverPack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

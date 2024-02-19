@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.ragatouille_retriever"
 
 [tool.llamahub.class_authors]
-RAGatouilleRetrieverPack = "llama-index"
+RAGatouilleRetrieverPack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

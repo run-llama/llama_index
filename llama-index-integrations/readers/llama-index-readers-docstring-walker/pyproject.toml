@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.docstring_walker"
 
 [tool.llamahub.class_authors]
-DocstringWalker = "llama-index"
+DocstringWalker = "Filip Wojcik"
 
 [tool.mypy]
 disallow_untyped_defs = true

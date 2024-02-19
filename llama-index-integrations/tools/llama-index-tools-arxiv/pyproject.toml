@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.arxiv"
 
 [tool.llamahub.class_authors]
-ArxivToolSpec = "llama-index"
+ArxivToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

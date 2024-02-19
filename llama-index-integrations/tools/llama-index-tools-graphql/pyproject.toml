@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.graphql"
 
 [tool.llamahub.class_authors]
-GraphQLToolSpec = "llama-index"
+GraphQLToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

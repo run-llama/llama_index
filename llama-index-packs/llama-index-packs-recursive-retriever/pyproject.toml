@@ -12,8 +12,8 @@ contains_example = false
 import_path = "llama_index.packs.recursive_retriever"
 
 [tool.llamahub.class_authors]
-EmbeddedTablesUnstructuredRetrieverPack = "llama-index"
-RecursiveRetrieverSmallToBigPack = "llama-index"
+EmbeddedTablesUnstructuredRetrieverPack = "jerryjliu"
+RecursiveRetrieverSmallToBigPack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

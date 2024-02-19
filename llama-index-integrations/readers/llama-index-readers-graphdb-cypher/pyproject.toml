@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.graphdb_cypher"
 
 [tool.llamahub.class_authors]
-GraphDBCypherReader = "llama-index"
+GraphDBCypherReader = "jexp"
 
 [tool.mypy]
 disallow_untyped_defs = true

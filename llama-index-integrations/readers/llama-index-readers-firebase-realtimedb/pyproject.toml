@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.firebase_realtimedb"
 
 [tool.llamahub.class_authors]
-FirebaseRealtimeDatabaseReader = "llama-index"
+FirebaseRealtimeDatabaseReader = "ajay"
 
 [tool.mypy]
 disallow_untyped_defs = true

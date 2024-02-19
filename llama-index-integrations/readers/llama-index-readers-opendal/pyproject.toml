@@ -12,10 +12,10 @@ contains_example = false
 import_path = "llama_index.readers.opendal"
 
 [tool.llamahub.class_authors]
-OpendalAzblobReader = "llama-index"
-OpendalGcsReader = "llama-index"
-OpendalReader = "llama-index"
-OpendalS3Reader = "llama-index"
+OpendalAzblobReader = "OpenDAL Contributors"
+OpendalGcsReader = "OpenDAL Contributors"
+OpendalReader = "OpenDAL Contributors"
+OpendalS3Reader = "OpenDAL Contributors"
 
 [tool.mypy]
 disallow_untyped_defs = true

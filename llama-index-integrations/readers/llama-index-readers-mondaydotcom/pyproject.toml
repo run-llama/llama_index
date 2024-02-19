@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.mondaydotcom"
 
 [tool.llamahub.class_authors]
-MondayReader = "llama-index"
+MondayReader = "nadavgr"
 
 [tool.mypy]
 disallow_untyped_defs = true

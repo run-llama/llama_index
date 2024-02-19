@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.remote"
 
 [tool.llamahub.class_authors]
-RemoteReader = "llama-index"
+RemoteReader = "thejessezhang"
 
 [tool.mypy]
 disallow_untyped_defs = true

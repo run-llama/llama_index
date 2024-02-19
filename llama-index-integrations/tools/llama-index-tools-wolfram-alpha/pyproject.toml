@@ -13,7 +13,7 @@ import_path = "llama_index.tools.wolfram_alpha"
 
 [tool.llamahub.class_authors]
 QUERY_URL_TMPL = "llama-index"
-WolframAlphaToolSpec = "llama-index"
+WolframAlphaToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

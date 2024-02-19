@@ -13,7 +13,7 @@ import_path = "llama_index.tools.zapier"
 
 [tool.llamahub.class_authors]
 ACTION_URL_TMPL = "llama-index"
-ZapierToolSpec = "llama-index"
+ZapierToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

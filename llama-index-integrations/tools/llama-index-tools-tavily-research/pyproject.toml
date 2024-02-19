@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.tavily_research"
 
 [tool.llamahub.class_authors]
-TavilyToolSpec = "llama-index"
+TavilyToolSpec = "rotemweiss57"
 
 [tool.mypy]
 disallow_untyped_defs = true

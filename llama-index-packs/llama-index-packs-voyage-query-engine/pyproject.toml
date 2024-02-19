@@ -12,7 +12,7 @@ contains_example = true
 import_path = "llama_index.packs.voyage_query_engine"
 
 [tool.llamahub.class_authors]
-VoyageQueryEnginePack = "llama-index"
+VoyageQueryEnginePack = "Liuhong99"
 
 [tool.mypy]
 disallow_untyped_defs = true

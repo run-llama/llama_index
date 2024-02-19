@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.vanna"
 
 [tool.llamahub.class_authors]
-VannaPack = "llama-index"
+VannaPack = "jerryjliu"
 VannaQueryEngine = "llama-index"
 
 [tool.mypy]

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.elasticsearch"
 
 [tool.llamahub.class_authors]
-ElasticsearchReader = "llama-index"
+ElasticsearchReader = "jaylmiller"
 
 [tool.mypy]
 disallow_untyped_defs = true

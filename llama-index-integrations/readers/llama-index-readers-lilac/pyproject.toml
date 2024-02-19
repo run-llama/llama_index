@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.lilac"
 
 [tool.llamahub.class_authors]
-LilacReader = "llama-index"
+LilacReader = "nsthorat"
 
 [tool.mypy]
 disallow_untyped_defs = true

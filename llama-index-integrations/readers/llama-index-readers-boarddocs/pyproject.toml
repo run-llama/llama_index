@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.boarddocs"
 
 [tool.llamahub.class_authors]
-BoardDocsReader = "llama-index"
+BoardDocsReader = "dweekly"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.maps"
 
 [tool.llamahub.class_authors]
-OpenMap = "llama-index"
+OpenMap = "carrotpy"
 
 [tool.mypy]
 disallow_untyped_defs = true

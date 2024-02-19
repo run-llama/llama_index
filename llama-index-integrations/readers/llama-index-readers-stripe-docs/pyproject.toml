@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.stripe_docs"
 
 [tool.llamahub.class_authors]
-StripeDocsReader = "llama-index"
+StripeDocsReader = "amorriscode"
 
 [tool.mypy]
 disallow_untyped_defs = true

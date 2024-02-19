@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.waii"
 
 [tool.llamahub.class_authors]
-WaiiToolSpec = "llama-index"
+WaiiToolSpec = "wangdatan"
 
 [tool.mypy]
 disallow_untyped_defs = true

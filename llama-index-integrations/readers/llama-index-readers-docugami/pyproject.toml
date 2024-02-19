@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.docugami"
 
 [tool.llamahub.class_authors]
-DocugamiReader = "llama-index"
+DocugamiReader = "tjaffri"
 
 [tool.mypy]
 disallow_untyped_defs = true

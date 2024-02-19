@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.readwise"
 
 [tool.llamahub.class_authors]
-ReadwiseReader = "llama-index"
+ReadwiseReader = "alexbowe"
 
 [tool.mypy]
 disallow_untyped_defs = true

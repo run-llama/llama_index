@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.ollama_query_engine"
 
 [tool.llamahub.class_authors]
-OllamaQueryEnginePack = "llama-index"
+OllamaQueryEnginePack = "chnsagitchen"
 
 [tool.mypy]
 disallow_untyped_defs = true

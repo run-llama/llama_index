@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.airbyte_salesforce"
 
 [tool.llamahub.class_authors]
-AirbyteSalesforceReader = "llama-index"
+AirbyteSalesforceReader = "flash1293"
 
 [tool.mypy]
 disallow_untyped_defs = true

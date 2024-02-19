@@ -12,9 +12,9 @@ contains_example = false
 import_path = "llama_index.tools.google"
 
 [tool.llamahub.class_authors]
-GmailToolSpec = "llama-index"
-GoogleCalendarToolSpec = "llama-index"
-GoogleSearchToolSpec = "llama-index"
+GmailToolSpec = "ajhofmann"
+GoogleCalendarToolSpec = "ajhofmann"
+GoogleSearchToolSpec = "ajhofmann"
 QUERY_URL_TMPL = "llama-index"
 
 [tool.mypy]

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.openai"
 
 [tool.llamahub.class_authors]
-OpenAIImageGenerationToolSpec = "llama-index"
+OpenAIImageGenerationToolSpec = "manelferreira_"
 
 [tool.mypy]
 disallow_untyped_defs = true

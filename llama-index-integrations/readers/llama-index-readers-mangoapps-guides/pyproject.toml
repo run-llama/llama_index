@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.mangoapps_guides"
 
 [tool.llamahub.class_authors]
-MangoppsGuidesReader = "llama-index"
+MangoppsGuidesReader = "mangoapps"
 
 [tool.mypy]
 disallow_untyped_defs = true

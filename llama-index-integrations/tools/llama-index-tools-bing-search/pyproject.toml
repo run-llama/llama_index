@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.bing_search"
 
 [tool.llamahub.class_authors]
-BingSearchToolSpec = "llama-index"
+BingSearchToolSpec = "ajhofmann"
 ENDPOINT_BASE_URL = "llama-index"
 
 [tool.mypy]

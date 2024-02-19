@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.pandas_ai"
 
 [tool.llamahub.class_authors]
-PandasAIReader = "llama-index"
+PandasAIReader = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

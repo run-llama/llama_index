@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.earnings_call_transcript"
 
 [tool.llamahub.class_authors]
-EarningsCallTranscript = "llama-index"
+EarningsCallTranscript = "Athe-kunal"
 
 [tool.mypy]
 disallow_untyped_defs = true

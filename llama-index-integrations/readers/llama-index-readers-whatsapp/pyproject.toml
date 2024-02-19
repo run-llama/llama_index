@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.whatsapp"
 
 [tool.llamahub.class_authors]
-WhatsappChatLoader = "llama-index"
+WhatsappChatLoader = "batmanscode"
 
 [tool.mypy]
 disallow_untyped_defs = true

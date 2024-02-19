@@ -12,7 +12,7 @@ contains_example = true
 import_path = "llama_index.packs.rag_evaluator"
 
 [tool.llamahub.class_authors]
-RagEvaluatorPack = "llama-index"
+RagEvaluatorPack = "nerdai"
 
 [tool.mypy]
 disallow_untyped_defs = true

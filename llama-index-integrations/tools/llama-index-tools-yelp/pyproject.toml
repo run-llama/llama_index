@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.yelp"
 
 [tool.llamahub.class_authors]
-YelpToolSpec = "llama-index"
+YelpToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.stock_market_data_query_engine"
 
 [tool.llamahub.class_authors]
-StockMarketDataQueryEnginePack = "llama-index"
+StockMarketDataQueryEnginePack = "anoopshrma"
 
 [tool.mypy]
 disallow_untyped_defs = true

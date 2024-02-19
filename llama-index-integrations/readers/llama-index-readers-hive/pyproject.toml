@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.hive"
 
 [tool.llamahub.class_authors]
-HiveReader = "llama-index"
+HiveReader = "kasen"
 
 [tool.mypy]
 disallow_untyped_defs = true

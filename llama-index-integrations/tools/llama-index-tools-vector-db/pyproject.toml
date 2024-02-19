@@ -13,7 +13,7 @@ import_path = "llama_index.tools.vector_db"
 
 [tool.llamahub.class_authors]
 VectorDB = "llama-index"
-VectorDBToolSpec = "llama-index"
+VectorDBToolSpec = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

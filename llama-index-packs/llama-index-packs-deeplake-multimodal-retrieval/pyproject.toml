@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.deeplake_multimodal_retrieval"
 
 [tool.llamahub.class_authors]
-DeepLakeMultimodalRetrieverPack = "llama-index"
+DeepLakeMultimodalRetrieverPack = "AdkSarsen"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.openalex"
 
 [tool.llamahub.class_authors]
-OpenAlexReader = "llama-index"
+OpenAlexReader = "shauryr"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.self_rag"
 
 [tool.llamahub.class_authors]
-SelfRAGPack = "llama-index"
+SelfRAGPack = "mmaatouk"
 SelfRAGQueryEngine = "llama-index"
 
 [tool.mypy]

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.microsoft_onedrive"
 
 [tool.llamahub.class_authors]
-OneDriveReader = "llama-index"
+OneDriveReader = "godwin3737"
 
 [tool.mypy]
 disallow_untyped_defs = true

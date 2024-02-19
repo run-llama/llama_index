@@ -12,7 +12,7 @@ contains_example = true
 import_path = "llama_index.packs.arize_phoenix_query_engine"
 
 [tool.llamahub.class_authors]
-ArizePhoenixQueryEnginePack = "llama-index"
+ArizePhoenixQueryEnginePack = "axiomofjoy"
 
 [tool.mypy]
 disallow_untyped_defs = true

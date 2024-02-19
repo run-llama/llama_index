@@ -13,7 +13,7 @@ import_path = "llama_index.tools.requests"
 
 [tool.llamahub.class_authors]
 INVALID_URL_PROMPT = "llama-index"
-RequestsToolSpec = "llama-index"
+RequestsToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

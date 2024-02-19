@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.steamship"
 
 [tool.llamahub.class_authors]
-SteamshipFileReader = "llama-index"
+SteamshipFileReader = "douglas-reid"
 
 [tool.mypy]
 disallow_untyped_defs = true

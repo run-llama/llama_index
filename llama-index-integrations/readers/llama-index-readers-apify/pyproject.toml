@@ -12,8 +12,8 @@ contains_example = false
 import_path = "llama_index.readers.apify"
 
 [tool.llamahub.class_authors]
-ApifyActor = "llama-index"
-ApifyDataset = "llama-index"
+ApifyActor = "drobnikj"
+ApifyDataset = "drobnikj"
 
 [tool.mypy]
 disallow_untyped_defs = true

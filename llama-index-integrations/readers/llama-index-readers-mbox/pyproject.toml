@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.mbox"
 
 [tool.llamahub.class_authors]
-MboxReader = "llama-index"
+MboxReader = "minosvasilias"
 
 [tool.mypy]
 disallow_untyped_defs = true

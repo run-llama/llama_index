@@ -12,12 +12,12 @@ contains_example = false
 import_path = "llama_index.readers.google"
 
 [tool.llamahub.class_authors]
-GmailReader = "llama-index"
-GoogleCalendarReader = "llama-index"
-GoogleDocsReader = "llama-index"
-GoogleDriveReader = "llama-index"
-GoogleKeepReader = "llama-index"
-GoogleSheetsReader = "llama-index"
+GmailReader = "bbornsztein"
+GoogleCalendarReader = "ong"
+GoogleDocsReader = "jerryjliu"
+GoogleDriveReader = "ravi03071991"
+GoogleKeepReader = "pycui"
+GoogleSheetsReader = "piroz"
 
 [tool.mypy]
 disallow_untyped_defs = true

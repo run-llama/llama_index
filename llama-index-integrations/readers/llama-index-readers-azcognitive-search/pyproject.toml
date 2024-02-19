@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.azcognitive_search"
 
 [tool.llamahub.class_authors]
-AzCognitiveSearchReader = "llama-index"
+AzCognitiveSearchReader = "mrcabellom"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.snowflake_query_engine"
 
 [tool.llamahub.class_authors]
-SnowflakeQueryEnginePack = "llama-index"
+SnowflakeQueryEnginePack = "wenqiglantz"
 
 [tool.mypy]
 disallow_untyped_defs = true

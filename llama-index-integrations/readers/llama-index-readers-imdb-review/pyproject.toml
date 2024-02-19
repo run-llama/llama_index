@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.imdb_review"
 
 [tool.llamahub.class_authors]
-IMDBReviews = "llama-index"
+IMDBReviews = "Athe-kunal"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.agent_search"
 
 [tool.llamahub.class_authors]
-AgentSearchReader = "llama-index"
+AgentSearchReader = "emrgnt-cmplxty"
 
 [tool.mypy]
 disallow_untyped_defs = true

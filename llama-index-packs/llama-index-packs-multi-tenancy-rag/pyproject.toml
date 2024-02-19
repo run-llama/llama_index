@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.packs.multi_tenancy_rag"
 
 [tool.llamahub.class_authors]
-MultiTenancyRAGPack = "llama-index"
+MultiTenancyRAGPack = "ravi03071991"
 
 [tool.mypy]
 disallow_untyped_defs = true

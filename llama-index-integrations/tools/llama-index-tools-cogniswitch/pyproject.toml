@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.cogniswitch"
 
 [tool.llamahub.class_authors]
-CogniswitchToolSpec = "llama-index"
+CogniswitchToolSpec = "cogniswitch"
 
 [tool.mypy]
 disallow_untyped_defs = true

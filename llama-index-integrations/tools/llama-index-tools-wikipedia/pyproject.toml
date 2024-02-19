@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.wikipedia"
 
 [tool.llamahub.class_authors]
-WikipediaToolSpec = "llama-index"
+WikipediaToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

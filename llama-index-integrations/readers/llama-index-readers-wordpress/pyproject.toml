@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.wordpress"
 
 [tool.llamahub.class_authors]
-WordpressReader = "llama-index"
+WordpressReader = "bbornsztein"
 
 [tool.mypy]
 disallow_untyped_defs = true

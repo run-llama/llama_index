@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.telegram"
 
 [tool.llamahub.class_authors]
-TelegramReader = "llama-index"
+TelegramReader = "diicell"
 
 [tool.mypy]
 disallow_untyped_defs = true

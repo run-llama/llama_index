@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.airbyte_cdk"
 
 [tool.llamahub.class_authors]
-AirbyteCDKReader = "llama-index"
+AirbyteCDKReader = "flash1293"
 
 [tool.mypy]
 disallow_untyped_defs = true

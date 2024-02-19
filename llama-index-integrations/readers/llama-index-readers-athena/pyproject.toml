@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.athena"
 
 [tool.llamahub.class_authors]
-AthenaReader = "llama-index"
+AthenaReader = "mattick27"
 
 [tool.mypy]
 disallow_untyped_defs = true

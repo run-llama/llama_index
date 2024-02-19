@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.openapi"
 
 [tool.llamahub.class_authors]
-OpenAPIToolSpec = "llama-index"
+OpenAPIToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

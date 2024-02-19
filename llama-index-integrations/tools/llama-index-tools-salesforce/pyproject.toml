@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.salesforce"
 
 [tool.llamahub.class_authors]
-SalesforceToolSpec = "llama-index"
+SalesforceToolSpec = "chrispangg"
 
 [tool.mypy]
 disallow_untyped_defs = true

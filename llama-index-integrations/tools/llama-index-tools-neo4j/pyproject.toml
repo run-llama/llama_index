@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.neo4j"
 
 [tool.llamahub.class_authors]
-Neo4jQueryToolSpec = "llama-index"
+Neo4jQueryToolSpec = "shahafp"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.feedly_rss"
 
 [tool.llamahub.class_authors]
-FeedlyRssReader = "llama-index"
+FeedlyRssReader = "kychanbp"
 
 [tool.mypy]
 disallow_untyped_defs = true
