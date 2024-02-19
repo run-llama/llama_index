@@ -24,7 +24,7 @@ description = "llama-index packs node_parser integration"
 keywords = ["chunk", "chunking", "embedding", "node", "parser", "semantic"]
 license = "MIT"
 maintainers = ["jerryjliu"]
-name = "llama-index-packs-node-parser"
+name = "llama-index-packs-node-parser-semantic-chunking"
 readme = "README.md"
 version = "0.1.2"
 
