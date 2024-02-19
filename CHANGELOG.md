@@ -1,5 +1,20 @@
 # ChangeLog
 
+## [0.10.7] - 2024-02-19
+
+### New Features
+
+- Added Self-Discover llamapack (#10951)
+
+### Bug Fixes / Nits
+
+- Fixed linting in CICD (#10945)
+- Fixed using remote graph stores (#10971)
+- Added missing LLM kwarg in NoText response synthesizer (#10971)
+- Fixed openai import in rankgpt (#10971)
+- Fixed resolving model name to string in openai embeddings (#10971)
+- Off by one error in sentence window node parser (#10971)
+
 ## [0.10.6] - 2024-02-17
 
 First, apologies for missing the changelog the last few versions. Trying to figure out the best process with 400+ packages.
