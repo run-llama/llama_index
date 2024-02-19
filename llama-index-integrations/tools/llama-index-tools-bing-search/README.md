@@ -18,7 +18,7 @@ tool_spec = BingSearchToolSpec(api_key="your-key")
 
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
 
-agent.chat("whats the latest news about superconductors")
+agent.chat("what's the latest news about superconductors")
 agent.chat("what does lk-99 look like")
 agent.chat("is there any videos of it levitating")
 ```

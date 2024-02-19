@@ -1,6 +1,6 @@
 # Zapier Tool
 
-This tool connects to a Zapier account and allows access to the natural langauge actions API. You can learn more about and enable the NLA API here: https://nla.zapier.com/start/
+This tool connects to a Zapier account and allows access to the natural language actions API. You can learn more about and enable the NLA API here: https://nla.zapier.com/start/
 
 ## Usage
 

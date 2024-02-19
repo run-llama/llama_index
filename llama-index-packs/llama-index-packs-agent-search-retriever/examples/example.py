@@ -2,12 +2,7 @@
 
 import os
 from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.llama_pack import download_llama_pack
-
-# download and install dependencies
-AgentSearchRetrieverPack = download_llama_pack(
-    "AgentSearchRetrieverPack", "./agent_search_pack"
-)
+from llama_index.packs.agent_search_retriever import AgentSearchRetrieverPack
 
 # create the pack
 agent_search_pack = AgentSearchRetrieverPack(

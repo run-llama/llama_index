@@ -1,10 +1,7 @@
 # Required Environment Variables: OPENAI_API_KEY
 # Required TavilyAI API KEY for web searches - https://tavily.com/
 from llama_index.core import SimpleDirectoryReader
-from llama_index.core.llama_pack import download_llama_pack
-
-# download and install dependencies
-CorrectiveRAGPack = download_llama_pack("CorrectiveRAGPack", "./corrective_rag_pack")
+from llama_index.packs.corrective_rag import CorrectiveRAGPack
 
 # load documents
 documents = SimpleDirectoryReader("./data").load_data()

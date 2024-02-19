@@ -1,6 +1,6 @@
 # OpenAPI Tool
 
-This tool loads an OpenAPI spec and allow the Agent to retrieve endpoints and details about endpoints. The RequestsToolSpec can also be laoded into the agent to allow the agent to hit the nessecary endpoints with a REST request.
+This tool loads an OpenAPI spec and allow the Agent to retrieve endpoints and details about endpoints. The RequestsToolSpec can also be loaded into the agent to allow the agent to hit the necessary endpoints with a REST request.
 
 ## Usage
 
