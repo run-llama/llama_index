@@ -158,6 +158,15 @@ maxdepth: 1
 /examples/llm/monsterapi.ipynb
 ```
 
+## MyMagic
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/mymagic.ipynb
+```
+
 ## NeutrinoAI
 
 ```{toctree}
