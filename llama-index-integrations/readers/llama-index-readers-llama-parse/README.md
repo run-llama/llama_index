@@ -1,10 +1,10 @@
-# LlamaParse (Preview)
+# LlamaParse
 
 LlamaParse is an API created by LlamaIndex to efficiently parse and represent files for efficient retrieval and context augmentation using LlamaIndex frameworks.
 
 LlamaParse directly integrates with [LlamaIndex](https://github.com/run-llama/llama_index).
 
-Currently available in preview mode for **free**. Try it out today!
+Currently available for **free**. Try it out today!
 
 **NOTE:** Currently, only PDF files are supported.
 
@@ -68,10 +68,10 @@ Full documentation for `SimpleDirectoryReader` can be found on the [LlamaIndex D
 
 Several end-to-end indexing examples can be found in the examples folder
 
-- [Getting Started](examples/demo_basic.ipynb)
-- [Advanced RAG Example](examples/demo_advanced.ipynb)
-- [Raw API Usage](examples/demo_api.ipynb)
+- [Getting Started](https://github.com/run-llama/llama_parse/blob/main/examples/demo_basic.ipynb)
+- [Advanced RAG Example](https://github.com/run-llama/llama_parse/blob/main/examples/demo_advanced.ipynb)
+- [Raw API Usage](https://github.com/run-llama/llama_parse/blob/main/examples/demo_api.ipynb)
 
 ## Terms of Service
 
-See the [Terms of Service Here](./TOS.pdf).
+See the [Terms of Service Here](https://github.com/run-llama/llama_parse/blob/main/TOS.pdf).
