@@ -12,6 +12,9 @@ classes = ["TwitterTweetReader"]
 contains_example = false
 import_path = "llama_index.readers.twitter"
 
+[tool.llamahub.class_authors]
+TwitterTweetReader = "ravi03071991"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

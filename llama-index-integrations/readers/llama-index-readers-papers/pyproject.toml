@@ -12,6 +12,10 @@ classes = ["ArxivReader", "PubmedReader"]
 contains_example = false
 import_path = "llama_index.readers.papers"
 
+[tool.llamahub.class_authors]
+ArxivReader = "thejessezhang"
+PubmedReader = "thejessezhang"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

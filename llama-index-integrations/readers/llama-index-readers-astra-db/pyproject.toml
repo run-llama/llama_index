@@ -12,6 +12,9 @@ classes = ["AstraDBReader"]
 contains_example = false
 import_path = "llama_index.readers.astra_db"
 
+[tool.llamahub.class_authors]
+AstraDBReader = "erichare"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

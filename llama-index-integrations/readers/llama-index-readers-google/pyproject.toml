@@ -12,6 +12,14 @@ classes = ["GmailReader", "GoogleCalendarReader", "GoogleDocsReader", "GoogleDri
 contains_example = false
 import_path = "llama_index.readers.google"
 
+[tool.llamahub.class_authors]
+GmailReader = "bbornsztein"
+GoogleCalendarReader = "ong"
+GoogleDocsReader = "jerryjliu"
+GoogleDriveReader = "ravi03071991"
+GoogleKeepReader = "pycui"
+GoogleSheetsReader = "piroz"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

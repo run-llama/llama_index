@@ -12,6 +12,11 @@ classes = ["GitHubIssuesClient", "GitHubRepositoryCollaboratorsReader", "GitHubR
 contains_example = false
 import_path = "llama_index.readers.github"
 
+[tool.llamahub.class_authors]
+GitHubRepositoryCollaboratorsReader = "rwood-97"
+GitHubRepositoryIssuesReader = "moncho"
+GithubRepositoryReader = "ahmetkca"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

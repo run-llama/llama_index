@@ -12,6 +12,9 @@ classes = ["JoplinReader", "LINK_NOTE_TEMPLATE"]
 contains_example = false
 import_path = "llama_index.readers.joplin"
 
+[tool.llamahub.class_authors]
+JoplinReader = "alondmnt"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

@@ -12,6 +12,9 @@ classes = ["DocugamiReader"]
 contains_example = false
 import_path = "llama_index.readers.docugami"
 
+[tool.llamahub.class_authors]
+DocugamiReader = "tjaffri"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

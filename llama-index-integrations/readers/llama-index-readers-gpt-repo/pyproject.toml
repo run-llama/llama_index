@@ -12,6 +12,9 @@ classes = ["GPTRepoReader", "get_ignore_list", "process_repository", "should_ign
 contains_example = false
 import_path = "llama_index.readers.gpt_repo"
 
+[tool.llamahub.class_authors]
+GPTRepoReader = "mpoon"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

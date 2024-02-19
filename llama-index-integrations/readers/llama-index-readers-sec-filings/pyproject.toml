@@ -12,6 +12,9 @@ classes = ["SECFilingsLoader"]
 contains_example = false
 import_path = "llama_index.readers.sec_filings"
 
+[tool.llamahub.class_authors]
+SECFilingsLoader = "Athe-kunal"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

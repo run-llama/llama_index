@@ -12,6 +12,9 @@ classes = ["ZendeskReader"]
 contains_example = false
 import_path = "llama_index.readers.zendesk"
 
+[tool.llamahub.class_authors]
+ZendeskReader = "bbornsztein"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

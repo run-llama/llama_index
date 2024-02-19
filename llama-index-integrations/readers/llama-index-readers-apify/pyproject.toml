@@ -12,6 +12,10 @@ classes = ["ApifyActor", "ApifyDataset"]
 contains_example = false
 import_path = "llama_index.readers.apify"
 
+[tool.llamahub.class_authors]
+ApifyActor = "drobnikj"
+ApifyDataset = "drobnikj"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

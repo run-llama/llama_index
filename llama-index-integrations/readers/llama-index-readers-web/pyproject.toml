@@ -12,6 +12,21 @@ classes = ["AsyncWebPageReader", "BeautifulSoupWebReader", "KnowledgeBaseWebRead
 contains_example = false
 import_path = "llama_index.readers.web"
 
+[tool.llamahub.class_authors]
+AsyncWebPageReader = "Hironsan"
+BeautifulSoupWebReader = "thejessezhang"
+KnowledgeBaseWebReader = "jasonwcfan"
+MainContentExtractorReader = "HawkClaws"
+NewsArticleReader = "ruze00"
+ReadabilityWebPageReader = "pandazki"
+RssNewsReader = "ruze00"
+RssReader = "bborn"
+SimpleWebPageReader = "thejessezhang"
+SitemapReader = "selamanse"
+TrafilaturaWebReader = "NA"
+UnstructuredURLLoader = "kravetsmic"
+WholeSiteReader = "an-bluecat"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

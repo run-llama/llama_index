@@ -12,6 +12,24 @@ classes = ["DocxReader", "EpubReader", "FlatReader", "HTMLTagReader", "HWPReader
 contains_example = false
 import_path = "llama_index.readers.file"
 
+[tool.llamahub.class_authors]
+DocxReader = "thejessezhang"
+EpubReader = "Haowjy"
+HWPReader = "sangwongenip"
+IPYNBReader = "FarisHijazi"
+ImageCaptionReader = "FarisHijazi"
+ImageReader = "ravi03071991"
+ImageTabularChartReader = "jon-chuang"
+ImageVisionLLMReader = "FarisHijazi"
+MarkdownReader = "hursh-desai"
+PDFReader = "ravi03071991"
+PagedCSVReader = "thejessezhang"
+PandasCSVReader = "ephe-meral"
+PptxReader = "thejessezhang"
+PyMuPDFReader = "iamarunbrahma"
+UnstructuredReader = "thejessezhang"
+XMLReader = "mmaatouk"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

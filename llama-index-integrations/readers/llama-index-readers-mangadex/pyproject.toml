@@ -12,6 +12,9 @@ classes = ["MangaDexReader"]
 contains_example = false
 import_path = "llama_index.readers.mangadex"
 
+[tool.llamahub.class_authors]
+MangaDexReader = "choombaa"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

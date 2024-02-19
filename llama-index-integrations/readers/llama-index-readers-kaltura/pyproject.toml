@@ -12,6 +12,9 @@ classes = ["KalturaESearchReader"]
 contains_example = false
 import_path = "llama_index.readers.kaltura_esearch"
 
+[tool.llamahub.class_authors]
+KalturaESearchReader = "kaltura"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

@@ -12,6 +12,9 @@ classes = ["MacrometaGDNReader"]
 contains_example = false
 import_path = "llama_index.readers.macrometa_gdn"
 
+[tool.llamahub.class_authors]
+MacrometaGDNReader = "Dain Im"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

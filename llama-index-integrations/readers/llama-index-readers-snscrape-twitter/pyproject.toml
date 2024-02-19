@@ -12,6 +12,9 @@ classes = ["SnscrapeTwitterReader"]
 contains_example = false
 import_path = "llama_index.readers.snscrape_twitter"
 
+[tool.llamahub.class_authors]
+SnscrapeTwitterReader = "smyja"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

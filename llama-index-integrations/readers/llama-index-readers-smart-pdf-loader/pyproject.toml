@@ -12,6 +12,9 @@ classes = ["SmartPDFLoader"]
 contains_example = false
 import_path = "llama_index.readers.smart_pdf_loader"
 
+[tool.llamahub.class_authors]
+SmartPDFLoader = "ansukla"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

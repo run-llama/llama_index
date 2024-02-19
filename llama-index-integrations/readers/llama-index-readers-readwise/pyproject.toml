@@ -12,6 +12,9 @@ classes = ["ReadwiseReader"]
 contains_example = false
 import_path = "llama_index.readers.readwise"
 
+[tool.llamahub.class_authors]
+ReadwiseReader = "alexbowe"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

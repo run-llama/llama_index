@@ -12,6 +12,9 @@ classes = ["AirtableReader"]
 contains_example = false
 import_path = "llama_index.readers.airtable"
 
+[tool.llamahub.class_authors]
+AirtableReader = "smyja"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

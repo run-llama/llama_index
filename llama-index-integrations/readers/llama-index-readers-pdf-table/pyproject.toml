@@ -12,6 +12,9 @@ classes = ["PDFTableReader"]
 contains_example = false
 import_path = "llama_index.readers.pdf_table"
 
+[tool.llamahub.class_authors]
+PDFTableReader = "yy0867"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

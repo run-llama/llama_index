@@ -12,6 +12,9 @@ classes = ["ConfluenceReader"]
 contains_example = false
 import_path = "llama_index.readers.confluence"
 
+[tool.llamahub.class_authors]
+ConfluenceReader = "zywilliamli"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

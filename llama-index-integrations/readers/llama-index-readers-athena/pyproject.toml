@@ -12,6 +12,9 @@ classes = ["AthenaReader"]
 contains_example = false
 import_path = "llama_index.readers.athena"
 
+[tool.llamahub.class_authors]
+AthenaReader = "mattick27"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

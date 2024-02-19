@@ -12,6 +12,9 @@ classes = ["AirbyteTypeformReader"]
 contains_example = false
 import_path = "llama_index.readers.airbyte_typeform"
 
+[tool.llamahub.class_authors]
+AirbyteTypeformReader = "flash1293"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
