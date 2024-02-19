@@ -13,6 +13,7 @@ from typing import (
     List,
     Optional,
     Type,
+    Callable,
 )
 
 from llama_index.agent.openai.step import OpenAIAgentWorker
@@ -53,6 +54,7 @@ class OpenAIAgent(AgentRunner):
         default_tool_choice: str = "auto",
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        get_tool_by: Callable[[List[BaseTool], str], BaseTool] = get_function_by_name,
     ) -> None:
         """Init params."""
         callback_manager = callback_manager or llm.callback_manager
@@ -64,6 +66,7 @@ class OpenAIAgent(AgentRunner):
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
             prefix_messages=prefix_messages,
+            get_tool_by=get_tool_by,
         )
         super().__init__(
             step_engine,
@@ -88,6 +91,7 @@ class OpenAIAgent(AgentRunner):
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
+        get_tool_by: Callable[[List[BaseTool], str], BaseTool] = get_function_by_name,
         **kwargs: Any,
     ) -> "OpenAIAgent":
         """Create an OpenAIAgent from a list of tools.
@@ -133,4 +137,5 @@ class OpenAIAgent(AgentRunner):
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
             default_tool_choice=default_tool_choice,
+            get_tool_by=get_tool_by,
         )
