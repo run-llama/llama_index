@@ -62,10 +62,14 @@ class LlamaCloudRetriever(BaseRetriever):
             pipeline_name=self.name,
             pipeline_type=PipelineType.MANAGED,
         )
-        if len(pipelines) != 1:
+        if len(pipelines) == 0:
             raise ValueError(
                 f"Unknown index name {self.name}. Please confirm a "
                 "managed index with this name exists."
+            )
+        elif len(pipelines) > 1:
+            raise ValueError(
+                f"Multiple pipelines found with name {self.name} in project {self.project_name}"
             )
         pipeline = pipelines[0]
 
@@ -96,7 +100,15 @@ class LlamaCloudRetriever(BaseRetriever):
             pipeline_name=self.name,
             pipeline_type=PipelineType.MANAGED,
         )
-        assert len(pipelines) == 1
+        if len(pipelines) == 0:
+            raise ValueError(
+                f"Unknown index name {self.name}. Please confirm a "
+                "managed index with this name exists."
+            )
+        elif len(pipelines) > 1:
+            raise ValueError(
+                f"Multiple pipelines found with name {self.name} in project {self.project_name}"
+            )
         pipeline = pipelines[0]
 
         if pipeline.id is None:
