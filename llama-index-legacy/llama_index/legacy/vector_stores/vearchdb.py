@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional
 
 import numpy as np
 
-from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
-from llama_index.legacy.vector_stores.types import (
+from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.legacy.vector_stores.utils import (
+from llama_index.vector_stores.utils import (
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
@@ -229,7 +229,7 @@ class VearchVectorStore(VectorStore):
                 "efConstruction": -1,
             },
         }
-        filed_list_add = self.field_list + [{"field": "text", "type": "str"}]
+        filed_list_add = self.field_list.append({"field": "text", "type": "str"})
         fields = [
             vearch.GammaFieldInfo(fi["field"], type_dict[fi["type"]])
             for fi in filed_list_add
