@@ -4,10 +4,10 @@ This tool connects to various open finance apis and libraries to gather news, ea
 
 To use this tool, you'll need a few API keys:
 
-- POLYGON_API_KEY -- <how to get this?>
-- FINNHUB_API_KEY -- <how to get this?>
-- ALPHA_VANTAGE_API_KEY -- <how to get this?>
-- NEWSAPI_API_KEY -- <how to get this?>
+- POLYGON_API_KEY -- <https://polygon.io/>
+- FINNHUB_API_KEY -- <https://finnhub.io/>
+- ALPHA_VANTAGE_API_KEY -- <https://www.alphavantage.co/>
+- NEWSAPI_API_KEY -- <https://newsapi.org/>
 
 ## Installation
 
