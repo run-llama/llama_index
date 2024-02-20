@@ -10,9 +10,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["DashScopeBatchTextEmbeddingModels", "DashScopeEmbedding", "DashScopeMultiModalEmbeddingModels", "DashScopeTextEmbeddingModels", "DashScopeTextEmbeddingType"]
 contains_example = false
 import_path = "llama_index.embeddings.dashscope"
+
+[tool.llamahub.class_authors]
+DashScopeEmbedding = "liuyhwangyh"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,7 +24,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["liuyhwangyh"]
 description = "llama-index embeddings dashscope integration"
 license = "MIT"
 name = "llama-index-embeddings-dashscope"
