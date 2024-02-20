@@ -2268,13 +2268,13 @@ files = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.3"
+version = "0.10.8.post1"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "llama_index_core-0.10.3-py3-none-any.whl", hash = "sha256:711e2766cb1690a394a209dc6155d1b7a05b44fd6b7e08084d6b96c00bef5dd0"},
-    {file = "llama_index_core-0.10.3.tar.gz", hash = "sha256:5cced2c56bd640311835094fe6946ce6498e6d31dffcdb3df7583ff1aa3861b8"},
+    {file = "llama_index_core-0.10.8.post1-py3-none-any.whl", hash = "sha256:51b736b22818cb0b117a1486be54cf05f9496e79feb5de7262be5ec5480d85ec"},
+    {file = "llama_index_core-0.10.8.post1.tar.gz", hash = "sha256:449fdd206901ca1e403b0c7fd021e52f9f0aa6fd121793f3062c442429a11ffd"},
 ]
 
 [package.dependencies]
@@ -2284,6 +2284,7 @@ deprecated = ">=1.2.9.3"
 dirtyjson = ">=1.0.8,<2.0.0"
 fsspec = ">=2023.5.0"
 httpx = "*"
+llamaindex-py-client = ">=0.1.13,<0.2.0"
 nest-asyncio = ">=1.5.8,<2.0.0"
 networkx = ">=3.0"
 nltk = ">=3.8.1,<4.0.0"
@@ -2352,6 +2353,21 @@ chromadb = ">=0.4.22,<0.5.0"
 llama-index-core = ">=0.10.1,<0.11.0"
 onnxruntime = ">=1.17.0,<2.0.0"
 tokenizers = ">=0.15.1,<0.16.0"
+
+[[package]]
+name = "llamaindex-py-client"
+version = "0.1.13"
+description = ""
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "llamaindex_py_client-0.1.13-py3-none-any.whl", hash = "sha256:02400c90655da80ae373e0455c829465208607d72462f1898fd383fdfe8dabce"},
+    {file = "llamaindex_py_client-0.1.13.tar.gz", hash = "sha256:3bd9b435ee0a78171eba412dea5674d813eb5bf36e577d3c7c7e90edc54900d9"},
+]
+
+[package.dependencies]
+httpx = ">=0.20.0"
+pydantic = ">=1.10"
 
 [[package]]
 name = "markupsafe"
@@ -5999,4 +6015,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "a0c6f7be872d5ca99b5cbba9da4916e5b54805026cdebbda71f7320e0a0f03df"
+content-hash = "fe397103ccb40b32f60b0547640e6670c4ee906e1f0bdd8e78d7034400e865f8"
