@@ -48,5 +48,5 @@ response = llm.complete("What is HuggingFace?")
 # Use the index directly
 index = zephyr_pack.index
 query_engine = index.as_query_engine()
-retriver = index.as_retriever()
+retriever = index.as_retriever()
 ```

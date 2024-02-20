@@ -8,9 +8,12 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["ChainOfTablePack", "MixSelfConsistencyPack"]
 contains_example = false
 import_path = "llama_index.packs.tables"
+
+[tool.llamahub.class_authors]
+ChainOfTablePack = "jerryjliu"
+MixSelfConsistencyPack = "Disiok"
 
 [tool.mypy]
 disallow_untyped_defs = true

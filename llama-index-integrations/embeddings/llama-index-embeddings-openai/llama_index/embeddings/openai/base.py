@@ -8,6 +8,8 @@ from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.embeddings.openai.utils import (
+    DEFAULT_OPENAI_API_BASE,
+    DEFAULT_OPENAI_API_VERSION,
     create_retry_decorator,
     resolve_openai_credentials,
 )
@@ -209,12 +211,12 @@ def get_engine(
     mode: str,
     model: str,
     mode_model_dict: Dict[Tuple[OpenAIEmbeddingMode, str], OpenAIEmbeddingModeModel],
-) -> OpenAIEmbeddingModeModel:
+) -> str:
     """Get engine."""
     key = (OpenAIEmbeddingMode(mode), OpenAIEmbeddingModelType(model))
     if key not in mode_model_dict:
         raise ValueError(f"Invalid mode, model combination: {key}")
-    return mode_model_dict[key]
+    return mode_model_dict[key].value
 
 
 class OpenAIEmbedding(BaseEmbedding):
@@ -244,8 +246,12 @@ class OpenAIEmbedding(BaseEmbedding):
     )
 
     api_key: str = Field(description="The OpenAI API key.")
-    api_base: str = Field(description="The base URL for OpenAI API.")
-    api_version: str = Field(description="The version for OpenAI API.")
+    api_base: str = Field(
+        default=DEFAULT_OPENAI_API_BASE, description="The base URL for OpenAI API."
+    )
+    api_version: str = Field(
+        default=DEFAULT_OPENAI_API_VERSION, description="The version for OpenAI API."
+    )
 
     max_retries: int = Field(
         default=10, description="Maximum number of retries.", gte=0
@@ -269,8 +275,8 @@ class OpenAIEmbedding(BaseEmbedding):
         ),
     )
 
-    _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
-    _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
+    _query_engine: str = PrivateAttr()
+    _text_engine: str = PrivateAttr()
     _client: Optional[OpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
     _http_client: Optional[httpx.Client] = PrivateAttr()

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["TogetherLLM"]
 contains_example = false
 import_path = "llama_index.llms.together"
+
+[tool.llamahub.class_authors]
+TogetherLLM = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

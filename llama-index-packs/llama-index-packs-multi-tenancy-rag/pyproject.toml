@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["MultiTenancyRAGPack"]
 contains_example = false
 import_path = "llama_index.packs.multi_tenancy_rag"
+
+[tool.llamahub.class_authors]
+MultiTenancyRAGPack = "ravi03071991"
 
 [tool.mypy]
 disallow_untyped_defs = true

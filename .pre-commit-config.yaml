@@ -49,8 +49,14 @@ repos:
           ]
         exclude: ^(docs/|llama-index-core/llama_index/core/_static)
         args:
-          [MYPYPATH=llama_index, --namespace-packages, --explicit-package-bases]
-        entry: bash -c 'cd $GIT_PREFIX'
+          [
+            --namespace-packages,
+            --explicit-package-bases,
+            --disallow-untyped-defs,
+            --ignore-missing-imports,
+            --python-version=3.8,
+          ]
+        entry: bash -c "export MYPYPATH=llama_index"
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
@@ -74,24 +80,23 @@ repos:
     rev: v3.0.3
     hooks:
       - id: prettier
-        exclude: llama-index-core/llama_index/core/_static
+        exclude: llama-index-core/llama_index/core/_static|poetry.lock|llama-index-legacy/llama_index/legacy/_static
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
       - id: codespell
         additional_dependencies: [tomli]
         exclude: |
-          (?x)^(
-            poetry.lock|
-            (\/.*?\.[\w:]+)/pyproject.toml|
-            llama-index-core/llama_index/core/_static
-          )$
+          poetry.lock|
+          (\/.*?\.[\w:]+)/pyproject.toml|
+          llama-index-core/llama_index/core/_static|
+          llama-index-legacy/llama_index/legacy/_static|
+          (\/.*?\.[\w:]+)/poetry.lock
         args:
           [
             "--ignore-words-list",
             "astroid,gallary,momento,narl,ot,rouge,nin,gere",
           ]
-        entry: bash -c 'cd $GIT_PREFIX'
   - repo: https://github.com/srstevenson/nb-clean
     rev: 3.1.0
     hooks:

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["SnowflakeQueryEnginePack"]
 contains_example = false
 import_path = "llama_index.packs.snowflake_query_engine"
+
+[tool.llamahub.class_authors]
+SnowflakeQueryEnginePack = "wenqiglantz"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["LilacReader"]
 contains_example = false
 import_path = "llama_index.readers.lilac"
+
+[tool.llamahub.class_authors]
+LilacReader = "nsthorat"
 
 [tool.mypy]
 disallow_untyped_defs = true

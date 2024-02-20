@@ -26,7 +26,7 @@ class AzureTranslateToolSpec(BaseToolSpec):
         using a two character language code.
 
         Args:
-            language (str): Target translation language. One of af, sq, am, ar, hy, as, az, bn, ba, eu, bs, bg, ca, hr, cs, da, dv, nl, en, et, fo, fj, fi, fr, gl, ka, de, el, gu, ht, he, hi, hu, is, id, iu, ga, it, ja, kn, kk, km, ko, ku, ky, lo, lv, lt, mk, mg, ms, ml, mt, mi, mr, my, ne, nb, or, ps, fa, pl, pt, pa, ro, ru, sm, sk, sl, so, es, sw, sv, ty, ta, tt, te, th, bo, ti, to, tr, tk, uk, ur, ug, uz, vi, cy, zu.
+            language (str): Target translation language.
         """
         request = requests.post(
             ENDPOINT_BASE_URL,

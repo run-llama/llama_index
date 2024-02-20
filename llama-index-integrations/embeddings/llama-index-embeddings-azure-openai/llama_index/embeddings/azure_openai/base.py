@@ -4,7 +4,7 @@ import httpx
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.core.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.embeddings.openai import (
     OpenAIEmbedding,
     OpenAIEmbeddingMode,
@@ -20,6 +20,11 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
     )
     azure_deployment: Optional[str] = Field(
         default=None, description="The Azure deployment to use."
+    )
+
+    api_base: str = Field(default="", description="The base URL for Azure deployment.")
+    api_version: str = Field(
+        default="", description="The version for Azure OpenAI API."
     )
 
     _client: AzureOpenAI = PrivateAttr()

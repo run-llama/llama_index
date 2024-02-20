@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["RedditReader"]
 contains_example = false
 import_path = "llama_index.readers.reddit"
+
+[tool.llamahub.class_authors]
+RedditReader = "vanessahlyan"
 
 [tool.mypy]
 disallow_untyped_defs = true

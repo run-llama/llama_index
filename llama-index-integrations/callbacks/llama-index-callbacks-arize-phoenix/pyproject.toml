@@ -9,9 +9,11 @@ ignore-words-list = "Gere"
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["arize_phoenix_callback_handler"]
 contains_example = false
 import_path = "llama_index.callbacks.arize_phoenix"
+
+[tool.llamahub.class_authors]
+arize_phoenix_callback_handler = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -20,10 +22,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = [
-    "Arize AI <phoenix-devs@arize.com>",
-    "OpenInference Authors <oss@arize.com>",
-]
+authors = ["Arize AI <phoenix-devs@arize.com>", "OpenInference Authors <oss@arize.com>"]
 description = "llama-index callbacks arize-phoenix integration"
 license = "MIT"
 name = "llama-index-callbacks-arize-phoenix"

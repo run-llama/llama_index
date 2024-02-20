@@ -139,6 +139,11 @@ class CallbackManager(BaseCallbackHandler, ABC):
         """Set handlers as the only handlers on the callback manager."""
         self.handlers = handlers
 
+    @classmethod
+    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
+        """Avoids serialization errors."""
+        schema.update(type="object", default={})
+
     @contextmanager
     def event(
         self,

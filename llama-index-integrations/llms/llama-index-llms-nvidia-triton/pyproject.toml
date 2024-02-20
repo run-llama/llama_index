@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["NvidiaTriton"]
 contains_example = false
 import_path = "llama_index.llms.nvidia_triton"
+
+[tool.llamahub.class_authors]
+NvidiaTriton = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,7 +26,7 @@ description = "llama-index llms nvidia triton integration"
 license = "MIT"
 name = "llama-index-llms-nvidia-triton"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["OllamaQueryEnginePack"]
 contains_example = false
 import_path = "llama_index.packs.ollama_query_engine"
+
+[tool.llamahub.class_authors]
+OllamaQueryEnginePack = "chnsagitchen"
 
 [tool.mypy]
 disallow_untyped_defs = true

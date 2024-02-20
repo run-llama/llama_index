@@ -8,9 +8,13 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["VectaraAutoRetriever", "VectaraIndex", "VectaraRetriever"]
 contains_example = false
 import_path = "llama_index.indices.managed.vectara"
+
+[tool.llamahub.class_authors]
+VectaraAutoRetriever = "llama-index"
+VectaraIndex = "llama-index"
+VectaraRetriever = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

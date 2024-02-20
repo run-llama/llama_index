@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AutoMergingRetrieverPack"]
 contains_example = true
 import_path = "llama_index.packs.auto_merging_retriever"
+
+[tool.llamahub.class_authors]
+AutoMergingRetrieverPack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true
