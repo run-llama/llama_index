@@ -1,5 +1,5 @@
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.vector_stores.astra.base import AstraDBVectorStore
+from llama_index.vector_stores.astra_db.base import AstraDBVectorStore
 
 
 def test_class():
