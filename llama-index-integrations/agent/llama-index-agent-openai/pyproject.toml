@@ -8,9 +8,13 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["OpenAIAgent", "OpenAIAgentWorker", "OpenAIAssistantAgent"]
 contains_example = false
 import_path = "llama_index.agent.openai"
+
+[tool.llamahub.class_authors]
+OpenAIAgent = "llama-index"
+OpenAIAgentWorker = "llama-index"
+OpenAIAssistantAgent = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

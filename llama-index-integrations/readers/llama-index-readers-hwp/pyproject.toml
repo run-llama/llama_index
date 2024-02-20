@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["HWPReader"]
 contains_example = false
 import_path = "llama_index.readers.hwp"
+
+[tool.llamahub.class_authors]
+HWPReader = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

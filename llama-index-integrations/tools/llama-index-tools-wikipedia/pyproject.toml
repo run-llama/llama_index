@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["WikipediaToolSpec"]
 contains_example = false
 import_path = "llama_index.tools.wikipedia"
+
+[tool.llamahub.class_authors]
+WikipediaToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

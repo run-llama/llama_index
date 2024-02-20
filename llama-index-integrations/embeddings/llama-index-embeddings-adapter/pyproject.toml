@@ -8,9 +8,14 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AdapterEmbeddingModel"]
 contains_example = false
 import_path = "llama_index.embeddings.adapter"
+
+[tool.llamahub.class_authors]
+AdapterEmbeddingModel = "llama-index"
+BaseAdapter = "llama-index"
+LinearAdapterEmbeddingModel = "llama-index"
+LinearLayer = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

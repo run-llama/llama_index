@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["WordpressReader"]
 contains_example = false
 import_path = "llama_index.readers.wordpress"
+
+[tool.llamahub.class_authors]
+WordpressReader = "bbornsztein"
 
 [tool.mypy]
 disallow_untyped_defs = true

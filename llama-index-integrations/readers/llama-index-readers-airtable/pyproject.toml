@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AirtableReader"]
 contains_example = false
 import_path = "llama_index.readers.airtable"
+
+[tool.llamahub.class_authors]
+AirtableReader = "smyja"
 
 [tool.mypy]
 disallow_untyped_defs = true

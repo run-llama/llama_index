@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["BilibiliTranscriptReader"]
 contains_example = false
 import_path = "llama_index.readers.bilibili"
+
+[tool.llamahub.class_authors]
+BilibiliTranscriptReader = "alexzhangji"
 
 [tool.mypy]
 disallow_untyped_defs = true

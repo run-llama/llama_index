@@ -8,9 +8,13 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["GitHubIssuesClient", "GitHubRepositoryCollaboratorsReader", "GitHubRepositoryIssuesReader", "GithubClient", "GithubRepositoryReader"]
 contains_example = false
 import_path = "llama_index.readers.github"
+
+[tool.llamahub.class_authors]
+GitHubRepositoryCollaboratorsReader = "rwood-97"
+GitHubRepositoryIssuesReader = "moncho"
+GithubRepositoryReader = "ahmetkca"
 
 [tool.mypy]
 disallow_untyped_defs = true

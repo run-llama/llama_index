@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["DeepLakeReader"]
 contains_example = false
 import_path = "llama_index.readers.deeplake"
+
+[tool.llamahub.class_authors]
+DeepLakeReader = "adolkhan"
 
 [tool.mypy]
 disallow_untyped_defs = true

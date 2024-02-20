@@ -8,9 +8,12 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["JoplinReader", "LINK_NOTE_TEMPLATE"]
 contains_example = false
 import_path = "llama_index.readers.joplin"
+
+[tool.llamahub.class_authors]
+JoplinReader = "alondmnt"
+LINK_NOTE_TEMPLATE = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

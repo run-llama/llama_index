@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["BM25Retriever"]
 contains_example = false
 import_path = "llama_index.retrievers.bm25"
+
+[tool.llamahub.class_authors]
+BM25Retriever = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
