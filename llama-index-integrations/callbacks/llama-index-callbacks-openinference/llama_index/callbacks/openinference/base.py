@@ -220,6 +220,9 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
                     self._trace_data.query_data.llm_messages = [
                         (m.role.value, m.content) for m in messages
                     ]
+                    # For chat engines there is no query event and thus the
+                    # query text will be None, in this case we set the query
+                    # text to the last message passed to the LLM
                     if self._trace_data.query_data.query_text is None:
                         self._trace_data.query_data.query_text = messages[-1].content
         return event_id
