@@ -25,6 +25,7 @@ from typing import (
     TypeVar,
 )
 
+from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 
@@ -245,9 +246,18 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
                     )
                 )
         elif event_type is CBEventType.LLM:
-            self._trace_data.query_data.response_text = str(
-                payload.get(EventPayload.RESPONSE, "")
-            ) or str(payload.get(EventPayload.COMPLETION, ""))
+            if self._trace_data.query_data.response_text is None:
+                if response := payload.get(EventPayload.RESPONSE, None):
+                    if isinstance(response, ChatResponse):
+                        # If the response is of class ChatResponse the string
+                        # representation has the format "<role>: <message>",
+                        # but we want just the message
+                        response_text = response.message.content
+                    else:
+                        response_text = str(response)
+                    self._trace_data.query_data.response_text = response_text
+                elif completion := payload.get(EventPayload.COMPLETION, None):
+                    self._trace_data.query_data.response_text = str(completion)
         elif event_type is CBEventType.EMBEDDING:
             self._trace_data.query_data.query_embedding = payload[
                 EventPayload.EMBEDDINGS
