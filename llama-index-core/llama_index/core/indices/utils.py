@@ -1,13 +1,12 @@
 """Utilities for GPT indices."""
 import logging
 import re
-from typing import Dict, List, Optional, Sequence, Set, Tuple
-
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.schema import BaseNode, ImageNode, MetadataMode
 from llama_index.core.utils import globals_helper, truncate_text
 from llama_index.core.vector_stores.types import VectorStoreQueryResult
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 _logger = logging.getLogger(__name__)
 
@@ -44,7 +43,7 @@ def expand_tokens_with_subtokens(tokens: Set[str]) -> Set[str]:
 
 
 def log_vector_store_query_result(
-    result: VectorStoreQueryResult, logger: Optional[logging.Logger] = None
+        result: VectorStoreQueryResult, logger: Optional[logging.Logger] = None
 ) -> None:
     """Log vector store query result."""
     logger = logger or _logger
@@ -67,7 +66,7 @@ def log_vector_store_query_result(
 
 
 def default_format_node_batch_fn(
-    summary_nodes: List[BaseNode],
+        summary_nodes: List[BaseNode],
 ) -> str:
     """Default format node batch function.
 
@@ -85,7 +84,7 @@ def default_format_node_batch_fn(
 
 
 def default_parse_choice_select_answer_fn(
-    answer: str, num_choices: int, raise_error: bool = False
+        answer: str, num_choices: int, raise_error: bool = False
 ) -> Tuple[List[int], List[float]]:
     """Default parse choice select answer function."""
     answer_lines = answer.split("\n")
@@ -106,12 +105,13 @@ def default_parse_choice_select_answer_fn(
         if answer_num > num_choices:
             continue
         answer_nums.append(answer_num)
-        answer_relevances.append(float(line_tokens[1].split(":")[1].strip()))
+        _answer_relevance = re.findall("\d+", line_tokens[1].split(":")[1].strip())[0]
+        answer_relevances.append(float(_answer_relevance))
     return answer_nums, answer_relevances
 
 
 def embed_nodes(
-    nodes: Sequence[BaseNode], embed_model: BaseEmbedding, show_progress: bool = False
+        nodes: Sequence[BaseNode], embed_model: BaseEmbedding, show_progress: bool = False
 ) -> Dict[str, List[float]]:
     """Get embeddings of the given nodes, run embedding model if necessary.
 
@@ -145,9 +145,9 @@ def embed_nodes(
 
 
 def embed_image_nodes(
-    nodes: Sequence[ImageNode],
-    embed_model: MultiModalEmbedding,
-    show_progress: bool = False,
+        nodes: Sequence[ImageNode],
+        embed_model: MultiModalEmbedding,
+        show_progress: bool = False,
 ) -> Dict[str, List[float]]:
     """Get image embeddings of the given nodes, run image embedding model if necessary.
 
@@ -181,7 +181,7 @@ def embed_image_nodes(
 
 
 async def async_embed_nodes(
-    nodes: Sequence[BaseNode], embed_model: BaseEmbedding, show_progress: bool = False
+        nodes: Sequence[BaseNode], embed_model: BaseEmbedding, show_progress: bool = False
 ) -> Dict[str, List[float]]:
     """Async get embeddings of the given nodes, run embedding model if necessary.
 
@@ -215,9 +215,9 @@ async def async_embed_nodes(
 
 
 async def async_embed_image_nodes(
-    nodes: Sequence[ImageNode],
-    embed_model: MultiModalEmbedding,
-    show_progress: bool = False,
+        nodes: Sequence[ImageNode],
+        embed_model: MultiModalEmbedding,
+        show_progress: bool = False,
 ) -> Dict[str, List[float]]:
     """Get image embeddings of the given nodes, run image embedding model if necessary.
 
