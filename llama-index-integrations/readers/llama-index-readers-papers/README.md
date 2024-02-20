@@ -2,7 +2,7 @@
 
 ## Arxiv Papers Loader
 
-This loader fetchs the text from the most relevant scientific papers on Arxiv specified by a search query (e.g. "Artificial Intelligence"). For each paper, the abstract is extracted and put in a separate document. The search query may be any string, Arxiv paper id, or a general Arxiv query string (see the full list of capabilities [here](https://info.arxiv.org/help/api/user-manual.html#query_details)).
+This loader fetches the text from the most relevant scientific papers on Arxiv specified by a search query (e.g. "Artificial Intelligence"). For each paper, the abstract is extracted and put in a separate document. The search query may be any string, Arxiv paper id, or a general Arxiv query string (see the full list of capabilities [here](https://info.arxiv.org/help/api/user-manual.html#query_details)).
 
 ## Usage
 
@@ -34,7 +34,7 @@ This loader is designed to be used as a way to load data into [LlamaIndex](https
 
 ## Pubmed Papers Loader
 
-This loader fetchs the text from the most relevant scientific papers on Pubmed specified by a search query (e.g. "Alzheimers"). For each paper, the abstract is included in the `Document`. The search query may be any string.
+This loader fetches the text from the most relevant scientific papers on Pubmed specified by a search query (e.g. "Alzheimers"). For each paper, the abstract is included in the `Document`. The search query may be any string.
 
 ## Usage
 

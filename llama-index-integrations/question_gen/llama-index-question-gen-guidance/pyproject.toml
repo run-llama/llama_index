@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["GuidanceQuestionGenerator"]
 contains_example = false
 import_path = "llama_index.question_gen.guidance"
+
+[tool.llamahub.class_authors]
+GuidanceQuestionGenerator = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

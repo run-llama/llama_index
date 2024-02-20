@@ -1,4 +1,5 @@
 """Simple node parser."""
+
 from typing import Any, Callable, List, Optional, Sequence
 
 from llama_index.core.bridge.pydantic import Field
@@ -115,7 +116,9 @@ class SentenceWindowNodeParser(NodeParser):
             # add window to each node
             for i, node in enumerate(nodes):
                 window_nodes = nodes[
-                    max(0, i - self.window_size) : min(i + self.window_size, len(nodes))
+                    max(0, i - self.window_size) : min(
+                        i + self.window_size + 1, len(nodes)
+                    )
                 ]
 
                 node.metadata[self.window_metadata_key] = " ".join(

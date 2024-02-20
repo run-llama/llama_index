@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["SalesforceToolSpec"]
 contains_example = false
 import_path = "llama_index.tools.salesforce"
+
+[tool.llamahub.class_authors]
+SalesforceToolSpec = "chrispangg"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -48,12 +48,16 @@ def _parse_from_imports(
                         new_imports[new_import_parent].append(module)
                 else:
                     print(f"Module not found: {module}\nSwitching to core")
+                    # get back the llama_index module that's being imported.
                     new_import_parent = (
-                        imported_modules[0]
-                        .split(" import ")[0]
-                        .split("from ")[-1]
-                        .replace("llama_index", "llama_index.core")
+                        imported_modules[0].split(" import ")[0].split("from ")[-1]
                     )
+                    # if the parent contains `llama_index.core` already, then skip
+                    if "llama_index.core" not in new_import_parent:
+                        new_import_parent = new_import_parent.replace(
+                            "llama_index", "llama_index.core"
+                        )
+
                     if new_import_parent not in new_imports:
                         new_imports[new_import_parent] = [module]
                     else:

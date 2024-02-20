@@ -3,6 +3,7 @@
 A loader that fetches an arbitrary remote page or file by URL and parses its contents.
 
 """
+
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -63,7 +64,7 @@ class RemoteReader(BaseReader):
             documents = [Document(text=text, extra_info=extra_info)]
         elif self._is_youtube_video(url):
             youtube_reader = YoutubeTranscriptReader()
-            # TODO should we have another langauge, like english / french?
+            # TODO should we have another language, like english / french?
             documents = youtube_reader.load_data([url])
         else:
             suffix = Path(urlparse(url).path).suffix

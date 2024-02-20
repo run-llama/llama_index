@@ -29,6 +29,6 @@ agent.chat(
 
 The tools available are:
 
-`code_interpreter`: A tool to evalute a python script
+`code_interpreter`: A tool to evaluate a python script
 
 This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.

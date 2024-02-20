@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["YoutubeTranscriptReader"]
 contains_example = false
 import_path = "llama_index.readers.youtube_transcript"
+
+[tool.llamahub.class_authors]
+YoutubeTranscriptReader = "ravi03071991"
 
 [tool.mypy]
 disallow_untyped_defs = true

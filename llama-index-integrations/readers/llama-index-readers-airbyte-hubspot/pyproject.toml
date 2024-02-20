@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AirbyteHubspotReader"]
 contains_example = false
 import_path = "llama_index.readers.airbyte_hubspot"
+
+[tool.llamahub.class_authors]
+AirbyteHubspotReader = "flash1293"
 
 [tool.mypy]
 disallow_untyped_defs = true

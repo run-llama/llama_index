@@ -86,7 +86,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
                 if self.keep_retrieval_score:
                     # keep the retrieval score in metadata
                     node.node.metadata["retrieval_score"] = node.score
-                node.score = score
+                node.score = float(score)
 
             new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
                 : self.top_n

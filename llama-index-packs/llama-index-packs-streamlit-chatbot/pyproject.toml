@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["StreamlitChatPack"]
 contains_example = false
 import_path = "llama_index.packs.streamlit_chatbot"
+
+[tool.llamahub.class_authors]
+StreamlitChatPack = "carolinedlu"
 
 [tool.mypy]
 disallow_untyped_defs = true

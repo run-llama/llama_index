@@ -8,9 +8,13 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["TruLensHarmlessPack", "TruLensHelpfulPack", "TruLensRAGTriadPack"]
 contains_example = false
 import_path = "llama_index.packs.trulens_eval_packs"
+
+[tool.llamahub.class_authors]
+TruLensHarmlessPack = "joshreini1"
+TruLensHelpfulPack = "joshreini1"
+TruLensRAGTriadPack = "joshreini1"
 
 [tool.mypy]
 disallow_untyped_defs = true

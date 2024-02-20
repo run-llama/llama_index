@@ -2,7 +2,7 @@
 
 This LlamaPack creates a query engine that uses a `RecursiveRetriever` in llama-index to fetch nodes based on propoistions extracted from each node.
 
-This follows the idea from the paper [Dense X Retrieval: What Retreival Granularity Should We Use?](https://arxiv.org/abs/2312.06648).
+This follows the idea from the paper [Dense X Retrieval: What Retrieval Granularity Should We Use?](https://arxiv.org/abs/2312.06648).
 
 From the paper, a proposition is described as:
 
