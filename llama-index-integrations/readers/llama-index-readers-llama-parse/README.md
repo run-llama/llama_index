@@ -12,11 +12,20 @@ Currently available for **free**. Try it out today!
 
 First, login and get an api-key from `https://cloud.llamaindex.ai`.
 
-Install the package:
+Then, make sure you have the latest LlamaIndex version installed.
+
+**NOTE:** If you are upgrading from v0.9.X, we recommend following our [migration guide](), as well as uninstalling your previous version first.
+
+```
+pip uninstall llama-index  # run this if upgrading from v0.9.x or older
+pip install -U llama-index --upgrade --no-cache-dir --force-reinstall
+```
+
+Lastly, install the package:
 
 `pip install llama-parse`
 
-Then, you can run the following to parse your first PDF file:
+Now you can run the following to parse your first PDF file:
 
 ```python
 import nest_asyncio
