@@ -13,7 +13,17 @@ import uuid
 from dataclasses import dataclass, field, fields
 from datetime import datetime
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+)
 
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -55,6 +65,14 @@ class QueryData:
     query_embedding: Optional[Embedding] = field(
         default=None,
         metadata={OPENINFERENCE_COLUMN_NAME: ":feature.[float].embedding:prompt"},
+    )
+    llm_prompt: Optional[str] = field(
+        default=None,
+        metadata={OPENINFERENCE_COLUMN_NAME: ":feature.text:llm_prompt"},
+    )
+    llm_messages: Optional[Tuple[str, str]] = field(
+        default=None,
+        metadata={OPENINFERENCE_COLUMN_NAME: ":feature.[[str]]:llm_messages"},
     )
     response_text: Optional[str] = field(
         default=None, metadata={OPENINFERENCE_COLUMN_NAME: ":prediction.text:response"}
@@ -194,6 +212,15 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
             if event_type is CBEventType.QUERY:
                 query_text = payload[EventPayload.QUERY_STR]
                 self._trace_data.query_data.query_text = query_text
+            elif event_type is CBEventType.LLM:
+                if prompt := payload.get(EventPayload.PROMPT, None):
+                    self._trace_data.query_data.llm_prompt = prompt
+                if messages := payload.get(EventPayload.MESSAGES, None):
+                    self._trace_data.query_data.llm_messages = [
+                        (m.role.value, m.content) for m in messages
+                    ]
+                    if self._trace_data.query_data.query_text is None:
+                        self._trace_data.query_data.query_text = messages[-1].content
         return event_id
 
     def on_event_end(
