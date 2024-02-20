@@ -2,6 +2,7 @@
 
 import logging
 import os
+import pandas as pd
 from typing import Any, List
 
 import googleapiclient.discovery as discovery
@@ -79,6 +80,21 @@ class GoogleSheetsReader(BasePydanticReader):
             )
         return results
 
+    def load_data_in_pandas(self, spreadsheet_ids: List[str]) -> List[pd.DataFrame]:
+        """Load data from the input directory.
+
+        Args:
+            spreadsheet_ids (List[str]): a list of document ids.
+        """
+        if spreadsheet_ids is None:
+            raise ValueError('Must specify a "spreadsheet_ids" in `load_kwargs`.')
+
+        results = []
+        for spreadsheet_id in spreadsheet_ids:
+            dataframes = self._load_sheet_in_pandas(spreadsheet_id)
+            results.extend(dataframes)
+        return results
+
     def _load_sheet(self, spreadsheet_id: str) -> str:
         """Load a sheet from Google Sheets.
 
@@ -114,6 +130,34 @@ class GoogleSheetsReader(BasePydanticReader):
                 "\n".join("\t".join(row) for row in response.get("values", [])) + "\n"
             )
         return sheet_text
+
+    def _load_sheet_in_pandas(self, spreadsheet_id: str) -> List[pd.DataFrame]:
+        """Load a sheet from Google Sheets.
+
+        Args:
+            spreadsheet_id: the sheet id.
+            sheet_name: the sheet name.
+
+        Returns:
+            The sheet data.
+        """
+        credentials = self._get_credentials()
+        sheets_service = discovery.build("sheets", "v4", credentials=credentials)
+        sheet = sheets_service.spreadsheets()
+        spreadsheet_data = sheet.get(spreadsheetId=spreadsheet_id).execute()
+        sheets = spreadsheet_data.get("sheets")
+        dataframes = []
+        for sheet in sheets:
+            result = sheet.get("values", [])
+            name = sheet.get("properties", {}).get("title")
+            if not result:
+                print(f"No data found in {name}")
+            else:
+                df = pd.DataFrame(result[1:], columns=result[0])
+                dataframes.append(df)
+        return dataframes
+
+        # return pd.DataFrame(response.get("values", []))
 
     def _get_credentials(self) -> Any:
         """Get valid user credentials from storage.
