@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AthenaReader"]
 contains_example = false
 import_path = "llama_index.readers.athena"
+
+[tool.llamahub.class_authors]
+AthenaReader = "mattick27"
 
 [tool.mypy]
 disallow_untyped_defs = true

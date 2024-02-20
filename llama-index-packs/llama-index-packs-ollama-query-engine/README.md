@@ -46,5 +46,5 @@ response = llm.complete("What is Ollama?")
 # Use the index directly
 index = ollama_pack.index
 query_engine = index.as_query_engine()
-retriver = index.as_retriever()
+retriever = index.as_retriever()
 ```

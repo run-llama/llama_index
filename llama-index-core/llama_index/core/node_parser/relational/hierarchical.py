@@ -40,6 +40,41 @@ def get_root_nodes(nodes: List[BaseNode]) -> List[BaseNode]:
     return root_nodes
 
 
+def get_child_nodes(nodes: List[BaseNode], all_nodes: List[BaseNode]) -> List[BaseNode]:
+    """Get child nodes of nodes from given all_nodes."""
+    children_ids = []
+    for node in nodes:
+        if NodeRelationship.CHILD not in node.relationships:
+            continue
+
+        children_ids.extend(
+            [r.node_id for r in node.relationships[NodeRelationship.CHILD]]
+        )
+
+    child_nodes = []
+    for candidate_node in all_nodes:
+        if candidate_node.node_id not in children_ids:
+            continue
+        child_nodes.append(candidate_node)
+
+    return child_nodes
+
+
+def get_deeper_nodes(nodes: List[BaseNode], depth: int = 1) -> List[BaseNode]:
+    """Get children of root nodes in given nodes that have given depth."""
+    if depth < 0:
+        raise ValueError("Depth cannot be a negative number!")
+    root_nodes = get_root_nodes(nodes)
+    if not root_nodes:
+        raise ValueError("There is no root nodes in given nodes!")
+
+    deeper_nodes = root_nodes
+    for _ in range(depth):
+        deeper_nodes = get_child_nodes(deeper_nodes, nodes)
+
+    return deeper_nodes
+
+
 class HierarchicalNodeParser(NodeParser):
     """Hierarchical node parser.
 

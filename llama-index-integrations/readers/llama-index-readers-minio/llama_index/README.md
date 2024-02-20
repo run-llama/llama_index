@@ -37,6 +37,8 @@ To use this loader, you need to pass in the name of your Minio Bucket. After tha
 
 Otherwise, you may specify a prefix if you only want to parse certain files in the Bucket, or a subdirectory.
 
+You can now use the client with a TLS-secured MinIO instance (`minio_secure=True`), even if server's certificate isn't trusted (`minio_cert_check=False`).
+
 ```python
 from llama_index import download_loader
 
@@ -44,7 +46,8 @@ MinioReader = download_loader("MinioReader")
 loader = MinioReader(
     bucket="documents",
     minio_endpoint="localhost:9000",
-    minio_secure=False,
+    minio_secure=True,
+    minio_cert_check=False,
     minio_access_key="minio_access_key",
     minio_secret_key="minio_secret_key",
 )

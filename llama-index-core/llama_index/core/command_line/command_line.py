@@ -99,7 +99,7 @@ def default_rag_cli() -> RagCLI:
 
         from llama_index.vector_stores.chroma import (
             ChromaVectorStore,
-        )
+        )  # pants: no-infer-dep
     except ImportError:
         ChromaVectorStore = None
 

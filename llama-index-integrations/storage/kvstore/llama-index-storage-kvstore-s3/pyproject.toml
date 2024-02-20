@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["S3DBKVStore"]
 contains_example = false
 import_path = "llama_index.storage.kvstore.s3"
+
+[tool.llamahub.class_authors]
+S3DBKVStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

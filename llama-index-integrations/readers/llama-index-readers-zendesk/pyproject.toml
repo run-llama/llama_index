@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["ZendeskReader"]
 contains_example = false
 import_path = "llama_index.readers.zendesk"
+
+[tool.llamahub.class_authors]
+ZendeskReader = "bbornsztein"
 
 [tool.mypy]
 disallow_untyped_defs = true

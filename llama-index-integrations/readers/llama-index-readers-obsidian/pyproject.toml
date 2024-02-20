@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["ObsidianReader"]
 contains_example = false
 import_path = "llama_index.readers.obsidian"
+
+[tool.llamahub.class_authors]
+ObsidianReader = "hursh-desai"
 
 [tool.mypy]
 disallow_untyped_defs = true

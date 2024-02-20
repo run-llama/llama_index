@@ -1,6 +1,6 @@
 # DeepLake DeepMemory Pack
 
-This LlamaPack inserts your data into deeplake and insantiates a [deepmemory](https://docs.activeloop.ai/performance-features/deep-memory) retriever, which will use deepmemory during runtime to increase RAG's retrieval accuracy (recall).
+This LlamaPack inserts your data into deeplake and instantiates a [deepmemory](https://docs.activeloop.ai/performance-features/deep-memory) retriever, which will use deepmemory during runtime to increase RAG's retrieval accuracy (recall).
 
 ## CLI Usage
 
@@ -52,7 +52,7 @@ response = deepmemory_pack.run("Tell me a bout a Music celebritiy.")
 You can also use modules individually.
 
 ```python
-# use the retreiver
+# use the retriever
 retriever = deepmemory_pack.retriever
 nodes = retriever.retrieve("query_str")
 

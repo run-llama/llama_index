@@ -1,4 +1,4 @@
-# How to use UpTrain with LlamaIndex
+# Perform Evaluations on LlamaIndex with UpTrain
 
 **Overview**: In this example, we will see how to use UpTrain with LlamaIndex.
 
@@ -11,6 +11,365 @@
 
 1. LlamaIndex solves the first problem by allowing you to perform Retrieval Augmented Generation (RAG) with a retriever that is fine-tuned on your own data. This allows you to use your own data to fine-tune a retriever, and then use that retriever to perform RAG.
 2. UpTrain solves the second problem by allowing you to perform evaluations on the generated responses. This helps you to ensure that the responses are relevant to the prompt, align with the desired tone or the context, and are not offensive etc.
+
+# How to go about it?
+
+There two ways you can use UpTrain with LlamaIndex:
+
+1. **Using the UpTrain Callback Handler**: This method allows you to seamlessly integrate UpTrain with LlamaIndex. You can simply add UpTrainCallbackHandler to your existing LlamaIndex pipeline and it will take care of sending the generated responses to the UpTrain Managed Service for evaluations. This is the recommended method as it is the easiest to use and provides you with dashboards and insights with minimal effort.
+
+2. **Using UpTrain's EvalLlamaIndex**: This method allows you to use UpTrain to perform evaluations on the generated responses. You can use the EvalLlamaIndex object to generate responses for the queries and then perform evaluations on the responses. You can find a detailed tutorial on how to do this below. This method offers more flexibility and control over the evaluations, but requires more effort to set up and use.
+
+# 1. Using the UpTrain Callback Handler <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/examples/callbacks/UpTrainCallback.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+
+Three additional evaluations for Llamaindex have been introduced, complementing existing ones. These evaluations run automatically, with results displayed in the output. More details on UpTrain's evaluations can be found [here](https://github.com/uptrain-ai/uptrain?tab=readme-ov-file#pre-built-evaluations-we-offer-).
+
+Selected operators from the LlamaIndex pipeline are highlighted for demonstration:
+
+## 1. **RAG Query Engine Evaluations**:
+
+The RAG query engine plays a crucial role in retrieving context and generating responses. To ensure its performance and response quality, we conduct the following evaluations:
+
+- **Context Relevance**: Determines if the context extracted from the query is relevant to the response.
+- **Factual Accuracy**: Assesses if the LLM is hallcuinating or providing incorrect information.
+- **Response Completeness**: Checks if the response contains all the information requested by the query.
+
+## 2. **Sub-Question Query Generation Evaluation**:
+
+The SubQuestionQueryGeneration operator decomposes a question into sub-questions, generating responses for each using a RAG query engine. Given the complexity, we include the previous evaluations and add:
+
+- **Sub Query Completeness**: Assures that the sub-questions accurately and comprehensively cover the original query.
+
+## 3. **Re-Ranking Evaluations**:
+
+Re-ranking involves reordering nodes based on relevance to the query and choosing top n nodes. Different evaluations are performed based on the number of nodes returned after re-ranking.
+
+a. Same Number of Nodes
+
+- **Context Reranking**: Checks if the order of re-ranked nodes is more relevant to the query than the original order.
+
+b. Different Number of Nodes:
+
+- **Context Conciseness**: Examines whether the reduced number of nodes still provides all the required information.
+
+These evaluations collectively ensure the robustness and effectiveness of the RAG query engine, SubQuestionQueryGeneration operator, and the re-ranking process in the LlamaIndex pipeline.
+
+#### **Note:**
+
+- We have performed evaluations using basic RAG query engine, the same evaluations can be performed using the advanced RAG query engine as well.
+- Same is true for Re-Ranking evaluations, we have performed evaluations using CohereRerank, the same evaluations can be performed using other re-rankers as well.
+
+## Install Dependencies and Import Libraries
+
+Install notebook dependencies.
+
+```bash
+pip install -q html2text llama-index pandas tqdm uptrain cohere
+```
+
+Import libraries.
+
+```python
+from llama_index import (
+    ServiceContext,
+    VectorStoreIndex,
+)
+from llama_index.node_parser import SentenceSplitter
+from llama_index.readers import SimpleWebPageReader
+from llama_index.callbacks import CallbackManager, UpTrainCallbackHandler
+from llama_index.postprocessor.cohere_rerank import CohereRerank
+from llama_index.service_context import set_global_service_context
+from llama_index.query_engine.sub_question_query_engine import (
+    SubQuestionQueryEngine,
+)
+from llama_index.tools.query_engine import QueryEngineTool
+from llama_index.tools.types import ToolMetadata
+```
+
+## Setup
+
+You can choose between the following options for evaluating using UpTrain:
+
+### 1. **UpTrain's Open-Source Software (OSS)**:
+
+You can use the open-source evaluation service to evaluate your model.
+In this case, you will need to provide an OpenAI API key. You can get yours [here](https://platform.openai.com/account/api-keys).
+
+Parameters:
+
+- key_type="openai"
+- api_key="OPENAI_API_KEY"
+- project_name_prefix="PROJECT_NAME_PREFIX"
+
+### 2. **UpTrain Managed Service and Dashboards**:
+
+You can create a free UpTrain account [here](https://uptrain.ai/) and get free trial credits. If you want more trial credits, [book a call with the maintainers of UpTrain here](https://calendly.com/uptrain-sourabh/30min).
+
+UpTrain Managed service provides:
+
+1. Dashboards with advanced drill-down and filtering options
+1. Insights and common topics among failing cases
+1. Observability and real-time monitoring of production data
+1. Regression testing via seamless integration with your CI/CD pipelines
+
+The notebook contains some screenshots of the dashboards and the insights that you can get from the UpTrain managed service.
+
+Parameters:
+
+- key_type="uptrain"
+- api_key="UPTRAIN_API_KEY"
+- project_name_prefix="PROJECT_NAME_PREFIX"
+
+**Note:** The `project_name_prefix` will be used as prefix for the project names in the UpTrain dashboard. These will be different for different types of evals. For example, if you set project_name_prefix="llama" and perform the sub_question evaluation, the project name will be "llama_sub_question_answering".
+
+```python
+callback_handler = UpTrainCallbackHandler(
+    key_type="openai",
+    api_key="sk-******************************",
+    project_name_prefix="llama",
+)
+callback_manager = CallbackManager([callback_handler])
+service_context = ServiceContext.from_defaults(
+    callback_manager=callback_manager
+)
+set_global_service_context(service_context)
+```
+
+## Load and Parse Documents
+
+Load documents from Paul Graham's essay "What I Worked On".
+
+```python
+documents = SimpleWebPageReader().load_data(
+    [
+        "https://raw.githubusercontent.com/run-llama/llama_index/main/docs/examples/data/paul_graham/paul_graham_essay.txt"
+    ]
+)
+```
+
+Parse the document into nodes.
+
+```python
+parser = SentenceSplitter()
+nodes = parser.get_nodes_from_documents(documents)
+```
+
+# 1. RAG Query Engine Evaluation
+
+UpTrain callback handler will automatically capture the query, context and response once generated and will run the following three evaluations _(Graded from 0 to 1)_ on the response:
+
+- **Context Relevance**: Check if the context extractedfrom the query is relevant to the response.
+- **Factual Accuracy**: Check how factually accurate the response is.
+- **Response Completeness**: Check if the response contains all the information that the query is asking for.
+
+```python
+index = VectorStoreIndex.from_documents(
+    documents, service_context=service_context
+)
+query_engine = index.as_query_engine()
+
+max_characters_per_line = 80
+queries = [
+    "What did Paul Graham do growing up?",
+    "When and how did Paul Graham's mother die?",
+    "What, in Paul Graham's opinion, is the most distinctive thing about YC?",
+    "When and how did Paul Graham meet Jessica Livingston?",
+    "What is Bel, and when and where was it written?",
+]
+for query in queries:
+    response = query_engine.query(query)
+```
+
+    Question: What did Paul Graham do growing up?
+    Context Relevance Score: 0.0
+    Factual Accuracy Score: 1.0
+    Response Completeness Score: 0.0
+
+
+    Question: When and how did Paul Graham's mother die?
+    Context Relevance Score: 0.0
+    Factual Accuracy Score: 1.0
+    Response Completeness Score: 0.0
+
+
+    Question: What, in Paul Graham's opinion, is the most distinctive thing about YC?
+    Context Relevance Score: 1.0
+    Factual Accuracy Score: 1.0
+    Response Completeness Score: 1.0
+
+
+    Question: When and how did Paul Graham meet Jessica Livingston?
+    Context Relevance Score: 1.0
+    Factual Accuracy Score: 1.0
+    Response Completeness Score: 0.5
+
+
+    Question: What is Bel, and when and where was it written?
+    Context Relevance Score: 1.0
+    Factual Accuracy Score: 1.0
+    Response Completeness Score: 0.0
+
+Here's an example of the dashboard showing how you can filter and drill down to the failing cases and get insights on the failing cases:
+![image-2.png](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/image-2.png)
+
+# 2. Sub-Question Query Engine Evaluation
+
+The **sub question query engine** is used to tackle the problem of answering a complex query using multiple data sources. It first breaks down the complex query into sub questions for each relevant data source, then gather all the intermediate responses and synthesizes a final response.
+
+UpTrain callback handler will automatically capture the sub-question and the responses for each of them once generated and will run the following three evaluations _(Graded from 0 to 1)_ on the response:
+
+- **Context Relevance**: Check if the context extractedfrom the query is relevant to the response.
+- **Factual Accuracy**: Check how factually accurate the response is.
+- **Response Completeness**: Check if the response contains all the information that the query is asking for.
+
+In addition to the above evaluations, the callback handler will also run the following evaluation:
+
+- **Sub Query Completeness**: Checks if the sub-questions accurately and completely cover the original query.
+
+```python
+# build index and query engine
+vector_query_engine = VectorStoreIndex.from_documents(
+    documents=documents, use_async=True, service_context=service_context
+).as_query_engine()
+
+query_engine_tools = [
+    QueryEngineTool(
+        query_engine=vector_query_engine,
+        metadata=ToolMetadata(
+            name="documents",
+            description="Paul Graham essay on What I Worked On",
+        ),
+    ),
+]
+
+query_engine = SubQuestionQueryEngine.from_defaults(
+    query_engine_tools=query_engine_tools,
+    service_context=service_context,
+    use_async=True,
+)
+
+response = query_engine.query(
+    "How was Paul Grahams life different before, during, and after YC?"
+)
+```
+
+    Question: What did Paul Graham work on during YC?
+    Context Relevance Score: 0.5
+    Factual Accuracy Score: 1.0
+    Response Completeness Score: 0.5
+
+
+    Question: What did Paul Graham work on after YC?
+    Context Relevance Score: 0.5
+    Factual Accuracy Score: 1.0
+    Response Completeness Score: 0.5
+
+
+    Question: What did Paul Graham work on before YC?
+    Context Relevance Score: 1.0
+    Factual Accuracy Score: 1.0
+    Response Completeness Score: 0.0
+
+
+    Question: How was Paul Grahams life different before, during, and after YC?
+    Sub Query Completeness Score: 1.0
+
+Here's an example of the dashboard visualizing the scores of the sub-questions in the form of a bar chart:
+
+![image.png](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/image.png)
+
+# 3. Re-ranking
+
+Re-ranking is the process of reordering the nodes based on their relevance to the query. There are multiple classes of re-ranking algorithms offered by Llamaindex. We have used CohereRerank for this example.
+
+The re-ranker allows you to enter the number of top n nodes that will be returned after re-ranking. If this value remains the same as the original number of nodes, the re-ranker will only re-rank the nodes and not change the number of nodes. Otherwise, it will re-rank the nodes and return the top n nodes.
+
+We will perform different evaluations based on the number of nodes returned after re-ranking.
+
+## 3a. Re-ranking (With same number of nodes)
+
+If the number of nodes returned after re-ranking is the same as the original number of nodes, the following evaluation will be performed:
+
+- **Context Reranking**: Check if the order of the re-ranked nodes is more relevant to the query than the original order.
+
+```python
+api_key = "**********************************"  # Insert cohere API key here
+cohere_rerank = CohereRerank(
+    api_key=api_key, top_n=5
+)  # In this example, the number of nodes before re-ranking is 5 and after re-ranking is also 5.
+
+index = VectorStoreIndex.from_documents(
+    documents=documents, service_context=service_context
+)
+
+query_engine = index.as_query_engine(
+    similarity_top_k=10,
+    node_postprocessors=[cohere_rerank],
+    service_context=service_context,
+)
+
+response = query_engine.query(
+    "What did Sam Altman do in this essay?",
+)
+```
+
+    Question: What did Sam Altman do in this essay?
+    Context Reranking Score: 0.0
+
+# 3b. Re-ranking (With different number of nodes)
+
+If the number of nodes returned after re-ranking is the lesser as the original number of nodes, the following evaluation will be performed:
+
+- **Context Conciseness**: If the re-ranked nodes are able to provide all the information required by the query.
+
+```python
+api_key = "**********************************"  # insert cohere API key here
+cohere_rerank = CohereRerank(
+    api_key=api_key, top_n=2
+)  # In this example, the number of nodes before re-ranking is 5 and after re-ranking is 2.
+
+index = VectorStoreIndex.from_documents(
+    documents=documents, service_context=service_context
+)
+query_engine = index.as_query_engine(
+    similarity_top_k=10,
+    node_postprocessors=[cohere_rerank],
+    service_context=service_context,
+)
+
+# Use your advanced RAG
+response = query_engine.query(
+    "What did Sam Altman do in this essay?",
+)
+```
+
+    Question: What did Sam Altman do in this essay?
+    Context Conciseness Score: 1.0
+
+# UpTrain's Managed Service Dashboard and Insights
+
+The UpTrain Managed Service offers the following features:
+
+1. Advanced dashboards with drill-down and filtering options.
+1. Identification of insights and common themes among unsuccessful cases.
+1. Real-time observability and monitoring of production data.
+1. Integration with CI/CD pipelines for seamless regression testing.
+
+To define the UpTrain callback handler, the only change required is to set the `key_type` and `api_key` parameters. The rest of the code remains the same.
+
+```python
+callback_handler = UpTrainCallbackHandler(
+    key_type="uptrain",
+    api_key="up-******************************",
+    project_name_prefix="llama",
+)
+```
+
+Here's a short GIF showcasing the dashboard and the insights that you can get from the UpTrain managed service:
+
+![output.gif](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/output.gif)
+
+# 2. Using EvalLlamaIndex <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/examples/evaluation/UpTrain.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ## Install UpTrain and LlamaIndex
 
@@ -182,16 +541,17 @@ pd.DataFrame(results)
 
 Histogram of score vs number of cases with that score
 
-![image.png](UpTrain_files/image.png)
+![dashboard.png](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/nyc_wiki_results.png)
 
 ### Insights:
 
 You can filter failure cases and generate common topics among them. This can help identify the core issue and help fix it
 
-![LlamaIndex_Integration.gif](UpTrain_files/LlamaIndex_Integration.gif)
+![LlamaIndex_Integration.gif](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/LlamaIndex_Integration.gif)
 
 ## Learn More
 
-1. [Colab Notebook on UpTrain Integration with LlamaIndex](https://colab.research.google.com/github/uptrain-ai/llama_index/blob/uptrain_integration/docs/examples/evaluation/UpTrain.ipynb)
+1. [Colab Notebook on UpTrainCallbackHandler](https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/examples/callbacks/UpTrainCallback.ipynb)
+1. [Colab Notebook on UpTrain Integration with LlamaIndex](https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/examples/evaluation/UpTrain.ipynb)
 1. [UpTrain Github Repository](https://github.com/uptrain-ai/uptrain)
 1. [UpTrain Documentation](https://docs.uptrain.ai/)

@@ -4,6 +4,7 @@ Created on Sun Apr 16 12:03:19 2023
 
 @author: tevslin
 """
+
 import datetime
 import importlib
 import platform
@@ -58,7 +59,7 @@ class OutlookLocalCalendarReader(BaseReader):
             "Subject",
             "Location",
             "Organizer",
-        ]  # base attrubutes to return
+        ]  # base attributes to return
         if more_attributes is not None:  # if the user has specified more attributes
             attributes += more_attributes
         if start_date is None:

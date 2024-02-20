@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["ReplicateMultiModal"]
 contains_example = false
 import_path = "llama_index.multi_modal_llms.replicate_multi_modal"
+
+[tool.llamahub.class_authors]
+ReplicateMultiModal = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

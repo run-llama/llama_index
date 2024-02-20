@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["Neo4jQueryEnginePack"]
 contains_example = false
 import_path = "llama_index.packs.neo4j_query_engine"
+
+[tool.llamahub.class_authors]
+Neo4jQueryEnginePack = "wenqiglantz"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["TelegramReader"]
 contains_example = false
 import_path = "llama_index.readers.telegram"
+
+[tool.llamahub.class_authors]
+TelegramReader = "diicell"
 
 [tool.mypy]
 disallow_untyped_defs = true

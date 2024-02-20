@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["CodeInterpreterToolSpec"]
 contains_example = false
 import_path = "llama_index.tools.code_interpreter"
+
+[tool.llamahub.class_authors]
+CodeInterpreterToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true
