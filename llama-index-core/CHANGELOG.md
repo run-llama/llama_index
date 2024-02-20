@@ -26,7 +26,7 @@
 
 ### Breaking Changes
 
-- Several changes are introduced. See the [full blog post](https://blog.llamaindex.ai/llamaindex-v0-10-838e735948f8) for complete deatils.
+- Several changes are introduced. See the [full blog post](https://blog.llamaindex.ai/llamaindex-v0-10-838e735948f8) for complete details.
 
 ## [0.9.48] - 2024-02-12
 
