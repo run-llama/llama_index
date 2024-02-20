@@ -14,7 +14,7 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.indices.base_retriever import BaseRetriever
 from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.indices.service_context import ServiceContext
-from llama_index.core.llms.generic_utils import messages_to_history_str
+from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor

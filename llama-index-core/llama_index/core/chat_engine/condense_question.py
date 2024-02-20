@@ -13,7 +13,7 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.chat_engine.utils import response_gen_from_query_engine
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
-from llama_index.core.llms.generic_utils import messages_to_history_str
+from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
