@@ -1675,13 +1675,13 @@ test = ["jupyter-server (>=2.0.0)", "pytest (>=7.0)", "pytest-jupyter[server] (>
 
 [[package]]
 name = "jupyterlab"
-version = "4.1.1"
+version = "4.1.2"
 description = "JupyterLab computational environment"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "jupyterlab-4.1.1-py3-none-any.whl", hash = "sha256:fa3e8c18b804eac04e51ceebd9dd3dd396e08106816f0d09cc426799d7087632"},
-    {file = "jupyterlab-4.1.1.tar.gz", hash = "sha256:8acc9f561729d8f32c14c294c397917cddfeeb13a5d46f811979b71b4911a9fd"},
+    {file = "jupyterlab-4.1.2-py3-none-any.whl", hash = "sha256:aa88193f03cf4d3555f6712f04d74112b5eb85edd7d222c588c7603a26d33c5b"},
+    {file = "jupyterlab-4.1.2.tar.gz", hash = "sha256:5d6348b3ed4085181499f621b7dfb6eb0b1f57f3586857aadfc8e3bf4c4885f9"},
 ]
 
 [package.dependencies]
@@ -1846,17 +1846,17 @@ query-tools = ["guidance (>=0.0.64,<0.0.65)", "jsonpath-ng (>=1.6.0,<2.0.0)", "l
 
 [[package]]
 name = "llama-parse"
-version = "0.3.1"
+version = "0.3.3"
 description = "Parse files into RAG-Optimized formats."
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "llama_parse-0.3.1-py3-none-any.whl", hash = "sha256:ac66a39ec85fc6154b79ae18bdc8d960bf43263a0533aaa803b2521c55a12e1f"},
-    {file = "llama_parse-0.3.1.tar.gz", hash = "sha256:6945d05589418089c49b0ff8bed83cf65c2df8e6ddf1bc4e32535fa6e1fc18d4"},
+    {file = "llama_parse-0.3.3-py3-none-any.whl", hash = "sha256:ffeb83d9a517da828bc8c430a02e5aa13a053814a733e72261dc86b66bc7cd31"},
+    {file = "llama_parse-0.3.3.tar.gz", hash = "sha256:30d0f1b16e31997092879fbdb48eff0820ae1f9310f2fd5b8a78437e1b6094c1"},
 ]
 
 [package.dependencies]
-llama-index-core = ">=0.10.6.post1"
+llama-index-core = ">=0.10.7"
 
 [[package]]
 name = "llamaindex-py-client"
@@ -4549,4 +4549,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "8a4ad4fc902dc3d8443fd6795da8e4fbc009cf2cb31e7e903deae6acbb83372c"
+content-hash = "048bf9740225a91edb26d81bed7d60a8d2f6955af92760b8a88a3ae351dcfbf3"

@@ -34,8 +34,14 @@ parser = LlamaParse(
 # sync
 documents = parser.load_data("./my_file.pdf")
 
+# sync batch
+documents = parser.load_data(["./my_file1.pdf", "./my_file2.pdf"])
+
 # async
 documents = await parser.aload_data("./my_file.pdf")
+
+# async batch
+documents = await parser.aload_data(["./my_file1.pdf", "./my_file2.pdf"])
 ```
 
 ## Using with `SimpleDirectoryReader`

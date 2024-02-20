@@ -10,9 +10,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["LlamaParse"]
 contains_example = false
 import_path = "llama_index.readers.llama_parse"
+
+[tool.llamahub.class_authors]
+LlamaParse = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -33,8 +35,8 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
-llama-index-core = "^0.10.0"
-llama-parse = "^0.3.1"
+llama-index-core = "^0.10.7"
+llama-parse = "^0.3.3"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
