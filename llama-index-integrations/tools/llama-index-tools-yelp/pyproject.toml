@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["YelpToolSpec"]
 contains_example = false
 import_path = "llama_index.tools.yelp"
+
+[tool.llamahub.class_authors]
+YelpToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["LlavaCompletionPack"]
 contains_example = false
 import_path = "llama_index.packs.llava_completion"
+
+[tool.llamahub.class_authors]
+LlavaCompletionPack = "wenqiglantz"
 
 [tool.mypy]
 disallow_untyped_defs = true

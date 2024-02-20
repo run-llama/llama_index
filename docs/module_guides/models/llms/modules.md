@@ -56,6 +56,16 @@ maxdepth: 1
 /examples/llm/cohere.ipynb
 ```
 
+## Dashscope
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/dashscope.ipynb
+/examples/multi_modal/dashscope_multi_modal.ipynb
+```
+
 ## EverlyAI
 
 ```{toctree}

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["SentenceTransformerRerank"]
 contains_example = false
 import_path = "llama_index.postprocessor.sbert_rerank"
+
+[tool.llamahub.class_authors]
+SentenceTransformerRerank = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

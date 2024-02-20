@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["Anthropic"]
 contains_example = false
 import_path = "llama_index.llms.anthropic"
+
+[tool.llamahub.class_authors]
+Anthropic = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -8,9 +8,13 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["GoogleTextSynthesizer", "SynthesizedResponse", "set_google_config"]
 contains_example = false
 import_path = "llama_index.response_synthesizers.google"
+
+[tool.llamahub.class_authors]
+GoogleTextSynthesizer = "llama-index"
+SynthesizedResponse = "llama-index"
+set_google_config = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

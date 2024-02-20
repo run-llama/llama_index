@@ -8,9 +8,14 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["OpendalAzblobReader", "OpendalGcsReader", "OpendalReader", "OpendalS3Reader"]
 contains_example = false
 import_path = "llama_index.readers.opendal"
+
+[tool.llamahub.class_authors]
+OpendalAzblobReader = "OpenDAL Contributors"
+OpendalGcsReader = "OpenDAL Contributors"
+OpendalReader = "OpenDAL Contributors"
+OpendalS3Reader = "OpenDAL Contributors"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["DynamoDBIndexStore"]
 contains_example = false
 import_path = "llama_index.storage.index_store.dynamodb"
+
+[tool.llamahub.class_authors]
+DynamoDBIndexStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

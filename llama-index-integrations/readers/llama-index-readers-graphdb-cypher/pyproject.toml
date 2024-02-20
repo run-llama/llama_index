@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["GraphDBCypherReader"]
 contains_example = false
 import_path = "llama_index.readers.graphdb_cypher"
+
+[tool.llamahub.class_authors]
+GraphDBCypherReader = "jexp"
 
 [tool.mypy]
 disallow_untyped_defs = true

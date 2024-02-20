@@ -8,9 +8,14 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["OpenAI"]
 contains_example = false
 import_path = "llama_index.llms.openai"
+
+[tool.llamahub.class_authors]
+AsyncOpenAI = "llama-index"
+OpenAI = "llama-index"
+SyncOpenAI = "llama-index"
+Tokenizer = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

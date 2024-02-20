@@ -8,9 +8,13 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["MyScaleReader", "escape_str", "format_list_to_string"]
 contains_example = false
 import_path = "llama_index.readers.myscale"
+
+[tool.llamahub.class_authors]
+MyScaleReader = "llama-index"
+escape_str = "llama-index"
+format_list_to_string = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
