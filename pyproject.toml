@@ -55,6 +55,8 @@ llama-index-program-openai = "^0.1.0"
 llama-index-question-gen-openai = "^0.1.0"
 llama-index-agent-openai = "^0.1.0"
 llama-index-readers-file = "^0.1.0"
+llama-index-readers-llama-parse = "^0.1.0"
+llama-index-indices-managed-llama-cloud = "^0.1.0"
 llama-index-core = "^0.10.0"
 llama-index-multi-modal-llms-openai = "^0.1.0"
 
