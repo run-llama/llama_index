@@ -1,8 +1,9 @@
+from typing import List, Optional, Any, Dict
+
 import pandas as pd
 
-from . import news, comparisons, earnings
+from llama_index.tools.finance import comparisons, earnings, news
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-from typing import List, Optional, Any, Dict
 
 
 class FinanceAgentToolSpec(BaseToolSpec):

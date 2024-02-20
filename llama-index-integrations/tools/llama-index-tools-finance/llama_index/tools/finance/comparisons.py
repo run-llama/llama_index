@@ -1,7 +1,8 @@
 """ Find similar companies across different indexes based on available open source models."""
 
 from typing import Dict
-from .util import request
+
+from llama_index.tools.finance.util import request
 
 
 def find_similar_companies(api_key: Dict[str, str], symbol: str, country=None):

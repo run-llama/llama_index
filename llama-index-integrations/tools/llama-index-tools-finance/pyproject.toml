@@ -18,7 +18,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index finance-tools integration"
 license = "MIT"
-name = "llama-index-tools-finance-tools"
+name = "llama-index-tools-finance"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
