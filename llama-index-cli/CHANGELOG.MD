@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [0.1.2] - 2024-02-20
+
+- Fix python requirement in pyproject.toml
+
 ## [0.1.1] - 2024-02-20
 
 - Upgrades ported over from core
