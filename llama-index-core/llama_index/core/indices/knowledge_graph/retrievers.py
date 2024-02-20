@@ -52,7 +52,7 @@ class KGRetrieverMode(str, Enum):
         KEYWORD ("keyword"): Default query mode, using keywords to find triplets.
         EMBEDDING ("embedding"): Embedding mode, using embeddings to find
             similar triplets.
-        HYBRID ("hybrid"): Hyrbid mode, combining both keywords and embeddings
+        HYBRID ("hybrid"): Hybrid mode, combining both keywords and embeddings
             to find relevant triplets.
     """
 
