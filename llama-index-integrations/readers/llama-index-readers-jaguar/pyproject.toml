@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["JaguarReader"]
 contains_example = false
 import_path = "llama_index.readers.jaguar"
+
+[tool.llamahub.class_authors]
+JaguarReader = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

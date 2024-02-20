@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["KalturaESearchReader"]
 contains_example = false
 import_path = "llama_index.readers.kaltura_esearch"
+
+[tool.llamahub.class_authors]
+KalturaESearchReader = "kaltura"
 
 [tool.mypy]
 disallow_untyped_defs = true

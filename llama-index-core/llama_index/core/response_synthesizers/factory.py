@@ -156,6 +156,7 @@ def get_response_synthesizer(
         )
     elif response_mode == ResponseMode.NO_TEXT:
         return NoText(
+            llm=llm,
             streaming=streaming,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,

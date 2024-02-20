@@ -8,9 +8,12 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AzureTranslateToolSpec", "ENDPOINT_BASE_URL"]
 contains_example = false
 import_path = "llama_index.tools.azure_translate"
+
+[tool.llamahub.class_authors]
+AzureTranslateToolSpec = "ajhofmann"
+ENDPOINT_BASE_URL = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

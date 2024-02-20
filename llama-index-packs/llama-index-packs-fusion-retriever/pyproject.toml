@@ -8,9 +8,12 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["HybridFusionRetrieverPack", "QueryRewritingRetrieverPack"]
 contains_example = false
 import_path = "llama_index.packs.fusion_retriever"
+
+[tool.llamahub.class_authors]
+HybridFusionRetrieverPack = "jerryjliu"
+QueryRewritingRetrieverPack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

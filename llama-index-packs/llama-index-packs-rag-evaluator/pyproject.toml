@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["RagEvaluatorPack"]
 contains_example = true
 import_path = "llama_index.packs.rag_evaluator"
+
+[tool.llamahub.class_authors]
+RagEvaluatorPack = "nerdai"
 
 [tool.mypy]
 disallow_untyped_defs = true

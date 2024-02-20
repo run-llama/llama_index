@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["OutlookLocalCalendarReader"]
 contains_example = false
 import_path = "llama_index.readers.microsoft_outlook"
+
+[tool.llamahub.class_authors]
+OutlookLocalCalendarReader = "tevslin"
 
 [tool.mypy]
 disallow_untyped_defs = true

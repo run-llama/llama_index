@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["MistralAI"]
 contains_example = false
 import_path = "llama_index.llms.mistralai"
+
+[tool.llamahub.class_authors]
+MistralAI = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

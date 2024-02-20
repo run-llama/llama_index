@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AI21"]
 contains_example = false
 import_path = "llama_index.llms.ai21"
+
+[tool.llamahub.class_authors]
+AI21 = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["NotionToolSpec"]
 contains_example = false
 import_path = "llama_index.tools.notion"
+
+[tool.llamahub.class_authors]
+NotionToolSpec = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true

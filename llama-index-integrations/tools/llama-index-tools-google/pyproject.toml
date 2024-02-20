@@ -8,9 +8,14 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["GmailToolSpec", "GoogleCalendarToolSpec", "GoogleSearchToolSpec", "QUERY_URL_TMPL"]
 contains_example = false
 import_path = "llama_index.tools.google"
+
+[tool.llamahub.class_authors]
+GmailToolSpec = "ajhofmann"
+GoogleCalendarToolSpec = "ajhofmann"
+GoogleSearchToolSpec = "ajhofmann"
+QUERY_URL_TMPL = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["OpenAPIToolSpec"]
 contains_example = false
 import_path = "llama_index.tools.openapi"
+
+[tool.llamahub.class_authors]
+OpenAPIToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true

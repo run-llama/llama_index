@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["LongLLMLinguaPostprocessor"]
 contains_example = false
 import_path = "llama_index.postprocessor.longllmlingua"
+
+[tool.llamahub.class_authors]
+LongLLMLinguaPostprocessor = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

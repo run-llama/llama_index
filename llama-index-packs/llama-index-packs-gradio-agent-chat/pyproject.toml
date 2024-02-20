@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["GradioAgentChatPack"]
 contains_example = false
 import_path = "llama_index.packs.gradio_agent_chat"
+
+[tool.llamahub.class_authors]
+GradioAgentChatPack = "nerdai"
 
 [tool.mypy]
 disallow_untyped_defs = true

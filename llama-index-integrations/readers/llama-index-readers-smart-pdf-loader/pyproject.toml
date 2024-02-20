@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["SmartPDFLoader"]
 contains_example = false
 import_path = "llama_index.readers.smart_pdf_loader"
+
+[tool.llamahub.class_authors]
+SmartPDFLoader = "ansukla"
 
 [tool.mypy]
 disallow_untyped_defs = true

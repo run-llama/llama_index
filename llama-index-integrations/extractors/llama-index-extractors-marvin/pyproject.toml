@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["MarvinMetadataExtractor"]
 contains_example = false
 import_path = "llama_index.extractors.marvin"
+
+[tool.llamahub.class_authors]
+MarvinMetadataExtractor = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

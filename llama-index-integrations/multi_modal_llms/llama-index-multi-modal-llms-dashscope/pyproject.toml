@@ -8,9 +8,12 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["DashScopeMultiModal", "DashScopeMultiModalModels"]
 contains_example = false
 import_path = "llama_index.multi_modal_llms.dashscope"
+
+[tool.llamahub.class_authors]
+DashScopeMultiModal = "llama-index"
+DashScopeMultiModalModels = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
