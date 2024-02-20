@@ -158,11 +158,11 @@ class SQLDatabase:
         for column in self._inspector.get_columns(table_name, schema=self._schema):
             if column.get("comment"):
                 columns.append(
-                    f"{column['name']} "
+                    f"{column['name']} ({column['type']!s}): "
                     f"'{column.get('comment')}'"
                 )
             else:
-                columns.append(f"{column['name']}")
+                columns.append(f"{column['name']} ({column['type']!s})")
 
         column_str = ", ".join(columns)
         foreign_keys = []
