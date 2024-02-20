@@ -23,29 +23,46 @@ import os
 class Maritalk(LLM):
     api_key: Optional[str] = Field(default=None, description="Your MariTalk API key.")
     temperature: float = Field(
-        default=0.7, gt=0.0, lt=1.0, description="Run inference with this temperature. Must be in the closed interval [0.0, 1.0]."
+        default=0.7,
+        gt=0.0,
+        lt=1.0,
+        description="Run inference with this temperature. Must be in the"
+        "closed interval [0.0, 1.0].",
     )
     max_tokens: int = Field(
-        default=512, gt=0, description="The maximum number of tokens to generate in the reply."
+        default=512,
+        gt=0,
+        description="The maximum number of tokens to" "generate in the reply.",
     )
     do_sample: bool = Field(
-        default=True, description="Whether or not to use sampling; use `True` to enable."
+        default=True,
+        description="Whether or not to use sampling; use `True` to enable.",
     )
     top_p: float = Field(
-        default=0.95, gt=0.0, lt=1.0, description="Nucleus sampling parameter controlling the size of the probability mass considered for sampling."
+        default=0.95,
+        gt=0.0,
+        lt=1.0,
+        description="Nucleus sampling parameter controlling the size of"
+        " the probability mass considered for sampling.",
     )
     system_message_workaround: bool = Field(
-        default=True, description="Whether to include a workaround for system message by adding it as a user message."
+        default=True,
+        description="Whether to include a workaround for system"
+        " message by adding it as a user message.",
     )
 
     _endpoint: str = PrivateAttr("https://chat.maritaca.ai/api/chat/inference")
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        # If an API key is not provided during instantiation, fall back to the MARITALK_API_KEY environment variable
-        self.api_key = self.api_key or os.getenv('MARITALK_API_KEY')
+        # If an API key is not provided during instantiation,
+        # fall back to the MARITALK_API_KEY environment variable
+        self.api_key = self.api_key or os.getenv("MARITALK_API_KEY")
         if not self.api_key:
-            raise ValueError("An API key must be provided or set in the 'MARITALK_API_KEY' environment variable.")
+            raise ValueError(
+                "An API key must be provided or set in the "
+                "'MARITALK_API_KEY' environment variable."
+            )
 
     @classmethod
     def class_name(cls) -> str:
@@ -63,7 +80,10 @@ class Maritalk(LLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # Prepare the data payload for the Maritalk API
         formatted_messages = [
-            {"role": "user" if msg.role == MessageRole.USER else "assistant", "content": msg.content}
+            {
+                "role": "user" if msg.role == MessageRole.USER else "assistant",
+                "content": msg.content,
+            }
             for msg in messages
         ]
 
@@ -83,7 +103,10 @@ class Maritalk(LLM):
         response = requests.post(self._endpoint, json=data, headers=headers)
         if response.status_code == 429:
             return ChatResponse(
-                message=ChatMessage(role=MessageRole.SYSTEM, content="Rate limited, please try again soon"),
+                message=ChatMessage(
+                    role=MessageRole.SYSTEM,
+                    content="Rate limited, please try again soon",
+                ),
                 raw=response.text,
             )
         elif response.ok:
@@ -93,10 +116,12 @@ class Maritalk(LLM):
                 raw=response.json(),
             )
         else:
-            response.raise_for_status()
+            response.raise_for_status()  # noqa: RET503
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any ) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         # Prepare the data payload for the Maritalk API
         data = {
             "messages": prompt,
@@ -109,7 +134,7 @@ class Maritalk(LLM):
 
         # Update data payload with additional kwargs if any
         data.update(kwargs)
-        
+
         headers = {"authorization": f"Key {self.api_key}"}
 
         response = requests.post(self._endpoint, json=data, headers=headers)
@@ -125,7 +150,7 @@ class Maritalk(LLM):
                 raw=response.json(),
             )
         else:
-            response.raise_for_status()
+            response.raise_for_status()  # noqa: RET503
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
