@@ -48,7 +48,7 @@ class FinanceAgentToolSpec(BaseToolSpec):
         return earnings.get_earnings_history(self._api_key, symbol)
 
     def get_latest_earning_estimate(self, symbol: str) -> float:
-        """Given a stock's ticker symbole, returns it's earnings estimate for the upcoming quarterly report."""
+        """Given a stock's ticker symbol, returns it's earnings estimate for the upcoming quarterly report."""
         return earnings.get_latest_earning_estimate(symbol)
 
     def get_stocks_with_upcoming_earnings(

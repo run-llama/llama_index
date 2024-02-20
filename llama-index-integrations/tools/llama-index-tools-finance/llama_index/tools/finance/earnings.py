@@ -10,7 +10,7 @@ def get_earnings_history(api_key: Dict[str, str], symbol: str) -> pd.DataFrame:
     """
     Get actual, estimated earnings and surprise history for a given stock ticker symbol.
 
-    If somehow api repsonse is not found, returns an empty dataframe.
+    If somehow api response is not found, returns an empty dataframe.
     """
     ALPHA_VANTAGE_API_KEY = api_key["ALPHA_VANTAGE"]
 
