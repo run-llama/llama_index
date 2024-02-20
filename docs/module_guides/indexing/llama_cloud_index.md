@@ -1,4 +1,4 @@
-# LlamaCloud Index + Retriever
+# LlamaCloudIndex + LlamaCloudRetriever
 
 LlamaCloud is a new generation of managed parsing, ingestion, and retrieval services, designed to bring production-grade context-augmentation to your LLM and RAG applications.
 
