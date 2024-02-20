@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["TxtaiReader"]
 contains_example = false
 import_path = "llama_index.readers.txtai"
+
+[tool.llamahub.class_authors]
+TxtaiReader = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

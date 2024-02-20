@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["FirestoreDocumentStore"]
 contains_example = false
 import_path = "llama_index.storage.docstore.firestore"
+
+[tool.llamahub.class_authors]
+FirestoreDocumentStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

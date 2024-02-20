@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["PostgresIndexStore"]
 contains_example = false
 import_path = "llama_index.storage.index_store.postgres"
+
+[tool.llamahub.class_authors]
+PostgresIndexStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

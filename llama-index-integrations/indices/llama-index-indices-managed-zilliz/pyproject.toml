@@ -8,9 +8,12 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["ZillizCloudPipelineIndex", "ZillizCloudPipelineRetriever"]
 contains_example = false
 import_path = "llama_index.indices.managed.zilliz"
+
+[tool.llamahub.class_authors]
+ZillizCloudPipelineIndex = "llama-index"
+ZillizCloudPipelineRetriever = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

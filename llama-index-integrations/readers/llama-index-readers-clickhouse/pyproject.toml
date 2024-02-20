@@ -7,6 +7,15 @@ check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.clickhouse"
+
+[tool.llamahub.class_authors]
+ClickHouseReader = "llama-index"
+escape_str = "llama-index"
+format_list_to_string = "llama-index"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]

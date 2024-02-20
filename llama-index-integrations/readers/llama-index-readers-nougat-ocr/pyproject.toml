@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["PDFNougatOCR"]
 contains_example = false
 import_path = "llama_index.readers.nougat_ocr"
+
+[tool.llamahub.class_authors]
+PDFNougatOCR = "mdarshad1000"
 
 [tool.mypy]
 disallow_untyped_defs = true

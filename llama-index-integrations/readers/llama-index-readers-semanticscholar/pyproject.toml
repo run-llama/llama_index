@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["SemanticScholarReader"]
 contains_example = false
 import_path = "llama_index.readers.semanticscholar"
+
+[tool.llamahub.class_authors]
+SemanticScholarReader = "shauryr"
 
 [tool.mypy]
 disallow_untyped_defs = true

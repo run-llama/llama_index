@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["DadJokesReader"]
 contains_example = false
 import_path = "llama_index.readers.dad_jokes"
+
+[tool.llamahub.class_authors]
+DadJokesReader = "sidu"
 
 [tool.mypy]
 disallow_untyped_defs = true

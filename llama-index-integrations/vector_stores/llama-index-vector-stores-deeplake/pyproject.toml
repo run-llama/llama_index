@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["DeepLakeVectorStore"]
 contains_example = false
 import_path = "llama_index.vector_stores.deeplake"
+
+[tool.llamahub.class_authors]
+DeepLakeVectorStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

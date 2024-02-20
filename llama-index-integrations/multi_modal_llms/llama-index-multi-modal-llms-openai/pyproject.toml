@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["OpenAIMultiModal"]
 contains_example = false
 import_path = "llama_index.multi_modal_llms.openai"
+
+[tool.llamahub.class_authors]
+OpenAIMultiModal = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

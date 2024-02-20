@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["VoyageQueryEnginePack"]
 contains_example = true
 import_path = "llama_index.packs.voyage_query_engine"
+
+[tool.llamahub.class_authors]
+VoyageQueryEnginePack = "Liuhong99"
 
 [tool.mypy]
 disallow_untyped_defs = true

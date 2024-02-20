@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["ReadwiseReader"]
 contains_example = false
 import_path = "llama_index.readers.readwise"
+
+[tool.llamahub.class_authors]
+ReadwiseReader = "alexbowe"
 
 [tool.mypy]
 disallow_untyped_defs = true

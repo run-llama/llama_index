@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["CogniswitchToolSpec"]
 contains_example = false
 import_path = "llama_index.tools.cogniswitch"
+
+[tool.llamahub.class_authors]
+CogniswitchToolSpec = "cogniswitch"
 
 [tool.mypy]
 disallow_untyped_defs = true

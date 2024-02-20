@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["KuzuGraphStore"]
 contains_example = false
 import_path = "llama_index.graph_stores.kuzu"
+
+[tool.llamahub.class_authors]
+KuzuGraphStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

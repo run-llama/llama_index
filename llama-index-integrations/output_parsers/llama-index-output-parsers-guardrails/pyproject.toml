@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["GuardrailsOutputParser"]
 contains_example = false
 import_path = "llama_index.output_parsers.guardrails"
+
+[tool.llamahub.class_authors]
+GuardrailsOutputParser = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

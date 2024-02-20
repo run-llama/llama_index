@@ -8,9 +8,23 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AsyncWebPageReader", "BeautifulSoupWebReader", "KnowledgeBaseWebReader", "MainContentExtractorReader", "NewsArticleReader", "ReadabilityWebPageReader", "RssNewsReader", "RssReader", "SimpleWebPageReader", "SitemapReader", "TrafilaturaWebReader", "UnstructuredURLLoader", "WholeSiteReader"]
 contains_example = false
 import_path = "llama_index.readers.web"
+
+[tool.llamahub.class_authors]
+AsyncWebPageReader = "Hironsan"
+BeautifulSoupWebReader = "thejessezhang"
+KnowledgeBaseWebReader = "jasonwcfan"
+MainContentExtractorReader = "HawkClaws"
+NewsArticleReader = "ruze00"
+ReadabilityWebPageReader = "pandazki"
+RssNewsReader = "ruze00"
+RssReader = "bborn"
+SimpleWebPageReader = "thejessezhang"
+SitemapReader = "selamanse"
+TrafilaturaWebReader = "NA"
+UnstructuredURLLoader = "kravetsmic"
+WholeSiteReader = "an-bluecat"
 
 [tool.mypy]
 disallow_untyped_defs = true
