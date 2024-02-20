@@ -38,7 +38,10 @@ def generate_openai_multi_modal_chat_message(
     completion_content = [{"type": "text", "text": prompt}]
     for image_document in image_documents:
         image_content: Dict[str, Any] = {}
-        mimetype = image_document.image_mimetype or "image/jpeg"
+        if isinstance(image_document, ImageDocument):
+            mimetype = image_document.image_mimetype or "image/jpeg"
+        else:
+            mimetype = "image/jpeg"
         if image_document.image and image_document.image != "":
             image_content = {
                 "type": "image_url",
