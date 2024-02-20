@@ -1,5 +1,9 @@
 # ChangeLog
 
+## [0.10.9] - 2024-02-20
+
+- add llama-index-cli dependency
+
 ## [0.10.7] - 2024-02-19
 
 ### New Features
