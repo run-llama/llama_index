@@ -13,7 +13,6 @@ I'm still a bit wonky with our publishing process -- apologies. This is just a v
 bump to ensure the changes that were supposed to happen in 0.10.9 actually
 did get published. (AF)
 
-
 ## [0.10.9] - 2024-02-20
 
 - add llama-index-cli dependency
