@@ -97,7 +97,7 @@ class MyMagicAI(LLM):
         response.raise_for_status()
         return response.json()
 
-    def preprocess(self, model, question, max_tokens) -> str:
+    def _preprocess(self, model, question, max_tokens) -> str:
         self.question = self.question_data["question"] = question
         self.model = self.question_data["model"] = model or self.model
         self.max_tokens = self.question_data["max_tokens"] = (
@@ -119,7 +119,7 @@ class MyMagicAI(LLM):
         max_tokens: Optional[int] = None,
         poll_interval: float = 1.0,
     ) -> CompletionResponse:
-        self.preprocess(model, question, max_tokens)
+        self._preprocess(model, question, max_tokens)
 
         task_response = await self._submit_question(self.question_data)
         task_id = task_response.get("task_id")
@@ -136,7 +136,7 @@ class MyMagicAI(LLM):
         max_tokens: Optional[int] = None,
         poll_interval: float = 1.0,
     ) -> CompletionResponse:
-        self.preprocess(model, question, max_tokens)
+        self._preprocess(model, question, max_tokens)
 
         task_response = self._submit_question_sync(self.question_data)
         task_id = task_response.get("task_id")
