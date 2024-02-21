@@ -1,6 +1,9 @@
 """Unstructured element node parser."""
 
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Dict
+
+
+from llama_index.core.bridge.pydantic import Field
 
 import pandas as pd
 from llama_index.core.callbacks.base import CallbackManager
@@ -45,11 +48,17 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
 
     """
 
+    partitioning_parameters: Optional[Dict[str, Any]] = Field(
+        default={},
+        description="Extra dictionary representing parameters of the partitioning process.",
+    )
+
     def __init__(
         self,
         callback_manager: Optional[CallbackManager] = None,
         llm: Optional[Any] = None,
         summary_query_str: str = DEFAULT_SUMMARY_QUERY_STR,
+        partitioning_parameters: Optional[Dict[str, Any]] = {},
     ) -> None:
         """Initialize."""
         try:
@@ -66,6 +75,7 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
             callback_manager=callback_manager,
             llm=llm,
             summary_query_str=summary_query_str,
+            partitioning_parameters=partitioning_parameters,
         )
 
     @classmethod
@@ -91,7 +101,7 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
         from unstructured.partition.html import partition_html  # pants: no-infer-dep
 
         table_filters = table_filters or []
-        elements = partition_html(text=text)
+        elements = partition_html(text=text, **self.partitioning_parameters)
         output_els = []
         for idx, element in enumerate(elements):
             if "unstructured.documents.html.HTMLTable" in str(type(element)):
