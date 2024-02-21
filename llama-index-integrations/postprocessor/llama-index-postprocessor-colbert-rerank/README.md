@@ -1,1 +1,1 @@
-# LlamaIndex Postprocessor Integration: Colbert_Rerank
+# LlamaIndex Postprocessor Integration: Colbert Rerank
