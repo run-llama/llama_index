@@ -247,7 +247,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             index_name: Name of the AsyncElasticsearch index to create.
             dims_length: Length of the embedding vectors.
         """
-        if self.client.indices.exists(index=index_name):
+        if await self.client.indices.exists(index=index_name):
             logger.debug(f"Index {index_name} already exists. Skipping creation.")
 
         else:
