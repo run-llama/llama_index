@@ -26,6 +26,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index llms openai integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-openai"
 readme = "README.md"

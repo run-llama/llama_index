@@ -23,6 +23,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs stock_market_data_query_engine integration"
+exclude = ["**/BUILD"]
 keywords = ["data", "engine", "finance", "market", "query", "stock", "yahoo finance", "yahoo"]
 license = "MIT"
 maintainers = ["anoopshrma"]
@@ -31,7 +32,7 @@ readme = "README.md"
 version = "0.1.2"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 yfinance = "^0.2.36"
 

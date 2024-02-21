@@ -25,6 +25,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs trulens_eval_packs integration"
+exclude = ["**/BUILD"]
 keywords = ["eval", "harmless", "helpful", "rag", "triad", "trulens"]
 license = "MIT"
 maintainers = ["joshreini1"]
@@ -33,7 +34,7 @@ readme = "README.md"
 version = "0.1.2"
 
 [tool.poetry.dependencies]
-python = ">3.9.7,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 trulens-eval = "^0.21.0"
 

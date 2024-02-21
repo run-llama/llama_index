@@ -24,6 +24,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs vanna integration"
+exclude = ["**/BUILD"]
 keywords = ["ai", "sql", "text-to-sql", "vanna"]
 license = "MIT"
 maintainers = ["jerryjliu"]
@@ -32,7 +33,7 @@ readme = "README.md"
 version = "0.1.2"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.8.1,<4.0"
 kaleido = "0.2.1"
 vanna = "0.0.36"
 llama-index-core = "^0.10.1"

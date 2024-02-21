@@ -43,6 +43,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers file integration"
+exclude = ["**/BUILD"]
 keywords = ["10k", "10q", "chart", "eml", "figure", "html", "hwp", "image", "invoice", "ipynb", "jupyter", "notebook", "pdf", "pymupdf", "receipt", "sec", "spreadsheet", "tabular", "unstructured.io", "yaml", "yml"]
 license = "MIT"
 maintainers = ["FarisHijazi", "Haowjy", "ephe-meral", "hursh-desai", "iamarunbrahma", "jon-chuang", "mmaatouk", "ravi03071991", "sangwongenip", "thejessezhang"]

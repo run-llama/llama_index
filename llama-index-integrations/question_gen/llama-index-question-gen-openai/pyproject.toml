@@ -23,6 +23,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index question_gen openai integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-question-gen-openai"
 readme = "README.md"
