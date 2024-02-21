@@ -115,6 +115,7 @@ redirects = {
     "core_modules/supporting_modules/callbacks/root": "/en/stable/module_guides/observability/callbacks/root.html",
     "core_modules/supporting_modules/evaluation/root": "/en/stable/module_guides/evaluating/root.html",
     "core_modules/supporting_modules/cost_analysis/root": "/en/stable/understanding/evaluating/cost_analysis/root.html",
+    "api/llama_index.vector_stores.MongoDBAtlasVectorSearch": "/en/stable/examples/vector_stores/MongoDBAtlasVectorSearch.html",
 }
 
 gtagjs_ids = [

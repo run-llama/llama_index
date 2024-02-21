@@ -28,7 +28,7 @@ description = "llama-index response synthesizers google integration"
 license = "MIT"
 name = "llama-index-response-synthesizers-google"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
