@@ -11,7 +11,11 @@ from llama_index.core import (
     VectorStoreIndex,
 )
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.base.response.schema import RESPONSE_TYPE, StreamingResponse, Response
+from llama_index.core.base.response.schema import (
+    RESPONSE_TYPE,
+    StreamingResponse,
+    Response,
+)
 from llama_index.core.bridge.pydantic import BaseModel, Field, validator
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
 from llama_index.core.indices.service_context import ServiceContext
