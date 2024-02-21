@@ -411,6 +411,7 @@ DEFAULT_CHOICE_SELECT_PROMPT_TMPL = (
     "as the relevance score. The relevance score is a number from 1-10 based on "
     "how relevant you think the document is to the question.\n"
     "Do not include any documents that are not relevant to the question. \n"
+    "If the question is not answerable with the given documents, respond with the list of documents.\n"
     "Example format: \n"
     "Document 1:\n<summary of document 1>\n\n"
     "Document 2:\n<summary of document 2>\n\n"
