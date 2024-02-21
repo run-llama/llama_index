@@ -6,6 +6,9 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 from llama_index.core.utils import infer_torch_device
 
+import torch
+from transformers import AutoTokenizer, AutoModel
+
 DEFAULT_COLBERT_MAX_LENGTH = 512
 
 
@@ -31,13 +34,6 @@ class ColbertRerank(BaseNodePostprocessor):
         device: Optional[str] = None,
         keep_retrieval_score: Optional[bool] = False,
     ):
-        try:
-            from transformers import AutoTokenizer, AutoModel
-        except ImportError:
-            raise ImportError(
-                "Cannot import sentence-transformers or torch package,",
-                "please `pip install torch sentence-transformers`",
-            )
         device = infer_torch_device() if device is None else device
         self._tokenizer = AutoTokenizer.from_pretrained(tokenizer)
         self._model = AutoModel.from_pretrained(model)
@@ -62,21 +58,12 @@ class ColbertRerank(BaseNodePostprocessor):
         )
         rerank_score_list = []
 
-        try:
-            import torch
-        except ImportError:
-            raise ImportError(
-                "Cannot import sentence-transformers or torch package,",
-                "please `pip install torch sentence-transformers`",
-            )
-
         for document_text in documents_text_list:
             document_encoding = self._tokenizer(
                 document_text, return_tensors="pt", truncation=True, max_length=512
             )
             document_embedding = self._model(**document_encoding).last_hidden_state
 
-            # Compute cosine similarity across the embedding dimension
             sim_matrix = torch.nn.functional.cosine_similarity(
                 query_embedding.unsqueeze(2), document_embedding.unsqueeze(1), dim=-1
             )
@@ -84,8 +71,8 @@ class ColbertRerank(BaseNodePostprocessor):
             # Take the maximum similarity for each query token (across all document tokens)
             # sim_matrix shape: [batch_size, query_length, doc_length]
             max_sim_scores, _ = torch.max(sim_matrix, dim=2)
-            avg_max_sim = torch.mean(max_sim_scores, dim=1)
-            rerank_score_list.append(avg_max_sim)
+            rerank_score_list.append(torch.mean(max_sim_scores, dim=1))
+
         return rerank_score_list
 
     def _postprocess_nodes(
