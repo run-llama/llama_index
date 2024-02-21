@@ -300,7 +300,7 @@ Contributing a new Reader or Tool involves submitting a new package within
 the [llama-index-integrations/readers](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) and [llama-index-integrations/tools](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools),
 folders respectively.
 
-The LlamaIndex command-line tool can be used to initialize new Packs and Integrations.
+The LlamaIndex command-line tool can be used to initialize new Packs and Integrations. (NOTE: `llama-index-cli` comes installed with `llama-index`.)
 
 ```shell
 cd ./llama-index-packs
