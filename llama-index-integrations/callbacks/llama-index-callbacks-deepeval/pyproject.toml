@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["deepeval_callback_handler"]
 contains_example = false
 import_path = "llama_index.callbacks.deepeval"
+
+[tool.llamahub.class_authors]
+deepeval_callback_handler = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

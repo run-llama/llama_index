@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["PDFTableReader"]
 contains_example = false
 import_path = "llama_index.readers.pdf_table"
+
+[tool.llamahub.class_authors]
+PDFTableReader = "yy0867"
 
 [tool.mypy]
 disallow_untyped_defs = true

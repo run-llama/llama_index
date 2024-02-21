@@ -1,5 +1,30 @@
 # ChangeLog
 
+## [0.10.10] - 2024-02-20
+
+I'm still a bit wonky with our publishing process -- apologies. This is just a version
+bump to ensure the changes that were supposed to happen in 0.10.9 actually
+did get published. (AF)
+
+## [0.10.9] - 2024-02-20
+
+- add llama-index-cli dependency
+
+## [0.10.7] - 2024-02-19
+
+### New Features
+
+- Added Self-Discover llamapack (#10951)
+
+### Bug Fixes / Nits
+
+- Fixed linting in CICD (#10945)
+- Fixed using remote graph stores (#10971)
+- Added missing LLM kwarg in NoText response synthesizer (#10971)
+- Fixed openai import in rankgpt (#10971)
+- Fixed resolving model name to string in openai embeddings (#10971)
+- Off by one error in sentence window node parser (#10971)
+
 ## [0.10.6] - 2024-02-17
 
 First, apologies for missing the changelog the last few versions. Trying to figure out the best process with 400+ packages.

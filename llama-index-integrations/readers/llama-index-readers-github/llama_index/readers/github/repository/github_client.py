@@ -176,7 +176,7 @@ class BaseGithubClient(Protocol):
         owner: str,
         repo: str,
         file_sha: str,
-    ) -> GitBlobResponseModel:
+    ) -> Optional[GitBlobResponseModel]:
         ...
 
     async def get_commit(
@@ -417,7 +417,7 @@ class GithubClient:
         file_sha: str,
         timeout: Optional[int] = 5,
         retries: int = 0,
-    ) -> GitBlobResponseModel:
+    ) -> Optional[GitBlobResponseModel]:
         """
         Get information about a blob. (Github API endpoint: getBlob).
 
@@ -434,19 +434,23 @@ class GithubClient:
         Examples:
             >>> blob_info = client.get_blob("owner", "repo", "file_sha")
         """
-        return GitBlobResponseModel.from_json(
-            (
-                await self.request(
-                    "getBlob",
-                    "GET",
-                    owner=owner,
-                    repo=repo,
-                    file_sha=file_sha,
-                    timeout=timeout,
-                    retries=retries,
-                )
-            ).text
-        )
+        try:
+            return GitBlobResponseModel.from_json(
+                (
+                    await self.request(
+                        "getBlob",
+                        "GET",
+                        owner=owner,
+                        repo=repo,
+                        file_sha=file_sha,
+                        timeout=timeout,
+                        retries=retries,
+                    )
+                ).text
+            )
+        except KeyError:
+            print(f"Failed to get blob for {owner}/{repo}/{file_sha}")
+            return None
 
     async def get_commit(
         self,
@@ -504,6 +508,6 @@ if __name__ == "__main__":
                 blob_response = await client.get_blob(
                     owner="ahmetkca", repo="CommitAI", file_sha=obj.sha
                 )
-                print(blob_response.content)
+                print(blob_response.content if blob_response else "None")
 
     asyncio.run(main())

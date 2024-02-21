@@ -8,9 +8,12 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["BaseEvaporateProgram", "DFEvaporateProgram"]
 contains_example = false
 import_path = "llama_index.program.evaporate"
+
+[tool.llamahub.class_authors]
+BaseEvaporateProgram = "llama-index"
+DFEvaporateProgram = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

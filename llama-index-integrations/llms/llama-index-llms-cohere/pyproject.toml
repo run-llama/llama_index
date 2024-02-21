@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["Cohere"]
 contains_example = false
 import_path = "llama_index.llms.cohere"
+
+[tool.llamahub.class_authors]
+Cohere = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

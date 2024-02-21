@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["TrelloReader"]
 contains_example = false
 import_path = "llama_index.readers.trello"
+
+[tool.llamahub.class_authors]
+TrelloReader = "bluzir"
 
 [tool.mypy]
 disallow_untyped_defs = true

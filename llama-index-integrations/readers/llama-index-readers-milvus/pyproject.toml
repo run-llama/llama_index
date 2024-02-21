@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["MilvusReader"]
 contains_example = false
 import_path = "llama_index.readers.milvus"
+
+[tool.llamahub.class_authors]
+MilvusReader = "filip-halt"
 
 [tool.mypy]
 disallow_untyped_defs = true

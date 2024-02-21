@@ -4,6 +4,7 @@ Qdrant vector store index.
 An index that is built on top of an existing Qdrant collection.
 
 """
+
 import logging
 from typing import Any, List, Optional, Tuple, cast
 
@@ -40,6 +41,7 @@ from qdrant_client.http.models import (
     MatchValue,
     Payload,
     Range,
+    HasIdCondition,
 )
 
 logger = logging.getLogger(__name__)
@@ -744,12 +746,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 )
             )
 
+        # Point id is a “service” id, it is not stored in payload. There is ‘HasId’ condition to filter by point id
+        # https://qdrant.tech/documentation/concepts/filtering/#has-id
         if query.node_ids:
             must_conditions.append(
-                FieldCondition(
-                    key="id",
-                    match=MatchAny(any=query.node_ids),
-                )
+                HasIdCondition(has_id=query.node_ids),
             )
 
         # Qdrant does not use the query.query_str property for the filtering. Full-text

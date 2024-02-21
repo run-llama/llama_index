@@ -24,7 +24,7 @@ description = "llama-index finetuning"
 license = "MIT"
 name = "llama-index-finetuning"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"

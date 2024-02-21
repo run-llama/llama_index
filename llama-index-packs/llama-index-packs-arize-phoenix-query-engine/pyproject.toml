@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["ArizePhoenixQueryEnginePack"]
 contains_example = true
 import_path = "llama_index.packs.arize_phoenix_query_engine"
+
+[tool.llamahub.class_authors]
+ArizePhoenixQueryEnginePack = "axiomofjoy"
 
 [tool.mypy]
 disallow_untyped_defs = true

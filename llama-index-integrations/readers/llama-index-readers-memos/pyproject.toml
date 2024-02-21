@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["MemosReader"]
 contains_example = false
 import_path = "llama_index.readers.memos"
+
+[tool.llamahub.class_authors]
+MemosReader = "bubu"
 
 [tool.mypy]
 disallow_untyped_defs = true

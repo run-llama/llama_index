@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["WeaviateReader"]
 contains_example = false
 import_path = "llama_index.readers.weaviate"
+
+[tool.llamahub.class_authors]
+WeaviateReader = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true
