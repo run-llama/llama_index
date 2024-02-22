@@ -1,5 +1,24 @@
 # ChangeLog
 
+# [0.10.12] - 2024-02-22
+
+### New Features
+
+- Added `llama-index-postprocessor-colbert-rerank` package (#11057)
+- `MyMagicAI` LLM (#11263)
+- `MariaTalk` LLM (#10925)
+- Add retries to github reader (#10980)
+- Added FireworksAI embedding and LLM modules (#10959)
+
+### Bug Fixes / Nits
+
+- Fixed string formatting in weaviate (#11294)
+- Fixed off-by-one error in semantic splitter (#11295)
+- Fixed `download_llama_pack` for multiple files (#11272)
+- Removed `BUILD` files from packages (#11267)
+- Loosened python version reqs for all packages (#11267)
+- Fixed args issue with chromadb (#11104)
+
 ## [0.10.11] - 2024-02-21
 
 ### Bug Fixes / Nits
