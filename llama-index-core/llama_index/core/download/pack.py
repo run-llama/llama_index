@@ -17,8 +17,8 @@ from llama_index.core.download.utils import (
     get_source_files_recursive,
 )
 
-BRANCH = "nerdai/migration-v0_10_0"
-REPO = "nerdai"
+BRANCH = "main"
+REPO = "run-llama"
 LLAMA_PACKS_CONTENTS_URL = (
     f"https://raw.githubusercontent.com/{REPO}/llama_index/{BRANCH}/llama-index-packs"
 )
