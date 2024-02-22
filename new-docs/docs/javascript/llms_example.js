@@ -21,22 +21,22 @@ var exampleData = `<div class="container">
 var exampleElement = document.createElement("div");
 exampleElement.innerHTML = exampleData;
 
+function addToggleToExample() {
+  const toggleExample = document.querySelector(".toggle-example");
+  const usageExamples = document.querySelector(".usage-examples");
+
+  toggleExample.addEventListener("click", function () {
+    console.log("clicked!");
+    console.log(usageExamples);
+    usageExamples.classList.toggle("hidden");
+  });
+}
+
 document$.subscribe(function () {
   console.log("document loaded");
   console.log(window.location.pathname);
   if (window.location.pathname.includes("/LLMS/")) {
     document.querySelector(".md-content__inner").prepend(exampleElement);
-
-    // JavaScript for toggling the usage example section
-    document.addEventListener("DOMContentLoaded", function () {
-      const toggleExample = document.querySelector(".toggle-example");
-      const usageExamples = document.querySelector(".usage-examples");
-
-      toggleExample.addEventListener("click", function () {
-        console.log("clicked!");
-        console.log(usageExamples);
-        usageExamples.classList.toggle("hidden");
-      });
-    });
+    addToggleToExample();
   }
 });
