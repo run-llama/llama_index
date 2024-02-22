@@ -6,8 +6,7 @@ from typing import Any, Dict, Sequence
 from deprecated import deprecated
 
 from llama_index.core.base.llms.types import ChatMessage
-from llama_index.core.events.base_event import CBEvent
-from llama_index.core.events.base_event_type import CBEventType
+from llama_index.core.callbacks.schema import CBEvent, CBEventType
 
 
 @dataclass

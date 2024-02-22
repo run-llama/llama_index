@@ -5,8 +5,7 @@ from typing import List
 
 from deprecated import deprecated
 
-from llama_index.core.events.base_event import CBEvent
-from llama_index.core.events.base_event_type import CBEventType
+from llama_index.core.callbacks.schema import CBEvent, CBEventType
 from llama_index.core.schema import NodeWithScore
 
 

@@ -2,12 +2,11 @@
 
 from typing import Dict, Literal
 
+from llama_index.core.callbacks.schema import CBEvent, CBEventType
 from llama_index.core.events.agent_step_events import (
     AgentStepEndEvent,
     AgentStepStartEvent,
 )
-from llama_index.core.events.base_event import CBEvent
-from llama_index.core.events.base_event_type import CBEventType
 from llama_index.core.events.chunking_events import ChunkingEndEvent, ChunkingStartEvent
 from llama_index.core.events.embedding_events import (
     EmbeddingEndEvent,

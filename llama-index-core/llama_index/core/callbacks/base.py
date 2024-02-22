@@ -7,10 +7,15 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, Generator, List, Optional
 
+from deprecated import deprecated
+
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
-from llama_index.core.callbacks.schema import BASE_TRACE_EVENT, EventPayload
-from llama_index.core.events.base_event import CBEvent
-from llama_index.core.events.base_event_type import CBEventType
+from llama_index.core.callbacks.schema import (
+    BASE_TRACE_EVENT,
+    CBEvent,
+    CBEventType,
+    EventPayload,
+)
 from llama_index.core.events.event_type_to_event_map import event_type_to_event
 
 logger = logging.getLogger(__name__)
@@ -70,6 +75,7 @@ class CallbackManager:
         self.handlers = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
+    @deprecated("You should call callback_manager.dispatch_event directly")
     def on_event_start(
         self,
         event_type: CBEventType,
@@ -120,6 +126,7 @@ class CallbackManager:
 
         # return event_id
 
+    @deprecated("You should call callback_manager.dispatch_event directly")
     def on_event_end(
         self,
         event_type: CBEventType,
@@ -194,6 +201,7 @@ class CallbackManager:
         """Avoids serialization errors."""
         schema.update(type="object", default={})
 
+    @deprecated("You should call callback_manager.dispatch_event directly")
     @contextmanager
     def event(
         self,

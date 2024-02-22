@@ -7,8 +7,7 @@ from typing import Any, Dict, List, Optional
 
 from deprecated import deprecated
 
-from llama_index.core.callbacks.schema import BASE_TRACE_EVENT, CBEventType
-from llama_index.core.events.base_event import CBEvent
+from llama_index.core.callbacks.schema import BASE_TRACE_EVENT, CBEvent, CBEventType
 
 logger = logging.getLogger(__name__)
 global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])

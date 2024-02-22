@@ -3,8 +3,13 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
-from llama_index.core.callbacks.schema import BASE_TRACE_EVENT, CBEventType, EventStats
-from llama_index.core.events.base_event import TIMESTAMP_FORMAT, CBEvent
+from llama_index.core.callbacks.schema import (
+    BASE_TRACE_EVENT,
+    TIMESTAMP_FORMAT,
+    CBEvent,
+    CBEventType,
+    EventStats,
+)
 
 
 class LlamaDebugHandler(BaseCallbackHandler):
@@ -60,6 +65,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         trace_map: Dict[str, List[str]] | None = None,
     ) -> None:
         self._sequential_events.append(event)
+        print("Event:", event, "trace_id:", trace_id, "trace_map:", trace_map)
 
     def on_event_start(
         self,
