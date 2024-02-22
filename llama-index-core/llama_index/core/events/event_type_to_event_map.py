@@ -42,7 +42,7 @@ from llama_index.core.events.templating_events import (
 )
 from llama_index.core.events.tree_events import TreeEndEvent, TreeStartEvent
 
-event_to_event_type: Dict[CBEventType, Dict[Literal["start", "end"], type[CBEvent]]] = {
+event_type_to_event: Dict[CBEventType, Dict[Literal["start", "end"], type[CBEvent]]] = {
     CBEventType.CHUNKING: {"start": ChunkingStartEvent, "end": ChunkingEndEvent},
     CBEventType.NODE_PARSING: {
         "start": NodeParsingStartEvent,

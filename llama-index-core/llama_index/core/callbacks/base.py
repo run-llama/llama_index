@@ -11,7 +11,7 @@ from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.callbacks.schema import BASE_TRACE_EVENT, EventPayload
 from llama_index.core.events.base_event import CBEvent
 from llama_index.core.events.base_event_type import CBEventType
-from llama_index.core.events.event_to_event_type_map import event_to_event_type
+from llama_index.core.events.event_type_to_event_map import event_type_to_event
 
 logger = logging.getLogger(__name__)
 global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
@@ -83,7 +83,7 @@ class CallbackManager:
         if (event_type is CBEventType.CUSTOM_EVENT) and (event is None):
             raise ValueError("Custom events must have an event object provided.")
         if event is None:
-            event_cls: CBEvent = event_to_event_type[event_type]["start"]
+            event_cls: CBEvent = event_type_to_event[event_type]["start"]
             event = (
                 event_cls(event_type=event_type, **payload)
                 if payload
@@ -132,7 +132,7 @@ class CallbackManager:
         if (event_type is CBEventType.CUSTOM_EVENT) and (event is None):
             raise ValueError("Custom events must have an event object provided.")
         if event is None:
-            event_cls: CBEvent = event_to_event_type[event_type]["end"]
+            event_cls: CBEvent = event_type_to_event[event_type]["end"]
             event = (
                 event_cls(event_type=event_type, **payload)
                 if payload
@@ -210,7 +210,7 @@ class CallbackManager:
                 ...
                 event.on_end(payload={key, val})  # optional
         """
-        # start_event_cls: CBEvent = event_to_event_type[event_type]["start"]
+        # start_event_cls: CBEvent = event_type_to_event[event_type]["start"]
         # start_event = (
         #     start_event_cls(event_type=event_type, **payload)
         #     if payload

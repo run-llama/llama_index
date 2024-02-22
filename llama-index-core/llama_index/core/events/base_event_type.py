@@ -3,7 +3,7 @@ from enum import Enum
 from deprecated import deprecated
 
 
-@deprecated("Since each event now has its o")
+@deprecated("Since each event now has its own class now")
 class CBEventType(str, Enum):
     """Callback manager event types.
 
