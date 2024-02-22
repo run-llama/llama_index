@@ -25,15 +25,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index embeddings azure openai integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-azure-openai"
 readme = "README.md"
-version = "0.1.4"
+version = "0.1.6"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
-llama-index-core = "^0.10.1"
-llama-index-llms-azure-openai = "^0.1.1"
+python = ">=3.8.1,<4.0"
+llama-index-core = "^0.10.11.post1"
+llama-index-llms-azure-openai = "^0.1.3"
 llama-index-embeddings-openai = "^0.1.3"
 
 [tool.poetry.group.dev.dependencies]

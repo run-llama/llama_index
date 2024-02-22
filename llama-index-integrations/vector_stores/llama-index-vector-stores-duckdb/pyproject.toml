@@ -23,11 +23,12 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Adithya Krishnan <me@krishadi.com>"]
 description = "llama-index vector_stores duckdb integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 maintainers = ["krish-adi"]
 name = "llama-index-vector-stores-duckdb"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
