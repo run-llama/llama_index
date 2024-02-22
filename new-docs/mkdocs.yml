@@ -1,0 +1,75 @@
+site_name: LlamaIndex
+theme:
+  name: material
+  features:
+    - navigation.instant
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - md_in_html
+extra_css:
+  - css/style.css
+extra_javascript:
+  - javascript/llms_example.js
+plugins:
+  - mkdocs-jupyter:
+      execute: false
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - ../llama-index-core
+            - ../llama-index-integrations/llms/llama-index-llms-neutrino/
+            - ../llama-index-integrations/llms/llama-index-llms-replicate/
+            - ../llama-index-integrations/llms/llama-index-llms-langchain/
+            - ../llama-index-integrations/llms/llama-index-llms-vertex/
+            - ../llama-index-integrations/llms/llama-index-llms-ollama/
+            - ../llama-index-integrations/llms/llama-index-llms-together/
+            - ../llama-index-integrations/llms/llama-index-llms-cohere/
+            - ../llama-index-integrations/llms/llama-index-llms-gemini/
+            - ../llama-index-integrations/llms/llama-index-llms-watsonx/
+            - ../llama-index-integrations/llms/llama-index-llms-dashscope/
+            - ../llama-index-integrations/llms/llama-index-llms-mistralai/
+            - ../llama-index-integrations/llms/llama-index-llms-monsterapi/
+            - ../llama-index-integrations/llms/llama-index-llms-predibase/
+            - ../llama-index-integrations/llms/llama-index-llms-clarifai/
+            - ../llama-index-integrations/llms/llama-index-llms-maritalk/
+            - ../llama-index-integrations/llms/llama-index-llms-huggingface/
+            - ../llama-index-integrations/llms/llama-index-llms-openai/
+            - ../llama-index-integrations/llms/llama-index-llms-anthropic/
+            - ../llama-index-integrations/llms/llama-index-llms-nvidia-triton/
+            - ../llama-index-integrations/llms/llama-index-llms-gradient/
+            - ../llama-index-integrations/llms/llama-index-llms-sagemaker-endpoint/
+            - ../llama-index-integrations/llms/llama-index-llms-portkey/
+            - ../llama-index-integrations/llms/llama-index-llms-everlyai/
+            - ../llama-index-integrations/llms/llama-index-llms-nvidia-tensorrt/
+            - ../llama-index-integrations/llms/llama-index-llms-mymagic/
+            - ../llama-index-integrations/llms/llama-index-llms-localai/
+            - ../llama-index-integrations/llms/llama-index-llms-ai21/
+            - ../llama-index-integrations/llms/llama-index-llms-llama-cpp/
+            - ../llama-index-integrations/llms/llama-index-llms-litellm/
+            - ../llama-index-integrations/llms/llama-index-llms-rungpt/
+            - ../llama-index-integrations/llms/llama-index-llms-anyscale/
+            - ../llama-index-integrations/llms/llama-index-llms-perplexity/
+            - ../llama-index-integrations/llms/llama-index-llms-bedrock/
+            - ../llama-index-integrations/llms/llama-index-llms-vllm/
+            - ../llama-index-integrations/llms/llama-index-llms-konko/
+            - ../llama-index-integrations/llms/llama-index-llms-azure-openai/
+            - ../llama-index-integrations/llms/llama-index-llms-openrouter/
+            - ../llama-index-integrations/llms/llama-index-llms-openllm/
+            - ../llama-index-integrations/llms/llama-index-llms-palm/
+            - ../llama-index-integrations/llms/llama-index-llms-xinference/
+            - ../llama-index-integrations/llms/llama-index-llms-llama-api/
+            - ../llama-index-integrations/llms/llama-index-llms-openai-like/
+          options:
+            docstring_style: numpy
+            members_order: source
+            separate_signature: true
+            filters: ["!^_", "!^__init__"]
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            show_root_toc_entry: false
