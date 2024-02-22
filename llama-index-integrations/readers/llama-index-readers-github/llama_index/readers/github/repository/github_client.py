@@ -272,6 +272,7 @@ class GithubClient:
         method: str,
         headers: Dict[str, Any] = {},
         timeout: Optional[int] = 5,
+        retries: int = 0,
         **kwargs: Any,
     ) -> Any:
         """
@@ -285,6 +286,7 @@ class GithubClient:
             - `method (str)`: HTTP method to use for the request.
             - `headers (dict)`: HTTP headers to include in the request.
             - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
             - `**kwargs`: Keyword arguments to pass to the endpoint URL.
 
         Returns:
@@ -297,7 +299,7 @@ class GithubClient:
         Examples:
             >>> response = client.request("getTree", "GET",
                                 owner="owner", repo="repo",
-                                tree_sha="tree_sha", timeout=5)
+                                tree_sha="tree_sha", timeout=5, retries=0)
         """
         try:
             import httpx
@@ -314,6 +316,7 @@ class GithubClient:
             headers=_headers,
             base_url=self._base_url,
             timeout=timeout,
+            transport=httpx.AsyncHTTPTransport(retries=retries),
         ) as _client:
             try:
                 response = await _client.request(
@@ -331,6 +334,7 @@ class GithubClient:
         branch: Optional[str] = None,
         branch_name: Optional[str] = None,
         timeout: Optional[int] = 5,
+        retries: int = 0,
     ) -> GitBranchResponseModel:
         """
         Get information about a branch. (Github API endpoint: getBranch).
@@ -339,6 +343,9 @@ class GithubClient:
             - `owner (str)`: Owner of the repository.
             - `repo (str)`: Name of the repository.
             - `branch (str)`: Name of the branch.
+            - `branch_name (str)`: Name of the branch (alternative to `branch`).
+            - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
 
         Returns:
             - `branch_info (GitBranchResponseModel)`: Information about the branch.
@@ -360,6 +367,7 @@ class GithubClient:
                     repo=repo,
                     branch=branch,
                     timeout=timeout,
+                    retries=retries,
                 )
             ).text
         )
@@ -370,6 +378,7 @@ class GithubClient:
         repo: str,
         tree_sha: str,
         timeout: Optional[int] = 5,
+        retries: int = 0,
     ) -> GitTreeResponseModel:
         """
         Get information about a tree. (Github API endpoint: getTree).
@@ -379,6 +388,7 @@ class GithubClient:
             - `repo (str)`: Name of the repository.
             - `tree_sha (str)`: SHA of the tree.
             - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
 
         Returns:
             - `tree_info (GitTreeResponseModel)`: Information about the tree.
@@ -395,6 +405,7 @@ class GithubClient:
                     repo=repo,
                     tree_sha=tree_sha,
                     timeout=timeout,
+                    retries=retries,
                 )
             ).text
         )
@@ -405,6 +416,7 @@ class GithubClient:
         repo: str,
         file_sha: str,
         timeout: Optional[int] = 5,
+        retries: int = 0,
     ) -> Optional[GitBlobResponseModel]:
         """
         Get information about a blob. (Github API endpoint: getBlob).
@@ -414,6 +426,7 @@ class GithubClient:
             - `repo (str)`: Name of the repository.
             - `file_sha (str)`: SHA of the file.
             - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
 
         Returns:
             - `blob_info (GitBlobResponseModel)`: Information about the blob.
@@ -431,6 +444,7 @@ class GithubClient:
                         repo=repo,
                         file_sha=file_sha,
                         timeout=timeout,
+                        retries=retries,
                     )
                 ).text
             )
@@ -444,6 +458,7 @@ class GithubClient:
         repo: str,
         commit_sha: str,
         timeout: Optional[int] = 5,
+        retries: int = 0,
     ) -> GitCommitResponseModel:
         """
         Get information about a commit. (Github API endpoint: getCommit).
@@ -453,6 +468,7 @@ class GithubClient:
             - `repo (str)`: Name of the repository.
             - `commit_sha (str)`: SHA of the commit.
             - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
 
         Returns:
             - `commit_info (GitCommitResponseModel)`: Information about the commit.
@@ -469,6 +485,7 @@ class GithubClient:
                     repo=repo,
                     commit_sha=commit_sha,
                     timeout=timeout,
+                    retries=retries,
                 )
             ).text
         )

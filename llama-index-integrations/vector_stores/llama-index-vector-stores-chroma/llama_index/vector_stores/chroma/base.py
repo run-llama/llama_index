@@ -1,4 +1,5 @@
 """Chroma vector store."""
+
 import logging
 import math
 from typing import Any, Dict, Generator, List, Optional, cast
@@ -143,6 +144,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        collection_kwargs = collection_kwargs or {}
         if chroma_collection is None:
             client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
             self._collection = client.get_or_create_collection(
