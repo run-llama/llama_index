@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Optional, Sequence
-
+import torch
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -110,7 +110,6 @@ class ModelScopeLLM(CustomLLM):
     )
 
     _pipeline: Any = PrivateAttr()
-    import torch  # for ut
 
     def __init__(
         self,
