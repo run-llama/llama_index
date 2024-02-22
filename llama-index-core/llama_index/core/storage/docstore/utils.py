@@ -27,15 +27,15 @@ def json_to_doc(doc_dict: dict) -> BaseNode:
         return legacy_json_to_doc(doc_dict)
     else:
         if doc_type == Document.get_type():
-            doc = Document.parse_obj(data_dict)
+            doc = Document.from_dict(data_dict)
         elif doc_type == ImageDocument.get_type():
-            doc = ImageDocument.parse_obj(data_dict)
+            doc = ImageDocument.from_dict(data_dict)
         elif doc_type == TextNode.get_type():
-            doc = TextNode.parse_obj(data_dict)
+            doc = TextNode.from_dict(data_dict)
         elif doc_type == ImageNode.get_type():
-            doc = ImageNode.parse_obj(data_dict)
+            doc = ImageNode.from_dict(data_dict)
         elif doc_type == IndexNode.get_type():
-            doc = IndexNode.parse_obj(data_dict)
+            doc = IndexNode.from_dict(data_dict)
         else:
             raise ValueError(f"Unknown doc type: {doc_type}")
 

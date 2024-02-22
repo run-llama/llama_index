@@ -38,6 +38,10 @@ def build_nodes_from_splits(
     ref_doc = ref_doc or document
     id_func = id_func or default_id_func
     nodes: List[TextNode] = []
+    """Calling as_related_node_info() on a document recomputes the hash for the whole text and metadata"""
+    """It is not that bad, when creating relationships between the nodes, but is terrible when adding a relationship"""
+    """between the node and a document, hence we create the relationship only once here and pass it to the nodes"""
+    relationships = {NodeRelationship.SOURCE: ref_doc.as_related_node_info()}
     for i, text_chunk in enumerate(text_splits):
         logger.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
 
@@ -54,7 +58,7 @@ def build_nodes_from_splits(
                 metadata_seperator=document.metadata_seperator,
                 metadata_template=document.metadata_template,
                 text_template=document.text_template,
-                relationships={NodeRelationship.SOURCE: ref_doc.as_related_node_info()},
+                relationships=relationships,
             )
             nodes.append(image_node)  # type: ignore
         elif isinstance(document, Document):
@@ -67,7 +71,7 @@ def build_nodes_from_splits(
                 metadata_seperator=document.metadata_seperator,
                 metadata_template=document.metadata_template,
                 text_template=document.text_template,
-                relationships={NodeRelationship.SOURCE: ref_doc.as_related_node_info()},
+                relationships=relationships,
             )
             nodes.append(node)
         elif isinstance(document, TextNode):
@@ -80,7 +84,7 @@ def build_nodes_from_splits(
                 metadata_seperator=document.metadata_seperator,
                 metadata_template=document.metadata_template,
                 text_template=document.text_template,
-                relationships={NodeRelationship.SOURCE: ref_doc.as_related_node_info()},
+                relationships=relationships,
             )
             nodes.append(node)
         else:

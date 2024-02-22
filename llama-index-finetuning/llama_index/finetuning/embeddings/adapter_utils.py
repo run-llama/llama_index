@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Type
 import torch
 import transformers
 from llama_index.core.utils import print_text
-from llama_index.embeddings.adapter.utils import BaseAdapter
+from llama_index.embeddings.adapter import BaseAdapter
 from sentence_transformers.util import cos_sim
 from torch import Tensor, nn
 from torch.optim import Optimizer

@@ -1,10 +1,81 @@
 # ChangeLog
 
+## [0.10.11] - 2024-02-21
+
+### Bug Fixes / Nits
+
+- Fixed multi-modal LLM for async acomplete (#11064)
+- Fixed issue with llamaindex-cli imports (#11068)
+
+## [0.10.10] - 2024-02-20
+
+I'm still a bit wonky with our publishing process -- apologies. This is just a version
+bump to ensure the changes that were supposed to happen in 0.10.9 actually
+did get published. (AF)
+
+## [0.10.9] - 2024-02-20
+
+- add llama-index-cli dependency
+
+## [0.10.7] - 2024-02-19
+
+### New Features
+
+- Added Self-Discover llamapack (#10951)
+
+### Bug Fixes / Nits
+
+- Fixed linting in CICD (#10945)
+- Fixed using remote graph stores (#10971)
+- Added missing LLM kwarg in NoText response synthesizer (#10971)
+- Fixed openai import in rankgpt (#10971)
+- Fixed resolving model name to string in openai embeddings (#10971)
+- Off by one error in sentence window node parser (#10971)
+
+## [0.10.6] - 2024-02-17
+
+First, apologies for missing the changelog the last few versions. Trying to figure out the best process with 400+ packages.
+
+At some point, each package will have a dedicated changelog.
+
+But for now, onto the "master" changelog.
+
+### New Features
+
+- Added `NomicHFEmbedding` (#10762)
+- Added `MinioReader` (#10744)
+
+### Bug Fixes / Nits
+
+- Various fixes for clickhouse vector store (#10799)
+- Fix index name in neo4j vector store (#10749)
+- Fixes to sagemaker embeddings (#10778)
+- Fixed performance issues when splitting nodes (#10766)
+- Fix non-float values in reranker + b25 (#10930)
+- OpenAI-agent should be a dep of openai program (#10930)
+- Add missing shortcut imports for query pipeline components (#10930)
+- Fix NLTK and tiktoken not being bundled properly with core (#10930)
+- Add back `llama_index.core.__version__` (#10930)
+
+## [0.10.3] - 2024-02-13
+
+### Bug Fixes / Nits
+
+- Fixed passing in LLM to `as_chat_engine` (#10605)
+- Fixed system prompt formatting for anthropic (#10603)
+- Fixed elasticsearch vector store error on `__version__` (#10656)
+- Fixed import on openai pydantic program (#10657)
+- Added client back to opensearch vector store exports (#10660)
+- Fixed bug in SimpleDirectoryReader not using file loaders properly (#10655)
+- Added lazy LLM initialization to RankGPT (#10648)
+- Fixed bedrock embedding `from_credentials` passing ing the model name (#10640)
+- Added back recent changes to TelegramReader (#10625)
+
 ## [0.10.0, 0.10.1] - 2024-02-12
 
 ### Breaking Changes
 
-- Several changes are introduced. See the [full blog post](https://blog.llamaindex.ai/llamaindex-v0-10-838e735948f8) for complete deatils.
+- Several changes are introduced. See the [full blog post](https://blog.llamaindex.ai/llamaindex-v0-10-838e735948f8) for complete details.
 
 ## [0.9.48] - 2024-02-12
 

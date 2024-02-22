@@ -149,7 +149,7 @@ def get_form_by_ticker(
 
 
 def _form_types(form_type: str, allow_amended_filing: Optional[bool] = True):
-    """Potentialy expand to include amended filing, e.g.:
+    """Potentially expand to include amended filing, e.g.:
     "10-Q" -> "10-Q/A".
     """
     assert form_type in VALID_FILING_TYPES
@@ -168,7 +168,7 @@ def get_form_by_cik(
 ) -> str:
     """For a given CIK, returns the most recent form of a given form_type. By default
     an amended version of the form_type may be retrieved (allow_amended_filing=True).
-    E.g., if form_type is "10-Q", the retrived form could be a 10-Q or 10-Q/A.
+    E.g., if form_type is "10-Q", the retrieved form could be a 10-Q or 10-Q/A.
     """
     session = _get_session(company, email)
     acc_num, _ = _get_recent_acc_num_by_cik(

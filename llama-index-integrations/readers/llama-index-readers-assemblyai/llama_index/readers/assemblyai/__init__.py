@@ -1,3 +1,6 @@
-from llama_index.readers.assemblyai.base import AssemblyAIAudioTranscriptReader
+from llama_index.readers.assemblyai.base import (
+    AssemblyAIAudioTranscriptReader,
+    TranscriptFormat,
+)
 
-__all__ = ["AssemblyAIAudioTranscriptReader"]
+__all__ = ["AssemblyAIAudioTranscriptReader", "TranscriptFormat"]

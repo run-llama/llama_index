@@ -70,7 +70,7 @@ response = weaviate_pack.run("Tell me a bout a Music celebritiy.")
 You can also use modules individually.
 
 ```python
-# use the retreiver
+# use the retriever
 retriever = weaviate_pack.retriever
 nodes = retriever.retrieve("query_str")
 

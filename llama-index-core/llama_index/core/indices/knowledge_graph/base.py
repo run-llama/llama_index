@@ -138,6 +138,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             object_map=self._object_map,
             llm=self._llm,
             embed_model=embed_model or self._embed_model,
+            retriever_mode=retriever_mode,
             **kwargs,
         )
 
@@ -240,17 +241,28 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                     rel_embedding = self._embed_model.get_text_embedding(triplet_str)
                     self._index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
 
-    def upsert_triplet(self, triplet: Tuple[str, str, str]) -> None:
-        """Insert triplets.
+        # Update the storage context's index_store
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+
+    def upsert_triplet(
+        self, triplet: Tuple[str, str, str], include_embeddings: bool = False
+    ) -> None:
+        """Insert triplets and optionally embeddings.
 
         Used for manual insertion of KG triplets (in the form
         of (subject, relationship, object)).
 
         Args:
-            triplet (str): Knowledge triplet
-
+            triplet (tuple): Knowledge triplet
+            embedding (Any, optional): Embedding option for the triplet. Defaults to None.
         """
         self._graph_store.upsert_triplet(*triplet)
+        triplet_str = str(triplet)
+        if include_embeddings:
+            set_embedding = self._service_context.embed_model.get_text_embedding(
+                triplet_str
+            )
+            self._index_struct.add_to_embedding_dict(str(triplet), set_embedding)
 
     def add_node(self, keywords: List[str], node: BaseNode) -> None:
         """Add node.
@@ -266,7 +278,10 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         self._docstore.add_documents([node], allow_update=True)
 
     def upsert_triplet_and_node(
-        self, triplet: Tuple[str, str, str], node: BaseNode
+        self,
+        triplet: Tuple[str, str, str],
+        node: BaseNode,
+        include_embeddings: bool = False,
     ) -> None:
         """Upsert KG triplet and node.
 
@@ -277,11 +292,18 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         Args:
             keywords (List[str]): Keywords to index the node.
             node (Node): Node to be indexed.
+            include_embeddings (bool): Option to add embeddings for triplets. Defaults to False
 
         """
         subj, _, obj = triplet
         self.upsert_triplet(triplet)
         self.add_node([subj, obj], node)
+        triplet_str = str(triplet)
+        if include_embeddings:
+            set_embedding = self._service_context.embed_model.get_text_embedding(
+                triplet_str
+            )
+            self._index_struct.add_to_embedding_dict(str(triplet), set_embedding)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""

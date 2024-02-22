@@ -59,7 +59,7 @@ class GoogleDriveReader(BaseReader):
             So, we need two files:
                 1. credentials.json
                 2. client_secrets.json
-            Both 1, 2 are esentially same but needed with two different names according to google-api-python-client, google-auth-httplib2, google-auth-oauthlib and pydrive libraries.
+            Both 1, 2 are essentially same but needed with two different names according to google-api-python-client, google-auth-httplib2, google-auth-oauthlib and pydrive libraries.
 
         Returns:
             credentials, pydrive object.

@@ -4,12 +4,13 @@ import json
 import logging
 from enum import auto
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
-
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+
 from llama_index.core.vector_stores.types import (
     ExactMatchFilter,
+    BasePydanticVectorStore,
     MetadataFilters,
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -19,6 +20,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents import SearchClient
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +49,23 @@ class IndexManagement(int, enum.Enum):
     CREATE_IF_NOT_EXISTS = auto()
 
 
-class AzureAISearchVectorStore(VectorStore):
+class AzureAISearchVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
+
+    _index_client: SearchIndexClient = PrivateAttr()
+    _search_client: SearchClient = PrivateAttr()
+    _embedding_dimensionality: int = PrivateAttr()
+    _language_analyzer: str = PrivateAttr()
+    _field_mapping: Dict[str, str] = PrivateAttr()
+    _index_management: IndexManagement = PrivateAttr()
+    _index_mapping: Callable[
+        [Dict[str, str], Dict[str, Any]], Dict[str, str]
+    ] = PrivateAttr()
+    _metadata_to_index_field_map: Dict[
+        str, Tuple[str, MetadataIndexFieldType]
+    ] = PrivateAttr()
+    _vector_profile_name: str = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
         self,
@@ -143,14 +161,14 @@ class AzureAISearchVectorStore(VectorStore):
             SearchableField(
                 name=self._field_mapping["chunk"],
                 type="Edm.String",
-                analyzer_name="en.microsoft",
+                analyzer_name=self._language_analyzer,
             ),
             SearchField(
                 name=self._field_mapping["embedding"],
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
-                vector_search_dimensions=self.embedding_dimensionality,
-                vector_search_profile_name="default",
+                vector_search_dimensions=self._embedding_dimensionality,
+                vector_search_profile_name=self._vector_profile_name,
             ),
             SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
@@ -243,6 +261,10 @@ class AzureAISearchVectorStore(VectorStore):
         ] = None,
         index_management: IndexManagement = IndexManagement.NO_VALIDATION,
         embedding_dimensionality: int = 1536,
+        vector_algorithm_type: str = "exhaustiveKnn",
+        # If we have content in other languages, it is better to enable the language analyzer to be adjusted in searchable fields.
+        # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
+        language_analyzer: str = "en.lucene",
         **kwargs: Any,
     ) -> None:
         # ruff: noqa: E501
@@ -304,7 +326,18 @@ class AzureAISearchVectorStore(VectorStore):
 
         self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
         self._search_client: SearchClient = cast(SearchClient, None)
-        self.embedding_dimensionality = embedding_dimensionality
+        self._embedding_dimensionality = embedding_dimensionality
+
+        if vector_algorithm_type == "exhaustiveKnn":
+            self._vector_profile_name = "myExhaustiveKnnProfile"
+        elif vector_algorithm_type == "hnsw":
+            self._vector_profile_name = "myHnswProfile"
+        else:
+            raise ValueError(
+                "Only 'exhaustiveKnn' and 'hnsw' are supported for vector_algorithm_type"
+            )
+
+        self._language_analyzer = language_analyzer
 
         # Validate search_or_index_client
         if search_or_index_client is not None:
@@ -379,6 +412,8 @@ class AzureAISearchVectorStore(VectorStore):
 
         if self._index_management == IndexManagement.VALIDATE_INDEX:
             self._validate_index(index_name)
+
+        super().__init__()
 
     @property
     def client(self) -> Any:

@@ -1,4 +1,5 @@
 """Init file."""
+
 from llama_index.core.query_pipeline.components.agent import (
     AgentFnComponent,
     AgentInputComponent,
@@ -6,7 +7,10 @@ from llama_index.core.query_pipeline.components.agent import (
     QueryComponent,
 )
 from llama_index.core.query_pipeline.components.argpacks import ArgPackComponent
-from llama_index.core.query_pipeline.components.function import FnComponent
+from llama_index.core.query_pipeline.components.function import (
+    FnComponent,
+    FunctionComponent,
+)
 from llama_index.core.query_pipeline.components.input import InputComponent
 from llama_index.core.query_pipeline.components.router import RouterComponent
 from llama_index.core.query_pipeline.components.tool_runner import ToolRunnerComponent
@@ -25,6 +29,7 @@ __all__ = [
     "AgentInputComponent",
     "ArgPackComponent",
     "FnComponent",
+    "FunctionComponent",
     "InputComponent",
     "RouterComponent",
     "ToolRunnerComponent",

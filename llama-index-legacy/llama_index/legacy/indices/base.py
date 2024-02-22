@@ -67,7 +67,11 @@ class BaseIndex(Generic[IS], ABC):
         self._graph_store = self._storage_context.graph_store
 
         objects = objects or []
-        self._object_map = {obj.index_id: obj.obj for obj in objects}
+        self._object_map = {}
+        for obj in objects:
+            self._object_map[obj.index_id] = obj.obj
+            obj.obj = None  # clear the object avoid serialization issues
+
         with self._service_context.callback_manager.as_trace("index_construction"):
             if index_struct is None:
                 nodes = nodes or []

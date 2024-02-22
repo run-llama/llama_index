@@ -28,7 +28,7 @@ class TextToImageToolSpec(BaseToolSpec):
             n (int): The number of images to generate. Defaults to 1.
             size (str): The size of the image(s) to generate. Defaults to 256x256. Other accepted values are 1024x1024 and 512x512
 
-        When handling the urls returned from this function, NEVER strip any parameters or try to modify the url, they are nessecary for authorization to view the image
+        When handling the urls returned from this function, NEVER strip any parameters or try to modify the url, they are necessary for authorization to view the image
         """
         try:
             response = openai.Image.create(prompt=prompt, n=n, size=size)
@@ -70,4 +70,4 @@ class TextToImageToolSpec(BaseToolSpec):
         for url in urls:
             plt.figure()
             plt.imshow(Image.open(BytesIO(requests.get(url).content)))
-        return "images rendered succesfully"
+        return "images rendered successfully"

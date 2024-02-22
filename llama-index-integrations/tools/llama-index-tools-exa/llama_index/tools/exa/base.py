@@ -47,7 +47,7 @@ class ExaToolSpec(BaseToolSpec):
         Args:
             query (str): A natural language query phrased as an answer for what the link provides, ie: "This is the latest news about space:"
             num_results (Optional[int]): Number of results to return. Defaults to 10.
-            include_domains (Optional[List(str)]): A list of top level domains like ["wsj.com"] to limit the search to specfic sites.
+            include_domains (Optional[List(str)]): A list of top level domains like ["wsj.com"] to limit the search to specific sites.
             exclude_domains (Optional[List(str)]): Top level domains to exclude.
             start_published_date (Optional[str]): A date string like "2020-06-15". Get the date from `current_date`
             end_published_date (Optional[str]): End date string

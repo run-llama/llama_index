@@ -50,7 +50,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
     ) -> None:
         """Init params."""
         import torch
-        from llama_index.finetuning.embeddings.adapter_utils import (
+        from llama_index.embeddings.adapter import (
             BaseAdapter,
             LinearLayer,
         )
@@ -108,7 +108,7 @@ class EmbeddingAdapterFinetuneEngine(BaseEmbeddingFinetuneEngine):
             **kwargs (Any): Additional kwargs (see __init__)
 
         """
-        from llama_index.finetuning.embeddings.adapter_utils import LinearLayer
+        from llama_index.embeddings.adapter import LinearLayer
 
         model_cls = model_cls or LinearLayer
         model = model_cls.load(model_path)

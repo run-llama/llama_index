@@ -1,6 +1,6 @@
 # Memos Loader
 
-This loader fetchs text from self-hosted [memos](https://github.com/usememos/memos).
+This loader fetches text from self-hosted [memos](https://github.com/usememos/memos).
 
 ## Usage
 
