@@ -117,4 +117,4 @@ def init_new_package(
     common_path = os.path.join(script_path, "common")
     shutil.copyfile(common_path + "/.gitignore", pkg_path + "/.gitignore")
     shutil.copyfile(common_path + "/Makefile", pkg_path + "/Makefile")
-    shutil.copyfile(common_path + "/BUILD", pkg_path + "/BUILD")
+    shutil.copyfile(common_path + "/_build", pkg_path + "/BUILD")
