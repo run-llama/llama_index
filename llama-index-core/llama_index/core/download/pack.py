@@ -18,10 +18,10 @@ from llama_index.core.download.utils import (
 )
 
 LLAMA_PACKS_CONTENTS_URL = (
-    f"https://raw.githubusercontent.com/run-llama/llama_index/main/llama-index-packs"
+    "https://raw.githubusercontent.com/run-llama/llama_index/main/llama-index-packs"
 )
 LLAMA_PACKS_SOURCE_FILES_GITHUB_TREE_URL = (
-    f"https://github.com/run-llama/llama_index/tree/main"
+    "https://github.com/run-llama/llama_index/tree/main"
 )
 PY_NAMESPACE = "llama_index/packs"
 
