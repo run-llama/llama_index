@@ -1,5 +1,22 @@
 # ChangeLog
 
+## [0.10.11] - 2024-02-21
+
+### Bug Fixes / Nits
+
+- Fixed multi-modal LLM for async acomplete (#11064)
+- Fixed issue with llamaindex-cli imports (#11068)
+
+## [0.10.10] - 2024-02-20
+
+I'm still a bit wonky with our publishing process -- apologies. This is just a version
+bump to ensure the changes that were supposed to happen in 0.10.9 actually
+did get published. (AF)
+
+## [0.10.9] - 2024-02-20
+
+- add llama-index-cli dependency
+
 ## [0.10.7] - 2024-02-19
 
 ### New Features

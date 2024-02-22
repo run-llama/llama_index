@@ -150,6 +150,15 @@ maxdepth: 1
 /examples/llm/localai.ipynb
 ```
 
+## MariTalk
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/maritalk.ipynb
+```
+
 ## MistralAI
 
 ```{toctree}

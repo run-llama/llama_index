@@ -187,7 +187,7 @@ class GradientAIFineTuningHandler(BaseFinetuningHandler):
         },
         ...
         """
-        from llama_index.core.llms.generic_utils import messages_to_history_str
+        from llama_index.core.base.llms.generic_utils import messages_to_history_str
 
         events_dict = self.get_finetuning_events()
         json_strs = []

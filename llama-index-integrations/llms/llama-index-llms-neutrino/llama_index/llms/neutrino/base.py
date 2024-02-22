@@ -6,7 +6,7 @@ from llama_index.core.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.core.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.openai_like import OpenAILike
 
 DEFAULT_API_BASE = "https://router.neutrinoapp.com/api/llm-router"

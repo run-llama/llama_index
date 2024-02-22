@@ -23,6 +23,7 @@ class MyMagicAI(LLM):
     max_tokens: int = Field(
         default=10, description="The maximum number of tokens to generate."
     )
+    question = Field(default="", description="The user question.")
     storage_provider: str = Field(
         default="gcs", description="The storage provider to use."
     )
@@ -105,11 +106,17 @@ class MyMagicAI(LLM):
             return resp.json()
 
     async def acomplete(
-        self, question: str, model: str, max_tokens: int, poll_interval: float = 1.0
+        self,
+        question: str,
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        poll_interval: float = 1.0,
     ) -> CompletionResponse:
         self.question_data["question"] = question
-        self.question_data["model"] = model
-        self.question_data["max_tokens"] = max_tokens
+        self.model = self.question_data["model"] = model or self.model
+        self.max_tokens = self.question_data["max_tokens"] = (
+            max_tokens or self.max_tokens
+        )
 
         task_response = await self._submit_question(self.question_data)
         task_id = task_response.get("task_id")
@@ -120,11 +127,17 @@ class MyMagicAI(LLM):
             await asyncio.sleep(poll_interval)
 
     def complete(
-        self, question: str, model: str, max_tokens: int, poll_interval: float = 1.0
+        self,
+        question: str,
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        poll_interval: float = 1.0,
     ) -> CompletionResponse:
         self.question_data["question"] = question
-        self.question_data["model"] = model
-        self.question_data["max_tokens"] = max_tokens
+        self.model = self.question_data["model"] = model or self.model
+        self.max_tokens = self.question_data["max_tokens"] = (
+            max_tokens or self.max_tokens
+        )
 
         task_response = self._submit_question_sync(self.question_data)
         task_id = task_response.get("task_id")
