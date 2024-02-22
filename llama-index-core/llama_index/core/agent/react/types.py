@@ -1,7 +1,7 @@
 """Base types for ReAct agent."""
 
 from abc import abstractmethod
-from typing import Dict
+from typing import Any, Dict
 
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -24,7 +24,7 @@ class ActionReasoningStep(BaseReasoningStep):
 
     thought: str
     action: str
-    action_input: Dict
+    action_input: Dict[str, Any]
 
     def get_content(self) -> str:
         """Get content."""

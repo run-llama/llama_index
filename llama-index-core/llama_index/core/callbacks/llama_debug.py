@@ -3,13 +3,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
-from llama_index.core.callbacks.schema import (
-    BASE_TRACE_EVENT,
-    TIMESTAMP_FORMAT,
-    CBEvent,
-    CBEventType,
-    EventStats,
-)
+from llama_index.core.callbacks.schema import BASE_TRACE_EVENT, CBEventType, EventStats
+from llama_index.core.events.base_event import TIMESTAMP_FORMAT, CBEvent
 
 
 class LlamaDebugHandler(BaseCallbackHandler):
@@ -29,6 +24,13 @@ class LlamaDebugHandler(BaseCallbackHandler):
 
     """
 
+    _event_pairs_by_type: Dict[CBEventType, List[CBEvent]]
+    _event_pairs_by_id: Dict[str, List[CBEvent]]
+    _sequential_events: List[CBEvent]
+    _cur_trace_id: Optional[str]
+    _trace_map: Dict[str, List[str]]
+    print_trace_on_end: bool
+
     def __init__(
         self,
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
@@ -36,12 +38,6 @@ class LlamaDebugHandler(BaseCallbackHandler):
         print_trace_on_end: bool = True,
     ) -> None:
         """Initialize the llama debug handler."""
-        self._event_pairs_by_type: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
-        self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
-        self._sequential_events: List[CBEvent] = []
-        self._cur_trace_id: Optional[str] = None
-        self._trace_map: Dict[str, List[str]] = defaultdict(list)
-        self.print_trace_on_end = print_trace_on_end
         event_starts_to_ignore = (
             event_starts_to_ignore if event_starts_to_ignore else []
         )
@@ -50,6 +46,20 @@ class LlamaDebugHandler(BaseCallbackHandler):
             event_starts_to_ignore=event_starts_to_ignore,
             event_ends_to_ignore=event_ends_to_ignore,
         )
+        self._event_pairs_by_type: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
+        self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
+        self._sequential_events: List[CBEvent] = []
+        self._cur_trace_id: Optional[str] = None
+        self._trace_map: Dict[str, List[str]] = defaultdict(list)
+        self.print_trace_on_end = print_trace_on_end
+
+    def on_event(
+        self,
+        event: CBEvent,
+        trace_id: str | None = None,
+        trace_map: Dict[str, List[str]] | None = None,
+    ) -> None:
+        self._sequential_events.append(event)
 
     def on_event_start(
         self,
@@ -59,20 +69,21 @@ class LlamaDebugHandler(BaseCallbackHandler):
         parent_id: str = "",
         **kwargs: Any,
     ) -> str:
-        """Store event start data by event type.
+        # """Store event start data by event type.
 
-        Args:
-            event_type (CBEventType): event type to store.
-            payload (Optional[Dict[str, Any]]): payload to store.
-            event_id (str): event id to store.
-            parent_id (str): parent event id.
+        # Args:
+        #     event_type (CBEventType): event type to store.
+        #     payload (Optional[Dict[str, Any]]): payload to store.
+        #     event_id (str): event id to store.
+        #     parent_id (str): parent event id.
 
-        """
-        event = CBEvent(event_type, payload=payload, id_=event_id)
-        self._event_pairs_by_type[event.event_type].append(event)
-        self._event_pairs_by_id[event.id_].append(event)
-        self._sequential_events.append(event)
-        return event.id_
+        # """
+        # event = CBEvent(event_type, payload=payload, id_=event_id)
+        # self._event_pairs_by_type[event.event_type].append(event)
+        # self._event_pairs_by_id[event.id_].append(event)
+        # self._sequential_events.append(event)
+        # return event.id_
+        return ""
 
     def on_event_end(
         self,
@@ -81,19 +92,20 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_id: str = "",
         **kwargs: Any,
     ) -> None:
-        """Store event end data by event type.
+        # """Store event end data by event type.
 
-        Args:
-            event_type (CBEventType): event type to store.
-            payload (Optional[Dict[str, Any]]): payload to store.
-            event_id (str): event id to store.
+        # Args:
+        #     event_type (CBEventType): event type to store.
+        #     payload (Optional[Dict[str, Any]]): payload to store.
+        #     event_id (str): event id to store.
 
-        """
-        event = CBEvent(event_type, payload=payload, id_=event_id)
-        self._event_pairs_by_type[event.event_type].append(event)
-        self._event_pairs_by_id[event.id_].append(event)
-        self._sequential_events.append(event)
-        self._trace_map = defaultdict(list)
+        # """
+        # event = CBEvent(event_type, payload=payload, id_=event_id)
+        # self._event_pairs_by_type[event.event_type].append(event)
+        # self._event_pairs_by_id[event.id_].append(event)
+        # self._sequential_events.append(event)
+        # self._trace_map = defaultdict(list)
+        pass
 
     def get_events(self, event_type: Optional[CBEventType] = None) -> List[CBEvent]:
         """Get all events for a specific event type."""

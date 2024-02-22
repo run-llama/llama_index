@@ -1,18 +1,17 @@
+"""A CallbackManager is responsible for managing a collection of event handlers, starting/stopping traces and sending events to each handler."""
+
 import logging
 import uuid
-from abc import ABC
 from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Generator, List, Optional, cast
+from typing import Any, Dict, Generator, List, Optional
 
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
-from llama_index.core.callbacks.schema import (
-    BASE_TRACE_EVENT,
-    LEAF_EVENTS,
-    CBEventType,
-    EventPayload,
-)
+from llama_index.core.callbacks.schema import BASE_TRACE_EVENT, EventPayload
+from llama_index.core.events.base_event import CBEvent
+from llama_index.core.events.base_event_type import CBEventType
+from llama_index.core.events.event_to_event_type_map import event_to_event_type
 
 logger = logging.getLogger(__name__)
 global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
@@ -20,7 +19,7 @@ empty_trace_ids: List[str] = []
 global_stack_trace_ids = ContextVar("trace_ids", default=empty_trace_ids)
 
 
-class CallbackManager(BaseCallbackHandler, ABC):
+class CallbackManager:
     """
     Callback manager that handles callbacks for events within LlamaIndex.
 
@@ -77,55 +76,106 @@ class CallbackManager(BaseCallbackHandler, ABC):
         payload: Optional[Dict[str, Any]] = None,
         event_id: Optional[str] = None,
         parent_id: Optional[str] = None,
+        event: Optional[CBEvent] = None,
         **kwargs: Any,
     ) -> str:
         """Run handlers when an event starts and return id of event."""
-        event_id = event_id or str(uuid.uuid4())
+        if (event_type is CBEventType.CUSTOM_EVENT) and (event is None):
+            raise ValueError("Custom events must have an event object provided.")
+        if event is None:
+            event_cls: CBEvent = event_to_event_type[event_type]["start"]
+            event = (
+                event_cls(event_type=event_type, **payload)
+                if payload
+                else event_cls(event_type=event_type)
+            )
+        self.dispatch_event(event)
+        return event.id_
+        # event_id = event_id or str(uuid.uuid4())
 
-        # if no trace is running, start a default trace
-        try:
-            parent_id = parent_id or global_stack_trace.get()[-1]
-        except IndexError:
-            self.start_trace("llama-index")
-            parent_id = global_stack_trace.get()[-1]
-        parent_id = cast(str, parent_id)
-        self._trace_map[parent_id].append(event_id)
-        for handler in self.handlers:
-            if event_type not in handler.event_starts_to_ignore:
-                handler.on_event_start(
-                    event_type,
-                    payload,
-                    event_id=event_id,
-                    parent_id=parent_id,
-                    **kwargs,
-                )
+        # # if no trace is running, start a default trace
+        # try:
+        #     parent_id = parent_id or global_stack_trace.get()[-1]
+        # except IndexError:
+        #     self.start_trace("llama-index")
+        #     parent_id = global_stack_trace.get()[-1]
+        # parent_id = cast(str, parent_id)
+        # self._trace_map[parent_id].append(event_id)
+        # for handler in self.handlers:
+        #     if event_type not in handler.event_starts_to_ignore:
+        #         handler.on_event_start(
+        #             event_type,
+        #             payload,
+        #             event_id=event_id,
+        #             parent_id=parent_id,
+        #             event=event,
+        #             **kwargs,
+        #         )
 
-        if event_type not in LEAF_EVENTS:
-            # copy the stack trace to prevent conflicts with threads/coroutines
-            current_trace_stack = global_stack_trace.get().copy()
-            current_trace_stack.append(event_id)
-            global_stack_trace.set(current_trace_stack)
+        # if event_type not in LEAF_EVENTS:
+        #     # copy the stack trace to prevent conflicts with threads/coroutines
+        #     current_trace_stack = global_stack_trace.get().copy()
+        #     current_trace_stack.append(event_id)
+        #     global_stack_trace.set(current_trace_stack)
 
-        return event_id
+        # return event_id
 
     def on_event_end(
         self,
         event_type: CBEventType,
         payload: Optional[Dict[str, Any]] = None,
         event_id: Optional[str] = None,
+        event: Optional[CBEvent] = None,
         **kwargs: Any,
     ) -> None:
         """Run handlers when an event ends."""
-        event_id = event_id or str(uuid.uuid4())
-        for handler in self.handlers:
-            if event_type not in handler.event_ends_to_ignore:
-                handler.on_event_end(event_type, payload, event_id=event_id, **kwargs)
+        if (event_type is CBEventType.CUSTOM_EVENT) and (event is None):
+            raise ValueError("Custom events must have an event object provided.")
+        if event is None:
+            event_cls: CBEvent = event_to_event_type[event_type]["end"]
+            event = (
+                event_cls(event_type=event_type, **payload)
+                if payload
+                else event_cls(event_type=event_type)
+            )
+        self.dispatch_event(event)
 
-        if event_type not in LEAF_EVENTS:
-            # copy the stack trace to prevent conflicts with threads/coroutines
-            current_trace_stack = global_stack_trace.get().copy()
-            current_trace_stack.pop()
-            global_stack_trace.set(current_trace_stack)
+        # event_id = event_id or str(uuid.uuid4())
+
+        # for handler in self.handlers:
+        #     if event_type not in handler.event_ends_to_ignore:
+        #         handler.on_event_end(
+        #             event_type, payload, event_id=event_id, event=event, **kwargs
+        #         )
+
+        # if event_type not in LEAF_EVENTS:
+        #     # copy the stack trace to prevent conflicts with threads/coroutines
+        #     current_trace_stack = global_stack_trace.get().copy()
+        #     current_trace_stack.pop()
+        #     global_stack_trace.set(current_trace_stack)
+
+    def dispatch_event(self, event: CBEvent) -> None:
+        """Send event to each handler when an event is fired."""
+        try:
+            current_trace_id = global_stack_trace.get()[-1]
+        except IndexError:
+            # There is no current trace so start a "default" trace
+            self.start_trace("llama-index")
+            current_trace_id = global_stack_trace.get()[-1]
+
+        # Record that this event was dispatched during this trace
+        self._trace_map[current_trace_id].append(event.id_)
+
+        # if event.event_type not in LEAF_EVENTS:
+        #     # copy the trace stack to prevent conflicts with threads/coroutines
+        #     current_trace_stack = global_stack_trace.get().copy()
+        #     current_trace_stack.pop()
+        #     global_stack_trace.set(current_trace_stack)
+
+        for handler in self.handlers:
+            handler.on_event(
+                event=event, trace_id=current_trace_id, trace_map=self._trace_map
+            )
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
         """Add a handler to the callback manager."""
@@ -160,25 +210,33 @@ class CallbackManager(BaseCallbackHandler, ABC):
                 ...
                 event.on_end(payload={key, val})  # optional
         """
+        # start_event_cls: CBEvent = event_to_event_type[event_type]["start"]
+        # start_event = (
+        #     start_event_cls(event_type=event_type, **payload)
+        #     if payload
+        #     else start_event_cls(event_type=event_type)
+        # )
+        # self.fire_event(start_event)
+
         # create event context wrapper
-        event = EventContext(self, event_type, event_id=event_id)
-        event.on_start(payload=payload)
+        event_context = EventContext(self, event_type, event_id=event_id)
+        event_context.on_start(payload=payload)
 
         payload = None
         try:
-            yield event
+            yield event_context
         except Exception as e:
             # data already logged to trace?
             if not hasattr(e, "event_added"):
                 payload = {EventPayload.EXCEPTION: e}
                 e.event_added = True  # type: ignore
-                if not event.finished:
-                    event.on_end(payload=payload)
+                if not event_context.finished:
+                    event_context.on_end(payload=payload)
             raise
         finally:
             # ensure event is ended
-            if not event.finished:
-                event.on_end(payload=payload)
+            if not event_context.finished:
+                event_context.on_end(payload=payload)
 
     @contextmanager
     def as_trace(self, trace_id: str) -> Generator[None, None, None]:
