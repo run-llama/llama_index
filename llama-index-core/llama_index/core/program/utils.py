@@ -70,7 +70,9 @@ def get_program_for_llm(
                 **kwargs,
             )
     elif pydantic_program_mode == PydanticProgramMode.OPENAI:
-        from llama_index.core.program.openai_program import OpenAIPydanticProgram
+        from llama_index.program.openai import (
+            OpenAIPydanticProgram,
+        )  # pants: no-infer-dep
 
         return OpenAIPydanticProgram.from_defaults(
             output_cls=output_cls,

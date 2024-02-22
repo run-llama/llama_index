@@ -1,15 +1,12 @@
 import logging
 from typing import Any, List
 
-import torch
 from llama_index.core.base.embeddings.base import Embedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.schema import ImageType
 from PIL import Image
-
-import clip
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +72,14 @@ class ClipEmbedding(MultiModalEmbedding):
         if embed_batch_size <= 0:
             raise ValueError(f"Embed batch size {embed_batch_size}  must be > 0.")
 
+        try:
+            import clip
+            import torch
+        except ImportError:
+            raise ImportError(
+                "ClipEmbedding requires `pip install git+https://github.com/openai/CLIP.git` and torch."
+            )
+
         super().__init__(
             embed_batch_size=embed_batch_size, model_name=model_name, **kwargs
         )
@@ -126,6 +131,8 @@ class ClipEmbedding(MultiModalEmbedding):
         return self._get_image_embedding(img_file_path)
 
     def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:
+        import torch
+
         with torch.no_grad():
             image = (
                 self._preprocess(Image.open(img_file_path))

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["DenseXRetrievalPack"]
 contains_example = true
 import_path = "llama_index.packs.dense_x_retrieval"
+
+[tool.llamahub.class_authors]
+DenseXRetrievalPack = "logan-markewich"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -25,7 +27,7 @@ license = "MIT"
 maintainers = ["logan-markewich"]
 name = "llama-index-packs-dense-x-retrieval"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["PGVectorStore"]
 contains_example = false
 import_path = "llama_index.vector_stores.postgres"
+
+[tool.llamahub.class_authors]
+PGVectorStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

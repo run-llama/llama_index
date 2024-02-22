@@ -212,37 +212,19 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
 
     pooling: Optional[Pooling] = Field(
         default=Pooling.CLS,
-        description=(
-            "Optional pooling technique to use with embeddings capability, if"
-            " the model's raw output needs pooling."
-        ),
+        description="Pooling strategy. If None, the model's default pooling is used.",
     )
     query_instruction: Optional[str] = Field(
-        default=None,
-        description=(
-            "Instruction to prepend during query embedding."
-            " Use of None means infer the instruction based on the model."
-            " Use of empty string will defeat instruction prepending entirely."
-        ),
+        default=None, description="Instruction to prepend during query embedding."
     )
     text_instruction: Optional[str] = Field(
-        default=None,
-        description=(
-            "Instruction to prepend during text embedding."
-            " Use of None means infer the instruction based on the model."
-            " Use of empty string will defeat instruction prepending entirely."
-        ),
+        default=None, description="Instruction to prepend during text embedding."
     )
 
     # Corresponds with huggingface_hub.InferenceClient
     model_name: Optional[str] = Field(
         default=None,
-        description=(
-            "The model to run inference with. Can be a model id hosted on the Hugging"
-            " Face Hub, e.g. bigcode/starcoder or a URL to a deployed Inference"
-            " Endpoint. Defaults to None, in which case a recommended model is"
-            " automatically selected for the task (see Field below)."
-        ),
+        description="Hugging Face model name. If None, the task will be used.",
     )
     token: Union[str, bool, None] = Field(
         default=None,

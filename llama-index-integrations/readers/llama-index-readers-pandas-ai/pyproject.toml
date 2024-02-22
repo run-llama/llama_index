@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["PandasAIReader"]
 contains_example = false
 import_path = "llama_index.readers.pandas_ai"
+
+[tool.llamahub.class_authors]
+PandasAIReader = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -26,7 +28,7 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-readers-pandas-ai"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"

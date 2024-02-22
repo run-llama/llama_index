@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AzStorageBlobReader"]
 contains_example = false
 import_path = "llama_index.readers.azstorage_blob"
+
+[tool.llamahub.class_authors]
+AzStorageBlobReader = "rivms"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -26,7 +28,7 @@ license = "MIT"
 maintainers = ["rivms"]
 name = "llama-index-readers-azstorage-blob"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"

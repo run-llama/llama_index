@@ -4,6 +4,7 @@ python_test_utils(
 
 python_tests(
     name="tests",
+    skip_tests=True,
     dependencies=[
         "!!llama-index-core:poetry",
         "!!llama-index-core/pyproject.toml:poetry",

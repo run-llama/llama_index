@@ -1,7 +1,7 @@
 from string import Formatter
 from typing import List
 
-from llama_index.core.llms.base import BaseLLM
+from llama_index.core.base.llms.base import BaseLLM
 
 
 def get_template_vars(template_str: str) -> List[str]:

@@ -13,7 +13,7 @@ from llama_index.core.service_context_elements.llm_predictor import (
     LLMPredictor,
     BaseLLMPredictor,
 )
-from llama_index.core.llms.base import LLMMetadata
+from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.service_context_elements.llama_logger import LlamaLogger

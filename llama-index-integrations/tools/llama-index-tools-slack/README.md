@@ -12,7 +12,7 @@ tool_spec = SlackToolSpec(slack_token="token")
 
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
 
-agent.chat("What is the most recent message in the annoucements channel?")
+agent.chat("What is the most recent message in the announcements channel?")
 ```
 
 `load_data`: Loads messages from a list of channels

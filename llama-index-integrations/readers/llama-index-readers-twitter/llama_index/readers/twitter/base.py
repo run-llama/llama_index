@@ -69,5 +69,5 @@ class TwitterTweetReader(BasePydanticReader):
             response = " "
             for tweet in tweets.data:
                 response = response + tweet.text + "\n"
-            results.append(Document(text=response))
+            results.append(Document(text=response, id_=username))
         return results

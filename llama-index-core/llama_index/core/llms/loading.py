@@ -9,6 +9,30 @@ RECOGNIZED_LLMS: Dict[str, Type[LLM]] = {
     CustomLLM.class_name(): CustomLLM,
 }
 
+# Conditionals for llama-cloud support
+try:
+    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
+
+    RECOGNIZED_LLMS[OpenAI.class_name()] = OpenAI
+except ImportError:
+    pass
+
+try:
+    from llama_index.llms.azure_openai import AzureOpenAI  # pants: no-infer-dep
+
+    RECOGNIZED_LLMS[AzureOpenAI.class_name()] = AzureOpenAI
+except ImportError:
+    pass
+
+try:
+    from llama_index.llms.huggingface import (
+        HuggingFaceInferenceAPI,
+    )  # pants: no-infer-dep
+
+    RECOGNIZED_LLMS[HuggingFaceInferenceAPI.class_name()] = HuggingFaceInferenceAPI
+except ImportError:
+    pass
+
 
 def load_llm(data: dict) -> LLM:
     """Load LLM by name."""

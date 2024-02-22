@@ -44,5 +44,5 @@ You can also use modules individually.
 # Use the index directly
 index = voyage_pack.index
 query_engine = index.as_query_engine()
-retriver = index.as_retriever()
+retriever = index.as_retriever()
 ```

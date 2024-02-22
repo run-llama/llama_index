@@ -8,9 +8,13 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["TruLensHarmlessPack", "TruLensHelpfulPack", "TruLensRAGTriadPack"]
 contains_example = false
 import_path = "llama_index.packs.trulens_eval_packs"
+
+[tool.llamahub.class_authors]
+TruLensHarmlessPack = "joshreini1"
+TruLensHelpfulPack = "joshreini1"
+TruLensRAGTriadPack = "joshreini1"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -26,7 +30,7 @@ license = "MIT"
 maintainers = ["joshreini1"]
 name = "llama-index-packs-trulens-eval-packs"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">3.9.7,<3.12"

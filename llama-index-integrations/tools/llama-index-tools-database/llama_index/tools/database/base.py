@@ -103,14 +103,14 @@ class DatabaseToolSpec(BaseToolSpec, BaseReader):
     def list_tables(self) -> List[str]:
         """
         Returns a list of available tables in the database.
-        To retrieve details about the columns of specfic tables, use
+        To retrieve details about the columns of specific tables, use
         the describe_tables endpoint.
         """
         return [x.name for x in self._metadata.sorted_tables]
 
     def describe_tables(self, tables: Optional[List[str]] = None) -> str:
         """
-        Describes the specifed tables in the database.
+        Describes the specified tables in the database.
 
         Args:
             tables (List[str]): A list of table names to retrieve details about

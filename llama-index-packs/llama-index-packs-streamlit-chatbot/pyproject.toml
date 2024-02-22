@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["StreamlitChatPack"]
 contains_example = false
 import_path = "llama_index.packs.streamlit_chatbot"
+
+[tool.llamahub.class_authors]
+StreamlitChatPack = "carolinedlu"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -26,7 +28,7 @@ license = "MIT"
 maintainers = ["carolinedlu"]
 name = "llama-index-packs-streamlit-chatbot"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">3.9.7,<3.12"

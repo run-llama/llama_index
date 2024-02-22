@@ -23,7 +23,7 @@ from llama_index.core.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.core.llms.base import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
@@ -253,8 +253,10 @@ class AgentRunner(BaseAgentRunner):
             )
 
         try:
-            from llama_index.llms.openai import OpenAI
-            from llama_index.llms.openai.utils import is_function_calling_model
+            from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
+            from llama_index.llms.openai.utils import (
+                is_function_calling_model,
+            )  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "`llama-index-llms-openai` package not found. Please "
@@ -262,7 +264,7 @@ class AgentRunner(BaseAgentRunner):
             )
 
         if isinstance(llm, OpenAI) and is_function_calling_model(llm.model):
-            from llama_index.agent.openai import OpenAIAgent
+            from llama_index.agent.openai import OpenAIAgent  # pants: no-infer-dep
 
             return OpenAIAgent.from_tools(
                 tools=tools,

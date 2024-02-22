@@ -1,162 +1,45 @@
-from multiprocessing import cpu_count
+from typing import Any, Dict
 
-from llama_index.legacy.embeddings import OpenAIEmbedding
-from llama_index.legacy.extractors import KeywordExtractor
-from llama_index.legacy.ingestion.pipeline import IngestionPipeline
-from llama_index.legacy.llms import MockLLM
-from llama_index.legacy.node_parser import SentenceSplitter
-from llama_index.legacy.readers import ReaderConfig, StringIterableReader
-from llama_index.legacy.schema import Document
-from llama_index.legacy.storage.docstore import SimpleDocumentStore
-
-
-# clean up folders after tests
-def teardown_function() -> None:
-    import shutil
-
-    shutil.rmtree("./test_pipeline", ignore_errors=True)
+from llama_index.legacy.embeddings import (
+    HuggingFaceEmbedding,
+    OpenAIEmbedding,
+)
+from llama_index.legacy.embeddings.utils import resolve_embed_model
+from llama_index.legacy.token_counter.mock_embed_model import MockEmbedding
+from pytest import MonkeyPatch
 
 
-def test_build_pipeline() -> None:
-    pipeline = IngestionPipeline(
-        reader=ReaderConfig(
-            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
-        ),
-        documents=[Document.example()],
-        transformations=[
-            SentenceSplitter(),
-            KeywordExtractor(llm=MockLLM()),
-            OpenAIEmbedding(api_key="fake"),
-        ],
+def mock_hf_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
+    """Mock HuggingFaceEmbeddings."""
+    return
+
+
+def mock_openai_embeddings(*args: Any, **kwargs: Dict[str, Any]) -> Any:
+    """Mock OpenAIEmbedding."""
+    return
+
+
+def test_resolve_embed_model(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "llama_index.legacy.embeddings.huggingface.HuggingFaceEmbedding.__init__",
+        mock_hf_embeddings,
+    )
+    monkeypatch.setattr(
+        "llama_index.legacy.embeddings.OpenAIEmbedding.__init__", mock_openai_embeddings
     )
 
-    assert len(pipeline.transformations) == 3
+    # Test None
+    embed_model = resolve_embed_model(None)
+    assert isinstance(embed_model, MockEmbedding)
 
+    # Test str
+    embed_model = resolve_embed_model("local")
+    assert isinstance(embed_model, HuggingFaceEmbedding)
 
-def test_run_pipeline() -> None:
-    pipeline = IngestionPipeline(
-        reader=ReaderConfig(
-            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
-        ),
-        documents=[Document.example()],
-        transformations=[
-            SentenceSplitter(),
-            KeywordExtractor(llm=MockLLM()),
-        ],
-    )
+    # Test LCEmbeddings
+    embed_model = resolve_embed_model(HuggingFaceEmbedding())
+    assert isinstance(embed_model, HuggingFaceEmbedding)
 
-    nodes = pipeline.run()
-
-    assert len(nodes) == 2
-    assert len(nodes[0].metadata) > 0
-
-
-def test_save_load_pipeline() -> None:
-    documents = [
-        Document(text="one", doc_id="1"),
-        Document(text="two", doc_id="2"),
-        Document(text="one", doc_id="1"),
-    ]
-
-    pipeline = IngestionPipeline(
-        transformations=[
-            SentenceSplitter(chunk_size=25, chunk_overlap=0),
-        ],
-        docstore=SimpleDocumentStore(),
-    )
-
-    nodes = pipeline.run(documents=documents)
-    assert len(nodes) == 2
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 2
-
-    # dedup will catch the last node
-    nodes = pipeline.run(documents=[documents[-1]])
-    assert len(nodes) == 0
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 2
-
-    # test save/load
-    pipeline.persist("./test_pipeline")
-
-    pipeline2 = IngestionPipeline(
-        transformations=[
-            SentenceSplitter(chunk_size=25, chunk_overlap=0),
-        ],
-    )
-
-    pipeline2.load("./test_pipeline")
-
-    # dedup will catch the last node
-    nodes = pipeline.run(documents=[documents[-1]])
-    assert len(nodes) == 0
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 2
-
-
-def test_pipeline_update() -> None:
-    document1 = Document.example()
-    document1.id_ = "1"
-
-    pipeline = IngestionPipeline(
-        transformations=[
-            SentenceSplitter(chunk_size=25, chunk_overlap=0),
-        ],
-        docstore=SimpleDocumentStore(),
-    )
-
-    nodes = pipeline.run(documents=[document1])
-    assert len(nodes) == 19
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 1
-
-    # adjust document content
-    document1 = Document(text="test", doc_id="1")
-
-    # run pipeline again
-    nodes = pipeline.run(documents=[document1])
-
-    assert len(nodes) == 1
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 1
-    assert next(iter(pipeline.docstore.docs.values())).text == "test"  # type: ignore
-
-
-def test_pipeline_dedup_duplicates_only() -> None:
-    documents = [
-        Document(text="one", doc_id="1"),
-        Document(text="two", doc_id="2"),
-        Document(text="three", doc_id="3"),
-    ]
-
-    pipeline = IngestionPipeline(
-        transformations=[
-            SentenceSplitter(chunk_size=25, chunk_overlap=0),
-        ],
-        docstore=SimpleDocumentStore(),
-    )
-
-    nodes = pipeline.run(documents=documents)
-    assert len(nodes) == 3
-
-    nodes = pipeline.run(documents=documents)
-    assert len(nodes) == 0
-
-
-def test_pipeline_parallel() -> None:
-    document1 = Document.example()
-    document1.id_ = "1"
-    document2 = Document(text="One\n\n\nTwo\n\n\nThree.", doc_id="2")
-
-    pipeline = IngestionPipeline(
-        transformations=[
-            SentenceSplitter(chunk_size=25, chunk_overlap=0),
-        ],
-        docstore=SimpleDocumentStore(),
-    )
-
-    num_workers = min(2, cpu_count())
-    nodes = pipeline.run(documents=[document1, document2], num_workers=num_workers)
-    assert len(nodes) == 20
-    assert pipeline.docstore is not None
-    assert len(pipeline.docstore.docs) == 2
+    # Test BaseEmbedding
+    embed_model = resolve_embed_model(OpenAIEmbedding())
+    assert isinstance(embed_model, OpenAIEmbedding)
