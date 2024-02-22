@@ -340,14 +340,8 @@ class ReActAgentWorker(BaseAgentWorker):
             bool: Boolean on whether the chunk is the start of the final response
         """
         latest_content = chunk.message.content
-        if latest_content:
-            if not latest_content.startswith(
-                "Thought"
-            ):  # doesn't follow thought-action format
-                return True
-            else:
-                if "Answer: " in latest_content:
-                    return True
+        if latest_content and "Answer: " in latest_content:
+            return True
         return False
 
     def _add_back_chunk_to_stream(
