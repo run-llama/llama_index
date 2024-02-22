@@ -74,14 +74,16 @@ class CohereEmbedding(BaseEmbedding):
     # Instance variables initialized via Pydantic's mechanism
     cohere_client: Any = Field(description="CohereAI client")
     truncate: str = Field(description="Truncation type - START/ END/ NONE")
-    # input_type: Optional[str] = Field(description="Model Input type")
+    input_type: Optional[str] = Field(
+        description="Model Input type. If not provided, search_document and search_query are used when needed."
+    )
 
     def __init__(
         self,
         cohere_api_key: Optional[str] = None,
         model_name: str = "embed-english-v3.0",
         truncate: str = "END",
-        # input_type: Optional[str] = None,
+        input_type: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
     ):
@@ -99,11 +101,10 @@ class CohereEmbedding(BaseEmbedding):
                           this model is supported and that the input type provided is compatible with the model.
         """
         # Validate model_name and input_type
-        # if (model_name, input_type) not in VALID_MODEL_INPUT_TYPES:
-        #     raise ValueError(
-        #         f"{(model_name, input_type)} is not valid for model '{model_name}'"
-        #     )
-        ALLOWED_INPUT_TYPES = tuple(item.value for item in CohereAIInputType)
+        if (model_name, input_type) not in VALID_MODEL_INPUT_TYPES:
+            raise ValueError(
+                f"{(model_name, input_type)} is not valid for model '{model_name}'"
+            )
         if truncate not in VALID_TRUNCATE_OPTIONS:
             raise ValueError(f"truncate must be one of {VALID_TRUNCATE_OPTIONS}")
 
@@ -111,6 +112,7 @@ class CohereEmbedding(BaseEmbedding):
             cohere_client=cohere.Client(cohere_api_key, client_name="llama_index"),
             cohere_api_key=cohere_api_key,
             model_name=model_name,
+            input_type=input_type,
             truncate=truncate,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
@@ -134,7 +136,7 @@ class CohereEmbedding(BaseEmbedding):
                 )
             result = self.cohere_client.embed(
                 texts=texts,
-                input_type=input_type,
+                input_type=self.input_type or input_type,
                 model=self.model_name,
                 truncate=self.truncate,
             ).embeddings
