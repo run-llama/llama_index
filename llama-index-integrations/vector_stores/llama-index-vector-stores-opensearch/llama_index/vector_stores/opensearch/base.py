@@ -350,13 +350,7 @@ class OpensearchVectorClient:
         Args:
             doc_id (str): document id
         """
-        body = {
-            "query": {
-                "match": {
-                'metadata.ref_doc_id': doc_id
-                }
-            }
-        }
+        body = {"query": {"match": {"metadata.ref_doc_id": doc_id}}}
         self._os_client.delete_by_query(index=self._index, body=body)
 
     def query(
