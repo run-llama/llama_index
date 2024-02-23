@@ -45,11 +45,6 @@ class Maritalk(LLM):
         description="Nucleus sampling parameter controlling the size of"
         " the probability mass considered for sampling.",
     )
-    system_message_workaround: bool = Field(
-        default=True,
-        description="Whether to include a workaround for system"
-        " message by adding it as a user message.",
-    )
 
     _endpoint: str = PrivateAttr("https://chat.maritaca.ai/api/chat/inference")
 
@@ -78,14 +73,10 @@ class Maritalk(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        # Prepare the data payload for the Maritalk API with the workaround
+        # Prepare the data payload for the Maritalk API
         formatted_messages = []
         for msg in messages:
-            # Check for system message and apply workaround if enabled
             if msg.role == MessageRole.SYSTEM:
-                assert self.system_message_workaround, (
-                    "When using a system message, "
-                    "self.system_message_workaround must be set to True")
                 # Add system message as a user message
                 formatted_messages.append({"role": "user", "content": msg.content})
                 # Follow it by an assistant message acknowledging it, to maintain conversation flow
