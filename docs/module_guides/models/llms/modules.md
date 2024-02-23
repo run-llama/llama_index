@@ -94,6 +94,15 @@ maxdepth: 1
 /examples/llm/gradient_model_adapter.ipynb
 ```
 
+## Groq
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/groq.ipynb
+```
+
 ## Hugging Face
 
 ```{toctree}
