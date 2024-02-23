@@ -53,9 +53,7 @@ class ColbertRerank(BaseNodePostprocessor):
         # Query: [batch_size, query_length, embedding_size] -> [batch_size, query_length, 1, embedding_size]
         # Document: [batch_size, doc_length, embedding_size] -> [batch_size, 1, doc_length, embedding_size]
         query_encoding = self._tokenizer(query, return_tensors="pt")
-        query_embedding = (
-            self._model(**query_encoding).last_hidden_state.mean(dim=1).unsqueeze(0)
-        )
+        query_embedding = self._model(**query_encoding).last_hidden_state
         rerank_score_list = []
 
         for document_text in documents_text_list:
