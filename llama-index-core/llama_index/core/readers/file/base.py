@@ -9,6 +9,8 @@ from datetime import datetime
 from functools import reduce
 from itertools import repeat
 from pathlib import Path
+import fsspec
+from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.core.readers.base import BaseReader
@@ -78,6 +80,10 @@ def default_file_metadata_func(file_path: str) -> Dict:
     }
 
 
+def get_default_fs() -> fsspec.AbstractFileSystem:
+    return LocalFileSystem()
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -111,6 +117,9 @@ class SimpleDirectoryReader(BaseReader):
         file_metadata (Optional[Callable[str, Dict]]): A function that takes
             in a filename and returns a Dict of metadata for the Document.
             Default is None.
+        fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
+        to using the local file system. Can be changed to use any remote file system
+        exposed via the fsspec interface.
     """
 
     supported_suffix_fn: Callable = _try_loading_included_file_formats
@@ -129,6 +138,7 @@ class SimpleDirectoryReader(BaseReader):
         file_extractor: Optional[Dict[str, BaseReader]] = None,
         num_files_limit: Optional[int] = None,
         file_metadata: Optional[Callable[[str], Dict]] = None,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Initialize with parameters."""
         super().__init__()
@@ -136,6 +146,7 @@ class SimpleDirectoryReader(BaseReader):
         if not input_dir and not input_files:
             raise ValueError("Must provide either `input_dir` or `input_files`.")
 
+        self.fs = fs or get_default_fs()
         self.errors = errors
         self.encoding = encoding
 
@@ -148,12 +159,12 @@ class SimpleDirectoryReader(BaseReader):
         if input_files:
             self.input_files = []
             for path in input_files:
-                if not os.path.isfile(path):
+                if not self.fs.isfile(path):
                     raise ValueError(f"File {path} does not exist.")
                 input_file = Path(path)
                 self.input_files.append(input_file)
         elif input_dir:
-            if not os.path.isdir(input_dir):
+            if not self.fs.isdir(input_dir):
                 raise ValueError(f"Directory {input_dir} does not exist.")
             self.input_dir = Path(input_dir)
             self.exclude = exclude
@@ -188,16 +199,17 @@ class SimpleDirectoryReader(BaseReader):
                     for file in input_dir.glob(excluded_pattern):
                         rejected_files.add(Path(file))
 
-        file_refs: Generator[Path, None, None]
+        file_refs: List[str] = []
         if self.recursive:
-            file_refs = Path(input_dir).rglob("*")
+            file_refs = self.fs.glob(str(input_dir) + "/**/*")
         else:
-            file_refs = Path(input_dir).glob("*")
+            file_refs = self.fs.glob(str(input_dir) + "/*")
 
         for ref in file_refs:
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
-            is_dir = ref.is_dir()
+            ref = Path(ref)
+            is_dir = self.fs.isdir(ref)
             skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
@@ -271,6 +283,7 @@ class SimpleDirectoryReader(BaseReader):
         filename_as_id: bool = False,
         encoding: str = "utf-8",
         errors: str = "ignore",
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
         """Static method for loading file.
 
@@ -283,6 +296,7 @@ class SimpleDirectoryReader(BaseReader):
             filename_as_id (bool, optional): _description_. Defaults to False.
             encoding (str, optional): _description_. Defaults to "utf-8".
             errors (str, optional): _description_. Defaults to "ignore".
+            fs (Optional[fsspec.AbstractFileSystem], optional): _description_. Defaults to None.
 
         input_file (Path): File path to read
         file_metadata ([Callable[str, Dict]]): A function that takes
@@ -295,6 +309,8 @@ class SimpleDirectoryReader(BaseReader):
             Default is utf-8.
         errors (str): how encoding and decoding errors are to be handled,
               see https://docs.python.org/3/library/functions.html#open
+        fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
+        to using the local file system. Can be changed to use any remote file system
 
         Returns:
             List[Document]: loaded documents
@@ -319,7 +335,10 @@ class SimpleDirectoryReader(BaseReader):
 
             # load data -- catch all errors except for ImportError
             try:
-                docs = reader.load_data(input_file, extra_info=metadata)
+                kwargs = {"extra_info": metadata}
+                if fs:
+                    kwargs["fs"] = fs
+                docs = reader.load_data(input_file, **kwargs)
             except ImportError as e:
                 # ensure that ImportError is raised so user knows
                 # about missing dependencies
@@ -340,8 +359,9 @@ class SimpleDirectoryReader(BaseReader):
             documents.extend(docs)
         else:
             # do standard read
-            with open(input_file, errors=errors, encoding=encoding) as f:
-                data = f.read()
+            fs = fs or get_default_fs()
+            with fs.open(input_file, errors=errors, encoding=encoding) as f:
+                data = f.read().decode(encoding, errors=errors)
 
             doc = Document(text=data, metadata=metadata or {})
             if filename_as_id:
@@ -352,12 +372,15 @@ class SimpleDirectoryReader(BaseReader):
         return documents
 
     def load_data(
-        self, show_progress: bool = False, num_workers: Optional[int] = None
+        self,
+        show_progress: bool = False,
+        num_workers: Optional[int] = None,
     ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
             show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+            num_workers  (Optional[int]): Number of workers to parallelize data-loading over.
 
         Returns:
             List[Document]: A list of documents.
@@ -382,6 +405,7 @@ class SimpleDirectoryReader(BaseReader):
                         repeat(self.filename_as_id),
                         repeat(self.encoding),
                         repeat(self.errors),
+                        repeat(self.fs),
                     ),
                 )
                 documents = reduce(lambda x, y: x + y, results)
@@ -400,6 +424,7 @@ class SimpleDirectoryReader(BaseReader):
                         filename_as_id=self.filename_as_id,
                         encoding=self.encoding,
                         errors=self.errors,
+                        fs=self.fs,
                     )
                 )
 
