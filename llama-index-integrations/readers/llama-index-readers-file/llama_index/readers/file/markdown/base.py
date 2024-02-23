@@ -76,7 +76,7 @@ class MarkdownReader(BaseReader):
         return re.sub(pattern, "", content)
 
     def remove_hyperlinks(self, content: str) -> str:
-        """Remove kyperlinks in markdown content"""
+        """Remove hyperlinks in markdown content"""
         pattern = r"\[(.*?)\]\((.*?)\)"
         return re.sub(pattern, r"\1", content)
 
