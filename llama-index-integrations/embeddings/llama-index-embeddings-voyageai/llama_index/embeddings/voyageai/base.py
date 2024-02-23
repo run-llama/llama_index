@@ -3,7 +3,6 @@
 from typing import Any, List, Optional
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 
 import voyageai
@@ -28,10 +27,12 @@ class VoyageEmbedding(BaseEmbedding):
         self,
         model_name: str = "voyage-2",
         voyage_api_key: Optional[str] = None,
-        embed_batch_size: int = DEFAULT_VOYAGE_BATCH_SIZE,
+        embed_batch_size: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
+        if embed_batch_size is None:
+            embed_batch_size = 72 if self.model in ["voyage-2", "voyage-02"] else 7
         super().__init__(
             model_name=model_name,
             embed_batch_size=embed_batch_size,
