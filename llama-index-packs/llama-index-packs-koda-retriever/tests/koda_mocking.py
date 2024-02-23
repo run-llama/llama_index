@@ -21,7 +21,7 @@ PROMPT_RESPONSES = {
 
 
 class KVMockLLM(MockLLM):
-    """Simple mock LLM that returns a response based on the prompt"""
+    """Simple mock LLM that returns a response based on the prompt."""
 
     prompt_responses: dict = PROMPT_RESPONSES
     strict: bool = False
@@ -38,7 +38,7 @@ class KVMockLLM(MockLLM):
     def complete(self, prompt: str, **kwargs) -> CompletionResponse:
         """Returns a response that was matched from the given prompt."""
         if self.strict:
-            if prompt not in self.prompt_responses.keys():
+            if prompt not in self.prompt_responses:
                 err = f"Prompt '{prompt}' not found in prompt_responses. Please recreate this MockLLM with the expected prompts and responses."
                 raise ValueError(err)
 

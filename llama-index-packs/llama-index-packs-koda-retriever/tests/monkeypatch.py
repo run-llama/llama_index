@@ -157,7 +157,7 @@ SimpleVectorStore.query = (
 
 
 def monkey_patch_vector_store_index() -> VectorStoreIndex:  # I did write this part..
-    """Returns a monkey-patched vector store index to simulate hybrid retrieval behavior"""
+    """Returns a monkey-patched vector store index to simulate hybrid retrieval behavior."""
     import sys
 
     print(sys.executable)
@@ -167,10 +167,8 @@ def monkey_patch_vector_store_index() -> VectorStoreIndex:  # I did write this p
 
     documents = loader.load_data(pages=pages)
 
-    data = dict()
+    data = {}
     for page, doc in zip(pages, documents):
         data[page] = doc.to_dict()
 
-    index = VectorStoreIndex.from_documents(documents)
-
-    return index
+    return VectorStoreIndex.from_documents(documents)

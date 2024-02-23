@@ -1,5 +1,5 @@
 """
-Defines a custom hybrid retriever for flexible alpha tuning
+Defines a custom hybrid retriever for flexible alpha tuning.
 
 Idea & original implementation sourced from the following docs:
     - https://blog.llamaindex.ai/llamaindex-enhancing-retrieval-performance-with-alpha-tuning-in-hybrid-search-in-rag-135d0c9b8a00
@@ -162,9 +162,7 @@ class KodaRetriever(BaseRetriever):
             alpha  # updates alpha according to classification of query
         )
 
-        results = self.retriever.retrieve(str_or_query_bundle=query)
-
-        return results
+        return self.retriever.retrieve(str_or_query_bundle=query)
 
     async def a_category_retrieve(
         self, category: str, query: QueryType
@@ -175,9 +173,7 @@ class KodaRetriever(BaseRetriever):
             alpha  # updates alpha according to classification of query
         )
 
-        results = await self.retriever.aretrieve(str_or_query_bundle=query)
-
-        return results
+        return await self.retriever.aretrieve(str_or_query_bundle=query)
 
     def _retrieve(self, query: QueryType) -> List[NodeWithScore]:
         """llama-index compatible retrieve method that auto-determines the optimal alpha for a query and then retrieves results for a query."""

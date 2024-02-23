@@ -38,7 +38,7 @@ class AlphaMatrix(BaseModel):
 
     def get_alpha(self, category: str) -> float:
         """Simple helper function to get the alpha value for a given category."""
-        if category not in self.data.keys():
+        if category not in self.data:
             err = f"Provided category '{category}' cannot be found"
             raise ValueError(err)
 
@@ -46,7 +46,7 @@ class AlphaMatrix(BaseModel):
 
     def get_examples(self, category: str) -> List[str]:
         """Simple helper function to get the examples for a given category."""
-        if category not in self.data.keys():
+        if category not in self.data:
             err = f"Provided category '{category}' cannot be found"
             raise ValueError(err)
 
@@ -54,7 +54,7 @@ class AlphaMatrix(BaseModel):
 
     def get_description(self, category: str) -> str:
         """Simple helper function to get the description for a given category."""
-        if category not in self.data.keys():
+        if category not in self.data:
             err = f"Provided category '{category}' cannot be found"
             raise ValueError(err)
 
@@ -66,7 +66,7 @@ class AlphaMatrix(BaseModel):
 
     def format_category(self, category: str) -> str:
         """Simple helper function to format the category information for a given category."""
-        if category not in self.data.keys():
+        if category not in self.data:
             err = f"Provided category '{category}' cannot be found"
             raise ValueError(err)
 
@@ -90,7 +90,7 @@ class AlphaMatrix(BaseModel):
 
     def get_all_category_info(self) -> str:
         """Simple helper function to get the category information for all categories."""
-        categories = list()
+        categories = []
         for category in self.get_categories():
             category_info = self.format_category(category)
             categories.append(category_info)

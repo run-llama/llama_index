@@ -14,7 +14,7 @@ from .monkeypatch import monkey_patch_vector_store_index
 
 @pytest.fixture()
 def setup() -> dict:  # monkey
-    """Sets up fixtures for simple vector stores to be used within retriever testing"""
+    """Sets up fixtures for simple vector stores to be used within retriever testing."""
     Settings.llm = KVMockLLM()
     Settings.embed_model = MockEmbedding(8)
 
