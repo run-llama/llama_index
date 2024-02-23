@@ -1,4 +1,4 @@
-var exampleTemplate = `<h3 class="example-heading toggle-example">Usage Example</h3>
+var exampleTemplate = `<h3 class="example-heading toggle-example">Framework Usage</h3>
   <div class="usage-examples hidden">
       <div class="example">
       </div>

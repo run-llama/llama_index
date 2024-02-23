@@ -15,6 +15,20 @@ DEFAULT_MODEL = "meta-llama/Llama-2-70b-chat-hf"
 
 
 class Anyscale(OpenAI):
+    """Anyscale LLM.
+
+    Examples:
+        `pip install llama-index-llms-anyscale`
+
+        ```python
+        from llama_index.embeddings.anyscale import Anyscale
+
+        llm = Anyscale(model="codellama/CodeLlama-34b-Instruct-hf")
+        resp = llm.complete("Show me the c++ code to send requests to HTTP Server")
+        print(resp)
+        ```
+    """
+
     def __init__(
         self,
         model: str = DEFAULT_MODEL,

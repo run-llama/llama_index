@@ -1,4 +1,5 @@
 """Google's hosted Gemini API."""
+
 import os
 import typing
 from typing import Any, Dict, Optional, Sequence
@@ -38,7 +39,19 @@ GEMINI_MODELS = (
 
 
 class Gemini(CustomLLM):
-    """Gemini."""
+    """Gemini LLM.
+
+    Examples:
+        `pip install llama-index-llms-gemini`
+
+        ```python
+        from llama_index.llms.gemini import Gemini
+
+        llm = Gemini(model_name="models/gemini-ultra", api_key="YOUR_API_KEY")
+        resp = llm.complete("Write a poem about a magic backpack")
+        print(resp)
+        ```
+    """
 
     model_name: str = Field(
         default=GEMINI_MODELS[0], description="The Gemini model to use."
