@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.embeddings.fastembed"
+import_path = "llama_index.llms.groq"
 
 [tool.llamahub.class_authors]
-FastEmbedEmbedding = "llama-index"
+Groq = "gradenr"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,17 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index embeddings fastembed integration"
+description = "llama-index llms groq integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-embeddings-fastembed"
+name = "llama-index-llms-groq"
 readme = "README.md"
 version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
-llama-index-core = "^0.10.11.post1"
-fastembed = "^0.2.2"
+python = ">=3.8.1,<4.0"
+llama-index-core = "^0.10.1"
+llama-index-llms-openai-like = "^0.1.3"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
