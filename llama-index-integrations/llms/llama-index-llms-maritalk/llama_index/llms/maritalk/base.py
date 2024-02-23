@@ -83,10 +83,12 @@ class Maritalk(LLM):
                 formatted_messages.append({"role": "assistant", "content": "ok"})
             else:
                 # Format user and assistant messages as before
-                formatted_messages.append({
-                    "role": "user" if msg.role == MessageRole.USER else "assistant",
-                    "content": msg.content,
-                })
+                formatted_messages.append(
+                    {
+                        "role": "user" if msg.role == MessageRole.USER else "assistant",
+                        "content": msg.content,
+                    }
+                )
 
         data = {
             "messages": formatted_messages,
