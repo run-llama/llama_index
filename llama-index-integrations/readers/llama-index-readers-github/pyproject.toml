@@ -25,15 +25,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers github integration"
+exclude = ["**/BUILD"]
 keywords = ["code", "collaborators", "git", "github", "issues", "placeholder", "repository", "source code"]
 license = "MIT"
 maintainers = ["ahmetkca", "moncho", "rwood-97"]
 name = "llama-index-readers-github"
 readme = "README.md"
-version = "0.1.5"
+version = "0.1.7"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llama-index-readers-file = "^0.1.1"
 httpx = ">=0.26.0"

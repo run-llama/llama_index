@@ -26,6 +26,7 @@ classifiers = [
 ]
 description = "Interface between LLMs and your data"
 documentation = "https://docs.llamaindex.ai/en/stable/"
+exclude = ["**/BUILD"]
 homepage = "https://llamaindex.ai"
 include = ["llama_index/core/_static/nltk_cache/corpora/stopwords/*", "llama_index/core/_static/nltk_cache/tokenizers/punkt/*", "llama_index/core/_static/nltk_cache/tokenizers/punkt/PY3/*", "llama_index/core/_static/tiktoken_cache/*"]
 keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
@@ -42,7 +43,7 @@ name = "llama-index-core"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.10.11.post1"
+version = "0.10.12"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}

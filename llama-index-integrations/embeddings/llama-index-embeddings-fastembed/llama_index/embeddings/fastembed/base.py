@@ -4,7 +4,7 @@ import numpy as np
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 
-from fastembed.embedding import FlagEmbedding
+from fastembed import TextEmbedding
 
 
 class FastEmbedEmbedding(BaseEmbedding):
@@ -51,10 +51,8 @@ class FastEmbedEmbedding(BaseEmbedding):
 
     doc_embed_type: Literal["default", "passage"] = Field(
         "default",
-        description="Type of embedding to use for documents.\n"
-        "'default': Uses FastEmbed's default embedding method.\n"
-        "'passage': Prefixes the text with 'passage' before embedding.\n"
-        "Defaults to 'default'.",
+        description="Type of embedding method to use for documents.\n"
+        "Available options are 'default' and 'passage'.",
     )
 
     _model: Any = PrivateAttr()
@@ -78,7 +76,7 @@ class FastEmbedEmbedding(BaseEmbedding):
             doc_embed_type=doc_embed_type,
         )
 
-        self._model = FlagEmbedding(
+        self._model = TextEmbedding(
             model_name=model_name,
             max_length=max_length,
             cache_dir=cache_dir,
