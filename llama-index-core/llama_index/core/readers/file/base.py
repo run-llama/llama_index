@@ -379,12 +379,15 @@ class SimpleDirectoryReader(BaseReader):
         self,
         show_progress: bool = False,
         num_workers: Optional[int] = None,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
             show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
             num_workers  (Optional[int]): Number of workers to parallelize data-loading over.
+            fs (Optional[fsspec.AbstractFileSystem]): File system to use. If fs was specified
+                in the constructor, it will override the fs parameter here.
 
         Returns:
             List[Document]: A list of documents.
@@ -392,6 +395,7 @@ class SimpleDirectoryReader(BaseReader):
         documents = []
 
         files_to_process = self.input_files
+        fs = fs or self.fs
 
         if num_workers and num_workers > 1:
             if num_workers > multiprocessing.cpu_count():
@@ -409,7 +413,7 @@ class SimpleDirectoryReader(BaseReader):
                         repeat(self.filename_as_id),
                         repeat(self.encoding),
                         repeat(self.errors),
-                        repeat(self.fs),
+                        repeat(fs),
                     ),
                 )
                 documents = reduce(lambda x, y: x + y, results)
@@ -428,7 +432,7 @@ class SimpleDirectoryReader(BaseReader):
                         filename_as_id=self.filename_as_id,
                         encoding=self.encoding,
                         errors=self.errors,
-                        fs=self.fs,
+                        fs=fs,
                     )
                 )
 
