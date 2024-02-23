@@ -37,14 +37,14 @@ In this tutorial, we start with the code you wrote for the `starter example <sta
 
 **"I want to use a different vector store"**
 
-First, you can install the vector store you want to use. For example, to use `chromadb` as the vector store, you can install it using pip:
+First, you can install the vector store you want to use. For example, to use Chroma as the vector store, you can install it using pip:
 
 .. code-block:: shell
 
-    pip install llama-index-chromadb
+    pip install llama-index-vector-stores-chroma
 
 
-To learn more about all integrations available, checkout `LlamaHub <https://llamahub.ai`_.
+To learn more about all integrations available, check out `LlamaHub <https://llamahub.ai>`_.
 
 Then, you can use it in your code:
 

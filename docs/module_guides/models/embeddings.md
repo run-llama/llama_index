@@ -234,4 +234,5 @@ maxdepth: 1
 /examples/embeddings/together.ipynb
 /examples/embeddings/voyageai.ipynb
 /examples/embeddings/nomic.ipynb
+/examples/embeddings/fireworks.ipynb
 ```
