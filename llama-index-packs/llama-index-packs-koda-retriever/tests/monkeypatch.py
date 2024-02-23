@@ -10,6 +10,7 @@ I didn't write MOST of this code, I just copied it from the llama_index library 
 
 AUTHOR: no_dice
 """
+
 import logging
 from typing import Any, Callable, List, Mapping, Optional, cast
 from llama_index.core.indices.query.embedding_utils import (
@@ -25,7 +26,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.readers.wikipedia import WikipediaReader
+from llama_index.core.readers import StringIterableReader
 
 logger = logging.getLogger(__name__)
 
@@ -162,13 +163,14 @@ def monkey_patch_vector_store_index() -> VectorStoreIndex:  # I did write this p
 
     print(sys.executable)
 
-    loader = WikipediaReader()
-    pages = ["Chicago", "Osaka", "Tokyo"]
+    loader = StringIterableReader()
 
-    documents = loader.load_data(pages=pages)
-
-    data = {}
-    for page, doc in zip(pages, documents):
-        data[page] = doc.to_dict()
+    documents = loader.load_data(
+        texts=[
+            "This is a test document.",
+            "This is another test document.",
+            "This is a third test document.",
+        ]
+    )
 
     return VectorStoreIndex.from_documents(documents)

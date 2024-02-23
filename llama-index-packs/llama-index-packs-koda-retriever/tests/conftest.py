@@ -8,8 +8,8 @@ from llama_index.packs.koda_retriever import (
 )
 import pytest
 
-from .koda_mocking import KVMockLLM
-from .monkeypatch import monkey_patch_vector_store_index
+from tests.koda_mocking import KVMockLLM
+from tests.monkeypatch import monkey_patch_vector_store_index
 
 
 @pytest.fixture()
