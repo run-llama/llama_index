@@ -18,6 +18,17 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
+          options:
+            docstring_style: google
+            members_order: source
+            separate_signature: true
+            filters: ["!^_", "!^__init__"]
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            show_root_toc_entry: false
           paths:
             - ../llama-index-core
             - ../llama-index-integrations/llms/llama-index-llms-neutrino/
@@ -62,14 +73,3 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-xinference/
             - ../llama-index-integrations/llms/llama-index-llms-llama-api/
             - ../llama-index-integrations/llms/llama-index-llms-openai-like/
-          options:
-            docstring_style: numpy
-            members_order: source
-            separate_signature: true
-            filters: ["!^_", "!^__init__"]
-            docstring_options:
-              ignore_init_summary: true
-            merge_init_into_class: true
-            show_signature_annotations: true
-            signature_crossrefs: true
-            show_root_toc_entry: false

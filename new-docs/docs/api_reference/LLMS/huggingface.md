@@ -1,3 +1,5 @@
 ::: llama_index.llms.huggingface
-options:
-members: - HuggingFaceLLM - HuggingFaceInferenceAPI
+    options:
+      members:
+      - HuggingFaceLLM
+      - HuggingFaceInferenceAPI
