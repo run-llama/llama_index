@@ -314,7 +314,7 @@ class SimpleDirectoryReader(BaseReader):
         errors (str): how encoding and decoding errors are to be handled,
               see https://docs.python.org/3/library/functions.html#open
         fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
-        to using the local file system. Can be changed to use any remote file system
+            to using the local file system. Can be changed to use any remote file system
 
         Returns:
             List[Document]: loaded documents
