@@ -84,6 +84,10 @@ def get_default_fs() -> fsspec.AbstractFileSystem:
     return LocalFileSystem()
 
 
+def is_default_fs(fs: fsspec.AbstractFileSystem) -> bool:
+    return isinstance(fs, LocalFileSystem) and not fs.auto_mkdir
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -336,7 +340,7 @@ class SimpleDirectoryReader(BaseReader):
             # load data -- catch all errors except for ImportError
             try:
                 kwargs = {"extra_info": metadata}
-                if fs:
+                if fs and not is_default_fs(fs):
                     kwargs["fs"] = fs
                 docs = reader.load_data(input_file, **kwargs)
             except ImportError as e:
