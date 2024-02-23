@@ -75,6 +75,15 @@ maxdepth: 1
 /examples/llm/everlyai.ipynb
 ```
 
+## Fireworks
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/fireworks.ipynb
+```
+
 ## Gradient
 
 ```{toctree}
