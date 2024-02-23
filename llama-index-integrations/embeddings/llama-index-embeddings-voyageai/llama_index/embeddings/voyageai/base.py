@@ -7,8 +7,6 @@ from llama_index.core.callbacks.base import CallbackManager
 
 import voyageai
 
-DEFAULT_VOYAGE_BATCH_SIZE = 8
-
 
 class VoyageEmbedding(BaseEmbedding):
     """Class for Voyage embeddings.
@@ -32,7 +30,7 @@ class VoyageEmbedding(BaseEmbedding):
         **kwargs: Any,
     ):
         if embed_batch_size is None:
-            embed_batch_size = 72 if self.model in ["voyage-2", "voyage-02"] else 7
+            embed_batch_size = 72 if model_name in ["voyage-2", "voyage-02"] else 7
         super().__init__(
             model_name=model_name,
             embed_batch_size=embed_batch_size,
