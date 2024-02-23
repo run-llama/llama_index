@@ -78,14 +78,24 @@ class Maritalk(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        # Prepare the data payload for the Maritalk API
-        formatted_messages = [
-            {
-                "role": "user" if msg.role == MessageRole.USER else "assistant",
-                "content": msg.content,
-            }
-            for msg in messages
-        ]
+        # Prepare the data payload for the Maritalk API with the workaround
+        formatted_messages = []
+        for msg in messages:
+            # Check for system message and apply workaround if enabled
+            if msg.role == MessageRole.SYSTEM:
+                assert self.system_message_workaround, (
+                    "When using a system message, "
+                    "self.system_message_workaround must be set to True")
+                # Add system message as a user message
+                formatted_messages.append({"role": "user", "content": msg.content})
+                # Follow it by an assistant message acknowledging it, to maintain conversation flow
+                formatted_messages.append({"role": "assistant", "content": "ok"})
+            else:
+                # Format user and assistant messages as before
+                formatted_messages.append({
+                    "role": "user" if msg.role == MessageRole.USER else "assistant",
+                    "content": msg.content,
+                })
 
         data = {
             "messages": formatted_messages,
