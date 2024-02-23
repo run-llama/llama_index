@@ -70,6 +70,7 @@
   "LlamaDebugHandler": "llama_index.core.callbacks",
   "TokenCountingHandler": "llama_index.core.callbacks",
   "trace_method": "llama_index.core.callbacks",
+  "langfuse_callback_handler": "llama_index.callbacks.langfuse",
   "deepeval_callback_handler": "llama_index.callbacks.deepeval",
   "OpenInferenceCallbackHandler": "llama_index.callbacks.openinference",
   "WandbCallbackHandler": "llama_index.callbacks.wandb",
