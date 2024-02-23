@@ -10,11 +10,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 # [tool.llamahub]
-# contains_example = false
-# import_path = "<import-path>"
+contains_example = false
+import_path = "llama_index.llms.octoai"
 
 # [tool.llamahub.class_authors]
-# CLASS = "github-username"
+OctoAI = "hanscl"
 
 [tool.mypy]
 disallow_untyped_defs = true
