@@ -467,6 +467,14 @@ class BaseIndex(Generic[IS], ABC):
                 llm=llm,
                 **kwargs,
             )
+        elif chat_mode == ChatMode.CITATIONS_CONTEXT:
+            from llama_index.core.chat_engine import CitationsContextChatEngine
+
+            return CitationsContextChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                llm=llm,
+                **kwargs,
+            )
         else:
             raise ValueError(f"Unknown chat mode: {chat_mode}")
 

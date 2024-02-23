@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    CitationsSettings,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -95,6 +96,14 @@ class Cohere(LLM):
             is_chat_model=True,
             model_name=self.model,
             system_role=MessageRole.CHATBOT,
+            has_chat_citation_mode=True,
+            citations_settings=CitationsSettings(
+                documents_response_field="documents",
+                documents_request_param="documents",
+                documents_stream_event_type="search-results",
+                citations_response_field="citations",
+                citations_stream_event_type="citation-generation",
+            ),
         )
 
     @property

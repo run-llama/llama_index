@@ -12,8 +12,15 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    CitationsSettings,
+    Document,
+    Citation,
 )
 from llama_index.core.base.response.schema import Response, StreamingResponse
+from llama_index.core.chat_engine.utils import (
+    convert_chat_response_to_citations,
+    convert_chat_response_to_documents,
+)
 from llama_index.core.memory import BaseMemory
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.tools import ToolOutput
@@ -197,6 +204,127 @@ class StreamingAgentChatResponse:
             print(token, end="", flush=True)
 
 
+@dataclass
+class AgentCitationsChatResponse(AgentChatResponse):
+    """Cohere Agent chat response. Adds citations and documents to the response."""
+
+    citations: List[Citation] = field(default_factory=list)
+    documents: List[Document] = field(default_factory=list)
+
+
+@dataclass
+class StreamingAgentCitationsChatResponse(StreamingAgentChatResponse):
+    """Streaming chat response to user and writing to chat history."""
+
+    citations: List[Citation] = field(default_factory=list)
+    documents: List[Document] = field(default_factory=list)
+    citations_settings: CitationsSettings = field(
+        default_factory=lambda: CitationsSettings(
+            documents_response_field="documents",
+            documents_request_param="documents",
+            documents_stream_event_type="search-results",
+            citations_response_field="citations",
+            citations_stream_event_type="citation-generation",
+        )
+    )
+
+    def write_response_to_history(
+        self, memory: BaseMemory, raise_error: bool = False
+    ) -> None:
+        if self.chat_stream is None:
+            raise ValueError(
+                "chat_stream is None. Cannot write to history without chat_stream."
+            )
+        # try/except to prevent hanging on error
+        try:
+            final_text = ""
+            for chat in self.chat_stream:
+                # LLM response queue
+                self._is_function = is_function(chat.message)
+                self.put_in_queue(chat.delta)
+                final_text += chat.delta or ""
+                if chat.raw is not None:
+                    # Citations stream event
+                    if (
+                        chat.raw.get("event_type", "")
+                        == self.citations_settings.citations_stream_event_type
+                    ):
+                        self.citations += convert_chat_response_to_citations(
+                            chat, self.citations_settings
+                        )
+                    # Documents stream event
+                    if (
+                        chat.raw.get("event_type", "")
+                        == self.citations_settings.documents_stream_event_type
+                    ):
+                        self.documents += convert_chat_response_to_documents(
+                            chat, self.citations_settings
+                        )
+            if self._is_function is not None:  # if loop has gone through iteration
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                chat.message.content = final_text.strip()  # final message
+                memory.put(chat.message)
+        except Exception as e:
+            if not raise_error:
+                logger.warning(
+                    f"Encountered exception writing response to history: {e}"
+                )
+            else:
+                raise
+
+        self._is_done = True
+
+        # This act as is_done events for any consumers waiting
+        self._is_function_not_none_thread_event.set()
+
+    async def awrite_response_to_history(
+        self,
+        memory: BaseMemory,
+    ) -> None:
+        if self.achat_stream is None:
+            raise ValueError(
+                "achat_stream is None. Cannot asynchronously write to "
+                "history without achat_stream."
+            )
+        # try/except to prevent hanging on error
+        try:
+            final_text = ""
+            async for chat in self.achat_stream:
+                # Chat response queue
+                self._is_function = is_function(chat.message)
+                self.aput_in_queue(chat.delta)
+                final_text += chat.delta or ""
+                if self._is_function is False:
+                    self._is_function_false_event.set()
+                if chat.raw is not None:
+                    # Citations stream event
+                    if (
+                        chat.raw.get("event_type", "")
+                        == self.citations_settings.citations_stream_event_type
+                    ):
+                        self.citations += convert_chat_response_to_citations(
+                            chat, self.citations_settings
+                        )
+                    # Documents stream event
+                    if (
+                        chat.raw.get("event_type", "")
+                        == self.citations_settings.documents_stream_event_type
+                    ):
+                        self.documents += convert_chat_response_to_documents(
+                            chat, self.citations_settings
+                        )
+                self._new_item_event.set()
+            if self._is_function is not None:  # if loop has gone through iteration
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                chat.message.content = final_text.strip()  # final message
+                memory.put(chat.message)
+        except Exception as e:
+            logger.warning(f"Encountered exception writing response to history: {e}")
+        self._is_done = True
+
+
 AGENT_CHAT_RESPONSE_TYPE = Union[AgentChatResponse, StreamingAgentChatResponse]
 
 
@@ -311,4 +439,12 @@ class ChatMode(str, Enum):
 
     Corresponds to `OpenAIAgent` if using an OpenAI model that supports
     function calling API, otherwise, corresponds to `ReActAgent`.
+    """
+
+    CITATIONS_CONTEXT = "citations_context"
+    """Corresponds to `CitationsContextChatEngine`.
+
+    First retrieve text from the index using the user's message, then convert the context to
+    the Citation's documents list. Then pass the context along with prompt and user message to LLM to generate
+    a response with citations and related documents
     """

@@ -1,8 +1,44 @@
+from dataclasses import dataclass, asdict, field
 from enum import Enum
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, AsyncGenerator, Generator, Optional, List
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+
+
+@dataclass
+class Citation:
+    """Citation object."""
+
+    text: str
+    start: int
+    end: int
+    document_ids: List[str]
+
+    dict = asdict
+
+
+@dataclass
+class Document:
+    """Document object."""
+
+    id: str
+    text: str
+
+    dict = asdict
+
+
+@dataclass
+class CitationsSettings:
+    """Citations settings."""
+
+    documents_request_param: str = field(default="documents")
+    documents_stream_event_type: str = field(default="search-results")
+    citations_response_field: str = field(default="citations")
+    documents_response_field: str = field(default="documents")
+    citations_stream_event_type: str = field(default="citation-generation")
+
+    dict = asdict
 
 
 class MessageRole(str, Enum):
@@ -90,6 +126,22 @@ class LLMMetadata(BaseModel):
             " sequence of messages, rather than text), like OpenAI's"
             " /v1/chat/completions endpoint."
         ),
+    )
+    has_chat_citation_mode: bool = Field(
+        default=False,
+        description=(
+            "Set True if the model supports citation generation, like Cohere's"
+        ),
+    )
+    citations_settings: CitationsSettings = Field(
+        default_factory=lambda: CitationsSettings(
+            documents_response_field="documents",
+            documents_request_param="documents",
+            documents_stream_event_type="search-results",
+            citations_response_field="citations",
+            citations_stream_event_type="citation-generation",
+        ),
+        description=("Settings for citation generation, like Cohere's"),
     )
     is_function_calling_model: bool = Field(
         default=False,
