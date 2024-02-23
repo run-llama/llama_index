@@ -42,27 +42,39 @@ CAIT = CohereAIInputType
 CAT = CohereAITruncate
 
 # This list would be used for model name and input type validation
-VALID_MODEL_INPUT_TYPES = [
-    (CAMN.ENGLISH_V3, CAIT.SEARCH_QUERY),
-    (CAMN.ENGLISH_LIGHT_V3, CAIT.SEARCH_QUERY),
-    (CAMN.MULTILINGUAL_V3, CAIT.SEARCH_QUERY),
-    (CAMN.MULTILINGUAL_LIGHT_V3, CAIT.SEARCH_QUERY),
-    (CAMN.ENGLISH_V3, CAIT.SEARCH_DOCUMENT),
-    (CAMN.ENGLISH_LIGHT_V3, CAIT.SEARCH_DOCUMENT),
-    (CAMN.MULTILINGUAL_V3, CAIT.SEARCH_DOCUMENT),
-    (CAMN.MULTILINGUAL_LIGHT_V3, CAIT.SEARCH_DOCUMENT),
-    (CAMN.ENGLISH_V3, CAIT.CLASSIFICATION),
-    (CAMN.ENGLISH_LIGHT_V3, CAIT.CLASSIFICATION),
-    (CAMN.MULTILINGUAL_V3, CAIT.CLASSIFICATION),
-    (CAMN.MULTILINGUAL_LIGHT_V3, CAIT.CLASSIFICATION),
-    (CAMN.ENGLISH_V3, CAIT.CLUSTERING),
-    (CAMN.ENGLISH_LIGHT_V3, CAIT.CLUSTERING),
-    (CAMN.MULTILINGUAL_V3, CAIT.CLUSTERING),
-    (CAMN.MULTILINGUAL_LIGHT_V3, CAIT.CLUSTERING),
-    (CAMN.ENGLISH_V2, None),
-    (CAMN.ENGLISH_LIGHT_V2, None),
-    (CAMN.MULTILINGUAL_V2, None),
-]
+VALID_MODEL_INPUT_TYPES = {
+    CAMN.ENGLISH_V3: [
+        None,
+        CAIT.SEARCH_QUERY,
+        CAIT.SEARCH_DOCUMENT,
+        CAIT.CLASSIFICATION,
+        CAIT.CLUSTERING,
+    ],
+    CAMN.ENGLISH_LIGHT_V3: [
+        None,
+        CAIT.SEARCH_QUERY,
+        CAIT.SEARCH_DOCUMENT,
+        CAIT.CLASSIFICATION,
+        CAIT.CLUSTERING,
+    ],
+    CAMN.MULTILINGUAL_V3: [
+        None,
+        CAIT.SEARCH_QUERY,
+        CAIT.SEARCH_DOCUMENT,
+        CAIT.CLASSIFICATION,
+        CAIT.CLUSTERING,
+    ],
+    CAMN.MULTILINGUAL_LIGHT_V3: [
+        None,
+        CAIT.SEARCH_QUERY,
+        CAIT.SEARCH_DOCUMENT,
+        CAIT.CLASSIFICATION,
+        CAIT.CLUSTERING,
+    ],
+    CAMN.ENGLISH_V2: [None],
+    CAMN.ENGLISH_LIGHT_V2: [None],
+    CAMN.MULTILINGUAL_V2: [None],
+}
 
 VALID_TRUNCATE_OPTIONS = [CAT.START, CAT.END, CAT.NONE]
 
@@ -101,10 +113,14 @@ class CohereEmbedding(BaseEmbedding):
                           this model is supported and that the input type provided is compatible with the model.
         """
         # Validate model_name and input_type
-        if (model_name, input_type) not in VALID_MODEL_INPUT_TYPES:
+        if model_name not in VALID_MODEL_INPUT_TYPES:
+            raise ValueError(f"{model_name} is not a valid model name")
+
+        if input_type not in VALID_MODEL_INPUT_TYPES[model_name]:
             raise ValueError(
-                f"{(model_name, input_type)} is not valid for model '{model_name}'"
+                f"{input_type} is not a valid input type for the provided model."
             )
+
         if truncate not in VALID_TRUNCATE_OPTIONS:
             raise ValueError(f"truncate must be one of {VALID_TRUNCATE_OPTIONS}")
 
@@ -130,10 +146,6 @@ class CohereEmbedding(BaseEmbedding):
             CAMN.MULTILINGUAL_V3,
             CAMN.MULTILINGUAL_LIGHT_V3,
         ]:
-            if input_type not in self.ALLOWED_INPUT_TYPES:
-                raise ValueError(
-                    f"input_type must be one of {self.ALLOWED_INPUT_TYPES}"
-                )
             result = self.cohere_client.embed(
                 texts=texts,
                 input_type=self.input_type or input_type,
