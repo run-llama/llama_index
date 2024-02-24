@@ -64,7 +64,7 @@ def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
                 key = expression.split(".")[
                     -1
                 ]  # Extracting "title" from "$.title", for example
-                results[key] = datum[0].value
+                results[key] = ", ".join(str(i.value) for i in datum)
         except Exception as exc:
             raise ValueError(f"Invalid JSON Path: {expression}") from exc
 
