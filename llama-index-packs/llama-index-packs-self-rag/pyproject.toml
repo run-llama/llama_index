@@ -13,7 +13,6 @@ import_path = "llama_index.packs.self_rag"
 
 [tool.llamahub.class_authors]
 SelfRAGPack = "mmaatouk"
-SelfRAGQueryEngine = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

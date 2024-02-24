@@ -14,8 +14,6 @@ import_path = "llama_index.vector_stores.azureaisearch"
 [tool.llamahub.class_authors]
 AzureAISearchVectorStore = "llama-index"
 CognitiveSearchVectorStore = "llama-index"
-IndexManagement = "llama-index"
-MetadataIndexFieldType = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
