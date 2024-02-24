@@ -8,9 +8,13 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["Bedrock", "completion_response_to_chat_response", "completion_with_retry"]
 contains_example = false
 import_path = "llama_index.llms.bedrock"
+
+[tool.llamahub.class_authors]
+Bedrock = "llama-index"
+completion_response_to_chat_response = "llama-index"
+completion_with_retry = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,13 +25,14 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index llms bedrock integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-bedrock"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llama-index-llms-anthropic = "^0.1.1"
 boto3 = "^1.34.26"

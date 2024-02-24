@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.core.bridge.pydantic import Field
-from llama_index.core.llms import LLM, ChatMessage, ChatResponse, OpenAI
+from llama_index.core.llms import LLM, ChatMessage, ChatResponse
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import RANKGPT_RERANK_PROMPT
@@ -14,12 +14,18 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 
+def get_default_llm() -> LLM:
+    from llama_index.llms.openai import OpenAI
+
+    return OpenAI(model="gpt-3.5-turbo-16k")
+
+
 class RankGPTRerank(BaseNodePostprocessor):
     """RankGPT-based reranker."""
 
     top_n: int = Field(default=5, description="Top N nodes to return from reranking.")
     llm: LLM = Field(
-        default_factory=lambda: OpenAI(model="gpt-3.5-turbo-16k"),
+        default_factory=get_default_llm,
         description="LLM to use for rankGPT",
     )
     verbose: bool = Field(

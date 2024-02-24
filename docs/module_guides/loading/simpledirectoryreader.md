@@ -1,6 +1,6 @@
 # SimpleDirectoryReader
 
-`SimpleDirectoryReader` is the simplest way to load data from local files into LlamaIndex. For production use cases it's more likely that you'll want to use one of the many Readers available on [LlamaHub](https://llamalab.com/hub), but `SimpleDirectoryReader` is a great way to get started.
+`SimpleDirectoryReader` is the simplest way to load data from local files into LlamaIndex. For production use cases it's more likely that you'll want to use one of the many Readers available on [LlamaHub](https://llamahub.ai/), but `SimpleDirectoryReader` is a great way to get started.
 
 ## Supported file types
 

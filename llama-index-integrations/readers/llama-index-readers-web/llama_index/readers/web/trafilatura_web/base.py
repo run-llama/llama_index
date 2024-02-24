@@ -14,6 +14,11 @@ class TrafilaturaWebReader(BasePydanticReader):
 
     is_remote: bool = True
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "TrafilaturaWebReader"
+
     def load_data(
         self,
         urls: List[str],

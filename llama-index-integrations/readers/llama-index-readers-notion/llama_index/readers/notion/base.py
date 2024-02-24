@@ -40,12 +40,17 @@ class NotionPageReader(BasePydanticReader):
 
         token = integration_token
         headers = {
-            "Authorization": "Bearer " + self.token,
+            "Authorization": "Bearer " + token,
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28",
         }
 
         super().__init__(token=token, headers=headers)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name identifier of the class."""
+        return "NotionPageReader"
 
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
         """Read a block."""

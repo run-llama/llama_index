@@ -8,9 +8,13 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["OpenAIAgent", "OpenAIAgentWorker", "OpenAIAssistantAgent"]
 contains_example = false
 import_path = "llama_index.agent.openai"
+
+[tool.llamahub.class_authors]
+OpenAIAgent = "llama-index"
+OpenAIAgentWorker = "llama-index"
+OpenAIAssistantAgent = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,15 +25,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index agent openai integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-agent-openai"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-llama-index-llms-openai = "^0.1.1"
+llama-index-llms-openai = "^0.1.5"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

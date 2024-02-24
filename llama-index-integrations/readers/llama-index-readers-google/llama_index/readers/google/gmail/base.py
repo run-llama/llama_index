@@ -1,4 +1,5 @@
 """Google Mail reader."""
+
 import base64
 import email
 from typing import Any, List, Optional
@@ -37,10 +38,10 @@ class GmailReader(BaseReader, BaseModel):
         if not self.service:
             self.service = build("gmail", "v1", credentials=credentials)
 
-        messsages = self.search_messages()
+        messages = self.search_messages()
 
         results = []
-        for message in messsages:
+        for message in messages:
             text = message.pop("body")
             extra_info = message
             results.append(Document(text=text, extra_info=extra_info or {}))

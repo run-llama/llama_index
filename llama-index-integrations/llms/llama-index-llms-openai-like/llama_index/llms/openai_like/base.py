@@ -12,7 +12,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.generic_utils import (
     async_stream_completion_response_to_chat_response,
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,

@@ -1,9 +1,8 @@
 import argparse
 from typing import Any, Optional
 
-from llama_index.cli.rag.base import RagCLI, default_ragcli_persist_dir
-from llama_index.cli.upgrade.base import upgrade_dir, upgrade_file
-from llama_index.cli.new_package.base import init_new_package
+from llama_index.cli.rag import RagCLI, default_ragcli_persist_dir
+from llama_index.cli.upgrade import upgrade_dir, upgrade_file
 from llama_index.core.ingestion import IngestionCache, IngestionPipeline
 from llama_index.core.llama_dataset.download import (
     LLAMA_DATASETS_LFS_URL,
@@ -17,6 +16,8 @@ from llama_index.core.llama_pack.download import (
 )
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.text_splitter import SentenceSplitter
+
+from llama_index.cli.new_package.base import init_new_package
 
 
 def handle_init_package(
@@ -98,7 +99,7 @@ def default_rag_cli() -> RagCLI:
 
         from llama_index.vector_stores.chroma import (
             ChromaVectorStore,
-        )
+        )  # pants: no-infer-dep
     except ImportError:
         ChromaVectorStore = None
 
@@ -133,7 +134,7 @@ def default_rag_cli() -> RagCLI:
         print(
             "Default RagCLI was not built. There are packages missing. Please"
             " install required dependencies by running "
-            "`pip install llama-index-embeddings-openai llama-index-llms-openai chromadb llama-index-vector-stores-chroma`"
+            "`pip install llama-index-embeddings-openai llama-index-llms-openai chroma llama-index-vector-stores-chroma`"
         )
         return None
 
@@ -146,7 +147,7 @@ def main() -> None:
 
     # llama rag command
     llamarag_parser = subparsers.add_parser(
-        "rag", help="Ask a question to a document or a directory of documents."
+        "rag", help="Ask a question to a document / a directory of documents."
     )
     RagCLI.add_parser_args(llamarag_parser, default_rag_cli)
 

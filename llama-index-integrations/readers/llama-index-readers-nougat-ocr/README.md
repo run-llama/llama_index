@@ -20,4 +20,4 @@ documents = reader.load_data(pdf_path)
 
 ## Miscellaneous
 
-An `ouput` folder will be created with the same name as the pdf and `.mmd` extension.
+An `output` folder will be created with the same name as the pdf and `.mmd` extension.

@@ -71,11 +71,11 @@ def metadata_dict_to_node(metadata: dict, text: Optional[str] = None) -> BaseNod
 
     node: BaseNode
     if node_type == IndexNode.class_name():
-        node = IndexNode.parse_raw(node_json)
+        node = IndexNode.from_json(node_json)
     elif node_type == ImageNode.class_name():
-        node = ImageNode.parse_raw(node_json)
+        node = ImageNode.from_json(node_json)
     else:
-        node = TextNode.parse_raw(node_json)
+        node = TextNode.from_json(node_json)
 
     if text is not None:
         node.set_content(text)

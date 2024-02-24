@@ -8,9 +8,13 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["GoogleTextSynthesizer", "SynthesizedResponse", "set_google_config"]
 contains_example = false
 import_path = "llama_index.response_synthesizers.google"
+
+[tool.llamahub.class_authors]
+GoogleTextSynthesizer = "llama-index"
+SynthesizedResponse = "llama-index"
+set_google_config = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,15 +25,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index response synthesizers google integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-response-synthesizers-google"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-llama-index-core = "^0.10.1"
-llama-index-vector-stores-google = "^0.1.1"
+python = ">=3.9,<4.0"
+llama-index-core = "^0.10.11.post1"
+llama-index-vector-stores-google = "^0.1.3"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

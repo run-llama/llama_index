@@ -9,7 +9,7 @@ from llama_index.core.base.embeddings.base import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 MAX_BATCH_SIZE = 2048
 

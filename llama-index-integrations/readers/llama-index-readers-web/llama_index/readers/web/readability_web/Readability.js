@@ -491,7 +491,7 @@ Readability.prototype = {
       }
     });
 
-    var medias = this._getAllNodesWithTag(articleContent, [
+    var mediaTypes = this._getAllNodesWithTag(articleContent, [
       "img",
       "picture",
       "figure",
@@ -500,7 +500,7 @@ Readability.prototype = {
       "source",
     ]);
 
-    this._forEachNode(medias, function (media) {
+    this._forEachNode(mediaTypes, function (media) {
       var src = media.getAttribute("src");
       var poster = media.getAttribute("poster");
       var srcset = media.getAttribute("srcset");

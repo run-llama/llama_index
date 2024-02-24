@@ -18,6 +18,7 @@ Each issue is converted to a document by doing the following:
     - The doc_hash of the document is not set.
 
 """
+
 import asyncio
 import enum
 import logging
@@ -176,7 +177,7 @@ class GitHubRepositoryIssuesReader(BaseReader):
                     "created_at": issue["created_at"],
                     # url is the API URL
                     "url": issue["url"],
-                    # source is the HTML URL, more conveninent for humans
+                    # source is the HTML URL, more convenient for humans
                     "source": issue["html_url"],
                 }
                 if issue["closed_at"] is not None:

@@ -150,7 +150,7 @@ class SECDocument(HTMLDocument):
         _raise_for_invalid_filing_type(self.filing_type)
         # NOTE(robinson) - We are not skipping table text because the risk narrative section
         # usually does not contain any tables and sometimes tables are used for
-        # title formating
+        # title formatting
         section_elements: List[NarrativeText] = []
         in_section = False
         for element in self.elements:
@@ -199,7 +199,7 @@ class SECDocument(HTMLDocument):
         _raise_for_invalid_filing_type(self.filing_type)
         # NOTE(robinson) - We are not skipping table text because the risk narrative section
         # usually does not contain any tables and sometimes tables are used for
-        # title formating
+        # title formatting
         toc = self.get_table_of_contents()
         if not toc.pages:
             return self.get_section_narrative_no_toc(section)
@@ -374,7 +374,7 @@ def is_10k_risk_title(title: str) -> bool:
 
 
 def is_s1_section_title(title: str) -> bool:
-    """Detemines if a title corresponds to a section title."""
+    """Determines if a title corresponds to a section title."""
     return title.strip().isupper()
 
 

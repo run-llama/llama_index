@@ -119,7 +119,7 @@ Learn how to configure specific modules:
 
 ## Setting local configurations
 
-Interfaces that use specific parts if the settings can also accept local overrides.
+Interfaces that use specific parts of the settings can also accept local overrides.
 
 ```python
 index = VectorStoreIndex.from_documents(
