@@ -13,7 +13,6 @@ import_path = "llama_index.packs.vanna"
 
 [tool.llamahub.class_authors]
 VannaPack = "jerryjliu"
-VannaQueryEngine = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

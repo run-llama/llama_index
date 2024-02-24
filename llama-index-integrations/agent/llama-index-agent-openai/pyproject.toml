@@ -13,7 +13,6 @@ import_path = "llama_index.agent.openai"
 
 [tool.llamahub.class_authors]
 OpenAIAgent = "llama-index"
-OpenAIAgentWorker = "llama-index"
 OpenAIAssistantAgent = "llama-index"
 
 [tool.mypy]

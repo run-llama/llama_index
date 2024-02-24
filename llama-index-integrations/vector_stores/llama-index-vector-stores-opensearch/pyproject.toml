@@ -12,7 +12,6 @@ contains_example = false
 import_path = "llama_index.vector_stores.opensearch"
 
 [tool.llamahub.class_authors]
-OpensearchVectorClient = "llama-index"
 OpensearchVectorStore = "llama-index"
 
 [tool.mypy]

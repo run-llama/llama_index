@@ -13,6 +13,8 @@ import_path = "llama_index.indices.managed.llama_cloud"
 
 [tool.llamahub.class_authors]
 LlamaCloudIndex = "llama-index"
+
+[tool.llamahub.secondary_class_authors]
 LlamaCloudRetriever = "llama-index"
 
 [tool.mypy]

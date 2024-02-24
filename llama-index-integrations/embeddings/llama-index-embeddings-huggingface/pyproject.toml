@@ -14,7 +14,6 @@ import_path = "llama_index.embeddings.huggingface"
 [tool.llamahub.class_authors]
 HuggingFaceEmbedding = "llama-index"
 HuggingFaceInferenceAPIEmbedding = "llama-index"
-HuggingFaceInferenceAPIEmbeddings = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

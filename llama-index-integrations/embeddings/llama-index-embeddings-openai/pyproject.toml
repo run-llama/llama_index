@@ -13,9 +13,6 @@ import_path = "llama_index.embeddings.openai"
 
 [tool.llamahub.class_authors]
 OpenAIEmbedding = "llama-index"
-OpenAIEmbeddingMode = "llama-index"
-OpenAIEmbeddingModeModel = "llama-index"
-OpenAIEmbeddingModelType = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
