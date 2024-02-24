@@ -75,6 +75,15 @@ maxdepth: 1
 /examples/llm/everlyai.ipynb
 ```
 
+## Fireworks
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/fireworks.ipynb
+```
+
 ## Gradient
 
 ```{toctree}
@@ -83,6 +92,15 @@ maxdepth: 1
 ---
 /examples/llm/gradient_base_model.ipynb
 /examples/llm/gradient_model_adapter.ipynb
+```
+
+## Groq
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/groq.ipynb
 ```
 
 ## Hugging Face
@@ -148,6 +166,15 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/localai.ipynb
+```
+
+## MariTalk
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/maritalk.ipynb
 ```
 
 ## MistralAI

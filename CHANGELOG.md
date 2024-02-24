@@ -1,5 +1,41 @@
 # ChangeLog
 
+# [0.10.12] - 2024-02-22
+
+### New Features
+
+- Added `llama-index-postprocessor-colbert-rerank` package (#11057)
+- `MyMagicAI` LLM (#11263)
+- `MariaTalk` LLM (#10925)
+- Add retries to github reader (#10980)
+- Added FireworksAI embedding and LLM modules (#10959)
+
+### Bug Fixes / Nits
+
+- Fixed string formatting in weaviate (#11294)
+- Fixed off-by-one error in semantic splitter (#11295)
+- Fixed `download_llama_pack` for multiple files (#11272)
+- Removed `BUILD` files from packages (#11267)
+- Loosened python version reqs for all packages (#11267)
+- Fixed args issue with chromadb (#11104)
+
+## [0.10.11] - 2024-02-21
+
+### Bug Fixes / Nits
+
+- Fixed multi-modal LLM for async acomplete (#11064)
+- Fixed issue with llamaindex-cli imports (#11068)
+
+## [0.10.10] - 2024-02-20
+
+I'm still a bit wonky with our publishing process -- apologies. This is just a version
+bump to ensure the changes that were supposed to happen in 0.10.9 actually
+did get published. (AF)
+
+## [0.10.9] - 2024-02-20
+
+- add llama-index-cli dependency
+
 ## [0.10.7] - 2024-02-19
 
 ### New Features

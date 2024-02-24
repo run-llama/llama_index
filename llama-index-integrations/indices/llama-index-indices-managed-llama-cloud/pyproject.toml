@@ -13,6 +13,8 @@ import_path = "llama_index.indices.managed.llama_cloud"
 
 [tool.llamahub.class_authors]
 LlamaCloudIndex = "llama-index"
+
+[tool.llamahub.secondary_class_authors]
 LlamaCloudRetriever = "llama-index"
 
 [tool.mypy]
@@ -24,13 +26,14 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Logan Markewich <logan@llamaindex.ai>"]
 description = "llama-index indices llama-cloud integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-indices-managed-llama-cloud"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
 llamaindex-py-client = "^0.1.13"
 

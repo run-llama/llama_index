@@ -382,13 +382,15 @@ class VllmServer(Vllm):
         response = post_http_request(self.api_url, sampling_params, stream=True)
 
         def gen() -> CompletionResponseGen:
+            response_str = ""
             for chunk in response.iter_lines(
                 chunk_size=8192, decode_unicode=False, delimiter=b"\0"
             ):
                 if chunk:
                     data = json.loads(chunk.decode("utf-8"))
 
-                    yield CompletionResponse(text=data["text"][0])
+                    response_str += data["text"][0]
+                    yield CompletionResponse(text=response_str, delta=data["text"][0])
 
         return gen()
 
