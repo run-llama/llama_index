@@ -13,8 +13,6 @@ import_path = "llama_index.response_synthesizers.google"
 
 [tool.llamahub.class_authors]
 GoogleTextSynthesizer = "llama-index"
-SynthesizedResponse = "llama-index"
-set_google_config = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
