@@ -45,7 +45,7 @@ def octoai_modelname_to_contextsize(modelname: str) -> int:
     if modelname not in ALL_AVAILABLE_MODELS:
         raise ValueError(
             f"Unknown model {modelname!r}. Please provide a supported model name as \
-            a string or using the TextModels enum from the OctoAI SDK:"
+            a string or using the TextModel enum from the OctoAI SDK:"
             f" {', '.join(ALL_AVAILABLE_MODELS.keys())}"
         )
     return ALL_AVAILABLE_MODELS[modelname]

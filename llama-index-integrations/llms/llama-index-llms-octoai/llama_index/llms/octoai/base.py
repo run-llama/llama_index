@@ -13,6 +13,7 @@ from typing import (
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
+from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.llm import LLM
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -23,6 +24,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
 )
 from llama_index.llms.octoai.utils import (
     octoai_modelname_to_contextsize,
@@ -31,10 +33,12 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
+from llama_index.core.base.llms.generic_utils import (
+    get_from_param_or_env,
+)
 from llama_index.core import Settings
 from octoai.chat import TextModel
 from octoai.client import Client
-from octoai.chat import TextModel
 
 import json
 
@@ -45,25 +49,53 @@ class OctoAI(LLM):
     model: str = Field(
         default=DEFAULT_OCTOAI_MODEL, description="The model to use with OctoAI"
     )
+    temperature: float = Field(
+        default=DEFAULT_TEMPERATURE,
+        description="The temperature to use during generation.",
+        gte=0.0,
+        lte=1.0,
+    )
+    max_tokens: Optional[int] = Field(
+        description="The maximum number of tokens to generate.",
+        gt=0,
+    )
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional kwargs for the OpenAI API."
+    )
 
     _client: Client = PrivateAttr()
 
     def __init__(
         self,
         model: str = DEFAULT_OCTOAI_MODEL,
+        token: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: float = DEFAULT_TEMPERATURE,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         print(f"Hello from OctoAI Integration ... with model {model}")
-        self._client = Client()
 
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
+        token = get_from_param_or_env("token", token, "OCTOAI_TOKEN", "")
+
+        if not token:
+            raise ValueError(
+                "You must provide an API token to use OctoAI. "
+                "You can either pass it in as an argument or set it `OCTOAI_TOKEN`."
+                "To generate a token in your OctoAI account settings: https://octoai.cloud/settings`."
+            )
+
+        self._client = Client(token=token)
+
         super().__init__(
             additional_kwargs=additional_kwargs,
+            max_tokens=max_tokens,
             model=model,
             callback_manager=callback_manager,
+            temperature=temperature,
         )
 
     @property
@@ -75,9 +107,29 @@ class OctoAI(LLM):
             model_name=self.model,
         )
 
+    def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        base_kwargs = {"model": self.model, "temperature": self.temperature, **kwargs}
+        if self.max_tokens is not None:
+            base_kwargs["max_tokens"] = self.max_tokens
+        return {**base_kwargs, **self.additional_kwargs}
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        raise (ValueError("Not Implemented"))
+        octoai_messages = [
+            {"role": message.role.value, "content": message.content}
+            for message in messages
+        ]
+
+        response = self._client.chat.completions.create(
+            messages=octoai_messages, **self._get_model_kwargs(**kwargs)
+        )
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=response.choices[0].message.content
+            ),
+            raw=dict(response),
+        )
 
     @llm_chat_callback()
     def stream_chat(
@@ -125,35 +177,3 @@ class OctoAI(LLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise (ValueError("Not Implemented"))
-
-    # @llm_completion_callback()
-    # def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-    #     completion = self._client.chat.completions.create(
-    #         model=self.model,
-    #         messages=[
-    #             {
-    #                 "role": "system",
-    #                 "content": "Below is an instruction that describes a task. Write a response that appropriately completes the request.",
-    #             },
-    #             {"role": "user", "content": prompt},
-    #         ],
-    #         max_tokens=150,
-    #     )
-    #     print(json.dumps(completion.dict(), indent=2))
-    #     return CompletionResponse(text="test")
-
-    # @llm_completion_callback()
-    # def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-    #     response = ""
-    #     for token in "test response stream":
-    #         response += token
-    #         yield CompletionResponse(text=response, delta=token)
-
-    # def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-    #     base_kwargs = {"model": self.model, "temperature": self.temperature, **kwargs}
-    #     if self.max_tokens is not None:
-    #         # If max_tokens is None, don't include in the payload:
-    #         # https://platform.openai.com/docs/api-reference/chat
-    #         # https://platform.openai.com/docs/api-reference/completions
-    #         base_kwargs["max_tokens"] = self.max_tokens
-    #     return {**base_kwargs, **self.additional_kwargs}
