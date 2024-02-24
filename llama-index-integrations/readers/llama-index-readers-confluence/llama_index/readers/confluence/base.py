@@ -374,7 +374,7 @@ class ConfluenceReader(BaseReader):
             elif media_type == "image/svg+xml":
                 text = title + self.process_svg(absolute_url)
             else:
-                logger.info('Skipping unsupported attachment {absolute_url} of media_type {media_type}')
+                logger.info(f"Skipping unsupported attachment {absolute_url} of media_type {media_type}")
                 continue
             texts.append(text)
 
