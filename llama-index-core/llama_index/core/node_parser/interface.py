@@ -69,6 +69,7 @@ class NodeParser(TransformComponent, ABC):
         """
         doc_id_to_document = {doc.id_: doc for doc in documents}
 
+        print(doc_id_to_document)
         with self.callback_manager.event(
             CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
         ) as event:
@@ -96,6 +97,8 @@ class NodeParser(TransformComponent, ABC):
                         node.metadata.update(
                             doc_id_to_document[node.ref_doc_id].metadata
                         )
+                        # print(node.ref_doc_id)
+                        # node.metadata["ref_doc_id"] = node.ref_doc_id
 
                 if self.include_prev_next_rel:
                     if i > 0:

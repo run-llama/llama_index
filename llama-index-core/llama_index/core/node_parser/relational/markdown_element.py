@@ -47,6 +47,8 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
 
     def get_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
         """Get nodes from node."""
+        print("*********NODE*********")
+        print(node.id_)
         elements = self.extract_elements(
             node.get_content(),
             table_filters=[self.filter_table],
@@ -57,7 +59,7 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        return self.get_nodes_from_elements(elements)
+        return self.get_nodes_from_elements(elements, node.id_)
 
     def extract_elements(
         self,
