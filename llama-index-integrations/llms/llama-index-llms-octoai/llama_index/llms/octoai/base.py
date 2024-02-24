@@ -15,6 +15,7 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.llm import LLM
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -35,6 +36,7 @@ from llama_index.core.llms.callbacks import (
 )
 from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
+    chat_to_completion_decorator
 )
 from llama_index.core import Settings
 from octoai.chat import TextModel
@@ -59,20 +61,29 @@ class OctoAI(LLM):
         description="The maximum number of tokens to generate.",
         gt=0,
     )
+    timeout: float = Field(
+        default=120, description="The timeout to use in seconds.", gte=0
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
     )
-
-    _client: Client = PrivateAttr()
+    _client: Optional[Client] = PrivateAttr()
 
     def __init__(
         self,
         model: str = DEFAULT_OCTOAI_MODEL,
-        token: Optional[str] = None,
-        max_tokens: Optional[int] = None,
         temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: Optional[int] = None,
+        timeout: int = 120,
+        token: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        # base class
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         print(f"Hello from OctoAI Integration ... with model {model}")
 
@@ -88,7 +99,13 @@ class OctoAI(LLM):
                 "To generate a token in your OctoAI account settings: https://octoai.cloud/settings`."
             )
 
-        self._client = Client(token=token)
+        try:
+            self._client = Client(token=token, timeout=timeout)
+        except ImportError as err:
+            raise ImportError(
+                "Could not import OctoAI python package. "
+                "Please install it with `pip install octoai-sdk`."
+            ) from err
 
         super().__init__(
             additional_kwargs=additional_kwargs,
@@ -96,6 +113,12 @@ class OctoAI(LLM):
             model=model,
             callback_manager=callback_manager,
             temperature=temperature,
+            timeout=timeout,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
         )
 
     @property
@@ -104,14 +127,27 @@ class OctoAI(LLM):
         return LLMMetadata(
             context_window=octoai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_tokens or -1,
+            is_chat_model=True,
             model_name=self.model,
         )
 
-    def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        base_kwargs = {"model": self.model, "temperature": self.temperature, **kwargs}
-        if self.max_tokens is not None:
-            base_kwargs["max_tokens"] = self.max_tokens
-        return {**base_kwargs, **self.additional_kwargs}
+    @property
+    def _model_kwargs(self) -> Dict[str, Any]:
+        base_kwargs = {
+            "model": self.model,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+        }
+        return {
+            **base_kwargs,
+            **self.additional_kwargs,
+        }
+
+    def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **self._model_kwargs,
+            **kwargs,
+        }
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -121,7 +157,7 @@ class OctoAI(LLM):
         ]
 
         response = self._client.chat.completions.create(
-            messages=octoai_messages, **self._get_model_kwargs(**kwargs)
+            messages=octoai_messages, **self._get_all_kwargs(**kwargs)
         )
 
         return ChatResponse(
@@ -141,7 +177,8 @@ class OctoAI(LLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        raise (ValueError("Not Implemented"))
+        complete_fn = chat_to_completion_decorator(self.chat)
+        return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
     def stream_complete(
@@ -156,7 +193,7 @@ class OctoAI(LLM):
         messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponse:
-        raise (ValueError("Not Implemented"))
+        raise NotImplementedError
 
     @llm_chat_callback()
     async def astream_chat(
@@ -164,16 +201,16 @@ class OctoAI(LLM):
         messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
-        raise (ValueError("Not Implemented"))
+        raise NotImplementedError
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        raise (ValueError("Not Implemented"))
+        raise NotImplementedError
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        raise (ValueError("Not Implemented"))
+        raise NotImplementedError
