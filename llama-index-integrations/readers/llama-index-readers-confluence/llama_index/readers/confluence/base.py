@@ -374,6 +374,7 @@ class ConfluenceReader(BaseReader):
             elif media_type == "image/svg+xml":
                 text = title + self.process_svg(absolute_url)
             else:
+                logger.info('Skipping unsupported attachment {absolute_url} of media_type {media_type}')
                 continue
             texts.append(text)
 
@@ -421,21 +422,29 @@ class ConfluenceReader(BaseReader):
                 " pytesseract Pillow`"
             )
 
-        response = self.confluence.request(path=link, absolute=True)
         text = ""
 
-        if (
-            response.status_code != 200
-            or response.content == b""
-            or response.content is None
-        ):
-            return text
         try:
-            image = Image.open(BytesIO(response.content))
-        except OSError:
+            response = self.confluence.request(path=link, absolute=True)
+            # Check if the response status code indicates success (200 OK)
+            if response.status_code == 200 and response.content:
+                try:
+                    image = Image.open(BytesIO(response.content))
+                    text = pytesseract.image_to_string(image)
+                except OSError:
+                    # Handle errors that occur while opening or processing the image
+                    logger.error(f"Error processing image at {link}: Unable to open or read the image content.")
+                    return text
+            else:
+                # Log non-200 responses here if needed
+                logger.error(f"Error fetching image at {link}: HTTP status code {response.status_code}.")
+                return text
+        except requests.exceptions.RequestException as e:
+            # This catches any Requests-related exceptions, including HTTPError, ConnectionError, etc.
+            logger.error(f"Request error while fetching image at {link}: {e}")
             return text
 
-        return pytesseract.image_to_string(image)
+        return text
 
     def process_doc(self, link):
         try:
