@@ -3,16 +3,16 @@ build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core"]
 
 [tool.codespell]
-# [tool.llamahub.class_authors]
-OctoAI = "hanscl"
 check-filenames = true
 check-hidden = true
-# [tool.llamahub]
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.llamahub]
 contains_example = false
 import_path = "llama_index.llms.octoai"
-# Feel free to un-skip examples, and experimental, you will just need to
-# work through many typos (--write-changes and --interactive will help)
-skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.llamahub.class_authors]
+OctoAI = "hanscl"
 
 [tool.mypy]
 disallow_untyped_defs = true
