@@ -61,7 +61,7 @@ class OctoAI(LLM):
         default=120, description="The timeout to use in seconds.", gte=0
     )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs for the OpenAI API."
+        default_factory=dict, description="Additional kwargs for the OctoAI SDK."
     )
     _client: Optional[Client] = PrivateAttr()
 
@@ -81,8 +81,6 @@ class OctoAI(LLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        print(f"Hello from OctoAI Integration ... with model {model}")
-
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 

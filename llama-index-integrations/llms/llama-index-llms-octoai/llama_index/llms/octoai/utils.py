@@ -16,7 +16,7 @@ TEXT_MODELS: Dict[str, int] = {
 
 ALL_AVAILABLE_MODELS = {**TEXT_MODELS}
 
-MISSING_TOKEN_ERROR_MESSAGE = """No token found for OpenAI.
+MISSING_TOKEN_ERROR_MESSAGE = """No token found for OctoAI.
 Please set the OCTOAI_TOKEN environment \
 variable prior to initialization.
 API keys can be found or created at \
