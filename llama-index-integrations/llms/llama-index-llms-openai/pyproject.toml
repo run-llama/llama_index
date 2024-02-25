@@ -15,7 +15,6 @@ import_path = "llama_index.llms.openai"
 AsyncOpenAI = "llama-index"
 OpenAI = "llama-index"
 SyncOpenAI = "llama-index"
-Tokenizer = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
