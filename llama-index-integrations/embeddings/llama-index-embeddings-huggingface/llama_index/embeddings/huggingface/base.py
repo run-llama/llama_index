@@ -164,7 +164,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         if self.pooling == Pooling.CLS:
             embeddings = self.pooling.cls_pooling(context_layer)
         elif self.pooling == Pooling.LAST:
-            embeddings = self.pooling.last_pooling(context_layer)           
+            embeddings = self.pooling.last_pooling(context_layer)
         else:
             embeddings = self._mean_pooling(
                 token_embeddings=context_layer,
