@@ -90,6 +90,19 @@ def default_file_metadata_func(
     }
 
 
+class _DefaultFileMetadataFunc:
+    """
+    Default file metadata function wrapper which stores the fs.
+    Allows for pickling of the function.
+    """
+
+    def __init__(self, fs: Optional[fsspec.AbstractFileSystem] = None):
+        self.fs = fs or get_default_fs()
+
+    def __call__(self, file_path: str) -> Dict:
+        return default_file_metadata_func(file_path, self.fs)
+
+
 def get_default_fs() -> fsspec.AbstractFileSystem:
     return LocalFileSystem()
 
@@ -189,10 +202,7 @@ class SimpleDirectoryReader(BaseReader):
         else:
             self.file_extractor = {}
 
-        def _default_metadata_func(path: str) -> Dict:
-            return default_file_metadata_func(path, self.fs)
-
-        self.file_metadata = file_metadata or _default_metadata_func
+        self.file_metadata = file_metadata or _DefaultFileMetadataFunc(self.fs)
         self.filename_as_id = filename_as_id
 
     def is_hidden(self, path: Path) -> bool:
