@@ -10,7 +10,7 @@ from llama_index.core.node_parser.node_utils import (
     default_id_func,
 )
 from llama_index.core.node_parser.text.utils import split_by_sentence_tokenizer
-from llama_index.core.schema import BaseNode, Document, MetadataMode
+from llama_index.core.schema import BaseNode, Document
 from llama_index.core.utils import get_tqdm_iterable
 
 DEFAULT_WINDOW_SIZE = 3
