@@ -12,10 +12,13 @@ class Pooling(str, Enum):
 
     CLS = "cls"
     MEAN = "mean"
+    LAST = "last"  # last token pooling
 
     def __call__(self, array: np.ndarray) -> np.ndarray:
         if self == self.CLS:
             return self.cls_pooling(array)
+        elif self == self.LAST:
+            return self.last_pooling(array)
         return self.mean_pooling(array)
 
     @classmethod
@@ -46,4 +49,14 @@ class Pooling(str, Enum):
             return array.mean(axis=1)
         if len(array.shape) == 2:
             return array.mean(axis=0)
+        raise NotImplementedError(f"Unhandled shape {array.shape}.")
+
+    @classmethod
+    def last_pooling(
+        cls, array: "Union[np.ndarray, torch.Tensor]"
+    ) -> "Union[np.ndarray, torch.Tensor]":
+        if len(array.shape) == 3:
+            return array[:, -1]
+        if len(array.shape) == 2:
+            return array[-1]
         raise NotImplementedError(f"Unhandled shape {array.shape}.")
