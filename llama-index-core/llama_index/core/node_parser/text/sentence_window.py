@@ -93,7 +93,6 @@ class SentenceWindowNodeParser(NodeParser):
         nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
 
         for node in nodes_with_progress:
-            self.sentence_splitter(node.get_content(metadata_mode=MetadataMode.NONE))
             nodes = self.build_window_nodes_from_documents([node])
             all_nodes.extend(nodes)
 
