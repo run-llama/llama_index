@@ -49,10 +49,8 @@ class IntelEmbedding(BaseEmbedding):
         except ImportError:
             raise ImportError(
                 "Optimum-Intel requires the following dependencies; please install with "
-                "`pip install optimum[exporters] \
-                      optimum-intel \
-                      neural-compressor \
-                      intel_extension_for_pytorch`"
+                "`pip install optimum[exporters] "
+                "optimum-intel neural-compressor intel_extension_for_pytorch`"
             )
 
         self._model = model or IPEXModel.from_pretrained(folder_name)
