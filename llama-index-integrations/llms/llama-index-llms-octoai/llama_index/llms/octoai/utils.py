@@ -41,7 +41,6 @@ def octoai_modelname_to_contextsize(modelname: str) -> int:
             max_tokens = octoai.modelname_to_contextsize(TextModel.CODELLAMA_13B_INSTRUCT_FP16)
             max_tokens = octoai.modelname_to_contextsize("llama-2-13b-chat-fp16")
     """
-
     if modelname not in ALL_AVAILABLE_MODELS:
         raise ValueError(
             f"Unknown model {modelname!r}. Please provide a supported model name as \
