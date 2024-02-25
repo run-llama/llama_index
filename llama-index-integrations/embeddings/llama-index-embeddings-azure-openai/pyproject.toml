@@ -12,8 +12,6 @@ contains_example = false
 import_path = "llama_index.embeddings.azure_openai"
 
 [tool.llamahub.class_authors]
-AsyncAzureOpenAI = "llama-index"
-AzureOpenAI = "llama-index"
 AzureOpenAIEmbedding = "llama-index"
 
 [tool.mypy]

@@ -15,7 +15,6 @@ import_path = "llama_index.tools.google"
 GmailToolSpec = "ajhofmann"
 GoogleCalendarToolSpec = "ajhofmann"
 GoogleSearchToolSpec = "ajhofmann"
-QUERY_URL_TMPL = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

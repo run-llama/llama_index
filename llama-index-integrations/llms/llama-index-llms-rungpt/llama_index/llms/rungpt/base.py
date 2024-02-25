@@ -1,4 +1,3 @@
-import json
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 from llama_index.core.base.llms.types import (
@@ -153,7 +152,7 @@ class RunGptLLM(LLM):
         def gen() -> CompletionResponseGen:
             text = ""
             for item in response_iter:
-                item_dict = json.loads(json.dumps(eval(item.data)))
+                item_dict = dict(item.data)
                 delta = item_dict["choices"][0]["text"]
                 additional_kwargs = item_dict["usage"]
                 text = text + self._space_handler(delta)
@@ -214,7 +213,7 @@ class RunGptLLM(LLM):
         def gen() -> ChatResponseGen:
             content = ""
             for item in chat_iter:
-                item_dict = json.loads(json.dumps(eval(item.data)))
+                item_dict = dict(item.data)
                 chat_message, delta = self._message_unpacker(item_dict)
                 content = content + self._space_handler(delta)
                 chat_message.content = content
