@@ -1,21 +1,16 @@
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Dict,
-    List,
     Optional,
-    Protocol,
     Sequence,
-    cast,
-    runtime_checkable,
 )
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_TEMPERATURE
-from llama_index.core.llms.llm import LLM
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.base.llms.generic_utils import (
+    get_from_param_or_env,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -27,22 +22,23 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.llms.octoai.utils import (
-    octoai_modelname_to_contextsize,
-)
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.constants import DEFAULT_TEMPERATURE
+from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.base.llms.generic_utils import (
-    get_from_param_or_env,
-    chat_to_completion_decorator
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+
+from llama_index.llms.octoai.utils import (
+    octoai_modelname_to_contextsize,
+    to_octoai_messages,
 )
-from llama_index.core import Settings
+
 from octoai.chat import TextModel
 from octoai.client import Client
-
-import json
 
 DEFAULT_OCTOAI_MODEL = TextModel.MIXTRAL_8X7B_INSTRUCT_FP16
 
@@ -125,7 +121,7 @@ class OctoAI(LLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=octoai_modelname_to_contextsize(self._get_model_name()),
+            context_window=octoai_modelname_to_contextsize(self.model),
             num_output=self.max_tokens or -1,
             is_chat_model=True,
             model_name=self.model,
@@ -151,13 +147,8 @@ class OctoAI(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        octoai_messages = [
-            {"role": message.role.value, "content": message.content}
-            for message in messages
-        ]
-
         response = self._client.chat.completions.create(
-            messages=octoai_messages, **self._get_all_kwargs(**kwargs)
+            messages=to_octoai_messages(messages), **self._get_all_kwargs(**kwargs)
         )
 
         return ChatResponse(
@@ -171,7 +162,28 @@ class OctoAI(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        raise (ValueError("Not Implemented"))
+        streaming_response = self._client.chat.completions.create(
+            messages=to_octoai_messages(messages),
+            stream=True,
+            **self._get_all_kwargs(**kwargs),
+        )
+
+        def gen() -> ChatResponseGen:
+            content = ""
+            role = MessageRole.ASSISTANT
+            for completion in streaming_response:
+                content_delta = completion.choices[0].delta.content
+                if content_delta is None:
+                    continue
+                content += content_delta
+
+                yield ChatResponse(
+                    message=ChatMessage(role=role, content=content),
+                    delta=content_delta,
+                    raw=completion,
+                )
+
+        return gen()
 
     @llm_completion_callback()
     def complete(
@@ -184,7 +196,8 @@ class OctoAI(LLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        raise (ValueError("Not Implemented"))
+        stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
+        return stream_complete_fn(prompt, **kwargs)
 
     # ===== Async Endpoints =====
     @llm_chat_callback()

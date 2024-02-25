@@ -1,5 +1,6 @@
 import logging
-from typing import Dict
+from typing import Dict, Sequence
+from llama_index.core.base.llms.types import ChatMessage
 from octoai.chat import TextModel
 
 TEXT_MODELS: Dict[str, int] = {
@@ -10,12 +11,10 @@ TEXT_MODELS: Dict[str, int] = {
     TextModel.LLAMA_2_13B_CHAT_FP16: 4096,
     TextModel.LLAMA_2_70B_CHAT_FP16: 4096,
     TextModel.MISTRAL_7B_INSTRUCT_FP16: 32768,
-    TextModel.MIXTRAL_8X7B_INSTRUCT_FP16: 32768
+    TextModel.MIXTRAL_8X7B_INSTRUCT_FP16: 32768,
 }
 
-ALL_AVAILABLE_MODELS = {
-    **TEXT_MODELS
-}
+ALL_AVAILABLE_MODELS = {**TEXT_MODELS}
 
 MISSING_TOKEN_ERROR_MESSAGE = """No token found for OpenAI.
 Please set the OCTOAI_TOKEN environment \
@@ -25,6 +24,7 @@ https://octoai.cloud/settings
 """
 
 logger = logging.getLogger(__name__)
+
 
 def octoai_modelname_to_contextsize(modelname: str) -> int:
     """Calculate the maximum number of tokens possible to generate for a model.
@@ -49,3 +49,9 @@ def octoai_modelname_to_contextsize(modelname: str) -> int:
             f" {', '.join(ALL_AVAILABLE_MODELS.keys())}"
         )
     return ALL_AVAILABLE_MODELS[modelname]
+
+
+def to_octoai_messages(messages: Sequence[ChatMessage]) -> Sequence[Dict]:
+    return [
+        {"role": message.role.value, "content": message.content} for message in messages
+    ]
