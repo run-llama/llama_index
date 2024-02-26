@@ -13,7 +13,6 @@ import_path = "llama_index.multi_modal_llms.dashscope"
 
 [tool.llamahub.class_authors]
 DashScopeMultiModal = "llama-index"
-DashScopeMultiModalModels = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

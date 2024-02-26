@@ -4,6 +4,7 @@ MISTRALAI_MODELS: Dict[str, int] = {
     "mistral-tiny": 32000,
     "mistral-small": 32000,
     "mistral-medium": 32000,
+    "mistral-large": 32000,
 }
 
 

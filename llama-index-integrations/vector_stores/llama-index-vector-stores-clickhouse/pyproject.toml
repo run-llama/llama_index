@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.vector_stores.clickhouse"
 
 [tool.llamahub.class_authors]
-ClickHouseVectorStore = "llama-index"
+ClickHouseVectorStore = "ClickHouse"
 
 [tool.mypy]
 disallow_untyped_defs = true
