@@ -342,7 +342,9 @@ class ReActAgentWorker(BaseAgentWorker):
         latest_content = chunk.message.content
         if latest_content:
             # doesn't follow thought-action format
-            if len(latest_content) > 7 and not latest_content.startswith("Thought"):
+            if len(latest_content) > len("Thought") and not latest_content.startswith(
+                "Thought"
+            ):
                 return True
             elif "Answer: " in latest_content:
                 return True
