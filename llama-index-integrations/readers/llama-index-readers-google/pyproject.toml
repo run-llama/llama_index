@@ -8,9 +8,16 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["GmailReader", "GoogleCalendarReader", "GoogleDocsReader", "GoogleDriveReader", "GoogleKeepReader", "GoogleSheetsReader"]
 contains_example = false
 import_path = "llama_index.readers.google"
+
+[tool.llamahub.class_authors]
+GmailReader = "bbornsztein"
+GoogleCalendarReader = "ong"
+GoogleDocsReader = "jerryjliu"
+GoogleDriveReader = "ravi03071991"
+GoogleKeepReader = "pycui"
+GoogleSheetsReader = "piroz"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,16 +28,17 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers google integration"
+exclude = ["**/BUILD"]
 keywords = ["email", "gmail", "google keep", "google notes"]
 license = "MIT"
 maintainers = ["bbornsztein", "jerryjliu", "ong", "piroz", "pycui", "ravi03071991"]
 name = "llama-index-readers-google"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
-llama-index-core = "^0.10.1"
+python = ">=3.10,<4.0"
+llama-index-core = "^0.10.11.post1"
 google-api-python-client = "^2.115.0"
 google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.0"

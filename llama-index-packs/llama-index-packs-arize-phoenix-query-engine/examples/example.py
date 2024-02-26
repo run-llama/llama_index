@@ -1,14 +1,9 @@
 # Required Environment Variables: OPENAI_API_KEY
 
-from llama_index.core.llama_pack import download_llama_pack
+from llama_index.packs.arize_phoenix_query_engine import ArizePhoenixQueryEnginePack
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.readers.web import SimpleWebPageReader
 from tqdm.auto import tqdm
-
-# download and install dependencies
-ArizePhoenixQueryEnginePack = download_llama_pack(
-    "ArizePhoenixQueryEnginePack", "./arize_pack"
-)
 
 # load documents and create the pack
 documents = SimpleWebPageReader().load_data(

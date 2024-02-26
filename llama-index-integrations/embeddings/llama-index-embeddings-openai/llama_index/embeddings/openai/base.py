@@ -211,12 +211,12 @@ def get_engine(
     mode: str,
     model: str,
     mode_model_dict: Dict[Tuple[OpenAIEmbeddingMode, str], OpenAIEmbeddingModeModel],
-) -> OpenAIEmbeddingModeModel:
+) -> str:
     """Get engine."""
     key = (OpenAIEmbeddingMode(mode), OpenAIEmbeddingModelType(model))
     if key not in mode_model_dict:
         raise ValueError(f"Invalid mode, model combination: {key}")
-    return mode_model_dict[key]
+    return mode_model_dict[key].value
 
 
 class OpenAIEmbedding(BaseEmbedding):
@@ -275,8 +275,8 @@ class OpenAIEmbedding(BaseEmbedding):
         ),
     )
 
-    _query_engine: OpenAIEmbeddingModeModel = PrivateAttr()
-    _text_engine: OpenAIEmbeddingModeModel = PrivateAttr()
+    _query_engine: str = PrivateAttr()
+    _text_engine: str = PrivateAttr()
     _client: Optional[OpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
     _http_client: Optional[httpx.Client] = PrivateAttr()
@@ -303,7 +303,7 @@ class OpenAIEmbedding(BaseEmbedding):
         if dimensions is not None:
             additional_kwargs["dimensions"] = dimensions
 
-        api_key, api_base, api_version = resolve_openai_credentials(
+        api_key, api_base, api_version = self._resolve_credentials(
             api_key=api_key,
             api_base=api_base,
             api_version=api_version,
@@ -337,6 +337,14 @@ class OpenAIEmbedding(BaseEmbedding):
         self._client = None
         self._aclient = None
         self._http_client = http_client
+
+    def _resolve_credentials(
+        self,
+        api_key: Optional[str] = None,
+        api_base: Optional[str] = None,
+        api_version: Optional[str] = None,
+    ) -> Tuple[Optional[str], str, str]:
+        return resolve_openai_credentials(api_key, api_base, api_version)
 
     def _get_client(self) -> OpenAI:
         if not self.reuse_client:

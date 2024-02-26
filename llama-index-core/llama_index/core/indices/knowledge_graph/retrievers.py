@@ -52,7 +52,7 @@ class KGRetrieverMode(str, Enum):
         KEYWORD ("keyword"): Default query mode, using keywords to find triplets.
         EMBEDDING ("embedding"): Embedding mode, using embeddings to find
             similar triplets.
-        HYBRID ("hybrid"): Hyrbid mode, combining both keywords and embeddings
+        HYBRID ("hybrid"): Hybrid mode, combining both keywords and embeddings
             to find relevant triplets.
     """
 
@@ -173,6 +173,10 @@ class KGTableRetriever(BaseRetriever):
             keyword = rel_text.split(",")[0]
             if keyword:
                 keywords.append(keyword.strip("(\"'"))
+            # Return the Object as well
+            keyword = rel_text.split(",")[2]
+            if keyword:
+                keywords.append(keyword.strip(" ()\"'"))
         return keywords
 
     def _retrieve(

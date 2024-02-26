@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Callable, Optional, Tuple, Union
 
-from llama_index.core.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from tenacity import (
     before_sleep_log,
     retry,

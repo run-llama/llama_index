@@ -49,6 +49,25 @@ llamaindex-cli new-package --kind "llms" --name "gemini"
 Executing the above commands will create a new folder called `llama-index-llms-gemini`
 within the `llama-index-integrations/llms` directory.
 
+In addition to preparing your source code, we also ask that you fill in some
+metadata for your package to appear in [llamahub.ai](https://llamahub.ai) with the
+correct information. You do so by adding the required metadata under the `[tool.llamahub]`
+section with your new package's `pyproject.toml`.
+
+Below is the example of the metadata required for all of our integration packages. Please
+replace the default author "llama-index" with your own Github user name.
+
+```toml
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.llms.anthropic"
+
+[tool.llamahub.class_authors]
+Anthropic = "llama-index"
+```
+
+([source](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/llms/llama-index-llms-anthropic/pyproject.toml))
+
 **NOTE**: We are making rapid improvements to the project, and as a result,
 some interfaces are still volatile. Specifically, we are actively working on making the following components more modular and extensible (uncolored boxes above): core indexes, document stores, index queries, query runner
 
@@ -281,7 +300,7 @@ Contributing a new Reader or Tool involves submitting a new package within
 the [llama-index-integrations/readers](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) and [llama-index-integrations/tools](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools),
 folders respectively.
 
-The LlamaIndex command-line tool can be used to initialize new Packs and Integrations.
+The LlamaIndex command-line tool can be used to initialize new Packs and Integrations. (NOTE: `llama-index-cli` comes installed with `llama-index`.)
 
 ```shell
 cd ./llama-index-packs
@@ -294,6 +313,24 @@ llamaindex-cli new-package --kind "readers" --name "new reader"
 Executing the first set of shell commands will create a new folder called `llama-index-packs-my-new-pack`
 within the `llama-index-packs` directory. While the second set will create a new
 package directory called `llama-index-readers-new-reader` within the `llama-index-integrations/readers` directory.
+
+In addition to preparing your source code, we also ask that you fill in some
+metadata for your package to appear in [llamahub.ai](https://llamahub.ai) with the
+correct information. You do so by adding the required metadata under the `[tool.llamahub]`
+section with your new package's `pyproject.toml`.
+
+Below is the example of the metadata required for packs, readers and tools:
+
+```toml
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.packs.agent_search_retriever"
+
+[tool.llamahub.class_authors]
+AgentSearchRetrieverPack = "logan-markewich"
+```
+
+([source](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-agent-search-retriever/pyproject.toml))
 
 ### 3. 🧠 Add new capabilities to core
 

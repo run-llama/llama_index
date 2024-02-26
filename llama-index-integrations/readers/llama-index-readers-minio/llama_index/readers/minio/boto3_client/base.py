@@ -116,7 +116,7 @@ class BotoMinioReader(BaseReader):
                     is_dir = obj.key.endswith("/")  # skip folders
                     is_bad_ext = (
                         self.required_exts is not None
-                        and suffix not in self.required_exts  # skip other extentions
+                        and suffix not in self.required_exts  # skip other extensions
                     )
 
                     if is_dir or is_bad_ext:

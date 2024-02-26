@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
 if TYPE_CHECKING:
-    from llama_index import ServiceContext
+    from llama_index.core.service_context import ServiceContext
 
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -84,12 +84,12 @@ class _Settings:
         import llama_index.core
 
         # TODO: deprecated?
-        return llama_index.global_handler
+        return llama_index.core.global_handler
 
     @global_handler.setter
     def global_handler(self, eval_mode: str, **eval_params: Any) -> None:
         """Set the global handler."""
-        from llama_index import set_global_handler
+        from llama_index.core import set_global_handler
 
         # TODO: deprecated?
         set_global_handler(eval_mode, **eval_params)
@@ -113,11 +113,11 @@ class _Settings:
         """Get the tokenizer."""
         import llama_index.core
 
-        if llama_index.global_tokenizer is None:
+        if llama_index.core.global_tokenizer is None:
             return get_tokenizer()
 
         # TODO: deprecated?
-        return llama_index.global_tokenizer
+        return llama_index.core.global_tokenizer
 
     @tokenizer.setter
     def tokenizer(self, tokenizer: Callable[[str], List[Any]]) -> None:

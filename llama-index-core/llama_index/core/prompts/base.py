@@ -34,11 +34,11 @@ from llama_index.core.base.query_pipeline.query import (
     validate_and_convert_stringable,
 )
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.llms.base import BaseLLM
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as default_messages_to_prompt,
 )
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.generic_utils import (
     prompt_to_messages,
 )
 from llama_index.core.prompts.prompt_type import PromptType
