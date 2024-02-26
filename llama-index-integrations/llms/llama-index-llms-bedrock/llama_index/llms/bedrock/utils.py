@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional, Sequence
 
 from llama_index.core.base.llms.types import ChatMessage
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.generic_utils import (
     prompt_to_messages,
 )
 from llama_index.llms.anthropic.utils import messages_to_anthropic_prompt

@@ -1,4 +1,5 @@
 """Simple node parser."""
+
 from typing import Any, Callable, List, Optional, Sequence
 
 from llama_index.core.bridge.pydantic import Field
@@ -9,7 +10,7 @@ from llama_index.core.node_parser.node_utils import (
     default_id_func,
 )
 from llama_index.core.node_parser.text.utils import split_by_sentence_tokenizer
-from llama_index.core.schema import BaseNode, Document, MetadataMode
+from llama_index.core.schema import BaseNode, Document
 from llama_index.core.utils import get_tqdm_iterable
 
 DEFAULT_WINDOW_SIZE = 3
@@ -92,7 +93,6 @@ class SentenceWindowNodeParser(NodeParser):
         nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
 
         for node in nodes_with_progress:
-            self.sentence_splitter(node.get_content(metadata_mode=MetadataMode.NONE))
             nodes = self.build_window_nodes_from_documents([node])
             all_nodes.extend(nodes)
 
@@ -115,7 +115,9 @@ class SentenceWindowNodeParser(NodeParser):
             # add window to each node
             for i, node in enumerate(nodes):
                 window_nodes = nodes[
-                    max(0, i - self.window_size) : min(i + self.window_size, len(nodes))
+                    max(0, i - self.window_size) : min(
+                        i + self.window_size + 1, len(nodes)
+                    )
                 ]
 
                 node.metadata[self.window_metadata_key] = " ".join(

@@ -9,9 +9,9 @@ pip install llama-index-cli
 ## Usage
 
 ```sh
-llamaindex -h
+llamaindex-cli -h
 
-usage: llamaindex [-h] {rag,download-llamapack,download-llamadataset,upgrade,upgrade-file,new-package} ...
+usage: llamaindex-cli [-h] {rag,download-llamapack,download-llamadataset,upgrade,upgrade-file,new-package} ...
 
 LlamaIndex CLI tool.
 

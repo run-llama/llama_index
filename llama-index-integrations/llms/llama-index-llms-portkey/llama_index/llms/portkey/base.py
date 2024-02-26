@@ -1,6 +1,7 @@
 """
 Portkey integration with Llama_index for enhanced monitoring.
 """
+
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union, cast
 
 from llama_index.core.base.llms.types import (
@@ -14,7 +15,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
     completion_to_chat_decorator,
     stream_chat_to_completion_decorator,

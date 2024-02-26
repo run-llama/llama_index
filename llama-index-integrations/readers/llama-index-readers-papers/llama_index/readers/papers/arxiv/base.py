@@ -57,7 +57,7 @@ class ArxivReader(BaseReader):
 
         paper_lookup = {}
         for paper in search_results:
-            # Hash filename to avoid bad charaters in file path
+            # Hash filename to avoid bad characters in file path
             filename = f"{self._hacky_hash(paper.title)}.pdf"
             paper_lookup[os.path.join(papers_dir, filename)] = {
                 "Title of this paper": paper.title,
@@ -129,7 +129,7 @@ class ArxivReader(BaseReader):
 
         paper_lookup = {}
         for paper in search_results:
-            # Hash filename to avoid bad charaters in file path
+            # Hash filename to avoid bad characters in file path
             filename = f"{self._hacky_hash(paper.title)}.pdf"
             paper_lookup[os.path.join(papers_dir, filename)] = {
                 "Title of this paper": paper.title,

@@ -173,8 +173,8 @@ class StreamingAgentChatResponse:
                 self._unformatted_response += delta
                 yield delta
             except queue.Empty:
-                # Queue is empty, but we're not done yet
-                time.sleep(0.01)
+                # Queue is empty, but we're not done yet. Sleep for 0 secs to release the GIL and allow other threads to run.
+                time.sleep(0)
         self.response = self._unformatted_response.strip()
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:

@@ -3,6 +3,7 @@ from typing import List, Sequence
 from llama_index.core.base.llms.types import ChatMessage, LLMMetadata, MessageRole
 from llama_index.core.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
 from llama_index.llms.anyscale.utils import anyscale_modelname_to_contextsize
+from llama_index.llms.fireworks.utils import fireworks_modelname_to_contextsize
 from llama_index.llms.openai.utils import openai_modelname_to_contextsize
 
 
@@ -14,6 +15,7 @@ class LC:
         BaseLanguageModel,
         BaseMessage,
         ChatAnyscale,
+        ChatFireworks,
         ChatMessage,
         ChatOpenAI,
         Cohere,
@@ -106,6 +108,13 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
     elif isinstance(llm, LC.ChatAnyscale):
         return LLMMetadata(
             context_window=anyscale_modelname_to_contextsize(llm.model_name),
+            num_output=llm.max_tokens or -1,
+            is_chat_model=is_chat_model_,
+            model_name=llm.model_name,
+        )
+    elif isinstance(llm, LC.ChatFireworks):
+        return LLMMetadata(
+            context_window=fireworks_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens or -1,
             is_chat_model=is_chat_model_,
             model_name=llm.model_name,
