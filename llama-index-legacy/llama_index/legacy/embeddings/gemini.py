@@ -18,12 +18,15 @@ class GeminiEmbedding(BaseEmbedding):
             Defaults to "models/embedding-001".
 
         api_key (Optional[str]): API key to access the model. Defaults to None.
+        api_base (Optional[str]): API base to access the model. Defaults to Official Base.
+        transport (Optional[str]): Transport to access the model.
     """
 
     _model: Any = PrivateAttr()
     title: Optional[str] = Field(
         default="",
-        description="Title is only applicable for retrieval_document tasks, and is used to represent a document title. For other tasks, title is invalid.",
+        description="Title is only applicable for retrieval_document tasks, and is used to represent a document title."
+                    " For other tasks, title is invalid.",
     )
     task_type: Optional[str] = Field(
         default="retrieval_document",
@@ -36,6 +39,7 @@ class GeminiEmbedding(BaseEmbedding):
         task_type: Optional[str] = "retrieval_document",
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
+        transport: Optional[str] = None,
         title: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
