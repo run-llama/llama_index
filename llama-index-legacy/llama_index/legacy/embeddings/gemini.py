@@ -35,6 +35,7 @@ class GeminiEmbedding(BaseEmbedding):
         model_name: str = "models/embedding-001",
         task_type: Optional[str] = "retrieval_document",
         api_key: Optional[str] = None,
+        api_base: Optional[str] = None,
         title: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
