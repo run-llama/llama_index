@@ -355,7 +355,7 @@
   "QdrantVectorStore": "llama_index.vector_stores.qdrant",
   "PineconeVectorStore": "llama_index.vector_stores.pinecone",
   "SupabaseVectorStore": "llama_index.vector_stores.supabase",
-  "AstraDBVectorStore": "llama_index.vector_stores.astra",
+  "AstraDBVectorStore": "llama_index.vector_stores.astra_db",
   "LanceDBVectorStore": "llama_index.vector_stores.lancedb",
   "ElasticsearchStore": "llama_index.vector_stores.elasticsearch",
   "PGVectorStore": "llama_index.vector_stores.postgres",

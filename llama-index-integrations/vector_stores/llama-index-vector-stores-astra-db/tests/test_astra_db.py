@@ -5,7 +5,7 @@ from typing import Iterable
 import astrapy
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import VectorStoreQuery
-from llama_index.vector_stores.astra import AstraDBVectorStore
+from llama_index.vector_stores.astra_db import AstraDBVectorStore
 
 print(f"astrapy detected: {astrapy.__version__}")
 
