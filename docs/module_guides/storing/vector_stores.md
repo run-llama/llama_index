@@ -36,7 +36,7 @@ We are actively adding more integrations and improving feature coverage for each
 | MyScale                  | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Milvus / Zilliz          | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Neo4jVector              | self-hosted / cloud |                    |               | ✓      | ✓               |       |
-| OpenSearch               | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| OpenSearch               | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓     |
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | pgvecto.rs               | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |

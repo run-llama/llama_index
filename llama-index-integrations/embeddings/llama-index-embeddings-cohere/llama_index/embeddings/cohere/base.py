@@ -42,27 +42,39 @@ CAIT = CohereAIInputType
 CAT = CohereAITruncate
 
 # This list would be used for model name and input type validation
-VALID_MODEL_INPUT_TYPES = [
-    (CAMN.ENGLISH_V3, CAIT.SEARCH_QUERY),
-    (CAMN.ENGLISH_LIGHT_V3, CAIT.SEARCH_QUERY),
-    (CAMN.MULTILINGUAL_V3, CAIT.SEARCH_QUERY),
-    (CAMN.MULTILINGUAL_LIGHT_V3, CAIT.SEARCH_QUERY),
-    (CAMN.ENGLISH_V3, CAIT.SEARCH_DOCUMENT),
-    (CAMN.ENGLISH_LIGHT_V3, CAIT.SEARCH_DOCUMENT),
-    (CAMN.MULTILINGUAL_V3, CAIT.SEARCH_DOCUMENT),
-    (CAMN.MULTILINGUAL_LIGHT_V3, CAIT.SEARCH_DOCUMENT),
-    (CAMN.ENGLISH_V3, CAIT.CLASSIFICATION),
-    (CAMN.ENGLISH_LIGHT_V3, CAIT.CLASSIFICATION),
-    (CAMN.MULTILINGUAL_V3, CAIT.CLASSIFICATION),
-    (CAMN.MULTILINGUAL_LIGHT_V3, CAIT.CLASSIFICATION),
-    (CAMN.ENGLISH_V3, CAIT.CLUSTERING),
-    (CAMN.ENGLISH_LIGHT_V3, CAIT.CLUSTERING),
-    (CAMN.MULTILINGUAL_V3, CAIT.CLUSTERING),
-    (CAMN.MULTILINGUAL_LIGHT_V3, CAIT.CLUSTERING),
-    (CAMN.ENGLISH_V2, None),
-    (CAMN.ENGLISH_LIGHT_V2, None),
-    (CAMN.MULTILINGUAL_V2, None),
-]
+VALID_MODEL_INPUT_TYPES = {
+    CAMN.ENGLISH_V3: [
+        None,
+        CAIT.SEARCH_QUERY,
+        CAIT.SEARCH_DOCUMENT,
+        CAIT.CLASSIFICATION,
+        CAIT.CLUSTERING,
+    ],
+    CAMN.ENGLISH_LIGHT_V3: [
+        None,
+        CAIT.SEARCH_QUERY,
+        CAIT.SEARCH_DOCUMENT,
+        CAIT.CLASSIFICATION,
+        CAIT.CLUSTERING,
+    ],
+    CAMN.MULTILINGUAL_V3: [
+        None,
+        CAIT.SEARCH_QUERY,
+        CAIT.SEARCH_DOCUMENT,
+        CAIT.CLASSIFICATION,
+        CAIT.CLUSTERING,
+    ],
+    CAMN.MULTILINGUAL_LIGHT_V3: [
+        None,
+        CAIT.SEARCH_QUERY,
+        CAIT.SEARCH_DOCUMENT,
+        CAIT.CLASSIFICATION,
+        CAIT.CLUSTERING,
+    ],
+    CAMN.ENGLISH_V2: [None],
+    CAMN.ENGLISH_LIGHT_V2: [None],
+    CAMN.MULTILINGUAL_V2: [None],
+}
 
 VALID_TRUNCATE_OPTIONS = [CAT.START, CAT.END, CAT.NONE]
 
@@ -74,12 +86,14 @@ class CohereEmbedding(BaseEmbedding):
     # Instance variables initialized via Pydantic's mechanism
     cohere_client: Any = Field(description="CohereAI client")
     truncate: str = Field(description="Truncation type - START/ END/ NONE")
-    input_type: Optional[str] = Field(description="Model Input type")
+    input_type: Optional[str] = Field(
+        description="Model Input type. If not provided, search_document and search_query are used when needed."
+    )
 
     def __init__(
         self,
         cohere_api_key: Optional[str] = None,
-        model_name: str = "embed-english-v2.0",
+        model_name: str = "embed-english-v3.0",
         truncate: str = "END",
         input_type: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
@@ -99,9 +113,12 @@ class CohereEmbedding(BaseEmbedding):
                           this model is supported and that the input type provided is compatible with the model.
         """
         # Validate model_name and input_type
-        if (model_name, input_type) not in VALID_MODEL_INPUT_TYPES:
+        if model_name not in VALID_MODEL_INPUT_TYPES:
+            raise ValueError(f"{model_name} is not a valid model name")
+
+        if input_type not in VALID_MODEL_INPUT_TYPES[model_name]:
             raise ValueError(
-                f"{(model_name, input_type)} is not valid for model '{model_name}'"
+                f"{input_type} is not a valid input type for the provided model."
             )
 
         if truncate not in VALID_TRUNCATE_OPTIONS:
@@ -111,8 +128,8 @@ class CohereEmbedding(BaseEmbedding):
             cohere_client=cohere.Client(cohere_api_key, client_name="llama_index"),
             cohere_api_key=cohere_api_key,
             model_name=model_name,
-            truncate=truncate,
             input_type=input_type,
+            truncate=truncate,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
         )
@@ -121,12 +138,17 @@ class CohereEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "CohereEmbedding"
 
-    def _embed(self, texts: List[str]) -> List[List[float]]:
+    def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
-        if self.input_type:
+        if self.model_name in [
+            CAMN.ENGLISH_V3,
+            CAMN.ENGLISH_LIGHT_V3,
+            CAMN.MULTILINGUAL_V3,
+            CAMN.MULTILINGUAL_LIGHT_V3,
+        ]:
             result = self.cohere_client.embed(
                 texts=texts,
-                input_type=self.input_type,
+                input_type=self.input_type or input_type,
                 model=self.model_name,
                 truncate=self.truncate,
             ).embeddings
@@ -137,21 +159,21 @@ class CohereEmbedding(BaseEmbedding):
         return [list(map(float, e)) for e in result]
 
     def _get_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding."""
-        return self._embed([query])[0]
+        """Get query embedding. For query embeddings, input_type='search_query'."""
+        return self._embed([query], input_type="search_query")[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding async."""
-        return self._get_query_embedding(query)
+        """Get query embedding async. For query embeddings, input_type='search_query'."""
+        return self._get_query_embedding(query, input_type="search_query")
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        return self._embed([text])[0]
+        return self._embed([text], input_type="search_document")[0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Get text embedding async."""
-        return self._get_text_embedding(text)
+        return self._get_text_embedding(text, input_type="search_document")
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        return self._embed(texts)
+        return self._embed(texts, input_type="search_document")

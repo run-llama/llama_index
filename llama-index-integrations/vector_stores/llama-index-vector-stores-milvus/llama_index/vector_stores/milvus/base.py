@@ -221,9 +221,10 @@ class MilvusVectorStore(VectorStore):
             collection_name=self.collection_name,
             filter=f"{self.doc_id_field} in [{','.join(doc_ids)}]",
         )
-        ids = [entry["id"] for entry in entries]
-        self.milvusclient.delete(collection_name=self.collection_name, pks=ids)
-        logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
+        if len(entries) > 0:
+            ids = [entry["id"] for entry in entries]
+            self.milvusclient.delete(collection_name=self.collection_name, pks=ids)
+            logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.

@@ -13,7 +13,6 @@ import_path = "llama_index.embeddings.llm_rails"
 
 [tool.llamahub.class_authors]
 LLMRailsEmbedding = "llama-index"
-LLMRailsEmbeddings = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
