@@ -68,7 +68,7 @@ class GoogleTextSynthesizer(BaseSynthesizer):
         See `from_defaults` for more documentation.
         """
         try:
-            import llama_index.vector_stores.google as genaix
+            import llama_index.vector_stores.google.genai_extension as genaix
         except ImportError:
             raise ImportError(_import_err_msg)
 
@@ -137,7 +137,7 @@ class GoogleTextSynthesizer(BaseSynthesizer):
             A `SynthesizedResponse` object.
         """
         try:
-            import llama_index.vector_stores.google as genaix
+            import llama_index.vector_stores.google.genai_extension as genaix
 
             import google.ai.generativelanguage as genai
         except ImportError:

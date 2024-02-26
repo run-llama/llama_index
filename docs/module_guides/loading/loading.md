@@ -7,6 +7,7 @@ Once you have [learned about the basics of loading data](/understanding/loading/
 ### Loading
 
 - [SimpleDirectoryReader](simpledirectoryreader.md), our built-in loader for loading all sorts of file types from a local directory
+- [LlamaParse](connector/llama_parse.md), LlamaIndex's official tool for PDF parsing, available as a managed API.
 - [LlamaHub](connector/root.md), our registry of hundreds of data loading libraries to ingest data from any source
 
 ### Transformations

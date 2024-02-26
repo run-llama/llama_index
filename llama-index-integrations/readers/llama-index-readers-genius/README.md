@@ -6,7 +6,7 @@ As a prerequisite, you will need to register with [Genius API](https://genius.co
 
 ## Usage
 
-Here's an example usage of the GeniusReader. It will retrieve songs that match specific lyrics. Acceptable agruments are lyrics (str): The lyric snippet you're looking for and will return List[Document]: A list of documents containing songs with those lyrics.
+Here's an example usage of the GeniusReader. It will retrieve songs that match specific lyrics. Acceptable arguments are lyrics (str): The lyric snippet you're looking for and will return List[Document]: A list of documents containing songs with those lyrics.
 
 ## GeniusReader Class Methods
 

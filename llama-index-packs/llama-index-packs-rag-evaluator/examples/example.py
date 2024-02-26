@@ -1,8 +1,8 @@
 # Required Environment Variables: OPENAI_API_KEY
 
 from llama_index.core.llama_dataset import download_llama_dataset
-from llama_index.core.llama_pack import download_llama_pack
-from llama_index.core import VectorStoreIndex
+from llama_index.packs.rag_evaluator import RagEvaluatorPack
+from llama_index.legacy import VectorStoreIndex
 
 # download a LabelledRagDataset from llama-hub
 rag_dataset, documents = download_llama_dataset(
@@ -12,10 +12,6 @@ rag_dataset, documents = download_llama_dataset(
 # build a basic RAG pipeline off of the source documents
 index = VectorStoreIndex.from_documents(documents=documents)
 query_engine = index.as_query_engine()
-
-# Time to benchmark/evaluate this RAG pipeline
-# Download and install dependencies
-RagEvaluatorPack = download_llama_pack("RagEvaluatorPack", "./rag_evaluator_pack")
 
 # construction requires a query_engine, a rag_dataset, and optionally a judge_llm
 rag_evaluator_pack = RagEvaluatorPack(

@@ -1,15 +1,9 @@
 # Required Environment Variables: OPENAI_API_KEY
 
 from pathlib import Path
-from llama_index.core import download_loader
-from llama_index.core.llama_pack import download_llama_pack
+from llama_index.readers.file.docs import PDFReader
+from llama_index.packs.rag_fusion_query_pipeline import RAGFusionPipelinePack
 from llama_index.llms.openai import OpenAI
-
-# download and install dependencies
-RAGFusionPipelinePack = download_llama_pack(
-    "RAGFusionPipelinePack", "./rag_fusion_pipeline_pack"
-)
-PDFReader = download_loader("PDFReader")
 
 # load documents
 loader = PDFReader()

@@ -1,12 +1,6 @@
 from pathlib import Path
-from llama_index.core.readers import download_loader
-from llama_index.core.llama_pack import download_llama_pack
-
-# download and install dependencies
-AutoMergingRetrieverPack = download_llama_pack(
-    "AutoMergingRetrieverPack", "./auto_merging_retriever_pack"
-)
-PDFReader = download_loader("PDFReader")
+from llama_index.readers.file.docs import PDFReader
+from llama_index.packs.auto_merging_retriever import AutoMergingRetrieverPack
 
 # get documents from any data loader
 loader = PDFReader()

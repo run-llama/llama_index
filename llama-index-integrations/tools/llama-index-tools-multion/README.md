@@ -21,7 +21,7 @@ multion_tool = MultionToolSpec()
 agent = OpenAIAgent.from_tools(multion_tool.to_tool_list())
 
 agent.chat("Can you read the latest tweets from my followers")
-agent.chat("Whats the next thing on my google calendar?")
+agent.chat("What's the next thing on my google calendar?")
 ```
 
 `browse`: The core function that takes natural language instructions to pass to the web browser to execute

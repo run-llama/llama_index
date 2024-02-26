@@ -54,7 +54,7 @@ query_engine = index.as_query_engine(
         ]
     )
 )
-retriver = index.as_retriever(
+retriever = index.as_retriever(
     filters=MetadataFilters(
         filters=[
             ExactMatchFilter(

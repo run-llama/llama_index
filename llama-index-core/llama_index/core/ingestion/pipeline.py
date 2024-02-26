@@ -20,7 +20,6 @@ from llama_index_client import (
     Project,
     ProjectCreate,
 )
-from llama_index_client.client import PlatformApi
 
 from llama_index.core.constants import (
     DEFAULT_APP_URL,
@@ -29,6 +28,7 @@ from llama_index.core.constants import (
     DEFAULT_PROJECT_NAME,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.ingestion.api_utils import get_client
 from llama_index.core.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
 from llama_index.core.ingestion.data_sources import (
     ConfigurableDataSources,
@@ -265,6 +265,8 @@ class IngestionPipeline(BaseModel):
             transformations = self._get_default_transformations()
 
         api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
+        base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
 
         super().__init__(
             name=name,
@@ -276,8 +278,8 @@ class IngestionPipeline(BaseModel):
             cache=cache or IngestionCache(),
             docstore=docstore,
             docstore_strategy=docstore_strategy,
-            base_url=base_url or DEFAULT_BASE_URL,
-            app_url=app_url or DEFAULT_APP_URL,
+            base_url=base_url,
+            app_url=app_url,
             api_key=api_key,
             disable_cache=disable_cache,
         )
@@ -298,9 +300,9 @@ class IngestionPipeline(BaseModel):
         assert base_url is not None
 
         api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
-        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", None)
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
 
-        client = PlatformApi(base_url=base_url, token=api_key)
+        client = get_client(api_key=api_key, base_url=base_url)
 
         projects: List[Project] = client.project.list_projects(
             project_name=project_name
@@ -381,9 +383,9 @@ class IngestionPipeline(BaseModel):
         assert base_url is not None
 
         api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
-        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", None)
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
 
-        client = PlatformApi(base_url=base_url, token=api_key)
+        client = get_client(api_key=api_key, base_url=base_url)
 
         projects: List[Project] = client.project.list_projects(
             project_name=project_name
@@ -454,7 +456,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
     ) -> str:
-        client = PlatformApi(base_url=self.base_url, token=self.api_key)
+        client = get_client(api_key=self.api_key, base_url=self.base_url)
 
         input_nodes = self._prepare_inputs(documents, nodes)
 
@@ -496,7 +498,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
     ) -> str:
-        client = PlatformApi(base_url=self.base_url, token=self.api_key)
+        client = get_client(api_key=self.api_key, base_url=self.base_url)
 
         pipeline_id = self.register(documents=documents, nodes=nodes, verbose=False)
 

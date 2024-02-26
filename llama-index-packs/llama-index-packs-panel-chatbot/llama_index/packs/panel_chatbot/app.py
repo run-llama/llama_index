@@ -244,7 +244,7 @@ class IndexLoader(pn.viewable.Viewer):
 
     @param.depends("_reload", watch=True)
     async def reload(self):
-        self._update_status("Deleteing cached index ...")
+        self._update_status("Deleting cached index ...")
         if self._cached_docs_path.exists():
             self._cached_docs_path.unlink()
         if self._cached_index_path.exists():

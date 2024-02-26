@@ -77,7 +77,7 @@ class OneDriveReader(BaseReader):
             result = app.acquire_token_for_client(scopes=CLIENTCREDENTIALSCOPES)
 
         if "access_token" in result:
-            logger.debug("Authentication is successfull...")
+            logger.debug("Authentication is successful...")
             return result["access_token"]
         else:
             logger.error(result.get("error"))
@@ -191,7 +191,7 @@ class OneDriveReader(BaseReader):
         - local_dir (str): Local directory where the file should be saved.
 
         Returns:
-        - str: The file path of the downloade file
+        - str: The file path of the download file
 
         """
         # Extract download URL and filename from the provided item.

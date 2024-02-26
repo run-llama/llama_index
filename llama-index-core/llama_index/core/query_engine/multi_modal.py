@@ -157,7 +157,7 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         )
         llm_response = await self._multi_modal_llm.acomplete(
             prompt=fmt_prompt,
-            image_documents=image_nodes,
+            image_documents=[image_node.node for image_node in image_nodes],
         )
         return Response(
             response=str(llm_response),
