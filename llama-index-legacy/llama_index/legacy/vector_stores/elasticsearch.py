@@ -62,7 +62,6 @@ def _get_elasticsearch_client(
             "Please install it with `pip install elasticsearch`."
         )
 
-
     if es_url and cloud_id:
         raise ValueError(
             "Both es_url and cloud_id are defined. Please provide only one."
