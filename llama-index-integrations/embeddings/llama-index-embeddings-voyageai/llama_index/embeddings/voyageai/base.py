@@ -1,11 +1,15 @@
 """Voyage embeddings file."""
 
+import logging
 from typing import Any, List, Optional
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
 
 import voyageai
+from pydantic import PrivateAttr
+
+logger = logging.getLogger(__name__)
 
 
 class VoyageEmbedding(BaseEmbedding):
@@ -19,24 +23,33 @@ class VoyageEmbedding(BaseEmbedding):
             You can either specify the key here or store it as an environment variable.
     """
 
-    client: Optional[voyageai.Client]
+    client: voyageai.Client = PrivateAttr(None)
 
     def __init__(
         self,
-        model_name: str = "voyage-2",
+        model_name: str = "voyage-01",
         voyage_api_key: Optional[str] = None,
         embed_batch_size: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
+        if model_name == "voyage-01":
+            logger.warning(
+                "voyage-01 is not the latest model by Voyage AI. Please note that `model_name` "
+                "will be a required argument in the future. We recommend setting it explicitly. Please see "
+                "https://docs.voyageai.com/docs/embeddings for the latest models offered by Voyage AI."
+            )
+
         if embed_batch_size is None:
             embed_batch_size = 72 if model_name in ["voyage-2", "voyage-02"] else 7
+
         super().__init__(
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             **kwargs,
         )
+
         self.client = voyageai.Client(api_key=voyage_api_key)
 
     @classmethod
