@@ -378,13 +378,31 @@ class ConfluenceReader(BaseReader):
                 if title.endswith('.csv') or absolute_url.endswith('.csv'):
                     text = title + self.process_csv(absolute_url)
                 else:
-                    text = title + self.process_xls(absolute_url)
+                    text = title + self.process_xls(absolute_url)                
             elif media_type == "application/vnd.ms-excel.sheet.binary.macroenabled.12":
                 text = title + self.process_xlsb(absolute_url)
             elif media_type == "text/csv":
-                text = title + self.process_csv(absolute_url)                
+                text = title + self.process_csv(absolute_url)    
+            elif media_type == "application/vnd.ms-outlook":
+                text = title + self.process_msg(absolute_url)   
+            elif media_type == "text/html":
+                logger.info("  Processing HTML attachment " + absolute_url)
+                text = title + self.process_html(absolute_url)
+            elif media_type == "text/plain":
+                if title.endswith('.csv') or absolute_url.endswith('.csv'):
+                    logger.info("  Processing CSV attachment " + absolute_url)
+                    text = title + self.process_csv(absolute_url)
+                else:
+                    logger.info("  Processing Text attachment " + absolute_url)
+                    text = title + self.process_txt(absolute_url)                                           
             elif media_type == "image/svg+xml":
                 text = title + self.process_svg(absolute_url)
+            elif (
+                media_type == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                or media_type == "application/vnd.ms-powerpoint.presentation.macroenabled.12"
+            ):
+                logger.info("  Processing PowerPoint attachment " + absolute_url + " (" + media_type + ")")
+                text = title + self.process_ppt(absolute_url)                
             else:
                 logger.info(f"Skipping unsupported attachment {absolute_url} of media_type {media_type}")
                 continue
@@ -421,6 +439,80 @@ class ConfluenceReader(BaseReader):
             text += f"Page {i + 1}:\n{image_text}\n\n"
 
         return text
+    
+    def process_html(self, link):
+        try:
+            from bs4 import BeautifulSoup  # type: ignore
+            import requests
+        except ImportError:
+            raise ImportError(
+                "`beautifulsoup4` or `requests` package not found, please run `pip install beautifulsoup4 requests`"
+            )
+
+        try:
+            response = requests.get(link)
+            if response.status_code != 200:
+                return "Error fetching HTML content: HTTP Status Code {}".format(response.status_code)
+
+            # Parse the HTML content and extract text
+            soup = BeautifulSoup(response.content, 'html.parser')
+            text = soup.get_text(separator=' ', strip=True)
+
+            # Optionally, you can refine how text is extracted, e.g., excluding scripts, styles, etc.
+            return text
+        except Exception as e:
+            logger.error(f"Error processing HTML file at {link}: {e}")
+            return f"Error processing HTML file: {link}. An error occurred while fetching or parsing the content."
+
+    def process_txt(self, link):
+        try:
+            import requests
+        except ImportError:
+            raise ImportError(
+                "`requests` package not found, please run `pip install requests`"
+            )
+
+        try:
+            response = requests.get(link)
+            if response.status_code != 200:
+                return "Error fetching text content: HTTP Status Code {}".format(response.status_code)
+            return response.text
+        except Exception as e:
+            logger.error(f"Error processing text file at {link}: {e}")
+            return f"Error processing text file: {link}. An error occurred while fetching the content."    
+        
+    def process_msg(self, link):
+        try:
+            import extract_msg  # type: ignore
+            from io import BytesIO
+        except ImportError:
+            raise ImportError("`extract-msg` package not found, please run `pip install extract-msg`")
+
+        response = self.confluence.request(path=link, absolute=True)
+        text = ""
+
+        if response.status_code != 200 or response.content in [b"", None]:
+            logger.error(f"Failed to download .msg file from {link}")
+            return text
+
+        file_data = BytesIO(response.content)
+
+        try:
+            # Load the .msg file content
+            with extract_msg.Message(file_data) as msg:
+                subject = msg.subject
+                sender = msg.sender
+                to = msg.to
+                cc = msg.cc
+                body = msg.body
+
+                # Compile the extracted information into a text string
+                text = f"Subject: {subject}\nFrom: {sender}\nTo: {to}\nCC: {cc}\n\n{body}"
+        except Exception as e:
+            logger.error(f"Error processing .msg file at {link}: {e}")
+            return "Error processing .msg file."
+
+        return text        
 
     def process_image(self, link):
         try:
@@ -460,27 +552,63 @@ class ConfluenceReader(BaseReader):
 
     def process_doc(self, link):
         try:
-            from io import BytesIO  # type: ignore
-
-            import docx2txt  # type: ignore
+            from io import BytesIO
+            import docx2txt
+            import zipfile  # Import zipfile to catch BadZipFile exceptions
         except ImportError:
             raise ImportError(
                 "`docx2txt` package not found, please run `pip install docx2txt`"
             )
 
+        text = ""
+
+        try:
+            response = self.confluence.request(path=link, absolute=True)
+            if response.status_code != 200 or response.content in [b"", None]:
+                logger.error(f"Error fetching document at {link}: HTTP status code {response.status_code}.")
+                return text
+
+            file_data = BytesIO(response.content)
+            try:
+                text = docx2txt.process(file_data)
+            except zipfile.BadZipFile:
+                logger.error(f"Error processing Word document at {link}: File is not a zip file.")
+                return text
+        except Exception as e:
+            logger.error(f"Unexpected error processing document at {link}: {e}")
+            return text
+
+        return text
+
+    def process_ppt(self, link):
+        try:
+            from io import BytesIO
+            from pptx import Presentation  # type: ignore
+        except ImportError:
+            raise ImportError(
+                "`python-pptx` package not found, please run `pip install python-pptx`"
+            )
+
         response = self.confluence.request(path=link, absolute=True)
         text = ""
 
-        if (
-            response.status_code != 200
-            or response.content == b""
-            or response.content is None
-        ):
+        if response.status_code != 200 or response.content == b"" or response.content is None:
             return text
+
         file_data = BytesIO(response.content)
 
-        return docx2txt.process(file_data)
+        try:
+            presentation = Presentation(file_data)
+            for slide in presentation.slides:
+                for shape in slide.shapes:
+                    if hasattr(shape, "text"):
+                        text += shape.text + " "
+        except Exception as e:  # Catching a general exception to handle any unexpected errors
+            logger.error(f"Error processing PowerPoint file at {link}: {e}")
+            text = f"Error processing PowerPoint file: {link}. The file might be corrupt or not a valid PowerPoint file."
 
+        return text.strip()  # Remove any leading/trailing whitespace
+    
     def process_xls(self, link):
         try:
             import pandas as pd  # type: ignore
