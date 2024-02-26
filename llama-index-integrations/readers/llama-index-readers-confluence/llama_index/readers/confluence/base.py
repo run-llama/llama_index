@@ -362,6 +362,7 @@ class ConfluenceReader(BaseReader):
                 media_type == "image/png"
                 or media_type == "image/jpg"
                 or media_type == "image/jpeg"
+                or media_type == "image/webp"                
             ):
                 text = title + self.process_image(absolute_url)
             elif (
