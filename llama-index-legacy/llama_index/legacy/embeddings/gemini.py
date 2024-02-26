@@ -25,8 +25,7 @@ class GeminiEmbedding(BaseEmbedding):
     _model: Any = PrivateAttr()
     title: Optional[str] = Field(
         default="",
-        description="Title is only applicable for retrieval_document tasks, and is used to represent a document title."
-                    " For other tasks, title is invalid.",
+        description="Title is only applicable for retrieval_document tasks, and is used to represent a document title. For other tasks, title is invalid.",
     )
     task_type: Optional[str] = Field(
         default="retrieval_document",
