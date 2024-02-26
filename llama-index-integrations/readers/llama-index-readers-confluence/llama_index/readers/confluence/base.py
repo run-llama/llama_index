@@ -370,8 +370,19 @@ class ConfluenceReader(BaseReader):
                 == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             ):
                 text = title + self.process_doc(absolute_url)
-            elif media_type == "application/vnd.ms-excel":
-                text = title + self.process_xls(absolute_url)
+            elif (
+                media_type == "application/vnd.ms-excel"
+                or media_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                or media_type == "application/vnd.ms-excel.sheet.macroenabled.12"
+            ):
+                if title.endswith('.csv') or absolute_url.endswith('.csv'):
+                    text = title + self.process_csv(absolute_url)
+                else:
+                    text = title + self.process_xls(absolute_url)
+            elif media_type == "application/vnd.ms-excel.sheet.binary.macroenabled.12":
+                text = title + self.process_xlsb(absolute_url)
+            elif media_type == "text/csv":
+                text = title + self.process_csv(absolute_url)                
             elif media_type == "image/svg+xml":
                 text = title + self.process_svg(absolute_url)
             else:
@@ -472,9 +483,17 @@ class ConfluenceReader(BaseReader):
 
     def process_xls(self, link):
         try:
-            import xlrd  # type: ignore
+            import pandas as pd  # type: ignore
         except ImportError:
-            raise ImportError("`xlrd` package not found, please run `pip install xlrd`")
+            raise ImportError(
+                "`pandas` package not found, please run `pip install pandas`"
+            )
+        try:
+            from io import BytesIO
+        except ImportError:
+            raise ImportError(
+                "Failed to import BytesIO from io"
+            )
 
         response = self.confluence.request(path=link, absolute=True)
         text = ""
@@ -486,17 +505,83 @@ class ConfluenceReader(BaseReader):
         ):
             return text
 
-        workbook = xlrd.open_workbook(file_contents=response.content)
-        for sheet in workbook.sheets():
-            text += f"{sheet.name}:\n"
-            for row in range(sheet.nrows):
-                for col in range(sheet.ncols):
-                    text += f"{sheet.cell_value(row, col)}\t"
-                text += "\n"
+        file_data = BytesIO(response.content)
+
+        # Try to read the Excel file
+        try:
+            # Use pandas to read all sheets; returns a dict of DataFrame
+            sheets = pd.read_excel(file_data, sheet_name=None, engine='openpyxl')
+        except Exception as e:
+            return f"Failed to read Excel file: {str(e)}"
+
+        for sheet_name, sheet_data in sheets.items():
+            text += f"{sheet_name}:\n"
+            for row_index, row in sheet_data.iterrows():
+                text += '\t'.join(str(value) for value in row) + "\n"
             text += "\n"
 
-        return text
+        return text.strip()
+    
+    def process_xlsb(self, link):
+        try:
+            import pandas as pd
+            from io import BytesIO
+        except ImportError:
+            raise ImportError(
+                "`pandas` package not found, please run `pip install pandas`"
+            )
 
+        response = self.confluence.request(path=link, absolute=True)
+        text = ""
+
+        if response.status_code != 200 or response.content == b"" or response.content is None:
+            return text
+
+        file_data = BytesIO(response.content)
+
+        try:
+            # Use pandas to read the .xlsb file, specifying pyxlsb as the engine
+            df = pd.read_excel(file_data, engine='pyxlsb')
+            # Convert the DataFrame to a text string
+            text_rows = []
+            for index, row in df.iterrows():
+                text_rows.append(', '.join(row.astype(str)))
+            text = "\n".join(text_rows)
+        except Exception as e:
+            logger.error(f"Error processing XLSB file at {link}: {e}")
+            text = "Error processing XLSB file."
+
+        return text    
+
+    def process_csv(self, link):
+        try:
+            import pandas as pd
+            from io import BytesIO
+        except ImportError:
+            raise ImportError("`pandas` package not found, please run `pip install pandas`")
+
+        response = self.confluence.request(path=link, absolute=True)
+        text = ""
+
+        if response.status_code != 200 or response.content == b"" or response.content is None:
+            return text
+
+        file_data = BytesIO(response.content)
+
+        try:
+            # Assuming CSV uses default comma delimiter. If delimiter varies, consider detecting it.
+            df = pd.read_csv(file_data)
+            # Convert the DataFrame to a text string, including headers
+            text_rows = []
+            for index, row in df.iterrows():
+                text_rows.append(', '.join(row.astype(str)))
+            text = "\n".join(text_rows)
+        except Exception as e:
+            logger.error(f"Error processing CSV file: {e}")
+            text = "Error processing CSV file."
+
+        return text
+    
     def process_svg(self, link):
         try:
             from io import BytesIO  # type: ignore
