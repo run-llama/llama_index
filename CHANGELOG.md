@@ -1,5 +1,23 @@
 # ChangeLog
 
+# [0.10.13] - 2024-02-26
+
+### New Features
+
+- Added a llama-pack for KodaRetriever, for on-the-fly alpha tuning (#11311)
+- Added support for `mistral-large` (#11398)
+- Last token pooling mode for huggingface embeddings models like SFR-Embedding-Mistral (#11373)
+- Added fsspec support to SimpleDirectoryReader (#11303)
+
+### Bug Fixes / Nits
+
+- Fixed an issue with context window + prompt helper (#11379)
+- Moved OpenSearch vector store to BasePydanticVectorStore (#11400)
+- Fixed function calling in fireworks LLM (#11363)
+- Made cohere embedding types more automatic (#11288)
+- Improve function calling in react agent (#11280)
+- Fixed MockLLM imports (#11376)
+
 # [0.10.12] - 2024-02-22
 
 ### New Features
