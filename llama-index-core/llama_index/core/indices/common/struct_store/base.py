@@ -68,7 +68,7 @@ class SQLDocumentContextBuilder:
         self._text_splitter = text_splitter
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
-            self._llm,
+            self._llm.metadata,
         )
         self._callback_manager = callback_manager_from_settings_or_context(
             Settings, service_context
