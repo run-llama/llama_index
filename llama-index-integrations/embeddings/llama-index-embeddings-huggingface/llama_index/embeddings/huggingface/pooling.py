@@ -52,6 +52,18 @@ class Pooling(str, Enum):
         raise NotImplementedError(f"Unhandled shape {array.shape}.")
 
     @classmethod
+    @overload
+    def last_pooling(cls, array: np.ndarray) -> np.ndarray:
+        ...
+
+    @classmethod
+    @overload
+    # TODO: Remove this `type: ignore` after the false positive problem
+    #  is addressed in mypy: https://github.com/python/mypy/issues/15683 .
+    def last_pooling(cls, array: "torch.Tensor") -> "torch.Tensor":  # type: ignore
+        ...
+
+    @classmethod
     def last_pooling(
         cls, array: "Union[np.ndarray, torch.Tensor]"
     ) -> "Union[np.ndarray, torch.Tensor]":
