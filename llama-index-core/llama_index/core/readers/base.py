@@ -1,4 +1,5 @@
 """Base reader class."""
+
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List
 
@@ -28,7 +29,7 @@ class BaseReader(ABC):
 
 
 class BasePydanticReader(BaseReader, BaseComponent):
-    """Serialiable Data Loader with Pydatnic."""
+    """Serialiable Data Loader with Pydantic."""
 
     is_remote: bool = Field(
         default=False,
