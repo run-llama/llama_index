@@ -108,17 +108,21 @@ class PromptHelper(BaseComponent):
         chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
         separator: str = " ",
+        context_window: Optional[int] = None,
+        num_output: Optional[int] = None,
     ) -> "PromptHelper":
         """Create from llm predictor.
 
         This will autofill values like context_window and num_output.
 
         """
-        context_window = llm_metadata.context_window
-        if llm_metadata.num_output == -1:
-            num_output = DEFAULT_NUM_OUTPUTS
-        else:
-            num_output = llm_metadata.num_output
+        context_window = context_window or llm_metadata.context_window
+
+        if num_output is None:
+            if llm_metadata.num_output == -1:
+                num_output = DEFAULT_NUM_OUTPUTS
+            else:
+                num_output = llm_metadata.num_output
 
         return cls(
             context_window=context_window,

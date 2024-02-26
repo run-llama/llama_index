@@ -30,6 +30,9 @@ class _Settings:
     _prompt_helper: Optional[PromptHelper] = None
     _transformations: Optional[List[TransformComponent]] = None
 
+    num_output: Optional[int] = None
+    context_window: Optional[int] = None
+
     # ---- LLM ----
 
     @property
@@ -197,43 +200,6 @@ class _Settings:
         """Set the text splitter."""
         self.node_parser = text_splitter
 
-    # ---- Prompt helper ----
-
-    @property
-    def prompt_helper(self) -> PromptHelper:
-        """Get the prompt helper."""
-        if self._llm is not None and self._prompt_helper is None:
-            self._prompt_helper = PromptHelper.from_llm_metadata(self._llm.metadata)
-        elif self._prompt_helper is None:
-            self._prompt_helper = PromptHelper()
-
-        return self._prompt_helper
-
-    @prompt_helper.setter
-    def prompt_helper(self, prompt_helper: PromptHelper) -> None:
-        """Set the prompt helper."""
-        self._prompt_helper = prompt_helper
-
-    @property
-    def num_output(self) -> int:
-        """Get the number of outputs."""
-        return self.prompt_helper.num_output
-
-    @num_output.setter
-    def num_output(self, num_output: int) -> None:
-        """Set the number of outputs."""
-        self.prompt_helper.num_output = num_output
-
-    @property
-    def context_window(self) -> int:
-        """Get the context window."""
-        return self.prompt_helper.context_window
-
-    @context_window.setter
-    def context_window(self, context_window: int) -> None:
-        """Set the context window."""
-        self.prompt_helper.context_window = context_window
-
     # ---- Transformations ----
 
     @property
@@ -294,16 +260,6 @@ def node_parser_from_settings_or_context(
         return context.node_parser
 
     return settings.node_parser
-
-
-def prompt_helper_from_settings_or_context(
-    settings: _Settings, context: Optional["ServiceContext"]
-) -> PromptHelper:
-    """Get settings from either settings or context."""
-    if context is not None:
-        return context.prompt_helper
-
-    return settings.prompt_helper
 
 
 def transformations_from_settings_or_context(
