@@ -62,10 +62,12 @@ def get_response_synthesizer(
         Settings, service_context
     )
     llm = llm or llm_from_settings_or_context(Settings, service_context)
-    self._prompt_helper = PromptHelper.from_llm_metadata(
-        self._llm,
-        num_output=Settings.num_output,
-        context_window=Settings.context_window,
+    prompt_helper = (
+        prompt_helper
+        or Settings._prompt_helper
+        or PromptHelper.from_llm_metadata(
+            llm,
+        )
     )
 
     if response_mode == ResponseMode.REFINE:

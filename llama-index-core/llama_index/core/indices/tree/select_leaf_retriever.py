@@ -93,10 +93,8 @@ class TreeSelectLeafRetriever(BaseRetriever):
         self._index_struct = index.index_struct
         self._docstore = index.docstore
         self._service_context = index.service_context
-        self._prompt_helper = PromptHelper.from_llm_metadata(
+        self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
             self._llm,
-            num_output=Settings.num_output,
-            context_window=Settings.context_window,
         )
 
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT

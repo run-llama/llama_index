@@ -69,10 +69,8 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
             callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context)
         )
-        self._prompt_helper = PromptHelper.from_llm_metadata(
+        self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
             self._llm,
-            num_output=Settings.num_output,
-            context_window=Settings.context_window,
         )
 
         self._streaming = streaming
