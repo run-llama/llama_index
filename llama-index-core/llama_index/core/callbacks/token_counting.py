@@ -148,6 +148,9 @@ class TokenCountingHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         """Count the LLM or Embedding tokens as needed."""
+        import pdb
+
+        pdb.set_trace()
         if (
             event_type == CBEventType.LLM
             and event_type not in self.event_ends_to_ignore
