@@ -93,7 +93,7 @@ def get_program_for_llm(
         try:
             from llama_index.program.lmformatenforcer import (
                 LMFormatEnforcerPydanticProgram,
-            )
+            )  # pants: no-infer-dep
         except ImportError:
             raise ImportError(
                 "This mode requires the `llama-index-program-lmformatenforcer package. Please"
