@@ -11,6 +11,7 @@ import logging
 from typing import Any, Dict, List, Optional, cast
 from warnings import warn
 
+import llama_index.core
 from llama_index.core.bridge.pydantic import PrivateAttr
 from astrapy.db import AstraDB
 from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
@@ -89,7 +90,11 @@ class AstraDBVectorStore(BasePydanticVectorStore):
 
         # Build the Astra DB object
         self._astra_db = AstraDB(
-            api_endpoint=api_endpoint, token=token, namespace=namespace
+            api_endpoint=api_endpoint,
+            token=token,
+            namespace=namespace,
+            caller_name=getattr(llama_index, "__name__", "llama_index"),
+            caller_version=getattr(llama_index.core, "__version__", None),
         )
 
         from astrapy.api import APIRequestError
