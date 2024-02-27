@@ -9,9 +9,11 @@ from fastapi import FastAPI
 
 
 class ContributorServiceSettings(BaseSettings):
-    secret: str = Field(..., description="JWT secret.")
     api_version: str = Field(default="v1", description="API version.")
-    DEBUG: bool = Field(default=False)
+    secret: Optional[str] = Field(
+        default=None, description="JWT secret."
+    )  # left for future consideration.
+    # or if user wants to implement their own
 
     class Config:
         env_file = ".env", ".env.contributor.service"
@@ -31,7 +33,7 @@ class ContributorService(BaseModel):
         )
 
         # routes
-        self._fastapi.add_api_route(path="/", endpoint=self.index, methods=["GET"])
+        self._fastapi.add_api_route(path="/api", endpoint=self.index, methods=["GET"])
         self._fastapi.add_api_route(
             path="/api/query",
             endpoint=self.query,
@@ -41,11 +43,11 @@ class ContributorService(BaseModel):
         super().__init__(query_engine=query_engine, config=config)
 
     async def index(self):
-        if self.config.DEBUG:
-            pass
+        """Index endpoint logic."""
         return {"message": "Hello World!"}
 
     async def query(self, request: ContributorQueryRequest):
+        """Query endpoint logic."""
         result = await self.query_engine.aquery(request.query)
         return {
             "response": result.response,

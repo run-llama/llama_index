@@ -20,13 +20,13 @@ class MockQueryEngine(CustomQueryEngine):
 
 def test_contributor_service_index():
     # arrange
-    config = ContributorServiceSettings(secret="secret")
+    config = ContributorServiceSettings()
     mock_query_engine = MockQueryEngine()
     service = ContributorService(query_engine=mock_query_engine, config=config)
     test_client = TestClient(service.app)
 
     # act
-    response = test_client.get("/")
+    response = test_client.get("/api")
 
     # assert
     assert response.status_code == 200
