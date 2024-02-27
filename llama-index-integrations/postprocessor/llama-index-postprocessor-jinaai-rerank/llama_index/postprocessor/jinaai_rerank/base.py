@@ -7,12 +7,13 @@ from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
 
-API_URL = "https://api.jina.ai/v1/reranking"
+API_URL = "https://api.jina.ai/v1/rerank"
 
 
 class JinaRerank(BaseNodePostprocessor):
+    api_key: str = Field(default=None, description="The JinaAI API key.")
     model: str = Field(
-        default="jina-rerank-v1-base-en",
+        default="jina-reranker-v1-base-en",
         description="The model to use when calling Jina AI API",
     )
 
@@ -23,16 +24,16 @@ class JinaRerank(BaseNodePostprocessor):
     def __init__(
         self,
         top_n: int = 2,
-        model: str = "jina-rerank-v1-base-en",
+        model: str = "jina-reranker-v1-base-en",
         api_key: Optional[str] = None,
     ):
+        super().__init__(top_n=top_n, model=model)
         self.api_key = get_from_param_or_env("api_key", api_key, "JINAAI_API_KEY", "")
         self.model = model
         self._session = requests.Session()
         self._session.headers.update(
             {"Authorization": f"Bearer {api_key}", "Accept-Encoding": "identity"}
         )
-        super().__init__(top_n=top_n, model=model)
 
     @classmethod
     def class_name(cls) -> str:
@@ -61,7 +62,7 @@ class JinaRerank(BaseNodePostprocessor):
             resp = self._session.post(  # type: ignore
                 API_URL,
                 json={
-                    "query": query_bundle.query_st,
+                    "query": query_bundle.query_str,
                     "documents": texts,
                     "model": self.model,
                     "top_n": self.top_n,

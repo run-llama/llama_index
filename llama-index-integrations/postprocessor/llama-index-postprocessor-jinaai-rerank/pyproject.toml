@@ -21,7 +21,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["joan.fontanals.martinez@jina.ai"]
+authors = ["Joan Fontanals <joan.fontanals.martinez@jina.ai>"]
 description = "llama-index postprocessor jinaai rerank integration"
 exclude = ["**/BUILD"]
 license = "MIT"
