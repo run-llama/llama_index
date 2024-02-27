@@ -250,7 +250,9 @@ class BaseElementNodeParser(NodeParser):
         return node_parser.get_nodes_from_documents([doc])
 
     def get_nodes_from_elements(
-        self, elements: List[Element], metadata_inherited: Dict[str, Any]
+        self,
+        elements: List[Element],
+        metadata_inherited: Optional[Dict[str, Any]] = None,
     ) -> List[BaseNode]:
         """Get nodes and mappings."""
         from llama_index.core.node_parser import SentenceSplitter
@@ -346,7 +348,8 @@ class BaseElementNodeParser(NodeParser):
 
         # remove empty nodes and keep node original metadata inherited from parent nodes
         for node in nodes:
-            for key in metadata_inherited:
-                if key not in node.metadata:
-                    node.metadata[key] = metadata_inherited[key]
+            if metadata_inherited:
+                for key in metadata_inherited:
+                    if key not in node.metadata:
+                        node.metadata[key] = metadata_inherited[key]
         return [node for node in nodes if len(node.text) > 0]
