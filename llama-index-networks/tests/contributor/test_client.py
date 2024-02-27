@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock, patch
-from llama_index.networks.contributor.client import (
+from llama_index.networks import (
     ContributorClient,
     ContributorClientSettings,
 )

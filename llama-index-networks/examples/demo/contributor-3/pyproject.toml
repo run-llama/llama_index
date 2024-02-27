@@ -6,7 +6,6 @@ requires = ["poetry-core"]
 authors = ["Your Name <you@example.com>"]
 description = ""
 name = "contributor-3"
-readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
