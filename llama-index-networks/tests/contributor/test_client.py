@@ -31,7 +31,7 @@ def test_contributor_client(mock_requests):
     mock_requests.post.assert_called_once()
     args, kwargs = mock_requests.post.call_args
     assert kwargs == {
-        "json": {"query": "Does this work?", "api_token": None},
+        "json": {"query": "Does this work?", "api_key": "fake-key"},
         "headers": {},
     }
     assert args[0] == "fake-url/api/query"

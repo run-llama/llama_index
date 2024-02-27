@@ -13,7 +13,7 @@ import aiohttp
 class ContributorClientSettings(BaseSettings):
     """Settings for contributor."""
 
-    api_key: str = Field(..., env="API_KEY")
+    api_key: Optional[str] = Field(default=None, env="API_KEY")
     api_url: str = Field(..., env="API_URL")
 
     class Config:
@@ -42,13 +42,12 @@ class ContributorClient(BaseQueryEngine):
     def _query(
         self,
         query_bundle: QueryBundle,
-        api_token: Optional[str] = None,
         additional_data: Dict[str, str] = {},
         headers: Dict[str, str] = {},
     ) -> RESPONSE_TYPE:
         """Make a post request to submit a query to QueryEngine."""
         # headers = {"Authorization": f"Bearer {self.config.api_key}"}
-        data = {"query": query_bundle.query_str, "api_token": api_token}
+        data = {"query": query_bundle.query_str, "api_key": self.config.api_key}
         data.update(additional_data)
         result = requests.post(
             self.config.api_url + "/api/query", json=data, headers=headers
