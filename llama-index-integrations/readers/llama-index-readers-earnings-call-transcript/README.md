@@ -19,7 +19,7 @@ The Earning call transcripts takes in three arguments
 ```python
 from llama_index import download_loader
 
-IMDBReviewsloader = download_loader("EarningsCallTranscript")
+EarningsCallTranscript = download_loader("EarningsCallTranscript")
 
 loader = EarningsCallTranscript(2023, "AAPL", "Q3")
 docs = loader.load_data()
