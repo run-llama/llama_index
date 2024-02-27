@@ -13,8 +13,6 @@ import_path = "llama_index.readers.myscale"
 
 [tool.llamahub.class_authors]
 MyScaleReader = "llama-index"
-escape_str = "llama-index"
-format_list_to_string = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

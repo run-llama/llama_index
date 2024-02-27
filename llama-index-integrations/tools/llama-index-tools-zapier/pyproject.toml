@@ -12,7 +12,6 @@ contains_example = false
 import_path = "llama_index.tools.zapier"
 
 [tool.llamahub.class_authors]
-ACTION_URL_TMPL = "llama-index"
 ZapierToolSpec = "ajhofmann"
 
 [tool.mypy]

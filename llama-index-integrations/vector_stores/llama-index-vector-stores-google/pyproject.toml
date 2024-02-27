@@ -13,7 +13,6 @@ import_path = "llama_index.vector_stores.google"
 
 [tool.llamahub.class_authors]
 GoogleVectorStore = "llama-index"
-set_google_config = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

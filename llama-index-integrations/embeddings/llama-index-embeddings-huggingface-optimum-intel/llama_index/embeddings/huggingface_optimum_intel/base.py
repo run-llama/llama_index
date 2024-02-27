@@ -45,14 +45,15 @@ class IntelEmbedding(BaseEmbedding):
         device: Optional[str] = None,
     ):
         try:
-            from optimum.intel import INCModel
+            from optimum.intel import IPEXModel
         except ImportError:
             raise ImportError(
                 "Optimum-Intel requires the following dependencies; please install with "
-                "`pip install optimum[exporters] optimum-intel neural-compressor`."
+                "`pip install optimum[exporters] "
+                "optimum-intel neural-compressor intel_extension_for_pytorch`"
             )
 
-        self._model = model or INCModel.from_pretrained(folder_name)
+        self._model = model or IPEXModel.from_pretrained(folder_name)
         self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
         self._device = device or infer_torch_device()
 

@@ -54,7 +54,7 @@ class InstructorEmbedding(BaseEmbedding):
 
     def _format_query_text(self, query_text: str) -> List[str]:
         """Format query text."""
-        instruction = self.text_instruction
+        instruction = self.query_instruction
 
         if instruction is None:
             instruction = get_query_instruct_for_model_name(self.model_name)
