@@ -18,7 +18,7 @@ def test_contributor_client(mock_requests):
     }
     mock_requests.post.return_value = result_mock
 
-    settings = ContributorClientSettings(api_key="fake-key", api_url="fake-url")
+    settings = ContributorClientSettings(api_url="fake-url")
     client = ContributorClient(
         config=settings, callback_manager=Settings.callback_manager
     )
@@ -31,7 +31,7 @@ def test_contributor_client(mock_requests):
     mock_requests.post.assert_called_once()
     args, kwargs = mock_requests.post.call_args
     assert kwargs == {
-        "json": {"query": "Does this work?", "api_key": "fake-key"},
+        "json": {"query": "Does this work?", "api_key": None},
         "headers": {},
     }
     assert args[0] == "fake-url/api/query"
