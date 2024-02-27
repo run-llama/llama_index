@@ -20,7 +20,8 @@ OpenAI as the LLM provider. As such, you'll need to supply an `OPENAI_API_KEY`.
 
 To do so, we make use of .env files. Each contributor folder requires a filled
 in `.env.contributor.service` file. You can use the `template.env.contributor.service`,
-fill in your openai-api-key and then save it as `.env.contributor.service`.
+fill in your openai-api-key and then save it as `.env.contributor.service` (you can also save it simply as `.env` as the `ContributorServiceSettings`
+class will look for `.env` file if it can't find `.env.contributor.service`).
 
 ### Installation
 
