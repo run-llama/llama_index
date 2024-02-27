@@ -184,6 +184,7 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/mistralai.ipynb
+/cookbooks/mistralai.ipynb
 ```
 
 ## MonsterAPI

@@ -557,7 +557,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
                     f"Could not parse metadata from hit {hit['_source']['metadata']}"
                 )
                 node_info = source.get("node_info")
-                relationships = source.get("relationships")
+                relationships = source.get("relationships", {})
                 start_char_idx = None
                 end_char_idx = None
                 if isinstance(node_info, dict):

@@ -7,6 +7,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 2) create and refine separately over each chunk, 3) tree summarization.
 
 """
+
 import logging
 from abc import abstractmethod
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
@@ -41,7 +42,6 @@ from llama_index.core.settings import (
     Settings,
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
-    prompt_helper_from_settings_or_context,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 
@@ -65,12 +65,20 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
     ) -> None:
         """Init params."""
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+
+        if callback_manager:
+            self._llm.callback_manager = callback_manager
+
         self._callback_manager = (
             callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context)
         )
-        self._prompt_helper = prompt_helper or prompt_helper_from_settings_or_context(
-            Settings, service_context
+        self._prompt_helper = (
+            prompt_helper
+            or Settings._prompt_helper
+            or PromptHelper.from_llm_metadata(
+                self._llm.metadata,
+            )
         )
 
         self._streaming = streaming

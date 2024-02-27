@@ -7,6 +7,7 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.fireworks.utils import (
     fireworks_modelname_to_contextsize,
+    is_function_calling_model,
 )
 from llama_index.llms.openai import OpenAI
 
@@ -64,7 +65,9 @@ class Fireworks(OpenAI):
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
-            is_function_calling_model=True,
+            is_function_calling_model=is_function_calling_model(
+                model=self._get_model_name()
+            ),
         )
 
     @property
