@@ -1157,6 +1157,7 @@ files = [
     {file = "grpcio-1.62.0-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:0e97f37a3b7c89f9125b92d22e9c8323f4e76e7993ba7049b9f4ccbe8bae958a"},
     {file = "grpcio-1.62.0-cp39-cp39-win32.whl", hash = "sha256:39cd45bd82a2e510e591ca2ddbe22352e8413378852ae814549c162cf3992a93"},
     {file = "grpcio-1.62.0-cp39-cp39-win_amd64.whl", hash = "sha256:b71c65427bf0ec6a8b48c68c17356cb9fbfc96b1130d20a07cb462f4e4dcdcd5"},
+    {file = "grpcio-1.62.0.tar.gz", hash = "sha256:748496af9238ac78dcd98cce65421f1adce28c3979393e3609683fcd7f3880d7"},
 ]
 
 [package.extras]
@@ -1624,13 +1625,13 @@ llama-index-llms-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-networks"
-version = "0.1.0a9"
+version = "0.1.0"
 description = "llama-index networks  integration"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "llama_index_networks-0.1.0a9-py3-none-any.whl", hash = "sha256:cde1037857dde76aadcf9542c7a3fa6e8cd08feb57c6678221ef4c44575b000f"},
-    {file = "llama_index_networks-0.1.0a9.tar.gz", hash = "sha256:99e585ac27df5e7c5a000e208951ef7796c7d013d1d639ca84412754248abb69"},
+    {file = "llama_index_networks-0.1.0-py3-none-any.whl", hash = "sha256:f9090e4aa1ee62281d95d8dc9f11f1f2f66dde7c3f32e96a007c5ef6e41c387a"},
+    {file = "llama_index_networks-0.1.0.tar.gz", hash = "sha256:774fea418a77842bd0b6cee872d1696902c117ff05bcd2e738be704f49844ed6"},
 ]
 
 [package.dependencies]
@@ -4361,4 +4362,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "1f952b7c275618a233d0085ec2e64bd4653ff9ad0b02650b48f2d763fde08b75"
+content-hash = "9765b97755e58cab020f5a98759d7e3b3bdd039bf3cc9868f76a77f51dd2ba53"
