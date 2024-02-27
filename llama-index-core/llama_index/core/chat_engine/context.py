@@ -69,6 +69,7 @@ class ContextChatEngine(BaseChatEngine):
         prefix_messages: Optional[List[ChatMessage]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         context_template: Optional[str] = None,
+        llm: Optional[LLM] = None,
         **kwargs: Any,
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
