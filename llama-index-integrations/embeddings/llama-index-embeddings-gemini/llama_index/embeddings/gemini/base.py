@@ -1,5 +1,6 @@
 """Gemini embeddings file."""
 
+import os
 from typing import Any, List, Optional
 
 import google.generativeai as gemini
