@@ -13,9 +13,9 @@ Default Prompts
 ^^^^^^^^^^^^^^^^^
 
 
-* `Completion prompt templates <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py>`_.
-* `Chat prompt templates <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py>`_.
-* `Selector prompt templates <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompt_selectors.py>`_.
+* `Completion prompt templates <https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/prompts/default_prompts.py>`_.
+* `Chat prompt templates <https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/prompts/chat_prompts.py>`_.
+* `Selector prompt templates <https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/prompts/default_prompt_selectors.py>`_.
 
 
 

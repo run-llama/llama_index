@@ -1,6 +1,6 @@
 # Chroma AutoRetrieval Pack
 
-This LlamaPack inserts your data into chroma and insantiates an auto-retriever, which will use the LLM at runtime to set metadata filtering, top-k, and query string.
+This LlamaPack inserts your data into chroma and instantiates an auto-retriever, which will use the LLM at runtime to set metadata filtering, top-k, and query string.
 
 ## CLI Usage
 
@@ -70,7 +70,7 @@ response = chroma_pack.run("Tell me a bout a Music celebritiy.")
 You can also use modules individually.
 
 ```python
-# use the retreiver
+# use the retriever
 retriever = chroma_pack.retriever
 nodes = retriever.retrieve("query_str")
 

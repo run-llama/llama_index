@@ -14,11 +14,11 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
 )
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.core.llms.llm import LLM
@@ -212,6 +212,18 @@ class Vllm(LLM):
         }
         return {**base_kwargs}
 
+    def __del__(self) -> None:
+        import torch
+
+        if torch.cuda.is_available():
+            from vllm.model_executor.parallel_utils.parallel_state import (
+                destroy_model_parallel,
+            )
+
+            destroy_model_parallel()
+            del self._client
+            torch.cuda.synchronize()
+
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
             **self._model_kwargs,
@@ -262,7 +274,8 @@ class Vllm(LLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        raise (ValueError("Not Implemented"))
+        kwargs = kwargs if kwargs else {}
+        return self.complete(prompt, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
@@ -370,13 +383,15 @@ class VllmServer(Vllm):
         response = post_http_request(self.api_url, sampling_params, stream=True)
 
         def gen() -> CompletionResponseGen:
+            response_str = ""
             for chunk in response.iter_lines(
                 chunk_size=8192, decode_unicode=False, delimiter=b"\0"
             ):
                 if chunk:
                     data = json.loads(chunk.decode("utf-8"))
 
-                    yield CompletionResponse(text=data["text"][0])
+                    response_str += data["text"][0]
+                    yield CompletionResponse(text=response_str, delta=data["text"][0])
 
         return gen()
 

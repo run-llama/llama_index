@@ -3,11 +3,16 @@
 Contains parsers for mp3, mp4 files.
 
 """
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
+import logging
+from fsspec import AbstractFileSystem
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+
+logger = logging.getLogger(__name__)
 
 
 class VideoAudioReader(BaseReader):
@@ -36,7 +41,10 @@ class VideoAudioReader(BaseReader):
         self.parser_config = {"model": model}
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
         import whisper
@@ -46,8 +54,12 @@ class VideoAudioReader(BaseReader):
                 from pydub import AudioSegment
             except ImportError:
                 raise ImportError("Please install pydub 'pip install pydub' ")
-            # open file
-            video = AudioSegment.from_file(file, format="mp4")
+            if fs:
+                with fs.open(file, "rb") as f:
+                    video = AudioSegment.from_file(f, format="mp4")
+            else:
+                # open file
+                video = AudioSegment.from_file(file, format="mp4")
 
             # Extract audio from video
             audio = video.split_to_mono()[0]

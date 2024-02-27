@@ -7,4 +7,4 @@ Storage, Callables and several others.
 
 We've designed the core library so that it can be easily extended through subclasses.
 Building LLM applications with LlamaIndex thus involves building with LlamaIndex
-core as well as with the LlamaIndex [integrations](https://github.com/run-llamae/llama_index/tree/main/llama-index-integrations) needed for your application.
+core as well as with the LlamaIndex [integrations](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations) needed for your application.

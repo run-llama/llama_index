@@ -3,13 +3,19 @@
 Contains parsers for docx, pdf files.
 
 """
+
 import struct
 import zlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from fsspec import AbstractFileSystem
+import logging
 
 from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
+
+logger = logging.getLogger(__name__)
 
 
 class PDFReader(BaseReader):
@@ -22,7 +28,10 @@ class PDFReader(BaseReader):
         self.return_full_document = return_full_document
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
         try:
@@ -31,7 +40,8 @@ class PDFReader(BaseReader):
             raise ImportError(
                 "pypdf is required to read PDF files: `pip install pypdf`"
             )
-        with open(file, "rb") as fp:
+        fs = fs or get_default_fs()
+        with fs.open(file, "rb") as fp:
             # Create a PDF object
             pdf = pypdf.PdfReader(fp)
 
@@ -74,7 +84,10 @@ class DocxReader(BaseReader):
     """Docx parser."""
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
         try:
@@ -85,7 +98,11 @@ class DocxReader(BaseReader):
                 "`pip install docx2txt`"
             )
 
-        text = docx2txt.process(file)
+        if fs:
+            with fs.open(file) as f:
+                text = docx2txt.process(f)
+        else:
+            text = docx2txt.process(file)
         metadata = {"file_name": file.name}
         if extra_info is not None:
             metadata.update(extra_info)
@@ -106,7 +123,10 @@ class HWPReader(BaseReader):
         self.text = ""
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Load data and extract table from Hwp file.
 
@@ -117,6 +137,12 @@ class HWPReader(BaseReader):
             List[Document]
         """
         import olefile
+
+        if fs:
+            logger.warning(
+                "fs was specified but HWPReader doesn't support loading "
+                "from fsspec filesystems. Will load from local filesystem instead."
+            )
 
         load_file = olefile.OleFileIO(file)
         file_dir = load_file.listdir()

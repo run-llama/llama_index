@@ -13,8 +13,19 @@ import uuid
 from dataclasses import dataclass, field, fields
 from datetime import datetime
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+)
 
+from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 
@@ -55,6 +66,14 @@ class QueryData:
     query_embedding: Optional[Embedding] = field(
         default=None,
         metadata={OPENINFERENCE_COLUMN_NAME: ":feature.[float].embedding:prompt"},
+    )
+    llm_prompt: Optional[str] = field(
+        default=None,
+        metadata={OPENINFERENCE_COLUMN_NAME: ":feature.text:llm_prompt"},
+    )
+    llm_messages: Optional[Tuple[str, str]] = field(
+        default=None,
+        metadata={OPENINFERENCE_COLUMN_NAME: ":feature.[[str]]:llm_messages"},
     )
     response_text: Optional[str] = field(
         default=None, metadata={OPENINFERENCE_COLUMN_NAME: ":prediction.text:response"}
@@ -165,7 +184,7 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         self._node_data_buffer: List[NodeData] = []
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
-        if trace_id == "query":
+        if trace_id == "query" or trace_id == "chat":
             self._trace_data = TraceData()
             self._trace_data.query_data.timestamp = datetime.now().isoformat()
             self._trace_data.query_data.id = _generate_random_id()
@@ -175,7 +194,7 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         trace_id: Optional[str] = None,
         trace_map: Optional[Dict[str, List[str]]] = None,
     ) -> None:
-        if trace_id == "query":
+        if trace_id == "query" or trace_id == "chat":
             self._query_data_buffer.append(self._trace_data.query_data)
             self._node_data_buffer.extend(self._trace_data.node_datas)
             self._trace_data = TraceData()
@@ -194,6 +213,18 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
             if event_type is CBEventType.QUERY:
                 query_text = payload[EventPayload.QUERY_STR]
                 self._trace_data.query_data.query_text = query_text
+            elif event_type is CBEventType.LLM:
+                if prompt := payload.get(EventPayload.PROMPT, None):
+                    self._trace_data.query_data.llm_prompt = prompt
+                if messages := payload.get(EventPayload.MESSAGES, None):
+                    self._trace_data.query_data.llm_messages = [
+                        (m.role.value, m.content) for m in messages
+                    ]
+                    # For chat engines there is no query event and thus the
+                    # query text will be None, in this case we set the query
+                    # text to the last message passed to the LLM
+                    if self._trace_data.query_data.query_text is None:
+                        self._trace_data.query_data.query_text = messages[-1].content
         return event_id
 
     def on_event_end(
@@ -218,9 +249,18 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
                     )
                 )
         elif event_type is CBEventType.LLM:
-            self._trace_data.query_data.response_text = str(
-                payload.get(EventPayload.RESPONSE, "")
-            ) or str(payload.get(EventPayload.COMPLETION, ""))
+            if self._trace_data.query_data.response_text is None:
+                if response := payload.get(EventPayload.RESPONSE, None):
+                    if isinstance(response, ChatResponse):
+                        # If the response is of class ChatResponse the string
+                        # representation has the format "<role>: <message>",
+                        # but we want just the message
+                        response_text = response.message.content
+                    else:
+                        response_text = str(response)
+                    self._trace_data.query_data.response_text = response_text
+                elif completion := payload.get(EventPayload.COMPLETION, None):
+                    self._trace_data.query_data.response_text = str(completion)
         elif event_type is CBEventType.EMBEDDING:
             self._trace_data.query_data.query_embedding = payload[
                 EventPayload.EMBEDDINGS

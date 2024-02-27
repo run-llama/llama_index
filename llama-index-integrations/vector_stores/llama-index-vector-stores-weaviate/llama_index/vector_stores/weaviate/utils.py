@@ -123,7 +123,7 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
         node.text = text
         node.embedding = embedding
     except Exception as e:
-        _logger.debug("Failed to parse Node metadata, fallback to legacy logic.", e)
+        _logger.debug("Failed to parse Node metadata, fallback to legacy logic. %s", e)
         metadata, node_info, relationships = legacy_metadata_dict_to_node(entry)
 
         node = TextNode(

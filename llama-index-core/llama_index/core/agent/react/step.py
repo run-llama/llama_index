@@ -42,7 +42,7 @@ from llama_index.core.chat_engine.types import (
     AgentChatResponse,
     StreamingAgentChatResponse,
 )
-from llama_index.core.llms.base import ChatMessage, ChatResponse
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
@@ -341,13 +341,13 @@ class ReActAgentWorker(BaseAgentWorker):
         """
         latest_content = chunk.message.content
         if latest_content:
-            if not latest_content.startswith(
+            # doesn't follow thought-action format
+            if len(latest_content) > len("Thought") and not latest_content.startswith(
                 "Thought"
-            ):  # doesn't follow thought-action format
+            ):
                 return True
-            else:
-                if "Answer: " in latest_content:
-                    return True
+            elif "Answer: " in latest_content:
+                return True
         return False
 
     def _add_back_chunk_to_stream(

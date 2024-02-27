@@ -146,7 +146,7 @@ class Neo4jQueryToolSpec(BaseToolSpec):
                     ChatMessage(role=MessageRole.ASSISTANT, content=cypher),
                     ChatMessage(
                         role=MessageRole.SYSTEM,
-                        conent=f"This query returns an error: {e!s}\n"
+                        content=f"This query returns an error: {e!s}\n"
                         "Give me a improved query that works without any explanations or apologies",
                     ),
                 ],

@@ -5,11 +5,11 @@ This loader reads files from:
 - Microsoft OneDrive Personal [(https://onedrive.live.com/)](https://onedrive.live.com/) and
 - Microsoft OneDrive for Business [(https://portal.office.com/onedrive)](https://portal.office.com/onedrive).
 
-It supports recursively traversing and downloading files from subfolders and provides capablity to download only files with specific mime types. To use this loader, you need to pass in a list of file/folder id or file/folder paths.
+It supports recursively traversing and downloading files from subfolders and provides capability to download only files with specific mime types. To use this loader, you need to pass in a list of file/folder id or file/folder paths.
 
 #### Subfolder traversing (enabled by default)
 
-To disbale: `loader.load_data(recursive = False)`
+To disable: `loader.load_data(recursive = False)`
 
 #### Mime types
 
@@ -23,7 +23,7 @@ OneDriveReader supports following two **MSAL authentication**:
 
 - You need to create a app registration in Microsoft Entra (formerly Azure Active Directory)
 - For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a **redirect URI** set to _'https://localhost'_ under mobile and native applications.
-- This mode of authnetication is not suitable for CI/CD or other background service scenarios where manual auhtentication isnt feasible.
+- This mode of authentication is not suitable for CI/CD or other background service scenarios where manual authentication isn't feasible.
 - API Permission required for registered app:
   > Microsoft Graph --> Delegated Permission -- > Files.Read.All
 
@@ -44,7 +44,7 @@ OneDriveReader supports following two **MSAL authentication**:
 
 https://onedrive.live.com/
 
-> Note: If you trying to connect to OneDrive Personal you can intialize OneDriveReader with just your client*id and interactive login. Microsoft \_doesn't* support App authentication for OneDrive Personal currently.
+> Note: If you trying to connect to OneDrive Personal you can initialize OneDriveReader with just your client*id and interactive login. Microsoft \_doesn't* support App authentication for OneDrive Personal currently.
 
 #### folder_id
 
@@ -70,10 +70,10 @@ loader = OneDriveReader(client_id="82ee706e-2439-47fa-877a-95048ead9318")
 
 # APP Authentication flow: NOT SUPPORTED By Microsoft
 
-#### Get all documetns including subfolders.
+#### Get all documents including subfolders.
 documents = loader.load_data()
 
-#### Get documents using folder_id , to exclude traversing subfolders explictly set the recursive flag to False, default is True
+#### Get documents using folder_id , to exclude traversing subfolders explicitly set the recursive flag to False, default is True
 documents = loader.load_data(folder_id="folderid", recursive=False)
 
 #### Using file ids

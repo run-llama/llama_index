@@ -2,6 +2,7 @@
 
 from typing import Any, List, Optional
 
+import llama_index.core
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
@@ -43,11 +44,19 @@ class AstraDBReader(BaseReader):
             raise ImportError(import_err_msg)
 
         if client is not None:
-            self._client = client
+            self._client = client.copy()
+            self._client.set_caller(
+                caller_name=getattr(llama_index, "__name__", "llama_index"),
+                caller_version=getattr(llama_index.core, "__version__", None),
+            )
         else:
             # Build the Astra DB object
             self._client = AstraDB(
-                api_endpoint=api_endpoint, token=token, namespace=namespace
+                api_endpoint=api_endpoint,
+                token=token,
+                namespace=namespace,
+                caller_name=getattr(llama_index, "__name__", "llama_index"),
+                caller_version=getattr(llama_index.core, "__version__", None),
             )
 
         self._collection = self._client.create_collection(

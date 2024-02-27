@@ -87,7 +87,7 @@ vectara = VectaraRAG(summary_num_results=12)
 Once you have the Vectara RAG object, you can now use it as a retriever:
 
 ```python
-# use the retreiver
+# use the retriever
 nodes = vectara.retrieve("Is light a wave or a particle?")
 ```
 

@@ -1,4 +1,5 @@
 """PDF Table reader."""
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -34,7 +35,7 @@ class PDFTableReader(BaseReader):
         Args:
             file (Path): Path for the PDF file.
             pages (str): Pages to read tables from.
-            extra_info (Optional[Dict]): Extra informations.
+            extra_info (Optional[Dict]): Extra information.
 
         Returns:
             List[Document]: List of documents.
