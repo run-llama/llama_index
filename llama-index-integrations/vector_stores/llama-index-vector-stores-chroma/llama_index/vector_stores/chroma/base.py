@@ -311,9 +311,6 @@ class ChromaVectorStore(BasePydanticVectorStore):
             **kwargs,
         )
 
-        print(f"QUERY RES: {results}")
-        print(f"EMBEDDINGS: {query_embeddings}")
-
         logger.debug(f"> Top {len(results['documents'])} nodes:")
         nodes = []
         similarities = []
@@ -361,8 +358,6 @@ class ChromaVectorStore(BasePydanticVectorStore):
             where=where,
             **kwargs,
         )
-        # results = self._collection.get()
-        print(f"COLLECTIONs: {results}")
 
         logger.debug(f"> Top {len(results['documents'])} nodes:")
         nodes = []
