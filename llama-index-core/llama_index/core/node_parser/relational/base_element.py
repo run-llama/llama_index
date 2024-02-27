@@ -54,8 +54,6 @@ class Element(BaseModel):
     title_level: Optional[int] = None
     table_output: Optional[TableOutput] = None
     table: Optional[pd.DataFrame] = None
-    # original document id, it is usually file name
-    doc_id: Optional[str] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -252,7 +250,7 @@ class BaseElementNodeParser(NodeParser):
         return node_parser.get_nodes_from_documents([doc])
 
     def get_nodes_from_elements(
-        self, elements: List[Element], doc_id: str
+        self, elements: List[Element], file_name: str
     ) -> List[BaseNode]:
         """Get nodes and mappings."""
         from llama_index.core.node_parser import SentenceSplitter
@@ -268,8 +266,6 @@ class BaseElementNodeParser(NodeParser):
                     cur_text_nodes = self._get_nodes_from_buffer(
                         cur_text_el_buffer, node_parser
                     )
-                    # for node in cur_text_nodes:
-                    #     node.metadata["doc_id"] = doc_id
                     nodes.extend(cur_text_nodes)
                     cur_text_el_buffer = []
 
@@ -350,5 +346,5 @@ class BaseElementNodeParser(NodeParser):
 
         # remove empty nodes
         for node in nodes:
-            node.metadata["doc_id"] = doc_id
+            node.metadata["file_name"] = file_name
         return [node for node in nodes if len(node.text) > 0]
