@@ -41,6 +41,59 @@ DEFAULT_LLAMA_CPP_MODEL_VERBOSITY = True
 
 
 class LlamaCPP(CustomLLM):
+    r"""LlamaCPP LLM.
+
+    Examples:
+        Install llama-cpp-python following instructions:
+        https://github.com/abetlen/llama-cpp-python
+
+        Then `pip install llama-index-llms-llama-cpp`
+
+        ```python
+        from llama_index.llms.llama_cpp import LlamaCPP
+
+        def messages_to_prompt(messages):
+            prompt = ""
+            for message in messages:
+                if message.role == 'system':
+                prompt += f"<|system|>\n{message.content}</s>\n"
+                elif message.role == 'user':
+                prompt += f"<|user|>\n{message.content}</s>\n"
+                elif message.role == 'assistant':
+                prompt += f"<|assistant|>\n{message.content}</s>\n"
+
+            # ensure we start with a system prompt, insert blank if needed
+            if not prompt.startswith("<|system|>\n"):
+                prompt = "<|system|>\n</s>\n" + prompt
+
+            # add final assistant prompt
+            prompt = prompt + "<|assistant|>\n"
+
+            return prompt
+
+        def completion_to_prompt(completion):
+            return f"<|system|>\n</s>\n<|user|>\n{completion}</s>\n<|assistant|>\n"
+
+        model_url = "https://huggingface.co/TheBloke/zephyr-7B-beta-GGUF/resolve/main/zephyr-7b-beta.Q4_0.gguf"
+
+        llm = LlamaCPP(
+            model_url=model_url,
+            model_path=None,
+            temperature=0.1,
+            max_new_tokens=256,
+            context_window=3900,
+            generate_kwargs={},
+            model_kwargs={"n_gpu_layers": -1},  # if compiled to use GPU
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            verbose=True,
+        )
+
+        response = llm.complete("Hello, how are you?")
+        print(str(response))
+        ```
+    """
+
     model_url: Optional[str] = Field(
         description="The URL llama-cpp model to download and use."
     )

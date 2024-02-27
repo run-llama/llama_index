@@ -21,6 +21,35 @@ import os
 
 
 class Maritalk(LLM):
+    """Maritalk LLM.
+
+    Examples:
+        `pip install llama-index-llms-maritalk`
+
+        ```python
+        from llama_index.core.llms import ChatMessage
+        from llama_index.llms.maritalk import Maritalk
+
+        # To customize your API key, do this
+        # otherwise it will lookup MARITALK_API_KEY from your env variable
+        # llm = Maritalk(api_key="<your_maritalk_api_key>")
+
+        llm = Maritalk()
+
+        # Call chat with a list of messages
+        messages = [
+            ChatMessage(
+                role="system",
+                content="You are an assistant specialized in suggesting pet names. Given the animal, you must suggest 4 names.",
+            ),
+            ChatMessage(role="user", content="I have a dog."),
+        ]
+
+        response = llm.chat(messages)
+        print(response)
+        ```
+    """
+
     api_key: Optional[str] = Field(default=None, description="Your MariTalk API key.")
     temperature: float = Field(
         default=0.7,

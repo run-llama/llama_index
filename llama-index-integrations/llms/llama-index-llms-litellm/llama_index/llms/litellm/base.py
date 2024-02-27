@@ -40,6 +40,34 @@ DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
 
 class LiteLLM(LLM):
+    """LiteLLM.
+
+    Examples:
+        `pip install llama-index-llms-litellm`
+
+        ```python
+        import os
+        from llama_index.core.llms import ChatMessage
+        from llama_index.llms.litellm import LiteLLM
+
+        # Set environment variables
+        os.environ["OPENAI_API_KEY"] = "your-openai-api-key"
+        os.environ["COHERE_API_KEY"] = "your-cohere-api-key"
+
+        # Define a chat message
+        message = ChatMessage(role="user", content="Hey! how's it going?")
+
+        # Initialize LiteLLM with the desired model
+        llm = LiteLLM(model="gpt-3.5-turbo")
+
+        # Call the chat method with the message
+        chat_response = llm.chat([message])
+
+        # Print the response
+        print(chat_response)
+        ```
+    """
+
     model: str = Field(
         default=DEFAULT_LITELLM_MODEL,
         description=(

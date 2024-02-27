@@ -41,6 +41,26 @@ DEFAULT_MISTRALAI_MAX_TOKENS = 512
 
 
 class MistralAI(LLM):
+    """MistralAI LLM.
+
+    Examples:
+        `pip install llama-index-llms-mistralai`
+
+        ```python
+        from llama_index.llms.mistralai import MistralAI
+
+        # To customize your API key, do this
+        # otherwise it will lookup MISTRAL_API_KEY from your env variable
+        # llm = MistralAI(api_key="<api_key>")
+
+        llm = MistralAI()
+
+        resp = llm.complete("Paul Graham is ")
+
+        print(resp)
+        ```
+    """
+
     model: str = Field(
         default=DEFAULT_MISTRALAI_MODEL, description="The mistralai model to use."
     )

@@ -17,6 +17,22 @@ from llama_index.core.bridge.pydantic import Field
 
 
 class MyMagicAI(LLM):
+    """MyMagicAI LLM.
+
+    Examples:
+        `pip install llama-index-llms-mymagic`
+
+        ```python
+        from llama_index.llms.mistralai import MistralAI
+
+        llm = MistralAI(model="mistral7b", api_key="<api_key>")
+
+        resp = llm.complete("Paul Graham is ")
+
+        print(resp)
+        ```
+    """
+
     base_url_template: str = "https://{model}.mymagic.ai"
     api_key: str = None
     model: str = Field(default="mistral7b", description="The MyMagicAI model to use.")

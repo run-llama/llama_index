@@ -35,6 +35,53 @@ PAD_TOKEN = 2
 
 
 class LocalTensorRTLLM(CustomLLM):
+    r"""Local TensorRT LLM.
+
+    [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM) provides users with an easy-to-use Python API to define Large Language Models (LLMs) and build TensorRT engines that contain state-of-the-art optimizations to perform inference
+    efficiently on NVIDIA GPUs.
+
+    Since TensorRT-LLM is a SDK for interacting with local models in process there are a few environment steps that must be followed to ensure that the TensorRT-LLM setup can be used.
+
+    1. Nvidia Cuda 12.2 or higher is currently required to run TensorRT-LLM
+    2. Install `tensorrt_llm` via pip with `pip3 install tensorrt_llm -U --extra-index-url https://pypi.nvidia.com`
+    3. For this example we will use Llama2. The Llama2 model files need to be created via scripts following the instructions
+    (https://github.com/NVIDIA/trt-llm-rag-windows/blob/release/1.0/README.md#building-trt-engine)
+        * The following files will be created from following the stop above
+        * `Llama_float16_tp1_rank0.engine`: The main output of the build script, containing the executable graph of operations with the model weights embedded.
+        * `config.json`: Includes detailed information about the model, like its general structure and precision, as well as information about which plug-ins were incorporated into the engine.
+        * `model.cache`: Caches some of the timing and optimization information from model compilation, making successive builds quicker.
+    4. `mkdir model`
+    5. Move all of the files mentioned above to the model directory.
+
+    Examples:
+        `pip install llama-index-llms-nvidia-tensorrt`
+
+        ```python
+        from llama_index.llms.nvidia_tensorrt import LocalTensorRTLLM
+
+
+        def completion_to_prompt(completion):
+            return f"<s> [INST] {completion} [/INST] "
+
+        def messages_to_prompt(messages):
+            content = ""
+            for message in messages:
+                content += str(message) + "\n"
+            return f"<s> [INST] {content} [/INST] "
+
+        llm = LocalTensorRTLLM(
+            model_path="./model",
+            engine_name="llama_float16_tp1_rank0.engine",
+            tokenizer_dir="meta-llama/Llama-2-13b-chat",
+            completion_to_prompt=completion_to_prompt,
+            messages_to_prompt=messages_to_prompt,
+        )
+
+        resp = llm.complete("Who is Paul Graham?")
+        print(str(resp))
+        ```
+    """
+
     model_path: Optional[str] = Field(description="The path to the trt engine.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_new_tokens: int = Field(description="The maximum number of tokens to generate.")

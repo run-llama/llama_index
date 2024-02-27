@@ -3,6 +3,24 @@ theme:
   name: material
   features:
     - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+#nav:
+  # - Home: 'index.md'
+  #- Getting Started:
+  #  - 'getting_started/installation.md'
+  #  - 'getting_started/reading.md'
+  #  - 'getting_started/starter_example.md'
+  #  - 'getting_started/concepts.md'
+  #  - 'getting_started/customization.md'
+  #  - 'getting_started/discover_llamaindex.md'
+  #- Use Cases: ./use_cases
+  #- Understanding: ./understanding
+  #- Module Guides: ./module_guides
+  #- Community: ./community
+  #- API Reference:
+  #  - LLMs: api_reference/llms
+  #- Changes: ./changes
 markdown_extensions:
   - admonition
   - pymdownx.details
@@ -13,6 +31,8 @@ extra_css:
 extra_javascript:
   - javascript/llms_example.js
 plugins:
+  - search
+  - include_dir_to_nav
   - mkdocs-jupyter:
       execute: false
   - mkdocstrings:
