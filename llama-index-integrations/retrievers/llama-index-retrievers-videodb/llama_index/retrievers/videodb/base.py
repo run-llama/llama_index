@@ -2,21 +2,19 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
-import requests
 import logging
 import os
 
 from typing import List, Optional
+from videodb import connect
 
 
 logger = logging.getLogger(__name__)
 
 
 class SearchType:
+    keyword = "keyword"
     semantic = "semantic"
-
-
-VIDEODB_BASE_URL = "https://api.videodb.io"
 
 
 class VideoDBRetriever(BaseRetriever):
@@ -28,7 +26,7 @@ class VideoDBRetriever(BaseRetriever):
         score_threshold: Optional[float] = 0.2,
         result_threshold: Optional[int] = 5,
         search_type: Optional[str] = SearchType.semantic,
-        base_url: Optional[str] = VIDEODB_BASE_URL,
+        base_url: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Creates a new VideoDB Retriever."""
@@ -49,48 +47,42 @@ class VideoDBRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve."""
+        kwargs = {"api_key": self._api_key}
+        if self._base_url is not None:
+            kwargs["base_url"] = self._base_url
+        conn = connect(**kwargs)
         if self.video:
-            path = f"video/{self.video}/search"
+            coll = conn.get_collection(self.collection)
+            video = coll.get_video(self.video)
+            search_res = video.search(
+                query_bundle.query_str,
+                search_type=self.search_type,
+                score_threshold=self.score_threshold,
+                result_threshold=self.result_threshold,
+            )
         else:
-            path = f"collection/{self.collection}/search"
-        url = f"{self._base_url}/{path}"
-
-        headers = {"x-access-token": self._api_key, "Content-Type": "application/json"}
-
-        payload = {
-            "type": self.search_type,
-            "query": query_bundle.query_str,
-            "score_threshold": self.score_threshold,
-            "result_threshold": self.result_threshold,
-        }
-
-        res = requests.post(url, headers=headers, json=payload).json()
-        if res.get("success"):
-            search_res = res.get("data")
-        else:
-            logger.error(f"Error in VideoDB Retrieval: {res.get('mesage')}")
-            raise Exception(f"Error in VideoDB Retrieval: {res.get('message')}")
+            coll = conn.get_collection(self.collection)
+            search_res = coll.search(
+                query_bundle.query_str,
+                search_type=self.search_type,
+                score_threshold=self.score_threshold,
+                result_threshold=self.result_threshold,
+            )
 
         nodes = []
-        results = search_res.get("results", [])
-        for result in results:
-            collection_id = result.get("collection_id")
-            video_id = result.get("video_id")
-            length = result.get("length")
-            title = result.get("title")
-            docs = result.get("docs", [])
-            for doc in docs:
-                textnode = TextNode(
-                    text=doc.get("text"),
-                    metadata={
-                        "collection_id": collection_id,
-                        "video_id": video_id,
-                        "length": length,
-                        "title": title,
-                        "start": doc.get("start"),
-                        "end": doc.get("end"),
-                    },
-                )
-                score = doc.get("score", 0)
-                nodes.append(NodeWithScore(node=textnode, score=score))
+        collection_id = search_res.collection_id
+        for shot in search_res.get_shots():
+            score = shot.search_score
+            textnode = TextNode(
+                text=shot.text,
+                metadata={
+                    "collection_id": collection_id,
+                    "video_id": shot.video_id,
+                    "length": shot.video_length,
+                    "title": shot.video_title,
+                    "start": shot.start,
+                    "end": shot.end,
+                },
+            )
+            nodes.append(NodeWithScore(node=textnode, score=score))
         return nodes
