@@ -4,6 +4,7 @@ import logging
 import os
 from typing import Dict, List, Optional
 from urllib.parse import unquote
+import requests
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -322,6 +323,8 @@ class ConfluenceReader(BaseReader):
         return function(**kwargs)
 
     def process_page(self, page, include_attachments, text_maker):
+        logger.info("Processing " + self.base_url + page["_links"]["webui"])
+
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"])
         else:
@@ -707,7 +710,7 @@ class ConfluenceReader(BaseReader):
 
         try:
             # Assuming CSV uses default comma delimiter. If delimiter varies, consider detecting it.
-            df = pd.read_csv(file_data)
+            df = pd.read_csv(file_data, low_memory=False)
             # Convert the DataFrame to a text string, including headers
             text_rows = []
             for index, row in df.iterrows():
