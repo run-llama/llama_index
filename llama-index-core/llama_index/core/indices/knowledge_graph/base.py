@@ -259,11 +259,9 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         self._graph_store.upsert_triplet(*triplet)
         triplet_str = str(triplet)
         if include_embeddings:
-            set_embedding = self._embed_model.get_text_embedding(
-                triplet_str
-            )
+            set_embedding = self._embed_model.get_text_embedding(triplet_str)
             self._index_struct.add_to_embedding_dict(str(triplet), set_embedding)
-        
+
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def add_node(self, keywords: List[str], node: BaseNode) -> None:
@@ -302,9 +300,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         self.add_node([subj, obj], node)
         triplet_str = str(triplet)
         if include_embeddings:
-            set_embedding = self._embed_model.get_text_embedding(
-                triplet_str
-            )
+            set_embedding = self._embed_model.get_text_embedding(triplet_str)
             self._index_struct.add_to_embedding_dict(str(triplet), set_embedding)
 
         self._storage_context.index_store.add_index_struct(self._index_struct)
