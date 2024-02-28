@@ -28,8 +28,8 @@ Oftentimes this can be preferable to figuring out how to load and index API data
 A usage example is given below:
 
 ```python
-from llama_hub.wikipedia.base import WikipediaReader
-from llama_index.tools.ondemand_loader_tool import OnDemandLoaderTool
+from llama_index.readers.wikipedia import WikipediaReader
+from llama_index.core.tools.ondemand_loader_tool import OnDemandLoaderTool
 
 tool = OnDemandLoaderTool.from_defaults(
     reader,
@@ -49,8 +49,10 @@ This is helpful for any API endpoint that will by default return large volumes o
 Example usage is shown below:
 
 ```python
-from llama_hub.tools.wikipedia.base import WikipediaToolSpec
-from llama_index.tools.tool_spec.load_and_search import LoadAndSearchToolSpec
+from llama_index.tools.wikipedia import WikipediaToolSpec
+from llama_index.core.tools.tool_spec.load_and_search import (
+    LoadAndSearchToolSpec,
+)
 
 wiki_spec = WikipediaToolSpec()
 # Get the search wikipedia tool

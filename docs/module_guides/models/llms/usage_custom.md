@@ -21,12 +21,8 @@ you may also plug in any LLM shown on Langchain's
 [LLM](https://python.langchain.com/docs/integrations/llms/) page.
 
 ```python
-from llama_index import (
-    KeywordTableIndex,
-    SimpleDirectoryReader,
-    ServiceContext,
-)
-from llama_index.llms import OpenAI
+from llama_index.core import KeywordTableIndex, SimpleDirectoryReader
+from llama_index.llms.openai import OpenAI
 
 # alternatively
 # from langchain.llms import ...
@@ -35,12 +31,9 @@ documents = SimpleDirectoryReader("data").load_data()
 
 # define LLM
 llm = OpenAI(temperature=0.1, model="gpt-4")
-service_context = ServiceContext.from_defaults(llm=llm)
 
 # build index
-index = KeywordTableIndex.from_documents(
-    documents, service_context=service_context
-)
+index = KeywordTableIndex.from_documents(documents, llm=llm)
 
 # get response from query
 query_engine = index.as_query_engine()
@@ -58,54 +51,38 @@ For OpenAI, Cohere, AI21, you just need to set the `max_tokens` parameter
 (or maxTokens for AI21). We will handle text chunking/calculations under the hood.
 
 ```python
-from llama_index import (
-    KeywordTableIndex,
-    SimpleDirectoryReader,
-    ServiceContext,
-)
-from llama_index.llms import OpenAI
+from llama_index.core import KeywordTableIndex, SimpleDirectoryReader
+from llama_index.llms.openai import OpenAI
+from llama_index.core import Settings
 
 documents = SimpleDirectoryReader("data").load_data()
 
-# define LLM
-llm = OpenAI(temperature=0, model="text-davinci-002", max_tokens=512)
-service_context = ServiceContext.from_defaults(llm=llm)
+# define global LLM
+Settings.llm = OpenAI(temperature=0, model="gpt-3.5-turbo", max_tokens=512)
 ```
 
 ## Example: Explicitly configure `context_window` and `num_output`
 
-If you are using other LLM classes from langchain, you may need to explicitly configure the `context_window` and `num_output` via the `ServiceContext` since the information is not available by default.
+If you are using other LLM classes from langchain, you may need to explicitly configure the `context_window` and `num_output` via the `Settings` since the information is not available by default.
 
 ```python
-from llama_index import (
-    KeywordTableIndex,
-    SimpleDirectoryReader,
-    ServiceContext,
-)
-from llama_index.llms import OpenAI
-
-# alternatively
-# from langchain.llms import ...
+from llama_index.core import KeywordTableIndex, SimpleDirectoryReader
+from llama_index.llms.openai import OpenAI
+from llama_index.core import Settings
 
 documents = SimpleDirectoryReader("data").load_data()
 
 
 # set context window
-context_window = 4096
+Settings.context_window = 4096
 # set number of output tokens
-num_output = 256
+Settings.num_output = 256
 
 # define LLM
-llm = OpenAI(
+Settings.llm = OpenAI(
     temperature=0,
-    model="text-davinci-002",
+    model="gpt-3.5-turbo",
     max_tokens=num_output,
-)
-
-service_context = ServiceContext.from_defaults(
-    llm=llm,
-    context_window=context_window,
-    num_output=num_output,
 )
 ```
 
@@ -118,38 +95,48 @@ Many open-source models from HuggingFace require either some preamble before eac
 Below, this example uses both the `system_prompt` and `query_wrapper_prompt`, using specific prompts from the model card found [here](https://huggingface.co/stabilityai/stablelm-tuned-alpha-3b).
 
 ```python
-from llama_index.prompts import PromptTemplate
+from llama_index.core import PromptTemplate
 
-system_prompt = """<|SYSTEM|># StableLM Tuned (Alpha version)
-- StableLM is a helpful and harmless open-source AI language model developed by StabilityAI.
-- StableLM is excited to be able to help the user, but will refuse to do anything that could be considered harmful to the user.
-- StableLM is more than just an information source, StableLM is also able to write poetry, short stories, and make jokes.
-- StableLM will refuse to participate in anything that could harm a human.
-"""
 
-# This will wrap the default prompts that are internal to llama-index
-query_wrapper_prompt = PromptTemplate("<|USER|>{query_str}<|ASSISTANT|>")
+# Transform a string into input zephyr-specific input
+def completion_to_prompt(completion):
+    return f"<|system|>\n</s>\n<|user|>\n{completion}</s>\n<|assistant|>\n"
+
+
+# Transform a list of chat messages into zephyr-specific input
+def messages_to_prompt(messages):
+    prompt = ""
+    for message in messages:
+        if message.role == "system":
+            prompt += f"<|system|>\n{message.content}</s>\n"
+        elif message.role == "user":
+            prompt += f"<|user|>\n{message.content}</s>\n"
+        elif message.role == "assistant":
+            prompt += f"<|assistant|>\n{message.content}</s>\n"
+
+    # ensure we start with a system prompt, insert blank if needed
+    if not prompt.startswith("<|system|>\n"):
+        prompt = "<|system|>\n</s>\n" + prompt
+
+    # add final assistant prompt
+    prompt = prompt + "<|assistant|>\n"
+
+    return prompt
+
 
 import torch
-from llama_index.llms import HuggingFaceLLM
+from llama_index.llms.huggingface import HuggingFaceLLM
+from llama_index.core import Settings
 
-llm = HuggingFaceLLM(
-    context_window=4096,
+Settings.llm = HuggingFaceLLM(
+    model_name="HuggingFaceH4/zephyr-7b-beta",
+    tokenizer_name="HuggingFaceH4/zephyr-7b-beta",
+    context_window=3900,
     max_new_tokens=256,
-    generate_kwargs={"temperature": 0.7, "do_sample": False},
-    system_prompt=system_prompt,
-    query_wrapper_prompt=query_wrapper_prompt,
-    tokenizer_name="StabilityAI/stablelm-tuned-alpha-3b",
-    model_name="StabilityAI/stablelm-tuned-alpha-3b",
+    generate_kwargs={"temperature": 0.7, "top_k": 50, "top_p": 0.95},
+    messages_to_prompt=messages_to_prompt,
+    completion_to_prompt=completion_to_prompt,
     device_map="auto",
-    stopping_ids=[50278, 50279, 50277, 1, 0],
-    tokenizer_kwargs={"max_length": 4096},
-    # uncomment this if using CUDA to reduce memory usage
-    # model_kwargs={"torch_dtype": torch.float16}
-)
-service_context = ServiceContext.from_defaults(
-    chunk_size=1024,
-    llm=llm,
 )
 ```
 
@@ -185,15 +172,16 @@ Here is a small boilerplate example:
 ```python
 from typing import Optional, List, Mapping, Any
 
-from llama_index import ServiceContext, SimpleDirectoryReader, SummaryIndex
-from llama_index.callbacks import CallbackManager
-from llama_index.llms import (
+from llama_index.core import SimpleDirectoryReader, SummaryIndex
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core.llms import (
     CustomLLM,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.llms.base import llm_completion_callback
+from llama_index.core.llms.callbacks import llm_completion_callback
+from llama_index.core import Settings
 
 
 class OurLLM(CustomLLM):
@@ -226,15 +214,15 @@ class OurLLM(CustomLLM):
 
 
 # define our LLM
-llm = OurLLM()
+Settings.llm = OurLLM()
 
-service_context = ServiceContext.from_defaults(
-    llm=llm, embed_model="local:BAAI/bge-base-en-v1.5"
-)
+# define embed model
+Settings.embed_model = "local:BAAI/bge-base-en-v1.5"
+
 
 # Load the your data
 documents = SimpleDirectoryReader("./data").load_data()
-index = SummaryIndex.from_documents(documents, service_context=service_context)
+index = SummaryIndex.from_documents(documents)
 
 # Query and print response
 query_engine = index.as_query_engine()

@@ -10,13 +10,13 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import pkg_resources
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../"))
 
-with open("../llama_index/VERSION") as f:
-    version = f.read()
+version = "v" + pkg_resources.get_distribution("llama-index-core").version
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -115,6 +115,7 @@ redirects = {
     "core_modules/supporting_modules/callbacks/root": "/en/stable/module_guides/observability/callbacks/root.html",
     "core_modules/supporting_modules/evaluation/root": "/en/stable/module_guides/evaluating/root.html",
     "core_modules/supporting_modules/cost_analysis/root": "/en/stable/understanding/evaluating/cost_analysis/root.html",
+    "api/llama_index.vector_stores.MongoDBAtlasVectorSearch": "/en/stable/examples/vector_stores/MongoDBAtlasVectorSearch.html",
 }
 
 gtagjs_ids = [
