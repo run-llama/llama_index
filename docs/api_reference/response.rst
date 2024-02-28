@@ -3,6 +3,6 @@
 Response
 =================
 
-.. automodule:: llama_index.response.schema
+.. automodule:: llama_index.core.base.response.schema
    :members:
    :inherited-members:

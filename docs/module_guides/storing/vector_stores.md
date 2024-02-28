@@ -21,12 +21,14 @@ We are actively adding more integrations and improving feature coverage for each
 | Azure CosmosDB MongoDB   | cloud               |                    |               | ✓      | ✓               |       |
 | ChatGPT Retrieval Plugin | aggregator          |                    |               | ✓      | ✓               |       |
 | Chroma                   | self-hosted         | ✓                  |               | ✓      | ✓               |       |
-| DashVector               | cloud               | ✓                  |               | ✓      | ✓               |       |
+| DashVector               | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Deeplake                 | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | DocArray                 | aggregator          | ✓                  |               | ✓      | ✓               |       |
 | DynamoDB                 | cloud               |                    |               | ✓      |                 |       |
 | Elasticsearch            | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | FAISS                    | in-memory           |                    |               |        |                 |       |
+| txtai                    | in-memory           |                    |               |        |                 |       |
+| Jaguar                   | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 | LanceDB                  | cloud               | ✓                  |               | ✓      | ✓               |       |
 | Lantern                  | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Metal                    | cloud               | ✓                  |               | ✓      | ✓               |       |
@@ -34,10 +36,11 @@ We are actively adding more integrations and improving feature coverage for each
 | MyScale                  | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Milvus / Zilliz          | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Neo4jVector              | self-hosted / cloud |                    |               | ✓      | ✓               |       |
-| OpenSearch               | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| OpenSearch               | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Pinecone                 | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
-| Qdrant                   | self-hosted / cloud | ✓                  |               | ✓      | ✓               | ✓     |
+| pgvecto.rs               | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
+| Qdrant                   | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Redis                    | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Simple                   | in-memory           | ✓                  |               | ✓      |                 |       |
 | SingleStore              | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
@@ -46,6 +49,7 @@ We are actively adding more integrations and improving feature coverage for each
 | TencentVectorDB          | cloud               | ✓                  | ✓             | ✓      | ✓               |       |
 | Timescale                |                     | ✓                  |               | ✓      | ✓               | ✓     |
 | Typesense                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
+| Upstash                  | cloud               |                    |               |        | ✓               |       |
 | Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
@@ -57,16 +61,19 @@ maxdepth: 1
 ---
 /examples/vector_stores/AstraDBIndexDemo.ipynb
 /examples/vector_stores/AsyncIndexCreationDemo.ipynb
+/examples/vector_stores/AzureAISearchIndexDemo.ipynb
 /examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb
 /examples/vector_stores/CassandraIndexDemo.ipynb
 /examples/vector_stores/ChromaIndexDemo.ipynb
-/examples/vector_stores/CognitiveSearchIndexDemo.ipynb
 /examples/vector_stores/DashvectorIndexDemo.ipynb
+/examples/vector_stores/DashvectorIndexDemo-Hybrid.ipynb
 /examples/vector_stores/DeepLakeIndexDemo.ipynb
 /examples/vector_stores/DocArrayHnswIndexDemo.ipynb
 /examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
 /examples/vector_stores/EpsillaIndexDemo.ipynb
+/examples/vector_stores/JaguarIndexDemo.ipynb
 /examples/vector_stores/LanceDBIndexDemo.ipynb
+/examples/vector_stores/LanternIndexDemo.ipynb
 /examples/vector_stores/MetalIndexDemo.ipynb
 /examples/vector_stores/MilvusIndexDemo.ipynb
 /examples/vector_stores/MyScaleIndexDemo.ipynb
@@ -77,11 +84,13 @@ maxdepth: 1
 /examples/vector_stores/OpensearchDemo.ipynb
 /examples/vector_stores/PineconeIndexDemo.ipynb
 /examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
+/examples/vector_stores/PGVectoRsDemo.ipynb
+/examples/vector_stores/postgres.ipynb
 /examples/vector_stores/RedisIndexDemo.ipynb
 /examples/vector_stores/QdrantIndexDemo.ipynb
+/examples/vector_stores/qdrant_hybrid.ipynb
 /examples/vector_stores/RocksetIndexDemo.ipynb
 /examples/vector_stores/SimpleIndexDemo.ipynb
-/examples/vector_stores/SingleStoreDemo.ipynb
 /examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 /examples/vector_stores/TairIndexDemo.ipynb
 /examples/vector_stores/TencentVectorDBIndexDemo.ipynb

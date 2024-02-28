@@ -2,7 +2,9 @@
 
 Now you've loaded your data, built an index, and stored that index for later, you're ready to get to the most significant part of an LLM application: querying.
 
-The most important thing to know about querying is that it is just a prompt to an LLM: so it can be a question and get an answer, or a request for summarization, or a much more complex instruction.
+At its simplest, querying is just a prompt call to an LLM: it can be a question and get an answer, or a request for summarization, or a much more complex instruction.
+
+More complex querying could involve repeated/chained prompt + LLM calls, or even a reasoning loop across multiple components.
 
 ## Getting started
 
@@ -35,13 +37,10 @@ LlamaIndex features a low-level composition API that gives you granular control 
 In this example, we customize our retriever to use a different number for `top_k` and add a post-processing step that requires that the retrieved nodes reach a minimum similarity score to be included. This would give you a lot of data when you have relevant results but potentially no data if you have nothing relevant.
 
 ```python
-from llama_index import (
-    VectorStoreIndex,
-    get_response_synthesizer,
-)
-from llama_index.retrievers import VectorIndexRetriever
-from llama_index.query_engine import RetrieverQueryEngine
-from llama_index.postprocessor import SimilarityPostprocessor
+from llama_index.core import VectorStoreIndex, get_response_synthesizer
+from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.postprocessor import SimilarityPostprocessor
 
 # build index
 index = VectorStoreIndex.from_documents(documents)
@@ -140,3 +139,15 @@ Right now, we support the following options:
   chunk while accumulating the responses into an array. Returns a concatenated string of all
   responses. Good for when you need to run the same query separately against each text
   chunk.
+
+## Structured Outputs
+
+You may want to ensure your output is structured. See our [Query Engines + Pydantic Outputs](/module_guides/querying/structured_outputs/query_engine.md) to see how to extract a Pydantic object from a query engine class.
+
+Also make sure to check out our entire [Structured Outputs](/module_guides/querying/structured_outputs/structured_outputs.md) guide.
+
+## Creating your own Query Pipeline
+
+If you want to design complex query flows, you can compose your own query pipeline across many different modules, from prompts/LLMs/output parsers to retrievers to response synthesizers to your own custom components.
+
+Take a look at our [Query Pipelines Module Guide](/module_guides/querying/pipeline/root.md) for more details.

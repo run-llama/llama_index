@@ -10,31 +10,60 @@ repos:
       - id: check-merge-conflict
       - id: check-symlinks
       - id: check-toml
+        exclude: llama-index-core/llama_index/core/_static
       - id: check-yaml
+        exclude: llama-index-core/llama_index/core/_static
       - id: detect-private-key
       - id: end-of-file-fixer
+        exclude: llama-index-core/llama_index/core/_static
       - id: mixed-line-ending
+        exclude: llama-index-core/llama_index/core/_static
       - id: trailing-whitespace
+        exclude: llama-index-core/llama_index/core/_static
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.1.5
 
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
+        exclude: ".*poetry.lock|.*_static"
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
       - id: black-jupyter
         name: black-src
         alias: black
-        exclude: docs/
+        exclude: "^docs|.*poetry.lock|.*_static"
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.0.1
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          [
+            "types-requests",
+            "types-Deprecated",
+            "types-redis",
+            "types-setuptools",
+            "types-PyYAML",
+            "types-protobuf==4.24.0.4",
+          ]
+        exclude: ^(docs/|llama-index-core/llama_index/core/_static)
+        args:
+          [
+            --namespace-packages,
+            --explicit-package-bases,
+            --disallow-untyped-defs,
+            --ignore-missing-imports,
+            --python-version=3.8,
+          ]
+        entry: bash -c "export MYPYPATH=llama_index"
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
       - id: black-jupyter
         name: black-docs-py
         alias: black
-        files: docs/
+        files: ^(docs/|examples/)
         # Using PEP 8's line length in docs prevents excess left/right scrolling
         args: [--line-length=79]
   - repo: https://github.com/adamchainz/blacken-docs
@@ -51,11 +80,23 @@ repos:
     rev: v3.0.3
     hooks:
       - id: prettier
+        exclude: llama-index-core/llama_index/core/_static|poetry.lock|llama-index-legacy/llama_index/legacy/_static
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
       - id: codespell
         additional_dependencies: [tomli]
+        exclude: |
+          poetry.lock|
+          (\/.*?\.[\w:]+)/pyproject.toml|
+          llama-index-core/llama_index/core/_static|
+          llama-index-legacy/llama_index/legacy/_static|
+          (\/.*?\.[\w:]+)/poetry.lock
+        args:
+          [
+            "--ignore-words-list",
+            "astroid,gallary,momento,narl,ot,rouge,nin,gere",
+          ]
   - repo: https://github.com/srstevenson/nb-clean
     rev: 3.1.0
     hooks:
@@ -65,4 +106,4 @@ repos:
     rev: v0.23.1
     hooks:
       - id: toml-sort-fix
-        exclude: poetry.lock
+        exclude: ".*poetry.lock|.*_static"

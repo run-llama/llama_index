@@ -329,10 +329,13 @@ async def receive(self, text_data):
 To load the collection model, the `load_collection_model` function is used, which can be found
 in [`delphic/utils/collections.py`](https://github.com/JSv4/Delphic/blob/main/delphic/utils/collections.py). This
 function retrieves the collection object with the given collection ID, checks if a JSON file for the collection model
-exists, and if not, creates one. Then, it sets up the `LLMPredictor` and `ServiceContext` before loading
+exists, and if not, creates one. Then, it sets up the `LLM` and `Settings` before loading
 the `VectorStoreIndex` using the cache file.
 
 ```python
+from llama_index.core import Settings
+
+
 async def load_collection_model(collection_id: str | int) -> VectorStoreIndex:
     """
     Load the Collection model from cache or the database, and return the index.
@@ -371,16 +374,17 @@ async def load_collection_model(collection_id: str | int) -> VectorStoreIndex:
 
         # define LLM
         logger.info(
-            f"load_collection_model() - Setup service context with tokens {settings.MAX_TOKENS} and "
+            f"load_collection_model() - Setup Settings with tokens {settings.MAX_TOKENS} and "
             f"model {settings.MODEL_NAME}"
         )
-        llm = OpenAI(temperature=0, model="text-davinci-003", max_tokens=512)
-        service_context = ServiceContext.from_defaults(llm=llm)
+        Settings.llm = OpenAI(
+            temperature=0, model="gpt-3.5-turbo", max_tokens=512
+        )
 
         # Call VectorStoreIndex.load_from_disk
         logger.info("load_collection_model() - Load llama index")
         index = VectorStoreIndex.load_from_disk(
-            cache_file_path, service_context=service_context
+            cache_file_path,
         )
         logger.info(
             "load_collection_model() - Llamaindex loaded and ready for query..."
