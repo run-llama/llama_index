@@ -50,10 +50,14 @@ def default_output_response_parser(llm_output: str) -> str:
         llm_output_parsed = re.search(
             pattern=r"JSONPath:\s+(.*)", string=llm_output
         ).groups()[0]
-    except Exception as exc:
-        raise ValueError(
-            f"JSON Path could not be parsed in the LLM response after the 'JSONPath' identifier. Try passing a custom JSON path prompt and processor."
-        ) from exc
+    except Exception:
+        logger.warning(
+            f"JSON Path could not be parsed in the LLM response after the 'JSONPath' identifier. "
+            "Try passing a custom JSON path prompt and processor. "
+            "Proceeding with output as-is."
+        )
+        return llm_output
+
     return llm_output_parsed
 
 
