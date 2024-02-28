@@ -4,7 +4,13 @@ from typing import Dict, List, Generator
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.core.vector_stores.types import VectorStoreQuery
+from llama_index.core.vector_stores.types import (
+    VectorStoreQuery,
+    MetadataFilter,
+    MetadataFilters,
+    FilterOperator,
+    FilterCondition,
+)
 
 ##
 # Run tests
@@ -159,3 +165,34 @@ async def test_add_to_chromadb_and_query(
         )
     assert res.nodes
     assert res.nodes[0].get_content() == "lorem ipsum"
+
+
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_chromadb_and_query_by_metafilters_only(
+    vector_store: ChromaVectorStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value="Marie Curie", operator=FilterOperator.EQ
+            )
+        ],
+        condition=FilterCondition.AND,
+    )
+
+    if use_async:
+        await vector_store.async_add(node_embeddings)
+        res = await vector_store.aquery(
+            VectorStoreQuery(filters=filters, similarity_top_k=1)
+        )
+    else:
+        vector_store.add(node_embeddings)
+        res = vector_store.query(VectorStoreQuery(filters=filters, similarity_top_k=1))
+
+    assert (
+        res.nodes[0].get_content()
+        == "I was taught that the way of progress was neither swift nor easy."
+    )
