@@ -4,7 +4,9 @@ theme:
   features:
     - navigation.instant
     - navigation.tabs
-    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - toc.follow
 #nav:
   # - Home: 'index.md'
   #- Getting Started:
@@ -26,6 +28,8 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.superfences
   - md_in_html
+  - toc:
+      permalink: "#"
 extra_css:
   - css/style.css
 extra_javascript:

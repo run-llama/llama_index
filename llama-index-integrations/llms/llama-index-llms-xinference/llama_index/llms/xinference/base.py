@@ -29,6 +29,30 @@ DEFAULT_XINFERENCE_TEMP = 1.0
 
 
 class Xinference(CustomLLM):
+    """Xinference LLM.
+
+    Examples:
+        `pip install llama-index-llms-xinference`
+
+        ```python
+        from llama_index.llms.xinference import Xinference
+
+        # Set up Xinference with required parameters
+        llm = Xinference(
+            model_name="xinference-1.0",
+            app_id="ml",
+            user_id="xinference",
+            api_key="<YOUR XINFERENCE API KEY>"
+            temperature=0.5,
+            max_tokens=256,
+        )
+
+        # Call the complete function
+        response = llm.complete("Hello World!")
+        print(response)
+        ```
+    """
+
     model_uid: str = Field(description="The Xinference model to use.")
     endpoint: str = Field(description="The Xinference endpoint URL to use.")
     temperature: float = Field(

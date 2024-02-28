@@ -21,6 +21,30 @@ DEFAULT_REPLICATE_TEMP = 0.75
 
 
 class Replicate(CustomLLM):
+    """Replicate LLM.
+
+    Examples:
+        `pip install llama-index-llms-replicate`
+
+        ```python
+        from llama_index.llms.replicate import Replicate
+
+        # Set up the Replicate API token
+        import os
+        os.environ["REPLICATE_API_TOKEN"] = "<your API key>"
+
+        # Initialize the Replicate class
+        llm = Replicate(
+            model="replicate/vicuna-13b:6282abe6a492de4145d7bb601023762212f9ddbbe78278bd6771c8b3b2f2a13b"
+        )
+
+        # Example of calling the 'complete' method with a prompt
+        resp = llm.complete("Who is Paul Graham?")
+
+        print(resp)
+        ```
+    """
+
     model: str = Field(description="The Replicate model to use.")
     temperature: float = Field(
         default=DEFAULT_REPLICATE_TEMP,

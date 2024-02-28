@@ -50,7 +50,25 @@ if TYPE_CHECKING:
 
 
 class OpenLLM(LLM):
-    """OpenLLM LLM."""
+    """OpenLLM LLM.
+
+    Examples:
+        `pip install llama-index-llms-openllm`
+
+        ```python
+        # If needed, set the OPENLLM_ENDPOINT environment variable to a remote server address
+        # os.environ["OPENLLM_ENDPOINT"] = "remote_server_address"
+
+        from llama_index.llms.openllm import OpenLLM
+
+        # Set up the OpenLLM instance
+        llm = OpenLLM("HuggingFaceH4/zephyr-7b-alpha")
+
+        # Example completion using OpenLLM
+        response = llm.complete("To infinity, and beyond")
+        print(str(response))
+        ```
+    """
 
     model_id: str = Field(
         description="Given Model ID from HuggingFace Hub. This can be either a pretrained ID or local path. This is synonymous to HuggingFace's '.from_pretrained' first argument"

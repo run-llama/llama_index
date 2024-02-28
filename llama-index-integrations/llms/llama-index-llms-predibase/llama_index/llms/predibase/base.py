@@ -20,7 +20,25 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 
 class PredibaseLLM(CustomLLM):
-    """Predibase LLM."""
+    """Predibase LLM.
+
+    Examples:
+        `pip install llama-index-llms-predibase`
+
+        ```python
+        import os
+
+        os.environ["PREDIBASE_API_TOKEN"] = "{PREDIBASE_API_TOKEN}"
+
+        from llama_index.llms.predibase import PredibaseLLM
+
+        llm = PredibaseLLM(
+            model_name="llama-2-13b", temperature=0.3, max_new_tokens=512
+        )
+        response = llm.complete("Hello World!")
+        print(str(response))
+        ```
+    """
 
     model_name: str = Field(description="The Predibase model to use.")
     predibase_api_key: str = Field(description="The Predibase API key to use.")
