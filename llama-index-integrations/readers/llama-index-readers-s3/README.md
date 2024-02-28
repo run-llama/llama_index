@@ -11,9 +11,7 @@ To use this loader, you need to pass in the name of your S3 Bucket. After that, 
 Otherwise, you may specify a prefix if you only want to parse certain files in the Bucket, or a subdirectory. AWS Access Key credentials may either be passed in during initialization or stored locally (see above).
 
 ```python
-from llama_index import download_loader
-
-S3Reader = download_loader("S3Reader")
+from llama_index.readers.s3 import S3Reader
 
 loader = S3Reader(
     bucket="scrabble-dictionary",
