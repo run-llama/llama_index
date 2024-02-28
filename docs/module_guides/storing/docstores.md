@@ -16,8 +16,8 @@ A more complete example can be found [here](../../examples/docstore/DocstoreDemo
 We support MongoDB as an alternative document store backend that persists data as `Node` objects are ingested.
 
 ```python
-from llama_index.storage.docstore import MongoDocumentStore
-from llama_index.node_parser import SentenceSplitter
+from llama_index.storage.docstore.mongodb import MongoDocumentStore
+from llama_index.core.node_parser import SentenceSplitter
 
 # create parser and parse document into nodes
 parser = SentenceSplitter()
@@ -50,8 +50,8 @@ A more complete example can be found [here](../../examples/docstore/MongoDocstor
 We support Redis as an alternative document store backend that persists data as `Node` objects are ingested.
 
 ```python
-from llama_index.storage.docstore import RedisDocumentStore
-from llama_index.node_parser import SentenceSplitter
+from llama_index.storage.docstore.redis import RedisDocumentStore
+from llama_index.core.node_parser import SentenceSplitter
 
 # create parser and parse document into nodes
 parser = SentenceSplitter()
@@ -83,8 +83,8 @@ A more complete example can be found [here](../../examples/docstore/RedisDocstor
 We support Firestore as an alternative document store backend that persists data as `Node` objects are ingested.
 
 ```python
-from llama_index.storage.docstore import FirestoreDocumentStore
-from llama_index.node_parser import SentenceSplitter
+from llama_index.storage.docstore.firestore import FirestoreDocumentStore
+from llama_index.core.node_parser import SentenceSplitter
 
 # create parser and parse document into nodes
 parser = SentenceSplitter()

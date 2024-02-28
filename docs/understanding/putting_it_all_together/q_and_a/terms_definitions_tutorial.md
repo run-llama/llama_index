@@ -84,13 +84,9 @@ Now that we are able to define LLM settings and upload text, we can try using Ll
 We can add the following functions to both initialize our LLM, as well as use it to extract terms from the input text.
 
 ```python
-from llama_index import (
-    Document,
-    SummaryIndex,
-    ServiceContext,
-    load_index_from_storage,
-)
-from llama_index.llms import OpenAI
+from llama_index.core import Document, SummaryIndex, load_index_from_storage
+from llama_index.llms.openai import OpenAI
+from llama_index.core import Settings
 
 
 def get_llm(llm_name, model_temperature, api_key, max_tokens=256):
@@ -105,12 +101,12 @@ def extract_terms(
 ):
     llm = get_llm(llm_name, model_temperature, api_key, max_tokens=1024)
 
-    service_context = ServiceContext.from_defaults(llm=llm, chunk_size=1024)
-
     temp_index = SummaryIndex.from_documents(
-        documents, service_context=service_context
+        documents,
     )
-    query_engine = temp_index.as_query_engine(response_mode="tree_summarize")
+    query_engine = temp_index.as_query_engine(
+        response_mode="tree_summarize", llm=llm
+    )
     terms_definitions = str(query_engine.query(term_extract_str))
     terms_definitions = [
         x
@@ -151,9 +147,9 @@ There's a lot going on now, let's take a moment to go over what is happening.
 
 `get_llm()` is instantiating the LLM based on the user configuration from the setup tab. Based on the model name, we need to use the appropriate class (`OpenAI` vs. `ChatOpenAI`).
 
-`extract_terms()` is where all the good stuff happens. First, we call `get_llm()` with `max_tokens=1024`, since we don't want to limit the model too much when it is extracting our terms and definitions (the default is 256 if not set). Then, we define our `ServiceContext` object, aligning `num_output` with our `max_tokens` value, as well as setting the chunk size to be no larger than the output. When documents are indexed by Llama Index, they are broken into chunks (also called nodes) if they are large, and `chunk_size` sets the size for these chunks.
+`extract_terms()` is where all the good stuff happens. First, we call `get_llm()` with `max_tokens=1024`, since we don't want to limit the model too much when it is extracting our terms and definitions (the default is 256 if not set). Then, we define our `Settomgs` object, aligning `num_output` with our `max_tokens` value, as well as setting the chunk size to be no larger than the output. When documents are indexed by Llama Index, they are broken into chunks (also called nodes) if they are large, and `chunk_size` sets the size for these chunks.
 
-Next, we create a temporary summary index and pass in our service context. A summary index will read every single piece of text in our index, which is perfect for extracting terms. Finally, we use our pre-defined query text to extract terms, using `response_mode="tree_summarize`. This response mode will generate a tree of summaries from the bottom up, where each parent summarizes its children. Finally, the top of the tree is returned, which will contain all our extracted terms and definitions.
+Next, we create a temporary summary index and pass in our llm. A summary index will read every single piece of text in our index, which is perfect for extracting terms. Finally, we use our pre-defined query text to extract terms, using `response_mode="tree_summarize`. This response mode will generate a tree of summaries from the bottom up, where each parent summarizes its children. Finally, the top of the tree is returned, which will contain all our extracted terms and definitions.
 
 Lastly, we do some minor post processing. We assume the model followed instructions and put a term/definition pair on each line. If a line is missing the `Term:` or `Definition:` labels, we skip it. Then, we convert this to a dictionary for easy storage!
 
@@ -164,6 +160,8 @@ Now that we can extract terms, we need to put them somewhere so that we can quer
 First things first though, let's add a feature to initialize a global vector index and another function to insert the extracted terms.
 
 ```python
+from llama_index.core import Settings
+
 ...
 if "all_terms" not in st.session_state:
     st.session_state["all_terms"] = DEFAULT_TERMS
@@ -179,13 +177,11 @@ def insert_terms(terms_to_definition):
 @st.cache_resource
 def initialize_index(llm_name, model_temperature, api_key):
     """Create the VectorStoreIndex object."""
-    llm = get_llm(llm_name, model_temperature, api_key)
+    Settings.llm = get_llm(llm_name, model_temperature, api_key)
 
-    service_context = ServiceContext.from_defaults(llm=llm)
+    index = VectorStoreIndex([])
 
-    index = VectorStoreIndex([], service_context=service_context)
-
-    return index
+    return index, llm
 
 
 ...
@@ -322,11 +318,9 @@ After inserting, remove the line of code we used to save the index to disk. With
 @st.cache_resource
 def initialize_index(llm_name, model_temperature, api_key):
     """Load the Index object."""
-    llm = get_llm(llm_name, model_temperature, api_key)
+    Settings.llm = get_llm(llm_name, model_temperature, api_key)
 
-    service_context = ServiceContext.from_defaults(llm=llm)
-
-    index = load_index_from_storage(service_context=service_context)
+    index = load_index_from_storage(storage_context)
 
     return index
 ```
@@ -351,13 +345,13 @@ This is due to the concept of "refining" answers in Llama Index. Since we are qu
 So, the refine process seems to be messing with our results! Rather than appending extra instructions to the `query_str`, remove that, and Llama Index will let us provide our own custom prompts! Let's create those now, using the [default prompts](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py) and [chat specific prompts](https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py) as a guide. Using a new file `constants.py`, let's create some new query templates:
 
 ```python
-from llama_index.prompts import (
+from llama_index.core import (
     PromptTemplate,
     SelectorPromptTemplate,
     ChatPromptTemplate,
 )
-from llama_index.prompts.utils import is_chat_model
-from llama_index.llms import ChatMessage, MessageRole
+from llama_index.core.prompts.utils import is_chat_model
+from llama_index.core.llms import ChatMessage, MessageRole
 
 # Text QA templates
 DEFAULT_TEXT_QA_PROMPT_TMPL = (
@@ -444,7 +438,10 @@ If you get an import error about PIL, install it using `pip install Pillow` firs
 
 ```python
 from PIL import Image
-from llama_index.readers.file.base import DEFAULT_FILE_EXTRACTOR, ImageParser
+from llama_index.readers.file import (
+    DEFAULT_FILE_EXTRACTOR,
+    ImageParser,
+)
 
 
 @st.cache_resource

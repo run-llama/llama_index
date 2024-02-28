@@ -3,5 +3,5 @@
 Node
 =================
 
-.. automodapi:: llama_index.schema
+.. automodapi:: llama_index.core.schema
    :no-inheritance-diagram:

@@ -16,7 +16,7 @@ Users may also provide their own prompt templates to further customize the behav
 Using prompts is simple.
 
 ```python
-from llama_index.prompts import PromptTemplate
+from llama_index.core import PromptTemplate
 
 template = (
     "We have provided context information below. \n"

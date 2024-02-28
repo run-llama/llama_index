@@ -9,9 +9,9 @@ This can drastically reduce the perceived latency of queries.
 To enable streaming, you need to use an LLM that supports streaming.
 Right now, streaming is supported by `OpenAI`, `HuggingFaceLLM`, and most LangChain LLMs (via `LangChainLLM`).
 
-Configure query engine to use streaming:
+> Note: if streaming is not supported by the LLM you choose a `NotImplementedError` will be raised.
 
-If you are using the high-level API, set `streaming=True` when building a query engine.
+To configure query engine to use streaming using the high-level API, set `streaming=True` when building a query engine.
 
 ```python
 query_engine = index.as_query_engine(streaming=True, similarity_top_k=1)
@@ -21,7 +21,7 @@ If you are using the low-level API to compose the query engine,
 pass `streaming=True` when constructing the `Response Synthesizer`:
 
 ```python
-from llama_index import get_response_synthesizer
+from llama_index.core import get_response_synthesizer
 
 synth = get_response_synthesizer(streaming=True, ...)
 query_engine = RetrieverQueryEngine(response_synthesizer=synth, ...)

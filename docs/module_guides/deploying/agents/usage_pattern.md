@@ -1,14 +1,14 @@
 # Usage Pattern
 
-## Get Started
+## Getting Started
 
 An agent is initialized from a set of Tools. Here's an example of instantiating a ReAct
 agent from a set of Tools.
 
 ```python
-from llama_index.tools import FunctionTool
-from llama_index.llms import OpenAI
-from llama_index.agent import ReActAgent
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
+from llama_index.core.agent import ReActAgent
 
 
 # define sample Tool
@@ -34,13 +34,23 @@ Example usage:
 agent.chat("What is 2123 * 215123")
 ```
 
-## Query Engine Tools
+To automatically pick the best agent depending on the LLM, you can use the `from_llm` method to generate an agent.
+
+```python
+from llama_index.core.agent import AgentRunner
+
+agent = AgentRunner.from_llm([multiply_tool], llm=llm, verbose=True)
+```
+
+## Defining Tools
+
+### Query Engine Tools
 
 It is easy to wrap query engines as tools for an agent as well. Simply do the following:
 
 ```python
-from llama_index.agent import ReActAgent
-from llama_index.tools import QueryEngineTool
+from llama_index.core.agent import ReActAgent
+from llama_index.core.tools import QueryEngineTool
 
 # NOTE: lyft_index and uber_index are both SimpleVectorIndex instances
 lyft_engine = lyft_index.as_query_engine(similarity_top_k=3)
@@ -69,13 +79,13 @@ query_engine_tools = [
 agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
-## Use other agents as Tools
+### Use other agents as Tools
 
 A nifty feature of our agents is that since they inherit from `BaseQueryEngine`, you can easily define other agents as tools
 through our `QueryEngineTool`.
 
 ```python
-from llama_index.tools import QueryEngineTool
+from llama_index.core.tools import QueryEngineTool
 
 query_engine_tools = [
     QueryEngineTool(
@@ -96,6 +106,42 @@ query_engine_tools = [
 outer_agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
+## Lower-Level API
+
+The OpenAIAgent and ReActAgent are simple wrappers on top of an `AgentRunner` interacting with an `AgentWorker`.
+
+_All_ agents can be defined this manner. For example for the OpenAIAgent:
+
+```python
+from llama_index.core.agent import AgentRunner
+from llama_index.agent.openai import OpenAIAgentWorker
+
+# construct OpenAIAgent from tools
+openai_step_engine = OpenAIAgentWorker.from_tools(tools, llm=llm, verbose=True)
+agent = AgentRunner(openai_step_engine)
+```
+
+This is also the preferred format for custom agents.
+
+Check out the [lower-level agent guide](/module_guides/deploying/agents/agent_runner.md) for more details.
+
+## Customizing your Agent
+
+If you wish to customize your agent, you can choose to subclass the `CustomSimpleAgentWorker`, and plug it into an AgentRunner (see above).
+
+```python
+from llama_index.core.agent import CustomSimpleAgentWorker
+
+
+class MyAgentWorker(CustomSimpleAgentWorker):
+    """Custom agent worker."""
+
+    # define class here
+    pass
+```
+
+Check out our [Custom Agent Notebook Guide](/examples/agent/custom_agent.ipynb) for more details.
+
 ## Advanced Concepts (for `OpenAIAgent`, in beta)
 
 You can also use agents in more advanced settings. For instance, being able to retrieve tools from an index during query-time, and
@@ -114,8 +160,8 @@ We first build an `ObjectIndex` over an existing set of Tools.
 
 ```python
 # define an "object" index over these tools
-from llama_index import VectorStoreIndex
-from llama_index.objects import ObjectIndex, SimpleToolNodeMapping
+from llama_index.core import VectorStoreIndex
+from llama_index.core.objects import ObjectIndex, SimpleToolNodeMapping
 
 tool_mapping = SimpleToolNodeMapping.from_objects(all_tools)
 obj_index = ObjectIndex.from_objects(
@@ -128,7 +174,7 @@ obj_index = ObjectIndex.from_objects(
 We then define our `FnRetrieverOpenAIAgent`:
 
 ```python
-from llama_index.agent import FnRetrieverOpenAIAgent
+from llama_index.agent.openai_legacy import FnRetrieverOpenAIAgent
 
 agent = FnRetrieverOpenAIAgent.from_retriever(
     obj_index.as_retriever(), verbose=True
@@ -143,8 +189,8 @@ This helps to provide additional context that can help the agent better pick Too
 just trying to make a decision without any context.
 
 ```python
-from llama_index.schema import Document
-from llama_index.agent import ContextRetrieverOpenAIAgent
+from llama_index.core import Document
+from llama_index.agent.openai_legacy import ContextRetrieverOpenAIAgent
 
 
 # toy index - stores a list of Abbreviations
@@ -173,8 +219,8 @@ plan over a set of subtools.
 
 ```python
 # define query plan tool
-from llama_index.tools import QueryPlanTool
-from llama_index import get_response_synthesizer
+from llama_index.core.tools import QueryPlanTool
+from llama_index.core import get_response_synthesizer
 
 response_synthesizer = get_response_synthesizer(
     service_context=service_context

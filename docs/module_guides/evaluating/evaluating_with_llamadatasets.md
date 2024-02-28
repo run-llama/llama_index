@@ -19,7 +19,7 @@ by first predicting a response to the given `query` and then comparing that pred
 (or generated) response to the `reference_answer`.
 
 ```python
-from llama_index.llama_dataset import (
+from llama_index.core.llama_dataset import (
     LabelledRagDataset,
     CreatedBy,
     CreatedByType,
@@ -28,7 +28,7 @@ from llama_index.llama_dataset import (
 
 example1 = LabelledRagDataExample(
     query="This is some user query.",
-    query_by=CreatedBy(type=CreateByType.HUMAN),
+    query_by=CreatedBy(type=CreatedByType.HUMAN),
     reference_answer="This is a reference answer. Otherwise known as ground-truth answer.",
     reference_contexts=[
         "This is a list",
@@ -53,20 +53,19 @@ As such, the `llama_dataset` module is equipped with the `RagDatasetGenerator` t
 is able to generate a `LabelledRagDataset` over a set of source `Document`'s.
 
 ```python
-from llama_index.llama_dataset.generator import RagDatasetGenerator
-from llama_index import ServiceContext
-from llama_index.llm import OpenAI
+from llama_index.core.llama_dataset.generator import RagDatasetGenerator
+from llama_index.llms.openai import OpenAI
 import nest_asyncio
 
 nest_asyncio.apply()
 
 documents = ...  # a set of documents loaded by using for example a Reader
 
-service_context = ServiceContext.from_defaults(llm=OpenAI(model="gpt-4"))
+llm = OpenAI(model="gpt-4")
 
 dataset_generator = RagDatasetGenerator.from_documents(
     documents=documents,
-    service_context=service_context,
+    llm=llm,
     num_questions_per_chunk=10,  # set the number of questions per nodes
 )
 
@@ -87,7 +86,7 @@ For convenience, we have a `LlamaPack` called the `RagEvaluatorPack` that
 streamlines this evaluation process!
 
 ```python
-from llama_index.llama_pack import download_llama_pack
+from llama_index.core.llama_pack import download_llama_pack
 
 RagEvaluatorPack = download_llama_pack("RagEvaluatorPack", "./pack")
 
@@ -105,7 +104,7 @@ contexts retrieved by the RAG system to generated the predicted response.
 
 ## Where To Find `LabelledRagDataset`'s
 
-You can find all of the `LabelledRagDataset`'s in [llamahub](https://llambahub.ai). You can browse each one of these and decide
+You can find all of the `LabelledRagDataset`'s in [llamahub](https://llamahub.ai). You can browse each one of these and decide
 if you do decide that you'd like to use it to benchmark your RAG pipeline, then
 you can download the dataset as well as the source `Document`'s conveniently thru
 one of two ways: the `llamaindex-cli` or through Python code using the
@@ -118,10 +117,10 @@ llamaindex-cli download-llamadataset PaulGrahamEssayDataset --download-dir ./dat
 
 ```python
 # using python
-from llama_index.llama_datasets import download_llama_datasets
+from llama_index.core.llama_dataset import download_llama_dataset
 
 # a LabelledRagDataset and a list of source Document's
-rag_dataset, documents = download_llama_datasets(
+rag_dataset, documents = download_llama_dataset(
     "PaulGrahamEssayDataset", "./data"
 )
 ```

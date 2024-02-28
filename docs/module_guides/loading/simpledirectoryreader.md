@@ -1,6 +1,6 @@
 # SimpleDirectoryReader
 
-`SimpleDirectoryReader` is the simplest way to load data from local files into LlamaIndex. For production use cases it's more likely that you'll want to use one of the many Readers available on [LlamaHub](https://llamalab.com/hub), but `SimpleDirectoryReader` is a great way to get started.
+`SimpleDirectoryReader` is the simplest way to load data from local files into LlamaIndex. For production use cases it's more likely that you'll want to use one of the many Readers available on [LlamaHub](https://llamahub.ai/), but `SimpleDirectoryReader` is a great way to get started.
 
 ## Supported file types
 
@@ -26,10 +26,22 @@ One file type you may be expecting to find here is JSON; for that we recommend y
 The most basic usage is to pass an `input_dir` and it will load all supported files in that directory:
 
 ```python
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 
 reader = SimpleDirectoryReader(input_dir="path/to/directory")
 documents = reader.load_data()
+```
+
+Documents can also be loaded with parallel processing if loading many files from
+a directory. Note that there are differences when using `multiprocessing` with
+Windows and Linux/MacOS machines, which is explained throughout the `multiprocessing` docs
+(e.g. see [here](https://docs.python.org/3/library/multiprocessing.html?highlight=process#the-spawn-and-forkserver-start-methods)).
+Ultimately, Windows users may see less or no performance gains whereas Linux/MacOS
+users would see these gains when loading the exact same set of files.
+
+```python
+...
+documents = reader.load_data(num_workers=4)
 ```
 
 ### Reading from subdirectories
@@ -109,9 +121,9 @@ The function should take a single argument, the file path, and return a dictiona
 You can extend `SimpleDirectoryReader` to read other file types by passing a dictionary of file extensions to instances of `BaseReader` as `file_extractor`. A BaseReader should read the file and return a list of Documents. For example, to add custom support for `.myfile` files :
 
 ```python
-from llama_index import SimpleDirectoryReader
-from llama_index.readers.base import BaseReader
-from llama_index.schema import Document
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core.readers.base import BaseReader
+from llama_index.core import Document
 
 
 class MyFileReader(BaseReader):

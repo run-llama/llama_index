@@ -32,4 +32,5 @@ maxdepth: 1
 ---
 Extracting names and locations from descriptions of people </examples/output_parsing/df_program.ipynb>
 Extracting album data from music reviews </examples/llm/llama_api.ipynb>
+Extracting information from emails </examples/usecases/email_data_extraction.ipynb>
 ```

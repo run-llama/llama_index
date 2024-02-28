@@ -47,6 +47,25 @@ maxdepth: 1
 /examples/llm/clarifai.ipynb
 ```
 
+## Cohere
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/cohere.ipynb
+```
+
+## Dashscope
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/dashscope.ipynb
+/examples/multi_modal/dashscope_multi_modal.ipynb
+```
+
 ## EverlyAI
 
 ```{toctree}
@@ -54,6 +73,15 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/everlyai.ipynb
+```
+
+## Fireworks
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/fireworks.ipynb
 ```
 
 ## Gradient
@@ -64,6 +92,15 @@ maxdepth: 1
 ---
 /examples/llm/gradient_base_model.ipynb
 /examples/llm/gradient_model_adapter.ipynb
+```
+
+## Groq
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/groq.ipynb
 ```
 
 ## Hugging Face
@@ -131,6 +168,15 @@ maxdepth: 1
 /examples/llm/localai.ipynb
 ```
 
+## MariTalk
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/maritalk.ipynb
+```
+
 ## MistralAI
 
 ```{toctree}
@@ -138,6 +184,7 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/mistralai.ipynb
+/cookbooks/mistralai.ipynb
 ```
 
 ## MonsterAPI
@@ -147,6 +194,42 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/monsterapi.ipynb
+```
+
+## MyMagic
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/mymagic.ipynb
+```
+
+## NeutrinoAI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/neutrino.ipynb
+```
+
+## Nvidia TensorRT-LLM
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/nvidia_tensorrt.ipynb
+```
+
+## Nvidia Triton
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/nvidia_triton.ipynb
 ```
 
 ## Ollama
@@ -240,6 +323,24 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/rungpt.ipynb
+```
+
+## SageMaker
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/sagemaker_endpoint_llm.ipynb
+```
+
+## Together.ai
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/together.ipynb
 ```
 
 ## Vertex
