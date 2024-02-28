@@ -33,6 +33,7 @@ PyMuPDFReader = "iamarunbrahma"
 UnstructuredReader = "thejessezhang"
 VideoAudioReader = "llama-index"
 XMLReader = "mmaatouk"
+RTFReader = "FunkyOz"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -58,6 +59,7 @@ pymupdf = "^1.23.21"
 bs4 = "^0.0.2"
 beautifulsoup4 = "^4.12.3"
 pypdf = "^4.0.1"
+striprtf = "^0.0.26"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
