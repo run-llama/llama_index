@@ -49,7 +49,7 @@ class NemoEmbedding(BaseEmbedding):
         return response["data"][0]["embedding"]
 
     def _get_query_embedding(self, query: str) -> List[float]:
-        return self._get_embedding(text, input_type="query")
+        return self._get_embedding(query, input_type="query")
 
     def _get_text_embedding(self, text: str) -> List[float]:
         return self._get_embedding(text, input_type="passage")
