@@ -9,7 +9,12 @@ from llama_index.core.schema import Document
 class RTFReader(BaseReader):
     """RTF (Rich Text Format) Reader. Reads rtf file and convert to Document."""
 
-    def load_data(self, input_file: Union[Path, str], extra_info=Dict[str, Any], **load_kwargs: Any) -> List[Document]:
+    def load_data(
+        self,
+        input_file: Union[Path, str],
+        extra_info=Dict[str, Any],
+        **load_kwargs: Any
+    ) -> List[Document]:
         """Load data from RTF file.
 
         Args:
@@ -24,6 +29,6 @@ class RTFReader(BaseReader):
         except ImportError:
             raise ImportError("striprtf is required to read RTF files.")
 
-        with open(str(input_file), "r") as f:
+        with open(str(input_file)) as f:
             text = rtf_to_text(f.read())
             return [Document(text=text.strip())]

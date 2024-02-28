@@ -30,10 +30,10 @@ PagedCSVReader = "thejessezhang"
 PandasCSVReader = "ephe-meral"
 PptxReader = "thejessezhang"
 PyMuPDFReader = "iamarunbrahma"
+RTFReader = "FunkyOz"
 UnstructuredReader = "thejessezhang"
 VideoAudioReader = "llama-index"
 XMLReader = "mmaatouk"
-RTFReader = "FunkyOz"
 
 [tool.mypy]
 disallow_untyped_defs = true
