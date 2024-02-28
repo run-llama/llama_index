@@ -46,15 +46,16 @@ response = query_engine.query("Rest of your query... \nRespond in Italian")
 Alternatively:
 
 ```py
-from llama_index import ServiceContext
-from llama_index.llms import OpenAI
+from llama_index.core import Settings
+from llama_index.llms.openai import OpenAI
 
 llm = OpenAI(system_prompt="Always respond in Italian.")
 
-service_context = ServiceContext.from_defaults(llm=llm)
+# set a global llm
+Settings.llm = llm
 
 query_engine = load_index_from_storage(
-    storage_context, service_context=service_context
+    storage_context,
 ).as_query_engine()
 ```
 

@@ -15,14 +15,14 @@ First, we define a metadata extractor that takes in a list of feature extractors
 We then feed this to the node parser, which will add the additional metadata to each node.
 
 ```python
-from llama_index.node_parser import SentenceSplitter
-from llama_index.extractors import (
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.extractors import (
     SummaryExtractor,
     QuestionsAnsweredExtractor,
     TitleExtractor,
     KeywordExtractor,
-    EntityExtractor,
 )
+from llama_index.extractors.entity import EntityExtractor
 
 transformations = [
     SentenceSplitter(),
@@ -37,7 +37,7 @@ transformations = [
 Then, we can run our transformations on input documents or nodes:
 
 ```python
-from llama_index.ingestion import IngestionPipeline
+from llama_index.core.ingestion import IngestionPipeline
 
 pipeline = IngestionPipeline(transformations=transformations)
 
@@ -61,7 +61,7 @@ Here is an sample of extracted metadata:
 If the provided extractors do not fit your needs, you can also define a custom extractor like so:
 
 ```python
-from llama_index.extractors import BaseExtractor
+from llama_index.core.extractors import BaseExtractor
 
 
 class CustomExtractor(BaseExtractor):

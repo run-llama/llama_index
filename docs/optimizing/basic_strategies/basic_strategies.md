@@ -60,20 +60,16 @@ Furthermore, when changing the chunk size for a vector index, you may also want 
 Here is a full example:
 
 ```
-from llama_index import (
-    ServiceContext,
-    SimpleDirectoryReader,
-    VectorStoreIndex,
-)
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core import Settings
 
 documents = SimpleDirectoryReader("./data").load_data()
 
-service_context = ServiceContext.from_defaults(
-    chunk_size=512, chunk_overlap=50
-)
+Settings.chunk_size = 512
+Settings.chunk_overlap = 50
 
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents,
 )
 
 query_engine = index.as_query_engine(similarity_top_k=4)
@@ -111,8 +107,8 @@ Before throwing your documents into a vector index, it can be useful to attach m
 Metadata filters can be set manually, so that only nodes with the matching metadata are returned:
 
 ```python
-from llama_index import VectorStoreIndex, Document
-from llama_index.vector_stores import MetadataFilters, ExactMatchFilter
+from llama_index.core import VectorStoreIndex, Document
+from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
 
 documents = [
     Document(text="text", metadata={"author": "LlamaIndex"}),

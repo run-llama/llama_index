@@ -3,9 +3,11 @@ from functools import partial
 from typing import Callable, List, Optional, Tuple
 
 import pandas as pd
-
-from llama_index import SimpleDirectoryReader
-from llama_index.core.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, BaseEmbedding
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core.base.embeddings.base import (
+    DEFAULT_EMBED_BATCH_SIZE,
+    BaseEmbedding,
+)
 from llama_index.embeddings import OpenAIEmbedding, resolve_embed_model
 
 
@@ -71,7 +73,7 @@ def bench_simple_vector_store(
     results = []
 
     if torch_num_threads is not None:
-        import torch
+        import torch  # pants: no-infer-dep
 
         torch.set_num_threads(torch_num_threads)
 

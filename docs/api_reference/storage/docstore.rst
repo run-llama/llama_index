@@ -3,6 +3,6 @@
 Document Store
 =====================
 
-.. automodule:: llama_index.storage.docstore
+.. automodule:: llama_index.core.storage.docstore
    :members:
    :inherited-members:
