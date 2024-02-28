@@ -50,7 +50,7 @@ class AzureOpenAI(OpenAI):
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
 
-    _azure_ad_token: Any = PrivateAttr()
+    _azure_ad_token: Any = PrivateAttr(default=None)
     _client: SyncAzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
 
