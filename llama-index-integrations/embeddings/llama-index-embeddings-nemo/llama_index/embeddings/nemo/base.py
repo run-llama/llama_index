@@ -12,8 +12,7 @@ from llama_index.core.callbacks.base import CallbackManager
 
 
 class NemoEmbedding(BaseEmbedding):
-    """Nvidia NeMo embeddings.
-    """
+    """Nvidia NeMo embeddings."""
 
     def __init__(
         self,
@@ -37,24 +36,21 @@ class NemoEmbedding(BaseEmbedding):
         return "NemoEmbedding"
 
     def _get_embedding(self, text: str, input_type: str):
-        payload = json.dumps({
-            "input": text,
-            "model": self.model_name,
-            "input_type": input_type
-        })
-        headers = {
-            'Content-Type': 'application/json'
-        }
+        payload = json.dumps(
+            {"input": text, "model": self.model_name, "input_type": input_type}
+        )
+        headers = {"Content-Type": "application/json"}
 
         response = requests.request(
-            "POST", self.api_endpoint_url, headers=headers, data=payload)
+            "POST", self.api_endpoint_url, headers=headers, data=payload
+        )
         response = json.loads(response.text)
 
         return response["data"][0]["embedding"]
 
     def _get_query_embedding(self, query: str) -> List[float]:
         return self._get_embedding(text, input_type="query")
-        
+
     def _get_text_embedding(self, text: str) -> List[float]:
         return self._get_embedding(text, input_type="passage")
 
