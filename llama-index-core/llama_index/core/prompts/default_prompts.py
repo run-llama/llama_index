@@ -397,7 +397,7 @@ DEFAULT_JSON_PATH_TMPL = (
     "Response: JSONPath: $.John.age\n"
     "Let's try this now: \n\n"
     "Task: {query_str}\n"
-    "Response: "    
+    "Response: "
 )
 
 DEFAULT_JSON_PATH_PROMPT = PromptTemplate(
