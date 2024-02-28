@@ -35,7 +35,7 @@ def _resolve_dataset_class(filename: str) -> Type[BaseLlamaDataset]:
 def download_llama_dataset(
     llama_dataset_class: str,
     download_dir: str,
-    llama_hub_url: str = LLAMA_DATASETS_URL,
+    llama_datasets_url: str = LLAMA_DATASETS_URL,
     llama_datasets_lfs_url: str = LLAMA_DATASETS_LFS_URL,
     llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     show_progress: bool = False,
@@ -67,7 +67,7 @@ def download_llama_dataset(
     """
     filenames: Tuple[str, str] = download(
         llama_dataset_class,
-        llama_hub_url=llama_hub_url,
+        llama_datasets_url=llama_datasets_url,
         llama_datasets_lfs_url=llama_datasets_lfs_url,
         llama_datasets_source_files_tree_url=llama_datasets_source_files_tree_url,
         refresh_cache=True,
