@@ -755,6 +755,7 @@
   "Tokenizer": "llama_index.llms.openai",
   "GradientBaseModelLLM": "llama_index.llms.gradient",
   "GradientModelAdapterLLM": "llama_index.llms.gradient",
+  "Friendli": "llama_index.llms.friendli",
   "EntityExtractor": "llama_index.extractors.entity",
   "MarvinMetadataExtractor": "llama_index.extractors.marvin",
   "WeaviateRetryEnginePack": "llama_index.packs.retry_engine_weaviate",
