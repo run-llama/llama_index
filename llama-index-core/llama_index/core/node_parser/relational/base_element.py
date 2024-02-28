@@ -349,7 +349,5 @@ class BaseElementNodeParser(NodeParser):
         # remove empty nodes and keep node original metadata inherited from parent nodes
         for node in nodes:
             if metadata_inherited:
-                for key in metadata_inherited:
-                    if key not in node.metadata:
-                        node.metadata[key] = metadata_inherited[key]
+                node.metadata.update(metadata_inherited)
         return [node for node in nodes if len(node.text) > 0]
