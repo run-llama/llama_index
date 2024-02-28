@@ -68,6 +68,8 @@ set_global_handler("langfuse")
 
 ```
 
+Check out the [full documentation](/examples/callbacks/LangfuseCallbackHandler.html) for more details.
+
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
 
 ### DeepEval
