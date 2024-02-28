@@ -13,17 +13,15 @@ import requests
 from llama_index.core.download.utils import (
     ChangeDirectory,
     get_file_content,
-    get_source_files_list,
     initialize_directory,
+    get_source_files_recursive,
 )
 
-BRANCH = "nerdai/migration-v0_10_0"
-REPO = "nerdai"
 LLAMA_PACKS_CONTENTS_URL = (
-    f"https://raw.githubusercontent.com/{REPO}/llama_index/{BRANCH}/llama-index-packs"
+    "https://raw.githubusercontent.com/run-llama/llama_index/main/llama-index-packs"
 )
 LLAMA_PACKS_SOURCE_FILES_GITHUB_TREE_URL = (
-    f"https://github.com/{REPO}/llama_index/tree/{BRANCH}/llama-index-packs"
+    "https://github.com/run-llama/llama_index/tree/main"
 )
 PY_NAMESPACE = "llama_index/packs"
 
@@ -51,17 +49,24 @@ def download_module_and_reqs(
         os.makedirs(module_path, exist_ok=True)
 
         # download all source files
-        source_files = get_source_files_list(
+        source_files = get_source_files_recursive(
             str(remote_source_dir_path),
-            f"/{package}/{PY_NAMESPACE}/{sub_module}",
+            f"/llama-index-packs/{package}/{PY_NAMESPACE}/{sub_module}",
         )
 
         for source_file in source_files:
             source_file_raw_content, _ = get_file_content(
                 str(remote_dir_path),
-                f"/{package}/{PY_NAMESPACE}/{sub_module}/{source_file}",
+                f"{source_file}",
             )
-            with open(f"{module_path}/{source_file}", "w") as f:
+            local_source_file_path = (
+                f"{local_dir_path}/{'/'.join(source_file.split('/')[2:])}"
+            )
+            # ensure parent dir of file exists
+            Path(local_source_file_path).parent.absolute().mkdir(
+                parents=True, exist_ok=True
+            )
+            with open(local_source_file_path, "w") as f:
                 f.write(source_file_raw_content)
 
     # pyproject.toml and README
@@ -99,7 +104,7 @@ def download_llama_pack_template(
     refresh_cache: bool = False,
     custom_dir: Optional[str] = None,
     custom_path: Optional[str] = None,
-    base_file_name: str = "base.py",
+    base_file_name: str = "__init__.py",
 ) -> Any:
     # create directory / get path
     dirpath = initialize_directory(custom_path=custom_path, custom_dir=custom_dir)

@@ -3,9 +3,11 @@
 Contains simple parser for mbox files.
 
 """
+
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from fsspec import AbstractFileSystem
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -50,7 +52,10 @@ class MboxReader(BaseReader):
         self.message_format = message_format
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file into string."""
         # Import required libraries
@@ -59,6 +64,12 @@ class MboxReader(BaseReader):
         from email.policy import default
 
         from bs4 import BeautifulSoup
+
+        if fs:
+            logger.warning(
+                "fs was specified but MboxReader doesn't support loading "
+                "from fsspec filesystems. Will load from local filesystem instead."
+            )
 
         i = 0
         results: List[str] = []

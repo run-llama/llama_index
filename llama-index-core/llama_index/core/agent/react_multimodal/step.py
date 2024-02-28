@@ -398,7 +398,8 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get_all()
+            + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -437,7 +438,8 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get_all()
+            + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
@@ -501,7 +503,9 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
-        task.memory.set(task.memory.get() + task.extra_state["new_memory"].get_all())
+        task.memory.set(
+            task.memory.get_all() + task.extra_state["new_memory"].get_all()
+        )
         # reset new memory
         task.extra_state["new_memory"].reset()
 

@@ -1,5 +1,49 @@
 # ChangeLog
 
+# [0.10.13] - 2024-02-26
+
+### New Features
+
+- Added a llama-pack for KodaRetriever, for on-the-fly alpha tuning (#11311)
+- Added support for `mistral-large` (#11398)
+- Last token pooling mode for huggingface embeddings models like SFR-Embedding-Mistral (#11373)
+- Added fsspec support to SimpleDirectoryReader (#11303)
+
+### Bug Fixes / Nits
+
+- Fixed an issue with context window + prompt helper (#11379)
+- Moved OpenSearch vector store to BasePydanticVectorStore (#11400)
+- Fixed function calling in fireworks LLM (#11363)
+- Made cohere embedding types more automatic (#11288)
+- Improve function calling in react agent (#11280)
+- Fixed MockLLM imports (#11376)
+
+# [0.10.12] - 2024-02-22
+
+### New Features
+
+- Added `llama-index-postprocessor-colbert-rerank` package (#11057)
+- `MyMagicAI` LLM (#11263)
+- `MariaTalk` LLM (#10925)
+- Add retries to github reader (#10980)
+- Added FireworksAI embedding and LLM modules (#10959)
+
+### Bug Fixes / Nits
+
+- Fixed string formatting in weaviate (#11294)
+- Fixed off-by-one error in semantic splitter (#11295)
+- Fixed `download_llama_pack` for multiple files (#11272)
+- Removed `BUILD` files from packages (#11267)
+- Loosened python version reqs for all packages (#11267)
+- Fixed args issue with chromadb (#11104)
+
+## [0.10.11] - 2024-02-21
+
+### Bug Fixes / Nits
+
+- Fixed multi-modal LLM for async acomplete (#11064)
+- Fixed issue with llamaindex-cli imports (#11068)
+
 ## [0.10.10] - 2024-02-20
 
 I'm still a bit wonky with our publishing process -- apologies. This is just a version

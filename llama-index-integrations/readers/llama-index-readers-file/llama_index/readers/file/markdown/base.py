@@ -3,8 +3,11 @@
 Contains parser for md files.
 
 """
+
 import re
 from pathlib import Path
+from fsspec import AbstractFileSystem
+from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llama_index.core.readers.base import BaseReader
@@ -71,12 +74,12 @@ class MarkdownReader(BaseReader):
         return markdown_tups
 
     def remove_images(self, content: str) -> str:
-        """Get a dictionary of a markdown file from its path."""
+        """Remove images in markdown content."""
         pattern = r"!{1}\[\[(.*)\]\]"
         return re.sub(pattern, "", content)
 
     def remove_hyperlinks(self, content: str) -> str:
-        """Get a dictionary of a markdown file from its path."""
+        """Remove hyperlinks in markdown content."""
         pattern = r"\[(.*?)\]\((.*?)\)"
         return re.sub(pattern, r"\1", content)
 
@@ -85,11 +88,15 @@ class MarkdownReader(BaseReader):
         return {}
 
     def parse_tups(
-        self, filepath: Path, errors: str = "ignore"
+        self,
+        filepath: Path,
+        errors: str = "ignore",
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Tuple[Optional[str], str]]:
         """Parse file into tuples."""
-        with open(filepath, encoding="utf-8") as f:
-            content = f.read()
+        fs = fs or LocalFileSystem()
+        with fs.open(filepath, encoding="utf-8") as f:
+            content = f.read().decode(encoding="utf-8")
         if self._remove_hyperlinks:
             content = self.remove_hyperlinks(content)
         if self._remove_images:
@@ -97,10 +104,13 @@ class MarkdownReader(BaseReader):
         return self.markdown_to_tups(content)
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file into string."""
-        tups = self.parse_tups(file)
+        tups = self.parse_tups(file, fs=fs)
         results = []
         # TODO: don't include headers right now
         for header, value in tups:

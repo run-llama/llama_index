@@ -13,7 +13,6 @@ import_path = "llama_index.agent.openai"
 
 [tool.llamahub.class_authors]
 OpenAIAgent = "llama-index"
-OpenAIAgentWorker = "llama-index"
 OpenAIAssistantAgent = "llama-index"
 
 [tool.mypy]
@@ -25,10 +24,11 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index agent openai integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-agent-openai"
 readme = "README.md"
-version = "0.1.4"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
