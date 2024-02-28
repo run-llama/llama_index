@@ -1,5 +1,3 @@
-import os
-
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.voyageai import VoyageEmbedding
 
@@ -14,7 +12,6 @@ def test_embedding_class_with_default_model():
     assert isinstance(emb, BaseEmbedding)
 
 
-def test_embedding_class_with_default_model_env_api_key():
-    os.environ["VOYAGE_API_KEY"] = "NOT_A_VALID_KEY"
-    emb = VoyageEmbedding()
-    assert isinstance(emb, BaseEmbedding)
+def test_voyageai_embedding_class():
+    names_of_base_classes = [b.__name__ for b in VoyageEmbedding.__mro__]
+    assert BaseEmbedding.__name__ in names_of_base_classes

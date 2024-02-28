@@ -60,25 +60,25 @@ class VoyageEmbedding(BaseEmbedding):
         """Get query embedding."""
         return self.client.embed(
             [query], model=self.model_name, input_type="query"
-        ).embeddings
+        ).embeddings[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
         return await self.client.embed(
             [query], model=self.model_name, input_type="query"
-        ).embeddings
+        ).embeddings[0]
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         return self.client.embed(
             [text], model=self.model_name, input_type="document"
-        ).embeddings
+        ).embeddings[0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
         return await self.client.embed(
             [text], model=self.model_name, input_type="document"
-        ).embeddings
+        ).embeddings[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
@@ -98,7 +98,7 @@ class VoyageEmbedding(BaseEmbedding):
         """Get general text embedding with input_type."""
         return self.client.embed(
             [text], model=self.model_name, input_type=input_type
-        ).embeddings
+        ).embeddings[0]
 
     async def aget_general_text_embedding(
         self, text: str, input_type: Optional[str] = None
@@ -106,4 +106,4 @@ class VoyageEmbedding(BaseEmbedding):
         """Asynchronously get general text embedding with input_type."""
         return await self.client.embed(
             [text], model=self.model_name, input_type=input_type
-        ).embeddings
+        ).embeddings[0]
