@@ -14,6 +14,7 @@ from llama_index.legacy.schema import (
     TextNode,
 )
 from llama_index.legacy.vector_stores.types import (
+    BasePydanticVectorStore,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
