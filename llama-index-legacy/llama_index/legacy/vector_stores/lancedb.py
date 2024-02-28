@@ -15,7 +15,6 @@ from llama_index.legacy.schema import (
 )
 from llama_index.legacy.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -53,7 +52,7 @@ def _to_llama_similarities(results: DataFrame) -> List[float]:
     return normalized_similarities.tolist()
 
 
-class LanceDBVectorStore(VectorStore):
+class LanceDBVectorStore(BasePydanticVectorStore):
     """
     The LanceDB Vector Store.
 
