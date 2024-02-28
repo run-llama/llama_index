@@ -65,7 +65,6 @@ from llama_index.core import set_global_handler
 # as shown in your langfuse.com project settings.
 
 set_global_handler("langfuse")
-
 ```
 
 Check out the [full documentation](/examples/callbacks/LangfuseCallbackHandler.html) for more details.

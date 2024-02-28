@@ -13,7 +13,6 @@ from llama_index.core import set_global_handler
 # as shown in your langfuse.com project settings.
 
 set_global_handler("langfuse")
-
 ```
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
