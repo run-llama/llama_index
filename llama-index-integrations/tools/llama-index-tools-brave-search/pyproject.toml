@@ -26,6 +26,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index tools brave_search integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-tools-brave-search"
 packages = [{include = "llama_index/"}]
