@@ -14,6 +14,12 @@ from llama_index.core.download.utils import (
     initialize_directory,
 )
 
+LLAMA_INDEX_CONTENTS_URL = (
+    f"https://raw.githubusercontent.com/run-llama/llama_index/main"
+)
+LLAMA_DATASETS_PATH = "/llama-datasets"
+LLAMA_DATASETS_URL = LLAMA_INDEX_CONTENTS_URL + LLAMA_DATASETS_PATH
+
 LLAMA_DATASETS_LFS_URL = (
     f"https://media.githubusercontent.com/media/run-llama/llama-datasets/main"
 )
