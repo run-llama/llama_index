@@ -127,6 +127,22 @@ postprocessor.postprocess_nodes(nodes)
 
 Full notebook guide is available [her for Gatsby](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb) and [here for Lyft 10K documents](/examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
 
+## JinaRerank
+
+Uses the "Cohere ReRank" functionality to re-order nodes, and returns the top N nodes.
+
+```python
+from llama_index.postprocessor.jinaai_rerank import JinaRerank
+
+postprocessor = JinaRerank(
+    top_n=2, model="jina-reranker-v1-base-en", api_key="YOUR JINA API KEY"
+)
+
+postprocessor.postprocess_nodes(nodes)
+```
+
+Full notebook guide is available [here](/examples/node_postprocessor/JinaRerank.ipynb).
+
 ## FixedRecencyPostprocessor
 
 This postproccesor returns the top K nodes sorted by date. This assumes there is a `date` field to parse in the metadata of each node.
