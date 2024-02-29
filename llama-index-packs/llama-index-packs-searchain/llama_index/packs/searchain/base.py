@@ -43,7 +43,7 @@ def _have_seen_or_not(model_cross_encoder,query_item,query_seen_list,query_type)
     return False
 
 
-class SelfRAGPack(BaseLlamaPack):
+class SearChainPack(BaseLlamaPack):
     """Simple short form Self-RAG pack."""
 
     def __init__(
