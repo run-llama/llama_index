@@ -237,7 +237,9 @@ class SimpleDirectoryReader(BaseReader):
             # in glob for backwards compatibility.
             ref = Path(ref)
             is_dir = self.fs.isdir(ref)
-            skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
+            skip_because_hidden = self.exclude_hidden and self.is_hidden(
+                ref.relative_to(input_dir.absolute())
+            )
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
             )
