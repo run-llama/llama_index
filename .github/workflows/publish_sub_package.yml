@@ -36,8 +36,7 @@ jobs:
           for file in ${{ steps.changed-files.outputs.changed_files }}; do
               cd `echo $file | sed 's/\/pyproject.toml//g'`
               poetry lock
-              poetry shell
-              poetry install
+              pip install -e .
               poetry config pypi-token.pypi $PYPI_TOKEN
               poetry publish --build
           done
