@@ -117,8 +117,12 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             for column in columns:
                 if column == "question":
                     print(f"\nQuestion: {row[column]}")
+                if column == "context":
+                    # print context without newlines
+                    context = row[column].replace("\n", " ")
+                    print(f"Context: {context}")
                 elif column == "response":
-                    print(f"Response: {row[column]}")
+                    print(f"Response: {row[column]}\n")
                 elif column.startswith("score"):
                     if column in score_name_map:
                         print(f"{score_name_map[column]}: {row[column]}")
