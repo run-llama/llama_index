@@ -214,7 +214,6 @@ for query in queries:
 ```
 
     Question: What did Paul Graham do growing up?
-    Context: I was invited to give a talk at a Lisp conference, so I gave one about how we'd used Lisp at Viaweb. Afterward I put a postscript file of this talk online, on paulgraham.com, which I'd created years before using Viaweb but had never used for anything. In one day it got 30,000...
     Response: Paul Graham wrote short stories and started programming on the IBM 1401 in 9th grade using an early version of Fortran. Later, he convinced his father to buy a TRS-80, where he wrote simple games, a program to predict rocket heights, and a word processor.
 
     Context Relevance Score: 0.0
@@ -223,7 +222,6 @@ for query in queries:
 
 
     Question: When and how did Paul Graham's mother die?
-    Context: I was invited to give a talk at a Lisp conference, so I gave one about how we'd used Lisp at Viaweb. Afterward I put a postscript file of this talk online, on paulgraham.com, which I'd created years before using Viaweb but had never used for anything. In one day it got 30,000...
     Response: Paul Graham's mother died when he was 18 years old, from a brain tumor.
 
     Context Relevance Score: 0.0
@@ -232,7 +230,6 @@ for query in queries:
 
 
     Question: What, in Paul Graham's opinion, is the most distinctive thing about YC?
-    Context: Obviously software and venture capital will be, but who would have predicted that essay writing would be?  [13] Y Combinator was not the original name. At first we were called Cambridge Seed. But we didn't want a regional name, in case someone copied us in Silicon Valley, so we...
     Response: The most distinctive thing about Y Combinator, according to Paul Graham, is that instead of deciding for himself what to work on, the problems come to him. Every 6 months, a new batch of startups brings their problems, which then become the focus of YC's work.
 
     Context Relevance Score: 0.0
@@ -241,7 +238,6 @@ for query in queries:
 
 
     Question: When and how did Paul Graham meet Jessica Livingston?
-    Context: I was invited to give a talk at a Lisp conference, so I gave one about how we'd used Lisp at Viaweb. Afterward I put a postscript file of this talk online, on paulgraham.com, which I'd created years before using Viaweb but had never used for anything. In one day it got 30,000...
     Response: Paul Graham met Jessica Livingston at a big party at his house in October 2003.
 
     Context Relevance Score: 1.0
@@ -250,7 +246,6 @@ for query in queries:
 
 
     Question: What is Bel, and when and where was it written?
-    Context: It took 4 years, from March 26, 2015 to October 12, 2019. It was fortunate that I had a precisely defined goal, or it would have been hard to keep at it for so long.  I wrote this new Lisp, called Bel, in itself in Arc. That may sound like a contradiction, but it's an indication...
     Response: Bel is a new Lisp that was written in Arc. It was developed over a period of 4 years, from March 26, 2015 to October 12, 2019. Most of the work on Bel was done in England, where the author had moved to in the summer of 2016.
 
     Context Relevance Score: 1.0
@@ -312,7 +307,6 @@ response = query_engine.query(
 
 
     Question: What did Paul Graham work on after Y Combinator?
-    Context: And I bought another building in Cambridge, a former candy factory (and later, twas said, porn studio), to use as an office.  One night in October 2003 there was a big party at my house. It was a clever idea of my friend Maria Daniels, who was one of the thursday diners...
     Response: Paul Graham worked on a project with Robert and Trevor after Y Combinator.
 
     Context Relevance Score: 0.0
@@ -321,7 +315,6 @@ response = query_engine.query(
 
 
     Question: What did Paul Graham work on before Y Combinator?
-    Context: And I bought another building in Cambridge, a former candy factory (and later, twas said, porn studio), to use as an office.  One night in October 2003 there was a big party at my house. It was a clever idea of my friend Maria Daniels, who was one of the thursday diners...
     Response: Paul Graham worked on projects with his colleagues Robert and Trevor before Y Combinator.
 
     Context Relevance Score: 0.0
@@ -330,7 +323,6 @@ response = query_engine.query(
 
 
     Question: What did Paul Graham work on during Y Combinator?
-    Context: And I bought another building in Cambridge, a former candy factory (and later, twas said, porn studio), to use as an office.  One night in October 2003 there was a big party at my house. It was a clever idea of my friend Maria Daniels, who was one of the thursday diners...
     Response: Paul Graham worked on writing essays and working on Y Combinator during his time at Y Combinator.
 
     Context Relevance Score: 0.0
@@ -387,12 +379,10 @@ response = query_engine.query(
 ```
 
     Question: What did Sam Altman do in this essay?
-    Context: 1. There were parts of the job I didn't like. Disputes between cofounders, figuring out when people were lying to us, fighting with people who maltreated the startups, and so on. But I worked hard even at the parts I didn't like. I was haunted by something Kevin Hale once said about...
     Context Reranking Score: 0.0
 
 
     Question: What did Sam Altman do in this essay?
-    Context: retrieval_score: 0.7978001246383588  I was invited to give a talk at a Lisp conference, so I gave one about how we'd used Lisp at Viaweb. Afterward I put a postscript file of this talk online, on paulgraham.com, which I'd created years before using Viaweb but had never used for anything...
     Response: Sam Altman was asked to become the president of Y Combinator after the original founders decided to step back and reorganize the company for long-term sustainability.
 
     Context Relevance Score: 1.0
@@ -433,12 +423,10 @@ response = query_engine.query(
 ```
 
     Question: What did Sam Altman do in this essay?
-    Context: There were parts of the job I didn't like. Disputes between cofounders, figuring out when people were lying to us, fighting with people who maltreated the startups, and so on. But I worked hard even at the parts I didn't like. I was haunted by something Kevin Hale once said about...
     Context Conciseness Score: 0.0
 
 
     Question: What did Sam Altman do in this essay?
-    Context: retrieval_score: 0.7844787960038967  We invested $6k per founder, which in the typical two-founder case was $12k, in return for 6%. That had to be fair, because it was twice as good as the deal we ourselves had taken. Plus that first summer, which was really hot, Jessica brought...
     Response: Sam Altman offered unsolicited advice to the author during a visit to California for interviews.
 
 
