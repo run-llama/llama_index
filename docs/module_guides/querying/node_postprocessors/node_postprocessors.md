@@ -256,7 +256,7 @@ postprocessor.postprocess_nodes(nodes)
 
 Full notebook guide is available [here](/examples/node_postprocessor/rankGPT.ipynb).
 
-## (Beta) Colbert Reranker
+## Colbert Reranker
 
 Uses Colbert V2 model as a reranker to rerank documents according to the fine-grained similarity between query tokens and passage tokens. Returns the top N ranked nodes.
 
@@ -281,7 +281,7 @@ response = query_engine.query(
 
 Full notebook guide is available [here](/examples/node_postprocessor/ColbertRerank.ipynb).
 
-## (Beta) Jina Reranker
+## Jina Reranker
 
 Uses models from [jina](https://jina.ai/) to rerank documents. Returns the top N ranked nodes.
 
