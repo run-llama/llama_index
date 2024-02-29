@@ -129,7 +129,7 @@ Full notebook guide is available [her for Gatsby](/examples/node_postprocessor/L
 
 ## JinaRerank
 
-Uses the "Cohere ReRank" functionality to re-order nodes, and returns the top N nodes.
+Uses the "Jina ReRank" functionality to re-order nodes, and returns the top N nodes.
 
 ```python
 from llama_index.postprocessor.jinaai_rerank import JinaRerank
