@@ -13,8 +13,6 @@ import_path = "llama_index.llms.bedrock"
 
 [tool.llamahub.class_authors]
 Bedrock = "llama-index"
-completion_response_to_chat_response = "llama-index"
-completion_with_retry = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

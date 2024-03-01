@@ -64,6 +64,7 @@ class Fireworks(OpenAI):
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
+            is_function_calling_model=True,
         )
 
     @property
