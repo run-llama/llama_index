@@ -148,12 +148,23 @@ class GoogleSheetsReader(BasePydanticReader):
         sheets = spreadsheet_data.get("sheets")
         dataframes = []
         for sheet in sheets:
-            result = sheet.get("values", [])
-            name = sheet.get("properties", {}).get("title")
-            if not result:
-                print(f"No data found in {name}")
+            properties = sheet.get("properties")
+            title = properties.get("title")
+            grid_props = properties.get("gridProperties")
+            rows = grid_props.get("rowCount")
+            cols = grid_props.get("columnCount")
+            range_pattern = f"{title}!R1C1:R{rows}C{cols}"
+            response = (
+                sheets_service.spreadsheets()
+                .values()
+                .get(spreadsheetId=spreadsheet_id, range=range_pattern)
+                .execute()
+            )
+            values = response.get("values", [])
+            if not values:
+                print(f"No data found in {title}")
             else:
-                df = pd.DataFrame(result[1:], columns=result[0])
+                df = pd.DataFrame(values[1:], columns=values[0])
                 dataframes.append(df)
         return dataframes
 
