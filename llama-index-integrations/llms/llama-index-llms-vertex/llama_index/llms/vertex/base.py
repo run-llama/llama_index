@@ -35,6 +35,9 @@ class Vertex(LLM):
     model: str = Field(description="The vertex model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
+    datastore: Optional[str] = Field(
+        default=None, description="The datastore to use for grounding the model."
+    )
     examples: Optional[Sequence[ChatMessage]] = Field(
         description="Example messages for the chat model."
     )
@@ -57,6 +60,7 @@ class Vertex(LLM):
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[Any] = None,
+        datastore: Optional[str] = None,
         examples: Optional[Sequence[ChatMessage]] = None,
         temperature: float = 0.1,
         max_tokens: int = 512,
@@ -179,6 +183,7 @@ class Vertex(LLM):
             is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
+            datastore = self.datastore,
             **params,
         )
 
