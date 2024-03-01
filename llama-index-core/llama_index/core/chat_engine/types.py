@@ -176,7 +176,7 @@ class StreamingAgentChatResponse:
                 # Queue is empty, but we're not done yet. Sleep for 0 secs to release the GIL and allow other threads to run.
                 time.sleep(0)
         self.response = self._unformatted_response.strip()
-    
+
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
         while True:
             if not self._aqueue.empty() or not self._is_done:
