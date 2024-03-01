@@ -102,6 +102,7 @@ async def acompletion_with_retry(
     chat: bool = False,
     is_gemini: bool = False,
     params: Any = {},
+    datastore: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -114,6 +115,14 @@ async def acompletion_with_retry(
 
             generation = client.start_chat(history=history)
             generation_config = dict(kwargs)
+            if datastore:
+                from vertexai.preview.generative_models import Tool, grounding
+                tool = Tool.from_retrieval(
+                    grounding.Retrieval(grounding.VertexAISearch(datastore=datastore))
+                )
+                return await generation.send_message_async(
+                    prompt, generation_config=generation_config, tools=[tool]
+                )
             return await generation.send_message_async(
                 prompt, generation_config=generation_config
             )

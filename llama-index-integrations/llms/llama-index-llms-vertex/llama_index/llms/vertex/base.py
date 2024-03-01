@@ -112,6 +112,7 @@ class Vertex(LLM):
         super().__init__(
             temperature=temperature,
             max_tokens=max_tokens,
+            datastore=datastore,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             model=model,
@@ -206,6 +207,7 @@ class Vertex(LLM):
             prompt,
             max_retries=self.max_retries,
             is_gemini=self._is_gemini,
+            datastore = self.datastore,
             **params,
         )
         return CompletionResponse(text=completion.text, raw=completion.__dict__)
@@ -235,6 +237,7 @@ class Vertex(LLM):
             prompt=question,
             chat=True,
             stream=True,
+            datastore = self.datastore,
             is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
@@ -270,6 +273,7 @@ class Vertex(LLM):
             stream=True,
             is_gemini=self._is_gemini,
             max_retries=self.max_retries,
+            datastore = self.datastore,
             **params,
         )
 
@@ -310,6 +314,7 @@ class Vertex(LLM):
             is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
+            datastore = self.datastore,
             **params,
         )
         ##this is due to a bug in vertex AI we have to await twice
@@ -333,6 +338,7 @@ class Vertex(LLM):
             prompt=prompt,
             max_retries=self.max_retries,
             is_gemini=self._is_gemini,
+            datastore = self.datastore,
             **params,
         )
         return CompletionResponse(text=completion.text)
