@@ -1,5 +1,24 @@
 # ChangeLog
 
+## [0.10.15] - 2024-03-01
+
+### New Features
+
+- Added FeishuWikiReader (#11491)
+- Added videodb retriever integration (#11463)
+- Added async to opensearch vector store (#11513)
+- New LangFuse one-click callback handler (#11324)
+
+### Bug Fixes / Nits
+
+- Fixed deadlock issue with async chat streaming (#11548)
+- Improved hidden file check in SimpleDirectoryReader (#11496)
+- Fixed null values in document metadata when using SimpleDirectoryReader (#11501)
+- Fix for sqlite utils in jsonalyze query engine (#11519)
+- Added base url and timeout to ollama multimodal LLM (#11526)
+- Updated duplicate handling in query fusion retriever (#11542)
+- Fixed bug in kg indexx struct updating (#11475)
+
 ## [0.10.14] - 2024-02-28
 
 ### New Features
