@@ -57,7 +57,7 @@ def completion_with_retry(
     is_gemini: bool = False,
     params: Any = {},
     **kwargs: Any,
-) -> Any:
+) -> Any: 
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
 
