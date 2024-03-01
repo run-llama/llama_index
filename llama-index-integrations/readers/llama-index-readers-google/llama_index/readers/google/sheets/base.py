@@ -168,8 +168,6 @@ class GoogleSheetsReader(BasePydanticReader):
                 dataframes.append(df)
         return dataframes
 
-        # return pd.DataFrame(response.get("values", []))
-
     def _get_credentials(self) -> Any:
         """Get valid user credentials from storage.
 
