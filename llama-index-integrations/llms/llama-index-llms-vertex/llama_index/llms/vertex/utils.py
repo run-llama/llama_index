@@ -55,9 +55,10 @@ def completion_with_retry(
     chat: bool = False,
     stream: bool = False,
     is_gemini: bool = False,
+    datastore: Optional[str] = None,
     params: Any = {},
     **kwargs: Any,
-) -> Any: 
+) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(max_retries=max_retries)
 
@@ -68,6 +69,14 @@ def completion_with_retry(
 
             generation = client.start_chat(history=history)
             generation_config = dict(kwargs)
+            if datastore:
+                from vertexai.preview.generative_models import Tool, grounding
+                tool = Tool.from_retrieval(
+                    grounding.Retrieval(grounding.VertexAISearch(datastore=datastore))
+                )
+                return generation.send_message(
+                    prompt, stream=stream, generation_config=generation_config, tools=[tool]
+                )
             return generation.send_message(
                 prompt, stream=stream, generation_config=generation_config
             )
