@@ -19,6 +19,7 @@ from llama_index.core.schema import (
 from llama_index.core.utils import get_tqdm_iterable
 
 
+
 class NodeParser(TransformComponent, ABC):
     """Base interface for node parser."""
 
