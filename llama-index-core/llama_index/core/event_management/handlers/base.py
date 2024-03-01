@@ -12,11 +12,11 @@ global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
 class BaseEventHandler(ABC):
     """Base callback handler that can be used to track event starts and ends."""
 
-    @abstractmethod
     @classmethod
     def class_name(cls) -> str:
         """Class name."""
+        return "BaseEventHandler"
 
     @abstractmethod
-    def handle(event: Any) -> None:
+    def handle(self, event: Any) -> None:
         """Logic for handling event."""

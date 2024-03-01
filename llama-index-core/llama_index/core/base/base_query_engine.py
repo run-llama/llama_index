@@ -16,6 +16,11 @@ from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.core.schema import NodeWithScore, QueryBundle, QueryType
+from llama_index.core.event_management.events.query import (
+    QueryEndEvent,
+    QueryStartEvent,
+)
+from llama_index.core.event_management.dispatcher import Dispatcher
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +28,18 @@ logger = logging.getLogger(__name__)
 class BaseQueryEngine(ChainableMixin, PromptMixin):
     """Base query engine."""
 
-    def __init__(self, callback_manager: Optional[CallbackManager]) -> None:
+    def __init__(
+        self,
+        callback_manager: Optional[CallbackManager],
+        dispatcher: Optional[Dispatcher] = None,
+    ) -> None:
+        if dispatcher is None:
+            import llama_index.core.event_management as event_management
+
+            dispatcher = event_management.get_dispatcher(__name__)
+
+        self.dispatcher = dispatcher
+
         self.callback_manager = callback_manager or CallbackManager([])
 
     def _get_prompts(self) -> Dict[str, Any]:
@@ -34,10 +50,13 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
         """Update prompts."""
 
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
-        with self.callback_manager.as_trace("query"):
-            if isinstance(str_or_query_bundle, str):
-                str_or_query_bundle = QueryBundle(str_or_query_bundle)
-            return self._query(str_or_query_bundle)
+        self.dispatcher.dispatch(QueryStartEvent)
+        if isinstance(str_or_query_bundle, str):
+            str_or_query_bundle = QueryBundle(str_or_query_bundle)
+
+        query_result = self._query(str_or_query_bundle)
+        self.dispatcher.dispatch(QueryEndEvent)
+        return query_result
 
     async def aquery(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         with self.callback_manager.as_trace("query"):

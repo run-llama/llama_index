@@ -3,7 +3,7 @@ from llama_index.core.event_management.handlers import NullHandler
 
 root_dispatcher: Dispatcher = Dispatcher(
     name="root",
-    handlers=[NullHandler],
+    handlers=[NullHandler()],
     parent=None,
     propagate=False,
 )

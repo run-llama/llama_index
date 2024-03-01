@@ -8,5 +8,5 @@ class NullHandler(BaseEventHandler):
         """Class name."""
         return "NullHandler"
 
-    def handle(event: Any) -> None:
+    def handle(self, event: Any) -> None:
         """Handle logic - null handler does nothing."""

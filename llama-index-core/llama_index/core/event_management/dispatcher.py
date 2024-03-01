@@ -1,14 +1,15 @@
-from typing import List, Self, Optional
+from typing import List, Optional, Type
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.event_management.handlers import BaseEventHandler
+from llama_index.core.event_management.events.base import BaseEvent
 
 
 class Dispatcher(BaseModel):
     name: str = Field(default_factory=str, description="Name of dispatcher")
     handlers: List[BaseEventHandler] = Field(
-        default_factory=list, description="List of attached handlers"
+        default=[], description="List of attached handlers"
     )
-    parent: Optional[Self] = Field(
+    parent: Optional["Dispatcher"] = Field(
         default_factory=None, description="List of parent dispatchers"
     )
     propagate: bool = Field(
@@ -20,8 +21,9 @@ class Dispatcher(BaseModel):
         """Add handler to set of handlers."""
         self.handlers += [handler]
 
-    def dispatch(self, event) -> None:
+    def dispatch(self, event_cls: Type[BaseEvent]) -> None:
         """Dispatch event to all registered handlers."""
+        event = event_cls()
         for h in self.handlers:
             h.handle(event)
 
@@ -32,3 +34,6 @@ class Dispatcher(BaseModel):
             return f"{self.parent.name}.{self.name}"
         else:
             return self.name
+
+    class Config:
+        arbitrary_types_allowed = True

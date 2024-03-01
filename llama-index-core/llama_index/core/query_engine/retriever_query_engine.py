@@ -22,6 +22,7 @@ from llama_index.core.settings import (
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
 )
+from llama_index.core.event_management.dispatcher import Dispatcher
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
@@ -40,6 +41,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[BaseSynthesizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        dispatcher: Optional[Dispatcher] = None,
     ) -> None:
         self._retriever = retriever
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
@@ -56,8 +58,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         )
         for node_postprocessor in self._node_postprocessors:
             node_postprocessor.callback_manager = callback_manager
-
-        super().__init__(callback_manager=callback_manager)
+        super().__init__(callback_manager=callback_manager, dispatcher=dispatcher)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
@@ -79,6 +80,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         output_cls: Optional[BaseModel] = None,
         use_async: bool = False,
         streaming: bool = False,
+        dispatcher: Optional[Dispatcher] = None,
         # deprecated
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
@@ -126,6 +128,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             retriever=retriever,
             response_synthesizer=response_synthesizer,
             callback_manager=callback_manager,
+            dispatcher=dispatcher,
             node_postprocessors=node_postprocessors,
         )
 
