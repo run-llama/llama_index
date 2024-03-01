@@ -2,10 +2,12 @@
 
 import logging
 import os
-from typing import Any, List
+from typing import Any, List, Optional
 
 import googleapiclient.discovery as discovery
 from google_auth_oauthlib.flow import InstalledAppFlow
+from pydantic import Field
+
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
@@ -40,8 +42,14 @@ class GoogleDocsReader(BasePydanticReader):
 
     is_remote: bool = True
 
-    def __init__(self) -> None:
-        """Initialize with parameters."""
+    split_on_heading_level: Optional[int] = Field(
+        default=None,
+        description="If set the document will be split on the specified heading level.",
+    )
+
+    include_toc: bool = Field(
+        default=True, description="Include table of contents elements."
+    )
 
     @classmethod
     def class_name(cls) -> str:
@@ -58,12 +66,9 @@ class GoogleDocsReader(BasePydanticReader):
 
         results = []
         for document_id in document_ids:
-            doc = self._load_doc(document_id)
-            results.append(
-                Document(
-                    text=doc, id_=document_id, metadata={"document_id": document_id}
-                )
-            )
+            docs = self._load_doc(document_id)
+            results.extend(docs)
+
         return results
 
     def _load_doc(self, document_id: str) -> str:
@@ -77,9 +82,15 @@ class GoogleDocsReader(BasePydanticReader):
         """
         credentials = self._get_credentials()
         docs_service = discovery.build("docs", "v1", credentials=credentials)
-        doc = docs_service.documents().get(documentId=document_id).execute()
-        doc_content = doc.get("body").get("content")
-        return self._read_structural_elements(doc_content)
+        google_doc = docs_service.documents().get(documentId=document_id).execute()
+        google_doc_content = google_doc.get("body").get("content")
+
+        doc_metadata = {
+            "document_id": document_id,
+            "document_title": google_doc.get("title"),
+        }
+
+        return self._structural_elements_to_docs(google_doc_content, doc_metadata)
 
     def _get_credentials(self) -> Any:
         """Get valid user credentials from storage.
@@ -147,6 +158,54 @@ class GoogleDocsReader(BasePydanticReader):
                 toc = value.get("tableOfContents")
                 text += self._read_structural_elements(toc.get("content"))
         return text
+
+    def _structural_elements_to_docs(
+        self, elements: List[Any], doc_metadata: dict
+    ) -> Any:
+        """Recurse through a list of Structural Elements.
+
+        Split documents on heading if split_on_heading_level is set.
+
+        Args:
+            elements: a list of Structural Elements.
+        """
+        docs = []
+
+        current_heading_level = self.split_on_heading_level
+
+        metadata = doc_metadata.copy()
+        text = ""
+        for value in elements:
+            element_text = self._read_structural_elements([value])
+
+            if self.split_on_heading_level and "paragraph" in value:
+                style = value.get("paragraph").get("paragraphStyle")
+                style_type = style.get("namedStyleType", "")
+                if style_type.startswith("HEADING_"):
+                    level = int(style_type.split("_")[1])
+
+                    if level == self.split_on_heading_level:
+                        docs.append(Document(text=text, metadata=metadata))
+                        text = ""
+                        metadata["heading_id"] = style.get("headingId")
+
+                    if level < current_heading_level:
+                        metadata = doc_metadata.copy()
+
+                    if level <= self.split_on_heading_level:
+                        heading_label = f"heading_{level}"
+                        metadata[heading_label] = element_text
+                    else:
+                        text += element_text
+
+                continue
+
+            text += element_text
+
+        if text:
+            docs.append(Document(text=text, metadata=metadata))
+
+        return docs
 
 
 if __name__ == "__main__":
