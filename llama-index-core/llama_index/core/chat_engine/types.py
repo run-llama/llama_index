@@ -185,7 +185,7 @@ class StreamingAgentChatResponse:
                 except asyncio.TimeoutError:
                     if self._is_done:
                         break
-                    continue  
+                    continue
                 self._unformatted_response += delta
                 yield delta
             else:
