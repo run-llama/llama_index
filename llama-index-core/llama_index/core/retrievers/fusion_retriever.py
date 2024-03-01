@@ -130,7 +130,7 @@ class QueryFusionRetriever(BaseRetriever):
         for nodes_with_scores in results.values():
             for node_with_score in nodes_with_scores:
                 text = node_with_score.node.get_content()
-                if(text in all_nodes):
+                if text in all_nodes:
                     max_score = max(node_with_score.score, all_nodes[text].score)
                     all_nodes[text].score = max_score
                 else:
