@@ -130,7 +130,7 @@ class GoogleSheetsReader(BasePydanticReader):
                 "\n".join("\t".join(row) for row in response.get("values", [])) + "\n"
             )
         return sheet_text
-# co-authored by Jayant Verma
+
     def _load_sheet_in_pandas(self, spreadsheet_id: str) -> List[pd.DataFrame]:
         """Load a sheet from Google Sheets.
 
