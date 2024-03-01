@@ -84,6 +84,7 @@ maxdepth: 1
 /examples/managed/GoogleDemo.ipynb
 /examples/managed/vectaraDemo.ipynb
 /examples/managed/zcpDemo.ipynb
+VideoDB Retriever </examples/retrievers/videodb_retriever.ipynb>
 ```
 
 ### Other Retrievers
