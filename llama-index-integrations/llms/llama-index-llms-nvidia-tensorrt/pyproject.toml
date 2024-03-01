@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["LocalTensorRTLLM"]
 contains_example = false
 import_path = "llama_index.llms.nvidia_tensorrt"
+
+[tool.llamahub.class_authors]
+LocalTensorRTLLM = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,13 +23,14 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index llms nvidia tensorrt integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-nvidia-tensorrt"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 torch = "^2.1.2"
 transformers = "^4.37.0"

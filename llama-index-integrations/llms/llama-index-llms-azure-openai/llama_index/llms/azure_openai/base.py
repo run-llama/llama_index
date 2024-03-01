@@ -4,7 +4,7 @@ import httpx
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, root_validator
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.azure_openai.utils import (
     refresh_openai_azuread_token,
@@ -50,7 +50,7 @@ class AzureOpenAI(OpenAI):
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
 
-    _azure_ad_token: Any = PrivateAttr()
+    _azure_ad_token: Any = PrivateAttr(default=None)
     _client: SyncAzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
 

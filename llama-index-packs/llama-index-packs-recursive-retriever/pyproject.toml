@@ -8,9 +8,12 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["EmbeddedTablesUnstructuredRetrieverPack", "RecursiveRetrieverSmallToBigPack"]
 contains_example = false
 import_path = "llama_index.packs.recursive_retriever"
+
+[tool.llamahub.class_authors]
+EmbeddedTablesUnstructuredRetrieverPack = "jerryjliu"
+RecursiveRetrieverSmallToBigPack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,15 +24,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs recursive_retriever integration"
+exclude = ["**/BUILD"]
 keywords = ["big", "embedded", "recursive", "retriever", "small", "tables", "unstructured"]
 license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-packs-recursive-retriever"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llama-index-readers-file = "^0.1.1"
 lxml = "^5.1.0"

@@ -69,10 +69,11 @@ class ContextChatEngine(BaseChatEngine):
         prefix_messages: Optional[List[ChatMessage]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         context_template: Optional[str] = None,
+        llm: Optional[LLM] = None,
         **kwargs: Any,
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
-        llm = llm_from_settings_or_context(Settings, service_context)
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
 
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(

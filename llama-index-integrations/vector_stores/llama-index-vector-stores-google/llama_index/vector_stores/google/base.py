@@ -99,13 +99,22 @@ class GoogleVectorStore(BasePydanticVectorStore):
 
     Example:
         google_vector_store = GoogleVectorStore.from_corpus(
-                corpus_id="my-corpus-id")
+            corpus_id="my-corpus-id",
+            include_metadata=True,
+            metadata_keys=['file_name', 'creation_date']
+        )
         index = VectorStoreIndex.from_vector_store(
-                google_vector_store)
+            vector_store=google_vector_store
+        )
 
     Attributes:
         corpus_id: The corpus ID that this vector store instance will read and
             write to.
+        include_metadata (bool): Indicates whether to include custom metadata in the query
+            results. Defaults to False.
+        metadata_keys (Optional[List[str]]): Specifies which metadata keys to include in the
+            query results if include_metadata is set to True. If None, all metadata keys
+            are included. Defaults to None.
     """
 
     # Semantic Retriever stores the document node's text as string and embeds
@@ -117,6 +126,10 @@ class GoogleVectorStore(BasePydanticVectorStore):
     # world.
     corpus_id: str = Field(frozen=True)
     """Corpus ID that this instance of the vector store is using."""
+
+    # Configuration options for handling metadata in query results
+    include_metadata: bool = False
+    metadata_keys: Optional[List[str]] = None
 
     _client: Any = PrivateAttr()
 
@@ -139,11 +152,22 @@ class GoogleVectorStore(BasePydanticVectorStore):
         self._client = client
 
     @classmethod
-    def from_corpus(cls, *, corpus_id: str) -> "GoogleVectorStore":
+    def from_corpus(
+        cls,
+        *,
+        corpus_id: str,
+        include_metadata: bool = False,
+        metadata_keys: Optional[List[str]] = None,
+    ) -> "GoogleVectorStore":
         """Create an instance that points to an existing corpus.
 
         Args:
-            corpus_id: ID of an existing corpus on Google's server.
+            corpus_id (str): ID of an existing corpus on Google's server.
+            include_metadata (bool, optional): Specifies whether to include custom metadata in the
+                query results. Defaults to False, meaning metadata will not be included.
+            metadata_keys (Optional[List[str]], optional): Specifies which metadata keys to include
+                in the query results if include_metadata is set to True. If None, all metadata keys
+                are included. Defaults to None.
 
         Returns:
             An instance of the vector store that points to the specified corpus.
@@ -161,7 +185,12 @@ class GoogleVectorStore(BasePydanticVectorStore):
         if genaix.get_corpus(corpus_id=corpus_id, client=client) is None:
             raise NoSuchCorpusException(corpus_id=corpus_id)
 
-        return cls(corpus_id=corpus_id, client=client)
+        return cls(
+            corpus_id=corpus_id,
+            client=client,
+            include_metadata=include_metadata,
+            metadata_keys=metadata_keys,
+        )
 
     @classmethod
     def create_corpus(
@@ -388,14 +417,34 @@ class GoogleVectorStore(BasePydanticVectorStore):
             # scores even across multiple documents.
             relevant_chunks.sort(key=lambda c: c.chunk_relevance_score, reverse=True)
 
+        nodes = []
+        include_metadata = self.include_metadata
+        metadata_keys = self.metadata_keys
+        for chunk in relevant_chunks:
+            metadata = {}
+            if include_metadata:
+                for custom_metadata in chunk.chunk.custom_metadata:
+                    # Use getattr to safely extract values
+                    value = getattr(custom_metadata, "string_value", None)
+                    if (
+                        value is None
+                    ):  # If string_value is not set, check for numeric_value
+                        value = getattr(custom_metadata, "numeric_value", None)
+                    # Add to the metadata dictionary only those keys that are present in metadata_keys
+                    if value is not None and (
+                        metadata_keys is None or custom_metadata.key in metadata_keys
+                    ):
+                        metadata[custom_metadata.key] = value
+
+            text_node = TextNode(
+                text=chunk.chunk.data.string_value,
+                id=_extract_chunk_id(chunk.chunk.name),
+                metadata=metadata,  # Adding metadata to the node
+            )
+            nodes.append(text_node)
+
         return VectorStoreQueryResult(
-            nodes=[
-                TextNode(
-                    text=chunk.chunk.data.string_value,
-                    id_=_extract_chunk_id(chunk.chunk.name),
-                )
-                for chunk in relevant_chunks
-            ],
+            nodes=nodes,
             ids=[_extract_chunk_id(chunk.chunk.name) for chunk in relevant_chunks],
             similarities=[chunk.chunk_relevance_score for chunk in relevant_chunks],
         )

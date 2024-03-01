@@ -18,14 +18,14 @@ agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
 
 agent.chat(
     """Load the eig, transpose and solve functions from the python file,
-and then write a function defintion using only builtin python types (List, float, Tuple)
+and then write a function definition using only builtin python types (List, float, Tuple)
 with a short 5-10 line doc string tool prompts for the functions that only has a small description and arguments
 """
 )
 ```
 
 `function_definitions`: Get all of the function definitions from the Python file
-`get_function`: Get a specfic function definiton from the Python file
+`get_function`: Get a specific function definition from the Python file
 `get_functions`: Get a list of functions from the python file
 
 This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.

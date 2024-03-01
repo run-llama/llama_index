@@ -18,7 +18,7 @@ class ArxivToolSpec(BaseToolSpec):
         """
         A tool to query arxiv.org
         ArXiv contains a variety of papers that are useful for answering
-        mathematic and scientfic questions.
+        mathematic and scientific questions.
 
         Args:
             query (str): The query to be passed to arXiv.

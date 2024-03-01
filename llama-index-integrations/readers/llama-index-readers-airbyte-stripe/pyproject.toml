@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AirbyteStripeReader"]
 contains_example = false
 import_path = "llama_index.readers.airbyte_stripe"
+
+[tool.llamahub.class_authors]
+AirbyteStripeReader = "flash1293"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,14 +23,15 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers airbyte_stripe integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 maintainers = ["flash1293"]
 name = "llama-index-readers-airbyte-stripe"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llama-index-readers-airbyte-cdk = "^0.1.1"
 

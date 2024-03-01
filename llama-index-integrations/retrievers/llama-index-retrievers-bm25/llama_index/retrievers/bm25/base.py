@@ -83,7 +83,7 @@ class BM25Retriever(BaseRetriever):
 
         nodes: List[NodeWithScore] = []
         for i, node in enumerate(self._nodes):
-            nodes.append(NodeWithScore(node=node, score=doc_scores[i]))
+            nodes.append(NodeWithScore(node=node, score=float(doc_scores[i])))
 
         return nodes
 

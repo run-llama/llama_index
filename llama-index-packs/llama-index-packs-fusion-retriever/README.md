@@ -51,7 +51,7 @@ response = hybrid_fusion_pack.run("Tell me about a Music celebritiy.")
 You can also use modules individually.
 
 ```python
-# use the fusion retreiver
+# use the fusion retriever
 nodes = hybrid_fusion_pack.fusion_retriever.retrieve("query_str")
 
 # use the vector retriever
@@ -116,7 +116,7 @@ response = query_rewriting_pack.run("Tell me a bout a Music celebritiy.")
 You can also use modules individually.
 
 ```python
-# use the fusion retreiver
+# use the fusion retriever
 nodes = query_rewriting_pack.fusion_retriever.retrieve("query_str")
 
 # use the vector retriever

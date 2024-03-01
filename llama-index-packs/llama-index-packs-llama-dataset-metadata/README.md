@@ -52,4 +52,4 @@ llama_dataset_metadata_pack.run(
 NOTE: this pack should be used only after performing a RAG evaluation (i.e., by
 using `RagEvaluatorPack` on a `LabelledRagDataset`). In the code snippet above,
 `index`, `rag_dataset`, and `benchmark_df` are all objects that you'd expect to
-have only after perfoming the RAG evaluation as mention in the previous sentence.
+have only after performing the RAG evaluation as mention in the previous sentence.
