@@ -85,10 +85,7 @@ class GoogleDocsReader(BasePydanticReader):
         google_doc = docs_service.documents().get(documentId=document_id).execute()
         google_doc_content = google_doc.get("body").get("content")
 
-        doc_metadata = {
-            "document_id": document_id,
-            "document_title": google_doc.get("title"),
-        }
+        doc_metadata = {"document_id": document_id}
 
         return self._structural_elements_to_docs(google_doc_content, doc_metadata)
 
@@ -159,6 +156,31 @@ class GoogleDocsReader(BasePydanticReader):
                 text += self._read_structural_elements(toc.get("content"))
         return text
 
+    def _determine_heading_level(self, element):
+        """Extracts the heading level, label, and ID from a document element.
+
+        Args:
+            element: a Structural Element.
+        """
+        level = None
+        heading_label = None
+        heading_id = None
+        if self.split_on_heading_level and "paragraph" in element:
+            style = element.get("paragraph").get("paragraphStyle")
+            style_type = style.get("namedStyleType", "")
+            heading_id = style.get("headingId", None)
+            if style_type == "TITLE":
+                level = 0
+                heading_label = "title"
+            elif style_type.startswith("HEADING_"):
+                level = int(style_type.split("_")[1])
+                if level > self.split_on_heading_level:
+                    return None, None, None
+
+                heading_label = f"heading_{level}"
+
+        return level, heading_label, heading_id
+
     def _structural_elements_to_docs(
         self, elements: List[Any], doc_metadata: dict
     ) -> Any:
@@ -178,29 +200,22 @@ class GoogleDocsReader(BasePydanticReader):
         for value in elements:
             element_text = self._read_structural_elements([value])
 
-            if self.split_on_heading_level and "paragraph" in value:
-                style = value.get("paragraph").get("paragraphStyle")
-                style_type = style.get("namedStyleType", "")
-                if style_type.startswith("HEADING_"):
-                    level = int(style_type.split("_")[1])
+            level, heading_label, heading_id = self._determine_heading_level(value)
 
-                    if level == self.split_on_heading_level:
-                        docs.append(Document(text=text, metadata=metadata))
+            if level is not None:
+                if level == self.split_on_heading_level:
+                    if text.strip():
+                        docs.append(Document(text=text, metadata=metadata.copy()))
                         text = ""
-                        metadata["heading_id"] = style.get("headingId")
+                    if heading_id:
+                        metadata["heading_id"] = heading_id
+                elif level < current_heading_level:
+                    metadata = doc_metadata.copy()
 
-                    if level < current_heading_level:
-                        metadata = doc_metadata.copy()
-
-                    if level <= self.split_on_heading_level:
-                        heading_label = f"heading_{level}"
-                        metadata[heading_label] = element_text
-                    else:
-                        text += element_text
-
-                continue
-
-            text += element_text
+                metadata[heading_label] = element_text
+                current_heading_level = level
+            else:
+                text += element_text
 
         if text:
             docs.append(Document(text=text, metadata=metadata))
@@ -209,7 +224,8 @@ class GoogleDocsReader(BasePydanticReader):
 
 
 if __name__ == "__main__":
-    reader = GoogleDocsReader()
-    logger.info(
-        reader.load_data(document_ids=["11ctUj_tEf5S8vs_dk8_BNi-Zk8wW5YFhXkKqtmU_4B8"])
+    reader = GoogleDocsReader(split_on_heading_level=1)
+    docs = reader.load_data(
+        document_ids=["1UORoHYBKmOdcv4g94znMF0ildBYWiu3C2M2MEsWN4mM"]
     )
+    logger.info(docs)
