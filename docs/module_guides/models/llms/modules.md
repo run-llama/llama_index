@@ -84,6 +84,15 @@ maxdepth: 1
 /examples/llm/fireworks.ipynb
 ```
 
+## Friendli
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/friendli.ipynb
+```
+
 ## Gradient
 
 ```{toctree}
@@ -184,6 +193,7 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/mistralai.ipynb
+/cookbooks/mistralai.ipynb
 ```
 
 ## MonsterAPI

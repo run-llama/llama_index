@@ -1,0 +1,27 @@
+{
+  "name": "Paul Graham Essay",
+  "className": "LabelledRagDataset",
+  "description": "A labelled RAG dataset based off an essay by Paul Graham, consisting of queries, reference answers, and reference contexts.",
+  "numberObservations": 44,
+  "containsExamplesByHumans": false,
+  "containsExamplesByAi": true,
+  "sourceUrls": ["http://www.paulgraham.com/articles.html"],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": 0.934,
+        "correctness": 4.239,
+        "faithfulness": 0.977,
+        "relevancy": 0.977
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/paul_graham_essay/llamaindex_baseline.py"
+    }
+  ]
+}

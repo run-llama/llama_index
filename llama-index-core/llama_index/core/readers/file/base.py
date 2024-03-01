@@ -56,6 +56,21 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
     return default_file_reader_cls
 
 
+def _format_file_timestamp(timestamp: float) -> Optional[str]:
+    """Format file timestamp to a %Y-%m-%d string.
+
+    Args:
+        timestamp (float): timestamp in float
+
+    Returns:
+        str: formatted timestamp
+    """
+    try:
+        return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d")
+    except Exception:
+        return None
+
+
 def default_file_metadata_func(
     file_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
 ) -> Dict:
@@ -66,20 +81,10 @@ def default_file_metadata_func(
     """
     fs = fs or get_default_fs()
     stat_result = fs.stat(file_path)
-    creation_date = stat_result.get("created")
-    last_modified_date = stat_result.get("mtime")
-    last_accessed_date = stat_result.get("atime")
-    try:
-        creation_date = datetime.fromtimestamp(creation_date).strftime("%Y-%m-%d")
-        last_modified_date = datetime.fromtimestamp(last_modified_date).strftime(
-            "%Y-%m-%d"
-        )
-        last_accessed_date = datetime.fromtimestamp(last_accessed_date).strftime(
-            "%Y-%m-%d"
-        )
-    except Exception:
-        pass
-    return {
+    creation_date = _format_file_timestamp(stat_result.get("created"))
+    last_modified_date = _format_file_timestamp(stat_result.get("mtime"))
+    last_accessed_date = _format_file_timestamp(stat_result.get("atime"))
+    default_meta = {
         "file_path": file_path,
         "file_name": stat_result["name"],
         "file_type": mimetypes.guess_type(file_path)[0],
@@ -87,6 +92,13 @@ def default_file_metadata_func(
         "creation_date": creation_date,
         "last_modified_date": last_modified_date,
         "last_accessed_date": last_accessed_date,
+    }
+
+    # Return not null value
+    return {
+        meta_key: meta_value
+        for meta_key, meta_value in default_meta.items()
+        if meta_value is not None
     }
 
 
@@ -237,7 +249,9 @@ class SimpleDirectoryReader(BaseReader):
             # in glob for backwards compatibility.
             ref = Path(ref)
             is_dir = self.fs.isdir(ref)
-            skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
+            skip_because_hidden = self.exclude_hidden and self.is_hidden(
+                ref.relative_to(input_dir.absolute())
+            )
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
             )

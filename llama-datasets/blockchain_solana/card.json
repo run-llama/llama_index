@@ -1,0 +1,27 @@
+{
+  "name": "Blockchain Solana",
+  "className": "LabelledRagDataset",
+  "description": "A labelled RAG dataset based off an article, From Bitcoin to Solana – Innovating Blockchain towards Enterprise Applications),by Xiangyu Li, Xinyu Wang, Tingli Kong, Junhao Zheng and Min Luo, consisting of queries, reference answers, and reference contexts.",
+  "numberObservations": 58,
+  "containsExamplesByHumans": false,
+  "containsExamplesByAi": true,
+  "sourceUrls": ["https://arxiv.org/abs/2207.05240"],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": 0.945,
+        "correctness": 4.457,
+        "faithfulness": 1.0,
+        "relevancy": 1.0
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/blockchain_solana/llamaindex_baseline.py"
+    }
+  ]
+}
