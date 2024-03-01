@@ -65,6 +65,10 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
     ) -> None:
         """Init params."""
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+
+        if callback_manager:
+            self._llm.callback_manager = callback_manager
+
         self._callback_manager = (
             callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context)

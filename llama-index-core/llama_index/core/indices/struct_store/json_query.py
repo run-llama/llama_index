@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -41,6 +42,23 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
     DEFAULT_RESPONSE_SYNTHESIS_PROMPT_TMPL,
     prompt_type=PromptType.SQL_RESPONSE_SYNTHESIS,
 )
+
+
+def default_output_response_parser(llm_output: str) -> str:
+    """Attempts to parse the JSON path prompt output. Only applicable if the default prompt is used."""
+    try:
+        llm_output_parsed = re.search(
+            pattern=r"JSONPath:\s+(.*)", string=llm_output
+        ).groups()[0]
+    except Exception:
+        logger.warning(
+            f"JSON Path could not be parsed in the LLM response after the 'JSONPath' identifier. "
+            "Try passing a custom JSON path prompt and processor. "
+            "Proceeding with output as-is."
+        )
+        return llm_output
+
+    return llm_output_parsed
 
 
 def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
@@ -164,6 +182,12 @@ class JSONQueryEngine(BaseQueryEngine):
             **self._output_kwargs,
         )
 
+        # removes JSONPath: prefix from returned JSON path prompt call
+        if self._json_path_prompt == DEFAULT_JSON_PATH_PROMPT:
+            json_path_response_str = default_output_response_parser(
+                json_path_response_str
+            )
+
         if self._verbose:
             print_text(f"> JSONPath Output: {json_path_output}\n")
 
@@ -192,6 +216,12 @@ class JSONQueryEngine(BaseQueryEngine):
             schema=schema,
             query_str=query_bundle.query_str,
         )
+
+        # removes JSONPath: prefix from returned JSON path prompt call
+        if self._json_path_prompt == DEFAULT_JSON_PATH_PROMPT:
+            json_path_response_str = default_output_response_parser(
+                json_path_response_str
+            )
 
         if self._verbose:
             print_text(
