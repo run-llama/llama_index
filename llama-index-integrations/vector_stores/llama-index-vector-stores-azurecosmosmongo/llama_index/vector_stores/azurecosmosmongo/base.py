@@ -3,6 +3,7 @@
 An index that is built on top of an existing vector store.
 
 """
+
 import logging
 import os
 from typing import Any, Dict, List, Optional, cast
@@ -29,6 +30,25 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
     To use, you should have both:
     - the ``pymongo`` python package installed
     - a connection string associated with an Azure Cosmodb MongoDB vCore Cluster
+
+    Examples:
+        `pip install llama-index-vector-stores-azurecosmosmongo`
+
+        ```python
+        import pymongo
+        from llama_index.vector_stores.azurecosmosmongo import AzureCosmosDBMongoDBVectorSearch
+
+        # Set up the connection string with your Azure CosmosDB MongoDB URI
+        connection_string = "YOUR_AZURE_COSMOSDB_MONGODB_URI"
+        mongodb_client = pymongo.MongoClient(connection_string)
+
+        # Create an instance of AzureCosmosDBMongoDBVectorSearch
+        vector_store = AzureCosmosDBMongoDBVectorSearch(
+            mongodb_client=mongodb_client,
+            db_name="demo_vectordb",
+            collection_name="paul_graham_essay",
+        )
+        ```
     """
 
     stores_text: bool = True

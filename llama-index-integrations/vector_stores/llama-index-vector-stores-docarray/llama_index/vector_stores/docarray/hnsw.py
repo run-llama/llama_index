@@ -10,6 +10,16 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
 
     This class is a lightweight Document Index implementation provided by Docarray.
     It stores vectors on disk in hnswlib, and stores all other data in SQLite.
+
+    Examples:
+        `pip install llama-index-vector-stores-docarray`
+
+        ```python
+        from llama_index.vector_stores.docarray import DocArrayHnswVectorStore
+
+        # Initialize the DocArrayHnswVectorStore
+        vector_store = DocArrayHnswVectorStore(work_dir="hnsw_index", dim=1536)
+        ```
     """
 
     def __init__(

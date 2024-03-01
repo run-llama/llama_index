@@ -101,6 +101,24 @@ def remove_lucene_chars(text: Optional[str]) -> Optional[str]:
 
 
 class Neo4jVectorStore(VectorStore):
+    """Neo4j Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-neo4jvector`
+
+
+        ```python
+        from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
+
+        username = "neo4j"
+        password = "pleaseletmein"
+        url = "bolt://localhost:7687"
+        embed_dim = 1536
+
+        neo4j_vector = Neo4jVectorStore(username, password, url, embed_dim)
+        ```
+    """
+
     stores_text: bool = True
     flat_metadata = True
 

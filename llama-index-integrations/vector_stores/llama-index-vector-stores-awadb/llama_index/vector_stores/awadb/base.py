@@ -3,6 +3,7 @@
 An index that is built on top of an existing vector store.
 
 """
+
 import logging
 import uuid
 from typing import Any, List, Optional, Set
@@ -30,9 +31,14 @@ class AwaDBVectorStore(VectorStore):
     During query time, the index uses AwaDB to query for the top
     k most similar nodes.
 
-    Args:
-        chroma_collection (chromadb.api.models.Collection.Collection):
-            ChromaDB collection instance
+    Examples:
+        `pip install llama-index-vector-stores-awadb`
+
+        ```python
+        from llama_index.vector_stores.awadb import AwaDBVectorStore
+
+        vector_store = AwaDBVectorStore(table_name="llamaindex")
+        ```
 
     """
 

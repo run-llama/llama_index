@@ -30,6 +30,28 @@ def _to_metal_filters(standard_filters: MetadataFilters) -> list:
 
 
 class MetalVectorStore(VectorStore):
+    """Metal Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-metal`
+
+        ```python
+        from llama_index.vector_stores.metal import MetalVectorStore
+
+        # Sign up for Metal and generate API key and client ID
+        api_key = "your_api_key_here"
+        client_id = "your_client_id_here"
+        index_id = "your_index_id_here"
+
+        # Initialize Metal Vector Store
+        vector_store = MetalVectorStore(
+            api_key=api_key,
+            client_id=client_id,
+            index_id=index_id,
+        )
+        ```
+    """
+
     def __init__(
         self,
         api_key: str,

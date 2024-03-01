@@ -33,17 +33,20 @@ class JaguarVectorStore(VectorStore):
     See http://www.jaguardb.com
     See http://github.com/fserv/jaguar-sdk
 
-    Example:
-       .. code-block:: python
+    Examples:
+        `pip install llama-index-vector-stores-jaguar`
 
-           vectorstore = JaguarVectorStore(
-               pod = 'vdb',
-               store = 'mystore',
-               vector_index = 'v',
-               vector_type = 'cosine_fraction_float',
-               vector_dimension = 1536,
-               url='http://192.168.8.88:8080/fwww/',
-           )
+        ```python
+        from llama_index.vector_stores.jaguar import JaguarVectorStore
+        vectorstore = JaguarVectorStore(
+            pod = 'vdb',
+            store = 'mystore',
+            vector_index = 'v',
+            vector_type = 'cosine_fraction_float',
+            vector_dimension = 1536,
+            url='http://192.168.8.88:8080/fwww/',
+        )
+        ```
     """
 
     stores_text: bool = True

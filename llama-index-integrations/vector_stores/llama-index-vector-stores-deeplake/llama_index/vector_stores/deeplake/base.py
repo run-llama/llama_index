@@ -37,6 +37,16 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
     allows the use of an already existing deeplake dataset if it is one that was created
     this vector store. It also supports creating a new one if the dataset doesn't
     exist or if `overwrite` is set to True.
+
+    Examples:
+        `pip install llama-index-vector-stores-deeplake`
+
+        ```python
+        from llama_index.vector_stores.deeplake import DeepLakeVectorStore
+
+        # Create an instance of DeepLakeVectorStore
+        vector_store = DeepLakeVectorStore(dataset_path=dataset_path, overwrite=True)
+        ```
     """
 
     stores_text: bool = True

@@ -44,6 +44,45 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     - a connection string associated with a MongoDB Atlas Cluster
     that has an Atlas Vector Search index
 
+    To get started head over to the [Atlas quick start](https://www.mongodb.com/docs/atlas/getting-started/).
+
+    Once your store is created, be sure to enable indexing in the Atlas GUI.
+
+    Please refer to the [documentation](https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/)
+    to get more details on how to define an Atlas Vector Search index. You can name the index {ATLAS_VECTOR_SEARCH_INDEX_NAME}
+    and create the index on the namespace {DB_NAME}.{COLLECTION_NAME}.
+    Finally, write the following definition in the JSON editor on MongoDB Atlas:
+
+    ```
+    {
+        "name": "index_name",
+        "type": "vectorSearch",
+        "fields":[
+            {
+            "type": "vector",
+            "path": "embedding",
+            "numDimensions": 1536,
+            "similarity": "cosine"
+            }
+        ]
+    }
+    ```
+
+
+    Examples:
+        `pip install llama-index-vector-stores-mongodb`
+
+        ```python
+        import pymongo
+        from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
+
+        # Ensure you have the MongoDB URI with appropriate credentials
+        mongo_uri = "mongodb+srv://<username>:<password>@<host>?retryWrites=true&w=majority"
+        mongodb_client = pymongo.MongoClient(mongo_uri)
+
+        # Create an instance of MongoDBAtlasVectorSearch
+        vector_store = MongoDBAtlasVectorSearch(mongodb_client)
+        ```
     """
 
     stores_text: bool = True

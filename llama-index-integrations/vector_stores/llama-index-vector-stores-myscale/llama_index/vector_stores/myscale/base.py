@@ -3,6 +3,7 @@
 An index that is built on top of an existing MyScale cluster.
 
 """
+
 import json
 import logging
 from typing import Any, Dict, List, Optional, cast
@@ -56,6 +57,24 @@ class MyScaleVectorStore(VectorStore):
         search_params (dict, optional): The search parameters for a MyScale query.
             Defaults to None.
         embed_dims (embed_dims, optional): Embedding dimensions. Defaults to None.
+
+    Examples:
+        `pip install llama-index-vector-stores-myscale`
+
+        ```python
+        from llama_index.vector_stores.myscale import MyScaleVectorStore
+        import clickhouse_connect
+
+        # initialize client
+        client = clickhouse_connect.get_client(
+            host="YOUR_CLUSTER_HOST",
+            port=8443,
+            username="YOUR_USERNAME",
+            password="YOUR_CLUSTER_PASSWORD",
+        )
+
+        vector_store = MyScaleVectorStore(myscale_client=client)
+        ```
 
     """
 
