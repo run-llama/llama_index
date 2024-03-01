@@ -93,4 +93,6 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
         **kwargs: Any,
     ) -> IndexType:
         """Build an index from a sequence of documents."""
-        raise NotImplementedError("ref_doc_info not implemented for BaseManagedIndex.")
+        raise NotImplementedError(
+            "from_documents not implemented for BaseManagedIndex."
+        )

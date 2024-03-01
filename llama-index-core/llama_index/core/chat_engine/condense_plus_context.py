@@ -14,7 +14,7 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.indices.base_retriever import BaseRetriever
 from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.indices.service_context import ServiceContext
-from llama_index.core.llms.generic_utils import messages_to_history_str
+from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
@@ -96,6 +96,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     def from_defaults(
         cls,
         retriever: BaseRetriever,
+        llm: Optional[LLM] = None,
         service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
@@ -108,7 +109,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
-        llm = llm_from_settings_or_context(Settings, service_context)
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
 
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(

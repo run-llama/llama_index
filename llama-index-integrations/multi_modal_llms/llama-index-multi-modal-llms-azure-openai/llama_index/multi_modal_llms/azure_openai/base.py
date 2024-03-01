@@ -8,7 +8,7 @@ from llama_index.core.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.core.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.multi_modal_llms import MultiModalLLMMetadata
 from llama_index.llms.azure_openai.utils import (
     refresh_openai_azuread_token,
@@ -54,7 +54,7 @@ class AzureOpenAIMultiModal(OpenAIMultiModal):
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
 
-    _azure_ad_token: Any = PrivateAttr()
+    _azure_ad_token: Any = PrivateAttr(default=None)
 
     def __init__(
         self,

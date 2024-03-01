@@ -57,7 +57,7 @@ class UnstructuredURLLoader(BaseReader):
                 docs.append(Document(text=text, extra_info=metadata))
             except Exception as e:
                 if self.continue_on_failure:
-                    logger.error(f"Error fetching or processing {url}, exeption: {e}")
+                    logger.error(f"Error fetching or processing {url}, exception: {e}")
                 else:
                     raise e  # noqa: TRY201
         return docs

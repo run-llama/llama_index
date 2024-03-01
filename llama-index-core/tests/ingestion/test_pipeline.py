@@ -19,9 +19,12 @@ def teardown_function() -> None:
 
 def test_build_pipeline() -> None:
     pipeline = IngestionPipeline(
-        reader=ReaderConfig(
-            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
-        ),
+        readers=[
+            ReaderConfig(
+                reader=StringIterableReader(),
+                reader_kwargs={"texts": ["This is a test."]},
+            )
+        ],
         documents=[Document.example()],
         transformations=[
             SentenceSplitter(),
@@ -35,9 +38,12 @@ def test_build_pipeline() -> None:
 
 def test_run_pipeline() -> None:
     pipeline = IngestionPipeline(
-        reader=ReaderConfig(
-            reader=StringIterableReader(), reader_kwargs={"texts": ["This is a test."]}
-        ),
+        readers=[
+            ReaderConfig(
+                reader=StringIterableReader(),
+                reader_kwargs={"texts": ["This is a test."]},
+            )
+        ],
         documents=[Document.example()],
         transformations=[
             SentenceSplitter(),

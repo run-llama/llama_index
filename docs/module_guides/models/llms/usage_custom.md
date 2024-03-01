@@ -180,7 +180,7 @@ from llama_index.core.llms import (
     CompletionResponseGen,
     LLMMetadata,
 )
-from llama_index.core.llms.base import llm_completion_callback
+from llama_index.core.llms.callbacks import llm_completion_callback
 from llama_index.core import Settings
 
 

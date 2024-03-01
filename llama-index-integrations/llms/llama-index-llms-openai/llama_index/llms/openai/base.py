@@ -33,7 +33,7 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.generic_utils import (
     achat_to_completion_decorator,
     acompletion_to_chat_decorator,
     astream_chat_to_completion_decorator,
@@ -111,7 +111,7 @@ class OpenAI(LLM):
         ),
     )
 
-    api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
+    api_key: str = Field(default=None, description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
 

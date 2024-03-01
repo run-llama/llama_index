@@ -228,9 +228,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
     @staticmethod
     def get_user_agent() -> str:
         """Get user agent for elasticsearch client."""
-        import llama_index
-
-        return f"llama_index-py-vs/{llama_index.core.__version__}"
+        return "llama_index-py-vs"
 
     async def _create_index_if_not_exists(
         self, index_name: str, dims_length: Optional[int] = None
@@ -241,7 +239,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             index_name: Name of the AsyncElasticsearch index to create.
             dims_length: Length of the embedding vectors.
         """
-        if self.client.indices.exists(index=index_name):
+        if await self.client.indices.exists(index=index_name):
             logger.debug(f"Index {index_name} already exists. Skipping creation.")
 
         else:
@@ -559,7 +557,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
                     f"Could not parse metadata from hit {hit['_source']['metadata']}"
                 )
                 node_info = source.get("node_info")
-                relationships = source.get("relationships")
+                relationships = source.get("relationships", {})
                 start_char_idx = None
                 end_char_idx = None
                 if isinstance(node_info, dict):

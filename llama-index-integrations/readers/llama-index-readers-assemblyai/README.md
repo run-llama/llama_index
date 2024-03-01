@@ -20,12 +20,30 @@ You can find more info about it inside the [assemblyai-python-sdk GitHub repo](h
 pip install assemblyai
 ```
 
+Optionally: You can install the AssemblyAI integration yourself with:
+
+```bash
+pip install llama-index-readers-assemblyai
+```
+
+Then you can import it with:
+
+```python
+from llama_index.readers.assemblyai import AssemblyAIAudioTranscriptReader
+```
+
+As an alternative, you can also use the `download_loader()` to install and use this integration (see next section).
+
 ## Usage
 
 The `AssemblyAIAudioTranscriptReader` needs at least the `file_path` argument. Audio files can be specified as an URL or a local file path.
 
 ```python
-from llama_hub.assemblyai import AssemblyAIAudioTranscriptReader
+from llama_index.core import download_loader
+
+AssemblyAIAudioTranscriptReader = download_loader(
+    "AssemblyAIAudioTranscriptReader"
+)
 
 audio_file = "https://storage.googleapis.com/aai-docs-samples/nbc.mp3"
 # or a local file path: audio_file = "./nbc.mp3"
@@ -69,7 +87,7 @@ Depending on the format, one or more documents are returned. These are the diffe
 - `SUBTITLES_VTT`: One document with the transcript exported in VTT subtitles format
 
 ```python
-from llama_hub.assemblyai import TranscriptFormat
+from llama_index.readers.assemblyai import TranscriptFormat
 
 reader = AssemblyAIAudioTranscripReader(
     file_path="./your_file.mp3",

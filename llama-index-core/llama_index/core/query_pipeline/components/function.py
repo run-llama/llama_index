@@ -114,3 +114,7 @@ class FnComponent(QueryComponent):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({self.output_key})
+
+
+# alias
+FunctionComponent = FnComponent

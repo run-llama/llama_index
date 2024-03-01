@@ -149,7 +149,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             node = n.node
             score = n.score or 1.0
             if isinstance(node, IndexNode):
-                obj = self.object_map.get(node.index_id, None)
+                obj = node.obj or self.object_map.get(node.index_id, None)
                 if obj is not None:
                     if self._verbose:
                         print_text(
@@ -181,7 +181,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             node = n.node
             score = n.score or 1.0
             if isinstance(node, IndexNode):
-                obj = self.object_map.get(node.index_id, None)
+                obj = node.obj or self.object_map.get(node.index_id, None)
                 if obj is not None:
                     if self._verbose:
                         print_text(

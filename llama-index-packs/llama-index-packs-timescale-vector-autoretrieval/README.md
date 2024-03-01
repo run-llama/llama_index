@@ -101,7 +101,7 @@ vector_store_info = VectorStoreInfo(
 )
 
 # nodes have to have their `id_` field set using a V1 UUID with the right time component
-# this can be acheived by using `client.uuid_from_time(datetime_obj)`
+# this can be achieved by using `client.uuid_from_time(datetime_obj)`
 nodes = [...]
 # an example:
 # nodes = [
@@ -144,7 +144,7 @@ response = tsv_pack.run(
 You can also use modules individually.
 
 ```python
-# use the retreiver
+# use the retriever
 retriever = tsv_pack.retriever
 nodes = retriever.retrieve("query_str")
 
