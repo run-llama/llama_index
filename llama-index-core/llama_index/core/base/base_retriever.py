@@ -166,12 +166,12 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             else:
                 retrieved_nodes.append(n)
 
-        seen = set()
-        return [
-            n
-            for n in retrieved_nodes
-            if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
-        ]
+        res = dict()
+        for n in retrieved_nodes:
+            node_hash = n.node.hash
+            if node_hash not in res:
+                res[node_hash] = n
+        return list(res.values()]
 
     async def _ahandle_recursive_retrieval(
         self, query_bundle: QueryBundle, nodes: List[NodeWithScore]
