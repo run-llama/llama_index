@@ -13,10 +13,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.llms.callbacks import (
-    llm_chat_callback,
-    llm_completion_callback,
-)
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.vertex.gemini_utils import create_gemini_client, is_gemini_model
@@ -133,6 +130,7 @@ class Vertex(LLM):
         return LLMMetadata(
             is_chat_model=self._is_chat_model,
             model_name=self.model,
+            system_role=MessageRole.USER,  # Vertex does not support the default: MessageRole.SYSTEM
         )
 
     @property

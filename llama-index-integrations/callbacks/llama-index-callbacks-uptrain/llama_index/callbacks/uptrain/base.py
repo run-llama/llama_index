@@ -118,7 +118,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                 if column == "question":
                     print(f"\nQuestion: {row[column]}")
                 elif column == "response":
-                    print(f"Response: {row[column]}")
+                    print(f"Response: {row[column]}\n")
                 elif column.startswith("score"):
                     if column in score_name_map:
                         print(f"{score_name_map[column]}: {row[column]}")

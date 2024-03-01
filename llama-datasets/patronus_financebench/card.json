@@ -1,0 +1,27 @@
+{
+  "name": "Patronus AI FinanceBench",
+  "className": "LabelledRagDataset",
+  "description": "This is a subset of the original FinanceBench dataset. FinanceBench is a first-of-its-kind test suite for evaluating the performance of LLMs on open book financial question answering (QA). This is an open source sample of 150 annotated examples used in the evaluation and analysis of models assessed in the FinanceBench paper. The dataset comprises of questions about publicly traded companies, with corresponding answers and evidence strings. The questions in FinanceBench are ecologically valid and cover a diverse set of scenarios. They are intended to be clear-cut and straightforward to answer to serve as a minimum performance standard.",
+  "numberObservations": 98,
+  "containsExamplesByHumans": true,
+  "containsExamplesByAi": false,
+  "sourceUrls": ["https://huggingface.co/datasets/PatronusAI/financebench"],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 1,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": 0.87,
+        "correctness": 2.622,
+        "faithfulness": 0.755,
+        "relevancy": 0.684
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/patronus_financebench/llamaindex_baseline.py"
+    }
+  ]
+}

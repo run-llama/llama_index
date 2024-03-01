@@ -1,0 +1,27 @@
+{
+  "name": "History of Alexnet Dataset",
+  "className": "LabelledRagDataset",
+  "description": "A labelled RAG dataset based off an article, The History Began from AlexNet: A Comprehensive Survey on Deep Learning Approaches, by Md Zahangir Alom, Tarek M. Taha, Christopher Yakopcic, Stefan Westberg, Paheding Sidike, Mst Shamima Nasrin, Brian C Van Esesn, Abdul A S. Awwal, Vijayan K. Asari, consisting of queries, reference answers, and reference contexts.",
+  "numberObservations": 160,
+  "containsExamplesByHumans": false,
+  "containsExamplesByAi": true,
+  "sourceUrls": ["https://arxiv.org/abs/1803.01164"],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": 0.931,
+        "correctness": 4.434,
+        "faithfulness": 0.963,
+        "relevancy": 0.931
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/history_of_alexnet/llamaindex_baseline.py"
+    }
+  ]
+}

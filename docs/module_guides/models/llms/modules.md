@@ -84,6 +84,15 @@ maxdepth: 1
 /examples/llm/fireworks.ipynb
 ```
 
+## Friendli
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/friendli.ipynb
+```
+
 ## Gradient
 
 ```{toctree}

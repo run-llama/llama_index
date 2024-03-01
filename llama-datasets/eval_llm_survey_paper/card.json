@@ -1,0 +1,27 @@
+{
+  "name": "Evaluating LLM Survey Paper Dataset",
+  "className": "LabelledRagDataset",
+  "description": "A labelled RAG dataset over the comprehensive, spanning 111 pages in total, survey on evaluating LLMs.",
+  "numberObservations": 276,
+  "containsExamplesByHumans": false,
+  "containsExamplesByAi": true,
+  "sourceUrls": ["https://arxiv.org/pdf/2310.19736.pdf"],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": 0.923,
+        "correctness": 3.81,
+        "faithfulness": 0.888,
+        "relevancy": 0.808
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/mini_squadv2/llamaindex_baseline.py"
+    }
+  ]
+}
