@@ -119,7 +119,7 @@ vector_store = CassandraVectorStore(
 **Astra DB**
 
 ```python
-from llama_index.vector_stores.astra import AstraDBVectorStore
+from llama_index.vector_stores.astra_db import AstraDBVectorStore
 
 astra_db_store = AstraDBVectorStore(
     token="AstraCS:xY3b...",  # Your Astra DB token

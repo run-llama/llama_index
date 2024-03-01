@@ -2,11 +2,12 @@
 import json
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
+from llama_index.core.bridge.pydantic import PrivateAttr
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -350,7 +351,8 @@ class OpensearchVectorClient:
         Args:
             doc_id (str): document id
         """
-        self._os_client.delete(index=self._index, id=doc_id)
+        body = {"query": {"match": {"metadata.ref_doc_id": doc_id}}}
+        self._os_client.delete_by_query(index=self._index, body=body)
 
     def query(
         self,
@@ -418,7 +420,7 @@ class OpensearchVectorClient:
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
 
-class OpensearchVectorStore(VectorStore):
+class OpensearchVectorStore(BasePydanticVectorStore):
     """Elasticsearch/Opensearch vector store.
 
     Args:
@@ -427,12 +429,14 @@ class OpensearchVectorStore(VectorStore):
     """
 
     stores_text: bool = True
+    _client: OpensearchVectorClient = PrivateAttr(default=None)
 
     def __init__(
         self,
         client: OpensearchVectorClient,
     ) -> None:
         """Initialize params."""
+        super().__init__()
         self._client = client
 
     @property

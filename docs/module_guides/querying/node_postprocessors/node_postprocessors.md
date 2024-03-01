@@ -127,6 +127,22 @@ postprocessor.postprocess_nodes(nodes)
 
 Full notebook guide is available [her for Gatsby](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb) and [here for Lyft 10K documents](/examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
 
+## JinaRerank
+
+Uses the "Jina ReRank" functionality to re-order nodes, and returns the top N nodes.
+
+```python
+from llama_index.postprocessor.jinaai_rerank import JinaRerank
+
+postprocessor = JinaRerank(
+    top_n=2, model="jina-reranker-v1-base-en", api_key="YOUR JINA API KEY"
+)
+
+postprocessor.postprocess_nodes(nodes)
+```
+
+Full notebook guide is available [here](/examples/node_postprocessor/JinaRerank.ipynb).
+
 ## FixedRecencyPostprocessor
 
 This postproccesor returns the top K nodes sorted by date. This assumes there is a `date` field to parse in the metadata of each node.
@@ -254,7 +270,48 @@ postprocessor = RankGPTRerank(top_n=3, llm=OpenAI(model="gpt-3.5-turbo-16k"))
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [her for Van Gogh](/examples/node_postprocessor/rankGPT.ipynb).
+Full notebook guide is available [here](/examples/node_postprocessor/rankGPT.ipynb).
+
+## Colbert Reranker
+
+Uses Colbert V2 model as a reranker to rerank documents according to the fine-grained similarity between query tokens and passage tokens. Returns the top N ranked nodes.
+
+```python
+from llama_index.postprocessor.colbert_rerank import ColbertRerank
+
+colbert_reranker = ColbertRerank(
+    top_n=5,
+    model="colbert-ir/colbertv2.0",
+    tokenizer="colbert-ir/colbertv2.0",
+    keep_retrieval_score=True,
+)
+
+query_engine = index.as_query_engine(
+    similarity_top_k=10,
+    node_postprocessors=[colbert_reranker],
+)
+response = query_engine.query(
+    query_str,
+)
+```
+
+Full notebook guide is available [here](/examples/node_postprocessor/ColbertRerank.ipynb).
+
+## Jina Reranker
+
+Uses models from [jina](https://jina.ai/) to rerank documents. Returns the top N ranked nodes.
+
+```python
+from llama_index.postprocessor.jinaai_rerank import JinaRerank
+
+jina_rerank = JinaRerank(api_key=api_key, top_n=2)
+
+query_engine = index.as_query_engine(
+    similarity_top_k=10, node_postprocessors=[jina_rerank]
+)
+```
+
+Full notebook guide is available [here](/examples/node_postprocessor/JinaRerank.ipynb).
 
 ## All Notebooks
 
@@ -273,4 +330,6 @@ maxdepth: 1
 /examples/node_postprocessor/MetadataReplacementDemo.ipynb
 /examples/node_postprocessor/LongContextReorder.ipynb
 /examples/node_postprocessor/rankGPT.ipynb
+/examples/node_postprocessor/ColbertRerank.ipynb
+/examples/node_postprocessor/JinaRerank.ipynb
 ```

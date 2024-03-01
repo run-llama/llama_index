@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 from typing import Dict, List, Optional
+from fsspec import AbstractFileSystem
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -19,7 +20,10 @@ class IPYNBReader(BaseReader):
         self._concatenate = concatenate
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
         if file.name.endswith(".ipynb"):
@@ -27,7 +31,11 @@ class IPYNBReader(BaseReader):
                 import nbconvert
             except ImportError:
                 raise ImportError("Please install nbconvert 'pip install nbconvert' ")
-        string = nbconvert.exporters.ScriptExporter().from_file(file)[0]
+        if fs:
+            with fs.open(file, encoding="utf-8") as f:
+                string = nbconvert.exporters.ScriptExporter().from_file(f)[0]
+        else:
+            string = nbconvert.exporters.ScriptExporter().from_file(file)[0]
         # split each In[] cell into a separate string
         splits = re.split(r"In\[\d+\]:", string)
         # remove the first element, which is empty

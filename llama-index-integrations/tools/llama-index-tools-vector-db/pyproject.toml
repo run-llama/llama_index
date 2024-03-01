@@ -12,7 +12,6 @@ contains_example = false
 import_path = "llama_index.tools.vector_db"
 
 [tool.llamahub.class_authors]
-VectorDB = "llama-index"
 VectorDBToolSpec = "jerryjliu"
 
 [tool.mypy]

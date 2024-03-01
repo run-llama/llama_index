@@ -12,7 +12,6 @@ contains_example = false
 import_path = "llama_index.tools.requests"
 
 [tool.llamahub.class_authors]
-INVALID_URL_PROMPT = "llama-index"
 RequestsToolSpec = "ajhofmann"
 
 [tool.mypy]

@@ -57,7 +57,7 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        return self.get_nodes_from_elements(elements)
+        return self.get_nodes_from_elements(elements, node.metadata)
 
     def extract_elements(
         self,

@@ -36,7 +36,7 @@ class MyMagicAI(LLM):
         description="The session to use. This is a subfolder in the bucket where your data is located.",
     )
     role_arn: Optional[str] = Field(
-        None, description="ARN for role assumption in AWS S3"
+        None, description="ARN for role assumption in AWS S3."
     )
     system_prompt: str = Field(
         default="Answer the question based only on the given content. Do not give explanations or examples. Do not continue generating more text after the answer.",
@@ -44,6 +44,9 @@ class MyMagicAI(LLM):
     )
     question_data: Dict[str, Any] = Field(
         default_factory=dict, description="The data to send to the MyMagicAI API."
+    )
+    region: Optional[str] = Field(
+        "eu-west-2", description="The region the bucket is in. Only used for AWS S3."
     )
 
     def __init__(
@@ -54,6 +57,7 @@ class MyMagicAI(LLM):
         session: str,
         system_prompt: Optional[str],
         role_arn: Optional[str] = None,
+        region: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -66,6 +70,7 @@ class MyMagicAI(LLM):
             "max_tokens": self.max_tokens,
             "role_arn": role_arn,
             "system_prompt": system_prompt,
+            "region": region,
         }
 
     @classmethod

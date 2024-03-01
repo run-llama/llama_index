@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, cast
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.response.schema import Response
 from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.indices.query.schema import QueryBundle
 from llama_index.core.indices.tree.base import TreeIndex
 from llama_index.core.indices.tree.utils import get_numbered_text_from_nodes
@@ -32,7 +33,6 @@ from llama_index.core.schema import (
 from llama_index.core.settings import (
     Settings,
     callback_manager_from_settings_or_context,
-    prompt_helper_from_settings_or_context,
 )
 from llama_index.core.utils import print_text, truncate_text
 
@@ -93,8 +93,8 @@ class TreeSelectLeafRetriever(BaseRetriever):
         self._index_struct = index.index_struct
         self._docstore = index.docstore
         self._service_context = index.service_context
-        self._prompt_helper = prompt_helper_from_settings_or_context(
-            Settings, index.service_context
+        self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
+            self._llm.metadata,
         )
 
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT
