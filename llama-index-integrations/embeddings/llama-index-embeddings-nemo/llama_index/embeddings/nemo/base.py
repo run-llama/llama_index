@@ -2,6 +2,7 @@
 
 import json
 import requests
+import aiohttp
 from typing import Any, List, Optional
 
 from llama_index.core.base.embeddings.base import (
@@ -11,7 +12,7 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.callbacks.base import CallbackManager
 
 
-class NemoEmbedding(BaseEmbedding):
+class NeMoEmbedding(BaseEmbedding):
     """Nvidia NeMo embeddings."""
 
     def __init__(
@@ -33,9 +34,9 @@ class NemoEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        return "NemoEmbedding"
+        return "NeMoEmbedding"
 
-    def _get_embedding(self, text: str, input_type: str):
+    def _get_embedding(self, text: str, input_type: str) -> List[float]:
         payload = json.dumps(
             {"input": text, "model": self.model_name, "input_type": input_type}
         )
@@ -48,6 +49,20 @@ class NemoEmbedding(BaseEmbedding):
 
         return response["data"][0]["embedding"]
 
+    async def _aget_embedding(self, session: Any, text: str, input_type: str) -> List[float]:
+
+        headers = {"Content-Type": "application/json"}
+
+        async with session.post(
+            self.api_endpoint_url,
+            json={"input": text, "model": self.model, "input_type": input_type},
+            headers=headers,
+        ) as response:
+            response.raise_for_status()
+            answer = await response.text()
+            answer = json.loads(answer)
+            return answer["data"][0]["embedding"]
+
     def _get_query_embedding(self, query: str) -> List[float]:
         return self._get_embedding(query, input_type="query")
 
@@ -56,3 +71,13 @@ class NemoEmbedding(BaseEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         return [self._get_embedding(text, input_type="passage") for text in texts]
+
+    def _aget_query_embedding(self, query: str) -> List[float]:
+        async with aiohttp.ClientSession() as session:
+            embedding = await self._aget_embedding(session, query, "query")
+            return embedding
+
+    def _aget_text_embedding(self, text: str) -> List[float]:
+        async with aiohttp.ClientSession() as session:
+            embedding = await self._aget_embedding(session, text, "passage")
+            return embedding
