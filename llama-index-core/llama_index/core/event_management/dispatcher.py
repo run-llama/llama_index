@@ -1,4 +1,5 @@
 from typing import List, Optional, Type
+import functools
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.event_management.handlers import BaseEventHandler
 from llama_index.core.event_management.events.base import BaseEvent
@@ -21,11 +22,21 @@ class Dispatcher(BaseModel):
         """Add handler to set of handlers."""
         self.handlers += [handler]
 
-    def dispatch(self, event_cls: Type[BaseEvent]) -> None:
+    def event(self, event_cls: Type[BaseEvent]) -> None:
         """Dispatch event to all registered handlers."""
         event = event_cls()
         for h in self.handlers:
             h.handle(event)
+
+    def span_enter(self, id: str) -> None:
+        """Send notice to handlers that a span with id has started."""
+        for h in self.handlers:
+            h.span_enter(id=id)
+
+    def span_exit(self, id: str) -> None:
+        """Send notice to handlers that a span with id has started."""
+        for h in self.handlers:
+            h.span_exit(id=id)
 
     @property
     def log_name(self) -> str:
@@ -37,3 +48,19 @@ class Dispatcher(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+
+# span decorator
+def span_class_method(id: str):
+    """Syntactic sugar for starting a span on a function."""
+
+    def span_decorator(f):
+        @functools.wraps(f)
+        def wrapper(self, *args, **kwargs):
+            self.dispatcher.span_enter(id=id)
+            f(self, *args, **kwargs)
+            self.dispatcher.span_exit(id=id)
+
+        return wrapper
+
+    return span_decorator

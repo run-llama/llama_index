@@ -10,3 +10,12 @@ class NullHandler(BaseEventHandler):
 
     def handle(self, event: Any) -> None:
         """Handle logic - null handler does nothing."""
+        return
+
+    def span_enter(self, id: str) -> None:
+        """Logic for entering a span."""
+        return
+
+    def span_exit(self, id: str) -> None:
+        """Logic for exiting a span."""
+        return

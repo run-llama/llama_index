@@ -20,7 +20,7 @@ from llama_index.core.event_management.events.query import (
     QueryEndEvent,
     QueryStartEvent,
 )
-from llama_index.core.event_management.dispatcher import Dispatcher
+from llama_index.core.event_management.dispatcher import Dispatcher, span_class_method
 
 logger = logging.getLogger(__name__)
 
@@ -49,13 +49,13 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
 
+    @span_class_method("query")
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
-        self.dispatcher.dispatch(QueryStartEvent)
+        self.dispatcher.event(QueryStartEvent)
         if isinstance(str_or_query_bundle, str):
             str_or_query_bundle = QueryBundle(str_or_query_bundle)
-
         query_result = self._query(str_or_query_bundle)
-        self.dispatcher.dispatch(QueryEndEvent)
+        self.dispatcher.event(QueryEndEvent)
         return query_result
 
     async def aquery(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
