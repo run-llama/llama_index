@@ -24,12 +24,15 @@ class VoyageEmbedding(BaseEmbedding):
     """
 
     client: voyageai.Client = PrivateAttr(None)
+    aclient: voyageai.client_async.AsyncClient = PrivateAttr()
+    truncation: Optional[bool] = None
 
     def __init__(
         self,
         model_name: str = "voyage-01",
         voyage_api_key: Optional[str] = None,
         embed_batch_size: Optional[int] = None,
+        truncation: Optional[bool] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
@@ -51,59 +54,67 @@ class VoyageEmbedding(BaseEmbedding):
         )
 
         self.client = voyageai.Client(api_key=voyage_api_key)
+        self.aclient = voyageai.AsyncClient(api_key=voyage_api_key)
+        self.truncation = truncation
 
     @classmethod
     def class_name(cls) -> str:
         return "VoyageEmbedding"
 
+    def _get_embedding(self, texts: List[str], input_type: str) -> List[List[float]]:
+        return self.client.embed(
+            texts,
+            model=self.model_name,
+            input_type=input_type,
+            truncation=self.truncation,
+        ).embeddings
+
+    async def _aget_embedding(
+        self, texts: List[str], input_type: str
+    ) -> List[List[float]]:
+        r = await self.aclient.embed(
+            texts,
+            model=self.model_name,
+            input_type=input_type,
+            truncation=self.truncation,
+        )
+        return r.embeddings
+
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        return self.client.embed(
-            [query], model=self.model_name, input_type="query"
-        ).embeddings[0]
+        return self._get_embedding([query], input_type="query")[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
-        return await self.client.embed(
-            [query], model=self.model_name, input_type="query"
-        ).embeddings[0]
+        r = await self._aget_embedding([query], input_type="query")
+        return r[0]
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        return self.client.embed(
-            [text], model=self.model_name, input_type="document"
-        ).embeddings[0]
+        return self._get_embedding([text], input_type="document")[0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        return await self.client.embed(
-            [text], model=self.model_name, input_type="document"
-        ).embeddings[0]
+        r = await self._aget_embedding([text], input_type="document")
+        return r[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        return self.client.embed(
-            texts, model=self.model_name, input_type="document"
-        ).embeddings
+        return self._get_embedding(texts, input_type="document")
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        return await self.client.embed(
-            texts, model=self.model_name, input_type="document"
-        ).embeddings
+        return await self._aget_embedding(texts, input_type="document")
 
     def get_general_text_embedding(
         self, text: str, input_type: Optional[str] = None
     ) -> List[float]:
         """Get general text embedding with input_type."""
-        return self.client.embed(
-            [text], model=self.model_name, input_type=input_type
-        ).embeddings[0]
+        return self._get_embedding([text], input_type=input_type)[0]
 
     async def aget_general_text_embedding(
         self, text: str, input_type: Optional[str] = None
     ) -> List[float]:
         """Asynchronously get general text embedding with input_type."""
-        return await self.client.embed(
-            [text], model=self.model_name, input_type=input_type
-        ).embeddings[0]
+        r = await self._aget_embedding([text], input_type=input_type)
+        return r[0]
