@@ -2,6 +2,8 @@
 
 import logging
 import os
+import random
+import string
 from typing import Any, List, Optional
 
 import googleapiclient.discovery as discovery
@@ -181,6 +183,15 @@ class GoogleDocsReader(BasePydanticReader):
 
         return level, heading_label, heading_id
 
+    def _generate_doc_id(self, metadata: dict):
+        if "heading_id" in metadata:
+            heading_id = metadata["heading_id"]
+        else:
+            heading_id = "".join(
+                random.choices(string.ascii_letters + string.digits, k=8)
+            )
+        return f"{metadata['document_id']}_{heading_id}"
+
     def _structural_elements_to_docs(
         self, elements: List[Any], doc_metadata: dict
     ) -> Any:
@@ -205,9 +216,15 @@ class GoogleDocsReader(BasePydanticReader):
             if level is not None:
                 if level == self.split_on_heading_level:
                     if text.strip():
-                        docs.append(Document(text=text, metadata=metadata.copy()))
+                        docs.append(
+                            Document(
+                                id_=self._generate_doc_id(metadata),
+                                text=text,
+                                metadata=metadata.copy(),
+                            )
+                        )
                         text = ""
-                    if heading_id:
+                    if "heading_id" in metadata:
                         metadata["heading_id"] = heading_id
                 elif level < current_heading_level:
                     metadata = doc_metadata.copy()
@@ -218,7 +235,11 @@ class GoogleDocsReader(BasePydanticReader):
                 text += element_text
 
         if text:
-            docs.append(Document(text=text, metadata=metadata))
+            if docs:
+                id_ = self._generate_doc_id(metadata)
+            else:
+                id_ = metadata["document_id"]
+            docs.append(Document(id_=id_, text=text, metadata=metadata))
 
         return docs
 
