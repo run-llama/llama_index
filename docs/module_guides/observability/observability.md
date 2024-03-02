@@ -67,7 +67,14 @@ from llama_index.core import set_global_handler
 set_global_handler("langfuse")
 ```
 
-Check out the [full documentation](/examples/callbacks/LangfuseCallbackHandler.html) for more details.
+#### Guides
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/callbacks/LangfuseCallbackHandler.ipynb
+```
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
 
