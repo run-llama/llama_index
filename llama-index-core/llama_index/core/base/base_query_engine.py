@@ -20,12 +20,12 @@ from llama_index.core.event_management.events.query import (
     QueryEndEvent,
     QueryStartEvent,
 )
-from llama_index.core.event_management.dispatcher import Dispatcher, span_class_method
+from llama_index.core.event_management.dispatcher import Dispatcher, DispatcherMixin
 
 logger = logging.getLogger(__name__)
 
 
-class BaseQueryEngine(ChainableMixin, PromptMixin):
+class BaseQueryEngine(ChainableMixin, PromptMixin, DispatcherMixin):
     """Base query engine."""
 
     def __init__(
@@ -49,7 +49,7 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
 
-    @span_class_method("query")
+    @DispatcherMixin.span
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         self.dispatcher.event(QueryStartEvent)
         if isinstance(str_or_query_bundle, str):

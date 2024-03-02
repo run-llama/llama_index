@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Protocol
 import functools
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.event_management.handlers import BaseEventHandler
@@ -50,17 +50,20 @@ class Dispatcher(BaseModel):
         arbitrary_types_allowed = True
 
 
-# span decorator
-def span_class_method(id: str):
-    """Syntactic sugar for starting a span on a function."""
+# class protocol
+class HasDispatcherProtocol(Protocol):
+    @property
+    def dispatcher(self) -> Dispatcher:
+        ...
 
-    def span_decorator(f):
-        @functools.wraps(f)
-        def wrapper(self, *args, **kwargs):
+
+class DispatcherMixin:
+    @staticmethod
+    def span(func):
+        @functools.wraps(func)
+        def wrapper(self: HasDispatcherProtocol, *args, **kwargs):
             self.dispatcher.span_enter(id=id)
-            f(self, *args, **kwargs)
+            func(self, *args, **kwargs)
             self.dispatcher.span_exit(id=id)
 
         return wrapper
-
-    return span_decorator
