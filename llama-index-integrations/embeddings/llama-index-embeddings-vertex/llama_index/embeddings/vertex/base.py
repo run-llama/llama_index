@@ -3,6 +3,7 @@ from typing import Optional, List, Any, Dict, Union
 
 import vertexai
 from llama_index.core.base.embeddings.base import Embedding, BaseEmbedding
+from llama_index.core.bridge.pydantic import PrivateAttr, Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.embeddings import MultiModalEmbedding
 from llama_index.core.schema import ImageType
@@ -10,10 +11,10 @@ from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
 from vertexai.language_models import TextEmbeddingModel, TextEmbeddingInput
 from vertexai.vision_models import MultiModalEmbeddingModel, Image
 
-from llama_index.core.bridge.pydantic import PrivateAttr, Field
+from google.auth import credentials as auth_credentials
 
 
-class VertexAIEmbeddingMode(str, Enum):
+class VertexEmbeddingMode(str, Enum):
     """VertexAI embedding mode.
 
     Attributes:
@@ -32,25 +33,25 @@ class VertexAIEmbeddingMode(str, Enum):
     RETRIEVAL_MODE = "retrieval"
 
 
-_TEXT_EMBED_TASK_TYPE_MAPPING: Dict[VertexAIEmbeddingMode, str] = {
-    VertexAIEmbeddingMode.CLASSIFICATION_MODE: "CLASSIFICATION",
-    VertexAIEmbeddingMode.CLUSTERING_MODE: "CLUSTERING",
-    VertexAIEmbeddingMode.SEMANTIC_SIMILARITY_MODE: "SEMANTIC_SIMILARITY",
-    VertexAIEmbeddingMode.RETRIEVAL_MODE: "RETRIEVAL_DOCUMENT",
+_TEXT_EMBED_TASK_TYPE_MAPPING: Dict[VertexEmbeddingMode, str] = {
+    VertexEmbeddingMode.CLASSIFICATION_MODE: "CLASSIFICATION",
+    VertexEmbeddingMode.CLUSTERING_MODE: "CLUSTERING",
+    VertexEmbeddingMode.SEMANTIC_SIMILARITY_MODE: "SEMANTIC_SIMILARITY",
+    VertexEmbeddingMode.RETRIEVAL_MODE: "RETRIEVAL_DOCUMENT",
 }
 
-_QUERY_EMBED_TASK_TYPE_MAPPING: Dict[VertexAIEmbeddingMode, str] = {
-    VertexAIEmbeddingMode.CLASSIFICATION_MODE: "CLASSIFICATION",
-    VertexAIEmbeddingMode.CLUSTERING_MODE: "CLUSTERING",
-    VertexAIEmbeddingMode.SEMANTIC_SIMILARITY_MODE: "SEMANTIC_SIMILARITY",
-    VertexAIEmbeddingMode.RETRIEVAL_MODE: "RETRIEVAL_QUERY",
+_QUERY_EMBED_TASK_TYPE_MAPPING: Dict[VertexEmbeddingMode, str] = {
+    VertexEmbeddingMode.CLASSIFICATION_MODE: "CLASSIFICATION",
+    VertexEmbeddingMode.CLUSTERING_MODE: "CLUSTERING",
+    VertexEmbeddingMode.SEMANTIC_SIMILARITY_MODE: "SEMANTIC_SIMILARITY",
+    VertexEmbeddingMode.RETRIEVAL_MODE: "RETRIEVAL_QUERY",
 }
 
 
 def init_vertexai(
     project: Optional[str] = None,
     location: Optional[str] = None,
-    credentials: Optional[Any] = None,
+    credentials: Optional[auth_credentials.Credentials] = None,
 ) -> None:
     """Init vertexai.
 
@@ -60,9 +61,6 @@ def init_vertexai(
         credentials: The default custom
             credentials to use when making API calls. If not provided credentials
             will be ascertained from the environment.
-
-    Raises:
-        ImportError: If importing vertexai SDK did not succeed.
     """
     vertexai.init(
         project=project,
@@ -72,9 +70,9 @@ def init_vertexai(
 
 
 def _get_embedding_request(
-    texts: List[str], embed_mode: VertexAIEmbeddingMode, is_query: bool
+    texts: List[str], embed_mode: VertexEmbeddingMode, is_query: bool
 ) -> List[Union[str, TextEmbeddingInput]]:
-    if embed_mode != VertexAIEmbeddingMode.DEFAULT_MODE:
+    if embed_mode != VertexEmbeddingMode.DEFAULT_MODE:
         mapping = (
             _QUERY_EMBED_TASK_TYPE_MAPPING
             if is_query
@@ -88,7 +86,7 @@ def _get_embedding_request(
 
 
 class VertexTextEmbedding(BaseEmbedding):
-    embed_mode: VertexAIEmbeddingMode = Field(description="The embedding mode to use.")
+    embed_mode: VertexEmbeddingMode = Field(description="The embedding mode to use.")
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Vertex."
     )
@@ -100,8 +98,8 @@ class VertexTextEmbedding(BaseEmbedding):
         model_name: str = "textembedding-gecko@003",
         project: Optional[str] = None,
         location: Optional[str] = None,
-        credentials: Optional[Any] = None,
-        embed_mode: VertexAIEmbeddingMode = VertexAIEmbeddingMode.RETRIEVAL_MODE,
+        credentials: Optional[auth_credentials.Credentials] = None,
+        embed_mode: VertexEmbeddingMode = VertexEmbeddingMode.RETRIEVAL_MODE,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -132,6 +130,9 @@ class VertexTextEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> Embedding:
         return self._get_text_embeddings([text])[0]
+
+    async def _aget_text_embedding(self, text: str) -> Embedding:
+        return (await self._aget_text_embeddings([text]))[0]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         texts = _get_embedding_request(
@@ -198,7 +199,9 @@ class VertexMultiModalEmbedding(MultiModalEmbedding):
 
     def _get_text_embedding(self, text: str) -> Embedding:
         return self._model.get_embeddings(
-            contextual_text=text, dimension=self._embed_dimension
+            contextual_text=text,
+            dimension=self.embed_dimension,
+            **self.additional_kwargs
         ).text_embedding
 
     def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:
@@ -207,7 +210,7 @@ class VertexMultiModalEmbedding(MultiModalEmbedding):
         else:
             image = Image(image_bytes=img_file_path.getvalue())
         embeddings = self._model.get_embeddings(
-            image=image, dimension=self._embed_dimension
+            image=image, dimension=self.embed_dimension, **self.additional_kwargs
         )
         return embeddings.image_embedding
 
