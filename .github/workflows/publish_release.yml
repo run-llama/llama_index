@@ -14,6 +14,7 @@ env:
 jobs:
   build-n-publish:
     name: Build and publish to PyPI
+    if: github.repository == 'run-llama/llama_index'
     runs-on: ubuntu-latest
 
     steps:
