@@ -1,11 +1,22 @@
 """Finance Chat LlamaPack class."""
 
 from typing import Optional, List, Any
+
+# The following imports have been adjusted to fix the ModuleNotFoundError
+from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.llms.openai import OpenAI
-from llama_index.agent import OpenAIAgent
 from llama_index.tools.finance import FinanceAgentToolSpec
-from llama_index.tools.tool_spec.base import BaseToolSpec
-from llama_index.tools.query_engine import QueryEngineTool
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from llama_index.core.readers.base import BaseReader
+from llama_index.core.utilities.sql_wrapper import SQLDatabase
+from llama_index.core.tools.query_engine import QueryEngineTool
+from llama_index.agent import OpenAIAgent
+from llama_index.readers.schema import Document
+from llama_index.llms.base import ChatMessage
+from sqlalchemy import MetaData, text
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import NoSuchTableError
+from sqlalchemy.schema import CreateTable
 
 
 class SQLDatabaseToolSpec(BaseToolSpec, BaseReader):
@@ -104,7 +115,7 @@ class SQLDatabaseToolSpec(BaseToolSpec, BaseReader):
 
     def describe_tables(self, tables: Optional[List[str]] = None) -> str:
         """
-        Describes the specifed tables in the database.
+        Describes the specified tables in the database.
 
         Args:
             tables (List[str]): A list of table names to retrieve details about
@@ -128,24 +139,45 @@ class SQLDatabaseToolSpec(BaseToolSpec, BaseReader):
 
         return "\n".join(table_schemas)
 
+    def get_table_info(self) -> str:
+        """Construct table info for the all tables in DB which includes information about the columns of the table and also shows top row of the table."""
+        all_table_info = ""
+        for table_name in self.list_tables():
+            table_info = self.sql_database.get_single_table_info(table_name)
+            table_info += f"\n\nHere is the DDL statement for this table:\n"
+            table_info += self.describe_tables([table_name])
+            _, output = self.sql_database.run_sql(f"SELECT * FROM {table_name} LIMIT 1")
+            table_info += f"\nTop row of {table_name}:\n\n"
+            for colname in output["col_keys"]:
+                table_info += colname + "\t"
+            table_info += "\n"
+            for data in output["result"]:
+                for val in data:
+                    table_info += str(val) + "\t"
+                table_info += "\n"
+            all_table_info += f"\n{table_info}\n"
+        return all_table_info
+
 
 class FinanceChatPack(BaseLlamaPack):
     def __init__(
+        self,
         polygon_api_key: str,
         finnhub_api_key: str,
         alpha_vantage_api_key: str,
         newsapi_api_key: str,
         openai_api_key: str,
         postgres_db_uri: str,
+        gpt_model_name: str = "gpt-4-0613",
     ):
-        llm = OpenAI(temperature=0, model=GPT_MODEL_NAME, api_key=openai_api_key)
+        llm = OpenAI(temperature=0, model=gpt_model_name, api_key=openai_api_key)
         self.db_tool_spec = SQLDatabaseToolSpec(uri=postgres_db_uri)
         self.fin_tool_spec = FinanceAgentToolSpec(
             polygon_api_key, finnhub_api_key, alpha_vantage_api_key, newsapi_api_key
         )
 
-        table_info = self.get_table_info()
-        prefix_messages = self.construct_prefix_db_message()
+        self.db_table_info = self.db_tool_spec.get_table_info()
+        prefix_messages = self.construct_prefix_db_message(self.db_table_info)
         # add some role play in the system .
         database_agent = OpenAIAgent.from_tools(
             [
@@ -161,7 +193,7 @@ class FinanceChatPack(BaseLlamaPack):
             database_agent,
             name="database_agent",
             description=""""
-                This agent analyzes a text query and add further explainations and thoughts to help a data scientist who has access to following tables:
+                This agent analyzes a text query and add further explanations and thoughts to help a data scientist who has access to following tables:
 
                 {table_info}
 
@@ -201,31 +233,7 @@ class FinanceChatPack(BaseLlamaPack):
             verbose=True,
         )
 
-    def get_table_info(self) -> str:
-        """Construct table info for the all tables in the database."""
-        all_table_info = ""
-        for table_name in self.db_tool_spec.list_tables():
-            table_info = self.db_tool_spec.sql_database.get_single_table_info(
-                table_name
-            )
-            table_info += f"\n\nHere is the DDL statement for this table:\n"
-            table_info += self.db_tool_spec.describe_tables([table_name])
-            _, output = self.db_tool_spec.sql_database.run_sql(
-                f"SELECT * FROM {table_name} LIMIT 1"
-            )
-            table_info += f"\nTop row of {table_name}:\n\n"
-            for colname in output["col_keys"]:
-                table_info += colname + "\t"
-            table_info += "\n"
-            for data in output["result"]:
-                for val in data:
-                    table_info += str(val) + "\t"
-                table_info += "\n"
-            all_table_info += f"\n{table_info}\n"
-        return all_table_info
-
-    def construct_prefix_db_message(self) -> str:
-        table_info = get_table_info(self.db_tool_spec)
+    def construct_prefix_db_message(self, table_info: str) -> str:
         system_prompt = f"""
         You are a smart data scientist working in a reputed trading firm like Jump Trading developing automated trading algorithms. Take a deep breathe and think
         step by step to design queries over a SQL database.
