@@ -46,10 +46,15 @@ class CSVReader(BaseReader):
             csv_reader = csv.reader(fp)
             for row in csv_reader:
                 text_list.append(", ".join(row))
+
+        metadata = {"filename": file.name, "extension": file.suffix}
+        if extra_info:
+            metadata = {**metadata, **extra_info}
+
         if self._concat_rows:
-            return [Document(text="\n".join(text_list), metadata=extra_info)]
+            return [Document(text="\n".join(text_list), metadata=metadata)]
         else:
-            return [Document(text=text, metadata=extra_info) for text in text_list]
+            return [Document(text=text, metadata=metadata) for text in text_list]
 
 
 class PandasCSVReader(BaseReader):
