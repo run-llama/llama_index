@@ -322,6 +322,15 @@ class BedrockEmbedding(BaseEmbedding):
     def _get_embedding(
         self, payload: Union[str, List[str]], type: Literal["text", "query"]
     ) -> Union[Embedding, List[Embedding]]:
+        """Get the embedding for the given payload.
+
+        Args:
+            payload (Union[str, List[str]]): The text or list of texts for which the embeddings are to be obtained.
+            type (Literal[&quot;text&quot;, &quot;query&quot;]): The type of the payload. It can be either "text" or "query".
+
+        Returns:
+            Union[Embedding, List[Embedding]]: The embedding or list of embeddings for the given payload. If the payload is a list of strings, then the response will be a list of embeddings.
+        """
         if self._client is None:
             self.set_credentials()
 
