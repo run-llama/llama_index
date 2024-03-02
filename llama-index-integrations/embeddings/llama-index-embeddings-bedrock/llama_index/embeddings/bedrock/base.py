@@ -31,7 +31,7 @@ PROVIDER_SPECIFIC_IDENTIFIERS = {
     },
     PROVIDERS.COHERE.value: {
         "get_embeddings_func": lambda r, isbatch: (
-            r.get("embeddings") if isbatch else r.get("embedding")[0]
+            r.get("embeddings") if isbatch else r.get("embeddings")[0]
         ),
     },
 }
