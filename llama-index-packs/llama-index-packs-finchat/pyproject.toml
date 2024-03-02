@@ -10,9 +10,9 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["CorrectiveRAGPack"]
+classes = ["FinanceChatPack"]
 contains_example = false
-import_path = "llama_index.packs.corrective_rag"
+import_path = "llama_index.packs.finchat"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -23,7 +23,7 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Ishan Gupta <345ishaan@gmail.com>"]
-description = "llama-index packs implementation of a heirarchical agent for finance chat."
+description = "llama-index packs implementation of a hierarchical agent for finance chat."
 keywords = ["agent", "finance", "finchat"]
 license = "MIT"
 maintainers = ["345ishaan"]
