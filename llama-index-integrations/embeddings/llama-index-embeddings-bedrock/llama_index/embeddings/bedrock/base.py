@@ -3,7 +3,7 @@ import os
 import warnings
 from enum import Enum
 from deprecated import deprecated
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
 from llama_index.core.base.embeddings.base import BaseEmbedding, Embedding
 from llama_index.core.base.llms.types import ChatMessage
@@ -27,10 +27,12 @@ class Models(str, Enum):
 
 PROVIDER_SPECIFIC_IDENTIFIERS = {
     PROVIDERS.AMAZON.value: {
-        "get_embeddings_func": lambda r: r.get("embedding"),
+        "get_embeddings_func": lambda r, isbatch: r.get("embedding"),
     },
     PROVIDERS.COHERE.value: {
-        "get_embeddings_func": lambda r: r.get("embeddings")[0],
+        "get_embeddings_func": lambda r, isbatch: (
+            r.get("embeddings") if isbatch else r.get("embedding")[0]
+        ),
     },
 }
 
@@ -317,7 +319,9 @@ class BedrockEmbedding(BaseEmbedding):
             verbose=verbose,
         )
 
-    def _get_embedding(self, payload: str, type: Literal["text", "query"]) -> Embedding:
+    def _get_embedding(
+        self, payload: Union[str, List[str]], type: Literal["text", "query"]
+    ) -> Union[Embedding, List[Embedding]]:
         if self._client is None:
             self.set_credentials()
 
@@ -338,7 +342,7 @@ class BedrockEmbedding(BaseEmbedding):
         identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider, None)
         if identifiers is None:
             raise ValueError("Provider not supported")
-        return identifiers["get_embeddings_func"](resp)
+        return identifiers["get_embeddings_func"](resp, isinstance(payload, list))
 
     def _get_query_embedding(self, query: str) -> Embedding:
         return self._get_embedding(query, "query")
@@ -346,8 +350,17 @@ class BedrockEmbedding(BaseEmbedding):
     def _get_text_embedding(self, text: str) -> Embedding:
         return self._get_embedding(text, "text")
 
+    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+        provider = self.model.split(".")[0]
+        if provider == PROVIDERS.COHERE:
+            return self._get_embedding(texts, "text")
+        return super()._get_text_embeddings(texts)
+
     def _get_request_body(
-        self, provider: str, payload: str, type: Literal["text", "query"]
+        self,
+        provider: str,
+        payload: Union[str, List[str]],
+        input_type: Literal["text", "query"],
     ) -> Any:
         """Build the request body as per the provider.
         Currently supported providers are amazon, cohere.
@@ -366,6 +379,8 @@ class BedrockEmbedding(BaseEmbedding):
 
         """
         if provider == PROVIDERS.AMAZON:
+            if isinstance(payload, list):
+                raise ValueError("Amazon provider does not support list of texts")
             request_body = json.dumps({"inputText": payload})
         elif provider == PROVIDERS.COHERE:
             input_types = {
@@ -374,8 +389,8 @@ class BedrockEmbedding(BaseEmbedding):
             }
             request_body = json.dumps(
                 {
-                    "texts": [payload],
-                    "input_type": input_types[type],
+                    "texts": [payload] if isinstance(payload, str) else payload,
+                    "input_type": input_types[input_type],
                     "truncate": "NONE",
                 }
             )
