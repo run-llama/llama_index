@@ -10,9 +10,9 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from llama_index.core.tools.query_engine import QueryEngineTool
-from llama_index.agent import OpenAIAgent
-from llama_index.readers.schema import Document
-from llama_index.llms.base import ChatMessage
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.schema import Document
+from llama_index.core.base.llms.types import ChatMessage
 from sqlalchemy import MetaData, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import NoSuchTableError
