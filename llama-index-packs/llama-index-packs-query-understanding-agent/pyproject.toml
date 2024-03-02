@@ -17,7 +17,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Sasha Sheng <hackgoofer@gmail.com>"]
 description = "llama-index packs query understanding agent integration"
 license = "MIT"
 name = "llama-index-packs-query-understanding-agent"
