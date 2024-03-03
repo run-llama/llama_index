@@ -1,5 +1,5 @@
-from llama_index.core.event_management.dispatcher import Dispatcher
-from llama_index.core.event_management.handlers import NullHandler
+from llama_index.core.instrumentation.dispatcher import Dispatcher
+from llama_index.core.instrumentation.handlers import NullHandler
 
 root_dispatcher: Dispatcher = Dispatcher(
     name="root",

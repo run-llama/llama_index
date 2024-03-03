@@ -1,5 +1,5 @@
 from typing import Any
-from llama_index.core.event_management.handlers.base import BaseEventHandler
+from llama_index.core.instrumentation.handlers.base import BaseEventHandler
 
 
 class NullHandler(BaseEventHandler):

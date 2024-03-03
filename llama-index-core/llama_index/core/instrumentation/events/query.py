@@ -1,4 +1,4 @@
-from llama_index.core.event_management.events.base import BaseEvent
+from llama_index.core.instrumentation.events.base import BaseEvent
 
 
 class QueryStartEvent(BaseEvent):

@@ -3,8 +3,8 @@ import functools
 import inspect
 import uuid
 from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.event_management.handlers import BaseEventHandler
-from llama_index.core.event_management.events.base import BaseEvent
+from llama_index.core.instrumentation.handlers import BaseEventHandler
+from llama_index.core.instrumentation.events.base import BaseEvent
 
 
 class Dispatcher(BaseModel):
