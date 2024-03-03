@@ -58,11 +58,14 @@ class BaseQueryEngine(ChainableMixin, PromptMixin, DispatcherMixin):
         self.dispatcher.event(QueryEndEvent)
         return query_result
 
+    @DispatcherMixin.span
     async def aquery(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
-        with self.callback_manager.as_trace("query"):
-            if isinstance(str_or_query_bundle, str):
-                str_or_query_bundle = QueryBundle(str_or_query_bundle)
-            return await self._aquery(str_or_query_bundle)
+        self.dispatcher.event(QueryStartEvent)
+        if isinstance(str_or_query_bundle, str):
+            str_or_query_bundle = QueryBundle(str_or_query_bundle)
+        query_result = await self._aquery(str_or_query_bundle)
+        self.dispatcher.event(QueryEndEvent)
+        return query_result
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         raise NotImplementedError(

@@ -1,5 +1,7 @@
 from typing import List, Optional, Type, Protocol
 import functools
+import inspect
+import uuid
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.event_management.handlers import BaseEventHandler
 from llama_index.core.event_management.events.base import BaseEvent
@@ -33,6 +35,11 @@ class Dispatcher(BaseModel):
         for h in self.handlers:
             h.span_enter(id=id)
 
+    def span_drop(self, id: str) -> None:
+        """Send notice to handlers that a span with id has started."""
+        # for h in self.handlers:
+        #     h.span_drop(id=id)
+
     def span_exit(self, id: str) -> None:
         """Send notice to handlers that a span with id has started."""
         for h in self.handlers:
@@ -62,8 +69,27 @@ class DispatcherMixin:
     def span(func):
         @functools.wraps(func)
         def wrapper(self: HasDispatcherProtocol, *args, **kwargs):
+            id = f"{func.__name__}-{uuid.uuid4()}"
             self.dispatcher.span_enter(id=id)
-            func(self, *args, **kwargs)
-            self.dispatcher.span_exit(id=id)
+            try:
+                func(self, *args, **kwargs)
+            except Exception as e:
+                self.dispatcher.span_drop(id=id)
+            finally:
+                self.dispatcher.span_exit(id=id)
 
-        return wrapper
+        @functools.wraps(func)
+        async def async_wrapper(self: HasDispatcherProtocol, *args, **kwargs):
+            id = f"{func.__name__}-{uuid.uuid4()}"
+            self.dispatcher.span_enter(id=id)
+            try:
+                await func(self, *args, **kwargs)
+            except Exception as e:
+                self.dispatcher.span_drop(id=id)
+            finally:
+                self.dispatcher.span_exit(id=id)
+
+        if inspect.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return wrapper
