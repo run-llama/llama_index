@@ -238,7 +238,7 @@ class VertexMultiModalEmbeddingTest(unittest.TestCase):
             _prediction_response=None, image_embedding=[0.1, 0.2, 0.3]
         )
 
-        image = PillowImage.open("data/test-image.jpg")
+        image = PillowImage.new("RGB", (128, 128))
         bytes_io = io.BytesIO()
         image.save(bytes_io, "jpeg")
         bytes_io.seek(0)
