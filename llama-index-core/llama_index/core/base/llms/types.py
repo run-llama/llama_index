@@ -29,10 +29,10 @@ class ChatMessage(BaseModel):
 
     @classmethod
     def from_str(
-        cls, 
-        content: str, 
+        cls,
+        content: str,
         role: Union[MessageRole, str] = MessageRole.USER,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> "ChatMessage":
         if isinstance(role, str):
             role = MessageRole(role)
