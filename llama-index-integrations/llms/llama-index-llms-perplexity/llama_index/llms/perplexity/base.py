@@ -115,7 +115,7 @@ class Perplexity(LLM):
             "sonar-medium-online": 12000,
             "codellama-34b-instruct": 16384,
             "mistral-7b-instruct": 16384,
-            "mixtral-8x7b-instruct": 16384
+            "mixtral-8x7b-instruct": 16384,
         }
         return model_context_windows.get(
             self.model, 4096
@@ -126,10 +126,9 @@ class Perplexity(LLM):
             "sonar-small-chat",
             "sonar-small-online",
             "sonar-medium-chat",
-            "sonar-medium-online"
-            "codellama-34b-instruct",
+            "sonar-medium-online" "codellama-34b-instruct",
             "mistral-7b-instruct",
-            "mixtral-8x7b-instruct"
+            "mixtral-8x7b-instruct",
         }
         return self.model in chat_models
 
