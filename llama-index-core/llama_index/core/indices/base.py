@@ -85,6 +85,9 @@ class BaseIndex(Generic[IS], ABC):
 
         objects = objects or []
         self._object_map = {obj.index_id: obj.obj for obj in objects}
+        for obj in objects:
+            obj.obj = None  # clear the object to avoid serialization issues
+
         with self._callback_manager.as_trace("index_construction"):
             if index_struct is None:
                 nodes = nodes or []
