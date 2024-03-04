@@ -150,7 +150,8 @@ class Anthropic(LLM):
         response = self._client.messages.create(
             messages=anthropic_messages,
             stream=False,
-            system_prompt=system_prompt**all_kwargs,
+            system_prompt=system_prompt,
+            **all_kwargs,
         )
         return ChatResponse(
             message=ChatMessage(
@@ -209,7 +210,7 @@ class Anthropic(LLM):
             messages=anthropic_messages,
             system_prompt=system_prompt,
             stream=False,
-            **all_kwargs
+            **all_kwargs,
         )
         return ChatResponse(
             message=ChatMessage(
