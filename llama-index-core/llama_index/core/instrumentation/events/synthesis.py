@@ -8,8 +8,22 @@ class SynthesizeStartEvent(BaseEvent):
         return "SynthesizeStartEvent"
 
 
-class RetrievalEndEvent(BaseEvent):
+class SynthesizeEndEvent(BaseEvent):
     @classmethod
     def class_name(cls):
         """Class name."""
-        return "RetrievalEndEvent"
+        return "SynthesizeEndEvent"
+
+
+class GetResponseStartEvent(BaseEvent):
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "GetResponseStartEvent"
+
+
+class GetResponseEndEvent(BaseEvent):
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "GetResponseEndEvent"
