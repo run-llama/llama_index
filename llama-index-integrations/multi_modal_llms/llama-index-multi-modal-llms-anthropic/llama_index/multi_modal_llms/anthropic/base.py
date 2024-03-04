@@ -113,7 +113,8 @@ class AnthropicMultiModal(MultiModalLLM):
             api_version=api_version,
             callback_manager=callback_manager,
             default_headers=default_headers,
-            system_promt=system_prompt**kwargs,
+            system_promt=system_prompt,
+            **kwargs,
         )
         self._http_client = http_client
         self._client, self._aclient = self._get_clients(**kwargs)
@@ -140,8 +141,6 @@ class AnthropicMultiModal(MultiModalLLM):
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
-            "http_client": self._http_client,
             "timeout": self.timeout,
             **kwargs,
         }
@@ -194,10 +193,11 @@ class AnthropicMultiModal(MultiModalLLM):
         message_dict = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
+
         response = self._client.messages.create(
             messages=message_dict,
-            stream=False,
             system=self.system_prompt,
+            stream=False,
             **all_kwargs,
         )
 
@@ -247,6 +247,18 @@ class AnthropicMultiModal(MultiModalLLM):
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponseGen:
         return self._stream_complete(prompt, image_documents, **kwargs)
+
+    def chat(
+        self,
+        **kwargs: Any,
+    ) -> Any:
+        raise NotImplementedError("This function is not yet implemented.")
+
+    def stream_chat(
+        self,
+        **kwargs: Any,
+    ) -> Any:
+        raise NotImplementedError("This function is not yet implemented.")
 
     # ===== Async Endpoints =====
 
@@ -310,3 +322,9 @@ class AnthropicMultiModal(MultiModalLLM):
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         return await self._astream_complete(prompt, image_documents, **kwargs)
+
+    async def achat(self, **kwargs: Any) -> Any:
+        raise NotImplementedError("This function is not yet implemented.")
+
+    async def astream_chat(self, **kwargs: Any) -> Any:
+        raise NotImplementedError("This function is not yet implemented.")

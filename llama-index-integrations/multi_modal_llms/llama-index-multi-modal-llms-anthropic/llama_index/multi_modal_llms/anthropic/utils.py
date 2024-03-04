@@ -7,7 +7,7 @@ from llama_index.core.schema import ImageDocument
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_ANTHROPIC_API_TYPE = "anthropic_ai"
-DEFAULT_ANTHROPIC_API_BASE = "https://api.anthropic.com/v1/"
+DEFAULT_ANTHROPIC_API_BASE = "https://api.anthropic.com"
 DEFAULT_ANTHROPIC_API_VERSION = ""
 
 
@@ -33,13 +33,13 @@ def generate_anthropic_multi_modal_chat_message(
 ) -> ChatMessage:
     # if image_documents is empty, return text only chat message
     if image_documents is None:
-        return [{"role": role, "content": prompt}]
+        return [{"role": role.value, "content": prompt}]
 
     # if image_documents is not empty, return text with images chat message
-    completion_content = [{"type": "text", "text": prompt}]
+    completion_content = []
     for image_document in image_documents:
         image_content: Dict[str, Any] = {}
-        mimetype = image_document.image_mimetype or "image/jpeg"
+        mimetype = image_document.image_mimetype or "image/png"
         if image_document.image_path and image_document.image_path != "":
             base64_image = encode_image(image_document.image_path)
             image_content = {
@@ -66,7 +66,9 @@ def generate_anthropic_multi_modal_chat_message(
 
         completion_content.append(image_content)
 
-    return [{"role": role, "content": completion_content}]
+    completion_content.append({"type": "text", "text": prompt})
+
+    return [{"role": role.value, "content": completion_content}]
 
 
 def resolve_anthropic_credentials(
