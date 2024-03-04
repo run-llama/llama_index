@@ -1,6 +1,5 @@
 """Base vector store index query."""
 
-
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -17,6 +16,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
+from llama_index.core.instrumentation.dispatcher import Dispatcher
 
 
 class VectorIndexRetriever(BaseRetriever):
@@ -47,6 +47,7 @@ class VectorIndexRetriever(BaseRetriever):
         doc_ids: Optional[List[str]] = None,
         sparse_top_k: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
+        dispatcher: Optional[Dispatcher] = None,
         object_map: Optional[dict] = None,
         embed_model: Optional[BaseEmbedding] = None,
         verbose: bool = False,
@@ -67,7 +68,10 @@ class VectorIndexRetriever(BaseRetriever):
         self._sparse_top_k = sparse_top_k
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
         super().__init__(
-            callback_manager=callback_manager, object_map=object_map, verbose=verbose
+            callback_manager=callback_manager,
+            object_map=object_map,
+            verbose=verbose,
+            dispatcher=dispatcher,
         )
 
     @property
@@ -146,11 +150,9 @@ class VectorIndexRetriever(BaseRetriever):
                 ):
                     node_id = query_result.nodes[i].node_id
                     if self._docstore.document_exists(node_id):
-                        query_result.nodes[
-                            i
-                        ] = self._docstore.get_node(  # type: ignore[index]
+                        query_result.nodes[i] = self._docstore.get_node(
                             node_id
-                        )
+                        )  # type: ignore[index]
 
         log_vector_store_query_result(query_result)
 

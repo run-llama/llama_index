@@ -393,6 +393,7 @@ class BaseIndex(Generic[IS], ABC):
         )
 
         retriever = self.as_retriever(**kwargs)
+        print(f"retriever dispatcher: {retriever.dispatcher}", flush=True)
         llm = (
             resolve_llm(llm, callback_manager=self._callback_manager)
             if llm

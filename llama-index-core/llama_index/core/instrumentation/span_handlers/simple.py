@@ -16,9 +16,9 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         """Class name."""
         return "SimpleSpanHandler"
 
-    def new_span(self, id: str, parent_span: Optional[str]) -> SimpleSpan:
+    def new_span(self, id: str, parent_span_id: Optional[str]) -> SimpleSpan:
         """Create a span."""
-        return SimpleSpan(id_=id, parent_span=parent_span)
+        return SimpleSpan(id_=id, parent_id=parent_span_id)
 
     def prepare_to_drop_span(self, id: str) -> None:
         """Logic for preparing to drop a span."""

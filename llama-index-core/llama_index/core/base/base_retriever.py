@@ -1,4 +1,5 @@
 """Base retriever."""
+
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
@@ -29,18 +30,27 @@ from llama_index.core.schema import (
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
+from llama_index.core.instrumentation.dispatcher import Dispatcher, DispatcherMixin
 
 
-class BaseRetriever(ChainableMixin, PromptMixin):
+class BaseRetriever(ChainableMixin, PromptMixin, DispatcherMixin):
     """Base retriever."""
 
     def __init__(
         self,
         callback_manager: Optional[CallbackManager] = None,
+        dispatcher: Optional[Dispatcher] = None,
         object_map: Optional[Dict] = None,
         objects: Optional[List[IndexNode]] = None,
         verbose: bool = False,
     ) -> None:
+        if dispatcher is None:
+            import llama_index.core.instrumentation as instrument
+
+            dispatcher = instrument.get_dispatcher(__name__)
+
+        self.dispatcher = dispatcher
+
         self.callback_manager = callback_manager or CallbackManager()
 
         if objects is not None:
@@ -207,6 +217,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
         ]
 
+    @DispatcherMixin.span
     def retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         """Retrieve nodes given query.
 

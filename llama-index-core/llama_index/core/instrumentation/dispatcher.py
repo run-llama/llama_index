@@ -76,7 +76,7 @@ class DispatcherMixin:
             id = f"{func.__name__}-{uuid.uuid4()}"
             self.dispatcher.span_enter(id=id)
             try:
-                func(self, *args, **kwargs)
+                return func(self, *args, **kwargs)
             except Exception as e:
                 self.dispatcher.span_drop(id=id)
             finally:
@@ -87,7 +87,7 @@ class DispatcherMixin:
             id = f"{func.__name__}-{uuid.uuid4()}"
             self.dispatcher.span_enter(id=id)
             try:
-                await func(self, *args, **kwargs)
+                return await func(self, *args, **kwargs)
             except Exception as e:
                 self.dispatcher.span_drop(id=id)
             finally:
