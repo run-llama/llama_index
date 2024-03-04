@@ -1,12 +1,8 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import httpx
 from anthropic.types import ContentBlockDeltaEvent
 from llama_index.core.base.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseAsyncGen,
-    ChatResponseGen,
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
@@ -27,10 +23,6 @@ from llama_index.core.multi_modal_llms import (
     MultiModalLLMMetadata,
 )
 from llama_index.core.schema import ImageDocument
-from llama_index.llms.openai.utils import (
-    from_openai_message,
-    to_openai_message_dicts,
-)
 from llama_index.multi_modal_llms.anthropic.utils import (
     ANTHROPIC_MULTI_MODAL_MODELS,
     generate_anthropic_multi_modal_chat_message,
@@ -215,23 +207,6 @@ class AnthropicMultiModal(MultiModalLLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
-    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        all_kwargs = self._get_model_kwargs(**kwargs)
-        message_dicts = to_openai_message_dicts(messages)
-        response = self._client.messages.create(
-            messages=message_dicts,
-            stream=False,
-            **all_kwargs,
-        )
-        openai_message = response.choices[0].message
-        message = from_openai_message(openai_message)
-
-        return ChatResponse(
-            message=message,
-            raw=response,
-            additional_kwargs=self._get_response_token_counts(response),
-        )
-
     def _stream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponseGen:
@@ -263,54 +238,6 @@ class AnthropicMultiModal(MultiModalLLM):
 
         return gen()
 
-    def _stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
-        message_dicts = to_openai_message_dicts(messages)
-
-        def gen() -> ChatResponseGen:
-            content = ""
-            tool_calls: List[ChoiceDeltaToolCall] = []
-
-            is_function = False
-            for response in self._client.messages.create(
-                messages=message_dicts,
-                stream=True,
-                **self._get_model_kwargs(**kwargs),
-            ):
-                response = cast(ChatCompletionChunk, response)
-                if len(response.choices) > 0:
-                    delta = response.choices[0].delta
-                else:
-                    delta = ChoiceDelta()
-
-                # check if this chunk is the start of a function call
-                if delta.tool_calls:
-                    is_function = True
-
-                # update using deltas
-                role = delta.role or MessageRole.ASSISTANT
-                content_delta = delta.content or ""
-                content += content_delta
-
-                additional_kwargs = {}
-                if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
-                    additional_kwargs["tool_calls"] = tool_calls
-
-                yield ChatResponse(
-                    message=ChatMessage(
-                        role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
-                    ),
-                    delta=content_delta,
-                    raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
-                )
-
-        return gen()
-
     def complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponse:
@@ -320,20 +247,6 @@ class AnthropicMultiModal(MultiModalLLM):
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponseGen:
         return self._stream_complete(prompt, image_documents, **kwargs)
-
-    def chat(
-        self,
-        messages: Sequence[ChatMessage],
-        **kwargs: Any,
-    ) -> ChatResponse:
-        return self._chat(messages, **kwargs)
-
-    def stream_chat(
-        self,
-        messages: Sequence[ChatMessage],
-        **kwargs: Any,
-    ) -> ChatResponseGen:
-        return self._stream_chat(messages, **kwargs)
 
     # ===== Async Endpoints =====
 
@@ -393,88 +306,7 @@ class AnthropicMultiModal(MultiModalLLM):
 
         return gen()
 
-    async def _achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponse:
-        all_kwargs = self._get_model_kwargs(**kwargs)
-        message_dicts = to_openai_message_dicts(messages)
-        response = await self._aclient.messages.create(
-            messages=message_dicts,
-            stream=False,
-            **all_kwargs,
-        )
-        openai_message = response.choices[0].message
-        message = from_openai_message(openai_message)
-
-        return ChatResponse(
-            message=message,
-            raw=response,
-            additional_kwargs=self._get_response_token_counts(response),
-        )
-
-    async def _astream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        message_dicts = to_openai_message_dicts(messages)
-
-        async def gen() -> ChatResponseAsyncGen:
-            content = ""
-            tool_calls: List[ChoiceDeltaToolCall] = []
-
-            is_function = False
-            async for response in await self._aclient.messages.create(
-                messages=message_dicts,
-                stream=True,
-                **self._get_model_kwargs(**kwargs),
-            ):
-                response = cast(ChatCompletionChunk, response)
-                if len(response.choices) > 0:
-                    delta = response.choices[0].delta
-                else:
-                    delta = ChoiceDelta()
-
-                # check if this chunk is the start of a function call
-                if delta.tool_calls:
-                    is_function = True
-
-                # update using deltas
-                role = delta.role or MessageRole.ASSISTANT
-                content_delta = delta.content or ""
-                content += content_delta
-
-                additional_kwargs = {}
-                if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
-                    additional_kwargs["tool_calls"] = tool_calls
-
-                yield ChatResponse(
-                    message=ChatMessage(
-                        role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
-                    ),
-                    delta=content_delta,
-                    raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
-                )
-
-        return gen()
-
     async def astream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         return await self._astream_complete(prompt, image_documents, **kwargs)
-
-    async def achat(
-        self,
-        messages: Sequence[ChatMessage],
-        **kwargs: Any,
-    ) -> ChatResponse:
-        return await self._achat(messages, **kwargs)
-
-    async def astream_chat(
-        self,
-        messages: Sequence[ChatMessage],
-        **kwargs: Any,
-    ) -> ChatResponseAsyncGen:
-        return await self._astream_chat(messages, **kwargs)
