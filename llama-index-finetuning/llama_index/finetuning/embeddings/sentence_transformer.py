@@ -28,7 +28,6 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
         log_path: str = None
     ) -> None:
         """Init params."""
-        from 
         from sentence_transformers import InputExample, SentenceTransformer, losses
         from sentence_transformers_tb import TBSentenceTransformer
         from torch.utils.data import DataLoader
