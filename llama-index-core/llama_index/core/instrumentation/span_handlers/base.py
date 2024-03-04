@@ -32,7 +32,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
             if span:
                 self.open_spans[id] = span
                 self.current_span_id = id
-        print(f"current span: {self.current_span_id}")
 
     def span_exit(self, id: str) -> None:
         """Logic for exiting a span."""

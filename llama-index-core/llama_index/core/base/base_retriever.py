@@ -31,6 +31,10 @@ from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 from llama_index.core.instrumentation.dispatcher import Dispatcher, DispatcherMixin
+from llama_index.core.instrumentation.events.retrieval import (
+    RetrievalEndEvent,
+    RetrievalStartEvent,
+)
 
 
 class BaseRetriever(ChainableMixin, PromptMixin, DispatcherMixin):
@@ -227,7 +231,7 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherMixin):
 
         """
         self._check_callback_manager()
-
+        self.dispatcher.event(RetrievalStartEvent)
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -242,12 +246,13 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherMixin):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-
+        self.dispatcher.event(RetrievalEndEvent)
         return nodes
 
+    @DispatcherMixin.span
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         self._check_callback_manager()
-
+        self.dispatcher.event(RetrievalStartEvent)
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -262,7 +267,7 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherMixin):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-
+        self.dispatcher.event(RetrievalEndEvent)
         return nodes
 
     @abstractmethod

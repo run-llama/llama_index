@@ -27,6 +27,7 @@ from llama_index.core.service_context_elements.llm_predictor import (
     LLMPredictorType,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE, BasePydanticProgram
+from llama_index.core.instrumentation.dispatcher import Dispatcher, DispatcherMixin
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,7 @@ class Refine(BaseSynthesizer):
         self,
         llm: Optional[LLMPredictorType] = None,
         callback_manager: Optional[CallbackManager] = None,
+        dispatcher: Optional[Dispatcher] = None,
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         refine_template: Optional[BasePromptTemplate] = None,
@@ -122,6 +124,7 @@ class Refine(BaseSynthesizer):
         super().__init__(
             llm=llm,
             callback_manager=callback_manager,
+            dispatcher=dispatcher,
             prompt_helper=prompt_helper,
             service_context=service_context,
             streaming=streaming,
@@ -156,6 +159,7 @@ class Refine(BaseSynthesizer):
         if "refine_template" in prompts:
             self._refine_template = prompts["refine_template"]
 
+    @DispatcherMixin.span
     def get_response(
         self,
         query_str: str,

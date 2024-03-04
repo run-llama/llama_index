@@ -33,6 +33,7 @@ from llama_index.core.settings import (
     llm_from_settings_or_context,
 )
 from llama_index.core.types import BasePydanticProgram
+from llama_index.core.instrumentation.dispatcher import Dispatcher
 
 
 def get_response_synthesizer(
@@ -45,6 +46,7 @@ def get_response_synthesizer(
     simple_template: Optional[BasePromptTemplate] = None,
     response_mode: ResponseMode = ResponseMode.COMPACT,
     callback_manager: Optional[CallbackManager] = None,
+    dispatcher: Optional[Dispatcher] = None,
     use_async: bool = False,
     streaming: bool = False,
     structured_answer_filtering: bool = False,
@@ -78,6 +80,7 @@ def get_response_synthesizer(
         return Refine(
             llm=llm,
             callback_manager=callback_manager,
+            dispatcher=dispatcher,
             prompt_helper=prompt_helper,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
@@ -93,6 +96,7 @@ def get_response_synthesizer(
         return CompactAndRefine(
             llm=llm,
             callback_manager=callback_manager,
+            dispatcher=dispatcher,
             prompt_helper=prompt_helper,
             text_qa_template=text_qa_template,
             refine_template=refine_template,

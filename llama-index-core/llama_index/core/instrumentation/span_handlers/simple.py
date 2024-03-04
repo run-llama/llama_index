@@ -25,5 +25,5 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         span = self.open_spans[id]
         span = cast(SimpleSpan, span)
         span.end_time = datetime.now()
-        span.duration = (span.start_time - span.end_time).total_seconds()
+        span.duration = (span.end_time - span.start_time).total_seconds()
         self.completed_spans += [span]

@@ -3,6 +3,7 @@
 An index that is built on top of an existing vector store.
 
 """
+
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -26,6 +27,7 @@ from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import VectorStore
+from llama_index.core.instrumentation.dispatcher import Dispatcher
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +57,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         index_struct: Optional[IndexDict] = None,
         storage_context: Optional[StorageContext] = None,
         callback_manager: Optional[CallbackManager] = None,
+        dispatcher: Optional[Dispatcher] = None,
         transformations: Optional[List[TransformComponent]] = None,
         show_progress: bool = False,
         # deprecated
@@ -79,6 +82,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             show_progress=show_progress,
             objects=objects,
             callback_manager=callback_manager,
+            dispatcher=dispatcher,
             transformations=transformations,
             **kwargs,
         )
@@ -122,6 +126,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
             callback_manager=self._callback_manager,
+            dispatcher=self.dispatcher,
             object_map=self._object_map,
             **kwargs,
         )

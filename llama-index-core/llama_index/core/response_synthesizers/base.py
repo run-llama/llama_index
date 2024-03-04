@@ -45,6 +45,7 @@ from llama_index.core.settings import (
     llm_from_settings_or_context,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE
+from llama_index.core.instrumentation.dispatcher import Dispatcher, DispatcherMixin
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         self,
         llm: Optional[LLMPredictorType] = None,
         callback_manager: Optional[CallbackManager] = None,
+        dispatcher: Optional[Dispatcher] = None,
         prompt_helper: Optional[PromptHelper] = None,
         streaming: bool = False,
         output_cls: BaseModel = None,
@@ -77,11 +79,20 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
         if callback_manager:
             self._llm.callback_manager = callback_manager
+            self._llm.dispatcher = dispatcher
 
         self._callback_manager = (
             callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context)
         )
+
+        if dispatcher is None:
+            import llama_index.core.instrumentation as instrument
+
+            dispatcher = instrument.get_dispatcher(__name__)
+
+        self._dispatcher = dispatcher
+
         self._prompt_helper = (
             prompt_helper
             or Settings._prompt_helper
@@ -101,6 +112,10 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
     @property
     def callback_manager(self) -> CallbackManager:
         return self._callback_manager
+
+    @property
+    def dispatcher(self) -> Dispatcher:
+        return self._dispatcher
 
     @callback_manager.setter
     def callback_manager(self, callback_manager: CallbackManager) -> None:
@@ -184,6 +199,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
             f"Response must be a string or a generator. Found {type(response_str)}"
         )
 
+    @DispatcherMixin.span
     def synthesize(
         self,
         query: QueryTextType,
@@ -220,6 +236,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
         return response
 
+    @DispatcherMixin.span
     async def asynthesize(
         self,
         query: QueryTextType,

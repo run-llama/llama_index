@@ -50,6 +50,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             or callback_manager_from_settings_or_context(
                 Settings, retriever.get_service_context()
             ),
+            dispatcher=dispatcher,
         )
 
         self._node_postprocessors = node_postprocessors or []
@@ -109,6 +110,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         response_synthesizer = response_synthesizer or get_response_synthesizer(
             llm=llm,
+            dispatcher=dispatcher,
             service_context=service_context,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
