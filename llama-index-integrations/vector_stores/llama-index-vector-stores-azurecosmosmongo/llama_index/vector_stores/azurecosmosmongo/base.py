@@ -8,9 +8,10 @@ import os
 from typing import Any, Dict, List, Optional, cast
 
 import pymongo
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -23,7 +24,7 @@ from llama_index.core.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AzureCosmosDBMongoDBVectorSearch(VectorStore):
+class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
     """Azure CosmosDB MongoDB vCore Vector Store.
 
     To use, you should have both:
@@ -33,6 +34,18 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
 
     stores_text: bool = True
     flat_metadata: bool = True
+
+    _collection: Any = PrivateAttr()
+    _index_name: str = PrivateAttr()
+    _embedding_key: str = PrivateAttr()
+    _id_key: str = PrivateAttr()
+    _text_key: str = PrivateAttr()
+    _metadata_key: str = PrivateAttr()
+    _insert_kwargs: dict = PrivateAttr()
+    _db_name: str = PrivateAttr()
+    _collection_name: str = PrivateAttr()
+    _cosmos_search_kwargs: dict = PrivateAttr()
+    _mongodb_client: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -88,6 +101,7 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
         self._collection_name = collection_name
         self._cosmos_search_kwargs = cosmos_search_kwargs or {}
         self._create_vector_search_index()
+        super().__init__()
 
     def _create_vector_search_index(self) -> None:
         db = self._mongodb_client[self._db_name]
