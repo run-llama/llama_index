@@ -3,6 +3,7 @@
 An index that is built on top of an existing vector store.
 
 """
+
 import logging
 import os
 from typing import Any, Dict, List, Optional, cast
@@ -78,6 +79,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             contain search options, such as kind, numLists, similarity, and dimensions.
             insert_kwargs: The kwargs used during `insert`.
         """
+        super().__init__()
+
         if mongodb_client is not None:
             self._mongodb_client = cast(pymongo.MongoClient, mongodb_client)
         else:
@@ -101,7 +104,6 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         self._collection_name = collection_name
         self._cosmos_search_kwargs = cosmos_search_kwargs or {}
         self._create_vector_search_index()
-        super().__init__()
 
     def _create_vector_search_index(self) -> None:
         db = self._mongodb_client[self._db_name]
