@@ -1,6 +1,5 @@
 from typing import Any, Callable, Dict, Optional, Sequence
-
-
+from anthropic.types import ContentBlockDeltaEvent
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -34,7 +33,7 @@ from llama_index.llms.anthropic.utils import (
 
 import anthropic
 
-DEFAULT_ANTHROPIC_MODEL = "claude-2"
+DEFAULT_ANTHROPIC_MODEL = "claude-2.1"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
 
 
@@ -150,7 +149,7 @@ class Anthropic(LLM):
         response = self._client.messages.create(
             messages=anthropic_messages,
             stream=False,
-            system_prompt=system_prompt,
+            system=system_prompt,
             **all_kwargs,
         )
         return ChatResponse(
@@ -182,13 +181,14 @@ class Anthropic(LLM):
             content = ""
             role = MessageRole.ASSISTANT
             for r in response:
-                content_delta = r.delta
-                content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    delta=content_delta,
-                    raw=r,
-                )
+                if isinstance(r, ContentBlockDeltaEvent):
+                    content_delta = r.delta.text
+                    content += content_delta
+                    yield ChatResponse(
+                        message=ChatMessage(role=role, content=content),
+                        delta=content_delta,
+                        raw=r,
+                    )
 
         return gen()
 
@@ -208,7 +208,7 @@ class Anthropic(LLM):
 
         response = await self._aclient.messages.create(
             messages=anthropic_messages,
-            system_prompt=system_prompt,
+            system=system_prompt,
             stream=False,
             **all_kwargs,
         )
@@ -241,13 +241,14 @@ class Anthropic(LLM):
             content = ""
             role = MessageRole.ASSISTANT
             async for r in response:
-                content_delta = r.completion
-                content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    delta=content_delta,
-                    raw=r,
-                )
+                if isinstance(r, ContentBlockDeltaEvent):
+                    content_delta = r.delta.text
+                    content += content_delta
+                    yield ChatResponse(
+                        message=ChatMessage(role=role, content=content),
+                        delta=content_delta,
+                        raw=r,
+                    )
 
         return gen()
 

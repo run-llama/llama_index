@@ -32,5 +32,6 @@ def messages_to_anthropic_messages(
         if message.role == MessageRole.SYSTEM:
             system_prompt = message.content
         else:
+            message = {"role": message.role.value, "content": message.content}
             anthropic_messages.append(message)
     return anthropic_messages, system_prompt
