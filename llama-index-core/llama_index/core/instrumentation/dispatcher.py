@@ -3,47 +3,51 @@ import functools
 import inspect
 import uuid
 from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.instrumentation.handlers import BaseEventHandler
+from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+from llama_index.core.instrumentation.span_handlers import (
+    BaseSpanHandler,
+    NullSpanHandler,
+)
 from llama_index.core.instrumentation.events.base import BaseEvent
 
 
 class Dispatcher(BaseModel):
     name: str = Field(default_factory=str, description="Name of dispatcher")
-    handlers: List[BaseEventHandler] = Field(
+    event_handlers: List[BaseEventHandler] = Field(
         default=[], description="List of attached handlers"
     )
+    span_handler: BaseSpanHandler = Field(
+        default=NullSpanHandler, description="Span handler."
+    )
     parent: Optional["Dispatcher"] = Field(
-        default_factory=None, description="List of parent dispatchers"
+        default_factory=None, description="Optional parent Dispatcher"
     )
     propagate: bool = Field(
         default=True,
         description="Whether to propagate the event to parent dispatchers and their handlers",
     )
 
-    def add_handler(self, handler) -> None:
+    def add_event_handler(self, handler) -> None:
         """Add handler to set of handlers."""
-        self.handlers += [handler]
+        self.event_handlers += [handler]
 
     def event(self, event_cls: Type[BaseEvent]) -> None:
         """Dispatch event to all registered handlers."""
         event = event_cls()
-        for h in self.handlers:
+        for h in self.event_handlers:
             h.handle(event)
 
     def span_enter(self, id: str) -> None:
         """Send notice to handlers that a span with id has started."""
-        for h in self.handlers:
-            h.span_enter(id=id)
+        self.span_handler.span_enter(id)
 
     def span_drop(self, id: str) -> None:
         """Send notice to handlers that a span with id has started."""
-        # for h in self.handlers:
-        #     h.span_drop(id=id)
+        return
 
     def span_exit(self, id: str) -> None:
         """Send notice to handlers that a span with id has started."""
-        for h in self.handlers:
-            h.span_exit(id=id)
+        self.span_handler.span_exit(id)
 
     @property
     def log_name(self) -> str:

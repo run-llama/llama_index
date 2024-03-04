@@ -22,7 +22,7 @@ from llama_index.core.settings import (
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
 )
-from llama_index.core.event_management.dispatcher import Dispatcher
+from llama_index.core.instrumentation.dispatcher import Dispatcher
 
 
 class RetrieverQueryEngine(BaseQueryEngine):

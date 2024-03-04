@@ -16,11 +16,11 @@ from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.core.schema import NodeWithScore, QueryBundle, QueryType
-from llama_index.core.event_management.events.query import (
+from llama_index.core.instrumentation.events.query import (
     QueryEndEvent,
     QueryStartEvent,
 )
-from llama_index.core.event_management.dispatcher import Dispatcher, DispatcherMixin
+from llama_index.core.instrumentation.dispatcher import Dispatcher, DispatcherMixin
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +34,9 @@ class BaseQueryEngine(ChainableMixin, PromptMixin, DispatcherMixin):
         dispatcher: Optional[Dispatcher] = None,
     ) -> None:
         if dispatcher is None:
-            import llama_index.core.event_management as event_management
+            import llama_index.core.instrumentation as instrument
 
-            dispatcher = event_management.get_dispatcher(__name__)
+            dispatcher = instrument.get_dispatcher(__name__)
 
         self.dispatcher = dispatcher
 
