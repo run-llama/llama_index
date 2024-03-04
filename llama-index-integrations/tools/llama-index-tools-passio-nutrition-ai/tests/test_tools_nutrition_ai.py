@@ -1,5 +1,5 @@
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-from llama_index.tools.passio_nutrition_ai import NutritionAIToolSpec, ENDPOINT_BASE_URL
+from llama_index.tools.passio_nutrition_ai import NutritionAIToolSpec
 
 
 def test_class():
