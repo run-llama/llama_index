@@ -1,7 +1,6 @@
 import logging
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple, List
 
-from llama_index.core.multi_modal_llms.base import ChatMessage
 from llama_index.core.multi_modal_llms.generic_utils import encode_image
 from llama_index.core.schema import ImageDocument
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
@@ -30,7 +29,7 @@ def generate_anthropic_multi_modal_chat_message(
     prompt: str,
     role: str,
     image_documents: Optional[Sequence[ImageDocument]] = None,
-) -> ChatMessage:
+) -> List[Dict[str, Any]]:
     # if image_documents is empty, return text only chat message
     if image_documents is None:
         return [{"role": role.value, "content": prompt}]
