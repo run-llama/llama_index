@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, AsyncGenerator, Generator, Optional, Union
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -26,6 +26,17 @@ class ChatMessage(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.role.value}: {self.content}"
+
+    @classmethod
+    def from_str(
+        cls,
+        content: str,
+        role: Union[MessageRole, str] = MessageRole.USER,
+        **kwargs: Any,
+    ) -> "ChatMessage":
+        if isinstance(role, str):
+            role = MessageRole(role)
+        return cls(role=role, content=content, **kwargs)
 
 
 # ===== Generic Model Output - Chat =====
