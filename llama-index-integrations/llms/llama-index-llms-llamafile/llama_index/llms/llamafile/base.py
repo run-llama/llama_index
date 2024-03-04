@@ -27,6 +27,20 @@ def get_addtional_kwargs(
 
 
 class Llamafile(CustomLLM):
+    """llamafile lets you distribute and run large language models with a
+    single file.
+
+    To get started, see: https://github.com/Mozilla-Ocho/llamafile
+
+    To use this class, you will need to first:
+
+    1. Download a llamafile.
+    2. Make the downloaded file executable: `chmod +x path/to/model.llamafile`
+    3. Start the llamafile in server mode:
+
+        `./path/to/model.llamafile --server --nobrowser`
+    """
+
     base_url: str = Field(
         default="http://localhost:8080",
         description="Base url where the llamafile server is listening.",
@@ -34,7 +48,7 @@ class Llamafile(CustomLLM):
 
     request_timeout: float = Field(
         default=DEFAULT_REQUEST_TIMEOUT,
-        description="The timeout for making http request to Ollama API server",
+        description="The timeout for making http request to llamafile API server",
     )
 
     #
