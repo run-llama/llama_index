@@ -1,3 +1,3 @@
-from llama_index.multi_modal_llms.openai.base import OpenAIMultiModal
+from llama_index.multi_modal_llms.anthropic.base import AnthropicMultiModal
 
-__all__ = ["OpenAIMultiModal"]
+__all__ = ["AnthropicMultiModal"]
