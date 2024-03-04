@@ -64,6 +64,7 @@ class AnthropicMultiModal(MultiModalLLM):
     api_key: str = Field(
         default=None, description="The Anthropic API key.", exclude=True
     )
+    system_prompt: str = Field(default="", description="System Prompt.")
     api_base: str = Field(default=None, description="The base URL for Anthropic API.")
     api_version: str = Field(description="The API version for Anthropic API.")
     additional_kwargs: Dict[str, Any] = Field(
@@ -96,6 +97,7 @@ class AnthropicMultiModal(MultiModalLLM):
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
+        system_prompt: Optional[str] = "",
         **kwargs: Any,
     ) -> None:
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
@@ -119,7 +121,7 @@ class AnthropicMultiModal(MultiModalLLM):
             api_version=api_version,
             callback_manager=callback_manager,
             default_headers=default_headers,
-            **kwargs,
+            system_promt=system_prompt**kwargs,
         )
         self._http_client = http_client
         self._client, self._aclient = self._get_clients(**kwargs)
@@ -203,6 +205,7 @@ class AnthropicMultiModal(MultiModalLLM):
         response = self._client.messages.create(
             messages=message_dict,
             stream=False,
+            system=self.system_prompt,
             **all_kwargs,
         )
 
@@ -243,6 +246,7 @@ class AnthropicMultiModal(MultiModalLLM):
             for response in self._client.messages.create(
                 messages=message_dict,
                 stream=True,
+                system=self.system_prompt,
                 **all_kwargs,
             ):
                 if isinstance(response, ContentBlockDeltaEvent):
@@ -343,6 +347,7 @@ class AnthropicMultiModal(MultiModalLLM):
         response = await self._aclient.messages.create(
             messages=message_dict,
             stream=False,
+            system=self.system_prompt,
             **all_kwargs,
         )
 
@@ -371,9 +376,9 @@ class AnthropicMultiModal(MultiModalLLM):
             async for response in await self._aclient.messages.create(
                 messages=message_dict,
                 stream=True,
+                system=self.system_prompt,
                 **all_kwargs,
             ):
-                response = cast(ChatCompletionChunk, response)
                 if isinstance(response, ContentBlockDeltaEvent):
                     # update using deltas
                     content_delta = response.delta.text or ""
