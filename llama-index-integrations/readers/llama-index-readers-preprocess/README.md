@@ -1,5 +1,9 @@
 # Preprocess Loader
 
+```bash
+pip install llama-index-readers-preprocess
+```
+
 [Preprocess](https://preprocess.co) is an API service that splits any kind of document into optimal chunks of text for use in language model tasks.
 Given documents in input `Preprocess` splits them into chunks of text that respect the layout and semantics of the original document.
 We split the content by taking into account sections, paragraphs, lists, images, data tables, text tables, and slides, and following the content semantics for long texts.
@@ -26,10 +30,9 @@ To chunk a file pass a valid filepath and the reader will start converting and c
 If you want to handle the nodes directly:
 
 ```python
-from llama_index import VectorStoreIndex
-from llama_index import download_loader
+from llama_index.core import VectorStoreIndex
 
-PreprocessReader = download_loader("PreprocessReader")
+from llama_index.readers.preprocess import PreprocessReader
 
 # pass a filepath and get the chunks as nodes
 loader = PreprocessReader(
@@ -45,10 +48,9 @@ query_engine = index.as_query_engine()
 By default load_data() returns a document for each chunk, remember to not apply any splitting to these documents
 
 ```python
-from llama_index import VectorStoreIndex
-from llama_index import download_loader
+from llama_index.core import VectorStoreIndex
 
-PreprocessReader = download_loader("PreprocessReader")
+from llama_index.readers.preprocess import PreprocessReader
 
 # pass a filepath and get the chunks as nodes
 loader = PreprocessReader(

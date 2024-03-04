@@ -8,7 +8,7 @@ This tool has a more extensive example usage documented in a Jupyter notebook [h
 
 ```python
 from llama_index.tools.azure_speech import AzureSpeechToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 speech_tool = AzureSpeechToolSpec(speech_key="your-key", region="eastus")
 

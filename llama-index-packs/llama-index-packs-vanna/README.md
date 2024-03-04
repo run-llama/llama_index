@@ -24,7 +24,7 @@ You can then inspect the files at `./vanna_pack` and use them as a template for 
 You can download the pack to a `./vanna_pack` directory:
 
 ```python
-from llama_index.llama_pack import download_llama_pack
+from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
 VannaPack = download_llama_pack("VannaPack", "./vanna_pack")
