@@ -19,24 +19,65 @@ from llama_index.core.agent.react.types import (
     ResponseReasoningStep,
 )
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.agent import AgentRunner
+import math
+from llama_index.core.llama_pack import BaseLlamaPack
 
 
 
-class ExpandedTasks(BaseModel):
-    """Expanded queries."""
+class SearchNode(BaseModel):
+    """Search node.
 
-    queries: List[str]
-
-
-
-class Node(BaseModel):
-    """Node."""
+    Named differently from `Node` which is a core module in LlamaIndex.
     
-    chat_history: List[ChatMessage] = Field(..., description="Chat history.")
-    parent: Optional["Node"] = Field(None, description="Parent node.")
-    children: List["Node"] = Field(default_factory=list, description="Children nodes.") 
-    score: float = Field(0.0, description="Score of the node.")
+    """
+    
+    current_reasoning: List[BaseReasoningStep] = Field(..., description="Current reasoning.")
+    parent: Optional["SearchNode"] = Field(None, description="Parent node.")
+    children: List["SearchNode"] = Field(default_factory=list, description="Children nodes.") 
+    evaluation: "Evaluation" = Field(0.0, description="Evaluation of the node.")
+    visits: int = Field(0, description="Number of visits to the node.")
+    
+    @property
+    def answer(self) -> Optional[str]:
+        """Answer."""
+        if not self.current_reasoning:
+            return None
+        return self.current_reasoning[-1].content
 
+    @property
+    def is_done(self) -> bool:
+        """Is the node done."""
+        return self.evaluation.is_done
+
+    @property
+    def upper_confidence_bound(self) -> float:
+        """Upper confidence bound."""
+        return self.score + 1.0 * math.sqrt(math.log(self.parent.visits) / self.visits)
+
+    def backpropagate(self, reward: float) -> None:
+        """Backpropagate the reward."""
+        self.visits += 1
+        cur_node = self
+        while cur_node is not None:
+            cur_node.score = (reward + (cur_node.visits - 1) * cur_node.score) / self.visits
+            cur_node = cur_node.parent
+
+    def get_best_leaf(self) -> "SearchNode":
+        """Get best leaf node.
+
+        Get best leaf node across any children nodes.
+        
+        """
+
+        # only get children that aren't done yet
+        free_children = [c for c in self.children if not c.is_done]
+        if not free_children:
+            return self
+
+        best_child = max(free_children, key=lambda x: x.upper_confidence_bound)
+        return best_child.get_best_leaf()
+        
 
 
 # taken from the paper
@@ -64,12 +105,16 @@ DEFAULT_REFLECTION_PROMPT = PromptTemplate(
 )
 
 
-class Reflection(BaseModel):
-    """Reflection."""
+class Evaluation(BaseModel):
+    """Evaluation of a given node.
 
-    score: float = Field(0.0, description="Score of the reflection indicating **correctness**.")
+    Currently evaluation is done by using LLMs to reflect on the trajectory.
+    
+    """
+
+    score: int = Field(default=0, description="Score of the reflection indicating **correctness**. Integer from 1-10", lte=10, gte=0)
     is_done: bool = Field(False, description="Is the task done (**completeness**).")
-    reasoning: str = Field(..., description="Reasoning about the trajectory")
+    reasoning: str = Field(default="", description="Reasoning about the trajectory")
     
 
 
@@ -86,6 +131,16 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
     num_expansions: int = Field(5, description="Number of expansions to do.")
     llm: LLM = Field(..., description="LLM to use.")
     reflection_prompt: PromptTemplate = Field(..., description="Reflection prompt.")
+    max_depth: int = Field(5, description="Max depth of the tree.")
+    max_rollouts: int = Field(
+        -1, description=(
+            "Max rollouts. By default, -1 means that we keep going until the first solution is found."
+        )
+    )
+    
+    chat_formatter: ReActChatFormatter = Field(
+        default_factory=ReActChatFormatter, description="Chat formatter."
+    )
 
     def __init__(
         self, 
@@ -108,50 +163,55 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
 
     def _initialize_state(self, task: Task, **kwargs: Any) -> Dict[str, Any]:
         """Initialize state."""
-        return {"count": 0, "current_reasoning": []}
+        # initialize root node
+        root_node = SearchNode(
+            current_reasoning=[ObservationReasoningStep(observation=task.input)],
+            evaluation=Evaluation(),  # evaluation for root node is blank
+        )
+        return {"count": 0, "solution_queue": [], "root_node": root_node}
 
-    def _run_candidates(self, node: Node, task: Task, state: Dict[str, Any]) -> List[Dict]:
-        """Expand node."""
+    def _run_candidate(
+        self, node: SearchNode, task: Task, state: Dict[str, Any]
+    ) -> List[BaseReasoningStep]:
+        """Generate candidate for a given node.
 
-        # task_program = LLMTextCompletionProgram.from_defaults(
-        #     output_cls=ExpandedTasks,
-        #     prompt_template_str=DEFAULT_EXPAND_PROMPT_TMPL,
-        #     verbose=True,
-        # )
+        Generically we sample the action space to generate new candidate nodes.
 
-        candidate_dicts = []
+        Practically since we're using a ReAct powered agent, this means
+        using generating a ReAct trajectory, running a tool.
+        
+        """
+
         tool_runner_component = ToolRunnerComponent(
             self.tools, callback_manager=task.callback_manager
         )
-        for i in range(self.num_expansions):
-            candidate_dict = {}
-            chat_formatter = ReActChatFormatter()
-            formatted_prompt = chat_formatter.format(
-                self.tools,
-                chat_history=task.memory.get(),
-                # current_reasoning=state["current_reasoning"],
-                current_reasoning=node.chat_history,
+        output_parser = ReActOutputParser()
+        # format react prompt 
+        formatted_prompt = self.chat_formatter.format(
+            self.tools,
+            chat_history=task.memory.get(),
+            current_reasoning=node.current_reasoning,
+        )
+        # run LLM
+        response = self.llm.chat(formatted_prompt)
+        # parse output into reasoning step
+        reasoning_step = output_parser.parse(response.message.content)
+        # get response or run tool
+        if reasoning_step.is_done:
+            reasoning_step = cast(ResponseReasoningStep, reasoning_step)
+            current_reasoning = [reasoning_step]
+        else:
+            reasoning_step = cast(ActionReasoningStep, reasoning_step)
+            tool_output = tool_runner_component.run_component(
+                tool_name=reasoning_step.action,
+                tool_input=reasoning_step.action_input
             )
-            response = self.llm.chat(formatted_prompt)
-            output_parser = ReActOutputParser()
-            reasoning_step = output_parser.parse(response.message.content)
-            if reasoning_step.is_done:
-                reasoning_step = cast(ResponseReasoningStep, reasoning_step)
-                candidate_dict["current_reasoning"] = [reasoning_step]
-            else:
-                reasoning_step = cast(ActionReasoningStep, reasoning_step)
-                tool_output = tool_runner_component.run_component(
-                    tool_name=reasoning_step.action,
-                    tool_input=reasoning_step.action_input
-                )
-                observation_step = ObservationReasoningStep(observation=str(tool_output))
-                candidate_dict["current_reasoning"] = [reasoning_step, observation_step]
+            observation_step = ObservationReasoningStep(observation=str(tool_output))
+            current_reasoning = [reasoning_step, observation_step]
 
-            candidate_dicts.append(candidate_dict)
+        return current_reasoning
 
-        return candidate_dicts
-
-    def _reflect(
+    def _evaluate(
         self,
         input: str,
         candidate_dict: Dict,
@@ -159,13 +219,40 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
     ) -> float:
         """Reflect."""
         history_str = "\n".join([s.get_content() for s in state["current_reasoning"]])
-        reflection = self.llm.structured_predict(
-            Reflection,
+        evaluation = self.llm.structured_predict(
+            Evaluation,
             prompt=self.reflection_prompt,
             query=input,
             conversation_history=history_str,
         )
-        return reflection
+
+        return evaluation
+
+    def _update_state(
+        self, 
+        node: SearchNode,
+        current_reasoning: List[BaseReasoningStep],
+        reflection: Evaluation,
+        state: Dict[str, Any]
+    ) -> None:
+        """Update state."""
+        # create child node
+        new_node = SearchNode(
+            current_reasoning=node.current_reasoning + current_reasoning,
+            parent=node,
+            children=[],
+            score=reflection.score,
+        )
+        node.children.append(new_node)
+        
+        # backpropagate the reward
+        new_node.backpropagate(reflection.score)
+        
+        # # backpropagate the reward
+        # while node is not None:
+        #     node.score += reflection.score
+        #     node = node.parent
+        
 
     def _run_step(
         self, state: Dict[str, Any], task: Task
@@ -177,25 +264,46 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
 
         """
         root_node = state["root_node"]
-        cur_node = root_node.get_best_node()
+        cur_node = root_node.get_best_leaf()
 
         # expand the given node, generate n candidates
         # for each candidate, run tool, get response
-        candidate_dicts = self._run_candidates(cur_node, task.input, state)
 
-        # run all the candidates 
-        for candidate_dict in candidate_dicts:
-            # either do rollout or estimate reward through self reflection
-            # TODO: currently we do the latter
-            reflection = self._reflect(candidate_dict, state)
-            
-            # update the state by adding new nodes, and backpropagating the reward
-            # to the parents
-            state = self._update_state(candidate, candidate_response, reward, state)
+        solution_queue: List[SearchNode] = state["solution_queue"]
+
+        
+        # first, generate the candidates
+        new_reasoning_steps = [
+            self._run_candidate(cur_node, task.input, state)
+            for _ in enumerate(range(self.num_expansions))
+        ]
+        # then, evaluate the candidates
+        evaluations = [
+            self._evaluate(new_reasoning_steps, state)
+            for new_reasoning_steps in new_reasoning_steps
+        ]
+        # then, update the state
+        for new_reasoning_steps, evaluation in zip(new_reasoning_steps, evaluations):
+            new_node = self._update_state(cur_node, new_reasoning_steps, evaluation, state)
+            if new_node.is_done:
+                solution_queue.append(new_node)
         
 
-        # # pick the next best node to expand
-        # next_node = self._pick_next_node(state, candidates)
+        # check if done
+        state["count"] += 1
+        if self.max_rollouts == -1 and solution_queue:
+            is_done = True
+        elif state["count"] >= self.max_rollouts:
+            is_done = True
+        else:
+            is_done = False
+
+        # determine response
+        if solution_queue:
+            best_solution_node = max(solution_queue, key=lambda x: x.score)
+            response = best_solution_node.answer
+        else:
+            response = "I am still thinking."
 
         # return response
         return AgentChatResponse(response=str(response)), is_done
@@ -208,3 +316,26 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
         pass
 
 
+
+class LATSPack(BaseLlamaPack):
+    """Pack for running the LATS agent."""
+
+    def __init__(
+        self,
+        **kwargs: Any
+    ) -> None:
+        """Init params."""
+        agent_worker = LATSAgentWorker(**kwargs)
+        agent = AgentRunner(agent_worker)
+        self.agent_worker = agent_worker
+
+    def get_modules(self) -> Dict[str, Any]:
+        """Get modules."""
+        return {
+            "agent_worker": self.agent_worker,
+            "agent": self.agent,
+        }
+
+    def run(self, *args: Any, **kwargs: Any) -> Any:
+        """Run."""
+        return self.agent.chat(*args, **kwargs)
