@@ -20,6 +20,6 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
         """Create a span."""
         return
 
-    def drop_span(self, id: str) -> None:
+    def prepare_to_drop_span(self, id: str) -> None:
         """Logic for droppping a span."""
         return

@@ -8,8 +8,8 @@ T = TypeVar("T", bound=BaseSpan)
 
 
 class BaseSpanHandler(BaseModel, Generic[T]):
-    spans: Dict[str, BaseSpan] = Field(
-        default_factory=Dict, description="Dictionary of spans."
+    open_spans: Dict[str, T] = Field(
+        default_factory=dict, description="Dictionary of open spans."
     )
     current_span_id: Optional[str] = Field(
         default=None, description="Id of current span."
@@ -24,25 +24,27 @@ class BaseSpanHandler(BaseModel, Generic[T]):
 
     def span_enter(self, id: str) -> None:
         """Logic for entering a span."""
-        if id in self.spans:
-            pass
+        if id in self.open_spans:
+            pass  # should probably raise an error here
         else:
             # TODO: thread safe
-            span = self.new_span()
+            span = self.new_span(id=id, parent_span=self.current_span_id)
             if span:
-                span.parent_id = self.current_span_id
-                self.spans[id] = span
+                self.open_spans[id] = span
 
     def span_exit(self, id: str) -> None:
         """Logic for exiting a span."""
-        self.drop_span(id)
+        self.prepare_to_drop_span(id)
+        if self.current_span_id == id:
+            self.current_span_id = None
+        del self.open_spans[id]
 
     @abstractmethod
-    def new_span(self) -> Optional[T]:
+    def new_span(self, id: str, parent_span: Optional[str]) -> Optional[T]:
         """Create a span."""
         ...
 
     @abstractmethod
-    def drop_span(self, id: str) -> Any:
-        """Logic for droppping a span."""
+    def prepare_to_drop_span(self, id: str) -> Any:
+        """Logic for preparing to drop a span."""
         ...

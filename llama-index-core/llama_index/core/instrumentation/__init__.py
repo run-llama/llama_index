@@ -1,9 +1,11 @@
 from llama_index.core.instrumentation.dispatcher import Dispatcher
-from llama_index.core.instrumentation.handlers import NullEventHandler
+from llama_index.core.instrumentation.event_handlers import NullEventHandler
+from llama_index.core.instrumentation.span_handlers import NullSpanHandler
 
 root_dispatcher: Dispatcher = Dispatcher(
     name="root",
-    handlers=[NullEventHandler()],
+    event_handlers=[NullEventHandler()],
+    span_handler=NullSpanHandler(),
     parent=None,
     propagate=False,
 )

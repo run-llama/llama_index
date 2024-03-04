@@ -17,7 +17,7 @@ class Dispatcher(BaseModel):
         default=[], description="List of attached handlers"
     )
     span_handler: BaseSpanHandler = Field(
-        default=NullSpanHandler, description="Span handler."
+        default=NullSpanHandler(), description="Span handler."
     )
     parent: Optional["Dispatcher"] = Field(
         default_factory=None, description="Optional parent Dispatcher"

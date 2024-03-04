@@ -1,0 +1,29 @@
+from typing import cast, List, Optional
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.instrumentation.span.simple import SimpleSpan
+from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
+from datetime import datetime
+
+
+class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
+    """Span Handler that managest SimpleSpan's."""
+
+    completed_spans: List[SimpleSpan] = Field(
+        default_factory=list, description="List of completed spans."
+    )
+
+    def class_name(cls) -> str:
+        """Class name."""
+        return "SimpleSpanHandler"
+
+    def new_span(self, id: str, parent_span: Optional[str]) -> SimpleSpan:
+        """Create a span."""
+        return SimpleSpan(id_=id, parent_span=parent_span)
+
+    def prepare_to_drop_span(self, id: str) -> None:
+        """Logic for preparing to drop a span."""
+        span = self.open_spans[id]
+        span = cast(SimpleSpan, span)
+        span.end_time = datetime.now()
+        span.duration = (span.start_time - span.end_time).total_seconds()
+        self.completed_spans += [span]
