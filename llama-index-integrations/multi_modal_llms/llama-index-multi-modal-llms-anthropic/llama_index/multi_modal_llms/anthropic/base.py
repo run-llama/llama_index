@@ -51,9 +51,6 @@ class AnthropicMultiModal(MultiModalLLM):
         description="The maximum number of context tokens for the model.",
         gt=0,
     )
-    image_detail: str = Field(
-        description="The level of details for image in API calls. Can be low, high, or auto"
-    )
     max_retries: int = Field(
         default=3,
         description="Maximum number of retries.",
@@ -115,7 +112,6 @@ class AnthropicMultiModal(MultiModalLLM):
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs or {},
             context_window=context_window,
-            image_detail=image_detail,
             max_retries=max_retries,
             timeout=timeout,
             api_key=api_key,
@@ -167,7 +163,6 @@ class AnthropicMultiModal(MultiModalLLM):
             prompt=prompt,
             role=role,
             image_documents=image_documents,
-            image_detail=self.image_detail,
         )
 
     # Model Params for Anthropic Multi Modal model.
