@@ -6,7 +6,6 @@ from typing import Any, Callable, Optional
 
 import google.api_core
 import vertexai
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from tenacity import (
     before_sleep_log,
     retry,
@@ -14,12 +13,10 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-from vertexai.language_models import (
-    ChatMessage as VertexChatMessage,
-)
-from vertexai.language_models import (
-    InputOutputTextPair,
-)
+from vertexai.language_models import ChatMessage as VertexChatMessage
+from vertexai.language_models import InputOutputTextPair
+
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
 TEXT_MODELS = ["text-bison", "text-bison-32k", "text-bison@001"]
@@ -169,9 +166,13 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
     for i, message in enumerate(history):
         if i == 0 and message.role == MessageRole.SYSTEM:
             if is_gemini:
-                raise ValueError("Gemini model don't support system messages")
+                raise ValueError("Gemini model doesn't support system messages")
             context = message.content
-        elif message.role == MessageRole.ASSISTANT or message.role == MessageRole.USER:
+        elif message.role in (
+            MessageRole.MODEL,
+            MessageRole.ASSISTANT,
+            MessageRole.USER,
+        ):
             if is_gemini:
                 from llama_index.llms.vertex.gemini_utils import (
                     convert_chat_message_to_gemini_content,
@@ -185,12 +186,16 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
             else:
                 vertex_message = VertexChatMessage(
                     content=message.content,
-                    author="bot" if message.role == MessageRole.ASSISTANT else "user",
+                    author=(
+                        "bot"
+                        if message.role in (MessageRole.ASSISTANT, MessageRole.MODEL)
+                        else MessageRole.USER
+                    ),
                 )
                 vertex_messages.append(vertex_message)
         else:
             raise ValueError(
-                f"Unexpected message with type {type(message)} at the position {i}."
+                f"Unexpected message with role {message.role} at the position {i}."
             )
     if len(vertex_messages) % 2 != 0:
         raise ValueError("total no of messages should be even")
