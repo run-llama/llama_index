@@ -16,19 +16,10 @@ from llama_index.embeddings.vertex import (
 )
 
 
-def test_embedding_baseclass():
-    emb = VertexTextEmbedding()
-    assert isinstance(emb, BaseEmbedding)
-
-
-def test_multimodal_embedding_baseclass():
-    emb = VertexMultiModalEmbedding()
-    assert isinstance(emb, MultiModalEmbedding)
-
-
 class VertexTextEmbeddingTest(unittest.TestCase):
     @patch("vertexai.init")
-    def test_init(self, mock_init: Mock):
+    @patch("vertexai.language_models.TextEmbeddingModel.from_pretrained")
+    def test_init(self, model_mock: Mock, mock_init: Mock):
         mock_cred = Mock(return_value="mock_credentials_instance")
         embedding = VertexTextEmbedding(
             model_name="textembedding-gecko@001",
@@ -44,6 +35,8 @@ class VertexTextEmbeddingTest(unittest.TestCase):
             location="us-test-location",
             credentials=mock_cred,
         )
+
+        self.assertIsInstance(embedding, BaseEmbedding)
 
         self.assertEqual(embedding.model_name, "textembedding-gecko@001")
         self.assertEqual(embedding.embed_mode, VertexEmbeddingMode.RETRIEVAL_MODE)
@@ -139,7 +132,8 @@ class VertexTextEmbeddingTestAsync(unittest.IsolatedAsyncioTestCase):
 
 class VertexMultiModalEmbeddingTest(unittest.TestCase):
     @patch("vertexai.init")
-    def test_init(self, mock_init: Mock):
+    @patch("vertexai.vision_models.MultiModalEmbeddingModel.from_pretrained")
+    def test_init(self, model_mock: Mock, mock_init: Mock):
         mock_cred = Mock(return_value="mock_credentials_instance")
         embedding = VertexMultiModalEmbedding(
             model_name="multimodalembedding",
@@ -155,6 +149,8 @@ class VertexMultiModalEmbeddingTest(unittest.TestCase):
             location="us-test-location",
             credentials=mock_cred,
         )
+
+        self.assertIsInstance(embedding, MultiModalEmbedding)
 
         self.assertEqual(embedding.model_name, "multimodalembedding")
         self.assertEqual(embedding.embed_batch_size, 100)
