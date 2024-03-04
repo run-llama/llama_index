@@ -2,11 +2,11 @@
 
 This tool connects to a Passio Nutrition AI account and allows an Agent to perform searches for 4000 different unique foods, 1.5M packaged food, images and videos.
 
-You will need to set up a search key using Azure,learn more here: https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/overview
+You will need to set up a search key using Passio Nutrition API,learn more here: https://www.passio.ai/nutrition-ai#nutrition-api-pricing
 
 ## Usage
 
-This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/bing_search.ipynb)
+This tool has a more extensive example usage documented in a Jupyter notebook.
 
 Here's an example usage of the NutritionAIToolSpec.
 
