@@ -47,6 +47,7 @@ from llama_index.core.types import (
     TokenAsyncGen,
     TokenGen,
 )
+from llama_index.core.instrumentation.dispatcher import DispatcherMixin
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -240,6 +241,7 @@ class LLM(BaseLLM):
 
         return output
 
+    @DispatcherMixin.span
     def predict(
         self,
         prompt: BasePromptTemplate,
@@ -281,6 +283,7 @@ class LLM(BaseLLM):
 
         return stream_tokens
 
+    @DispatcherMixin.span
     async def apredict(
         self,
         prompt: BasePromptTemplate,

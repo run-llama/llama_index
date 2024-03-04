@@ -73,7 +73,7 @@ class DispatcherMixin:
     def span(func):
         @functools.wraps(func)
         def wrapper(self: HasDispatcherProtocol, *args, **kwargs):
-            id = f"{func.__name__}-{uuid.uuid4()}"
+            id = f"{func.__qualname__}-{uuid.uuid4()}"
             self.dispatcher.span_enter(id=id)
             try:
                 return func(self, *args, **kwargs)
@@ -84,7 +84,7 @@ class DispatcherMixin:
 
         @functools.wraps(func)
         async def async_wrapper(self: HasDispatcherProtocol, *args, **kwargs):
-            id = f"{func.__name__}-{uuid.uuid4()}"
+            id = f"{func.__qualname__}-{uuid.uuid4()}"
             self.dispatcher.span_enter(id=id)
             try:
                 return await func(self, *args, **kwargs)
