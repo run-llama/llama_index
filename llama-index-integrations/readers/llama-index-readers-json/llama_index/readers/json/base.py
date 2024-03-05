@@ -85,7 +85,7 @@ class JSONReader(BaseReader):
         self.is_jsonl = is_jsonl
 
     def load_data(
-        self, input_file: str, extra_info: Optional[Dict] = None
+        self, input_file: str, extra_info: Optional[Dict] = {}
     ) -> List[Document]:
         """Load data from the input file."""
         with open(input_file, encoding="utf-8") as f:
