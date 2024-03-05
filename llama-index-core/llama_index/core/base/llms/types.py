@@ -14,6 +14,7 @@ class MessageRole(str, Enum):
     FUNCTION = "function"
     TOOL = "tool"
     CHATBOT = "chatbot"
+    MODEL = "model"
 
 
 # ===== Generic Model Input - Chat =====
