@@ -182,8 +182,6 @@ class StreamingAgentChatResponse:
             if not self._aqueue.empty() or not self._is_done:
                 try:
                     delta = await asyncio.wait_for(self._aqueue.get(), timeout=0.1)
-                    if delta is None:
-                        continue
                 except asyncio.TimeoutError:
                     if self._is_done:
                         break
