@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Generator, List, Optional
 
 from llama_index.legacy.readers.base import BaseReader
 from llama_index.legacy.schema import Document
@@ -84,9 +84,7 @@ class JSONReader(BaseReader):
         self.ensure_ascii = ensure_ascii
         self.is_jsonl = is_jsonl
 
-    def load_data(
-        self, input_file: str, extra_info: Optional[Dict] = {}
-    ) -> List[Document]:
+    def load_data(self, input_file: str) -> List[Document]:
         """Load data from the input file."""
         with open(input_file, encoding="utf-8") as f:
             load_data = []
@@ -109,9 +107,7 @@ class JSONReader(BaseReader):
                     useful_lines = [
                         line for line in lines if not re.match(r"^[{}\[\],]*$", line)
                     ]
-                    documents.append(
-                        Document(text="\n".join(useful_lines), metadata=extra_info)
-                    )
+                    documents.append(Document(text="\n".join(useful_lines)))
                 elif self.levels_back is not None:
                     # If levels_back is set, we make the embeddings contain the labels
                     # from further up the JSON tree
@@ -124,7 +120,5 @@ class JSONReader(BaseReader):
                             self.ensure_ascii,
                         )
                     ]
-                    documents.append(
-                        Document(text="\n".join(lines), metadata=extra_info)
-                    )
+                    documents.append(Document(text="\n".join(lines)))
             return documents
