@@ -1,5 +1,6 @@
 """Simple reader that reads files of different formats from a directory."""
 
+import os
 import logging
 import mimetypes
 import multiprocessing
@@ -81,12 +82,13 @@ def default_file_metadata_func(
     """
     fs = fs or get_default_fs()
     stat_result = fs.stat(file_path)
+    file_name = os.path.basename(str(stat_result["name"]))
     creation_date = _format_file_timestamp(stat_result.get("created"))
     last_modified_date = _format_file_timestamp(stat_result.get("mtime"))
     last_accessed_date = _format_file_timestamp(stat_result.get("atime"))
     default_meta = {
         "file_path": file_path,
-        "file_name": stat_result["name"],
+        "file_name": file_name,
         "file_type": mimetypes.guess_type(file_path)[0],
         "file_size": stat_result.get("size"),
         "creation_date": creation_date,
