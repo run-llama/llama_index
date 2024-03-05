@@ -19,7 +19,7 @@ Here's an example usage of the MetaphorToolSpec.
 
 ```python
 from llama_index.tools.metaphor import MetaphorToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 metaphor_tool = MetaphorToolSpec(
     api_key="your-key",

@@ -1,10 +1,9 @@
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Tuple
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
-
 
 CLAUDE_MODELS: Dict[str, int] = {
     "claude-instant-1": 100000,
@@ -12,6 +11,8 @@ CLAUDE_MODELS: Dict[str, int] = {
     "claude-2": 100000,
     "claude-2.0": 100000,
     "claude-2.1": 200000,
+    "claude-3-opus-20240229": 200000,
+    "claude-3-sonnet-20240229": 200000,
 }
 
 
@@ -25,6 +26,21 @@ def anthropic_modelname_to_contextsize(modelname: str) -> int:
     return CLAUDE_MODELS[modelname]
 
 
+def messages_to_anthropic_messages(
+    messages: Sequence[ChatMessage],
+) -> Tuple[Sequence[ChatMessage], str]:
+    anthropic_messages = []
+    system_prompt = ""
+    for message in messages:
+        if message.role == MessageRole.SYSTEM:
+            system_prompt = message.content
+        else:
+            message = {"role": message.role.value, "content": message.content}
+            anthropic_messages.append(message)
+    return anthropic_messages, system_prompt
+
+
+# Function used in bedrock
 def _message_to_anthropic_prompt(message: ChatMessage) -> str:
     if message.role == MessageRole.USER:
         prompt = f"{HUMAN_PREFIX} {message.content}"

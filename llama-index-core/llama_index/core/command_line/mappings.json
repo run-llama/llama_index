@@ -519,6 +519,7 @@
   "TextEmbeddingsInference": "llama_index.embeddings.text_embeddings_inference",
   "UpTrainCallbackHandler": "llama_index.callbacks.uptrain",
   "deepeval_callback_handler": "llama_index.callbacks.deepeval",
+  "langfuse_callback_handler": "llama_index.callbacks.langfuse",
   "OpenInferenceCallbackHandler": "llama_index.callbacks.openinference",
   "WandbCallbackHandler": "llama_index.callbacks.wandb",
   "argilla_callback_handler": "llama_index.callbacks.argilla",

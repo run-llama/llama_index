@@ -1,11 +1,15 @@
 # OpenAlex Reader
 
+```bash
+pip install llama-index-readers-openalex
+```
+
 This loader will search for papers in OpenAlex and load them in llama-index. The main advantage of using OpenAlex is that you can search the full-text for Open Access papers as well.
 
 ## Usage
 
 ```python
-from llama_hub.openalex_loader import OpenAlexReader
+from llama_index.readers.openalex import OpenAlexReader
 
 openalex_reader = OpenAlexReader(email="shauryr@gmail.com")
 query = "biases in large language models"

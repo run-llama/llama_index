@@ -273,7 +273,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         # Convert to string expression
         string_expr = ""
         if len(expr) != 0:
-            string_expr = " and ".join(expr)
+            string_expr = f" {query.filters.condition.value} ".join(expr)
 
         # Perform the search
         res = self._milvusclient.search(

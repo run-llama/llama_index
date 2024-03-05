@@ -1,5 +1,9 @@
 # Whatsapp chat loader
 
+```bash
+pip install llama-index-readers-whatsapp
+```
+
 ## Export a Whatsapp chat
 
 1. Open a chat
@@ -16,9 +20,8 @@ For more info see [Whatsapp's Help Center](https://faq.whatsapp.com/118041407917
 
 ```python
 from pathlib import Path
-from llama_index import download_loader
 
-WhatsappChatLoader = download_loader("WhatsappChatLoader")
+from llama_index.readers.whatsapp import WhatsappChatLoader
 
 path = "whatsapp.txt"
 loader = WhatsappChatLoader(path=path)

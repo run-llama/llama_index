@@ -1,5 +1,9 @@
 # Monday Loader
 
+```bash
+pip install llama-index-readers-mondaydotcom
+```
+
 This loader loads data from monday.com. The user specifies an API token to initialize the MondayReader. They then specify a monday.com board id to load in the corresponding Document objects.
 
 ## Usage
@@ -7,9 +11,7 @@ This loader loads data from monday.com. The user specifies an API token to initi
 Here's an example usage of the MondayReader.
 
 ```python
-from llama_index import download_loader
-
-MondayReader = download_loader("MondayReader")
+from llama_index.readers.mondaydotcom import MondayReader
 
 reader = MondayReader("<monday_api_token>")
 documents = reader.load_data("<board_id: int>")
