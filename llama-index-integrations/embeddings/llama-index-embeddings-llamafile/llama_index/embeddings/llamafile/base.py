@@ -29,8 +29,7 @@ class LlamafileEmbedding(BaseEmbedding):
     """
 
     base_url: str = Field(
-        description="base url of the llamafile server",
-        default="http://localhost:8080"
+        description="base url of the llamafile server", default="http://localhost:8080"
     )
 
     request_timeout: float = Field(
@@ -39,16 +38,12 @@ class LlamafileEmbedding(BaseEmbedding):
     )
 
     def __init__(
-            self,
-            base_url: str = "http://localhost:8080",
-            callback_manager: Optional[CallbackManager] = None,
-            **kwargs
+        self,
+        base_url: str = "http://localhost:8080",
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs,
     ) -> None:
-        super().__init__(
-            base_url=base_url,
-            callback_manager=callback_manager,
-            **kwargs
-        )
+        super().__init__(base_url=base_url, callback_manager=callback_manager, **kwargs)
 
     @classmethod
     def class_name(cls) -> str:

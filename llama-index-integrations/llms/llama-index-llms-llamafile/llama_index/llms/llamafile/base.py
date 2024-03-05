@@ -61,10 +61,7 @@ class Llamafile(CustomLLM):
         lte=1.0,
     )
 
-    seed: int = Field(
-        default=0,
-        description="Random seed"
-    )
+    seed: int = Field(default=0, description="Random seed")
 
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
@@ -132,7 +129,9 @@ class Llamafile(CustomLLM):
             )
 
     @llm_chat_callback()
-    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
         payload = {
             "messages": [
                 {
@@ -153,7 +152,6 @@ class Llamafile(CustomLLM):
                 url=f"{self.base_url}/v1/chat/completions",
                 json=payload,
             ) as response:
-
                 response.raise_for_status()
 
                 with io.StringIO() as buff:
@@ -248,18 +246,18 @@ class Llamafile(CustomLLM):
                             )
 
     def _get_streaming_chunk_content(self, chunk: str) -> Dict:
-        """When streaming is turned on, llamafile server returns lines like:
+        """Extract json from chunks received from llamafile API streaming calls.
+
+        When streaming is turned on, llamafile server returns lines like:
 
         'data: {"content":" They","multimodal":true,"slot_id":0,"stop":false}'
 
         Here, we convert this to a dict and return the value of the 'content'
         field
         """
-
         if chunk.startswith("data:"):
             cleaned = chunk.lstrip("data: ")
-            data = json.loads(cleaned)
-            return data
+            return json.loads(cleaned)
         else:
             raise ValueError(
                 f"Received chunk with unexpected format during streaming: '{chunk}'"
