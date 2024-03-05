@@ -182,11 +182,12 @@ class Gemini(CustomLLM):
                         type(response.prompt_feedback).to_dict(response.prompt_feedback)
                     ),
                 }
-                content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    delta=content_delta,
-                    raw=raw,
-                )
+                if content_delta is not None:
+                    content += content_delta
+                    yield ChatResponse(
+                        message=ChatMessage(role=role, content=content),
+                        delta=content_delta,
+                        raw=raw,
+                    )
 
         return gen()

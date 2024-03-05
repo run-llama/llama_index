@@ -312,7 +312,8 @@ class OpenAI(LLM):
         tool_calls: List[ChoiceDeltaToolCall],
         tool_calls_delta: Optional[List[ChoiceDeltaToolCall]],
     ) -> List[ChoiceDeltaToolCall]:
-        """Use the tool_calls_delta objects received from openai stream chunks
+        """
+        Use the tool_calls_delta objects received from openai stream chunks
         to update the running tool_calls object.
 
         Args:
@@ -385,23 +386,26 @@ class OpenAI(LLM):
                 # update using deltas
                 role = delta.role or MessageRole.ASSISTANT
                 content_delta = delta.content or ""
-                content += content_delta
+                if content_delta is not None:
+                    content += content_delta
 
-                additional_kwargs = {}
-                if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
-                    additional_kwargs["tool_calls"] = tool_calls
+                    additional_kwargs = {}
+                    if is_function:
+                        tool_calls = self._update_tool_calls(
+                            tool_calls, delta.tool_calls
+                        )
+                        additional_kwargs["tool_calls"] = tool_calls
 
-                yield ChatResponse(
-                    message=ChatMessage(
-                        role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
-                    ),
-                    delta=content_delta,
-                    raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
-                )
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            content=content,
+                            additional_kwargs=additional_kwargs,
+                        ),
+                        delta=content_delta,
+                        raw=response,
+                        additional_kwargs=self._get_response_token_counts(response),
+                    )
 
         return gen()
 
@@ -591,22 +595,24 @@ class OpenAI(LLM):
                 role = delta.role or MessageRole.ASSISTANT
                 content_delta = delta.content or ""
                 content += content_delta
+                if content_delta is not None:
+                    additional_kwargs = {}
+                    if is_function:
+                        tool_calls = self._update_tool_calls(
+                            tool_calls, delta.tool_calls
+                        )
+                        additional_kwargs["tool_calls"] = tool_calls
 
-                additional_kwargs = {}
-                if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
-                    additional_kwargs["tool_calls"] = tool_calls
-
-                yield ChatResponse(
-                    message=ChatMessage(
-                        role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
-                    ),
-                    delta=content_delta,
-                    raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
-                )
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            content=content,
+                            additional_kwargs=additional_kwargs,
+                        ),
+                        delta=content_delta,
+                        raw=response,
+                        additional_kwargs=self._get_response_token_counts(response),
+                    )
 
         return gen()
 
