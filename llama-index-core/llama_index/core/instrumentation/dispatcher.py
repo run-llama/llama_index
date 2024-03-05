@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Protocol
+from typing import List, Optional, Type, Dict
 import functools
 import inspect
 import uuid
@@ -19,13 +19,25 @@ class Dispatcher(BaseModel):
     span_handler: BaseSpanHandler = Field(
         default=NullSpanHandler(), description="Span handler."
     )
-    parent: Optional["Dispatcher"] = Field(
-        default_factory=None, description="Optional parent Dispatcher"
+    parent_name: str = Field(
+        default_factory=str, description="Name of parent Dispatcher."
     )
+    manager: Optional["Manager"] = Field(
+        default=None, description="Dispatcher manager."
+    )
+    root_name: str = Field(default="root", description="Root of the Dispatcher tree.")
     propagate: bool = Field(
         default=True,
         description="Whether to propagate the event to parent dispatchers and their handlers",
     )
+
+    @property
+    def parent(self) -> "Dispatcher":
+        return self.manager.dispatchers[self.parent_name]
+
+    @property
+    def root(self) -> "Dispatcher":
+        return self.manager.dispatchers[self.root_name]
 
     def add_event_handler(self, handler) -> None:
         """Add handler to set of handlers."""
@@ -33,13 +45,25 @@ class Dispatcher(BaseModel):
 
     def event(self, event_cls: Type[BaseEvent]) -> None:
         """Dispatch event to all registered handlers."""
+        c = self
         event = event_cls()
-        for h in self.event_handlers:
-            h.handle(event)
+        while c:
+            for h in c.event_handlers:
+                h.handle(event)
+            if not c.propagate:
+                c = None
+            else:
+                c = c.parent
 
     def span_enter(self, id: str) -> None:
         """Send notice to handlers that a span with id has started."""
-        self.span_handler.span_enter(id)
+        c = self
+        while c:
+            c.span_handler.span_enter(id)
+            if not c.propagate:
+                c = None
+            else:
+                c = c.parent
 
     def span_drop(self, id: str) -> None:
         """Send notice to handlers that a span with id has started."""
@@ -47,7 +71,41 @@ class Dispatcher(BaseModel):
 
     def span_exit(self, id: str) -> None:
         """Send notice to handlers that a span with id has started."""
-        self.span_handler.span_exit(id)
+        c = self
+        while c:
+            c.span_handler.span_exit(id)
+            if not c.propagate:
+                c = None
+            else:
+                c = c.parent
+
+    def span(self, func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            id = f"{func.__qualname__}-{uuid.uuid4()}"
+            self.span_enter(id=id)
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                self.span_drop(id=id)
+            finally:
+                self.span_exit(id=id)
+
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            id = f"{func.__qualname__}-{uuid.uuid4()}"
+            self.span_enter(id=id)
+            try:
+                return await func(*args, **kwargs)
+            except Exception as e:
+                self.span_drop(id=id)
+            finally:
+                self.span_exit(id=id)
+
+        if inspect.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return wrapper
 
     @property
     def log_name(self) -> str:
@@ -61,39 +119,15 @@ class Dispatcher(BaseModel):
         arbitrary_types_allowed = True
 
 
-# class protocol
-class HasDispatcherProtocol(Protocol):
-    @property
-    def dispatcher(self) -> Dispatcher:
-        ...
+class Manager:
+    def __init__(self, root: Dispatcher) -> None:
+        self.dispatchers: Dict[str, Dispatcher] = {root.name: root}
 
-
-class DispatcherMixin:
-    @staticmethod
-    def span(func):
-        @functools.wraps(func)
-        def wrapper(self: HasDispatcherProtocol, *args, **kwargs):
-            id = f"{func.__qualname__}-{uuid.uuid4()}"
-            self.dispatcher.span_enter(id=id)
-            try:
-                return func(self, *args, **kwargs)
-            except Exception as e:
-                self.dispatcher.span_drop(id=id)
-            finally:
-                self.dispatcher.span_exit(id=id)
-
-        @functools.wraps(func)
-        async def async_wrapper(self: HasDispatcherProtocol, *args, **kwargs):
-            id = f"{func.__qualname__}-{uuid.uuid4()}"
-            self.dispatcher.span_enter(id=id)
-            try:
-                return await func(self, *args, **kwargs)
-            except Exception as e:
-                self.dispatcher.span_drop(id=id)
-            finally:
-                self.dispatcher.span_exit(id=id)
-
-        if inspect.iscoroutinefunction(func):
-            return async_wrapper
+    def add_dispatcher(self, d: Dispatcher) -> None:
+        if d.name in self.dispatchers:
+            pass
         else:
-            return wrapper
+            self.dispatchers[d.name] = d
+
+
+Dispatcher.update_forward_refs()

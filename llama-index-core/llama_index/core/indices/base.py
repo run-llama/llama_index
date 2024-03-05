@@ -21,7 +21,6 @@ from llama_index.core.settings import (
 )
 from llama_index.core.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
-from llama_index.core.instrumentation.dispatcher import Dispatcher
 
 IS = TypeVar("IS", bound=IndexStruct)
 IndexType = TypeVar("IndexType", bound="BaseIndex")
@@ -49,7 +48,6 @@ class BaseIndex(Generic[IS], ABC):
         index_struct: Optional[IS] = None,
         storage_context: Optional[StorageContext] = None,
         callback_manager: Optional[CallbackManager] = None,
-        dispatcher: Optional[Dispatcher] = None,
         transformations: Optional[List[TransformComponent]] = None,
         show_progress: bool = False,
         # deprecated
@@ -84,12 +82,6 @@ class BaseIndex(Generic[IS], ABC):
             callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context)
         )
-        if dispatcher is None:
-            import llama_index.core.instrumentation as instrument
-
-            dispatcher = instrument.get_dispatcher(__name__)
-
-        self._dispatcher = dispatcher
 
         objects = objects or []
         self._object_map = {obj.index_id: obj.obj for obj in objects}
@@ -117,7 +109,6 @@ class BaseIndex(Generic[IS], ABC):
         storage_context: Optional[StorageContext] = None,
         show_progress: bool = False,
         callback_manager: Optional[CallbackManager] = None,
-        dispatcher: Optional[Dispatcher] = None,
         transformations: Optional[List[TransformComponent]] = None,
         # deprecated
         service_context: Optional[ServiceContext] = None,
@@ -139,10 +130,6 @@ class BaseIndex(Generic[IS], ABC):
         transformations = transformations or transformations_from_settings_or_context(
             Settings, service_context
         )
-        if dispatcher is None:
-            import llama_index.core.instrumentation as instrument
-
-            dispatcher = instrument.get_dispatcher(__name__)
 
         with callback_manager.as_trace("index_construction"):
             for doc in documents:
@@ -159,17 +146,11 @@ class BaseIndex(Generic[IS], ABC):
                 nodes=nodes,
                 storage_context=storage_context,
                 callback_manager=callback_manager,
-                dispatcher=dispatcher,
                 show_progress=show_progress,
                 transformations=transformations,
                 service_context=service_context,
                 **kwargs,
             )
-
-    @property
-    def dispatcher(self) -> Dispatcher:
-        """Get the dispatcher."""
-        return self._dispatcher
 
     @property
     def index_struct(self) -> IS:
@@ -412,7 +393,6 @@ class BaseIndex(Generic[IS], ABC):
         )
 
         retriever = self.as_retriever(**kwargs)
-        print(f"retriever dispatcher: {retriever.dispatcher}", flush=True)
         llm = (
             resolve_llm(llm, callback_manager=self._callback_manager)
             if llm
@@ -422,7 +402,6 @@ class BaseIndex(Generic[IS], ABC):
         return RetrieverQueryEngine.from_args(
             retriever,
             llm=llm,
-            dispatcher=self.dispatcher,
             **kwargs,
         )
 

@@ -47,11 +47,14 @@ from llama_index.core.types import (
     TokenAsyncGen,
     TokenGen,
 )
-from llama_index.core.instrumentation.dispatcher import DispatcherMixin
 from llama_index.core.instrumentation.events import (
     LLMPredictEndEvent,
     LLMPredictStartEvent,
 )
+
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -245,14 +248,14 @@ class LLM(BaseLLM):
 
         return output
 
-    @DispatcherMixin.span
+    @dispatcher.span
     def predict(
         self,
         prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> str:
         """Predict."""
-        self.dispatcher.event(LLMPredictStartEvent)
+        dispatcher.event(LLMPredictStartEvent)
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -264,7 +267,7 @@ class LLM(BaseLLM):
             response = self.complete(formatted_prompt, formatted=True)
             output = response.text
 
-        self.dispatcher.event(LLMPredictEndEvent)
+        dispatcher.event(LLMPredictEndEvent)
         return self._parse_output(output)
 
     def stream(
@@ -289,14 +292,14 @@ class LLM(BaseLLM):
 
         return stream_tokens
 
-    @DispatcherMixin.span
+    @dispatcher.span
     async def apredict(
         self,
         prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> str:
         """Async predict."""
-        self.dispatcher.event(LLMPredictStartEvent)
+        dispatcher.event(LLMPredictStartEvent)
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -308,7 +311,7 @@ class LLM(BaseLLM):
             response = await self.acomplete(formatted_prompt, formatted=True)
             output = response.text
 
-        self.dispatcher.event(LLMPredictEndEvent)
+        dispatcher.event(LLMPredictEndEvent)
         return self._parse_output(output)
 
     async def astream(

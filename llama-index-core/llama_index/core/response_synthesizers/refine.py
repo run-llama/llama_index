@@ -27,11 +27,13 @@ from llama_index.core.service_context_elements.llm_predictor import (
     LLMPredictorType,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE, BasePydanticProgram
-from llama_index.core.instrumentation.dispatcher import Dispatcher, DispatcherMixin
 from llama_index.core.instrumentation.events import (
     GetResponseEndEvent,
     GetResponseStartEvent,
 )
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +110,6 @@ class Refine(BaseSynthesizer):
         self,
         llm: Optional[LLMPredictorType] = None,
         callback_manager: Optional[CallbackManager] = None,
-        dispatcher: Optional[Dispatcher] = None,
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         refine_template: Optional[BasePromptTemplate] = None,
@@ -128,7 +129,6 @@ class Refine(BaseSynthesizer):
         super().__init__(
             llm=llm,
             callback_manager=callback_manager,
-            dispatcher=dispatcher,
             prompt_helper=prompt_helper,
             service_context=service_context,
             streaming=streaming,
@@ -163,7 +163,7 @@ class Refine(BaseSynthesizer):
         if "refine_template" in prompts:
             self._refine_template = prompts["refine_template"]
 
-    @DispatcherMixin.span
+    @dispatcher.span
     def get_response(
         self,
         query_str: str,
@@ -172,7 +172,7 @@ class Refine(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
-        self.dispatcher.event(GetResponseStartEvent)
+        dispatcher.event(GetResponseStartEvent)
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
             if prev_response is None:
@@ -194,7 +194,7 @@ class Refine(BaseSynthesizer):
                 response = response or "Empty Response"
         else:
             response = cast(Generator, response)
-        self.dispatcher.event(GetResponseEndEvent)
+        dispatcher.event(GetResponseEndEvent)
         return response
 
     def _default_program_factory(self, prompt: PromptTemplate) -> BasePydanticProgram:
@@ -349,7 +349,7 @@ class Refine(BaseSynthesizer):
         prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        self.dispatcher.event(GetResponseStartEvent)
+        dispatcher.event(GetResponseStartEvent)
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
             if prev_response is None:

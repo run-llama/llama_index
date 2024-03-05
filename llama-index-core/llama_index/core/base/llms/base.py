@@ -20,16 +20,14 @@ from llama_index.core.base.query_pipeline.query import (
 from llama_index.core.bridge.pydantic import Field, validator
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.schema import BaseComponent
-from llama_index.core.instrumentation.dispatcher import Dispatcher, DispatcherMixin
 
 
-class BaseLLM(ChainableMixin, BaseComponent, DispatcherMixin):
+class BaseLLM(ChainableMixin, BaseComponent):
     """LLM interface."""
 
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
-    dispatcher: Dispatcher = Field(default_factory=Dispatcher, exclude=True)
 
     class Config:
         arbitrary_types_allowed = True
@@ -38,14 +36,6 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherMixin):
     def _validate_callback_manager(cls, v: CallbackManager) -> CallbackManager:
         if v is None:
             return CallbackManager([])
-        return v
-
-    @validator("dispatcher", pre=True)
-    def _validate_dispatcher(cls, v: Dispatcher) -> Dispatcher:
-        if v is None:
-            import llama_index.core.instrumentation as instrument
-
-            return instrument.get_dispatcher(__name__)
         return v
 
     @property

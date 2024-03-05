@@ -30,31 +30,25 @@ from llama_index.core.schema import (
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
-from llama_index.core.instrumentation.dispatcher import Dispatcher, DispatcherMixin
 from llama_index.core.instrumentation.events.retrieval import (
     RetrievalEndEvent,
     RetrievalStartEvent,
 )
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
-class BaseRetriever(ChainableMixin, PromptMixin, DispatcherMixin):
+class BaseRetriever(ChainableMixin, PromptMixin):
     """Base retriever."""
 
     def __init__(
         self,
         callback_manager: Optional[CallbackManager] = None,
-        dispatcher: Optional[Dispatcher] = None,
         object_map: Optional[Dict] = None,
         objects: Optional[List[IndexNode]] = None,
         verbose: bool = False,
     ) -> None:
-        if dispatcher is None:
-            import llama_index.core.instrumentation as instrument
-
-            dispatcher = instrument.get_dispatcher(__name__)
-
-        self.dispatcher = dispatcher
-
         self.callback_manager = callback_manager or CallbackManager()
 
         if objects is not None:
@@ -221,7 +215,7 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherMixin):
             if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
         ]
 
-    @DispatcherMixin.span
+    @dispatcher.span
     def retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         """Retrieve nodes given query.
 
@@ -231,7 +225,7 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherMixin):
 
         """
         self._check_callback_manager()
-        self.dispatcher.event(RetrievalStartEvent)
+        dispatcher.event(RetrievalStartEvent)
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -246,13 +240,13 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherMixin):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-        self.dispatcher.event(RetrievalEndEvent)
+        dispatcher.event(RetrievalEndEvent)
         return nodes
 
-    @DispatcherMixin.span
+    @dispatcher.span
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         self._check_callback_manager()
-        self.dispatcher.event(RetrievalStartEvent)
+        dispatcher.event(RetrievalStartEvent)
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -267,7 +261,7 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherMixin):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-        self.dispatcher.event(RetrievalEndEvent)
+        dispatcher.event(RetrievalEndEvent)
         return nodes
 
     @abstractmethod

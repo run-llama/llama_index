@@ -16,7 +16,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.core.instrumentation.dispatcher import Dispatcher
 
 
 class VectorIndexRetriever(BaseRetriever):
@@ -47,7 +46,6 @@ class VectorIndexRetriever(BaseRetriever):
         doc_ids: Optional[List[str]] = None,
         sparse_top_k: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
-        dispatcher: Optional[Dispatcher] = None,
         object_map: Optional[dict] = None,
         embed_model: Optional[BaseEmbedding] = None,
         verbose: bool = False,
@@ -71,7 +69,6 @@ class VectorIndexRetriever(BaseRetriever):
             callback_manager=callback_manager,
             object_map=object_map,
             verbose=verbose,
-            dispatcher=dispatcher,
         )
 
     @property
