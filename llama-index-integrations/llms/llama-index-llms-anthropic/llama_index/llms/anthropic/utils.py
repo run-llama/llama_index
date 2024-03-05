@@ -11,8 +11,8 @@ CLAUDE_MODELS: Dict[str, int] = {
     "claude-2": 100000,
     "claude-2.0": 100000,
     "claude-2.1": 200000,
-    "claude-3-opus-20240229": 200000,
-    "claude-3-sonnet-20240229": 200000,
+    "claude-3-opus-20240229": 180000,
+    "claude-3-sonnet-20240229": 180000,
 }
 
 

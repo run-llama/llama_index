@@ -30,6 +30,7 @@ from llama_index.llms.anthropic.utils import (
     anthropic_modelname_to_contextsize,
     messages_to_anthropic_messages,
 )
+from llama_index.core.utils import Tokenizer
 
 import anthropic
 
@@ -122,6 +123,10 @@ class Anthropic(LLM):
             is_chat_model=True,
             model_name=self.model,
         )
+
+    @property
+    def tokenizer(self) -> Tokenizer:
+        return self._client.get_tokenizer()
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
