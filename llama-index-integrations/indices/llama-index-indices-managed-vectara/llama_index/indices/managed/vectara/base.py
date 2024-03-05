@@ -30,6 +30,9 @@ from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 
+from llama_index.core.response_synthesizers import ResponseMode
+from llama_index.core import get_response_synthesizer
+
 _logger = logging.getLogger(__name__)
 
 
@@ -360,8 +363,14 @@ class VectaraIndex(BaseManagedIndex):
             )
 
             retriever = self.as_retriever(**kwargs)
+            response_synthesizer = get_response_synthesizer(
+                response_mode=ResponseMode.COMPACT
+            )
             return RetrieverQueryEngine.from_args(
-                retriever=retriever, llm=llm, **kwargs
+                retriever=retriever,
+                llm=llm,
+                response_synthesizer=response_synthesizer,
+                **kwargs,
             )
 
     @classmethod
