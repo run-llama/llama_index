@@ -178,14 +178,18 @@ class StreamingAgentChatResponse:
         self.response = self._unformatted_response.strip()
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
-        while not self._is_done or not self._aqueue.empty():
-            if not self._aqueue.empty():
-                delta = self._aqueue.get_nowait()
+        while True:
+            if not self._aqueue.empty() or not self._is_done:
+                try:
+                    delta = await asyncio.wait_for(self._aqueue.get(), timeout=0.1)
+                except asyncio.TimeoutError:
+                    if self._is_done:
+                        break
+                    continue
                 self._unformatted_response += delta
                 yield delta
             else:
-                await self._new_item_event.wait()  # Wait until a new item is added
-                self._new_item_event.clear()  # Clear the event for the next wait
+                break
         self.response = self._unformatted_response.strip()
 
     def print_response_stream(self) -> None:

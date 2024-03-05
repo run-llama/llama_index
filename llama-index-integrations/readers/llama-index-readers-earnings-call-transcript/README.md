@@ -1,5 +1,9 @@
 # EARNING CALL TRANSCRIPTS LOADER
 
+```bash
+pip install llama-index-readers-earnings-call-transcript
+```
+
 This loader fetches the earning call transcripts of US based companies from the website [discountingcashflows.com](https://discountingcashflows.com/). It is not available for commercial purposes
 
 Install the required dependencies
@@ -17,9 +21,7 @@ The Earning call transcripts takes in three arguments
 ## Usage
 
 ```python
-from llama_index import download_loader
-
-EarningsCallTranscript = download_loader("EarningsCallTranscript")
+from llama_index.readers.earnings_call_transcript import EarningsCallTranscript
 
 loader = EarningsCallTranscript(2023, "AAPL", "Q3")
 docs = loader.load_data()
@@ -37,10 +39,9 @@ The metadata of the transcripts are the following
 #### Llama Index
 
 ```python
-from llama_index import download_loader
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-EarningsCallTranscript = download_loader("EarningsCallTranscript")
+from llama_index.readers.earnings_call_transcript import EarningsCallTranscript
 
 loader = EarningsCallTranscript(2023, "AAPL", "Q3")
 docs = loader.load_data()
@@ -57,13 +58,12 @@ print(response)
 #### Langchain
 
 ```python
-from llama_index import download_loader
 from langchain.agents import Tool
 from langchain.agents import initialize_agent
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 
-EarningsCallTranscript = download_loader("EarningsCallTranscript")
+from llama_index.readers.earnings_call_transcript import EarningsCallTranscript
 
 loader = EarningsCallTranscript(2023, "AAPL", "Q3")
 docs = loader.load_data()

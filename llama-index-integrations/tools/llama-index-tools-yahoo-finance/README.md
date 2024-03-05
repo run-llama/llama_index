@@ -8,7 +8,7 @@ Here's an example of how to use this tool:
 
 ```python
 from llama_index.tools.yahoo_finance import YahooFinanceToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = YahooFinanceToolSpec()
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())

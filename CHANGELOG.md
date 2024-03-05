@@ -1,6 +1,54 @@
 # ChangeLog
 
-# [0.10.13] - 2024-02-26
+## [0.10.15] - 2024-03-01
+
+### New Features
+
+- Added FeishuWikiReader (#11491)
+- Added videodb retriever integration (#11463)
+- Added async to opensearch vector store (#11513)
+- New LangFuse one-click callback handler (#11324)
+
+### Bug Fixes / Nits
+
+- Fixed deadlock issue with async chat streaming (#11548)
+- Improved hidden file check in SimpleDirectoryReader (#11496)
+- Fixed null values in document metadata when using SimpleDirectoryReader (#11501)
+- Fix for sqlite utils in jsonalyze query engine (#11519)
+- Added base url and timeout to ollama multimodal LLM (#11526)
+- Updated duplicate handling in query fusion retriever (#11542)
+- Fixed bug in kg indexx struct updating (#11475)
+
+## [0.10.14] - 2024-02-28
+
+### New Features
+
+- Released llama-index-networks (#11413)
+- Jina reranker (#11291)
+- Added DuckDuckGo agent search tool (#11386)
+- helper functions for chatml (#10272)
+- added brave search tool for agents (#11468)
+- Added Friendli LLM integration (#11384)
+- metadata only queries for chromadb (#11328)
+
+### Bug Fixes / Nits
+
+- Fixed inheriting llm callback in synthesizers (#11404)
+- Catch delete error in milvus (#11315)
+- Fixed pinecone kwargs issue (#11422)
+- Supabase metadata filtering fix (#11428)
+- api base fix in gemini embeddings (#11393)
+- fix elasticsearch vector store await (#11438)
+- vllm server cuda fix (#11442)
+- fix for passing LLM to context chat engine (#11444)
+- set input types for cohere embeddings (#11288)
+- default value for azure ad token (#10377)
+- added back prompt mixin for react agent (#10610)
+- fixed system roles for gemini (#11481)
+- fixed mean agg pooling returning numpy float values (#11458)
+- improved json path parsing for JSONQueryEngine (#9097)
+
+## [0.10.13] - 2024-02-26
 
 ### New Features
 
@@ -18,7 +66,7 @@
 - Improve function calling in react agent (#11280)
 - Fixed MockLLM imports (#11376)
 
-# [0.10.12] - 2024-02-22
+## [0.10.12] - 2024-02-22
 
 ### New Features
 

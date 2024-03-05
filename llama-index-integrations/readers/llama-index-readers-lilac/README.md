@@ -1,5 +1,11 @@
 # Lilac reader
 
+```bash
+pip install llama-index-readers-papers
+
+pip install llama-index-readers-lilac
+```
+
 [Lilac](https://lilacml.com/) is an open-source product that helps you analyze, enrich, and clean unstructured data with AI.
 
 It can be used to analyze, clean, structure, and label data that can be used in downstream LlamaIndex and LangChain applications.
@@ -17,11 +23,10 @@ You can use any LlamaIndex loader to load data into Lilac, clean data, and then 
 See [this notebook](https://github.com/lilacai/lilac/blob/main/notebooks/LlamaIndexLoader.ipynb) for getting data into Lilac from LlamaHub.
 
 ```python
-from llama_index import download_loader
 import lilac as ll
 
 # See: https://llamahub.ai/l/papers-arxiv
-ArxivReader = download_loader("ArxivReader")
+from llama_index.readers.papers import ArxivReader
 
 loader = ArxivReader()
 documents = loader.load_data(search_query="au:Karpathy")
@@ -49,9 +54,9 @@ ll.start_server(project_dir="./data")
 ### Lilac => LlamaIndex Documents
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-LilacReader = download_loader("LilacReader")
+from llama_index.readers.lilac import LilacReader
 
 loader = LilacReader()
 documents = loader.load_data(

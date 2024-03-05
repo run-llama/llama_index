@@ -1,5 +1,9 @@
 # Snscrape twitter Loader
 
+```bash
+pip install llama-index-readers-snscrape-twitter
+```
+
 This loader loads documents from Twitter using the Snscrape Python package.
 
 ## Usage
@@ -7,10 +11,9 @@ This loader loads documents from Twitter using the Snscrape Python package.
 Here's an example usage of the SnscrapeReader.
 
 ```python
-from llama_index import download_loader
 import os
 
-SnscrapeReader = download_loader("SnscrapeTwitterReader")
+from llama_index.readers.snscrape_twitter import SnscrapeTwitterReader
 
 loader = SnscrapeReader()
 documents = loader.load_data(username="elonmusk", num_tweets=10)

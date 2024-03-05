@@ -12,7 +12,7 @@ This tool works best when the Agent has access to the GraphQL schema for the ser
 
 ```python
 from llama_index.tools.graphql import GraphQLToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = GraphQLToolSpec(
     url="https://spacex-production.up.railway.app/",
