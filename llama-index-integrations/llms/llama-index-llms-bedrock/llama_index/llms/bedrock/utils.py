@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.base.llms.generic_utils import (
@@ -113,14 +113,21 @@ def completion_to_anthopic_prompt(completion: str) -> str:
 
 
 class AnthropicProvider(Provider):
-    max_tokens_key = "max_tokens_to_sample"
+    max_tokens_key = "max_tokens"
 
     def __init__(self) -> None:
         self.messages_to_prompt = messages_to_anthropic_prompt
         self.completion_to_prompt = completion_to_anthopic_prompt
 
     def get_text_from_response(self, response: dict) -> str:
-        return response["completion"]
+        return ' '.join(response["content"])
+
+    def get_request_body(self, prompt: Sequence[Dict], inference_parameters: dict):
+        return {
+            "messages": prompt,
+            "anthropic_version": "bedrock-2023-05-31",
+            **inference_parameters
+        }
 
 
 class CohereProvider(Provider):
