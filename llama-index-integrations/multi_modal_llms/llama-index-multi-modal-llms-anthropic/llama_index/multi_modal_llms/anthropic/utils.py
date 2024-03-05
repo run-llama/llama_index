@@ -61,7 +61,6 @@ def generate_anthropic_multi_modal_chat_message(
     completion_content = []
     for image_document in image_documents:
         image_content: Dict[str, Any] = {}
-        # mimetype = image_document.image_mimetype or "image/jpeg"
         if image_document.image_path and image_document.image_path != "":
             mimetype = infer_image_mimetype(image_document.image_path)
             base64_image = encode_image(image_document.image_path)
