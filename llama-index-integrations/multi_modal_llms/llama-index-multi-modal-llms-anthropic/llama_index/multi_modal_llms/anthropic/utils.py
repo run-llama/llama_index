@@ -11,8 +11,8 @@ DEFAULT_ANTHROPIC_API_VERSION = ""
 
 
 ANTHROPIC_MULTI_MODAL_MODELS = {
-    "claude-3-opus-20240229": 200000,
-    "claude-3-sonnet-20240229": 200000,
+    "claude-3-opus-20240229": 180000,
+    "claude-3-sonnet-20240229": 180000,
 }
 
 
