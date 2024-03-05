@@ -1,5 +1,7 @@
 import logging
 from typing import Any, Dict, Optional, Sequence, Tuple, List
+import base64
+import httpx
 
 from llama_index.core.multi_modal_llms.generic_utils import encode_image
 from llama_index.core.schema import ImageDocument
@@ -25,6 +27,27 @@ https://console.anthropic.com/settings/keys
 logger = logging.getLogger(__name__)
 
 
+def infer_image_mimetype(image_file_path: str) -> str:
+    # Get the file extension
+    file_extension = image_file_path.split(".")[-1].lower()
+
+    # Map file extensions to mimetypes
+    # Claude 3 support the base64 source type for images, and the image/jpeg, image/png, image/gif, and image/webp media types.
+    # https://docs.anthropic.com/claude/reference/messages_post
+    if file_extension == "jpg" or file_extension == "jpeg":
+        return "image/jpeg"
+    elif file_extension == "png":
+        return "image/png"
+    elif file_extension == "gif":
+        return "image/gif"
+    elif file_extension == "webp":
+        return "image/webp"
+    # Add more mappings for other image types if needed
+
+    # If the file extension is not recognized
+    return "image/jpeg"
+
+
 def generate_anthropic_multi_modal_chat_message(
     prompt: str,
     role: str,
@@ -32,14 +55,15 @@ def generate_anthropic_multi_modal_chat_message(
 ) -> List[Dict[str, Any]]:
     # if image_documents is empty, return text only chat message
     if image_documents is None:
-        return [{"role": role.value, "content": prompt}]
+        return [{"role": role, "content": prompt}]
 
     # if image_documents is not empty, return text with images chat message
     completion_content = []
     for image_document in image_documents:
         image_content: Dict[str, Any] = {}
-        mimetype = image_document.image_mimetype or "image/png"
+        # mimetype = image_document.image_mimetype or "image/jpeg"
         if image_document.image_path and image_document.image_path != "":
+            mimetype = infer_image_mimetype(image_document.image_path)
             base64_image = encode_image(image_document.image_path)
             image_content = {
                 "type": "image",
@@ -53,6 +77,7 @@ def generate_anthropic_multi_modal_chat_message(
             "file_path" in image_document.metadata
             and image_document.metadata["file_path"] != ""
         ):
+            mimetype = infer_image_mimetype(image_document.metadata["file_path"])
             base64_image = encode_image(image_document.metadata["file_path"])
             image_content = {
                 "type": "image",
@@ -62,12 +87,23 @@ def generate_anthropic_multi_modal_chat_message(
                     "data": base64_image,
                 },
             }
-
+        elif image_document.image_url and image_document.image_url != "":
+            mimetype = infer_image_mimetype(image_document.image_url)
+            image_content = {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": mimetype,
+                    "data": base64.b64encode(
+                        httpx.get(image_document.image_url).content
+                    ).decode("utf-8"),
+                },
+            }
         completion_content.append(image_content)
 
     completion_content.append({"type": "text", "text": prompt})
 
-    return [{"role": role.value, "content": completion_content}]
+    return [{"role": role, "content": completion_content}]
 
 
 def resolve_anthropic_credentials(
@@ -75,7 +111,7 @@ def resolve_anthropic_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str]:
-    """ "Resolve OpenAI credentials.
+    """ "Resolve Anthropic credentials.
 
     The order of precedence is:
     1. param
@@ -90,7 +126,7 @@ def resolve_anthropic_credentials(
         "api_version", api_version, "ANTHROPIC_API_VERSION", ""
     )
 
-    # resolve from openai module or default
+    # resolve from Anthropic module or default
     final_api_key = api_key or ""
     final_api_base = api_base or DEFAULT_ANTHROPIC_API_BASE
     final_api_version = api_version or DEFAULT_ANTHROPIC_API_VERSION
