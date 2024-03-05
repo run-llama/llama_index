@@ -6,9 +6,9 @@ This tool wraps a VectorStoreIndex and enables a agent to call it with queries a
 
 ```python
 from llama_index.tools.vector_db import VectorDB
-from llama_index.agent import OpenAIAgent
-from llama_index.vector_stores.types import VectorStoreInfo
-from llama_index import VectorStoreIndex
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.vector_stores import VectorStoreInfo
+from llama_index.core import VectorStoreIndex
 
 index = VectorStoreIndex(nodes=nodes)
 tool_spec = VectorDB(index=index)

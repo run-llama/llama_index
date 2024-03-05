@@ -1,5 +1,9 @@
 # MainContentExtractor Website Loader
 
+```bash
+pip install llama-index-readers-web
+```
+
 This loader is a web scraper that fetches the text from static websites using the `MainContentExtractor` Python package.
 
 For information on how to extract main content, README in the following github repository
@@ -11,9 +15,7 @@ For information on how to extract main content, README in the following github r
 To use this loader, you need to pass in an array of URLs.
 
 ```python
-from llama_index import download_loader
-
-MainContentExtractorReader = download_loader("MainContentExtractorReader")
+from llama_index.readers.web import MainContentExtractorReader
 
 loader = MainContentExtractorReader()
 documents = loader.load_data(urls=["https://google.com"])
@@ -24,9 +26,9 @@ documents = loader.load_data(urls=["https://google.com"])
 ### LlamaIndex
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-MainContentExtractorReader = download_loader("MainContentExtractorReader")
+from llama_index.readers.web import MainContentExtractorReader
 
 loader = MainContentExtractorReader()
 documents = loader.load_data(urls=["https://google.com"])
@@ -39,12 +41,12 @@ index.query("What language is on this website?")
 Note: Make sure you change the description of the `Tool` to match your use-case.
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 from langchain.agents import initialize_agent, Tool
 from langchain.llms import OpenAI
 from langchain.chains.conversation.memory import ConversationBufferMemory
 
-MainContentExtractorReader = download_loader("MainContentExtractorReader")
+from llama_index.readers.web import MainContentExtractorReader
 
 loader = MainContentExtractorReader()
 documents = loader.load_data(urls=["https://google.com"])

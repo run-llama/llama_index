@@ -320,6 +320,8 @@ class OpensearchVectorClient:
         }
         self._os_client = _get_async_opensearch_client(self._endpoint, **kwargs)
         not_found_error = _import_not_found_error()
+
+        nest_asyncio.apply()
         event_loop = asyncio.get_event_loop()
         try:
             event_loop.run_until_complete(

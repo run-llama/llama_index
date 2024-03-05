@@ -42,7 +42,7 @@ llamaindex-cli download-llamapack CogniswitchAgentPack --download-dir ./cs_pack
 import warnings
 
 warnings.filterwarnings("ignore")
-from llama_index.core.llama_packs import CogniswitchAgentPack
+from llama_index.packs.cogniswitch_agent import CogniswitchAgentPack
 import os
 
 

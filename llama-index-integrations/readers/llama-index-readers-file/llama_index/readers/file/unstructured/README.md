@@ -1,5 +1,9 @@
 # Unstructured.io File Loader
 
+```bash
+pip install llama-index-readers-file
+```
+
 This loader extracts the text from a variety of unstructured text files using [Unstructured.io](https://github.com/Unstructured-IO/unstructured). Currently, the file extensions that are supported are `.txt`, `.docx`, `.pptx`, `.jpg`, `.png`, `.eml`, `.html`, and `.pdf` documents. A single local file is passed in each time you call `load_data`.
 
 Check out their documentation to see more details, but notably, this enables you to parse the unstructured data of many use-cases. For example, you can download the 10-K SEC filings of public companies (e.g. [Coinbase](https://www.sec.gov/ix?doc=/Archives/edgar/data/0001679788/000167978822000031/coin-20211231.htm)), and feed it directly into this loader without worrying about cleaning up the formatting or HTML tags.
@@ -10,7 +14,7 @@ To use this loader, you need to pass in a `Path` to a local file. Optionally, yo
 
 ```python
 from pathlib import Path
-from llama_hub.file.unstructured import UnstructuredReader
+from llama_index.readers.file import UnstructuredReader
 
 loader = UnstructuredReader()
 documents = loader.load_data(file=Path("./10k_filing.html"))
@@ -20,10 +24,9 @@ You can also easily use this loader in conjunction with `SimpleDirectoryReader` 
 
 ```python
 from pathlib import Path
-from llama_index import download_loader
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 
-UnstructuredReader = download_loader("UnstructuredReader")
+from llama_index.readers.file import UnstructuredReader
 
 dir_reader = SimpleDirectoryReader(
     "./data",
