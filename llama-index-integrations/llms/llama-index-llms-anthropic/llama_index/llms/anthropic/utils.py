@@ -1,4 +1,4 @@
-from typing import Dict, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -56,7 +56,7 @@ def _message_to_anthropic_prompt(message: ChatMessage) -> str:
     return prompt
 
 
-def messages_to_anthropic_prompt(messages: Sequence[ChatMessage]) -> str:
+def messages_to_anthropic_prompt(messages: Sequence[ChatMessage]) -> List[Dict]:
     if len(messages) == 0:
         raise ValueError("Got empty list of messages.")
 
@@ -67,5 +67,4 @@ def messages_to_anthropic_prompt(messages: Sequence[ChatMessage]) -> str:
             ChatMessage(role=MessageRole.ASSISTANT, content=""),
         ]
 
-    str_list = [_message_to_anthropic_prompt(message) for message in messages]
-    return "".join(str_list)
+    return [{"role": message.role, "content": message.content} for message in messages]
