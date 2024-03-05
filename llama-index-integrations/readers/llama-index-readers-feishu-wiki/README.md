@@ -11,8 +11,6 @@ To use this loader, you need to:
 3. finally, pass your feishu space id to this loader
 
 ```python
-from llama_index import download_loader
-
 app_id = "xxx"
 app_secret = "xxx"
 space_id = "xxx"

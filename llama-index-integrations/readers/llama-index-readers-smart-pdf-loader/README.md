@@ -1,5 +1,9 @@
 # Smart PDF Loader
 
+```bash
+pip install llama-index-readers-smart-pdf-loader
+```
+
 SmartPDFLoader is a super fast PDF reader that understands the layout structure of PDFs such as nested sections, nested lists, paragraphs and tables.
 It uses layout information to smartly chunk PDFs into optimal short contexts for LLMs.
 
@@ -16,7 +20,7 @@ pip install llmsherpa
 Here's an example usage of the SmartPDFLoader:
 
 ```python
-from llama_hub.smart_pdf_loader import SmartPDFLoader
+from llama_index.readers.smart_pdf_loader import SmartPDFLoader
 
 llmsherpa_api_url = "https://readers.llmsherpa.com/api/document/developer/parseDocument?renderFormat=all"
 pdf_url = "https://arxiv.org/pdf/1910.13461.pdf"  # also allowed is a file path e.g. /home/downloads/xyz.pdf
@@ -27,7 +31,7 @@ documents = pdf_loader.load_data(pdf_url)
 Now you can use the documents with other LlamaIndex components. For example, for retrieval augmented generation, try this:
 
 ```python
-from llama_index import VectorStoreIndex
+from llama_index.core import VectorStoreIndex
 
 index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()

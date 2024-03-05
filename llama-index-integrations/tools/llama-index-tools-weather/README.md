@@ -13,7 +13,7 @@ Here's an example usage of the OpenWeatherMapToolSpec.
 
 ```python
 from llama_index.tools.weather import OpenWeatherMapToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = OpenWeatherMapToolSpec(key="...")
 
