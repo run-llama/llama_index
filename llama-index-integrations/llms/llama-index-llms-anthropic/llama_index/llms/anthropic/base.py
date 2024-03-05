@@ -183,12 +183,13 @@ class Anthropic(LLM):
             for r in response:
                 if isinstance(r, ContentBlockDeltaEvent):
                     content_delta = r.delta.text
-                    content += content_delta
-                    yield ChatResponse(
-                        message=ChatMessage(role=role, content=content),
-                        delta=content_delta,
-                        raw=r,
-                    )
+                    if content_delta is not None:
+                        content += content_delta
+                        yield ChatResponse(
+                            message=ChatMessage(role=role, content=content),
+                            delta=content_delta,
+                            raw=r,
+                        )
 
         return gen()
 
@@ -243,7 +244,7 @@ class Anthropic(LLM):
             async for r in response:
                 if isinstance(r, ContentBlockDeltaEvent):
                     content_delta = r.delta.text
-                    if content_delta is not None:  # Check if content_delta is not None
+                    if content_delta is not None:
                         content += content_delta
                         yield ChatResponse(
                             message=ChatMessage(role=role, content=content),
