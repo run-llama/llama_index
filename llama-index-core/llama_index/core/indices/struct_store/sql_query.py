@@ -396,14 +396,12 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             partial_synthesis_prompt = self._response_synthesis_prompt.partial_format(
                 sql_query=sql_query_str,
             )
-            partial_refine_prompt = self._refine_synthesis_prompt.partial_format(
-                sql_query=sql_query_str,
-            )
+
             response_synthesizer = get_response_synthesizer(
                 llm=self._llm,
                 callback_manager=self.callback_manager,
                 text_qa_template=partial_synthesis_prompt,
-                refine_template=partial_refine_prompt,
+                refine_template=self._refine_synthesis_prompt,
             )
             response = await response_synthesizer.asynthesize(
                 query=query_bundle.query_str,
