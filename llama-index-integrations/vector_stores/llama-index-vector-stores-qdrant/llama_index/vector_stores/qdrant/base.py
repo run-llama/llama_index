@@ -344,9 +344,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def _create_collection(self, collection_name: str, vector_size: int) -> None:
         """Create a Qdrant collection."""
         from qdrant_client.http import models as rest
-        from qdrant_client.http.exceptions import UnexpectedResponse
 
-        try:
+        if not self._collection_exists(collection_name):
             if self.enable_hybrid:
                 self._client.create_collection(
                     collection_name=collection_name,
@@ -370,9 +369,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except (ValueError, UnexpectedResponse) as exc:
-            if "already exists" not in str(exc):
-                raise exc  # noqa: TRY201
+        else:
             logger.warning(
                 "Collection %s already exists, skipping collection creation.",
                 collection_name,
@@ -382,9 +379,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     async def _acreate_collection(self, collection_name: str, vector_size: int) -> None:
         """Asynchronous method to create a Qdrant collection."""
         from qdrant_client.http import models as rest
-        from qdrant_client.http.exceptions import UnexpectedResponse
 
-        try:
+        if not await self._acollection_exists(collection_name):
             if self.enable_hybrid:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
@@ -408,9 +404,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except (ValueError, UnexpectedResponse) as exc:
-            if "already exists" not in str(exc):
-                raise exc  # noqa: TRY201
+        else:
             logger.warning(
                 "Collection %s already exists, skipping collection creation.",
                 collection_name,
