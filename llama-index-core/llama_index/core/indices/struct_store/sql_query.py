@@ -22,6 +22,7 @@ from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.default_prompts import (
     DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT,
     DEFAULT_TEXT_TO_SQL_PROMPT,
+    DEFAULT_REFINE_PROMPT,
 )
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.prompts.prompt_type import PromptType
@@ -287,15 +288,15 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         return Response(response=response_str, metadata=metadata)
 
 
-def _validate_prompt(response_synthesis_prompt: BasePromptTemplate) -> None:
+def _validate_prompt(
+    custom_prompt: BasePromptTemplate,
+    default_prompt: BasePromptTemplate,
+) -> None:
     """Validate prompt."""
-    if (
-        response_synthesis_prompt.template_vars
-        != DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2.template_vars
-    ):
+    if custom_prompt.template_vars != default_prompt.template_vars:
         raise ValueError(
-            "response_synthesis_prompt must have the following template variables: "
-            "query_str, sql_query, context_str"
+            "custom_prompt must have the following template variables: "
+            f"{default_prompt.template_vars}"
         )
 
 
@@ -306,6 +307,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         callback_manager: Optional[CallbackManager] = None,
+        refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         verbose: bool = False,
         # deprecated
         service_context: Optional[ServiceContext] = None,
@@ -320,8 +322,14 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         self._response_synthesis_prompt = (
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2
         )
+        self._refine_synthesis_prompt = refine_synthesis_prompt or DEFAULT_REFINE_PROMPT
+
         # do some basic prompt validation
-        _validate_prompt(self._response_synthesis_prompt)
+        _validate_prompt(
+            self._response_synthesis_prompt, DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2
+        )
+        _validate_prompt(self._refine_synthesis_prompt, DEFAULT_REFINE_PROMPT)
+
         self._synthesize_response = synthesize_response
         self._verbose = verbose
         super().__init__(
@@ -368,6 +376,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 llm=self._llm,
                 callback_manager=self.callback_manager,
                 text_qa_template=partial_synthesis_prompt,
+                refine_template=self._refine_synthesis_prompt,
                 verbose=self._verbose,
             )
             response = response_synthesizer.synthesize(
@@ -391,10 +400,12 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             partial_synthesis_prompt = self._response_synthesis_prompt.partial_format(
                 sql_query=sql_query_str,
             )
+
             response_synthesizer = get_response_synthesizer(
                 llm=self._llm,
                 callback_manager=self.callback_manager,
                 text_qa_template=partial_synthesis_prompt,
+                refine_template=self._refine_synthesis_prompt,
             )
             response = await response_synthesizer.asynthesize(
                 query=query_bundle.query_str,
@@ -422,6 +433,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
+        refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
@@ -447,6 +459,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         super().__init__(
             synthesize_response=synthesize_response,
             response_synthesis_prompt=response_synthesis_prompt,
+            refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
             service_context=service_context,
             callback_manager=callback_manager,
@@ -478,6 +491,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
+        refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
@@ -502,6 +516,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
         super().__init__(
             synthesize_response=synthesize_response,
             response_synthesis_prompt=response_synthesis_prompt,
+            refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
             service_context=service_context,
             callback_manager=callback_manager,
@@ -526,6 +541,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
+        refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         sql_only: bool = False,
@@ -547,6 +563,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         super().__init__(
             synthesize_response=synthesize_response,
             response_synthesis_prompt=response_synthesis_prompt,
+            refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
             service_context=service_context,
             callback_manager=callback_manager,
