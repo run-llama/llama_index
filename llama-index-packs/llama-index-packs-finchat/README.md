@@ -1,4 +1,4 @@
-# Corrective Retrieval Augmented Generation Llama Pack
+# Finance Chat Llama Pack based on OpenAIAgent
 
 This LlamaPack implements a hierarchical agent based on LLM for financial chat and information extraction purposed.
 
