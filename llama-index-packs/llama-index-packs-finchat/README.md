@@ -1,6 +1,6 @@
 # Corrective Retrieval Augmented Generation Llama Pack
 
-This LlamaPack implements a heirarchical agent based on LLM for finacial chat and information extraction purposed.
+This LlamaPack implements a hierarchical agent based on LLM for financial chat and information extraction purposed.
 
 LLM agent is connected to various open financial apis as well as daily updated SP500 postgres SQL database storing
 opening & closing price, volume as well as past earnings.
