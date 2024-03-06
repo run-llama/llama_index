@@ -39,4 +39,32 @@ class PremAI(CustomLLM):
         ),
     )
 
+    max_tokens: Optional[int] = Field(
+        default=512, description=("The max number of tokens to output from the LLM. ")
+    )
+
+    system_prompt: Optional[str] = Field(
+        default=None,
+        description=(
+            "System prompts helps the model to guide the generation and the way it acts. Default system prompt is the one set on your deployed LaunchPad model under the specified project."
+        ),
+    )
+
+    generation_kwargs: Optional[dict] = Field(
+        default={
+            "top_p": 0.95,
+            "temperature": 0.1,
+            "logit_bias": None,
+            "max_tokens": max_tokens,
+            "presence_penalty": None,
+            "frequency_penalty": None,
+            "seed": None,
+            "stop": None,
+        },
+        default_factory=dict,
+        description=(
+            "The default generation arguments like temperature, top_p, log_probs etc. Please note: The default parameters are the one which appears in your deployed LaunchPad."
+        ),
+    )
+
     _client: "premai.Prem" = PrivateAttr()
