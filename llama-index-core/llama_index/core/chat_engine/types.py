@@ -186,8 +186,9 @@ class StreamingAgentChatResponse:
                     if self._is_done:
                         break
                     continue
-                self._unformatted_response += delta
-                yield delta
+                if delta is not None:
+                    self._unformatted_response += delta
+                    yield delta
             else:
                 break
         self.response = self._unformatted_response.strip()
