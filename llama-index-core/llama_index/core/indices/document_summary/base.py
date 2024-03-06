@@ -199,13 +199,13 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
                 nodes=nodes_with_scores,
             )
             summary_response = cast(Response, summary_response)
-            doc_metadata = {} if not doc_id_to_nodes[doc_id] else doc_id_to_nodes[doc_id][0].metadata
+            metadata = doc_id_to_nodes.get(doc_id, [BaseNode(metadata={})])[0].metadata
             summary_node_dict[doc_id] = TextNode(
                 text=summary_response.response,
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc_id)
                 },
-                metadata=doc_metadata,
+                metadata=metadata,
             )
             self.docstore.add_documents([summary_node_dict[doc_id]])
             logger.info(
