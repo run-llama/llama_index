@@ -44,4 +44,6 @@ def messages_to_anthropic_prompt(messages: Sequence[ChatMessage]) -> Sequence[Di
     if len(messages) == 0:
         raise ValueError("Got empty list of messages.")
 
-    return [{"role": message.role, "content": message.content} for message in messages]
+    return [
+        {"role": message.role.value, "content": message.content} for message in messages
+    ]
