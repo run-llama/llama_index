@@ -169,12 +169,20 @@ class KGTableRetriever(BaseRetriever):
     def _extract_rel_text_keywords(self, rel_texts: List[str]) -> List[str]:
         """Find the keywords for given rel text triplets."""
         keywords = []
+
         for rel_text in rel_texts:
-            keyword = rel_text.split(",")[0]
+            splited_texts = rel_text.split(",")
+
+            if len(splited_texts) <= 0:
+                continue
+            keyword = splited_texts[0]
             if keyword:
                 keywords.append(keyword.strip("(\"'"))
+
             # Return the Object as well
-            keyword = rel_text.split(",")[2]
+            if len(splited_texts) <= 2:
+                continue
+            keyword = splited_texts[2]
             if keyword:
                 keywords.append(keyword.strip(" ()\"'"))
         return keywords
@@ -222,6 +230,7 @@ class KGTableRetriever(BaseRetriever):
                 rel_map = self._graph_store.get_rel_map(
                     list(subjs), self.graph_store_query_depth
                 )
+
                 logger.debug(f"rel_map: {rel_map}")
 
                 if not rel_map:
