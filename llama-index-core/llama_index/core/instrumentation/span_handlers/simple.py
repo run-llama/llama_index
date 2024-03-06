@@ -16,7 +16,7 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         """Class name."""
         return "SimpleSpanHandler"
 
-    def new_span(self, id: str, parent_span_id: Optional[str]) -> SimpleSpan:
+    def new_span(self, id: str, parent_span_id: Optional[str], **kwargs) -> SimpleSpan:
         """Create a span."""
         return SimpleSpan(id_=id, parent_id=parent_span_id)
 

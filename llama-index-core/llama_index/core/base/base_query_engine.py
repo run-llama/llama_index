@@ -20,6 +20,7 @@ from llama_index.core.instrumentation.events.query import (
     QueryEndEvent,
     QueryStartEvent,
 )
+from llama_index.core.instrumentation.span_handlers import LegacyCallbackSpanHandler
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -34,6 +35,10 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
         callback_manager: Optional[CallbackManager],
     ) -> None:
         self.callback_manager = callback_manager or CallbackManager([])
+        legacy_span_handler = LegacyCallbackSpanHandler(
+            callback_manager=self.callback_manager
+        )
+        dispatcher.span_handler = legacy_span_handler
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -47,7 +52,7 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
         dispatcher.event(QueryStartEvent())
         if isinstance(str_or_query_bundle, str):
             str_or_query_bundle = QueryBundle(str_or_query_bundle)
-        query_result = self._query(str_or_query_bundle)
+        query_result = self._query(query_bundle=str_or_query_bundle)
         dispatcher.event(QueryEndEvent())
         return query_result
 
@@ -56,7 +61,7 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
         dispatcher.event(QueryStartEvent())
         if isinstance(str_or_query_bundle, str):
             str_or_query_bundle = QueryBundle(str_or_query_bundle)
-        query_result = await self._aquery(str_or_query_bundle)
+        query_result = await self._aquery(query_bundle=str_or_query_bundle)
         dispatcher.event(QueryEndEvent())
         return query_result
 

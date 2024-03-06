@@ -9,11 +9,11 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
         """Class name."""
         return "NullSpanHandler"
 
-    def span_enter(self, id: str) -> None:
+    def span_enter(self, id: str, **kwargs) -> None:
         """Logic for entering a span."""
         return
 
-    def span_exit(self, id: str, result: Optional[Any]) -> None:
+    def span_exit(self, id: str, result: Optional[Any], **kwargs) -> None:
         """Logic for exiting a span."""
         return
 

@@ -54,11 +54,11 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
-    def span_enter(self, id: str) -> None:
+    def span_enter(self, id: str, **kwargs) -> None:
         """Send notice to handlers that a span with id has started."""
         c = self
         while c:
-            c.span_handler.span_enter(id)
+            c.span_handler.span_enter(id, **kwargs)
             if not c.propagate:
                 c = None
             else:
@@ -68,17 +68,17 @@ class Dispatcher(BaseModel):
         """Send notice to handlers that a span with id is being dropped."""
         c = self
         while c:
-            c.span_handler.span_drop(id, err)
+            c.span_handler.span_drop(id, err, **kwargs)
             if not c.propagate:
                 c = None
             else:
                 c = c.parent
 
-    def span_exit(self, id: str, result: Optional[Any] = None) -> None:
+    def span_exit(self, id: str, result: Optional[Any] = None, **kwargs) -> None:
         """Send notice to handlers that a span with id is exiting."""
         c = self
         while c:
-            c.span_handler.span_exit(id, result)
+            c.span_handler.span_exit(id, result, **kwargs)
             if not c.propagate:
                 c = None
             else:
@@ -88,7 +88,7 @@ class Dispatcher(BaseModel):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             id = f"{func.__qualname__}-{uuid.uuid4()}"
-            self.span_enter(id=id)
+            self.span_enter(id=id, **kwargs)
             try:
                 result = func(*args, **kwargs)
             except Exception as e:
@@ -100,7 +100,7 @@ class Dispatcher(BaseModel):
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
             id = f"{func.__qualname__}-{uuid.uuid4()}"
-            self.span_enter(id=id)
+            self.span_enter(id=id, **kwargs)
             try:
                 result = await func(*args, **kwargs)
             except Exception as e:
