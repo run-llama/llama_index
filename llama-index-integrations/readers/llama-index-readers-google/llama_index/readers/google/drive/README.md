@@ -16,7 +16,12 @@ For example, the file_id of `https://drive.google.com/file/d/1LEqD_zQiOizKrBKZYK
 
 ### mime_types
 
-You can also filter the files by the mimeType e.g.: `mime_types=["application/vnd.google-apps.document"]`
+DEPRECATED: You can also filter the files by the mimeType e.g.: `mime_types=["application/vnd.google-apps.document"]`
+
+### query_string
+
+You can also filter the files by the query string e.g.: `query_string="name contains 'test'"`
+It gives more flexibility to filter the documents. More info: https://developers.google.com/drive/api/v3/search-files
 
 ## Usage
 
