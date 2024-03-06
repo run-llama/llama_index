@@ -93,7 +93,7 @@ class Dispatcher(BaseModel):
                 return func(*args, **kwargs)
             except Exception as e:
                 self.span_drop(id=id, err=e)
-            finally:
+            else:
                 self.span_exit(id=id)
 
         @functools.wraps(func)
@@ -104,7 +104,7 @@ class Dispatcher(BaseModel):
                 return await func(*args, **kwargs)
             except Exception as e:
                 self.span_drop(id=id, err=e)
-            finally:
+            else:
                 self.span_exit(id=id)
 
         if inspect.iscoroutinefunction(func):
