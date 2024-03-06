@@ -1,5 +1,39 @@
 # ChangeLog
 
+## [2024-03-06]
+
+### `llama-index-cli` [0.1.8]
+
+- Update mappings for `upgrade` command (#11699)
+
+### `llama-index-vector-stores-astra-db` [0.1.4]
+
+- Update wording in warning message (#11702)
+
+### `llama-index-vector-stores-qdrant` [0.1.4]
+
+- Catch RPC errors (#11657)
+
+### `llama-index-vector-stores-opensearch` [0.1.7]
+
+- Avoid calling `nest_asyncio.apply()` in code to avoid confusing errors for users (#11707)
+
+### `llama-index-multi-modal-llms-anthropic` [0.1.2]
+
+- Added support for new multi-modal models `haiku` and `sonnet` (#11656)
+
+### `llama-index-readers-file` [0.1.8]
+
+- Added support for checking if NLTK files are already downloaded (#11676)
+
+### `llama-index-readers-json` [0.1.4]
+
+- Use the metadata passed in when creating documents (#11626)
+
+### `llama-index-packs-finchat` [0.1.0]
+
+- Added a new llama-pack for hierarchical agents + finance chat (#11387)
+
 ## [0.10.16] - 2024-03-05
 
 ### New Features
