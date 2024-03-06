@@ -1,5 +1,24 @@
 # ChangeLog
 
+## [0.10.16] - 2024-03-05
+
+### New Features
+
+- Anthropic support for new models (#11623, #11612)
+- Easier creation of chat prompts (#11583)
+- Added a raptor retriever llama-pack (#11527)
+- Improve batch cohere embeddings through bedrock (#11572)
+- Added support for vertex AI embeddings (#11561)
+
+### Bug Fixes / Nits
+
+- Ensure order in async embeddings generation (#11562)
+- Fixed empty metadata for csv reader (#11563)
+- Serializable fix for composable retrievers (#11617)
+- Fixed milvus metadata filter support (#11566)
+- FIxed pydantic import in clickhouse vector store (#11631)
+- Fixed system prompts for gemini/vertext-gemini (#11511)
+
 ## [0.10.15] - 2024-03-01
 
 ### New Features
