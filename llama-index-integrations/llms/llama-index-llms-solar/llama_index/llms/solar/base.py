@@ -52,23 +52,12 @@ DEFAULT_SOLAR_MODEL = "solar-1-mini-translate-koen"
 
 
 class Solar(OpenAI):
-    """
-    Solar is a thin wrapper around the OpenAI model that makes it compatible with
-    3rd party tools that provide an openai-compatible api.
 
-    Currently, llama_index prevents using custom models with their OpenAI class
-    because they need to be able to infer some metadata from the model name.
-
-    NOTE: You still need to set the OPENAI_BASE_API and SOLAR_API_KEY environment
-    variables or the api_key and api_base constructor arguments.
-    SOLAR_API_KEY/api_key can normally be set to anything in this case,
-    but will depend on the tool you're using.
-    """
     api_key: str = Field(default=None, description="The SOLAR API key.")
-    api_base: str = Field(default="", description="The base URL for OpenAI API.")
+    api_base: str = Field(default="", description="The base URL for SOLAR API.")
 
     model: str = Field(
-        default="solar-1-mini-translate-koen", description="The OpenAI model to use."
+        default="solar-1-mini-translate-koen", description="The SOLAR model to use."
     )
 
     context_window: int = Field(
@@ -258,7 +247,7 @@ def resolve_solar_credentials(
     The order of precedence is:
     1. param
     2. env
-    3. openai module
+    3. solar module
     4. default
     """
     # resolve from param or env
