@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Dict
+from typing import List, Optional, Dict
 import functools
 import inspect
 import uuid
@@ -43,13 +43,12 @@ class Dispatcher(BaseModel):
         """Add handler to set of handlers."""
         self.event_handlers += [handler]
 
-    def event(self, event_cls: Type[BaseEvent]) -> None:
+    def event(self, event: BaseEvent, **kwargs) -> None:
         """Dispatch event to all registered handlers."""
         c = self
-        event = event_cls()
         while c:
             for h in c.event_handlers:
-                h.handle(event)
+                h.handle(event, **kwargs)
             if not c.propagate:
                 c = None
             else:
@@ -65,12 +64,18 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
-    def span_drop(self, id: str) -> None:
-        """Send notice to handlers that a span with id has started."""
-        return
+    def span_drop(self, id: str, exception: Optional[Exception], **kwargs) -> None:
+        """Send notice to handlers that a span with id is being dropped."""
+        c = self
+        while c:
+            c.span_handler.span_drop(id, exception)
+            if not c.propagate:
+                c = None
+            else:
+                c = c.parent
 
     def span_exit(self, id: str) -> None:
-        """Send notice to handlers that a span with id has started."""
+        """Send notice to handlers that a span with id is exiting."""
         c = self
         while c:
             c.span_handler.span_exit(id)
@@ -87,7 +92,7 @@ class Dispatcher(BaseModel):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                self.span_drop(id=id)
+                self.span_drop(id=id, err=e)
             finally:
                 self.span_exit(id=id)
 
@@ -98,7 +103,7 @@ class Dispatcher(BaseModel):
             try:
                 return await func(*args, **kwargs)
             except Exception as e:
-                self.span_drop(id=id)
+                self.span_drop(id=id, err=e)
             finally:
                 self.span_exit(id=id)
 

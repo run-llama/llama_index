@@ -1,3 +1,4 @@
+from typing import Any
 from llama_index.core.instrumentation.event_handlers.base import BaseEventHandler
 from llama_index.core.instrumentation.events.base import BaseEvent
 
@@ -8,6 +9,6 @@ class NullEventHandler(BaseEventHandler):
         """Class name."""
         return "NullEventHandler"
 
-    def handle(self, event: BaseEvent) -> None:
+    def handle(self, event: BaseEvent, **kwargs) -> Any:
         """Handle logic - null handler does nothing."""
         return

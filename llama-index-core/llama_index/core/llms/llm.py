@@ -255,7 +255,7 @@ class LLM(BaseLLM):
         **prompt_args: Any,
     ) -> str:
         """Predict."""
-        dispatcher.event(LLMPredictStartEvent)
+        dispatcher.event(LLMPredictStartEvent())
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -267,7 +267,7 @@ class LLM(BaseLLM):
             response = self.complete(formatted_prompt, formatted=True)
             output = response.text
 
-        dispatcher.event(LLMPredictEndEvent)
+        dispatcher.event(LLMPredictEndEvent())
         return self._parse_output(output)
 
     def stream(
@@ -299,7 +299,7 @@ class LLM(BaseLLM):
         **prompt_args: Any,
     ) -> str:
         """Async predict."""
-        dispatcher.event(LLMPredictStartEvent)
+        dispatcher.event(LLMPredictStartEvent())
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -311,7 +311,7 @@ class LLM(BaseLLM):
             response = await self.acomplete(formatted_prompt, formatted=True)
             output = response.text
 
-        dispatcher.event(LLMPredictEndEvent)
+        dispatcher.event(LLMPredictEndEvent())
         return self._parse_output(output)
 
     async def astream(

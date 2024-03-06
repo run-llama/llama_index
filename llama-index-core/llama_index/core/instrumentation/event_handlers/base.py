@@ -1,3 +1,4 @@
+from typing import Any
 from abc import abstractmethod
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.instrumentation.events.base import BaseEvent
@@ -12,7 +13,7 @@ class BaseEventHandler(BaseModel):
         return "BaseEventHandler"
 
     @abstractmethod
-    def handle(self, event: BaseEvent) -> None:
+    def handle(self, event: BaseEvent, **kwargs) -> Any:
         """Logic for handling event."""
 
     class Config:

@@ -198,7 +198,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        self.dispatcher.event(SynthesizeStartEvent)
+        dispatcher.event(SynthesizeStartEvent())
 
         if len(nodes) == 0:
             if self._streaming:
@@ -229,7 +229,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
-        self.dispatcher.event(SynthesizeEndEvent)
+        dispatcher.event(SynthesizeEndEvent())
         return response
 
     @dispatcher.span
@@ -240,7 +240,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        self.dispatcher.event(SynthesizeStartEvent)
+        dispatcher.event(SynthesizeStartEvent())
         if len(nodes) == 0:
             if self._streaming:
                 self.dispatcher.event(SynthesizeEndEvent)
@@ -270,7 +270,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
-        self.dispatcher.event(SynthesizeEndEvent)
+        dispatcher.event(SynthesizeEndEvent())
         return response
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
