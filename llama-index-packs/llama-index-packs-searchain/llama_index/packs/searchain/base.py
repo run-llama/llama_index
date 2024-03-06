@@ -85,13 +85,11 @@ class SearChainPack(BaseLlamaPack):
         answer_start_index = outputs.start_logits.argmax()
         answer_end_index = outputs.end_logits.argmax()
         predict_answer_tokens = encoded_inputs.input_ids[0, answer_start_index : answer_end_index + 1]
-        #print(tokenizer.decode(predict_answer_tokens))
         answer = self.dprtokenizer.decode(predict_answer_tokens)
         return answer,relevance_logits
 
     def _ir(self,query,query_seen_list):
         flag_contibue_label = False
-        #print('recv query is {}'.format(query))
         query_list = query.split('\n')
         message = ''
         for idx in range(len(query_list)):
@@ -104,14 +102,10 @@ class SearChainPack(BaseLlamaPack):
                 query_item = temp[1]
                 if ':' in query_item:
                     query_item = query_item[1:]
-                #print('solving: '+query_item)
                 if not _have_seen_or_not(self.crossencoder,query_item,query_seen_list,query_type):
                     now_reference = {}
                     query_seen_list.append(query_item)
                     response = str(self.query_engine.query(query_item))
-#                   print('query_item:'+query_item)
-#                   print('top1_passage:'+response)
-#                   print(response)
 
                     answer,relevance_score = self._get_answer(query=query_item,texts='',title=response)
                     now_reference['query'] = query_item
@@ -119,15 +113,9 @@ class SearChainPack(BaseLlamaPack):
                     now_reference['reference'] = response
                     now_reference['ref_score'] = relevance_score
                     now_reference['idx'] = response
-
-                    # print('answer is '+answer)
-                    # print('reference is'+response)
-                    # print('score is {}'.format(relevance_score))
-                    # print('query_type is '+query_type)
                     
                     if 'Unsolved' in query_type:
                         message = '[Unsolved Query]:{}<SEP>[Answer]:{}<SEP>[Reference]:{}<SEP>'.format(query_item,answer,response)
-                        #print(message)
                         flag_contibue_label = True
                         break
                     elif relevance_score > 1.5:
@@ -138,13 +126,11 @@ class SearChainPack(BaseLlamaPack):
                                 predict_answer = query_list[answer_start_idx]
                                 break
                             answer_start_idx += 1
-                        #print('predict answer is '+predict_answer)
                         match_label = _match_or_not(prediction=predict_answer,ground_truth=answer)
                         if match_label:
                             continue
                         else:
                             message = '[Query]:{}<SEP>[Answer]:{}<SEP>[Reference]:{}<SEP>'.format(query_item,answer,response)
-                            #print(message)
                             flag_contibue_label = True
                             break
         return message,flag_contibue_label,query_seen_list
@@ -167,7 +153,6 @@ class SearChainPack(BaseLlamaPack):
         for k, example in enumerate(data):
             if k < start_idx:
                 continue
-            #print(k)
             example = json.loads(example)
             q = example['question']
             round_count = 0
@@ -202,13 +187,11 @@ class SearChainPack(BaseLlamaPack):
             predict_answer = ''
             query_seen_list = []
             while round_count < 5 and not feedback_answer == 'end':
-                #print('round is {}'.format(round_count))
                 time.sleep(0.5)
                 rsp = self.llm.chat(message_keys_list)
                 round_count += 1
                 input_str = str(rsp.message.content)
                 message_keys_list.append(ChatMessage(role='assistant',content=input_str))
-                #print('solving......')
                 predict_answer += input_str
         
                 message,flag_contibue_label,query_seen_list = self._ir(input_str,query_seen_list)
@@ -217,8 +200,6 @@ class SearChainPack(BaseLlamaPack):
                 else:
                     feedback = 'end'
                 
-                #print('send message {}'.format(input_str))
-                #print('feedback is '+feedback)
                 if feedback == 'end':
                     break
                 #[Query]:xxxx<SEP>[Answer]:xxxx<SEP>[Reference]:xxxx<SEP>
