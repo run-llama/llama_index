@@ -109,6 +109,9 @@ class Llamafile(CustomLLM):
         with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             response = client.post(
                 url=f"{self.base_url}/v1/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                },
                 json=payload,
             )
             response.raise_for_status()
@@ -150,6 +153,9 @@ class Llamafile(CustomLLM):
             with client.stream(
                 method="POST",
                 url=f"{self.base_url}/v1/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                },
                 json=payload,
             ) as response:
                 response.raise_for_status()
@@ -200,6 +206,9 @@ class Llamafile(CustomLLM):
         with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             response = client.post(
                 url=f"{self.base_url}/completion",
+                headers={
+                    "Content-Type": "application/json",
+                },
                 json=payload,
             )
             response.raise_for_status()
@@ -226,6 +235,9 @@ class Llamafile(CustomLLM):
             with client.stream(
                 method="POST",
                 url=f"{self.base_url}/completion",
+                headers={
+                    "Content-Type": "application/json",
+                },
                 json=payload,
             ) as response:
                 response.raise_for_status()
