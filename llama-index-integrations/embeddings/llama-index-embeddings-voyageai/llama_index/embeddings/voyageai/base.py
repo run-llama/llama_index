@@ -29,7 +29,7 @@ class VoyageEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: str = "voyage-01",
+        model_name: str,
         voyage_api_key: Optional[str] = None,
         embed_batch_size: Optional[int] = None,
         truncation: Optional[bool] = None,
