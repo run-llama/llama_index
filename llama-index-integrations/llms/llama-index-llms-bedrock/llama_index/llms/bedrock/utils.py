@@ -120,10 +120,10 @@ class AnthropicProvider(Provider):
         self.completion_to_prompt = completion_to_anthopic_prompt
 
     def get_text_from_stream_response(self, response: dict) -> str:
-        if response['type'] == 'content_block_delta':
-            return response['delta']['text']
+        if response["type"] == "content_block_delta":
+            return response["delta"]["text"]
         else:
-            return ''
+            return ""
 
     def get_text_from_response(self, response: dict) -> str:
         return response["content"][0]["text"]
@@ -132,7 +132,7 @@ class AnthropicProvider(Provider):
         return {
             "messages": prompt,
             "anthropic_version": "bedrock-2023-05-31",  # Required by AWS.
-            **inference_parameters
+            **inference_parameters,
         }
 
 
