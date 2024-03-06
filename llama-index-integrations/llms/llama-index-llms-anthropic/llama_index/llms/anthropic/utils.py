@@ -1,4 +1,4 @@
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, Sequence, Tuple
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -40,31 +40,8 @@ def messages_to_anthropic_messages(
     return anthropic_messages, system_prompt
 
 
-# Function used in bedrock
-def _message_to_anthropic_prompt(message: ChatMessage) -> str:
-    if message.role == MessageRole.USER:
-        prompt = f"{HUMAN_PREFIX} {message.content}"
-    elif message.role == MessageRole.ASSISTANT:
-        prompt = f"{ASSISTANT_PREFIX} {message.content}"
-    elif message.role == MessageRole.SYSTEM:
-        prompt = f"{message.content}"
-    elif message.role == MessageRole.FUNCTION:
-        raise ValueError(f"Message role {MessageRole.FUNCTION} is not supported.")
-    else:
-        raise ValueError(f"Unknown message role: {message.role}")
-
-    return prompt
-
-
-def messages_to_anthropic_prompt(messages: Sequence[ChatMessage]) -> List[Dict]:
+def messages_to_anthropic_prompt(messages: Sequence[ChatMessage]) -> Sequence[Dict]:
     if len(messages) == 0:
         raise ValueError("Got empty list of messages.")
-
-    # NOTE: make sure the prompt ends with the assistant prefix
-    if messages[-1].role != MessageRole.ASSISTANT:
-        messages = [
-            *list(messages),
-            ChatMessage(role=MessageRole.ASSISTANT, content=""),
-        ]
 
     return [{"role": message.role, "content": message.content} for message in messages]
