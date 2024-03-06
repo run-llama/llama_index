@@ -199,10 +199,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
                 nodes=nodes_with_scores,
             )
             summary_response = cast(Response, summary_response)
-            metadata = (
-                doc_id_to_nodes.get(doc_id, [BaseNode(metadata=dict())])[0].metadata
-                or dict()
-            )
+            metadata = doc_id_to_nodes.get(doc_id, [TextNode(metadata=dict())])[0].metadata
             summary_node_dict[doc_id] = TextNode(
                 text=summary_response.response,
                 relationships={
