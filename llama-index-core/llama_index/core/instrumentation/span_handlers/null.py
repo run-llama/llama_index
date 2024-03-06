@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
 from llama_index.core.instrumentation.span.base import BaseSpan
 
@@ -13,15 +13,17 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
         """Logic for entering a span."""
         return
 
-    def span_exit(self, id: str) -> None:
+    def span_exit(self, id: str, result: Optional[Any]) -> None:
         """Logic for exiting a span."""
         return
 
-    def new_span(self) -> None:
+    def new_span(self, id: str, parent_span_id: Optional[str], **kwargs) -> None:
         """Create a span."""
         return
 
-    def prepare_to_exit_span(self, id: str, **kwargs) -> None:
+    def prepare_to_exit_span(
+        self, id: str, result: Optional[Any] = None, **kwargs
+    ) -> None:
         """Logic for exiting a span."""
         return
 

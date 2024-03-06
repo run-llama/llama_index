@@ -33,9 +33,9 @@ class BaseSpanHandler(BaseModel, Generic[T]):
                 self.open_spans[id] = span
                 self.current_span_id = id
 
-    def span_exit(self, id: str, **kwargs) -> None:
+    def span_exit(self, id: str, result: Optional[Any] = None, **kwargs) -> None:
         """Logic for exiting a span."""
-        self.prepare_to_exit_span(id, **kwargs)
+        self.prepare_to_exit_span(id, result=result, **kwargs)
         if self.current_span_id == id:
             self.current_span_id = self.open_spans[id].parent_id
         del self.open_spans[id]
@@ -53,7 +53,9 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         ...
 
     @abstractmethod
-    def prepare_to_exit_span(self, id: str, **kwargs) -> Any:
+    def prepare_to_exit_span(
+        self, id: str, result: Optional[Any] = None, **kwargs
+    ) -> Any:
         """Logic for preparing to exit a span."""
         ...
 

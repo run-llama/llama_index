@@ -1,5 +1,6 @@
 from typing import Any, Optional
 from llama_index.core.bridge.pydantic import Field
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.callbacks.base import EventContext, EventPayload, CBEventType
 from llama_index.core.instrumentation.span import LegacyCallbackSpan
@@ -32,11 +33,17 @@ class LegacyCallbackSpanHandler(BaseSpanHandler[LegacyCallbackSpan]):
             id_=id, parent_id=parent_span_id, event_context=event_context
         )
 
-    def prepare_to_exit_span(self, id: str, **kwargs: Any) -> None:
+    def prepare_to_exit_span(
+        self, id: str, result: Optional[Any] = None, **kwargs: Any
+    ) -> None:
         """Logic for preparing to drop a span."""
         event_context = self.open_spans[id].event_context
+        if isinstance(result, RESPONSE_TYPE):
+            payload = {EventPayload.RESPONSE: result}
+        else:
+            payload = {}
         if event_context and not event_context.finished:
-            event_context.on_end()
+            event_context.on_end(payload=payload)
         self.callback_manager.end_trace(id)
 
     def prepare_to_drop_span(

@@ -1,4 +1,4 @@
-from typing import cast, List, Optional
+from typing import Any, cast, List, Optional
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.instrumentation.span.simple import SimpleSpan
 from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
@@ -20,7 +20,9 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         """Create a span."""
         return SimpleSpan(id_=id, parent_id=parent_span_id)
 
-    def prepare_to_exit_span(self, id: str, **kwargs) -> None:
+    def prepare_to_exit_span(
+        self, id: str, result: Optional[Any] = None, **kwargs
+    ) -> None:
         """Logic for preparing to drop a span."""
         span = self.open_spans[id]
         span = cast(SimpleSpan, span)

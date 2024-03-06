@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import Any, List, Optional, Dict
 import functools
 import inspect
 import uuid
@@ -64,21 +64,21 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
-    def span_drop(self, id: str, exception: Optional[Exception], **kwargs) -> None:
+    def span_drop(self, id: str, err: Optional[Exception], **kwargs) -> None:
         """Send notice to handlers that a span with id is being dropped."""
         c = self
         while c:
-            c.span_handler.span_drop(id, exception)
+            c.span_handler.span_drop(id, err)
             if not c.propagate:
                 c = None
             else:
                 c = c.parent
 
-    def span_exit(self, id: str) -> None:
+    def span_exit(self, id: str, result: Optional[Any] = None) -> None:
         """Send notice to handlers that a span with id is exiting."""
         c = self
         while c:
-            c.span_handler.span_exit(id)
+            c.span_handler.span_exit(id, result)
             if not c.propagate:
                 c = None
             else:
@@ -90,22 +90,24 @@ class Dispatcher(BaseModel):
             id = f"{func.__qualname__}-{uuid.uuid4()}"
             self.span_enter(id=id)
             try:
-                return func(*args, **kwargs)
+                result = func(*args, **kwargs)
             except Exception as e:
                 self.span_drop(id=id, err=e)
             else:
-                self.span_exit(id=id)
+                self.span_exit(id=id, result=result)
+                return result
 
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
             id = f"{func.__qualname__}-{uuid.uuid4()}"
             self.span_enter(id=id)
             try:
-                return await func(*args, **kwargs)
+                result = await func(*args, **kwargs)
             except Exception as e:
                 self.span_drop(id=id, err=e)
             else:
-                self.span_exit(id=id)
+                self.span_exit(id=id, result=result)
+                return result
 
         if inspect.iscoroutinefunction(func):
             return async_wrapper
