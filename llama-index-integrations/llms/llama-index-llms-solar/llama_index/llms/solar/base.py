@@ -48,7 +48,7 @@ from llama_index.llms.openai.base import OpenAI, Tokenizer
 from transformers import AutoTokenizer
 
 DEFAULT_SOLAR_API_BASE = "https://api.upstage.ai/v1/solar"
-DEFAULT_SOLAR_MODEL = "solar-1-mini-translate-koen"
+DEFAULT_SOLAR_MODEL = "solar-1-mini-chat"
 
 
 class Solar(OpenAI):
@@ -57,7 +57,7 @@ class Solar(OpenAI):
     api_base: str = Field(default="", description="The base URL for SOLAR API.")
 
     model: str = Field(
-        default="solar-1-mini-translate-koen", description="The SOLAR model to use."
+        default="solar-1-mini-chat", description="The SOLAR model to use."
     )
 
     context_window: int = Field(
