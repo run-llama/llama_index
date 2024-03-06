@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import Response
+from llama_index.core.callbacks import CallbackManager
 from llama_index.core.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
 )
@@ -305,6 +306,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         llm: Optional[LLM] = None,
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
+        callback_manager: Optional[CallbackManager] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         verbose: bool = False,
         # deprecated
@@ -314,6 +316,9 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         """Initialize params."""
         self._service_context = service_context
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        if callback_manager is not None:
+            self._llm.callback_manager = callback_manager
+
         self._response_synthesis_prompt = (
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2
         )
@@ -328,9 +333,8 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         self._synthesize_response = synthesize_response
         self._verbose = verbose
         super().__init__(
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            ),
+            callback_manager=callback_manager
+            or callback_manager_from_settings_or_context(Settings, service_context),
             **kwargs,
         )
 
@@ -434,6 +438,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         sql_only: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -448,6 +453,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             context_str_prefix=context_str_prefix,
             service_context=service_context,
             sql_only=sql_only,
+            callback_manager=callback_manager,
             verbose=verbose,
         )
         super().__init__(
@@ -456,6 +462,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
             service_context=service_context,
+            callback_manager=callback_manager,
             verbose=verbose,
             **kwargs,
         )
@@ -489,6 +496,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         sql_only: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -503,6 +511,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             context_str_prefix=context_str_prefix,
             service_context=service_context,
             sql_only=sql_only,
+            callback_manager=callback_manager,
         )
         super().__init__(
             synthesize_response=synthesize_response,
@@ -510,6 +519,7 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
             service_context=service_context,
+            callback_manager=callback_manager,
             **kwargs,
         )
 
@@ -535,6 +545,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         sql_only: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -547,6 +558,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             context_str_prefix=context_str_prefix,
             service_context=service_context,
             sql_only=sql_only,
+            callback_manager=callback_manager,
         )
         super().__init__(
             synthesize_response=synthesize_response,
@@ -554,6 +566,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
             service_context=service_context,
+            callback_manager=callback_manager,
             **kwargs,
         )
 
