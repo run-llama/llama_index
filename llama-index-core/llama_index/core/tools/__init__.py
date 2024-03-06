@@ -1,6 +1,7 @@
 """Tools."""
 
 from llama_index.core.tools.download import download_tool
+from llama_index.core.tools.eval_query_engine import EvalQueryEngineTool
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.query_engine import QueryEngineTool
 from llama_index.core.tools.query_plan import QueryPlanTool
@@ -17,6 +18,7 @@ __all__ = [
     "BaseTool",
     "adapt_to_async_tool",
     "AsyncBaseTool",
+    "EvalQueryEngineTool",
     "QueryEngineTool",
     "RetrieverTool",
     "ToolMetadata",
