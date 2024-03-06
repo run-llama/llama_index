@@ -67,11 +67,10 @@ class GoogleDriveReader(BaseReader):
         Returns:
             credentials, pydrive object.
         """
-        from google_auth_oauthlib.flow import InstalledAppFlow
-        from pydrive.auth import GoogleAuth
-
         from google.auth.transport.requests import Request
         from google.oauth2 import service_account
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        from pydrive.auth import GoogleAuth
 
         # First, we need the Google API credentials for the app
         creds = None
@@ -97,7 +96,7 @@ class GoogleDriveReader(BaseReader):
                 )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open(self.token_path, "w", encoding="utf-8") as token:
+            with open(self.token_path, "w") as token:
                 token.write(creds.to_json())
 
         # Next, we need user authentication to download files (via pydrive)
@@ -414,5 +413,8 @@ class GoogleDriveReader(BaseReader):
 
         if folder_id:
             return self._load_from_folder(folder_id, mime_types, query_string)
-        else:
+        elif file_ids:
             return self._load_from_file_ids(file_ids, mime_types, query_string)
+        else:
+            logger.warning("Either 'folder_id' or 'file_ids' must be provided.")
+            return []
