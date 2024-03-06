@@ -3748,13 +3748,13 @@ typing = ["mypy (>=1.6,<2.0)", "traitlets (>=5.11.1)"]
 
 [[package]]
 name = "tidb-vector"
-version = "0.0.3"
+version = "0.0.4"
 description = ""
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "tidb_vector-0.0.3-py3-none-any.whl", hash = "sha256:8141ea1df3deedd666fea6752b0152bb2f2ee06323907d5ff18ede7ac365beb8"},
-    {file = "tidb_vector-0.0.3.tar.gz", hash = "sha256:23a0aba80370e29d0184395e48730129065ee7f01c33179bb1cca2f0a13674ce"},
+    {file = "tidb_vector-0.0.4-py3-none-any.whl", hash = "sha256:8e10d3f06da3beb5d676b3a6d817df1defb5d35a91945778a072c2452e777a3a"},
+    {file = "tidb_vector-0.0.4.tar.gz", hash = "sha256:b2dcd3c437e6e073724f7e0093bb4e48484d41d8f7c8087329335dd3e44403ef"},
 ]
 
 [package.dependencies]
