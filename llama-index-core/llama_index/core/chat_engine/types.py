@@ -112,7 +112,7 @@ class StreamingAgentChatResponse:
             final_text = ""
             for chat in self.chat_stream:
                 self._is_function = is_function(chat.message)
-                if chat.delta != "":
+                if chat.delta:
                     self.put_in_queue(chat.delta)
                 final_text += chat.delta or ""
             if self._is_function is not None:  # if loop has gone through iteration
@@ -148,7 +148,7 @@ class StreamingAgentChatResponse:
             final_text = ""
             async for chat in self.achat_stream:
                 self._is_function = is_function(chat.message)
-                if chat.delta != "":
+                if chat.delta:
                     self.aput_in_queue(chat.delta)
                 final_text += chat.delta or ""
                 self._new_item_event.set()
