@@ -177,7 +177,14 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
         if len(nodes) == 0:
-            return Response("Empty Response")
+            if self._streaming:
+
+                def response_generator() -> Generator[str, None, None]:
+                    yield "Empty Response"
+
+                return StreamingResponse(response_gen=response_generator())
+            else:
+                return Response("Empty Response")
 
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
@@ -210,7 +217,14 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
         if len(nodes) == 0:
-            return Response("Empty Response")
+            if self._streaming:
+
+                def response_generator() -> Generator[str, None, None]:
+                    yield "Empty Response"
+
+                return StreamingResponse(response_gen=response_generator())
+            else:
+                return Response("Empty Response")
 
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
