@@ -5,8 +5,6 @@ import json
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
-import nest_asyncio
-
 from llama_index.core.bridge.pydantic import PrivateAttr
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -321,7 +319,6 @@ class OpensearchVectorClient:
         self._os_client = _get_async_opensearch_client(self._endpoint, **kwargs)
         not_found_error = _import_not_found_error()
 
-        nest_asyncio.apply()
         event_loop = asyncio.get_event_loop()
         try:
             event_loop.run_until_complete(
@@ -454,7 +451,6 @@ class OpensearchVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Initialize params."""
         super().__init__()
-        nest_asyncio.apply()
         self._client = client
 
     @property
