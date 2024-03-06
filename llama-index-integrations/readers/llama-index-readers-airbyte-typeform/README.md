@@ -1,18 +1,17 @@
 # Airbyte Typeform Loader
 
+```bash
+pip install llama-index-readers-airbyte-typeform
+```
+
 The Airbyte Typeform Loader allows you to access different Typeform objects.
-
-## Installation
-
-- Install llama_hub: `pip install llama_hub`
-- Install the typeform source: `pip install airbyte-source-typeform`
 
 ## Usage
 
 Here's an example usage of the AirbyteTypeformReader.
 
 ```python
-from llama_hub.airbyte_typeform import AirbyteTypeformReader
+from llama_index.readers.airbyte_typeform import AirbyteTypeformReader
 
 typeform_config = {
     # ...

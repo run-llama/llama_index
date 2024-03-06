@@ -289,16 +289,13 @@ class BaseEmbedding(TransformComponent):
         nested_embeddings = []
         if show_progress:
             try:
-                from tqdm.auto import tqdm
+                from tqdm.asyncio import tqdm_asyncio
 
-                nested_embeddings = [
-                    await f
-                    for f in tqdm(
-                        asyncio.as_completed(embeddings_coroutines),
-                        total=len(embeddings_coroutines),
-                        desc="Generating embeddings",
-                    )
-                ]
+                nested_embeddings = await tqdm_asyncio.gather(
+                    *embeddings_coroutines,
+                    total=len(embeddings_coroutines),
+                    desc="Generating embeddings",
+                )
             except ImportError:
                 nested_embeddings = await asyncio.gather(*embeddings_coroutines)
         else:
