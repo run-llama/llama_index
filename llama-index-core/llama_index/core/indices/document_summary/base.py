@@ -5,6 +5,7 @@ the summary to the underlying Nodes.
 This summary can be used for retrieval.
 
 """
+
 import logging
 from collections import defaultdict
 from enum import Enum
@@ -199,7 +200,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
                 nodes=nodes_with_scores,
             )
             summary_response = cast(Response, summary_response)
-            metadata = doc_id_to_nodes.get(doc_id, [TextNode(metadata=dict())])[0].metadata
+            metadata = doc_id_to_nodes.get(doc_id, [TextNode()]).metadata
             summary_node_dict[doc_id] = TextNode(
                 text=summary_response.response,
                 relationships={
