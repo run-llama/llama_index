@@ -131,7 +131,9 @@ class AnthropicProvider(Provider):
     def get_request_body(self, prompt: Sequence[Dict], inference_parameters: dict):
         return {
             "messages": prompt,
-            "anthropic_version": "bedrock-2023-05-31",  # Required by AWS.
+            "anthropic_version": inference_parameters.get(
+                "anthropic_version", "bedrock-2023-05-31"
+            ),  # Required by AWS.
             **inference_parameters,
         }
 
