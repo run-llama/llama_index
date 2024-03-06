@@ -363,12 +363,12 @@ class VectaraIndex(BaseManagedIndex):
 
             retriever = self.as_retriever(**kwargs)
             response_synthesizer = get_response_synthesizer(
-                response_mode=ResponseMode.COMPACT
+                response_mode=ResponseMode.COMPACT,
             )
             return RetrieverQueryEngine.from_args(
                 retriever=retriever,
-                llm=llm,
                 response_synthesizer=response_synthesizer,
+                llm=llm,
                 **kwargs,
             )
 
