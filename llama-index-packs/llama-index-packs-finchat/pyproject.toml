@@ -10,9 +10,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["FinanceChatPack"]
-contains_example = false
+contains_example = true
 import_path = "llama_index.packs.finchat"
+
+[tool.llamahub.class_authors]
+FinanceChatPack = "345ishaan"
 
 [tool.mypy]
 disallow_untyped_defs = true
