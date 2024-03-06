@@ -23,15 +23,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers feedly_rss integration"
+exclude = ["**/BUILD"]
 keywords = ["feedly", "rss"]
 license = "MIT"
 maintainers = ["kychanbp"]
 name = "llama-index-readers-feedly-rss"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 feedly-client = "^0.26"
 

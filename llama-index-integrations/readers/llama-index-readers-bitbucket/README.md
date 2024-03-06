@@ -1,5 +1,9 @@
 # Bitbucket Loader
 
+```bash
+pip install llama-index-readers-bitbucket
+```
+
 This loader utilizes the Bitbucket API to load the files inside a Bitbucket repository as Documents in an index.
 
 ## Usage
@@ -8,7 +12,7 @@ To use this loader, you need to provide as environment variables the `BITBUCKET_
 
 ```python
 import os
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
 os.environ["BITBUCKET_USERNAME"] = "myusername"
 os.environ["BITBUCKET_API_KEY"] = "myapikey"
@@ -16,7 +20,7 @@ os.environ["BITBUCKET_API_KEY"] = "myapikey"
 base_url = "https://myserver/bitbucket"
 project_key = "mykey"
 
-BitbucketReader = download_loader("BitbucketReader")
+from llama_index.readers.bitbucket import BitbucketReader
 
 loader = BitbucketReader(
     base_url=base_url,

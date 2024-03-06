@@ -23,15 +23,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers smart_pdf_loader integration"
+exclude = ["**/BUILD"]
 keywords = ["pdf layout", "pdf table", "pdf"]
 license = "MIT"
 maintainers = ["ansukla"]
 name = "llama-index-readers-smart-pdf-loader"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llmsherpa = "^0.1.4"
 

@@ -76,6 +76,7 @@ class GithubRepositoryReader(BaseReader):
         verbose: bool = False,
         concurrent_requests: int = 5,
         timeout: Optional[int] = 5,
+        retries: int = 0,
         filter_directories: Optional[Tuple[List[str], FilterType]] = None,
         filter_file_extensions: Optional[Tuple[List[str], FilterType]] = None,
     ):
@@ -92,6 +93,7 @@ class GithubRepositoryReader(BaseReader):
             - concurrent_requests (int): Number of concurrent requests to
                 make to the Github API.
             - timeout (int or None): Timeout for the requests to the Github API. Default is 5.
+            - retries (int): Number of retries for requests made to the Github API. Default is 0.
             - filter_directories (Optional[Tuple[List[str], FilterType]]): Tuple
                 containing a list of directories and a FilterType. If the FilterType
                 is INCLUDE, only the files in the directories in the list will be
@@ -115,6 +117,7 @@ class GithubRepositoryReader(BaseReader):
         self._verbose = verbose
         self._concurrent_requests = concurrent_requests
         self._timeout = timeout
+        self._retries = retries
         self._filter_directories = filter_directories
         self._filter_file_extensions = filter_file_extensions
 

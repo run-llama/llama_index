@@ -1,18 +1,17 @@
 # Airbyte Stripe Loader
 
+```bash
+pip install llama-index-readers-airbyte-stripe
+```
+
 The Airbyte Stripe Loader allows you to access different Stripe objects.
-
-## Installation
-
-- Install llama_hub: `pip install llama_hub`
-- Install the stripe source: `pip install airbyte-source-stripe`
 
 ## Usage
 
 Here's an example usage of the AirbyteStripeReader.
 
 ```python
-from llama_hub.airbyte_stripe import AirbyteStripeReader
+from llama_index.readers.airbyte_stripe import AirbyteStripeReader
 
 stripe_config = {
     # ...

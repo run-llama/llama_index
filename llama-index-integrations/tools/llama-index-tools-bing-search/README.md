@@ -12,7 +12,7 @@ Here's an example usage of the BingSearchToolSpec.
 
 ```python
 from llama_index.tools.bing_search import BingSearchToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = BingSearchToolSpec(api_key="your-key")
 

@@ -10,6 +10,7 @@ remote_cache_read = true
 remote_cache_write = true
 remote_instance_name = "main"
 remote_store_address = "grpc://44.204.50.6:9092"
+unmatched_build_file_globs = "error"
 
 [black]
 config = "./pyproject.toml"

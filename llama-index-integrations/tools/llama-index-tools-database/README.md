@@ -10,7 +10,7 @@ Here's an example usage of the DatabaseToolSpec.
 
 ```python
 from llama_index.tools.database import DatabaseToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 db_tools = DatabaseToolSpec(
     scheme="postgresql",  # Database Scheme

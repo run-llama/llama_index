@@ -30,8 +30,8 @@ From here, you can use the pack, or inspect and modify the pack in `./redis_inge
 Then, you can set up the pack like so:
 
 ```python
-from llama_index.core.text_splitter import SentenceSplitter
-from llama_index.core.embeddings import OpenAIEmbedding
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.embeddings.openai import OpenAIEmbedding
 
 transformations = [SentenceSplitter(), OpenAIEmbedding()]
 
