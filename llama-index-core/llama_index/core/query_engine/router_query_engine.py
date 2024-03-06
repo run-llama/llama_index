@@ -159,6 +159,7 @@ class RouterQueryEngine(BaseQueryEngine):
             query_engine_tools,
             service_context=service_context,
             summarizer=summarizer,
+            **kwargs,
         )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
