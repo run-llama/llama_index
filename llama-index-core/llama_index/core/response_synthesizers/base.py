@@ -50,6 +50,10 @@ logger = logging.getLogger(__name__)
 QueryTextType = Union[str, QueryBundle]
 
 
+def empty_response_generator() -> Generator[str, None, None]:
+    yield "Empty Response"
+
+
 class BaseSynthesizer(ChainableMixin, PromptMixin):
     """Response builder class."""
 
@@ -178,11 +182,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
     ) -> RESPONSE_TYPE:
         if len(nodes) == 0:
             if self._streaming:
-
-                def response_generator() -> Generator[str, None, None]:
-                    yield "Empty Response"
-
-                return StreamingResponse(response_gen=response_generator())
+                return StreamingResponse(response_gen=empty_response_generator())
             else:
                 return Response("Empty Response")
 
@@ -218,11 +218,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
     ) -> RESPONSE_TYPE:
         if len(nodes) == 0:
             if self._streaming:
-
-                def response_generator() -> Generator[str, None, None]:
-                    yield "Empty Response"
-
-                return StreamingResponse(response_gen=response_generator())
+                return StreamingResponse(response_gen=empty_response_generator())
             else:
                 return Response("Empty Response")
 
