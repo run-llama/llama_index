@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Sequence, Set, Tuple
+from typing import Any, Dict, Optional, Sequence, Set, Tuple
 from llama_index.core import PromptTemplate
 from llama_index.core.langchain_helpers.agents import LlamaIndexTool
 from llama_index.core.query_engine import CustomQueryEngine
@@ -12,10 +12,10 @@ class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
     """A keyword table made specifically to work with the code hierarchy node parser."""
 
     nodes: Sequence[BaseNode]
-    index: Dict[str, Tuple[int, BaseNode]] | None = None
+    index: Optional[Dict[str, Tuple[int, BaseNode]]] = None
     repo_map_depth: int = -1
     include_repo_map: bool = True
-    repo_map: Tuple[Dict[str, Any], str] | None = None
+    repo_map: Optional[Tuple[Dict[str, Any], str]] = None
     tool_instructions: PromptTemplate = PromptTemplate(
         template="""
         Search the tool by any element in this list
