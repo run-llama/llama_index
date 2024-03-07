@@ -35,6 +35,7 @@ llama-index-readers-file = "^0.1.8"
 tree-sitter-languages = "^1.8.0"
 tree-sitter = "^0.20.2"
 llama-index-agent-openai = "^0.1.5"
+llama-index-readers-file = "^0.1.8"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
