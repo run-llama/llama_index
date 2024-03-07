@@ -58,9 +58,6 @@ pymupdf = "^1.23.21"
 bs4 = "^0.0.2"
 beautifulsoup4 = "^4.12.3"
 pypdf = "^4.0.1"
-tree-sitter-languages = "^1.8.0"
-tree-sitter = "0.20.2"
-langchain = "^0.1.5"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
