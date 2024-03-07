@@ -228,16 +228,20 @@ class SimpleDirectoryReader(BaseReader):
         """Add files."""
         all_files = set()
         rejected_files = set()
+        rejected_dirs = set()
 
         if self.exclude is not None:
             for excluded_pattern in self.exclude:
                 if self.recursive:
                     # Recursive glob
-                    for file in input_dir.rglob(excluded_pattern):
-                        rejected_files.add(Path(file))
+                    excluded_glob = Path(input_dir) / Path("**") / excluded_pattern
                 else:
                     # Non-recursive glob
-                    for file in input_dir.glob(excluded_pattern):
+                    excluded_glob = Path(input_dir) / excluded_pattern
+                for file in self.fs.glob(str(excluded_glob)):
+                    if self.fs.isdir(file):
+                        rejected_dirs.add(Path(file))
+                    else:
                         rejected_files.add(Path(file))
 
         file_refs: List[str] = []
@@ -251,13 +255,29 @@ class SimpleDirectoryReader(BaseReader):
             # in glob for backwards compatibility.
             ref = Path(ref)
             is_dir = self.fs.isdir(ref)
-            skip_because_hidden = self.exclude_hidden and self.is_hidden(
-                ref.relative_to(input_dir.absolute())
-            )
+            # skip_because_hidden = self.exclude_hidden and self.is_hidden(
+            #     ref.relative_to(input_dir.absolute())
+            # )
+            skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
             )
             skip_because_excluded = ref in rejected_files
+            if not skip_because_excluded:
+                if is_dir:
+                    ref_parent_dir = ref
+                else:
+                    ref_parent_dir = self.fs._parent(ref)
+                for rejected_dir in rejected_dirs:
+                    if str(ref_parent_dir).startswith(str(rejected_dir)):
+                        skip_because_excluded = True
+                        logger.debug(
+                            "Skipping %s because it in parent dir %s which is in %s",
+                            ref,
+                            ref_parent_dir,
+                            rejected_dir,
+                        )
+                        break
 
             if (
                 is_dir
