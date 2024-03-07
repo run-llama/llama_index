@@ -463,7 +463,7 @@ class CodeHierarchyNodeParser(NodeParser):
         """
         out: Dict[str, Any] = defaultdict(dict)
 
-        def get_subdict(keys: list[str]) -> Dict[str, Any]:
+        def get_subdict(keys: List[str]) -> Dict[str, Any]:
             # Get the dictionary we are operating on
             this_dict = out
             for key in keys:
@@ -472,7 +472,7 @@ class CodeHierarchyNodeParser(NodeParser):
                 this_dict = this_dict[key]
             return this_dict
 
-        def recur_inclusive_scope(node: BaseNode, i: int, keys: list[str]) -> None:
+        def recur_inclusive_scope(node: BaseNode, i: int, keys: List[str]) -> None:
             if "inclusive_scopes" not in node.metadata:
                 raise KeyError("inclusive_scopes not in node.metadata")
             if i >= len(node.metadata["inclusive_scopes"]):
@@ -487,7 +487,7 @@ class CodeHierarchyNodeParser(NodeParser):
             if i < max_depth or max_depth == -1:
                 recur_inclusive_scope(node, i + 1, [*keys, scope["name"]])
 
-        def dict_to_markdown(d: dict[str, Any], depth: int = 0) -> str:
+        def dict_to_markdown(d: Dict[str, Any], depth: int = 0) -> str:
             markdown = ""
             indent = "  " * depth  # Two spaces per depth level
 
