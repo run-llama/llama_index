@@ -3,7 +3,6 @@ from typing import Any, Dict, List
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.chat_engine.types import BaseChatEngine
 from llama_index.core.schema import Document
-from llama_index.core import Settings
 
 from .citations_context_chat_engine import VectorStoreIndexWithCitationsChat
 
@@ -27,17 +26,14 @@ class CohereCitationChatEnginePack(BaseLlamaPack):
             additional_kwargs={"prompt_truncation": "AUTO"},
         )
 
-        self.embed_model_query = CohereEmbedding(
+        self.embed_model_document = CohereEmbedding(
             cohere_api_key=self.api_key,
             model_name="embed-english-v3.0",
-            input_type="search_query",
+            input_type="search_document",
         )
 
-        Settings.llm = self.llm
-        Settings.embed_model = self.embed_model_query
-
         self.index = VectorStoreIndexWithCitationsChat.from_documents(
-            documents, llm=self.llm, embed_model=self.embed_model_query
+            documents, llm=self.llm, embed_model=self.embed_model_document
         )
 
     def get_modules(self) -> Dict[str, Any]:
@@ -49,4 +45,6 @@ class CohereCitationChatEnginePack(BaseLlamaPack):
 
     def run(self, **kwargs: Any) -> BaseChatEngine:
         """Run the pipeline."""
-        return self.index.as_chat_engine()
+        # Change Cohere embed input type. See the documentation here https://docs.cohere.com/reference/embed
+        self.index.set_embed_model_input_type("search_query")
+        return self.index.as_chat_engine(llm=self.llm)

@@ -13,6 +13,12 @@ llamaindex-cli download-llamapack CohereCitationChatEnginePack --download-dir ./
 
 You can then inspect the files at `./cohere_citation_chat_pack` and use them as a template for your own project!
 
+You can also directly install it if you don't want to look at/inspect the source code:
+
+```bash
+pip install llama-index-packs-cohere-citation-chat
+```
+
 ## Code Usage
 
 You can download the pack to the `./cohere_citation_chat_pack` directory:

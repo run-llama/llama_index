@@ -227,6 +227,20 @@ class ChatModeCitations(str, Enum):
 
 
 class VectorStoreIndexWithCitationsChat(VectorStoreIndex):
+    """Vector Store Index with Citations Chat."""
+
+    def set_embed_model_input_type(self, input_type: str) -> None:
+        try:
+            from llama_index.embeddings.cohere import CohereEmbedding
+        except ImportError:
+            raise ImportError(
+                "Please run `pip install llama-index-embeddings-cohere` "
+                "to use the Cohere."
+            )
+        # Set the embed model input type. We need to change the Cohere embed input type to the 'search_query' value.
+        if isinstance(self._embed_model, CohereEmbedding):
+            self._embed_model.input_type = input_type
+
     def as_chat_engine(
         self,
         chat_mode: ChatModeCitations = ChatModeCitations.COHERE_CITATIONS_CONTEXT,

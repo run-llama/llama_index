@@ -21,7 +21,7 @@ def convert_chat_response_to_citations(
     if (
         chat_response
         and chat_response.raw
-        and citations_settings.citations_response_field in chat_response.raw
+        and chat_response.raw.get(citations_settings.citations_response_field, None)
     ):
         return [
             Citation(
@@ -43,7 +43,7 @@ def convert_chat_response_to_documents(
     if (
         chat_response
         and chat_response.raw
-        and citations_settings.documents_response_field in chat_response.raw
+        and chat_response.raw.get(citations_settings.documents_response_field, None)
     ):
         return [
             Document(
