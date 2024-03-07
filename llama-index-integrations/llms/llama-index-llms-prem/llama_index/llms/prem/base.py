@@ -1,7 +1,5 @@
 """PremAI's API to interact with deployed projects"""
 
-import os
-import typing
 from typing import Any, Dict, Optional, Sequence, Callable
 
 from llama_index.core.base.llms.types import (
@@ -14,8 +12,6 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
     chat_to_completion_decorator,
     get_from_param_or_env,
     stream_chat_to_completion_decorator,
@@ -23,8 +19,7 @@ from llama_index.core.base.llms.generic_utils import (
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
-from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
+from llama_index.core.llms.callbacks import llm_chat_callback
 from llama_index.core.llms.llm import LLM
 
 from premai import Prem
@@ -33,6 +28,10 @@ from premai import Prem
 # FIXME: The current version does not support stop tokens and number of responses i.e. n > 1
 
 # TODO: Fetch the default values from prem-sdk
+
+
+class ChatPremError(Exception):
+    pass
 
 
 class PremAI(LLM):
@@ -111,7 +110,7 @@ class PremAI(LLM):
         ),
     )
 
-    _client: "premai.Prem" = PrivateAttr()
+    _client: "Prem" = PrivateAttr()
 
     def __init__(
         self,
@@ -185,26 +184,90 @@ class PremAI(LLM):
             top_p=self.top_p,
         )
 
-    def chat(self):
-        raise NotImplementedError
+    @property
+    def _model_kwargs(self) -> Dict[str, Any]:
+        return {
+            "model": self.model,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "seed": self.seed,
+            "top_p": self.top_p,
+            "system_prompt": self.system_prompt,
+            "logit_bias": self.logit_bias,
+            "tools": self.tools,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+        }
 
-    def achat(self):
-        raise NotImplementedError
+    def _get_all_kwargs(self, **kwargs) -> Dict[str, Any]:
+        return {**self._model_kwargs, **kwargs}
+
+    @llm_chat_callback()
+    def chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> Sequence[ChatResponse]:
+
+        # Skip any system messages here. Since it is always defined over the arguments
+
+        messages = [
+            {"role": x.role, "content": x.content}
+            for x in messages
+            if x.role != "system"
+        ]
+
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        response = self._client.chat.completions.create(
+            project_id=self.project_id, messages=messages, **all_kwargs
+        )
+
+        if not response.choices:
+            raise ChatPremError("ChatResponse must have at least one candidate")
+
+        chat_responses: Sequence[ChatResponse] = []
+
+        for choice in response.choices:
+            role = choice.message.role
+            if role is None:
+                raise ChatPremError(f"ChatResponse {choice} must have a role.")
+            content = choice.message.content or ""
+            chat_responses.append(
+                ChatResponse(
+                    message=ChatMessage(role=role, content=content),
+                    raw={"role": role, "content": content},
+                )
+            )
+
+        return chat_responses
 
     def stream_chat(self):
         raise NotImplementedError
 
+    def achat(self):
+        raise NotImplementedError(
+            "Current version of premai does not support async calls."
+        )
+
     def astream_chat(self):
-        raise NotImplementedError
+        raise NotImplementedError(
+            "Current version of premai does not support async calls."
+        )
 
     def complete(self):
-        raise NotImplementedError
+        raise NotImplementedError(
+            "Current version of premai does not support async calls."
+        )
 
     def acomplete(self):
-        raise NotImplementedError
+        raise NotImplementedError(
+            "Current version of premai does not support async calls."
+        )
 
     def stream_complete(self):
-        raise NotImplementedError
+        raise NotImplementedError(
+            "Current version of premai does not support async calls."
+        )
 
     def astream_complete(self):
-        raise NotImplementedError
+        raise NotImplementedError(
+            "Current version of premai does not support async calls."
+        )
