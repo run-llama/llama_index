@@ -5,8 +5,10 @@ The `CodeHierarchyNodeParser` is useful to split long code files into more reaso
 Nodes in this hierarchy will be split based on scope, like function, class, or method scope, and will have links to their children and parents so the LLM can traverse the tree.
 
 ```python
-from llama_index.node_parser.code_hierarchy import CodeHierarchyNodeParser
-from llama_index.text_splitter.code_splitter import CodeSplitter
+from llama_index.core.text_splitter import CodeSplitter
+from llama_index.core.llama_pack import download_llama_pack
+
+CodeHierarchyNodeParser = download_llama_pack("CodeHierarchyNodeParser")
 
 split_nodes = CodeHierarchyNodeParser(
     language="python",
@@ -89,3 +91,9 @@ The code as it is should handle any language which:
 
 I'm considering adding all the languages from [aider](https://github.com/paul-gauthier/aider/tree/main/aider/queries)
 by incorporating `.scm` files instead of `_SignatureCaptureType`, `_SignatureCaptureOptions`, and `_DEFAULT_SIGNATURE_IDENTIFIERS`
+
+## Contributing
+
+Please make a `.env` file in the root directory of this pack and then add your `OPENAI_API_KEY` to it to run the jupyter notebook.
+
+You can run tests with `pytest tests` in the root directory of this pack.

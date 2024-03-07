@@ -585,7 +585,7 @@ class CodeHierarchyNodeParser(NodeParser):
                             new_split_node.text = (
                                 new_split_node.text
                                 + "\n"
-                                + self._create_comment_line(new_split_nodes[i + 1])
+                                + self._create_comment_line(new_split_nodes[i + 1], 0)
                             ).strip()
 
                         # Add the UUID of the previous node to the beginning of all nodes
@@ -716,7 +716,7 @@ class CodeHierarchyNodeParser(NodeParser):
         return f"Code replaced for brevity. See node_id {node.node_id}"
 
     @classmethod
-    def _create_comment_line(cls, node: TextNode) -> str:
+    def _create_comment_line(cls, node: TextNode, indention_lvl: int = -1) -> str:
         """
         Creates a comment line for a node.
 
@@ -734,6 +734,8 @@ class CodeHierarchyNodeParser(NodeParser):
             indentation_count_per_lvl,
             first_indentation_lvl,
         ) = cls._get_indentation(node.text)
+        if indention_lvl != -1:
+            first_indentation_lvl = indention_lvl
         return (
             indentation_char * indentation_count_per_lvl * (first_indentation_lvl + 1)
             + comment_options.comment_template.format(cls._get_comment_text(node))
