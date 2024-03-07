@@ -5,10 +5,18 @@ from typing import Any, Dict, Sequence, Optional, Set, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from llama_index.core.langchain_helpers.agents import LlamaIndexTool
 
-from llama_index.core import PromptTemplate
 from llama_index.core.query_engine import CustomQueryEngine
 from llama_index.core.schema import BaseNode
 from llama_index.packs.code_hierarchy.code_hierarchy import CodeHierarchyNodeParser
+
+
+DEFAULT_TOOL_INSTRUCTIONS = (
+    "Search the tool by any element in this list to get more information about that element.\n"
+    "If you see 'Code replaced for brevity' then a uuid, you may also search the tool with that uuid to see the full code.\n"
+    "You may need to use the tool multiple times to fully answer the user message.\n"
+    "The list is:\n"
+    "{repo_map}\n"
+)
 
 
 class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
@@ -19,17 +27,7 @@ class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
     repo_map_depth: int = -1
     include_repo_map: bool = True
     repo_map: Optional[Tuple[Dict[str, Any], str]] = None
-    tool_instructions: PromptTemplate = PromptTemplate(
-        template="""
-        Search the tool by any element in this list
-        to get more information about that element.
-        If you see "Code replaced for brevity" then a uuid, you may also search the tool for that uuid to see the full code.
-        The list is:
-
-        {repo_map}
-
-        """
-    )
+    tool_instructions: str = DEFAULT_TOOL_INSTRUCTIONS
 
     def _setup_node_dict(self) -> None:
         """Initialize the index."""
@@ -128,6 +126,14 @@ class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
         else:
             return "None"
 
+    def get_tool_instructions(self) -> str:
+        """Get the tool instructions."""
+        if self.node_dict is None or self.repo_map is None:
+            self._setup_node_dict()
+        return self.tool_instructions.format(
+            repo_map=self.repo_map[1] if self.include_repo_map else ""
+        )
+
     def as_langchain_tool(
         self,
         **tool_kwargs: Any,
@@ -143,9 +149,7 @@ class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
             self._setup_node_dict()
         return LlamaIndexTool(
             name="Code Search",
-            description=self.tool_instructions.format(
-                repo_map=self.repo_map[1] if self.include_repo_map else ""
-            ),
+            description=self.get_tool_instructions(),
             query_engine=self,
             **tool_kwargs,
         )
