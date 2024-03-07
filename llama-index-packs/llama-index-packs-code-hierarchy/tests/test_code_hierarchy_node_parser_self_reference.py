@@ -10,7 +10,7 @@ from llama_index.core.schema import BaseNode
 from IPython.display import Markdown, display
 
 from llama_index.packs.code_hierarchy import CodeHierarchyKeywordQueryEngine
-
+from llama_index.core.llama_pack import download_llama_pack
 
 def print_python(python_text: str) -> None:
     """This function prints python text in ipynb nicely formatted."""
