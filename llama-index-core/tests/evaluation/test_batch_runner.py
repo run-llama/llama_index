@@ -55,7 +55,7 @@ def get_eval_results(key, eval_results):
     return correct / len(results)
 
 
-def test_batch_runner_with_single_evaluator(mocker) -> None:
+def test_batch_runner_with_single_evaluator() -> None:
     runner = BatchEvalRunner(evaluators={"evaluator1": MockEvaluator()})
 
     exp_queries = ["query1", "query2"]
@@ -78,7 +78,7 @@ def test_batch_runner_with_single_evaluator(mocker) -> None:
     assert get_eval_results("evaluator1", results) == 0.5
 
 
-def test_batch_runner_with_multiple_evaluators(mocker) -> None:
+def test_batch_runner_with_multiple_evaluators() -> None:
     runner = BatchEvalRunner(
         evaluators={
             "evaluator1": MockEvaluator(),
