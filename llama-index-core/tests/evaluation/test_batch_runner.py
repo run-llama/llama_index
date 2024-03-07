@@ -1,3 +1,5 @@
+import pytest
+
 from typing import Any, Optional, Sequence
 
 from llama_index.core.base.response.schema import Response
@@ -55,6 +57,7 @@ def get_eval_results(key, eval_results):
     return correct / len(results)
 
 
+@pytest.mark.asyncio()
 def test_batch_runner_with_single_evaluator() -> None:
     runner = BatchEvalRunner(evaluators={"evaluator1": MockEvaluator()})
 
@@ -78,6 +81,7 @@ def test_batch_runner_with_single_evaluator() -> None:
     assert get_eval_results("evaluator1", results) == 0.5
 
 
+@pytest.mark.asyncio()
 def test_batch_runner_with_multiple_evaluators() -> None:
     runner = BatchEvalRunner(
         evaluators={
