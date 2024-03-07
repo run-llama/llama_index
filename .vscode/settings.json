@@ -7,11 +7,9 @@
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
   "python.testing.pytestArgs": [
-    "./llama-index-packs/llama-index-packs-code-hierarchy/tests",
+    "./llama-index-packs/llama-index-packs-code-hierarchy/tests"
   ],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
-  "python.analysis.extraPaths": [
-    "./llama-index-core",
-  ]
+  "python.analysis.extraPaths": ["./llama-index-core"]
 }

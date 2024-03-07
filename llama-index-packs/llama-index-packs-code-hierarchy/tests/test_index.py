@@ -9,10 +9,8 @@ from llama_index.core.text_splitter import CodeSplitter
 from pathlib import Path
 from llama_index.core.schema import BaseNode
 import re
-from IPython.display import Markdown, display
 
 from llama_index.packs.code_hierarchy import CodeHierarchyKeywordQueryEngine
-from llama_index.core.llama_pack import download_llama_pack
 
 
 def print_python(python_text: str) -> None:
@@ -45,7 +43,7 @@ def code_hierarchy_nodes(request) -> Sequence[BaseNode]:
 def test_code_splitter_NEXT_relationship_indention(
     code_hierarchy_nodes: Sequence[BaseNode],
 ) -> None:
-    """When using jupyter I found that the final brevity comment was indented when it shouldnt be."""
+    """When using jupyter I found that the final brevity comment was indented when it shouldn't be."""
     for node in code_hierarchy_nodes:
         last_line = node.text.split("\n")[-1]
         if "Code replaced for brevity" in last_line and "NEXT" in node.relationships:
