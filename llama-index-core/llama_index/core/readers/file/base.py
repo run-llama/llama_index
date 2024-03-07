@@ -227,19 +227,8 @@ class SimpleDirectoryReader(BaseReader):
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
         all_files = set()
-        rejected_files = set()
         accepted_files = set()
-
-        if self.exclude is not None:
-            for excluded_pattern in self.exclude:
-                if self.recursive:
-                    # Recursive glob
-                    for file in input_dir.rglob(excluded_pattern):
-                        rejected_files.add(Path(file))
-                else:
-                    # Non-recursive glob
-                    for file in input_dir.glob(excluded_pattern):
-                        rejected_files.add(Path(file))
+        rejected_files = set()
 
         if self.include is not None:
             for included_pattern in self.include:
@@ -252,6 +241,17 @@ class SimpleDirectoryReader(BaseReader):
                     for file in input_dir.glob(included_pattern):
                         accepted_files.add(Path(file))
         
+        if self.exclude is not None:
+            for excluded_pattern in self.exclude:
+                if self.recursive:
+                    # Recursive glob
+                    for file in input_dir.rglob(excluded_pattern):
+                        rejected_files.add(Path(file))
+                else:
+                    # Non-recursive glob
+                    for file in input_dir.glob(excluded_pattern):
+                        rejected_files.add(Path(file))
+
         file_refs: List[str] = []
         if self.recursive:
             file_refs = self.fs.glob(str(input_dir) + "/**/*")
