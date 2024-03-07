@@ -34,10 +34,7 @@ llama-index-core = "^0.10.1"
 llama-index-readers-file = "^0.1.8"
 tree-sitter-languages = "^1.8.0"
 tree-sitter = "^0.20.2"
-langchain = "^0.1.5"
 python-dotenv = "^1.0.1"
-langchainhub = "^0.1.15"
-langchain-openai = "^0.0.8"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

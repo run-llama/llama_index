@@ -1,18 +1,13 @@
 from collections import defaultdict
 from enum import Enum
+from tree_sitter import Node
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+
+from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.extractors.metadata_extractors import BaseExtractor
 from llama_index.core.node_parser.interface import NodeParser
-
-try:
-    from pydantic.v1 import BaseModel, Field
-except ImportError:
-    from pydantic import BaseModel, Field
-
-from tree_sitter import Node
-
-from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import BaseNode, NodeRelationship, TextNode
 from llama_index.core.text_splitter import CodeSplitter
 from llama_index.core.utils import get_tqdm_iterable
