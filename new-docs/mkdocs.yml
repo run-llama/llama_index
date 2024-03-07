@@ -97,3 +97,46 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-xinference/
             - ../llama-index-integrations/llms/llama-index-llms-llama-api/
             - ../llama-index-integrations/llms/llama-index-llms-openai-like/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-google/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-azureaisearch/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-azurecosmosmongo/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-milvus/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-opensearch/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-lantern/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-myscale/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-dashvector/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-awadb/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-upstash/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-zep/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-timescalevector/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-astra/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-supabase/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-deeplake/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-qdrant/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-rocksetdb/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-clickhouse/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-elasticsearch/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-cassandra/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-docarray/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-singlestoredb/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-metal/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-tair/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-jaguar/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-bagel/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-postgres/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-redis/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-mongodb/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-lancedb/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-faiss/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-tencentvectordb/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-epsilla/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-typesense/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-duckdb/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-neo4jvector/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-dynamodb/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-txtai/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-weaviate/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-pgvecto-rs/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-chatgpt-plugin/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-chroma/
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-pinecone/

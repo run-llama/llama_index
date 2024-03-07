@@ -47,6 +47,25 @@ class TypesenseVectorStore(VectorStore):
         client (Any): Typesense client
         tokenizer (Optional[Callable[[str], List]]): tokenizer function.
 
+    Examples:
+        `pip install llama-index-vector-stores-typesense`
+
+        ```python
+        from llama_index.vector_stores.typesense import TypesenseVectorStore
+        from typesense import Client
+
+        # Sign up for Typesense and get your API key
+        typesense_client = Client(
+            {
+                "api_key": "your_api_key_here",
+                "nodes": [{"host": "localhost", "port": "8108", "protocol": "http"}],
+                "connection_timeout_seconds": 2,
+            }
+        )
+
+        # Create an instance of TypesenseVectorStore
+        vector_store = TypesenseVectorStore(typesense_client)
+        ```
     """
 
     stores_text: bool = True

@@ -101,15 +101,25 @@ class RedisVectorStore(BasePydanticVectorStore):
             ValueError: If RediSearch is not installed
 
         Examples:
-            >>> from llama_index.core.vector_stores.redis import RedisVectorStore
-            >>> # Create a RedisVectorStore
-            >>> vector_store = RedisVectorStore(
-            >>>     index_name="my_index",
-            >>>     index_prefix="llama_index",
-            >>>     index_args={"algorithm": "HNSW", "m": 16, "ef_construction": 200,
-                "distance_metric": "cosine"},
-            >>>     redis_url="redis://localhost:6379/",
-            >>>     overwrite=True)
+            `pip install llama-index-vector-stores-redis`
+
+            ```python
+            from llama_index.core.vector_stores.redis import RedisVectorStore
+
+            # Create a RedisVectorStore
+            vector_store = RedisVectorStore(
+                index_name="my_index",
+                index_prefix="llama_index",
+                index_args={
+                    "algorithm": "HNSW",
+                    "m": 16,
+                    "ef_construction": 200,
+                    "distance_metric": "cosine"
+                },
+                redis_url="redis://localhost:6379/",
+                overwrite=True
+            )
+            ```
         """
         try:
             # connect to redis from url

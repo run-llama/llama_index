@@ -3,6 +3,7 @@
 An index that is built with Tencent Vector Database.
 
 """
+
 import json
 from typing import Any, Dict, List, Optional
 
@@ -157,6 +158,20 @@ class TencentVectorDB(VectorStore):
         key (Optional[str]): The Api-Key for Tencent vector database
         collection_params (Optional[CollectionParams]): The collection parameters for vector database
 
+    Examples:
+        `pip install llama-index-vector-stores-tencentvectordb`
+
+        ```python
+        from llama_index.vector_stores.tencentvectordb import TencentVectorDB, CollectionParams
+
+        # Setup
+        url = "http://10.0.X.X"
+        key = "eC4bLRy2va******************************"
+        collection_params = CollectionParams(dimension=1536, drop_exists=True)
+
+        # Create an instance of TencentVectorDB
+        vector_store = TencentVectorDB(url=url, key=key, collection_params=collection_params)
+        ```
     """
 
     stores_text: bool = True

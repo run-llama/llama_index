@@ -56,6 +56,25 @@ class SingleStoreVectorStore(VectorStore):
             connections, 80 for HTTP connections, and 443 for HTTPS connections.
         database (str, optional): Database name.
 
+    Examples:
+        `pip install llama-index-vector-stores-singlestoredb`
+
+        ```python
+        from llama_index.vector_stores.singlestoredb import SingleStoreVectorStore
+        import os
+
+        # can set the singlestore db url in env
+        # or pass it in as an argument to the SingleStoreVectorStore constructor
+        os.environ["SINGLESTOREDB_URL"] = "PLACEHOLDER URL"
+        vector_store = SingleStoreVectorStore(
+            table_name="embeddings",
+            content_field="content",
+            metadata_field="metadata",
+            vector_field="vector",
+            timeout=30,
+        )
+        ```
+
     """
 
     stores_text: bool = True

@@ -4,6 +4,7 @@ Pinecone Vector store index.
 An index that is built on top of an existing vector store.
 
 """
+
 import logging
 from collections import Counter
 from functools import partial
@@ -178,6 +179,34 @@ class PineconeVectorStore(BasePydanticVectorStore):
             Defaults to None. If not None, then this vector will be used as the query
             vector if the query is empty.
 
+    Examples:
+        `pip install llama-index-vector-stores-pinecone`
+
+        ```python
+        import os
+        from llama_index.vector_stores.pinecone import PineconeVectorStore
+        from pinecone import Pinecone, ServerlessSpec
+
+        # Set up Pinecone API key
+        os.environ["PINECONE_API_KEY"] = "<Your Pinecone API key, from app.pinecone.io>"
+        api_key = os.environ["PINECONE_API_KEY"]
+
+        # Create Pinecone Vector Store
+        pc = Pinecone(api_key=api_key)
+
+        pc.create_index(
+            name="quickstart",
+            dimension=1536,
+            metric="dotproduct",
+            spec=ServerlessSpec(cloud="aws", region="us-west-2"),
+        )
+
+        pinecone_index = pc.Index("quickstart")
+
+        vector_store = PineconeVectorStore(
+            pinecone_index=pinecone_index,
+        )
+        ```
     """
 
     stores_text: bool = True
