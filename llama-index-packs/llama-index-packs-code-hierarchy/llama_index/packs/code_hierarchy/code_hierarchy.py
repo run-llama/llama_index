@@ -244,6 +244,7 @@ class CodeHierarchyNodeParser(NodeParser):
                 )
 
         super().__init__(
+            include_prev_next_rel=False,
             language=language,
             callback_manager=callback_manager,
             metadata_extractor=metadata_extractor,
@@ -736,8 +737,10 @@ class CodeHierarchyNodeParser(NodeParser):
         ) = cls._get_indentation(node.text)
         if indention_lvl != -1:
             first_indentation_lvl = indention_lvl
+        else:
+            first_indentation_lvl += 1
         return (
-            indentation_char * indentation_count_per_lvl * (first_indentation_lvl + 1)
+            indentation_char * indentation_count_per_lvl * first_indentation_lvl
             + comment_options.comment_template.format(cls._get_comment_text(node))
             + "\n"
         )
