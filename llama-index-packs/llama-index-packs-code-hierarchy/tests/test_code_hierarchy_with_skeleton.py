@@ -12,7 +12,7 @@ def test_python_code_splitter() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="python", skeleton=True, min_characters=0
+        language="python", skeleton=True, chunk_min_characters=0
     )
 
     text = """\
@@ -148,7 +148,7 @@ def test_python_code_splitter_with_decorators() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="python", skeleton=True, min_characters=0
+        language="python", skeleton=True, chunk_min_characters=0
     )
 
     text = """\
@@ -258,7 +258,7 @@ def test_html_code_splitter() -> None:
 
     code_splitter = CodeHierarchyNodeParser(
         language="html",
-        min_characters=len("    <title>My Example Page</title>") + 1,
+        chunk_min_characters=len("    <title>My Example Page</title>") + 1,
         skeleton=True,
     )
 
@@ -370,7 +370,7 @@ def test_typescript_code_splitter() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="typescript", skeleton=True, min_characters=0
+        language="typescript", skeleton=True, chunk_min_characters=0
     )
 
     text = """\
@@ -498,7 +498,7 @@ def test_typescript_code_splitter_2() -> None:
         return
 
     code_splitter = CodeHierarchyNodeParser(
-        language="typescript", skeleton=True, min_characters=0
+        language="typescript", skeleton=True, chunk_min_characters=0
     )
 
     text = """\

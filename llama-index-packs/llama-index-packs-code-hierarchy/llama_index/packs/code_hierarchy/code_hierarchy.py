@@ -231,7 +231,7 @@ class CodeHierarchyNodeParser(NodeParser):
         code_splitter: Optional[CodeSplitter] = None,
         callback_manager: Optional[CallbackManager] = None,
         metadata_extractor: Optional[BaseExtractor] = None,
-        min_characters: int = 80,
+        chunk_min_characters: int = 80,
     ):
         callback_manager = callback_manager or CallbackManager([])
 
@@ -250,7 +250,7 @@ class CodeHierarchyNodeParser(NodeParser):
             metadata_extractor=metadata_extractor,
             code_splitter=code_splitter,
             signature_identifiers=signature_identifiers,
-            min_characters=min_characters,
+            min_characters=chunk_min_characters,
             skeleton=skeleton,
         )
 
@@ -454,7 +454,7 @@ class CodeHierarchyNodeParser(NodeParser):
     def get_code_hierarchy_from_nodes(
         nodes: Sequence[BaseNode],
         max_depth: int = -1,
-    ) -> str:
+    ) -> Tuple[Dict[str, Any], str]:
         """
         Creates a code hierarchy appropriate to put into a tool description or context
         to make it easier to search for code.
@@ -506,7 +506,7 @@ class CodeHierarchyNodeParser(NodeParser):
             filepath[-1] = filepath[-1].split(".")[0]
             recur_inclusive_scope(node, 0, filepath)
 
-        return dict_to_markdown(out)
+        return out, dict_to_markdown(out)
 
     def _parse_nodes(
         self,
