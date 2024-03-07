@@ -11,7 +11,7 @@ Here's an example usage of the GoogleCalendar. It will retrieve up to 100 future
 ```python
 from llama_index import download_loader
 
-GoogleCalendarReader = download_loader('GoogleCalendarReader')
+GoogleCalendarReader = download_loader("GoogleCalendarReader")
 
 loader = GoogleCalendarReader()
 documents = loader.load_data()
@@ -26,10 +26,10 @@ This loader is designed to be used as a way to load data into [LlamaIndex](https
 ```python
 from llama_index import VectorStoreIndex, download_loader
 
-GoogleCalendarReader = download_loader('GoogleCalendarReader')
+GoogleCalendarReader = download_loader("GoogleCalendarReader")
 
 loader = GoogleCalendarReader()
 documents = loader.load_data()
 index = VectorStoreIndex.from_documents(documents)
-index.query('When am I meeting Gordon?')
+index.query("When am I meeting Gordon?")
 ```

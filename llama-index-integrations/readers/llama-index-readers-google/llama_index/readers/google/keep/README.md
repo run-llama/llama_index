@@ -13,7 +13,7 @@ To use this loader, you simply need to pass in an array of Google Keep IDs.
 ```python
 from llama_hub.google_keep import GoogleKeepReader
 
-gkeep_ids = ['1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec']
+gkeep_ids = ["1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec"]
 loader = GoogleKeepReader()
 documents = loader.load_data(document_ids=gkeep_ids)
 ```
@@ -28,12 +28,12 @@ This loader is designed to be used as a way to load data into [LlamaIndex](https
 from llama_index import VectorStoreIndex
 from llama_hub.google_keep import GoogleKeepReader
 
-gkeep_ids = ['1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec']
+gkeep_ids = ["1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec"]
 loader = GoogleKeepReader()
 notes = loader.load_data(document_ids=gkeep_ids)
 index = VectorStoreIndex.from_documents(notes)
 query_engine = index.as_query_engine()
-query_engine.query('What are my current TODOs?')
+query_engine.query("What are my current TODOs?")
 ```
 
 ### LangChain
@@ -48,7 +48,7 @@ from langchain.llms import OpenAI
 from langchain.chains.conversation.memory import ConversationBufferMemory
 
 
-gkeep_ids = ['1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec']
+gkeep_ids = ["1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec"]
 loader = GoogleKeepReader()
 notes = loader.load_data(document_ids=gkeep_ids)
 index = VectorStoreIndex.from_documents(notes)

@@ -11,9 +11,9 @@ To use this loader, you simply need to pass in an array of Google Doc IDs.
 ```python
 from llama_index import download_loader
 
-GoogleDocsReader = download_loader('GoogleDocsReader')
+GoogleDocsReader = download_loader("GoogleDocsReader")
 
-gdoc_ids = ['1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec']
+gdoc_ids = ["1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec"]
 loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=gdoc_ids)
 ```
@@ -27,13 +27,13 @@ This loader is designed to be used as a way to load data into [LlamaIndex](https
 ```python
 from llama_index import VectorStoreIndex, download_loader
 
-GoogleDocsReader = download_loader('GoogleDocsReader')
+GoogleDocsReader = download_loader("GoogleDocsReader")
 
-gdoc_ids = ['1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec']
+gdoc_ids = ["1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec"]
 loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=gdoc_ids)
 index = VectorStoreIndex.from_documents(documents)
-index.query('Where did the author go to school?')
+index.query("Where did the author go to school?")
 ```
 
 ### LangChain
@@ -46,9 +46,9 @@ from langchain.agents import initialize_agent, Tool
 from langchain.llms import OpenAI
 from langchain.chains.conversation.memory import ConversationBufferMemory
 
-GoogleDocsReader = download_loader('GoogleDocsReader')
+GoogleDocsReader = download_loader("GoogleDocsReader")
 
-gdoc_ids = ['1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec']
+gdoc_ids = ["1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec"]
 loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=gdoc_ids)
 index = VectorStoreIndex.from_documents(documents)
