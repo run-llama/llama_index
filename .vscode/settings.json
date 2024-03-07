@@ -6,7 +6,9 @@
     },
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
-  "python.testing.pytestArgs": ["tests"],
+  "python.testing.pytestArgs": [
+    "llama-index-packs/llama-index-packs-code-hierarchy/tests",
+  ],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
   "python.analysis.extraPaths": [
