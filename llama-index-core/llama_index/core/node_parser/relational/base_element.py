@@ -13,7 +13,6 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.core.utils import get_tqdm_iterable
-from llama_index.core.node_parser import SentenceSplitter
 
 DEFAULT_SUMMARY_QUERY_STR = """\
 What is this table about? Give a very concise summary (imagine you are adding a new caption and summary for this table), \
@@ -261,6 +260,8 @@ class BaseElementNodeParser(NodeParser):
         metadata_inherited: Optional[Dict[str, Any]] = None,
     ) -> List[BaseNode]:
         """Get nodes and mappings."""
+        from llama_index.core.node_parser import SentenceSplitter
+
         node_parser = self.nested_node_parser or SentenceSplitter()
 
         nodes = []
