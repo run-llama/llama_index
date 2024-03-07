@@ -14,18 +14,19 @@ from IPython.display import Markdown, display
 from llama_index.packs.code_hierarchy import CodeHierarchyKeywordQueryEngine
 from llama_index.core.llama_pack import download_llama_pack
 
+
 def print_python(python_text: str) -> None:
     """This function prints python text in ipynb nicely formatted."""
     print("```python\n" + python_text + "```")
 
 
-@fixture(params=
-    [(80, 1000, 10),
-    (500, 5000, 100)]
-)
+@fixture(params=[(80, 1000, 10), (500, 5000, 100)])
 def code_hierarchy_nodes(request) -> Sequence[BaseNode]:
     reader = SimpleDirectoryReader(
-        input_files=[Path(__file__).parent / Path("../llama_index/packs/code_hierarchy/code_hierarchy.py")],
+        input_files=[
+            Path(__file__).parent
+            / Path("../llama_index/packs/code_hierarchy/code_hierarchy.py")
+        ],
         file_metadata=lambda x: {"filepath": x},
     )
     nodes = reader.load_data()
@@ -35,7 +36,9 @@ def code_hierarchy_nodes(request) -> Sequence[BaseNode]:
         # You can further parameterize the CodeSplitter to split the code
         # into "chunks" that match your context window size using
         # chunck_lines and max_chars parameters, here we just use the defaults
-        code_splitter=CodeSplitter(language="python", max_chars=request.param[1], chunk_lines=request.param[2]),
+        code_splitter=CodeSplitter(
+            language="python", max_chars=request.param[1], chunk_lines=request.param[2]
+        ),
     ).get_nodes_from_documents(nodes)
 
 
@@ -49,6 +52,7 @@ def test_code_splitter_NEXT_relationship_indention(
             assert not last_line.startswith(" ")
             assert not last_line.startswith("\t")
 
+
 def test_query_by_module_name(code_hierarchy_nodes: Sequence[BaseNode]) -> None:
     """Test querying the index by filename."""
     index = CodeHierarchyKeywordQueryEngine(nodes=code_hierarchy_nodes)
@@ -56,19 +60,25 @@ def test_query_by_module_name(code_hierarchy_nodes: Sequence[BaseNode]) -> None:
     results = index.query(query)
     assert len(results.response) >= 1 and results.response != "None"
 
-@pytest.mark.parametrize("name", [
-    "CodeHierarchyNodeParser",
-    "_parse_node",
-    "recur",
-    "__init__",
-    ]
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "CodeHierarchyNodeParser",
+        "_parse_node",
+        "recur",
+        "__init__",
+    ],
 )
-def test_query_by_item_name(name: str, code_hierarchy_nodes: Sequence[BaseNode]) -> None:
+def test_query_by_item_name(
+    name: str, code_hierarchy_nodes: Sequence[BaseNode]
+) -> None:
     """Test querying the index by signature."""
     index = CodeHierarchyKeywordQueryEngine(nodes=code_hierarchy_nodes)
     query = "CodeHierarchyNodeParser"
     results = index.query(query)
     assert len(results.response) >= 1 and results.response != "None"
+
 
 def test_get_tool(code_hierarchy_nodes: Sequence[BaseNode]) -> None:
     """Test querying the index by signature."""
@@ -76,6 +86,7 @@ def test_get_tool(code_hierarchy_nodes: Sequence[BaseNode]) -> None:
     query = "CodeHierarchyNodeParser"
     results = index.as_langchain_tool().run(query)
     assert len(results) >= 1 and results != "None"
+
 
 def test_query_by_all_uuids(code_hierarchy_nodes: Sequence[BaseNode]) -> None:
     """Test querying the index by signature."""

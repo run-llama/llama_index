@@ -83,9 +83,11 @@ class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
 
     def custom_query(self, query: str) -> str:
         """Query the index. Only use exact matches.
-        If there is no exact match, but there is one for a parent, returns the parent."""
+        If there is no exact match, but there is one for a parent, returns the parent.
+        """
         if self.index is None or self.repo_map is None:
             self._setup_index()
+
         def get_all_dict_recursive(inp: Dict[str, Any]) -> Set[str]:
             """Get all keys and values from a dictionary of dictionaries recursively."""
             kvs = set()
@@ -96,6 +98,7 @@ class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
                 else:
                     kvs.add(value)
             return kvs
+
         def get_parent_dict_recursive(inp: Dict[str, Any], query: str) -> str:
             """Get the parent of a key in a dictionary of dictionaries recursively."""
             for key, value in inp.items():
@@ -137,7 +140,9 @@ class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
             self._setup_index()
         return LlamaIndexTool(
             name="Code Search",
-            description=self.tool_instructions.format(repo_map=self.repo_map[1] if self.include_repo_map else ""),
+            description=self.tool_instructions.format(
+                repo_map=self.repo_map[1] if self.include_repo_map else ""
+            ),
             query_engine=self,
             **tool_kwargs,
         )
