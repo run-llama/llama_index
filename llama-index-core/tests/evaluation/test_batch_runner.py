@@ -1,5 +1,3 @@
-import pytest
-
 from typing import Any, Optional, Sequence
 
 from llama_index.core.base.response.schema import Response
@@ -57,8 +55,8 @@ def get_eval_results(key, eval_results):
     return correct / len(results)
 
 
-@pytest.mark.asyncio()
-def test_batch_runner_with_single_evaluator() -> None:
+def test_batch_runner() -> None:
+    # single evaluator
     runner = BatchEvalRunner(evaluators={"evaluator1": MockEvaluator()})
 
     exp_queries = ["query1", "query2"]
@@ -67,6 +65,7 @@ def test_batch_runner_with_single_evaluator() -> None:
         Response(response="response1", source_nodes=[]),
         Response(response="response2", source_nodes=[]),
     ]
+    # original eval_kwargs_lists format - Dict[str, List]
     exp_kwargs = {"reference": ["response1", "response1"]}
 
     # test evaluate_response_strs()
@@ -74,21 +73,18 @@ def test_batch_runner_with_single_evaluator() -> None:
         queries=exp_queries, response_strs=exp_response_strs, **exp_kwargs
     )
     assert get_eval_results("evaluator1", results) == 0.5
+
     # test evaluate_responses()
     results = runner.evaluate_responses(
         queries=exp_queries, responses=exp_responses, **exp_kwargs
     )
     assert get_eval_results("evaluator1", results) == 0.5
 
-
-@pytest.mark.asyncio()
-def test_batch_runner_with_multiple_evaluators() -> None:
-    runner = BatchEvalRunner(
-        evaluators={
-            "evaluator1": MockEvaluator(),
-            "evaluator2": MockEvaluator(),
-        }
-    )
+    # multiple evaluators
+    runner.evaluators = {
+        "evaluator1": MockEvaluator(),
+        "evaluator2": MockEvaluator(),
+    }
 
     exp_queries = ["query1", "query2"]
     exp_response_strs = ["response1", "response2"]
@@ -96,6 +92,7 @@ def test_batch_runner_with_multiple_evaluators() -> None:
         Response(response="response1", source_nodes=[]),
         Response(response="response2", source_nodes=[]),
     ]
+    # updated eval_kwargs_lists format - Dict[str, Dict[str, List]]
     exp_kwargs = {
         "evaluator1": {"reference": ["response1", "response1"]},
         "evaluator2": {"reference": ["response1", "response2"]},
@@ -107,9 +104,12 @@ def test_batch_runner_with_multiple_evaluators() -> None:
     )
     assert get_eval_results("evaluator1", results) == 0.5
     assert get_eval_results("evaluator2", results) == 1.0
+
     # test evaluate_responses()
     results = runner.evaluate_responses(
         queries=exp_queries, responses=exp_responses, **exp_kwargs
     )
+    assert get_eval_results("evaluator1", results) == 0.5
+    assert get_eval_results("evaluator2", results) == 1.0
     assert get_eval_results("evaluator1", results) == 0.5
     assert get_eval_results("evaluator2", results) == 1.0
