@@ -5,7 +5,7 @@ An index that is built within KDB.AI.
 """
 
 import logging
-from typing import Any, List
+from typing import Any, List, Callable, Optional
 
 import pandas as pd
 
@@ -16,6 +16,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+from llama_index.vector_stores.kdbai.utils import default_sparse_encoder
 
 DEFAULT_COLUMN_NAMES = ["document_id", "text", "embedding"]
 
@@ -63,13 +64,17 @@ class KDBAIVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    hybrid_search: bool = False
     batch_size: int
 
     _table: Any = PrivateAttr()
+    _sparse_encoder: Optional[Callable] = PrivateAttr()
 
     def __init__(
         self,
         table: Any = None,
+        hybrid_search: bool = False,
+        sparse_encoder: Optional[Callable] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
     ) -> None:
@@ -90,7 +95,15 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         else:
             self._table = table
 
-        super().__init__(batch_size=batch_size)
+        if hybrid_search:
+            if sparse_encoder is None:
+                self._sparse_encoder = default_sparse_encoder
+            else:
+                self._sparse_encoder = sparse_encoder
+
+
+        super().__init__(batch_size=batch_size,
+                         hybrid_search=hybrid_search)
 
     @property
     def client(self) -> Any:
@@ -116,7 +129,9 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         """
         df = pd.DataFrame()
         docs = []
-        schema = self._table.schema()
+        schema = self._table.schema()['columns']
+        if self.hybrid_search:
+            schema = [item for item in schema if item['name'] != 'sparseVectors']
 
         try:
             for node in nodes:
@@ -126,9 +141,12 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                     "embedding": node.embedding,
                 }
 
+                if self.hybrid_search:
+                    doc['sparseVectors'] = self._sparse_encoder([node.get_content()])
+
                 # handle extra columns
-                if len(schema["columns"]) > len(DEFAULT_COLUMN_NAMES):
-                    for column in schema["columns"][len(DEFAULT_COLUMN_NAMES) :]:
+                if len(schema) > len(DEFAULT_COLUMN_NAMES):
+                    for column in schema[len(DEFAULT_COLUMN_NAMES) :]:
                         try:
                             doc[column["name"]] = convert_metadata_col(
                                 column, node.metadata[column["name"]]
@@ -158,14 +176,25 @@ class KDBAIVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         if query.filters is None:
-            results = self._table.search(
-                vectors=[query.query_embedding], n=query.similarity_top_k
+            filter=[]
+        else:
+            filter=query.filters
+
+        if self.hybrid_search:
+            alpha = query.alpha if query.alpha is not None else 0.5
+            sparse_vectors = self._sparse_encoder([query.query_str])
+            results = self._table.hybrid_search(
+                dense_vectors=[query.query_embedding],
+                sparse_vectors=sparse_vectors,
+                n=query.similarity_top_k,
+                filter=filter,
+                alpha=alpha
             )[0]
         else:
             results = self._table.search(
                 vectors=[query.query_embedding],
                 n=query.similarity_top_k,
-                filter=query.filters,
+                filter=filter
             )[0]
 
         top_k_nodes = []
