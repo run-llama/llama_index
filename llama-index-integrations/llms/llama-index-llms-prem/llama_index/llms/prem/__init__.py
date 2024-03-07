@@ -1,4 +1,4 @@
-from llama_index.llms.prem.base import <FILL>
+from llama_index.llms.prem.base import PremAI
 
 
-__all__ = ["<FILL>"]
+__all__ = ["PremAI"]
