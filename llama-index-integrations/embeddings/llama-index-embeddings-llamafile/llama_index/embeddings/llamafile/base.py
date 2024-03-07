@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 import httpx
 from httpx import Timeout
@@ -92,3 +92,41 @@ class LlamafileEmbedding(BaseEmbedding):
             response.raise_for_status()
 
             return response.json()["embedding"]
+
+    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+        """
+        Embed the input texts synchronously.
+        """
+        request_body = {
+            "content": texts,
+        }
+
+        with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
+            response = client.post(
+                url=f"{self.base_url}/embedding",
+                headers={"Content-Type": "application/json"},
+                json=request_body,
+            )
+            response.encoding = "utf-8"
+            response.raise_for_status()
+
+            return [output["embedding"] for output in response.json()["results"]]
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> Embedding:
+        """
+        Embed the input text asynchronously.
+        """
+        request_body = {
+            "content": texts,
+        }
+
+        async with httpx.AsyncClient(timeout=Timeout(self.request_timeout)) as client:
+            response = await client.post(
+                url=f"{self.base_url}/embedding",
+                headers={"Content-Type": "application/json"},
+                json=request_body,
+            )
+            response.encoding = "utf-8"
+            response.raise_for_status()
+
+            return [output["embedding"] for output in response.json()["results"]]

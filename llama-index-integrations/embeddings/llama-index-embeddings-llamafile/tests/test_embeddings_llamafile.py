@@ -46,3 +46,38 @@ def test_get_text_embedding(monkeypatch: MonkeyPatch):
 
     out = embedder.get_text_embedding("Test prompt")
     assert out == [0.1, 0.2, 0.1, 0.2]
+
+
+def mock_embeddings_batched_response() -> httpx.Response:
+    content = json_dumps(
+        {
+            "results": [
+                {"embedding": [0.1, 0.2, 0.1, 0.2]},
+                {"embedding": [0.3, 0.3, 0.3, 0.3]},
+            ]
+        }
+    )
+    return httpx.Response(
+        status_code=200,
+        content=content,
+        request=httpx.Request(method="POST", url=BASE_URL),
+    )
+
+
+def test_get_text_embeddings(monkeypatch: MonkeyPatch):
+    embedder = LlamafileEmbedding(base_url=BASE_URL)
+
+    def mock_post(self, url, headers, json):  # type: ignore[no-untyped-def]
+        assert url == f"{BASE_URL}/embedding"
+        assert headers == {
+            "Content-Type": "application/json",
+        }
+        assert json == {"content": ["Test prompt", "Another test prompt"]}
+        return mock_embeddings_batched_response()
+
+    monkeypatch.setattr(httpx.Client, "post", mock_post)
+
+    out = embedder.get_text_embedding_batch(["Test prompt", "Another test prompt"])
+    assert len(out) == 2
+    assert out[0] == [0.1, 0.2, 0.1, 0.2]
+    assert out[1] == [0.3, 0.3, 0.3, 0.3]
