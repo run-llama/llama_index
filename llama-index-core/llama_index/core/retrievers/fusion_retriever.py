@@ -141,6 +141,9 @@ class QueryFusionRetriever(BaseRetriever):
         # then scale by the weight of the retriever
         min_max_scores = {}
         for query_tuple, nodes_with_scores in results.items():
+            if not nodes_with_scores:
+                min_max_scores[query_tuple] = (0.0, 0.0)
+                continue
             scores = [node_with_score.score for node_with_score in nodes_with_scores]
             if dist_based:
                 # Set min and max based on mean and std dev
