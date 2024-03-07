@@ -17,6 +17,10 @@ from llama_index.core.base.llms.generic_utils import (
     stream_chat_to_completion_decorator,
 )
 
+from llama_index.core.llms.callbacks import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback
@@ -239,35 +243,69 @@ class PremAI(LLM):
 
         return chat_responses
 
-    def stream_chat(self):
-        raise NotImplementedError
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        # Skip any system messages here. Since it is always defined over the arguments
+
+        messages = [
+            {"role": x.role, "content": x.content}
+            for x in messages
+            if x.role != "system"
+        ]
+
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        response_generator = self._client.chat.completions.create(
+            project_id=self.project_id, messages=messages, **all_kwargs
+        )
+
+        def gen() -> ChatResponseGen:
+            content = ""
+            for chunk in response_generator:
+                delta = chunk.choices[0].delta
+                if delta is None:
+                    continue
+
+                role = delta["role"]
+                chunk_content = delta["content"]
+
+                content += chunk_content
+                yield ChatResponse(
+                    message=ChatMessage(role=role, content=content), raw=chunk
+                )
+
+        return gen()
 
     def achat(self):
         raise NotImplementedError(
             "Current version of premai does not support async calls."
         )
 
-    def astream_chat(self):
-        raise NotImplementedError(
-            "Current version of premai does not support async calls."
-        )
+    @llm_completion_callback()
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        complete_fn = chat_to_completion_decorator(self.chat)
+        return complete_fn(prompt, **kwargs)
 
-    def complete(self):
-        raise NotImplementedError(
-            "Current version of premai does not support async calls."
-        )
+    @llm_completion_callback()
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> ChatResponseGen:
+        stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
+        return stream_complete_fn(prompt, **kwargs)
 
     def acomplete(self):
         raise NotImplementedError(
             "Current version of premai does not support async calls."
         )
 
-    def stream_complete(self):
+    def astream_complete(self):
         raise NotImplementedError(
             "Current version of premai does not support async calls."
         )
 
-    def astream_complete(self):
+    def astream_chat(self):
         raise NotImplementedError(
             "Current version of premai does not support async calls."
         )
