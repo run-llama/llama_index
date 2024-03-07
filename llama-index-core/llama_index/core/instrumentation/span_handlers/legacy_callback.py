@@ -23,17 +23,18 @@ class LegacyCallbackSpanHandler(BaseSpanHandler[LegacyCallbackSpan]):
         self, id: str, parent_span_id: Optional[str], **kwargs: Any
     ) -> LegacyCallbackSpan:
         """Create a span."""
+        event_context = None
         if "query_bundle" in kwargs:  # EventContext type of span
             query_bundle = kwargs["query_bundle"]
-            payload = {EventPayload.QUERY_STR: query_bundle.query_str}
-            event_context = EventContext(
-                self.callback_manager,
-                CBEventType.QUERY,
-            )
-            event_context.on_start(payload=payload)
+            if "._query" in id:
+                payload = {EventPayload.QUERY_STR: query_bundle.query_str}
+                event_context = EventContext(
+                    self.callback_manager,
+                    CBEventType.QUERY,
+                )
+                event_context.on_start(payload=payload)
         else:  # trace type of span
             self.callback_manager.start_trace(id)
-            event_context = None
         return LegacyCallbackSpan(
             id_=id, parent_id=parent_span_id, event_context=event_context
         )

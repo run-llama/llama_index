@@ -16,6 +16,10 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
+from llama_index.core.instrumentation.span_handlers import LegacyCallbackSpanHandler
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 class VectorIndexRetriever(BaseRetriever):
@@ -65,6 +69,12 @@ class VectorIndexRetriever(BaseRetriever):
         self._filters = filters
         self._sparse_top_k = sparse_top_k
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
+
+        callback_manager = callback_manager or CallbackManager()
+        legacy_span_handler = LegacyCallbackSpanHandler(
+            callback_manager=callback_manager
+        )
+        dispatcher.span_handler = legacy_span_handler
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,
@@ -81,6 +91,7 @@ class VectorIndexRetriever(BaseRetriever):
         """Set similarity top k."""
         self._similarity_top_k = similarity_top_k
 
+    @dispatcher.span
     def _retrieve(
         self,
         query_bundle: QueryBundle,
@@ -94,6 +105,7 @@ class VectorIndexRetriever(BaseRetriever):
                 )
         return self._get_nodes_with_embeddings(query_bundle)
 
+    @dispatcher.span
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         if self._vector_store.is_embedding_query:
             if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
