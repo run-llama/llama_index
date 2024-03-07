@@ -1,4 +1,4 @@
-from llama_index.packs.searchain.base import <FILL>
+from llama_index.packs.searchain.base import SearChainPack
 
 
-__all__ = ["<FILL>"]
+__all__ = ["SearChainPack"]
