@@ -72,7 +72,7 @@ index = VectorStoreIndex(nodes=nodes, embed_model=embed_model)
 query_engine = index.as_query_engine(llm=llm)
 
 if __name__ == "__main__":
-    from llama_index.networks.contributor import ContributorService
+    from llama_index.networks.contributor.query_engine import ContributorService
     import uvicorn
 
     service = ContributorService.from_config_file(
