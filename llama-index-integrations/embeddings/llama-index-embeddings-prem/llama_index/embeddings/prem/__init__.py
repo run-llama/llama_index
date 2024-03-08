@@ -1,3 +1,3 @@
-from llama_index.embeddings.mistralai.base import MistralAIEmbedding
+from llama_index.embeddings.prem.base import PremAIEmbeddings
 
-__all__ = ["MistralAIEmbedding"]
+__all__ = ["PremAIEmbeddings"]
