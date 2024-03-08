@@ -1,5 +1,5 @@
 from .app_query_engine import query_engine
-from llama_index.networks.contributor.service import (
+from llama_index.networks.contributor.query_engine.service import (
     ContributorService,
     ContributorServiceSettings,
 )
