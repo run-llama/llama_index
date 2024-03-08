@@ -1,6 +1,6 @@
 # Gmail Loader
 
-This loader seaches your Gmail account and parses the resulting emails into `Document`s. The search query can include normal query params, like `from: email@example.com label:inbox`.
+This loader searches your Gmail account and parses the resulting emails into `Document`s. The search query can include normal query params, like `from: email@example.com label:inbox`.
 
 As a prerequisite, you will need to register with Google and generate a `credentials.json` file in the directory where you run this loader. See [here](https://developers.google.com/workspace/guides/create-credentials) for instructions.
 

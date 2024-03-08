@@ -27,7 +27,7 @@ It gives more flexibility to filter the documents. More info: https://developers
 
 We need `credentials.json` file to use this reader.
 
-1. You need to create a service account folllowing the steps mentioned [here](https://cloud.google.com/iam/docs/keys-create-delete)
+1. You need to create a service account following the steps mentioned [here](https://cloud.google.com/iam/docs/keys-create-delete)
 2. Get your json file and rename to `credentials.json` and move to the project root
 
 > Note: If you are not using Google Workspaces (formerly GSuite), You'll need to share your document making it public, or inviting your service account as an reader/editor of the folder or file.
