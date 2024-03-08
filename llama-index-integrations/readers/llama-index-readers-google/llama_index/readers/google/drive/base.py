@@ -1,7 +1,6 @@
 """Google Drive files reader."""
 
 import logging
-import warnings
 import os
 import tempfile
 from pathlib import Path
@@ -134,6 +133,7 @@ class GoogleDriveReader(BaseReader):
             file_id: file id of the file in google drive
             mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
             query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
+
         Returns:
             metadata: List of metadata of filde ids.
         """
@@ -372,11 +372,13 @@ class GoogleDriveReader(BaseReader):
         mime_types: Optional[List[str]],
         query_string: Optional[str],
     ) -> List[Document]:
-        """Load data from folder_id
+        """Load data from folder_id.
+
         Args:
             folder_id: folder id of the folder in google drive.
             mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
             query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
+
         Returns:
             Document: List of Documents of text.
         """
