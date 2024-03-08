@@ -1,12 +1,12 @@
 from unittest.mock import MagicMock, patch
-from llama_index.networks import (
+from llama_index.networks.contributor.query_engine import (
     ContributorClient,
     ContributorClientSettings,
 )
 from llama_index.core.settings import Settings
 
 
-@patch("llama_index.networks.contributor.client.requests")
+@patch("llama_index.networks.contributor.query_engine.client.requests")
 def test_contributor_client(mock_requests):
     # arrange
     result_mock = MagicMock()

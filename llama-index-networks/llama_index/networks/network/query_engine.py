@@ -17,7 +17,7 @@ from llama_index.core.settings import (
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.core.llms import LLM
-from llama_index.networks.contributor.client import ContributorClient
+from llama_index.networks.contributor.query_engine import ContributorClient
 import asyncio
 
 

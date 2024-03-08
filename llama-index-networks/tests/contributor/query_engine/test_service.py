@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from llama_index.networks import (
+from llama_index.networks.contributor.query_engine import (
     ContributorService,
     ContributorServiceSettings,
 )
