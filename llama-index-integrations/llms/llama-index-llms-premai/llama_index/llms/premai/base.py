@@ -1,4 +1,4 @@
-"""PremAI's API to interact with deployed projects"""
+"""PremAI's API to interact with deployed projects."""
 
 from typing import Any, Dict, Optional, Sequence, Callable
 
@@ -31,7 +31,6 @@ from premai import Prem
 
 
 # FIXME: The current version does not support stop tokens and number of responses i.e. n > 1
-
 # TODO: Fetch the default values from prem-sdk
 
 
@@ -40,11 +39,11 @@ class ChatPremError(Exception):
 
 
 class PremAI(LLM):
-    """PremAI LLM Provider"""
+    """PremAI LLM Provider."""
 
     project_id: int = Field(
         description=(
-            "The project ID in which the experiments or deployements are carried out. can find all your projects here: https://app.premai.io/projects/"
+            "The project ID in which the experiments or deployments are carried out. can find all your projects here: https://app.premai.io/projects/"
         )
     )
 
@@ -58,7 +57,7 @@ class PremAI(LLM):
 
     model: Optional[str] = Field(
         description=(
-            "Name of the model. This is an optional paramter. The default model is the one deployed from Prem's LaunchPad. An example: https://app.premai.io/projects/<project-id>/launchpad. If model name is other than default model then it will override the calls from the model deployed from launchpad."
+            "Name of the model. This is an optional parameter. The default model is the one deployed from Prem's LaunchPad. An example: https://app.premai.io/projects/<project-id>/launchpad. If model name is other than default model then it will override the calls from the model deployed from launchpad."
         ),
     )
     system_prompt: Optional[str] = Field(
@@ -72,7 +71,7 @@ class PremAI(LLM):
     )
 
     temperature: Optional[float] = Field(
-        description="Model temperature. Value shoud be >= 0 and <= 1.0"
+        description="Model temperature. Value should be >= 0 and <= 1.0"
     )
 
     top_p: Optional[float] = Field(
@@ -251,7 +250,7 @@ class PremAI(LLM):
                 )
             )
 
-        if "is_completion" in kwargs.keys():
+        if "is_completion" in kwargs:
             return chat_responses[0]
 
         return chat_responses
