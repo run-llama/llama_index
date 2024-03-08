@@ -279,6 +279,7 @@
   "LLMQuestionGenerator": "llama_index.core.question_gen",
   "SubQuestionOutputParser": "llama_index.core.question_gen",
   "ReaderConfig": "llama_index.core.readers",
+  "CodeHierarchyAgentPack": "llama_index.packs.code_hierarchy",
   "CodeHierarchyNodeParser": "llama_index.packs.code_hierarchy",
   "CodeHierarchyKeywordQueryEngine": "llama_index.packs.code_hierarchy",
   "StringIterableReader": "llama_index.core.readers",
