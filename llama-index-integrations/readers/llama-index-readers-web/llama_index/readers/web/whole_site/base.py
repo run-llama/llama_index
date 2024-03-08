@@ -26,7 +26,7 @@ class WholeSiteReader(BaseReader):
         max_depth (int, optional): Maximum depth for BFS. Defaults to 10.
     """
 
-    def __init__(self, prefix: str, , driver: webdriver.Chrome, max_depth: int = 10) -> None:
+    def __init__(self, prefix: str, max_depth: int = 10, driver: Optional[webdriver.Chrome] = None) -> None:
         """
         Initialize the WholeSiteReader with the provided prefix and maximum depth.
         """
