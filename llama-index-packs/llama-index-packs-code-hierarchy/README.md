@@ -1,29 +1,56 @@
-# CodeHierarchyNodeParser
+# CodeHierarchyAgentPack
 
-The `CodeHierarchyNodeParser` is useful to split long code files into more reasonable chunks. What this will do is create a "Hierarchy" of sorts, where sections of the code are made more reasonable by replacing the scope body with short comments telling the LLM to search for a referenced node if it wants to read that context body. This is called skeletonization, and is toggled by setting `skeleton` to `True` which it is by default.
+```bash
+# install
+pip install llama-index-packs-code-hierarchy
+
+# download source code
+llamaindex-cli download-llamapack CodeHierarchyAgentPack -d ./code_hierarchy_pack
+```
+
+The `CodeHierarchyAgentPack` is useful to split long code files into more reasonable chunks, while creating an agent on top to navigate the code. What this will do is create a "Hierarchy" of sorts, where sections of the code are made more reasonable by replacing the scope body with short comments telling the LLM to search for a referenced node if it wants to read that context body.
 
 Nodes in this hierarchy will be split based on scope, like function, class, or method scope, and will have links to their children and parents so the LLM can traverse the tree.
 
 ```python
 from llama_index.core.text_splitter import CodeSplitter
-from llama_index.core.llama_pack import download_llama_pack
+from llama_index.llms.openai import OpenAI
+from llama_index.packs.code_hierarchy import (
+    CodeHierarchyAgentPack,
+    CodeHierarchyNodeParser,
+)
 
-CodeHierarchyNodeParser = download_llama_pack("CodeHierarchyNodeParser")
+llm = OpenAI(model="gpt-4", temperature=0.2)
+
+documents = SimpleDirectoryReader(
+    input_files=[
+        Path("../llama_index/packs/code_hierarchy/code_hierarchy.py")
+    ],
+    file_metadata=lambda x: {"filepath": x},
+).load_data()
 
 split_nodes = CodeHierarchyNodeParser(
     language="python",
     # You can further parameterize the CodeSplitter to split the code
     # into "chunks" that match your context window size using
     # chunck_lines and max_chars parameters, here we just use the defaults
-    code_splitter=CodeSplitter(language="python"),
+    code_splitter=CodeSplitter(
+        language="python", max_chars=1000, chunk_lines=10
+    ),
+).get_nodes_from_documents(documents)
+
+pack = CodeHierarchyAgentPack(split_nodes=split_nodes, llm=llm)
+
+pack.run(
+    "How does the get_code_hierarchy_from_nodes function from the code hierarchy node parser work? Provide specific implementation details."
 )
 ```
 
-A full example can be found [here in combination with `CodeSplitter`](./CodeHierarchyNodeParserUsage.ipynb).
+A full example can be found [here in combination with `](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-code-hierarchy/examples/CodeHierarchyNodeParserUsage.ipynb).
 
-# Repo Maps
+## Repo Maps
 
-Generate a map of a repository's structure and contents. This is useful for the LLM to understand the structure of a codebase, and to be able to reference specific files or directories.
+The pack contains a `CodeHierarchyKeywordQueryEngine` that uses a `CodeHierarchyNodeParser` to generate a map of a repository's structure and contents. This is useful for the LLM to understand the structure of a codebase, and to be able to reference specific files or directories.
 
 For example:
 
@@ -56,21 +83,31 @@ For example:
     - \_skeletonize_list
       - recur
 
-# Query Engine & Langchain Tool
+## Usage as a Tool with an Agent
 
-Generates a langchain tool with the following name and description:
+You can create a tool for any agent using the nodes from the node parser:
 
+```python
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.tools import QueryEngineTool
+from llama_index.packs.code_hierarchy import CodeHierarchyKeywordQueryEngine
+
+query_engine = CodeHierarchyKeywordQueryEngine(
+    nodes=split_nodes,
+)
+
+tool = QueryEngineTool.from_defaults(
+    query_engine=query_engine,
+    name="code_lookup",
+    description="Useful for looking up information about the code hierarchy codebase.",
+)
+
+agent = OpenAIAgent.from_tools(
+    [tool], system_prompt=query_engine.get_tool_instructions(), verbose=True
+)
 ```
-name: "Code Search"
-description:
-    Search the tool by any element in this list,
-    or any uuid found in the code,
-    to get more information about that element.
 
-    {repo_map}
-```
-
-# Adding new languages
+## Adding new languages
 
 To add a new language you need to edit `_DEFAULT_SIGNATURE_IDENTIFIERS` in `code_hierarchy.py`.
 
@@ -94,6 +131,6 @@ by incorporating `.scm` files instead of `_SignatureCaptureType`, `_SignatureCap
 
 ## Contributing
 
-Please make a `.env` file in the root directory of this pack and then add your `OPENAI_API_KEY` to it to run the jupyter notebook.
+You will need to set your `OPENAI_API_KEY` in your env to run the notebook or test the pack.
 
 You can run tests with `pytest tests` in the root directory of this pack.
