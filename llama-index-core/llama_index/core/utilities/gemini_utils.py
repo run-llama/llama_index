@@ -10,6 +10,7 @@ ROLES_TO_GEMINI: Dict[MessageRole, MessageRole] = {
     MessageRole.ASSISTANT: MessageRole.MODEL,
     ## Gemini only has user and model roles. Put the rest in user role.
     MessageRole.SYSTEM: MessageRole.USER,
+    MessageRole.MODEL: MessageRole.MODEL,
 }
 ROLES_FROM_GEMINI: Dict[MessageRole, MessageRole] = {
     ## Gemini only has user and model roles.
