@@ -1,6 +1,6 @@
 # Google Calendar Loader
 
-This loader reads your upcoming Google Calendar events and parses the relevant info into `Documents`. 
+This loader reads your upcoming Google Calendar events and parses the relevant info into `Documents`.
 
 As a prerequisite, you will need to register with Google and generate a `credentials.json` file in the directory where you run this loader. See [here](https://developers.google.com/workspace/guides/create-credentials) for instructions.
 
@@ -30,6 +30,7 @@ GoogleCalendarReader = download_loader("GoogleCalendarReader")
 
 loader = GoogleCalendarReader()
 documents = loader.load_data()
+
 index = VectorStoreIndex.from_documents(documents)
 index.query("When am I meeting Gordon?")
 ```
