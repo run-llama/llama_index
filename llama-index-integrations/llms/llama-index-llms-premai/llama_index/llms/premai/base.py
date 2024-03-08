@@ -9,6 +9,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
 )
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.base.llms.generic_utils import (
@@ -80,10 +81,6 @@ class PremAI(LLM):
 
     max_retries: Optional[int] = Field(
         description="Max number of retries to call the API"
-    )
-
-    streaming: Optional[bool] = Field(
-        description="Whether to stream token responses or not."
     )
 
     tools: Optional[Dict[str, Any]] = Field(
@@ -276,22 +273,25 @@ class PremAI(LLM):
                 )
 
         response_generator = self._client.chat.completions.create(
-            project_id=self.project_id, messages=chat_messages, **all_kwargs
+            project_id=self.project_id,
+            messages=chat_messages,
+            stream=True,
+            **all_kwargs,
         )
 
         def gen() -> ChatResponseGen:
             content = ""
+            role = MessageRole.ASSISTANT
             for chunk in response_generator:
                 delta = chunk.choices[0].delta
-                if delta is None:
+                if delta is None or delta["content"] is None:
                     continue
 
-                role = delta["role"]
                 chunk_content = delta["content"]
-
                 content += chunk_content
+
                 yield ChatResponse(
-                    message=ChatMessage(role=role, content=content), raw=chunk
+                    message=ChatMessage(content=content, role=role), delta=chunk_content
                 )
 
         return gen()
