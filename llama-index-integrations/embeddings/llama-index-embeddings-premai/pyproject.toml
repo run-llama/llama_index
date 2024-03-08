@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.embeddings.prem"
+import_path = "llama_index.embeddings.premai"
 
 [tool.llamahub.class_authors]
 PremAIEmbeddings = "llama-index"
@@ -22,7 +22,7 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["PremAI"]
-description = "llama-index embeddings premaiai integration"
+description = "llama-index embeddings premai integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-premai"
@@ -32,7 +32,7 @@ version = "0.1.3"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-premai = "0.3.20"
+premai = "^0.3.20"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
