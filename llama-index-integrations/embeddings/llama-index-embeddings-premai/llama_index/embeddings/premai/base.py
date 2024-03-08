@@ -18,7 +18,7 @@ class PremAIEmbeddings(BaseEmbedding):
 
     project_id: int = Field(
         description=(
-            "The project ID in which the experiments or deployements are carried out. can find all your projects here: https://app.premai.io/projects/"
+            "The project ID in which the experiments or deployments are carried out. can find all your projects here: https://app.premai.io/projects/"
         )
     )
 
