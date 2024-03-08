@@ -44,7 +44,7 @@ class PremAIEmbeddings(BaseEmbedding):
                 "You must provide an API key to use PremAI. "
                 "You can either pass it in as an argument or set it `PREMAI_API_KEY`."
             )
-        self._premlai_client = Prem(api_key=api_key)
+        self._premai_client = Prem(api_key=api_key)
         super().__init__(
             project_id=project_id,
             model_name=model_name,
