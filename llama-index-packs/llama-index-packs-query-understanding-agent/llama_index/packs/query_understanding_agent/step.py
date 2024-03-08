@@ -1,4 +1,5 @@
 from llama_index.core.bridge.pydantic import Field, BaseModel, PrivateAttr
+from llama_index.core import PromptTemplate
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 
@@ -19,11 +20,8 @@ from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.agent import CustomSimpleAgentWorker, Task
 from typing import Dict, Any, List, Tuple, Optional
 from llama_index.core.tools import BaseTool, QueryEngineTool
-from llama_index.core.program import LLMTextCompletionProgram
-from llama_index.core.output_parsers import PydanticOutputParser
 from llama_index.core.query_engine import RouterQueryEngine
 from llama_index.core.prompts import ChatPromptTemplate
-from llama_index.core.selectors import PydanticSingleSelector
 
 from llama_index.core.llms import ChatMessage, MessageRole
 
@@ -144,8 +142,9 @@ class QueryUnderstandingAgentWorker(CustomSimpleAgentWorker):
                 raise ValueError(
                     f"Tool {tool.metadata.name} is not a query engine tool."
                 )
-        self._router_query_engine = RouterQueryEngine(
-            selector=PydanticSingleSelector.from_defaults(),
+        self._router_query_engine = RouterQueryEngine.from_defaults(
+            llm=kwargs.get("llm"),
+            select_multi=False,
             query_engine_tools=tools,
             verbose=kwargs.get("verbose", False),
         )
@@ -158,15 +157,15 @@ class QueryUnderstandingAgentWorker(CustomSimpleAgentWorker):
         """Initialize state."""
         return {"count": 0, "current_reasoning": []}
 
-    def _run_llm_program(self, prompt, state):
+    def _run_llm_program(self, query_str, response_str, tools):
         for _ in range(3):
             try:
-                return LLMTextCompletionProgram.from_defaults(
-                    output_cls=ResponseEval,
-                    output_parser=PydanticOutputParser(output_cls=ResponseEval),
-                    prompt_template_str=prompt,
-                    verbose=True,
-                    llm=self.llm,
+                return self.llm.structured_predict(
+                    ResponseEval,
+                    PromptTemplate(self.prompt_str),
+                    query_str=query_str,
+                    response_str=str(response_str),
+                    tools=tools,
                 )
             except Exception as e:
                 print(f"Attempt failed with error: {e}")
@@ -204,10 +203,7 @@ class QueryUnderstandingAgentWorker(CustomSimpleAgentWorker):
         # Then, check for errors
         # dynamically create pydantic program for structured output extraction based on template
         tools = "\n".join([a.description for a in self._router_query_engine._metadatas])
-        llm_program = self._run_llm_program(self.prompt_str, state)
-
-        # run program, look at the result
-        response_eval = llm_program(
+        response_eval = self._run_llm_program(
             query_str=new_input, response_str=str(response), tools=tools
         )
 
