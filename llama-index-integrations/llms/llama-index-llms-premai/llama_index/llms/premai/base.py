@@ -208,6 +208,7 @@ class PremAI(LLM):
             "frequency_penalty",
             "presence_penalty",
             "tools",
+            "model",
         ]
 
         for key in _keys_that_cannot_be_none:
