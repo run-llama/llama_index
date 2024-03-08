@@ -5,7 +5,8 @@ from enum import Enum
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import PrivateAttr
+# The PrivateAttr should be imported from llama_index.core.bridge.pydantic instead of pydantic
+from llama_index.core.bridge.pydantic import PrivateAttr
 
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.schema import ImageType
