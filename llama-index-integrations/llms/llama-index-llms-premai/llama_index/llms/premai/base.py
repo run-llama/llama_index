@@ -158,6 +158,7 @@ class PremAI(LLM):
             temperature=temperature,
             max_tokens=max_tokens,
             model=model,
+            api_key=api_key,
             callback_manager=callback_manager,
             top_p=top_p,
             system_prompt=system_prompt,
@@ -204,7 +205,18 @@ class PremAI(LLM):
         }
 
     def _get_all_kwargs(self, **kwargs) -> Dict[str, Any]:
-        return {**self._model_kwargs, **kwargs}
+        all_kwargs = {**self._model_kwargs, **kwargs}
+        _keys_that_cannot_be_none = [
+            "system_prompt",
+            "frequency_penalty",
+            "presence_penalty",
+            "tools",
+        ]
+
+        for key in _keys_that_cannot_be_none:
+            if all_kwargs.get(key) is None:
+                all_kwargs.pop(key, None)
+        return all_kwargs
 
     @llm_chat_callback()
     def chat(
@@ -212,9 +224,8 @@ class PremAI(LLM):
     ) -> Sequence[ChatResponse]:
 
         # Skip any system messages here. Since it is always defined over the arguments
-
         messages = [
-            {"role": x.role, "content": x.content}
+            {"role": x.role.value, "content": x.content}
             for x in messages
             if x.role != "system"
         ]
@@ -223,7 +234,6 @@ class PremAI(LLM):
         response = self._client.chat.completions.create(
             project_id=self.project_id, messages=messages, **all_kwargs
         )
-
         if not response.choices:
             raise ChatPremError("ChatResponse must have at least one candidate")
 
@@ -240,6 +250,9 @@ class PremAI(LLM):
                     raw={"role": role, "content": content},
                 )
             )
+
+        if "is_completion" in kwargs.keys():
+            return chat_responses[0]
 
         return chat_responses
 
@@ -286,6 +299,7 @@ class PremAI(LLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         complete_fn = chat_to_completion_decorator(self.chat)
+        kwargs["is_completion"] = True
         return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
