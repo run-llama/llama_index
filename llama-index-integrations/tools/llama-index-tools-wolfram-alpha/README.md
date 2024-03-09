@@ -12,7 +12,7 @@ Here's an example usage of the WolframAlphaToolSpec.
 
 ```python
 from llama_index.tools.wolfram_alpha import WolframAlphaToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 
 wolfram_spec = WolframAlphaToolSpec(app_id="API-key")

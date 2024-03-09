@@ -291,9 +291,22 @@ class ChromaVectorStore(BasePydanticVectorStore):
         else:
             where = kwargs.pop("where", {})
 
-        results = self._collection.query(
+        if not query.query_embedding:
+            return self._get(limit=query.similarity_top_k, where=where, **kwargs)
+
+        return self._query(
             query_embeddings=query.query_embedding,
             n_results=query.similarity_top_k,
+            where=where,
+            **kwargs,
+        )
+
+    def _query(
+        self, query_embeddings: List["float"], n_results: int, where: dict, **kwargs
+    ) -> VectorStoreQueryResult:
+        results = self._collection.query(
+            query_embeddings=query_embeddings,
+            n_results=n_results,
             where=where,
             **kwargs,
         )
@@ -338,3 +351,48 @@ class ChromaVectorStore(BasePydanticVectorStore):
             ids.append(node_id)
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def _get(self, limit: int, where: dict, **kwargs) -> VectorStoreQueryResult:
+        results = self._collection.get(
+            limit=limit,
+            where=where,
+            **kwargs,
+        )
+
+        logger.debug(f"> Top {len(results['documents'])} nodes:")
+        nodes = []
+        ids = []
+
+        if not results["ids"]:
+            results["ids"] = [[]]
+
+        for node_id, text, metadata in zip(
+            results["ids"][0], results["documents"], results["metadatas"]
+        ):
+            try:
+                node = metadata_dict_to_node(metadata)
+                node.set_content(text)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata
+                )
+
+                node = TextNode(
+                    text=text,
+                    id_=node_id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
+            nodes.append(node)
+
+            logger.debug(
+                f"> [Node {node_id}] [Similarity score: N/A - using get()] "
+                f"{truncate_text(str(text), 100)}"
+            )
+            ids.append(node_id)
+
+        return VectorStoreQueryResult(nodes=nodes, ids=ids)

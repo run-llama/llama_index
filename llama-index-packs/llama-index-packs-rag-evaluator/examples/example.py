@@ -1,8 +1,8 @@
 # Required Environment Variables: OPENAI_API_KEY
 
+from llama_index.core import VectorStoreIndex
 from llama_index.core.llama_dataset import download_llama_dataset
 from llama_index.packs.rag_evaluator import RagEvaluatorPack
-from llama_index.legacy import VectorStoreIndex
 
 # download a LabelledRagDataset from llama-hub
 rag_dataset, documents = download_llama_dataset(

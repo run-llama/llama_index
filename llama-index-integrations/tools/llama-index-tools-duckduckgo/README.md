@@ -10,7 +10,7 @@ Here's an example usage of the DuckDuckGoSearchToolSpec.
 
 ```python
 from llama_index.tools.duckduckgo import DuckDuckGoSearchToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = DuckDuckGoSearchToolSpec()
 

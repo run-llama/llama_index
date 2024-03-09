@@ -29,7 +29,7 @@ class SimilarityMode(str, Enum):
 
 def mean_agg(embeddings: List[Embedding]) -> Embedding:
     """Mean aggregation for embeddings."""
-    return list(np.array(embeddings).mean(axis=0))
+    return np.array(embeddings).mean(axis=0).tolist()
 
 
 def similarity(
@@ -288,16 +288,13 @@ class BaseEmbedding(TransformComponent):
         nested_embeddings = []
         if show_progress:
             try:
-                from tqdm.auto import tqdm
+                from tqdm.asyncio import tqdm_asyncio
 
-                nested_embeddings = [
-                    await f
-                    for f in tqdm(
-                        asyncio.as_completed(embeddings_coroutines),
-                        total=len(embeddings_coroutines),
-                        desc="Generating embeddings",
-                    )
-                ]
+                nested_embeddings = await tqdm_asyncio.gather(
+                    *embeddings_coroutines,
+                    total=len(embeddings_coroutines),
+                    desc="Generating embeddings",
+                )
             except ImportError:
                 nested_embeddings = await asyncio.gather(*embeddings_coroutines)
         else:

@@ -1,5 +1,9 @@
 # StripeDocs Loader
 
+```bash
+pip install llama-index-readers-stripe-docs
+```
+
 This loader asynchronously loads data from the [Stripe documentation](https://stripe.com/docs). It iterates through the Stripe sitemap to get all `/docs` references.
 
 It is based on the [Async Website Loader](https://llamahub.ai/l/web-async_web).
@@ -7,8 +11,8 @@ It is based on the [Async Website Loader](https://llamahub.ai/l/web-async_web).
 ## Usage
 
 ```python
-from llama_index import VectorStoreIndex
-from llama_hub.stripe_docs import StripeDocsReader
+from llama_index.core import VectorStoreIndex
+from llama_index.readers.stripe_docs import StripeDocsReader
 
 loader = StripeDocsReader()
 documents = loader.load_data()

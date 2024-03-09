@@ -43,7 +43,7 @@ agent = gmail_agent_pack.agent
 response = agent.chat("What is my most recent email?")
 
 # Use the tool spec in another agent
-from llama_index.core.agents import ReActAgent
+from llama_index.core.agent import ReActAgent
 
 tool_spec = gmail_agent_pack.tool_spec
 agent = ReActAgent.from_tools(tool_spec.to_tool_lost())

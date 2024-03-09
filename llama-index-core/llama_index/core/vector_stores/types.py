@@ -119,14 +119,10 @@ ExactMatchFilter = MetadataFilter
 
 
 class MetadataFilters(BaseModel):
-    """Metadata filters for vector stores.
-
-    Currently only supports exact match filters.
-    TODO: support more advanced expressions.
-    """
+    """Metadata filters for vector stores."""
 
     # Exact match filters and Advanced filters with operators like >, <, >=, <=, !=, etc.
-    filters: List[Union[MetadataFilter, ExactMatchFilter]]
+    filters: List[Union[MetadataFilter, ExactMatchFilter, "MetadataFilters"]]
     # and/or such conditions for combining different filters
     condition: Optional[FilterCondition] = FilterCondition.AND
 
