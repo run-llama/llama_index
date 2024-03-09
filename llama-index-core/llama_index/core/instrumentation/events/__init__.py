@@ -1,4 +1,8 @@
-from llama_index.core.instrumentation.events.base import BaseEvent
+from llama_index.core.instrumentation.events.agent import (
+    AgentRunStepEndEvent,
+    AgentRunStepStartEvent,
+    AgentChatWithStepEndEvent,
+)
 from llama_index.core.instrumentation.events.llm import (
     LLMPredictEndEvent,
     LLMPredictStartEvent,
@@ -16,6 +20,10 @@ from llama_index.core.instrumentation.events.synthesis import (
 
 
 __all__ = [
+    "AgentRunStepEndEvent",
+    "AgentRunStepStartEvent",
+    "AgentChatWithStepEndEvent",
+    "AgentChatWithStepStartEvent",
     "BaseEvent",
     "LLMPredictEndEvent",
     "LLMPredictStartEvent",

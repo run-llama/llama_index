@@ -1,6 +1,5 @@
 from typing import Any, Optional
 from llama_index.core.bridge.pydantic import Field
-from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.callbacks.base import EventContext, EventPayload, CBEventType
 from llama_index.core.instrumentation.span import LegacyCallbackSpan
@@ -33,6 +32,14 @@ class LegacyCallbackSpanHandler(BaseSpanHandler[LegacyCallbackSpan]):
                     CBEventType.QUERY,
                 )
                 event_context.on_start(payload=payload)
+        elif "message" in kwargs:  # stream_chat
+            message = kwargs["message"]
+            if "._achat" in id:
+                payload = {EventPayload.MESSAGES: [message]}
+                event_context = EventContext(
+                    self.callback_manager, CBEventType.AGENT_STEP
+                )
+                event_context.on_start(payload=payload)
         else:  # trace type of span
             self.callback_manager.start_trace(id)
         return LegacyCallbackSpan(
@@ -43,8 +50,14 @@ class LegacyCallbackSpanHandler(BaseSpanHandler[LegacyCallbackSpan]):
         self, id: str, result: Optional[Any] = None, **kwargs: Any
     ) -> None:
         """Logic for preparing to drop a span."""
+        # defining here to avoid circular imports
+        from llama_index.core.chat_engine.types import StreamingAgentChatResponse
+        from llama_index.core.base.response.schema import RESPONSE_TYPE
+
         event_context = self.open_spans[id].event_context
         if isinstance(result, RESPONSE_TYPE):
+            payload = {EventPayload.RESPONSE: result}
+        elif isinstance(result, StreamingAgentChatResponse):
             payload = {EventPayload.RESPONSE: result}
         else:
             payload = {}

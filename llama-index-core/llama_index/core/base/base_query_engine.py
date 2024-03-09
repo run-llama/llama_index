@@ -20,7 +20,9 @@ from llama_index.core.instrumentation.events.query import (
     QueryEndEvent,
     QueryStartEvent,
 )
-from llama_index.core.instrumentation.span_handlers import LegacyCallbackSpanHandler
+from llama_index.core.instrumentation.span_handlers.legacy_callback import (
+    LegacyCallbackSpanHandler,
+)
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
