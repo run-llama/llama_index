@@ -151,12 +151,16 @@ class SQLDatabase:
         """Get table info for a single table."""
         # same logic as table_info, but with specific table names
         template = "Table '{table_name}' has columns: {columns}, "
-
-        table_comment = self._inspector.get_table_comment(
-            table_name, schema=self._schema
-        )["text"]
-        if table_comment:
-            template += f"with comment: ({table_comment}) "
+        try:
+            # try to retrieve table comment
+            table_comment = self._inspector.get_table_comment(
+                table_name, schema=self._schema
+            )["text"]
+            if table_comment:
+                template += f"with comment: ({table_comment}) "
+        except NotImplementedError:
+            # get_table_comment makRaises NotImplementedError for a dialect that does not support comments.
+            pass
 
         template += "and foreign keys: {foreign_keys}."
         columns = []
