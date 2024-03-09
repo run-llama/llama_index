@@ -48,6 +48,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
     create_retry_decorator,
     from_openai_message,
+    from_openai_token_logprobs,
     is_chat_model,
     is_function_calling_model,
     openai_modelname_to_contextsize,
@@ -95,6 +96,15 @@ class OpenAI(LLM):
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
         gt=0,
+    )
+    logprobs: Optional[bool] = Field(
+        description="Whether to return logprobs per token."
+    )
+    top_logprobs: int = Field(
+        description="The number of top token log probs to return.",
+        default=0,
+        gte=0,
+        lte=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
@@ -297,6 +307,9 @@ class OpenAI(LLM):
             # https://platform.openai.com/docs/api-reference/chat
             # https://platform.openai.com/docs/api-reference/completions
             base_kwargs["max_tokens"] = self.max_tokens
+        if self.logprobs is not None and self.logprob is True:
+            base_kwargs["logprobs"] = self.logprobs
+            base_kwargs["top_logprobs"] = self.top_logprobs
         return {**base_kwargs, **self.additional_kwargs}
 
     @llm_retry_decorator
@@ -310,10 +323,15 @@ class OpenAI(LLM):
         )
         openai_message = response.choices[0].message
         message = from_openai_message(openai_message)
+        openai_token_logprobs = response.choices[0].logprobs
+        logprobs = None
+        if openai_token_logprobs:
+            logprobs = from_openai_token_logprobs(openai_token_logprobs.content)
 
         return ChatResponse(
             message=message,
             raw=response,
+            logprobs=logprobs,
             additional_kwargs=self._get_response_token_counts(response),
         )
 
@@ -554,6 +572,7 @@ class OpenAI(LLM):
         )
         message_dict = response.choices[0].message
         message = from_openai_message(message_dict)
+        logprobs_dict = response.choices[0].logprobs
 
         return ChatResponse(
             message=message,
