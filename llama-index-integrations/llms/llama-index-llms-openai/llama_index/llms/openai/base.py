@@ -307,7 +307,7 @@ class OpenAI(LLM):
             # https://platform.openai.com/docs/api-reference/chat
             # https://platform.openai.com/docs/api-reference/completions
             base_kwargs["max_tokens"] = self.max_tokens
-        if self.logprobs is not None and self.logprob is True:
+        if self.logprobs is not None and self.logprobs is True:
             base_kwargs["logprobs"] = self.logprobs
             base_kwargs["top_logprobs"] = self.top_logprobs
         return {**base_kwargs, **self.additional_kwargs}
