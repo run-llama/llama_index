@@ -49,7 +49,10 @@ from llama_index.llms.openai.utils import (
     create_retry_decorator,
     from_openai_message,
     from_openai_token_logprobs,
+<<<<<<< HEAD
     from_openai_completion_logprobs,
+=======
+>>>>>>> 3a84a6cab (add logprob)
     is_chat_model,
     is_function_calling_model,
     openai_modelname_to_contextsize,
@@ -308,12 +311,18 @@ class OpenAI(LLM):
             # https://platform.openai.com/docs/api-reference/chat
             # https://platform.openai.com/docs/api-reference/completions
             base_kwargs["max_tokens"] = self.max_tokens
+<<<<<<< HEAD
         if self.logprobs is not None and self.logprobs is True:
             if self.metadata.is_chat_model:
                 base_kwargs["logprobs"] = self.logprobs
                 base_kwargs["top_logprobs"] = self.top_logprobs
             else:
                 base_kwargs["logprobs"] = self.top_logprobs  # int in this case
+=======
+        if self.logprobs is not None and self.logprob is True:
+            base_kwargs["logprobs"] = self.logprobs
+            base_kwargs["top_logprobs"] = self.top_logprobs
+>>>>>>> 3a84a6cab (add logprob)
         return {**base_kwargs, **self.additional_kwargs}
 
     @llm_retry_decorator
