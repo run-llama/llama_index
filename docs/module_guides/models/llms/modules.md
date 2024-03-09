@@ -196,6 +196,16 @@ maxdepth: 1
 /cookbooks/mistralai.ipynb
 ```
 
+## PremAI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/premai.ipynb
+/examples/embedding/premai.ipynb
+```
+
 ## MonsterAPI
 
 ```{toctree}
