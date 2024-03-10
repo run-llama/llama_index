@@ -43,6 +43,7 @@ extensions = [
     "sphinx_reredirects",
     "sphinx_automodapi.automodapi",
     "sphinxcontrib.gtagjs",
+    "gen_sidebar_ext",
 ]
 
 # automodapi requires this to avoid duplicates apparently
