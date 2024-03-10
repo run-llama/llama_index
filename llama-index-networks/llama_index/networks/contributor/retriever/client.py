@@ -4,7 +4,7 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import QueryBundle
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.prompts.mixin import PromptMixinType
-from llama_index.networks.schema.contributor import ContributorQueryResponse
+from llama_index.networks.schema.contributor import ContributorRetrieverResponse
 from pydantic.v1 import BaseSettings, Field
 import requests
 import aiohttp
@@ -39,7 +39,7 @@ class ContributorClient(BaseRetriever):
         config = ContributorClientSettings(_env_file=env_file)
         return cls(callback_manager=callback_manager, config=config)
 
-    def _query(
+    def _retrieve(
         self,
         query_bundle: QueryBundle,
         additional_data: Dict[str, str] = {},
@@ -53,12 +53,12 @@ class ContributorClient(BaseRetriever):
             self.config.api_url + "/api/query", json=data, headers=headers
         )
         try:
-            contributor_response = ContributorQueryResponse.parse_obj(result.json())
+            contributor_response = ContributorRetrieverResponse.parse_obj(result.json())
         except Exception as e:
             raise ValueError("Failed to parse response") from e
-        return contributor_response.to_response()
+        return contributor_response.get_nodes()
 
-    async def _aquery(
+    async def _aretrieve(
         self,
         query_bundle: QueryBundle,
         api_token: Optional[str] = None,
@@ -75,10 +75,12 @@ class ContributorClient(BaseRetriever):
             ) as resp:
                 json_result = await resp.json()
             try:
-                contributor_response = ContributorQueryResponse.parse_obj(json_result)
+                contributor_response = ContributorRetrieverResponse.parse_obj(
+                    json_result
+                )
             except Exception as e:
                 raise ValueError("Failed to parse response") from e
-        return contributor_response.to_response()
+        return contributor_response.get_nodes()
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""

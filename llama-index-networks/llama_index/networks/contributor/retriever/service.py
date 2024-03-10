@@ -2,7 +2,7 @@ from typing import Any, Optional
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.bridge.pydantic import Field, BaseModel
 from llama_index.networks.schema.contributor import (
-    ContributorQueryRequest,
+    ContributorRetrieverRequest,
 )
 from pydantic.v1 import BaseSettings, PrivateAttr
 from fastapi import FastAPI
@@ -35,8 +35,8 @@ class ContributorService(BaseModel):
         # routes
         self._fastapi.add_api_route(path="/api", endpoint=self.index, methods=["GET"])
         self._fastapi.add_api_route(
-            path="/api/query",
-            endpoint=self.query,
+            path="/api/retrieve",
+            endpoint=self.retrieve,
             methods=["POST"],
         )
 
@@ -46,9 +46,9 @@ class ContributorService(BaseModel):
         """Index endpoint logic."""
         return {"message": "Hello World!"}
 
-    async def query(self, request: ContributorQueryRequest):
-        """Query endpoint logic."""
-        return await self.retriever.aquery(request.query)
+    async def retrieve(self, request: ContributorRetrieverRequest):
+        """Retriever endpoint logic."""
+        return await self.retriever.aretrieve(request.query)
 
     @classmethod
     def from_config_file(

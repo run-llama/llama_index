@@ -1,4 +1,5 @@
-from typing import Optional
+from typing import Optional, List
+from llama_index.core.schema import NodeWithScore
 from llama_index.core.base.response.schema import Response
 from llama_index.core.bridge.pydantic import BaseModel
 from pydantic import BaseModel as V2BaseModel
@@ -19,3 +20,15 @@ class ContributorQueryResponse(BaseModel):
     def to_response(self) -> Response:
         """Convert to Response type."""
         return Response(response=self.response, metadata={"score": self.score})
+
+
+class ContributorRetrieverRequest(V2BaseModel):
+    query: str
+
+
+class ContributorRetrieverResponse(BaseModel):
+    nodes: Optional[List[NodeWithScore]]
+
+    def get_nodes(self) -> List[NodeWithScore]:
+        """Providing an empty list if none exist."""
+        return self.nodes if self.nodes is not None else []
