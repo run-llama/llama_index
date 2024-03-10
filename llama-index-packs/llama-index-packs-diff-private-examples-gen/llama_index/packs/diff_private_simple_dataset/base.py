@@ -1,9 +1,8 @@
-from typing import List, Dict
+from typing import List, Dict, Sequence
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage, LLM
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llama_dataset.base import CreatedBy, CreatedByType
-from llama_index.core.prompts.mixin import PromptMixin
 from llama_index.packs.diff_private_simple_dataset.simple_dataset import (
     LabelledSimpleDataset,
     LabelledSimpleDataExample,
@@ -26,7 +25,7 @@ class PromptBundle(BaseModel):
     label_heading: str = Field(description="Label heading used for label.")
 
 
-class DiffPrivateSimpleDatasetPack(PromptMixin, BaseLlamaPack):
+class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
     """A pack for creating differentially private simple llama-dataset."""
 
     def __init__(
@@ -106,7 +105,7 @@ class DiffPrivateSimpleDatasetPack(PromptMixin, BaseLlamaPack):
         if len(split.examples) == 1:
             return one_shot_chat_template.format_messages(
                 synthetic_text=synthetic_example,
-                example_label=split.examples[0].label,
+                example_label=split.examples[0].reference_label,
                 example_text=split.examples[0].text,
                 label=label,
                 instruction=self.prompt_bundle.instruction,
@@ -116,10 +115,10 @@ class DiffPrivateSimpleDatasetPack(PromptMixin, BaseLlamaPack):
         else:
             return two_shot_chat_template.format_messages(
                 synthetic_text=synthetic_example,
-                example1_label=split.examples[0].label,
-                example1_text=split.examples[0].text,
-                example2_label=split.examples[0].label,
-                example2_text=split.examples[0].text,
+                example_label=split.examples[0].reference_label,
+                example_text=split.examples[0].text,
+                second_example_label=split.examples[1].reference_label,
+                second_example_text=split.examples[1].text,
                 label=label,
                 instruction=self.prompt_bundle.instruction,
                 label_heading=self.prompt_bundle.label_heading,
@@ -135,7 +134,7 @@ class DiffPrivateSimpleDatasetPack(PromptMixin, BaseLlamaPack):
         self, sigma: float, size: int, mechanism: PrivacyMechanism
     ) -> float:
         """Generates noise that satisfies eps-delta differential privacy."""
-        noise_rng: np.random.RandomState
+        noise_rng = np.random.RandomState()
         if mechanism == PrivacyMechanism.GAUSSIAN:
             return noise_rng.normal(0, sigma, size=size)
         else:
@@ -149,6 +148,15 @@ class DiffPrivateSimpleDatasetPack(PromptMixin, BaseLlamaPack):
         for token in tokens:
             merged_distribution[token] = sum(pr[token] / scale for pr in list_of_probas)
         return merged_distribution
+
+    def _add_noise(
+        self, proba: Dict[str, float], noise_array=Sequence[float]
+    ) -> Dict[str, float]:
+        """Add noise to proba distribution."""
+        return {
+            token: proba + noise
+            for (token, proba), noise in zip(proba.items(), noise_array)
+        }
 
     def _mode_of_distribution(self, proba: Dict[str, float]) -> str:
         """Returns the mode of a given probability distribution."""
@@ -167,18 +175,29 @@ class DiffPrivateSimpleDatasetPack(PromptMixin, BaseLlamaPack):
         synthetic_example = ""
 
         for _ in range(t_max):
+            print(f"synthetic example: {synthetic_example}\n", flush=True)
             # reduced token universe
             token_universe_messages = self._get_messages_for_reduced_token_universe(
-                synthetic_example
+                synthetic_example=synthetic_example, label=label
             )
-            response = self.llm.chat(messages)
+            print(f"token_univer_messages: {token_universe_messages}\n", flush=True)
+            response = self.llm.chat(token_universe_messages)
+            print(f"universe response: {response.logprobs}\n", flush=True)
             token_universe_probas = {
                 el.token: np.exp(el.logprob)
                 for el in response.logprobs[0]  # only for next immediate token
             }
+            print(f"universe: {token_universe_probas}\n", flush=True)
+
+            # filter dataset by label
+            filtered_simple_dataset = self._filter_dataset_by_label(label=label)
 
             # split the private dataset
-            disjoint_splits = self._split_dataset(num_splits, num_samples_per_split)
+            disjoint_splits = self._split_dataset(
+                dataset=filtered_simple_dataset,
+                num_splits=num_splits,
+                num_samples_per_split=num_samples_per_split,
+            )
 
             # generate next token probability distributions per split
             splits = []
@@ -187,25 +206,33 @@ class DiffPrivateSimpleDatasetPack(PromptMixin, BaseLlamaPack):
                 messages = self._get_messages_for_synthetic_generation(
                     split, synthetic_example, label
                 )
+                print(f"messages: {messages}\n", flush=True)
                 response = self.llm.chat(messages)
 
                 # updating and (rescaling) split probs
-                for el in response.logprobs:
+                for el in response.logprobs[0]:  # for immediate next token only
                     if el.token in split_probs:
                         split_probs[el.token] = np.exp(el.logprob)
-                split_probs = self.normalize(
+                split_probs = self._normalize(
                     split_probs
                 )  # to make into a valid prob distribution
-
                 splits.append(split_probs)
+
+            print(f"splits: {splits}\n", flush=True)
 
             # noisy aggrergation
             sigma_calib = np.sqrt(2) / num_splits * sigma
-            noise = self._generate_noise(sigma=sigma, size=len(token_universe_probas))
-            agg_probs = self._merge_probas(splits) + noise
+            noise_array = self._generate_noise(
+                sigma=sigma_calib, size=len(token_universe_probas), mechanism="gaussian"
+            )
+            merged_probas = self._merge_probas(splits)
+            print(f"merged_probas: {merged_probas}\n", flush=True)
+            noisy_probs = self._add_noise(merged_probas, noise_array)
+            print(f"noisy_probs: {noisy_probs}\n\n", flush=True)
 
             # next token
-            synthetic_example += self._mode_of_distribution(agg_probs)
+            synthetic_example += self._mode_of_distribution(noisy_probs) + " "
+            synthetic_example = synthetic_example.lower()
 
         return LabelledSimpleDataExample(
             reference_label=label,
