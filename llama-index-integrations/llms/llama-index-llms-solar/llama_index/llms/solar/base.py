@@ -1,14 +1,9 @@
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Dict,
-    List,
     Optional,
-    Protocol,
     Sequence,
-    cast,
-    runtime_checkable,
     Union,
     Tuple,
 )
@@ -24,7 +19,6 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
 )
 import httpx
-import tiktoken
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.core.base.llms.generic_utils import (
@@ -32,18 +26,9 @@ from llama_index.core.base.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
 )
-from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
-from llama_index.llms.openai.utils import (
-    from_openai_message,
-    is_chat_model,
-    is_function_calling_model,
-    openai_modelname_to_contextsize,
-    resolve_openai_credentials,
-    to_openai_message_dicts,
-)
 from llama_index.llms.openai.base import OpenAI, Tokenizer
 from transformers import AutoTokenizer
 
@@ -52,7 +37,6 @@ DEFAULT_SOLAR_MODEL = "solar-1-mini-chat"
 
 
 class Solar(OpenAI):
-
     api_key: str = Field(default=None, description="The SOLAR API key.")
     api_base: str = Field(default="", description="The base URL for SOLAR API.")
 
@@ -83,7 +67,6 @@ class Solar(OpenAI):
         ),
     )
 
-
     def __init__(
         self,
         model: str = DEFAULT_SOLAR_MODEL,
@@ -107,7 +90,6 @@ class Solar(OpenAI):
         output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
-
         api_key, api_base = resolve_solar_credentials(
             api_key=api_key,
             api_base=api_base,
@@ -133,7 +115,6 @@ class Solar(OpenAI):
             output_parser=output_parser,
             **kwargs,
         )
-
 
     @property
     def metadata(self) -> LLMMetadata:
