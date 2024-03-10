@@ -48,8 +48,7 @@ class ContributorService(BaseModel):
 
     async def query(self, request: ContributorQueryRequest):
         """Query endpoint logic."""
-        result = await self.retriever.aquery(request.query)
-        return result
+        return await self.retriever.aquery(request.query)
 
     @classmethod
     def from_config_file(
