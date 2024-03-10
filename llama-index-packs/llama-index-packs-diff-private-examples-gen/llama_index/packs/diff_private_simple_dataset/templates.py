@@ -27,28 +27,31 @@ message_templates = [
 ]
 
 zero_shot_chat_template = ChatPromptTemplate(
-    message_templates=message_templates.append(
+    message_templates=[
+        *message_templates,
         ChatMessage(
             content=ZERO_SHOT_TEMPLATE,
             role=MessageRole.USER,
         ),
-    )
+    ]
 )
 
 one_shot_chat_template = ChatPromptTemplate(
-    message_templates=message_templates.append(
+    message_templates=[
+        *message_templates,
         ChatMessage(
             content=ONE_SHOT_TEMPLATE,
             role=MessageRole.USER,
         ),
-    )
+    ]
 )
 
 two_shot_chat_template = ChatPromptTemplate(
-    message_templates=message_templates.append(
+    message_templates=[
+        *message_templates,
         ChatMessage(
             content=TWO_SHOT_TEMPLATE,
             role=MessageRole.USER,
         ),
-    )
+    ]
 )

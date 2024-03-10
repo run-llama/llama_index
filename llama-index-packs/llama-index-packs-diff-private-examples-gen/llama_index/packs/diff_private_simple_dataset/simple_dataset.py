@@ -6,7 +6,7 @@ from llama_index.core.llama_dataset.base import (
     BaseLlamaExamplePrediction,
     BaseLlamaPredictionDataset,
 )
-from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.llms import LLM
 from llama_index.core.bridge.pydantic import Field
 from pandas import DataFrame as PandasDataFrame
 
@@ -65,7 +65,7 @@ class LabelledSimpleDataExample(BaseLlamaDataExample):
         return "LabelledSimpleDataExample"
 
 
-class LabelledSimpleDataset(BaseLlamaDataset[BaseQueryEngine]):
+class LabelledSimpleDataset(BaseLlamaDataset[LLM]):
     _example_type = LabelledSimpleDataExample
 
     def _construct_prediction_dataset(
@@ -93,20 +93,20 @@ class LabelledSimpleDataset(BaseLlamaDataset[BaseQueryEngine]):
 
     async def _apredict_example(
         self,
-        predictor: BaseQueryEngine,
+        predictor: LLM,
         example: LabelledSimpleDataExample,
         sleep_time_in_seconds: int,
     ) -> SimpleExamplePrediction:
         """Async predict RAG example with a query engine."""
-        return
+        raise NotImplementedError("This method has not yet been implemented.")
 
     def _predict_example(
         self,
-        predictor: BaseQueryEngine,
+        predictor: LLM,
         example: BaseLlamaDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> BaseLlamaExamplePrediction:
-        return
+        raise NotImplementedError("This method has not yet been implemented.")
 
     @property
     def class_name(self) -> str:
