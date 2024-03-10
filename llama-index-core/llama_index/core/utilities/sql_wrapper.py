@@ -159,7 +159,7 @@ class SQLDatabase:
             if table_comment:
                 template += f"with comment: ({table_comment}) "
         except NotImplementedError:
-            # get_table_comment makRaises NotImplementedError for a dialect that does not support comments.
+            # get_table_comment raises NotImplementedError for a dialect that does not support comments.
             pass
 
         template += "and foreign keys: {foreign_keys}."
