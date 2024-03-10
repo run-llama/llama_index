@@ -13,7 +13,7 @@ def test_contributor_client(mock_requests):
     result_mock.status_code = 200
     result_mock.json.return_value = {
         "response": "Mock response",
-        "souce_nodes": [],
+        "source_nodes": [],
         "metadata": None,
     }
     mock_requests.post.return_value = result_mock

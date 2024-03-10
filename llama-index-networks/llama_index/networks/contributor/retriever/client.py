@@ -50,7 +50,7 @@ class ContributorClient(BaseRetriever):
         data = {"query": query_bundle.query_str, "api_key": self.config.api_key}
         data.update(additional_data)
         result = requests.post(
-            self.config.api_url + "/api/query", json=data, headers=headers
+            self.config.api_url + "/api/retrieve", json=data, headers=headers
         )
         try:
             contributor_response = ContributorRetrieverResponse.parse_obj(result.json())
@@ -71,7 +71,7 @@ class ContributorClient(BaseRetriever):
         data.update(additional_data)
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.config.api_url + "/api/query", json=data, headers=headers
+                self.config.api_url + "/api/retrieve", json=data, headers=headers
             ) as resp:
                 json_result = await resp.json()
             try:
