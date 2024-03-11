@@ -101,9 +101,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
             else:
                 self._sparse_encoder = sparse_encoder
 
-
-        super().__init__(batch_size=batch_size,
-                         hybrid_search=hybrid_search)
+        super().__init__(batch_size=batch_size, hybrid_search=hybrid_search)
 
     @property
     def client(self) -> Any:
@@ -129,9 +127,9 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         """
         df = pd.DataFrame()
         docs = []
-        schema = self._table.schema()['columns']
+        schema = self._table.schema()["columns"]
         if self.hybrid_search:
-            schema = [item for item in schema if item['name'] != 'sparseVectors']
+            schema = [item for item in schema if item["name"] != "sparseVectors"]
 
         try:
             for node in nodes:
@@ -142,7 +140,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 }
 
                 if self.hybrid_search:
-                    doc['sparseVectors'] = self._sparse_encoder([node.get_content()])
+                    doc["sparseVectors"] = self._sparse_encoder([node.get_content()])
 
                 # handle extra columns
                 if len(schema) > len(DEFAULT_COLUMN_NAMES):
@@ -176,9 +174,9 @@ class KDBAIVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         if query.filters is None:
-            filter=[]
+            filter = []
         else:
-            filter=query.filters
+            filter = query.filters
 
         if self.hybrid_search:
             alpha = query.alpha if query.alpha is not None else 0.5
@@ -188,13 +186,11 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 sparse_vectors=sparse_vectors,
                 n=query.similarity_top_k,
                 filter=filter,
-                alpha=alpha
+                alpha=alpha,
             )[0]
         else:
             results = self._table.search(
-                vectors=[query.query_embedding],
-                n=query.similarity_top_k,
-                filter=filter
+                vectors=[query.query_embedding], n=query.similarity_top_k, filter=filter
             )[0]
 
         top_k_nodes = []

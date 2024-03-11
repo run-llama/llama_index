@@ -1,7 +1,4 @@
-from typing import Any, List, Callable, Tuple
-
-
-def default_sparse_encoder(texts:list[str]) -> list[dict[int, int]]:  
+def default_sparse_encoder(texts: list[str]) -> list[dict[int, int]]:
     try:
         from transformers import BertTokenizer
         from collections import Counter
@@ -10,11 +7,13 @@ def default_sparse_encoder(texts:list[str]) -> list[dict[int, int]]:
             "Could not import transformers library. "
             'Please install transformers with `pip install "transformers"`'
         )
-    
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     results = []
     for text in texts:
-        tokenized_text = tokenizer(text, padding=True, truncation=True, max_length=512)['input_ids']
+        tokenized_text = tokenizer(text, padding=True, truncation=True, max_length=512)[
+            "input_ids"
+        ]
         sparse_encoding = dict(Counter(tokenized_text))
         results.append(sparse_encoding)
     return results
