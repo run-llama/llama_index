@@ -1,4 +1,4 @@
-from typing import List, Dict, Sequence
+from typing import Any, List, Dict, Sequence
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage, LLM
 from llama_index.core.llama_pack.base import BaseLlamaPack
@@ -31,11 +31,13 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
     def __init__(
         self,
         llm: LLM,  # needs an LLM that produces logprobs one token at a time
+        tokenizer: Any,
         prompt_bundle: PromptBundle,
         simple_dataset: LabelledSimpleDataset,
         show_progress: bool = True,
     ):
         self.llm = llm
+        self.tokenizer = tokenizer
         self.prompt_bundle = prompt_bundle
         self.simple_dataset = simple_dataset
         self._num_examples = len(self.simple_dataset.examples)
@@ -188,6 +190,12 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 for el in response.logprobs[0]  # only for next immediate token
             }
             print(f"universe: {token_universe_probas}\n", flush=True)
+            self.llm.additional_kwargs = {
+                "logit_bias": {
+                    self.tokenizer.encode(token)[0]: 5
+                    for token in token_universe_probas
+                }
+            }
 
             # filter dataset by label
             filtered_simple_dataset = self._filter_dataset_by_label(label=label)
