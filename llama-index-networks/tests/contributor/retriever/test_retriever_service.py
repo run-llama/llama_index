@@ -5,19 +5,19 @@ from llama_index.networks.contributor.retriever import (
     ContributorServiceSettings,
 )
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.schema import NodeWithScore, BaseNode
+from llama_index.core.schema import NodeWithScore, TextNode
 
 
 class MockRetriever(BaseRetriever):
     """Custom retriever for testing."""
 
-    def retrieve(self, query_str: str) -> List[NodeWithScore]:
+    def _retrieve(self, query_str: str) -> List[NodeWithScore]:
         """Mock retrieval."""
-        return [NodeWithScore(node=BaseNode(id_=f"mock_{query_str}"), score=0.9)]
+        return [NodeWithScore(node=TextNode(text=f"mock_{query_str}"), score=0.9)]
 
-    async def aretrieve(self, query_str: str) -> List[NodeWithScore]:
+    async def _aretrieve(self, query_str: str) -> List[NodeWithScore]:
         """Mock retrieval."""
-        return [NodeWithScore(node=BaseNode(id_=f"mock_{query_str}"), score=0.9)]
+        return [NodeWithScore(node=TextNode(text=f"mock_{query_str}"), score=0.9)]
 
 
 def test_contributor_service_index():
@@ -44,9 +44,10 @@ def test_contributor_service_retrieve():
 
     # act
     response = test_client.post("/api/retrieve", json={"query": "mock_query"})
+    nodes_dict = response.json()["nodes_dict"]
 
     # assert
     assert response.status_code == 200
-    assert response.json() == [
-        {"node": {"id_": "mock_mock_query", "metadata": None}, "score": 0.9}
-    ]
+    assert len(nodes_dict) == 1
+    assert nodes_dict[0]["node"]["text"] == "mock_mock_query"
+    assert nodes_dict[0]["score"] == 0.9
