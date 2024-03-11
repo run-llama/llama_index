@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
 import uuid
+import random
 from typing import Coroutine, Dict, List, Optional, Tuple
 
 from deprecated import deprecated
@@ -226,6 +228,8 @@ class DatasetGenerator(PromptMixin):
         nodes: List[BaseNode],
         num: int | None = None,
         generate_response: bool = False,
+        throttle_enabled: bool = False,
+        throttle_range: Tuple[float, float] = (0.5, 1.0),
     ) -> QueryResponseDataset:
         """Node question generator."""
         query_tasks: List[Coroutine] = []
@@ -243,6 +247,10 @@ class DatasetGenerator(PromptMixin):
         for node in nodes:
             if num is not None and len(query_tasks) >= num:
                 break
+            if throttle_enabled:
+                logging.info("query_tasks:", len(query_tasks), "num:", num)
+                await asyncio.sleep(random.uniform(*throttle_range))
+
             index = SummaryIndex.from_documents(
                 [
                     Document(
@@ -264,7 +272,24 @@ class DatasetGenerator(PromptMixin):
             query_tasks.append(task)
             summary_indices.append(index)
 
-        responses = await async_module.gather(*query_tasks)
+        responses = []
+        if throttle_enabled:
+            async def process_batch(batch):
+                # save upvalue,
+                results = await async_module.gather(*batch)
+                return results
+
+            batch_size = 1
+            for i in range(0, len(query_tasks), batch_size):
+                batch = query_tasks[i:i + batch_size]
+                print("query_tasks:", len(query_tasks), "batch:", i)
+                await asyncio.sleep(random.uniform(*throttle_range))
+                batch_results = await process_batch(batch)
+                responses.extend(batch_results)
+        else:
+            generate_response = await async_module.gather(*query_tasks)
+            responses.extend(generate_response)
+
         for idx, response in enumerate(responses):
             result = str(response).strip().split("\n")
             cleaned_questions = [
@@ -308,19 +333,30 @@ class DatasetGenerator(PromptMixin):
 
         return QueryResponseDataset(queries=queries, responses=responses_dict)
 
-    async def agenerate_questions_from_nodes(self, num: int | None = None) -> List[str]:
+    async def agenerate_questions_from_nodes(
+            self, num: int | None = None,
+            throttle_enabled: bool = False,
+            throttle_range: Tuple[float, float] = (0.5, 1.0),
+
+    ) -> List[str]:
         """Generates questions for each document."""
         dataset = await self._agenerate_dataset(
-            self.nodes, num=num, generate_response=False
+            self.nodes, num=num, generate_response=False,
+            throttle_enabled=throttle_enabled,
+            throttle_range=throttle_range
         )
         return dataset.questions
 
     async def agenerate_dataset_from_nodes(
-        self, num: int | None = None
+        self, num: int | None = None,
+        throttle_enabled: bool = False,
+        throttle_range: Tuple[float, float] = (0.5, 1.0),
     ) -> QueryResponseDataset:
         """Generates questions for each document."""
         return await self._agenerate_dataset(
-            self.nodes, num=num, generate_response=True
+            self.nodes, num=num, generate_response=True,
+            throttle_enabled=throttle_enabled,
+            throttle_range=throttle_range
         )
 
     def generate_questions_from_nodes(self, num: int | None = None) -> List[str]:
@@ -328,10 +364,18 @@ class DatasetGenerator(PromptMixin):
         return asyncio.run(self.agenerate_questions_from_nodes(num=num))
 
     def generate_dataset_from_nodes(
-        self, num: int | None = None
+        self, num: int | None = None,
+        throttle_enabled: bool = False,
+        throttle_range: Tuple[float, float] = (0.5, 1.0),
     ) -> QueryResponseDataset:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_dataset_from_nodes(num=num))
+        return asyncio.run(
+            self.agenerate_dataset_from_nodes(
+                num=num,
+                throttle_enabled=throttle_enabled,
+                throttle_range=throttle_range
+            )
+        )
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
