@@ -48,7 +48,10 @@ class ContributorService(BaseModel):
 
     async def retrieve(self, request: ContributorRetrieverRequest):
         """Retriever endpoint logic."""
-        return await self.retriever.aretrieve(request.query)
+        result = await self.retriever.aretrieve(request.query)
+        return {
+            "nodes": result,
+        }
 
     @classmethod
     def from_config_file(

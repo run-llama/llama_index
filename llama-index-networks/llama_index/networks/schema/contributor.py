@@ -28,7 +28,3 @@ class ContributorRetrieverRequest(V2BaseModel):
 
 class ContributorRetrieverResponse(BaseModel):
     nodes: Optional[List[NodeWithScore]]
-
-    def get_nodes(self) -> List[NodeWithScore]:
-        """Providing an empty list if none exist."""
-        return self.nodes if self.nodes is not None else []

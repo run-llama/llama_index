@@ -72,17 +72,18 @@ index = VectorStoreIndex(nodes=nodes, embed_model=embed_model)
 query_engine = index.as_query_engine(llm=llm)
 
 if __name__ == "__main__":
-    from llama_index.networks.contributor.query_engine import ContributorService
-    import uvicorn
-
-    service = ContributorService.from_config_file(
-        ".env.contributor.service", query_engine
+    from llama_index.networks.contributor.query_engine import (
+        ContributorService as QueryEngineContributorService,
     )
-    app = service.app
+
+    query_engine_service = QueryEngineContributorService.from_config_file(
+        ".env.contributor.service", query_engine=query_engine
+    )
+    query_engine_app = query_engine_service.app
 
     # can add own endpoints or security to app
     # @app.get("...")
     # async def custom_endpoint_logic():
     #   ...
 
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug")
+    uvicorn.run(query_engine_app, host="0.0.0.0", port=8000, log_level="debug")
