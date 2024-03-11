@@ -45,11 +45,14 @@ from llama_index.core.settings import (
     llm_from_settings_or_context,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE
-from llama_index.core.instrumentation.dispatcher import Dispatcher, DispatcherMixin
-from llama_index.core.instrumentation.events import (
+from llama_index.core.instrumentation.events.synthesis import (
     SynthesizeStartEvent,
     SynthesizeEndEvent,
 )
+
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 logger = logging.getLogger(__name__)
 

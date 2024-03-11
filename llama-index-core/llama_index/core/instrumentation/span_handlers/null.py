@@ -29,4 +29,5 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
 
     def prepare_to_drop_span(self, id: str, err: Optional[Exception], **kwargs) -> None:
         """Logic for droppping a span."""
-        return
+        if err:
+            raise err

@@ -40,6 +40,23 @@ class LegacyCallbackSpanHandler(BaseSpanHandler[LegacyCallbackSpan]):
                     self.callback_manager, CBEventType.AGENT_STEP
                 )
                 event_context.on_start(payload=payload)
+        elif "tool_call" in kwargs:  # tool call
+            if "call_function" in id and "._call_function" not in id:
+                tool_call = kwargs["tool_call"]
+                function_call = tool_call.function
+                tools = kwargs["tools"]
+                tool = next(
+                    tool for tool in tools if tool.metadata.name == function_call.name
+                )
+                payload = {
+                    EventPayload.FUNCTION_CALL: function_call.arguments,
+                    EventPayload.TOOL: tool.metadata,
+                }
+                event_context = EventContext(
+                    self.callback_manager, CBEventType.FUNCTION_CALL
+                )
+                event_context.on_start(payload=payload)
+
         else:  # trace type of span
             self.callback_manager.start_trace(id)
         return LegacyCallbackSpan(

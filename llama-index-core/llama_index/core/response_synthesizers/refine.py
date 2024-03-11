@@ -27,7 +27,7 @@ from llama_index.core.service_context_elements.llm_predictor import (
     LLMPredictorType,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE, BasePydanticProgram
-from llama_index.core.instrumentation.events import (
+from llama_index.core.instrumentation.events.synthesis import (
     GetResponseEndEvent,
     GetResponseStartEvent,
 )

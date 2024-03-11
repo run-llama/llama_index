@@ -47,7 +47,7 @@ from llama_index.core.types import (
     TokenAsyncGen,
     TokenGen,
 )
-from llama_index.core.instrumentation.events import (
+from llama_index.core.instrumentation.events.llm import (
     LLMPredictEndEvent,
     LLMPredictStartEvent,
 )

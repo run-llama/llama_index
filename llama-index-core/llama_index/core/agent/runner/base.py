@@ -28,10 +28,11 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.tools.types import BaseTool
-from llama_index.core.instrumentation.events import (
+from llama_index.core.instrumentation.events.agent import (
     AgentRunStepEndEvent,
     AgentRunStepStartEvent,
     AgentChatWithStepStartEvent,
+    AgentChatWithStepEndEvent,
 )
 from llama_index.core.instrumentation.span_handlers import LegacyCallbackSpanHandler
 import llama_index.core.instrumentation as instrument
@@ -546,10 +547,12 @@ class AgentRunner(BaseAgentRunner):
             # ensure tool_choice does not cause endless loops
             tool_choice = "auto"
 
-        return self.finalize_response(
+        result = self.finalize_response(
             task.task_id,
             result_output,
         )
+        dispatcher.event(AgentChatWithStepEndEvent())
+        return result
 
     async def _achat(
         self,

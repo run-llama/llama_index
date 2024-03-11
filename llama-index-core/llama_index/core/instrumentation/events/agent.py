@@ -1,4 +1,5 @@
 from llama_index.core.instrumentation.events.base import BaseEvent
+from llama_index.core.tools.types import ToolMetadata
 
 
 class AgentRunStepStartEvent(BaseEvent):
@@ -27,3 +28,13 @@ class AgentChatWithStepEndEvent(BaseEvent):
     def class_name(cls):
         """Class name."""
         return "AgentChatWithStepEndEvent"
+
+
+class AgentToolCallEvent(BaseEvent):
+    arguments: str
+    tool: ToolMetadata
+
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "AgentToolCallEvent"
