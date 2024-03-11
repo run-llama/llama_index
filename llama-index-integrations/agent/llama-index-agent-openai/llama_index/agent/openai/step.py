@@ -37,6 +37,14 @@ from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall
+from llama_index.core.instrumentation.span_handlers.legacy_callback import (
+    LegacyCallbackSpanHandler,
+)
+from llama_index.core.instrumentation.events.agent import AgentToolCallEvent
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -77,6 +85,7 @@ def call_tool_with_error_handling(
         )
 
 
+@dispatcher.span
 def call_function(
     tools: List[BaseTool],
     tool_call: OpenAIToolCall,
@@ -173,6 +182,10 @@ class OpenAIAgentWorker(BaseAgentWorker):
         self._max_function_calls = max_function_calls
         self.prefix_messages = prefix_messages
         self.callback_manager = callback_manager or self._llm.callback_manager
+        legacy_span_handler = LegacyCallbackSpanHandler(
+            callback_manager=self.callback_manager
+        )
+        dispatcher.span_handler = legacy_span_handler
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -339,6 +352,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         else:
             raise NotImplementedError
 
+    @dispatcher.span
     def _call_function(
         self,
         tools: List[BaseTool],
@@ -352,19 +366,25 @@ class OpenAIAgentWorker(BaseAgentWorker):
         assert function_call.name is not None
         assert function_call.arguments is not None
 
-        with self.callback_manager.event(
-            CBEventType.FUNCTION_CALL,
-            payload={
-                EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: get_function_by_name(
-                    tools, function_call.name
-                ).metadata,
-            },
-        ) as event:
-            function_message, tool_output = call_function(
-                tools, tool_call, verbose=self._verbose
+        dispatcher.event(
+            AgentToolCallEvent(
+                arguments=function_call.arguments,
+                tool=get_function_by_name(tools, function_call.name).metadata,
             )
-            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        )  # call function
+        # with self.callback_manager.event(
+        #     CBEventType.FUNCTION_CALL,
+        #     payload={
+        #         EventPayload.FUNCTION_CALL: function_call.arguments,
+        #         EventPayload.TOOL: get_function_by_name(
+        #             tools, function_call.name
+        #         ).metadata,
+        #     },
+        # ) as event:
+        function_message, tool_output = call_function(
+            tools=tools, tool_call=tool_call, verbose=self._verbose
+        )
+        # event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         sources.append(tool_output)
         memory.put(function_message)
 
@@ -429,6 +449,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         """Get tools."""
         return self._get_tools(input)
 
+    @dispatcher.span
     def _run_step(
         self,
         step: TaskStep,
@@ -470,10 +491,10 @@ class OpenAIAgentWorker(BaseAgentWorker):
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
                 # TODO: maybe execute this with multi-threading
                 self._call_function(
-                    tools,
-                    tool_call,
-                    task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    tools=tools,
+                    tool_call=tool_call,
+                    memory=task.extra_state["new_memory"],
+                    sources=task.extra_state["sources"],
                 )
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
