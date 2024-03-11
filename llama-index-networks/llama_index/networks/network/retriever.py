@@ -1,11 +1,10 @@
-from typing import List, Optional
 import asyncio
-
+from typing import List, Optional
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import TextNode, NodeWithScore
-from llama_index.networks.contributor.query_engine import ContributorClient
+from llama_index.networks.contributor.retriever import ContributorClient
 
 
 class NetworkRetriever(BaseRetriever):

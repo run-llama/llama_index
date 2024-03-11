@@ -4,12 +4,6 @@ from llama_index.networks.contributor.query_engine import (
     ContributorService,
     ContributorServiceSettings,
 )
-from llama_index.networks.contributor.retriever import (
-    ContributorClient,
-    ContributorClientSettings,
-    ContributorService,
-    ContributorServiceSettings,
-)
 
 from llama_index.networks.network.query_engine import NetworkQueryEngine
 from llama_index.networks.network.retriever import NetworkRetriever
