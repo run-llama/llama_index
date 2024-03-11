@@ -1,8 +1,7 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.schema import QueryBundle
-from llama_index.core.base.response.schema import RESPONSE_TYPE
+from llama_index.core.schema import QueryBundle, NodeWithScore
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.networks.schema.contributor import ContributorRetrieverResponse
 from pydantic.v1 import BaseSettings, Field
@@ -44,7 +43,7 @@ class ContributorClient(BaseRetriever):
         query_bundle: QueryBundle,
         additional_data: Dict[str, str] = {},
         headers: Dict[str, str] = {},
-    ) -> RESPONSE_TYPE:
+    ) -> List[NodeWithScore]:
         """Make a post request to submit a query to Retriever."""
         # headers = {"Authorization": f"Bearer {self.config.api_key}"}
         data = {"query": query_bundle.query_str, "api_key": self.config.api_key}
@@ -64,7 +63,7 @@ class ContributorClient(BaseRetriever):
         api_token: Optional[str] = None,
         additional_data: Dict[str, str] = {},
         headers: Dict[str, str] = {},
-    ) -> RESPONSE_TYPE:
+    ) -> List[NodeWithScore]:
         """Make a post request to submit a query to Retriever."""
         # headers = {"Authorization": f"Bearer {self.config.api_key}"}
         data = {"query": query_bundle.query_str, "api_token": api_token}

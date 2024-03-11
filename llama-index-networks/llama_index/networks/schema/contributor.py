@@ -1,5 +1,5 @@
-from typing import Optional, List
-from llama_index.core.schema import NodeWithScore
+from typing import Optional, List, Dict, Any, Type
+from llama_index.core.schema import NodeWithScore, TextNode, BaseNode
 from llama_index.core.base.response.schema import Response
 from llama_index.core.bridge.pydantic import BaseModel
 from pydantic import BaseModel as V2BaseModel
@@ -26,5 +26,18 @@ class ContributorRetrieverRequest(V2BaseModel):
     query: str
 
 
+NODE_REGISTRY: Dict[str, Type[BaseNode]] = {"TextNode": TextNode}
+
+
 class ContributorRetrieverResponse(BaseModel):
-    nodes: Optional[List[NodeWithScore]]
+    nodes_dict: Optional[List[Dict[str, Any]]]
+
+    def get_nodes(self) -> List[NodeWithScore]:
+        """Build list of nodes with score."""
+        nodes = []
+        for d in self.nodes_dict:
+            node_dict = d["node"]
+            node_cls = NODE_REGISTRY[node_dict["class_name"]]
+            node = node_cls.parse_obj(node_dict)
+            nodes.append(NodeWithScore(node=node, score=d["score"]))
+        return nodes

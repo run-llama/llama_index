@@ -50,7 +50,7 @@ class ContributorService(BaseModel):
         """Retriever endpoint logic."""
         result = await self.retriever.aretrieve(request.query)
         return {
-            "nodes": result,
+            "nodes_dict": result,
         }
 
     @classmethod
