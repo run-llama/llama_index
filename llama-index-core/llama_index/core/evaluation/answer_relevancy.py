@@ -5,7 +5,7 @@ import asyncio
 import re
 from typing import Any, Callable, Optional, Sequence, Tuple
 
-from llama_index.core import ServiceContext
+from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate

@@ -10,13 +10,13 @@ Here's an example usage of the ArxivToolSpec.
 
 ```python
 from llama_index.tools.arxiv import ArxivToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = ArxivToolSpec()
 
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
 
-agent.chat("Whats going on with the superconductor lk-99")
+agent.chat("What's going on with the superconductor lk-99")
 agent.chat("what are the latest developments in machine learning")
 ```
 

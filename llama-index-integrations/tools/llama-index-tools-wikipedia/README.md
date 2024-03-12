@@ -8,7 +8,7 @@ This tool has more extensive example usage documented in a Jupyter notebook [her
 
 ```python
 from llama_index.tools.wikipedia import WikipediaToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = WikipediaToolSpec()
 
@@ -18,7 +18,7 @@ agent.chat("Who is Ben Afflecks spouse?")
 ```
 
 `load_data`: Loads a page from wikipedia
-`search_data`: Searchs wikipedia for a query and loads all matching pages
+`search_data`: Searches wikipedia for a query and loads all matching pages
 
 This loader is designed to be used as a way to load data as a Tool in a Agent.
 See [this LlamaIndex tutorial][1] for examples.

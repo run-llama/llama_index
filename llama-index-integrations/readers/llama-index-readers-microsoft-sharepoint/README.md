@@ -1,5 +1,9 @@
 # Microsoft SharePoint Reader
 
+```bash
+pip install llama-index-readers-microsoft-sharepoint
+```
+
 The loader loads the files from a folder in sharepoint site.
 
 It also supports traversing recursively through the sub-folders.
@@ -8,9 +12,9 @@ It also supports traversing recursively through the sub-folders.
 
 ### App Authentication using Microsoft Entra ID(formerly Azure AD)
 
-1. You need to create an App Registeration in Microsoft Entra ID. Refer [here](https://learn.microsoft.com/en-us/azure/healthcare-apis/register-application)
+1. You need to create an App Registration in Microsoft Entra ID. Refer [here](https://learn.microsoft.com/en-us/azure/healthcare-apis/register-application)
 2. API Permissions for the created app.
-   1. Micorsoft Graph --> Application Permissions --> Sites.ReadAll (**Grant Admin Consent**)
+   1. Microsoft Graph --> Application Permissions --> Sites.ReadAll (**Grant Admin Consent**)
    2. Microsoft Graph --> Application Permissions --> Files.ReadAll (**Grant Admin Consent**)
    3. Microsoft Graph --> Application Permissions --> BrowserSiteLists.Read.All (**Grant Admin Consent**)
 
@@ -27,14 +31,12 @@ If the files are present in the `Test` folder in SharePoint Site under `root` di
 ![FilePath](file_path_info.png)
 
 ```python
-from llama_index import download_loader
-
-SharePointLoader = download_loader("SharePointReader")
+from llama_index.readers.microsoft_sharepoint import SharePointReader
 
 loader = SharePointLoader(
     client_id="<Client ID of the app>",
     client_secret="<Client Secret of the app>",
-    tenant_id="<Tenant ID of the Micorsoft Azure Directory>",
+    tenant_id="<Tenant ID of the Microsoft Azure Directory>",
 )
 
 documents = loader.load_data(

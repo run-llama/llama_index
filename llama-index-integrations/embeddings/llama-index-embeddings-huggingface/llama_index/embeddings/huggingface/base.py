@@ -160,12 +160,14 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
         model_output = self._model(**encoded_input)
 
+        context_layer: "torch.Tensor" = model_output[0]
         if self.pooling == Pooling.CLS:
-            context_layer: "torch.Tensor" = model_output[0]
             embeddings = self.pooling.cls_pooling(context_layer)
+        elif self.pooling == Pooling.LAST:
+            embeddings = self.pooling.last_pooling(context_layer)
         else:
             embeddings = self._mean_pooling(
-                token_embeddings=model_output[0],
+                token_embeddings=context_layer,
                 attention_mask=encoded_input["attention_mask"],
             )
 

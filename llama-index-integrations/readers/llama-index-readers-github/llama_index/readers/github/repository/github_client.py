@@ -1,13 +1,14 @@
 """
-Github API client for the LlamaIndex library.
+Github API client for the GPT-Index library.
 
-This module contains the Github API client for the LlamaIndex library.
+This module contains the Github API client for the GPT-Index library.
 It is used by the Github readers to retrieve the data from Github.
 """
 
 import os
+
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Protocol
 
 from dataclasses_json import DataClassJsonMixin
 
@@ -104,6 +105,8 @@ class GitCommitResponseModel(DataClassJsonMixin):
         tree: Tree
 
     commit: Commit
+    url: str
+    sha: str
 
 
 @dataclass
@@ -137,7 +140,61 @@ class GitBranchResponseModel(DataClassJsonMixin):
 
         commit: Commit
 
+    @dataclass
+    class Links(DataClassJsonMixin):
+        self: str
+        html: str
+
     commit: Commit
+    name: str
+    _links: Links
+
+
+class BaseGithubClient(Protocol):
+    def get_all_endpoints(self) -> Dict[str, str]:
+        ...
+
+    async def request(
+        self,
+        endpoint: str,
+        method: str,
+        headers: Dict[str, Any] = {},
+        **kwargs: Any,
+    ) -> Any:
+        ...
+
+    async def get_tree(
+        self,
+        owner: str,
+        repo: str,
+        tree_sha: str,
+    ) -> GitTreeResponseModel:
+        ...
+
+    async def get_blob(
+        self,
+        owner: str,
+        repo: str,
+        file_sha: str,
+    ) -> Optional[GitBlobResponseModel]:
+        ...
+
+    async def get_commit(
+        self,
+        owner: str,
+        repo: str,
+        commit_sha: str,
+    ) -> GitCommitResponseModel:
+        ...
+
+    async def get_branch(
+        self,
+        owner: str,
+        repo: str,
+        branch: Optional[str],
+        branch_name: Optional[str],
+    ) -> GitBranchResponseModel:
+        ...
 
 
 class GithubClient:
@@ -214,6 +271,8 @@ class GithubClient:
         endpoint: str,
         method: str,
         headers: Dict[str, Any] = {},
+        timeout: Optional[int] = 5,
+        retries: int = 0,
         **kwargs: Any,
     ) -> Any:
         """
@@ -226,6 +285,8 @@ class GithubClient:
             - `endpoint (str)`: Name of the endpoint to make the request to.
             - `method (str)`: HTTP method to use for the request.
             - `headers (dict)`: HTTP headers to include in the request.
+            - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
             - `**kwargs`: Keyword arguments to pass to the endpoint URL.
 
         Returns:
@@ -238,7 +299,7 @@ class GithubClient:
         Examples:
             >>> response = client.request("getTree", "GET",
                                 owner="owner", repo="repo",
-                                tree_sha="tree_sha")
+                                tree_sha="tree_sha", timeout=5, retries=0)
         """
         try:
             import httpx
@@ -252,20 +313,28 @@ class GithubClient:
 
         _client: httpx.AsyncClient
         async with httpx.AsyncClient(
-            headers=_headers, base_url=self._base_url
+            headers=_headers,
+            base_url=self._base_url,
+            timeout=timeout,
+            transport=httpx.AsyncHTTPTransport(retries=retries),
         ) as _client:
             try:
                 response = await _client.request(
                     method, url=self._endpoints[endpoint].format(**kwargs)
                 )
-                response.raise_for_status()
             except httpx.HTTPError as excp:
                 print(f"HTTP Exception for {excp.request.url} - {excp}")
-                raise
+                raise excp  # noqa: TRY201
             return response
 
     async def get_branch(
-        self, owner: str, repo: str, branch: str
+        self,
+        owner: str,
+        repo: str,
+        branch: Optional[str] = None,
+        branch_name: Optional[str] = None,
+        timeout: Optional[int] = 5,
+        retries: int = 0,
     ) -> GitBranchResponseModel:
         """
         Get information about a branch. (Github API endpoint: getBranch).
@@ -274,6 +343,9 @@ class GithubClient:
             - `owner (str)`: Owner of the repository.
             - `repo (str)`: Name of the repository.
             - `branch (str)`: Name of the branch.
+            - `branch_name (str)`: Name of the branch (alternative to `branch`).
+            - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
 
         Returns:
             - `branch_info (GitBranchResponseModel)`: Information about the branch.
@@ -281,16 +353,32 @@ class GithubClient:
         Examples:
             >>> branch_info = client.get_branch("owner", "repo", "branch")
         """
+        if branch is None:
+            if branch_name is None:
+                raise ValueError("Either branch or branch_name must be provided.")
+            branch = branch_name
+
         return GitBranchResponseModel.from_json(
             (
                 await self.request(
-                    "getBranch", "GET", owner=owner, repo=repo, branch=branch
+                    "getBranch",
+                    "GET",
+                    owner=owner,
+                    repo=repo,
+                    branch=branch,
+                    timeout=timeout,
+                    retries=retries,
                 )
             ).text
         )
 
     async def get_tree(
-        self, owner: str, repo: str, tree_sha: str
+        self,
+        owner: str,
+        repo: str,
+        tree_sha: str,
+        timeout: Optional[int] = 5,
+        retries: int = 0,
     ) -> GitTreeResponseModel:
         """
         Get information about a tree. (Github API endpoint: getTree).
@@ -299,6 +387,8 @@ class GithubClient:
             - `owner (str)`: Owner of the repository.
             - `repo (str)`: Name of the repository.
             - `tree_sha (str)`: SHA of the tree.
+            - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
 
         Returns:
             - `tree_info (GitTreeResponseModel)`: Information about the tree.
@@ -309,14 +399,25 @@ class GithubClient:
         return GitTreeResponseModel.from_json(
             (
                 await self.request(
-                    "getTree", "GET", owner=owner, repo=repo, tree_sha=tree_sha
+                    "getTree",
+                    "GET",
+                    owner=owner,
+                    repo=repo,
+                    tree_sha=tree_sha,
+                    timeout=timeout,
+                    retries=retries,
                 )
             ).text
         )
 
     async def get_blob(
-        self, owner: str, repo: str, file_sha: str
-    ) -> GitBlobResponseModel:
+        self,
+        owner: str,
+        repo: str,
+        file_sha: str,
+        timeout: Optional[int] = 5,
+        retries: int = 0,
+    ) -> Optional[GitBlobResponseModel]:
         """
         Get information about a blob. (Github API endpoint: getBlob).
 
@@ -324,6 +425,8 @@ class GithubClient:
             - `owner (str)`: Owner of the repository.
             - `repo (str)`: Name of the repository.
             - `file_sha (str)`: SHA of the file.
+            - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
 
         Returns:
             - `blob_info (GitBlobResponseModel)`: Information about the blob.
@@ -331,16 +434,31 @@ class GithubClient:
         Examples:
             >>> blob_info = client.get_blob("owner", "repo", "file_sha")
         """
-        return GitBlobResponseModel.from_json(
-            (
-                await self.request(
-                    "getBlob", "GET", owner=owner, repo=repo, file_sha=file_sha
-                )
-            ).text
-        )
+        try:
+            return GitBlobResponseModel.from_json(
+                (
+                    await self.request(
+                        "getBlob",
+                        "GET",
+                        owner=owner,
+                        repo=repo,
+                        file_sha=file_sha,
+                        timeout=timeout,
+                        retries=retries,
+                    )
+                ).text
+            )
+        except KeyError:
+            print(f"Failed to get blob for {owner}/{repo}/{file_sha}")
+            return None
 
     async def get_commit(
-        self, owner: str, repo: str, commit_sha: str
+        self,
+        owner: str,
+        repo: str,
+        commit_sha: str,
+        timeout: Optional[int] = 5,
+        retries: int = 0,
     ) -> GitCommitResponseModel:
         """
         Get information about a commit. (Github API endpoint: getCommit).
@@ -349,6 +467,8 @@ class GithubClient:
             - `owner (str)`: Owner of the repository.
             - `repo (str)`: Name of the repository.
             - `commit_sha (str)`: SHA of the commit.
+            - `timeout (int or None)`: Timeout for the request in seconds. Default is 5.
+            - `retries (int)`: Number of retries for the request. Default is 0.
 
         Returns:
             - `commit_info (GitCommitResponseModel)`: Information about the commit.
@@ -359,7 +479,13 @@ class GithubClient:
         return GitCommitResponseModel.from_json(
             (
                 await self.request(
-                    "getCommit", "GET", owner=owner, repo=repo, commit_sha=commit_sha
+                    "getCommit",
+                    "GET",
+                    owner=owner,
+                    repo=repo,
+                    commit_sha=commit_sha,
+                    timeout=timeout,
+                    retries=retries,
                 )
             ).text
         )
@@ -382,6 +508,6 @@ if __name__ == "__main__":
                 blob_response = await client.get_blob(
                     owner="ahmetkca", repo="CommitAI", file_sha=obj.sha
                 )
-                print(blob_response.content)
+                print(blob_response.content if blob_response else "None")
 
     asyncio.run(main())

@@ -1,6 +1,6 @@
 # DeepLake DeepMemory Pack
 
-This LlamaPack inserts your multimodal data (texts, images) into deeplake and insantiates an deeplake retriever, which will use clip for embedding images and GPT4-V during runtime.
+This LlamaPack inserts your multimodal data (texts, images) into deeplake and instantiates an deeplake retriever, which will use clip for embedding images and GPT4-V during runtime.
 
 ## CLI Usage
 
@@ -17,7 +17,7 @@ You can then inspect the files at `./deeplake_multimodal_pack` and use them as a
 You can download the pack to a `./deeplake_multimodal_pack` directory:
 
 ```python
-from llama_hub.llama_pack import download_llama_pack
+from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
 DeepLakeMultimodalRetriever = download_llama_pack(
@@ -31,7 +31,7 @@ Then, you can set up the pack like so:
 
 ```python
 # setup pack arguments
-from llama_index.core.vector_stores.types import MetadataInfo, VectorStoreInfo
+from llama_index.core.vector_stores import MetadataInfo, VectorStoreInfo
 
 # collection of image and text nodes
 nodes = [...]
@@ -51,7 +51,7 @@ response = deeplake_pack.run("Tell me a bout a Music celebritiy.")
 You can also use modules individually.
 
 ```python
-# use the retreiver
+# use the retriever
 retriever = deeplake_pack.retriever
 nodes = retriever.retrieve("query_str")
 

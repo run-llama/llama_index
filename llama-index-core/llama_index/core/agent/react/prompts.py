@@ -1,6 +1,5 @@
 """Default prompt for ReAct agent."""
 
-
 # ReAct chat prompt
 # TODO: have formatting instructions be a part of react output parser
 
@@ -19,10 +18,10 @@ You have access to the following tools:
 {tool_desc}
 
 ## Output Format
-To answer the question, please use the following format.
+Please answer in the same language as the question and use the following format:
 
 ```
-Thought: I need to use a tool to help me answer the question.
+Thought: The current language of the user is: (user's language). I need to use a tool to help me answer the question.
 Action: tool name (one of {tool_names}) if using a tool.
 Action Input: the input to the tool, in a JSON format representing the kwargs (e.g. {{"input": "hello world", "num_beams": 5}})
 ```
@@ -42,13 +41,13 @@ to answer the question without using any more tools. At that point, you MUST res
 in the one of the following two formats:
 
 ```
-Thought: I can answer without using any more tools.
-Answer: [your answer here]
+Thought: I can answer without using any more tools. I'll use the user's language to answer
+Answer: [your answer here (In the same language as the user's question)]
 ```
 
 ```
 Thought: I cannot answer the question with the provided tools.
-Answer: Sorry, I cannot answer your query.
+Answer: [your answer here (In the same language as the user's question)]
 ```
 
 ## Current Conversation
@@ -74,10 +73,10 @@ You have access to the following tools:
 {tool_desc}
 
 ## Output Format
-To answer the question, please use the following format.
+Please answer in the same language as the question and use the following format:
 
 ```
-Thought: I need to use a tool to help me answer the question.
+Thought: The current language of the user is: (user's language). I need to use a tool to help me answer the question.
 Action: tool name (one of {tool_names}) if using a tool.
 Action Input: the input to the tool, in a JSON format representing the kwargs (e.g. {{"input": "hello world", "num_beams": 5}})
 ```
@@ -97,13 +96,13 @@ to answer the question without using any more tools. At that point, you MUST res
 in the one of the following two formats:
 
 ```
-Thought: I can answer without using any more tools.
-Answer: [your answer here]
+Thought: I can answer without using any more tools. I'll use the user's language to answer
+Answer: [your answer here (In the same language as the user's question)]
 ```
 
 ```
 Thought: I cannot answer the question with the provided tools.
-Answer: Sorry, I cannot answer your query.
+Answer: [your answer here (In the same language as the user's question)]
 ```
 
 ## Current Conversation

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
 if TYPE_CHECKING:
-    from llama_index import ServiceContext
+    from llama_index.core.service_context import ServiceContext
 
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -84,12 +84,12 @@ class _Settings:
         import llama_index.core
 
         # TODO: deprecated?
-        return llama_index.global_handler
+        return llama_index.core.global_handler
 
     @global_handler.setter
     def global_handler(self, eval_mode: str, **eval_params: Any) -> None:
         """Set the global handler."""
-        from llama_index import set_global_handler
+        from llama_index.core import set_global_handler
 
         # TODO: deprecated?
         set_global_handler(eval_mode, **eval_params)
@@ -113,11 +113,11 @@ class _Settings:
         """Get the tokenizer."""
         import llama_index.core
 
-        if llama_index.global_tokenizer is None:
+        if llama_index.core.global_tokenizer is None:
             return get_tokenizer()
 
         # TODO: deprecated?
-        return llama_index.global_tokenizer
+        return llama_index.core.global_tokenizer
 
     @tokenizer.setter
     def tokenizer(self, tokenizer: Callable[[str], List[Any]]) -> None:
@@ -196,8 +196,6 @@ class _Settings:
     def text_splitter(self, text_splitter: NodeParser) -> None:
         """Set the text splitter."""
         self.node_parser = text_splitter
-
-    # ---- Prompt helper ----
 
     @property
     def prompt_helper(self) -> PromptHelper:
@@ -294,16 +292,6 @@ def node_parser_from_settings_or_context(
         return context.node_parser
 
     return settings.node_parser
-
-
-def prompt_helper_from_settings_or_context(
-    settings: _Settings, context: Optional["ServiceContext"]
-) -> PromptHelper:
-    """Get settings from either settings or context."""
-    if context is not None:
-        return context.prompt_helper
-
-    return settings.prompt_helper
 
 
 def transformations_from_settings_or_context(

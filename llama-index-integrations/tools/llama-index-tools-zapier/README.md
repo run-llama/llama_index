@@ -1,6 +1,6 @@
 # Zapier Tool
 
-This tool connects to a Zapier account and allows access to the natural langauge actions API. You can learn more about and enable the NLA API here: https://nla.zapier.com/start/
+This tool connects to a Zapier account and allows access to the natural language actions API. You can learn more about and enable the NLA API here: https://nla.zapier.com/start/
 
 ## Usage
 
@@ -10,7 +10,7 @@ Here's an example usage of the ZapierToolSpec.
 
 ```python
 from llama_index.tools.zapier import ZapierToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 
 zapier_spec = ZapierToolSpec(api_key="sk-ak-your-key")

@@ -31,7 +31,7 @@ Then, you can set up the pack like so:
 
 ```python
 # setup pack arguments
-from llama_index.core.vector_stores.types import MetadataInfo, VectorStoreInfo
+from llama_index.core.vector_stores import MetadataInfo, VectorStoreInfo
 
 vector_store_info = VectorStoreInfo(
     content_info="brief biography of celebrities",
@@ -70,7 +70,7 @@ response = weaviate_pack.run("Tell me a bout a Music celebritiy.")
 You can also use modules individually.
 
 ```python
-# use the retreiver
+# use the retriever
 retriever = weaviate_pack.retriever
 nodes = retriever.retrieve("query_str")
 

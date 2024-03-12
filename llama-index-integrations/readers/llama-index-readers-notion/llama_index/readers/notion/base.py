@@ -40,7 +40,7 @@ class NotionPageReader(BasePydanticReader):
 
         token = integration_token
         headers = {
-            "Authorization": "Bearer " + self.token,
+            "Authorization": "Bearer " + token,
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28",
         }

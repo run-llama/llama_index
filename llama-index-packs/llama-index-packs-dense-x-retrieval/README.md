@@ -2,7 +2,7 @@
 
 This LlamaPack creates a query engine that uses a `RecursiveRetriever` in llama-index to fetch nodes based on propoistions extracted from each node.
 
-This follows the idea from the paper [Dense X Retrieval: What Retreival Granularity Should We Use?](https://arxiv.org/abs/2312.06648).
+This follows the idea from the paper [Dense X Retrieval: What Retrieval Granularity Should We Use?](https://arxiv.org/abs/2312.06648).
 
 From the paper, a proposition is described as:
 
@@ -29,7 +29,7 @@ You can then inspect the files at `./dense_pack` and use them as a template for 
 You can download the pack to a the `./dense_pack` directory:
 
 ```python
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies

@@ -100,7 +100,10 @@ class StreamingAgentChatResponse:
         self._new_item_event.set()
 
     def write_response_to_history(
-        self, memory: BaseMemory, raise_error: bool = False
+        self,
+        memory: BaseMemory,
+        on_stream_end_fn: Optional[callable] = None,
+        raise_error: bool = False,
     ) -> None:
         if self.chat_stream is None:
             raise ValueError(
@@ -112,7 +115,8 @@ class StreamingAgentChatResponse:
             final_text = ""
             for chat in self.chat_stream:
                 self._is_function = is_function(chat.message)
-                self.put_in_queue(chat.delta)
+                if chat.delta:
+                    self.put_in_queue(chat.delta)
                 final_text += chat.delta or ""
             if self._is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
@@ -131,10 +135,13 @@ class StreamingAgentChatResponse:
 
         # This act as is_done events for any consumers waiting
         self._is_function_not_none_thread_event.set()
+        if on_stream_end_fn is not None and not self._is_function:
+            on_stream_end_fn()
 
     async def awrite_response_to_history(
         self,
         memory: BaseMemory,
+        on_stream_end_fn: Optional[callable] = None,
     ) -> None:
         if self.achat_stream is None:
             raise ValueError(
@@ -147,7 +154,8 @@ class StreamingAgentChatResponse:
             final_text = ""
             async for chat in self.achat_stream:
                 self._is_function = is_function(chat.message)
-                self.aput_in_queue(chat.delta)
+                if chat.delta:
+                    self.aput_in_queue(chat.delta)
                 final_text += chat.delta or ""
                 self._new_item_event.set()
                 if self._is_function is False:
@@ -164,6 +172,8 @@ class StreamingAgentChatResponse:
         # These act as is_done events for any consumers waiting
         self._is_function_false_event.set()
         self._new_item_event.set()
+        if on_stream_end_fn is not None and not self._is_function:
+            on_stream_end_fn()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
@@ -173,19 +183,24 @@ class StreamingAgentChatResponse:
                 self._unformatted_response += delta
                 yield delta
             except queue.Empty:
-                # Queue is empty, but we're not done yet
-                time.sleep(0.01)
+                # Queue is empty, but we're not done yet. Sleep for 0 secs to release the GIL and allow other threads to run.
+                time.sleep(0)
         self.response = self._unformatted_response.strip()
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
-        while not self._is_done or not self._aqueue.empty():
-            if not self._aqueue.empty():
-                delta = self._aqueue.get_nowait()
-                self._unformatted_response += delta
-                yield delta
+        while True:
+            if not self._aqueue.empty() or not self._is_done:
+                try:
+                    delta = await asyncio.wait_for(self._aqueue.get(), timeout=0.1)
+                except asyncio.TimeoutError:
+                    if self._is_done:
+                        break
+                    continue
+                if delta is not None:
+                    self._unformatted_response += delta
+                    yield delta
             else:
-                await self._new_item_event.wait()  # Wait until a new item is added
-                self._new_item_event.clear()  # Clear the event for the next wait
+                break
         self.response = self._unformatted_response.strip()
 
     def print_response_stream(self) -> None:

@@ -1,5 +1,9 @@
 # Whatsapp chat loader
 
+```bash
+pip install llama-index-readers-whatsapp
+```
+
 ## Export a Whatsapp chat
 
 1. Open a chat
@@ -12,13 +16,12 @@ For more info see [Whatsapp's Help Center](https://faq.whatsapp.com/118041407917
 ## Usage
 
 - Messages will get saved in the format: `{timestamp} {author}: {message}`. Useful for when you want to ask about specific people in a group chat.
-- Metadata automatically included: `source` (file name), `author` and `timesamp`.
+- Metadata automatically included: `source` (file name), `author` and `timestamp`.
 
 ```python
 from pathlib import Path
-from llama_index import download_loader
 
-WhatsappChatLoader = download_loader("WhatsappChatLoader")
+from llama_index.readers.whatsapp import WhatsappChatLoader
 
 path = "whatsapp.txt"
 loader = WhatsappChatLoader(path=path)

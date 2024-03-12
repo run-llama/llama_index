@@ -7,6 +7,7 @@ Contains parsers for image files.
 import re
 from pathlib import Path
 from typing import Dict, List, Optional
+from fsspec import AbstractFileSystem
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document, ImageDocument
@@ -53,14 +54,22 @@ class ImageReader(BaseReader):
         self._parse_text = parse_text
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
         from llama_index.core.img_utils import img_2_b64
         from PIL import Image
 
         # load document image
-        image = Image.open(file)
+        if fs:
+            with fs.open(path=file) as f:
+                image = Image.open(f.read())
+        else:
+            image = Image.open(file)
+
         if image.mode != "RGB":
             image = image.convert("RGB")
 

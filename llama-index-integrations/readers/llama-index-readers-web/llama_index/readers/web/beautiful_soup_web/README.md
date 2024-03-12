@@ -1,5 +1,9 @@
 # Beautiful Soup Website Loader
 
+```bash
+pip install llama-index-readers-web
+```
+
 This loader is a web scraper that fetches the text from websites using the `Beautiful Soup` (aka `bs4`) Python package. Furthermore, the flexibility of Beautiful Soup allows for custom templates that enable the loader to extract the desired text from specific website designs, such as Substack. Check out the code to see how to add your own.
 
 ## Usage
@@ -7,9 +11,7 @@ This loader is a web scraper that fetches the text from websites using the `Beau
 To use this loader, you need to pass in an array of URLs.
 
 ```python
-from llama_index import download_loader
-
-BeautifulSoupWebReader = download_loader("BeautifulSoupWebReader")
+from llama_index.readers.web import BeautifulSoupWebReader
 
 loader = BeautifulSoupWebReader()
 documents = loader.load_data(urls=["https://google.com"])
@@ -38,9 +40,9 @@ This loader is designed to be used as a way to load data into [LlamaIndex](https
 ### LlamaIndex
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-BeautifulSoupWebReader = download_loader("BeautifulSoupWebReader")
+from llama_index.readers.web import BeautifulSoupWebReader
 
 loader = BeautifulSoupWebReader()
 documents = loader.load_data(urls=["https://google.com"])
@@ -53,12 +55,12 @@ index.query("What language is on this website?")
 Note: Make sure you change the description of the `Tool` to match your use-case.
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 from langchain.agents import initialize_agent, Tool
 from langchain.llms import OpenAI
 from langchain.chains.conversation.memory import ConversationBufferMemory
 
-BeautifulSoupWebReader = download_loader("BeautifulSoupWebReader")
+from llama_index.readers.web import BeautifulSoupWebReader
 
 loader = BeautifulSoupWebReader()
 documents = loader.load_data(urls=["https://google.com"])

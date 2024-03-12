@@ -1,18 +1,17 @@
 # Airbyte Gong Loader
 
+```bash
+pip install llama-index-readers-airbyte-gong
+```
+
 The Airbyte Gong Loader allows you to access different Gong objects.
-
-## Installation
-
-- Install llama_hub: `pip install llama_hub`
-- Install the gong source: `pip install airbyte-source-gong`
 
 ## Usage
 
 Here's an example usage of the AirbyteGongReader.
 
 ```python
-from llama_hub.airbyte_gong import AirbyteGongReader
+from llama_index.readers.airbyte_gong import AirbyteGongReader
 
 gong_config = {
     # ...

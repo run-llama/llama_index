@@ -250,7 +250,7 @@ class SelfRAGQueryEngine(CustomQueryEngine):
 
         if "[Retrieval]" in answer:
             if self.verbose:
-                print_text("Retreival required\n", color="blue")
+                print_text("Retrieval required\n", color="blue")
             documents = self.retriever.retrieve(query_str)
             if self.verbose:
                 print_text(f"Received: {len(documents)} documents\n", color="blue")

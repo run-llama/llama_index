@@ -17,7 +17,7 @@ f = requests.get(
 manifest = yaml.safe_load(f)
 
 from llama_index.tools.chatgpt_plugin import ChatGPTPluginToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 from llama_index.tools.requests import RequestsToolSpec
 
 requests_spec = RequestsToolSpec()
@@ -36,6 +36,6 @@ print(agent.chat("Convert 100 euros to CAD"))
 `describe_plugin`: Describe the plugin that has been loaded.
 `load_openapi_spec`: Returns the parsed OpenAPI spec that the class was initialized with
 
-In addition to the above method, this tool makes all of the tools available from the OpenAPI Tool Spec and Requests Tool Spec available to the agent. The plugin OpenAPI defintion is loaded into the OpenAPI tool spec, and authentication headers are passed in to the Requests tool spec
+In addition to the above method, this tool makes all of the tools available from the OpenAPI Tool Spec and Requests Tool Spec available to the agent. The plugin OpenAPI definition is loaded into the OpenAPI tool spec, and authentication headers are passed in to the Requests tool spec
 
 This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.

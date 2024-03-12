@@ -541,6 +541,7 @@ class IndexNode(TextNode):
 
         obj = data.get("obj", None)
         parsed_obj = None
+
         if isinstance(obj, str):
             parsed_obj = TextNode(text=obj)
         elif isinstance(obj, dict):

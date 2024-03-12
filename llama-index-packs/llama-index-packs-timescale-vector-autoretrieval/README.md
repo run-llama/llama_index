@@ -51,7 +51,7 @@ You can then inspect the files at `./tsv_pack` and use them as a template for yo
 You can download the pack to a the `./tsv_pack` directory:
 
 ```python
-from llama_hub.llama_pack import download_llama_pack
+from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
 TimescaleVectorAutoretrievalPack = download_llama_pack(
@@ -65,7 +65,7 @@ Then, you can set up the pack like so:
 
 ```python
 # setup pack arguments
-from llama_index.core.vector_stores.types import MetadataInfo, VectorStoreInfo
+from llama_index.core.vector_stores import MetadataInfo, VectorStoreInfo
 from timescale_vector import client
 from dotenv import load_dotenv, find_dotenv
 import os
@@ -101,7 +101,7 @@ vector_store_info = VectorStoreInfo(
 )
 
 # nodes have to have their `id_` field set using a V1 UUID with the right time component
-# this can be acheived by using `client.uuid_from_time(datetime_obj)`
+# this can be achieved by using `client.uuid_from_time(datetime_obj)`
 nodes = [...]
 # an example:
 # nodes = [
@@ -144,7 +144,7 @@ response = tsv_pack.run(
 You can also use modules individually.
 
 ```python
-# use the retreiver
+# use the retriever
 retriever = tsv_pack.retriever
 nodes = retriever.retrieve("query_str")
 

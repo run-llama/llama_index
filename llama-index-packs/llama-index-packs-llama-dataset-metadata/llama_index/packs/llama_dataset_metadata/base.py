@@ -113,7 +113,7 @@ class DatasetCard(BaseMetadata):
         source_urls: Optional[List[str]] = None,
         code_url: Optional[str] = None,
     ) -> "DatasetCard":
-        """Convenience contstructor method for building a DatasetCard.
+        """Convenience constructor method for building a DatasetCard.
 
         Args:
             index (BaseIndex): the index from which query_engine is derived and
