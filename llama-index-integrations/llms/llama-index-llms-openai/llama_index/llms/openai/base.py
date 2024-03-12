@@ -46,6 +46,7 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
+    create_retry_decorator,
     from_openai_message,
     is_chat_model,
     is_function_calling_model,
@@ -63,6 +64,14 @@ from openai.types.chat.chat_completion_chunk import (
 )
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
+
+llm_retry_decorator = create_retry_decorator(
+    max_retries=6,
+    random_exponential=True,
+    stop_after_delay_seconds=60,
+    min_seconds=1,
+    max_seconds=20,
+)
 
 
 @runtime_checkable
@@ -290,6 +299,7 @@ class OpenAI(LLM):
             base_kwargs["max_tokens"] = self.max_tokens
         return {**base_kwargs, **self.additional_kwargs}
 
+    @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
         message_dicts = to_openai_message_dicts(messages)
@@ -353,6 +363,7 @@ class OpenAI(LLM):
                 t.id += tc_delta.id or ""
         return tool_calls
 
+    @llm_retry_decorator
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -405,6 +416,7 @@ class OpenAI(LLM):
 
         return gen()
 
+    @llm_retry_decorator
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         client = self._get_client()
         all_kwargs = self._get_model_kwargs(**kwargs)
@@ -422,6 +434,7 @@ class OpenAI(LLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_retry_decorator
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         client = self._get_client()
         all_kwargs = self._get_model_kwargs(**kwargs)
@@ -530,6 +543,7 @@ class OpenAI(LLM):
             astream_complete_fn = self._astream_complete
         return await astream_complete_fn(prompt, **kwargs)
 
+    @llm_retry_decorator
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
@@ -547,6 +561,7 @@ class OpenAI(LLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_retry_decorator
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
@@ -610,6 +625,7 @@ class OpenAI(LLM):
 
         return gen()
 
+    @llm_retry_decorator
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         aclient = self._get_aclient()
         all_kwargs = self._get_model_kwargs(**kwargs)
@@ -627,6 +643,7 @@ class OpenAI(LLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_retry_decorator
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
