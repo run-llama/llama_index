@@ -465,4 +465,3 @@ class VearchVectorStore(VectorStore):
         ids: List[str] = []
         ids.append(ref_doc_id)
         self._delete(ids)
-
