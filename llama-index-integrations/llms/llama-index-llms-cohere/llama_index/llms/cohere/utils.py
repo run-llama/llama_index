@@ -11,6 +11,7 @@ from tenacity import (
 )
 
 COMMAND_MODELS = {
+    "command-r": 128000,
     "command": 4096,
     "command-nightly": 4096,
     "command-light": 4096,
