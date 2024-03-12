@@ -1,4 +1,5 @@
 """A store that is built with Baidu VectorDB."""
+
 import json
 import time
 from typing import Any, Dict, List, Optional
@@ -49,7 +50,7 @@ NOT_SUPPORT_METRIC_TYPE_ERROR = (
 
 def _try_import() -> None:
     try:
-        import pymochow
+        import pymochow  # noqa: F401
     except ImportError:
         raise ImportError(
             "`pymochow` package not found, please run `pip install pymochow`"
@@ -67,6 +68,7 @@ class TableField:
 
 class TableParams:
     """Baidu VectorDB table params.
+
     See the following documentation for details:
     https://cloud.baidu.com/doc/VDB/s/mlrsob0p6
 
@@ -120,6 +122,7 @@ class TableParams:
 
 class BaiduVectorDB(VectorStore):
     """Baidu VectorDB as a vector store.
+
     In order to use this you need to have a database instance.
     See the following documentation for details:
     https://cloud.baidu.com/doc/VDB/index.html
