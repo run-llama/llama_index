@@ -49,8 +49,9 @@ class NeMoEmbedding(BaseEmbedding):
 
         return response["data"][0]["embedding"]
 
-    async def _aget_embedding(self, session: Any, text: str, input_type: str) -> List[float]:
-
+    async def _aget_embedding(
+        self, session: Any, text: str, input_type: str
+    ) -> List[float]:
         headers = {"Content-Type": "application/json"}
 
         async with session.post(
@@ -74,10 +75,8 @@ class NeMoEmbedding(BaseEmbedding):
 
     def _aget_query_embedding(self, query: str) -> List[float]:
         async with aiohttp.ClientSession() as session:
-            embedding = await self._aget_embedding(session, query, "query")
-            return embedding
+            return await self._aget_embedding(session, query, "query")
 
     def _aget_text_embedding(self, text: str) -> List[float]:
         async with aiohttp.ClientSession() as session:
-            embedding = await self._aget_embedding(session, text, "passage")
-            return embedding
+            return await self._aget_embedding(session, text, "passage")
