@@ -1,5 +1,61 @@
 # ChangeLog
 
+## [2024-03-12]
+
+### `llama-index-cli` [0.1.9]
+
+- Removed chroma as a bundled dep to reduce `llama-index` deps
+
+### `llama-index-core` [0.10.19]
+
+- Introduce retries for rate limits in `OpenAI` llm class (#11867)
+- Added table comments to SQL table schemas in `SQLDatabase` (#11774)
+- Added `LogProb` type to `ChatResponse` object (#11795)
+- Introduced `LabelledSimpleDataset` (#11805)
+- Fixed insert `IndexNode` objects with unserializable objects (#11836)
+- Fixed stream chat type error when writing response to history in `CondenseQuestionChatEngine` (#11856)
+- Improve post-processing for json query engine (#11862)
+
+### `llama-index-embeddings-cohere` [0.1.4]
+
+- Fixed async kwarg error (#11822)
+
+### `llama-index-embeddings-dashscope` [0.1.2]
+
+- Fixed pydantic import (#11765)
+
+### `llama-index-graph-stores-neo4j` [0.1.3]
+
+- Properly close connection after verifying connectivity (#11821)
+
+### `llama-index-llms-cohere` [0.1.3]
+
+- Add support for new `command-r` model (#11852)
+
+### `llama-index-llms-huggingface` [0.1.4]
+
+- Fixed streaming decoding with special tokens (#11807)
+
+### `llama-index-llms-mistralai` [0.1.5]
+
+- Added support for latest and open models (#11792)
+
+### `llama-index-tools-finance` [0.1.1]
+
+- Fixed small bug when passing in the API get for stock news (#11772)
+
+### `llama-index-vector-stores-chroma` [0.1.6]
+
+- Slimmed down chroma deps (#11775)
+
+### `llama-index-vector-stores-lancedb` [0.1.3]
+
+- Fixes for deleting (#11825)
+
+### `llama-index-vector-stores-postgres` [0.1.3]
+
+- Support for nested metadata filters (#11778)
+
 ## [2024-03-07]
 
 ### `llama-index-callbacks-deepeval` [0.1.3]
