@@ -183,7 +183,7 @@ class KodaRetriever(BaseRetriever):
 
             results = self.retriever.retrieve(query_bundle)
         else:
-            category = self.categorize(query)  # type: ignore
+            category = self.categorize(query=query_bundle.query_str)  # type: ignore
             results = self.category_retrieve(category, query_bundle)
             if self.verbose:
                 logging.info(
@@ -193,7 +193,9 @@ class KodaRetriever(BaseRetriever):
         if self.reranker:
             if self.verbose:
                 logging.info("Reranking results")
-            results = self.reranker.postprocess_nodes(nodes=results, query_str=query)
+            results = self.reranker.postprocess_nodes(
+                nodes=results, query_bundle=query_bundle
+            )
 
         return results
 
@@ -205,7 +207,7 @@ class KodaRetriever(BaseRetriever):
 
             results = await self.retriever.aretrieve(query_bundle)
         else:
-            category = await self.a_categorize(query)  # type: ignore
+            category = await self.a_categorize(query_bundle.query_str)  # type: ignore
             results = await self.a_category_retrieve(category, query_bundle)
             if self.verbose:
                 logging.info(
