@@ -8,7 +8,7 @@ from pydantic.v1 import BaseSettings, PrivateAttr
 from fastapi import FastAPI
 
 
-class ContributorServiceSettings(BaseSettings):
+class ContributorRetrieverServiceSettings(BaseSettings):
     api_version: str = Field(default="v1", description="API version.")
     secret: Optional[str] = Field(
         default=None, description="JWT secret."
@@ -19,9 +19,9 @@ class ContributorServiceSettings(BaseSettings):
         env_file = ".env", ".env.contributor.service"
 
 
-class ContributorService(BaseModel):
+class ContributorRetrieverService(BaseModel):
     retriever: Optional[BaseRetriever]
-    config: ContributorServiceSettings
+    config: ContributorRetrieverServiceSettings
     _fastapi: FastAPI = PrivateAttr()
 
     class Config:
@@ -56,8 +56,8 @@ class ContributorService(BaseModel):
     @classmethod
     def from_config_file(
         cls, env_file: str, retriever: BaseRetriever
-    ) -> "ContributorService":
-        config = ContributorServiceSettings(_env_file=env_file)
+    ) -> "ContributorRetrieverService":
+        config = ContributorRetrieverServiceSettings(_env_file=env_file)
         return cls(retriever=retriever, config=config)
 
     def __getattr__(self, attr) -> Any:

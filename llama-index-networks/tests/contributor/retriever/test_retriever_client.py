@@ -1,7 +1,7 @@
 from unittest.mock import patch, MagicMock
 from llama_index.networks.contributor.retriever import (
-    ContributorClient,
-    ContributorClientSettings,
+    ContributorRetrieverClient,
+    ContributorRetrieverClientSettings,
 )
 from llama_index.core.schema import TextNode, NodeWithScore
 from llama_index.core.settings import Settings
@@ -24,8 +24,8 @@ def test_contributor_client_retrieve(mock_post):
     }
     mock_post.return_value = mock_response
 
-    settings = ContributorClientSettings(api_url="fake-url")
-    client = ContributorClient(
+    settings = ContributorRetrieverClientSettings(api_url="fake-url")
+    client = ContributorRetrieverClient(
         config=settings, callback_manager=Settings.callback_manager
     )
 

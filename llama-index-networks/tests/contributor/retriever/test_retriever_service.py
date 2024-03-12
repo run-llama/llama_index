@@ -1,8 +1,8 @@
 from typing import List
 from fastapi.testclient import TestClient
 from llama_index.networks.contributor.retriever import (
-    ContributorService,
-    ContributorServiceSettings,
+    ContributorRetrieverService,
+    ContributorRetrieverServiceSettings,
 )
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.schema import NodeWithScore, TextNode
@@ -22,9 +22,9 @@ class MockRetriever(BaseRetriever):
 
 def test_contributor_service_index():
     # arrange
-    config = ContributorServiceSettings()
+    config = ContributorRetrieverServiceSettings()
     mock_retriever = MockRetriever()
-    service = ContributorService(retriever=mock_retriever, config=config)
+    service = ContributorRetrieverService(retriever=mock_retriever, config=config)
     test_client = TestClient(service.app)
 
     # act
@@ -37,9 +37,9 @@ def test_contributor_service_index():
 
 def test_contributor_service_retrieve():
     # arrange
-    config = ContributorServiceSettings(secret="secret")
+    config = ContributorRetrieverServiceSettings(secret="secret")
     mock_retriever = MockRetriever()
-    service = ContributorService(retriever=mock_retriever, config=config)
+    service = ContributorRetrieverService(retriever=mock_retriever, config=config)
     test_client = TestClient(service.app)
 
     # act

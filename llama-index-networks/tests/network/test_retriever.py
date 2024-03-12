@@ -7,7 +7,7 @@ async def return_nodes():
     return [NodeWithScore(node=TextNode(text="mock_node"), score=0.9)]
 
 
-@patch("llama_index.networks.contributor.retriever.client.ContributorClient")
+@patch("llama_index.networks.contributor.retriever.client.ContributorRetrieverClient")
 def test_network_retriever(mock_contributor):
     # arrange
     mock_contributor.aretrieve.return_value = return_nodes()

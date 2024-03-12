@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 from llama_index.networks.contributor.query_engine import (
-    ContributorClient,
-    ContributorClientSettings,
+    ContributorQueryEngineClient,
+    ContributorQueryEngineClientSettings,
 )
 from llama_index.core.settings import Settings
 
@@ -18,8 +18,8 @@ def test_contributor_client(mock_requests):
     }
     mock_requests.post.return_value = result_mock
 
-    settings = ContributorClientSettings(api_url="fake-url")
-    client = ContributorClient(
+    settings = ContributorQueryEngineClientSettings(api_url="fake-url")
+    client = ContributorQueryEngineClient(
         config=settings, callback_manager=Settings.callback_manager
     )
 

@@ -8,7 +8,9 @@ async def return_response():
     return Response(response="mock contributor response", metadata={"score": 0.5})
 
 
-@patch("llama_index.networks.contributor.query_engine.client.ContributorClient")
+@patch(
+    "llama_index.networks.contributor.query_engine.client.ContributorQueryEngineClient"
+)
 def test_network_query_engine(mock_contributor):
     # arange
     llm = MockLLM()

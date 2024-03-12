@@ -10,7 +10,7 @@ import requests
 import aiohttp
 
 
-class ContributorClientSettings(BaseSettings):
+class ContributorQueryEngineClientSettings(BaseSettings):
     """Settings for contributor."""
 
     api_key: Optional[str] = Field(default=None, env="API_KEY")
@@ -20,13 +20,13 @@ class ContributorClientSettings(BaseSettings):
         env_file = ".env", ".env.contributor.client"
 
 
-class ContributorClient(BaseQueryEngine):
+class ContributorQueryEngineClient(BaseQueryEngine):
     """A remote QueryEngine exposed through a REST API."""
 
     def __init__(
         self,
         callback_manager: Optional[CallbackManager],
-        config: ContributorClientSettings,
+        config: ContributorQueryEngineClientSettings,
     ) -> None:
         self.config = config
         super().__init__(callback_manager)
@@ -34,9 +34,9 @@ class ContributorClient(BaseQueryEngine):
     @classmethod
     def from_config_file(
         cls, env_file: str, callback_manager: Optional[CallbackManager] = None
-    ) -> "ContributorClient":
+    ) -> "ContributorQueryEngineClient":
         """Convenience constructor from a custom env file."""
-        config = ContributorClientSettings(_env_file=env_file)
+        config = ContributorQueryEngineClientSettings(_env_file=env_file)
         return cls(callback_manager=callback_manager, config=config)
 
     def _query(

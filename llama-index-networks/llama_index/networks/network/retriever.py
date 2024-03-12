@@ -5,7 +5,7 @@ from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.indices.query.schema import QueryBundle
-from llama_index.networks.contributor.retriever import ContributorClient
+from llama_index.networks.contributor.retriever import ContributorRetrieverClient
 from functools import reduce
 
 
@@ -14,7 +14,7 @@ class NetworkRetriever(BaseRetriever):
 
     def __init__(
         self,
-        contributors: List[ContributorClient],
+        contributors: List[ContributorRetrieverClient],
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._contributors = contributors

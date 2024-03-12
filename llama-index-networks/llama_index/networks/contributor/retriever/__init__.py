@@ -1,16 +1,16 @@
 from llama_index.networks.contributor.retriever.service import (
-    ContributorService,
-    ContributorServiceSettings,
+    ContributorRetrieverService,
+    ContributorRetrieverServiceSettings,
 )
 from llama_index.networks.contributor.retriever.client import (
-    ContributorClient,
-    ContributorClientSettings,
+    ContributorRetrieverClient,
+    ContributorRetrieverClientSettings,
 )
 
 
 __all__ = [
-    "ContributorService",
-    "ContributorServiceSettings",
-    "ContributorClient",
-    "ContributorClientSettings",
+    "ContributorRetrieverService",
+    "ContributorRetrieverServiceSettings",
+    "ContributorRetrieverClient",
+    "ContributorRetrieverClientSettings",
 ]

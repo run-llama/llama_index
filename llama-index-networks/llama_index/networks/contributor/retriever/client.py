@@ -9,7 +9,7 @@ import requests
 import aiohttp
 
 
-class ContributorClientSettings(BaseSettings):
+class ContributorRetrieverClientSettings(BaseSettings):
     """Settings for contributor."""
 
     api_key: Optional[str] = Field(default=None, env="API_KEY")
@@ -19,13 +19,13 @@ class ContributorClientSettings(BaseSettings):
         env_file = ".env", ".env.contributor.client"
 
 
-class ContributorClient(BaseRetriever):
+class ContributorRetrieverClient(BaseRetriever):
     """A remote Retriever exposed through a REST API."""
 
     def __init__(
         self,
         callback_manager: Optional[CallbackManager],
-        config: ContributorClientSettings,
+        config: ContributorRetrieverClientSettings,
     ) -> None:
         self.config = config
         super().__init__(callback_manager)
@@ -33,9 +33,9 @@ class ContributorClient(BaseRetriever):
     @classmethod
     def from_config_file(
         cls, env_file: str, callback_manager: Optional[CallbackManager] = None
-    ) -> "ContributorClient":
+    ) -> "ContributorRetrieverClient":
         """Convenience constructor from a custom env file."""
-        config = ContributorClientSettings(_env_file=env_file)
+        config = ContributorRetrieverClientSettings(_env_file=env_file)
         return cls(callback_manager=callback_manager, config=config)
 
     def _retrieve(
