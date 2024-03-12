@@ -23,6 +23,8 @@ def get_dispatcher(name: str = "root") -> Dispatcher:
     else:
         parent_name = "root"
 
-    return Dispatcher(
+    new_dipsatcher = Dispatcher(
         name=name, root=root_dispatcher, parent_name=parent_name, manager=root_manager
     )
+    root_manager.add_dispatcher(new_dipsatcher)
+    return new_dipsatcher

@@ -40,7 +40,9 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
         legacy_span_handler = LegacyCallbackSpanHandler(
             callback_manager=self.callback_manager
         )
-        dispatcher.span_handler = legacy_span_handler
+        # don't overwrite current span_handler
+        if not dispatcher.span_handler.open_spans:
+            dispatcher.span_handler = legacy_span_handler
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""

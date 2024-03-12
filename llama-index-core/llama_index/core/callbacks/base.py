@@ -84,10 +84,10 @@ class CallbackManager(BaseCallbackHandler, ABC):
 
         # if no trace is running, start a default trace
         try:
-            parent_id = parent_id or global_stack_trace.get()[-1]
+            parent_id = parent_id or global_stack_trace_ids.get()[-1]
         except IndexError:
             self.start_trace("llama-index")
-            parent_id = global_stack_trace.get()[-1]
+            parent_id = global_stack_trace_ids.get()[-1]
         parent_id = cast(str, parent_id)
         self._trace_map[parent_id].append(event_id)
         for handler in self.handlers:
@@ -124,7 +124,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         if event_type not in LEAF_EVENTS:
             # copy the stack trace to prevent conflicts with threads/coroutines
             current_trace_stack = global_stack_trace.get().copy()
-            current_trace_stack.pop()
+            removed_event_id = current_trace_stack.pop()
             global_stack_trace.set(current_trace_stack)
 
     def add_handler(self, handler: BaseCallbackHandler) -> None:
@@ -205,7 +205,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         current_trace_stack_ids = global_stack_trace_ids.get().copy()
         if trace_id is not None:
             if len(current_trace_stack_ids) == 0:
-                self._reset_trace_events()
+                # self._reset_trace_events()
 
                 for handler in self.handlers:
                     handler.start_trace(trace_id=trace_id)

@@ -28,4 +28,4 @@ class StreamChatDeltaReceivedEvent(BaseEvent):
     @classmethod
     def class_name(cls):
         """Class name."""
-        return "ChatDeltaReceivedEvent"
+        return "StreamChatDeltaReceivedEvent"

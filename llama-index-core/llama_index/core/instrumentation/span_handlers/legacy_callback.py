@@ -80,7 +80,9 @@ class LegacyCallbackSpanHandler(BaseSpanHandler[LegacyCallbackSpan]):
             payload = {}
         if event_context and not event_context.finished:
             event_context.on_end(payload=payload)
-        self.callback_manager.end_trace(id)
+
+        if event_context is None:  # trace
+            self.callback_manager.end_trace(id)
 
     def prepare_to_drop_span(
         self, id: str, err: Optional[Exception], **kwargs: Any
