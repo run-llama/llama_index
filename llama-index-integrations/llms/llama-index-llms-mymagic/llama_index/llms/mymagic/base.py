@@ -51,6 +51,11 @@ class MyMagicAI(LLM):
     return_output: Optional[bool] = Field(
         False, description="Whether MyMagic API should return the output json"
     )
+    input_json_file: Optional[str] = None
+
+    structured_output: Optional[Dict[str, Any]] = Field(
+        None, description="User-defined structure for the response output"
+    )
 
     def __init__(
         self,
@@ -62,6 +67,8 @@ class MyMagicAI(LLM):
         role_arn: Optional[str] = None,
         region: Optional[str] = None,
         return_output: Optional[bool] = False,
+        input_json_file: Optional[str] = None,
+        structured_output: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -76,6 +83,9 @@ class MyMagicAI(LLM):
             "system_prompt": system_prompt,
             "region": region,
             "return_output": return_output,
+            "input_json_file":input_json_file,
+            "structured_output":structured_output,
+            ""
         }
 
     @classmethod
