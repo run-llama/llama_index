@@ -21,18 +21,18 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Dhruv Chawla <dhruv@uptrain.ai>"]
 description = "llama-index callbacks uptrain integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-callbacks-uptrain"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = ">=0.10.0"
-uptrain = ">=0.6.5"
+uptrain = ">=0.6.6"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

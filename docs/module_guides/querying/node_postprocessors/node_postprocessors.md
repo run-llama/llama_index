@@ -332,4 +332,5 @@ maxdepth: 1
 /examples/node_postprocessor/rankGPT.ipynb
 /examples/node_postprocessor/ColbertRerank.ipynb
 /examples/node_postprocessor/JinaRerank.ipynb
+/cookbooks/mixedbread_reranker.ipynb
 ```

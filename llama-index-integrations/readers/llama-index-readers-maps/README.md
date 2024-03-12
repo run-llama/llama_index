@@ -1,5 +1,9 @@
 # **_Osmmap Loader_**
 
+```bash
+pip install llama-index-readers-maps
+```
+
 The Osmmap Loader will fetch map data from the [Overpass](https://wiki.openstreetmap.org/wiki/Main_Page) api for a certain place or area. Version **Overpass API 0.7.60** is used by this loader.
 
 The api will provide you with all the **nodes, relations, and ways** for the particular region when you request data for a region or location.
@@ -27,9 +31,7 @@ She requires all the nodes, routes, and relations within a five-kilometer radius
 ### And the code snippet looks like
 
 ```python
-from llama_index import download_loader
-
-MapReader = download_loader("OpenMap")
+from llama_index.readers.maps import OpenMap
 
 loader = MapReader()
 documents = loader.load_data(
@@ -46,9 +48,7 @@ documents = loader.load_data(
 - so she search for hospital tag in the [Taginfo](https://taginfo.openstreetmap.org/tags) and she got
 
 ```python
-from llama_index import download_loader
-
-MapReader = download_loader("OpenMap")
+from llama_index.readers.maps import OpenMap
 
 loader = MapReader()
 documents = loader.load_data(

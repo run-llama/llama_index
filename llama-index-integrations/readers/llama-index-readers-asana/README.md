@@ -1,5 +1,9 @@
 # Asana Loader
 
+```bash
+pip install llama-index-readers-asana
+```
+
 This loader loads documents from Asana. The user specifies an API token to initialize the AsanaReader. They then specify a `workspace_id` OR a `project_id` to load in the corresponding Document objects.
 
 ## Usage
@@ -7,10 +11,9 @@ This loader loads documents from Asana. The user specifies an API token to initi
 Here's an example usage of the AsanaReader.
 
 ```python
-from llama_index import download_loader
 import os
 
-AsanaReader = download_loader("AsanaReader")
+from llama_index.readers.asana import AsanaReader
 
 reader = AsanaReader("<ASANA_TOKEN>")
 

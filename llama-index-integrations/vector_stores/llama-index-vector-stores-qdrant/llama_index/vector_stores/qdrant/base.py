@@ -370,7 +370,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except (ValueError, UnexpectedResponse) as exc:
+        except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
             logger.warning(
@@ -408,7 +408,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except (ValueError, UnexpectedResponse) as exc:
+        except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
             logger.warning(

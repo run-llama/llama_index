@@ -126,9 +126,11 @@ class AstraDBVectorStore(BasePydanticVectorStore):
                 if "indexing" not in pre_col_options:
                     warn(
                         (
-                            f"Collection '{collection_name}' is detected as legacy"
-                            " and has indexing turned on for all fields. This"
-                            " implies stricter limitations on the amount of text"
+                            f"Collection '{collection_name}' is detected as "
+                            "having indexing turned on for all fields "
+                            "(either created manually or by older versions "
+                            "of this plugin). This implies stricter "
+                            "limitations on the amount of text"
                             " each entry can store. Consider reindexing anew on a"
                             " fresh collection to be able to store longer texts."
                         ),

@@ -1,5 +1,9 @@
 # Paged CSV Loader
 
+```bash
+pip install llama-index-readers-file
+```
+
 This loader extracts the text from a local .csv file by formatting each row in an LLM-friendly way and inserting it into a separate Document. A single local file is passed in each time you call `load_data`. For example, a Document might look like:
 
 ```
@@ -15,9 +19,8 @@ To use this loader, you need to pass in a `Path` to a local file.
 
 ```python
 from pathlib import Path
-from llama_index.core.readers import download_loader
 
-PagedCSVReader = download_loader("PagedCSVReader")
+from llama_index.readers.file import PagedCSVReader
 
 loader = PagedCSVReader(encoding="utf-8")
 documents = loader.load_data(file=Path("./transactions.csv"))

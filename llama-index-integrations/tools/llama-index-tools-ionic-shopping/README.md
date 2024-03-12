@@ -1,5 +1,9 @@
 # LlamaIndex Tools Integration: Ionic Shopping
 
+```bash
+pip install llama-index-tools-ionic-shopping
+```
+
 [Ionic](https://ioniccommerce.com) is a plug and play ecommerce marketplace for AI Assistants.
 By including the Ionic Tool in your agent, you are effortlessly providing your users with the ability
 to shop and transact directly within your agent, and you’ll get a cut of the transaction.
@@ -10,7 +14,7 @@ Llearn more about how [Ionic attributes sales](https://docs.ioniccommerce.com/gu
 to your agent. Provide your Ionic API Key when instantiating the tool:
 
 ```python
-from llama_hub.tools.ionic_shopping.base import IonicShoppingToolSpec
+from llama_index.tools.ionic_shopping import IonicShoppingToolSpec
 
 ionic_tool = IonicShoppingToolSpec(api_key="<my Ionic API Key>").to_tool_list()
 ```
@@ -21,8 +25,10 @@ Try it out using the [Jupyter notebook](https://github.com/run-llama/llama-hub/b
 
 ```python
 import openai
-from llama_index.agent import OpenAIAgent  # requires llama-index-agent-openai
-from llama_hub.tools.ionic_shopping.base import IonicShoppingToolSpec
+from llama_index.core.agent import (
+    OpenAIAgent,
+)  # requires llama-index-agent-openai
+from llama_index.tools.ionic_shopping import IonicShoppingToolSpec
 
 openai.api_key = "sk-api-key"
 

@@ -1,5 +1,9 @@
 # LlamaIndex Readers Integration: Arango Db
 
+```bash
+pip install llama-index-readers-arango-db
+```
+
 This loader loads documents from ArangoDB. The user specifies a ArangoDB instance to
 initialize the reader. They then specify the collection name and query params to
 fetch the relevant docs.
@@ -9,10 +13,9 @@ fetch the relevant docs.
 Here's an example usage of the SimpleArangoDBReader.
 
 ```python
-from llama_index.core.readers import download_loader
 import os
 
-SimpleArangoDBReader = download_loader("SimpleArangoDBReader")
+from llama_index.readers.arango_db import SimpleArangoDBReader
 
 host = "<host>"
 db_name = "<db_name>"
@@ -32,4 +35,4 @@ documents = reader.load_data(
 )
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/run-llama/llama-hub/tree/main/llama_hub) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.

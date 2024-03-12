@@ -1,5 +1,9 @@
 # Apify Loaders
 
+```bash
+pip install llama-index-readers-apify
+```
+
 ## Apify Actor Loader
 
 [Apify](https://apify.com/) is a cloud platform for web scraping and data extraction,
@@ -20,8 +24,7 @@ To use this loader, you need to have a (free) Apify account
 and set your [Apify API token](https://console.apify.com/account/integrations) in the code.
 
 ```python
-from llama_index import download_loader
-from llama_index.readers.schema import Document
+from llama_index.core import Document
 
 
 # Converts a single record from the Actor's resulting dataset to the LlamaIndex format
@@ -34,7 +37,7 @@ def tranform_dataset_item(item):
     )
 
 
-ApifyActor = download_loader("ApifyActor")
+from llama_index.readers.apify import ApifyActor
 
 reader = ApifyActor("<My Apify API token>")
 documents = reader.load_data(
@@ -72,8 +75,7 @@ To use this loader, you need to have a (free) Apify account
 and set your [Apify API token](https://console.apify.com/account/integrations) in the code.
 
 ```python
-from llama_index import download_loader
-from llama_index.readers.schema import Document
+from llama_index.core import Document
 
 
 # Converts a single record from the Apify dataset to the LlamaIndex format
@@ -86,7 +88,7 @@ def tranform_dataset_item(item):
     )
 
 
-ApifyDataset = download_loader("ApifyDataset")
+from llama_index.readers.apify import ApifyDataset
 
 reader = ApifyDataset("<Your Apify API token>")
 documents = reader.load_data(

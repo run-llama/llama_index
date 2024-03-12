@@ -73,7 +73,7 @@ class QueryData:
     )
     llm_messages: Optional[Tuple[str, str]] = field(
         default=None,
-        metadata={OPENINFERENCE_COLUMN_NAME: ":feature.[[str]]:llm_messages"},
+        metadata={OPENINFERENCE_COLUMN_NAME: ":feature.[str]:llm_messages"},
     )
     response_text: Optional[str] = field(
         default=None, metadata={OPENINFERENCE_COLUMN_NAME: ":prediction.text:response"}
