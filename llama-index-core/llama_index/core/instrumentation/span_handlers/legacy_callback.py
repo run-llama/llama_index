@@ -69,10 +69,14 @@ class LegacyCallbackSpanHandler(BaseSpanHandler[LegacyCallbackSpan]):
         """Logic for preparing to drop a span."""
         # defining here to avoid circular imports
         from llama_index.core.chat_engine.types import StreamingAgentChatResponse
-        from llama_index.core.base.response.schema import RESPONSE_TYPE
+        from llama_index.core.base.response.schema import (
+            Response,
+            StreamingResponse,
+            PydanticResponse,
+        )
 
         event_context = self.open_spans[id].event_context
-        if isinstance(result, RESPONSE_TYPE):
+        if isinstance(result, (Response, StreamingResponse, PydanticResponse)):
             payload = {EventPayload.RESPONSE: result}
         elif isinstance(result, StreamingAgentChatResponse):
             payload = {EventPayload.RESPONSE: result}
