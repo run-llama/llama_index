@@ -5,7 +5,6 @@ from typing import Any, Callable, List, Optional, Dict
 
 from llama_index.core.bridge.pydantic import Field
 
-import pandas as pd
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser.relational.base_element import (
     DEFAULT_SUMMARY_QUERY_STR,
@@ -13,31 +12,7 @@ from llama_index.core.node_parser.relational.base_element import (
     Element,
 )
 from llama_index.core.schema import BaseNode, TextNode
-
-
-def html_to_df(html_str: str) -> pd.DataFrame:
-    """Convert HTML to dataframe."""
-    from lxml import html
-
-    tree = html.fromstring(html_str)
-    table_element = tree.xpath("//table")[0]
-    rows = table_element.xpath(".//tr")
-
-    data = []
-    for row in rows:
-        cols = row.xpath(".//td")
-        cols = [c.text.strip() if c.text is not None else "" for c in cols]
-        data.append(cols)
-
-    # Check if the table is empty
-    if len(data) == 0:
-        return None
-
-    # Check if the all rows have the same number of columns
-    if not all(len(row) == len(data[0]) for row in data):
-        return None
-
-    return pd.DataFrame(data[1:], columns=data[0])
+from llama_index.core.node_parser.relational.utils import html_to_df
 
 
 class UnstructuredElementNodeParser(BaseElementNodeParser):

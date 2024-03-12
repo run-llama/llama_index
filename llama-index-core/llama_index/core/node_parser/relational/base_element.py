@@ -54,6 +54,8 @@ class Element(BaseModel):
     title_level: Optional[int] = None
     table_output: Optional[TableOutput] = None
     table: Optional[pd.DataFrame] = None
+    markdown: Optional[str] = None
+    page_number: Optional[int] = None
 
     class Config:
         arbitrary_types_allowed = True
