@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["MultiDocumentAgentsPack"]
 contains_example = false
 import_path = "llama_index.packs.multi_document_agents"
+
+[tool.llamahub.class_authors]
+MultiDocumentAgentsPack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,15 +23,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs multi_document_agents integration"
+exclude = ["**/BUILD"]
 keywords = ["agents", "document", "multi"]
 license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-packs-multi-document-agents"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llama-index-agent-openai-legacy = "^0.1.1"
 

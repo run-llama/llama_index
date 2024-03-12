@@ -1,4 +1,4 @@
-from llama_index.core.llms.base import BaseLLM
+from llama_index.core.base.llms.base import BaseLLM
 from llama_index.llms.cohere import Cohere
 
 

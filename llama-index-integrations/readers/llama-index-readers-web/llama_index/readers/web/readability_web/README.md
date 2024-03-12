@@ -1,5 +1,9 @@
 # Readability Webpage Loader
 
+```bash
+pip install llama-index-readers-web
+```
+
 Extracting relevant information from a fully rendered web page.
 During the processing, it is always assumed that web pages used as data sources contain textual content.
 
@@ -13,9 +17,7 @@ It is particularly effective for websites that use client-side rendering.
 To use this loader, you need to pass in a single of URL.
 
 ```python
-from llama_index import download_loader
-
-ReadabilityWebPageReader = download_loader("ReadabilityWebPageReader")
+from llama_index.readers.web import ReadabilityWebPageReader
 
 # or set proxy server for playwright: loader = ReadabilityWebPageReader(proxy="http://your-proxy-server:port")
 # For some specific web pages, you may need to set "wait_until" to "networkidle". loader = ReadabilityWebPageReader(wait_until="networkidle")
@@ -33,9 +35,7 @@ This loader is designed to be used as a way to load data into [LlamaIndex](https
 ### LlamaIndex
 
 ```python
-from llama_index import download_loader
-
-ReadabilityWebPageReader = download_loader("ReadabilityWebPageReader")
+from llama_index.readers.web import ReadabilityWebPageReader
 
 loader = ReadabilityWebPageReader()
 documents = loader.load_data(
@@ -51,12 +51,12 @@ print(index.query("What is pages?"))
 Note: Make sure you change the description of the `Tool` to match your use-case.
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 from langchain.agents import initialize_agent, Tool
 from langchain.llms import OpenAI
 from langchain.chains.conversation.memory import ConversationBufferMemory
 
-ReadabilityWebPageReader = download_loader("ReadabilityWebPageReader")
+from llama_index.readers.web import ReadabilityWebPageReader
 
 loader = ReadabilityWebPageReader()
 documents = loader.load_data(

@@ -24,7 +24,7 @@ from llama_index.core.chat_engine.types import (
     ChatResponseMode,
     StreamingAgentChatResponse,
 )
-from llama_index.core.llms.base import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
@@ -361,7 +361,10 @@ class ParallelAgentRunner(BaseAgentRunner):
                 result_output = cur_step_output
                 break
 
-        return self.finalize_response(task.task_id, result_output)
+        return self.finalize_response(
+            task.task_id,
+            result_output,
+        )
 
     async def _achat(
         self,
@@ -393,7 +396,10 @@ class ParallelAgentRunner(BaseAgentRunner):
                 result_output = cur_step_output
                 break
 
-        return self.finalize_response(task.task_id, result_output)
+        return self.finalize_response(
+            task.task_id,
+            result_output,
+        )
 
     @trace_method("chat")
     def chat(

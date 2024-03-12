@@ -1,6 +1,6 @@
 # SimpleDirectoryReader
 
-`SimpleDirectoryReader` is the simplest way to load data from local files into LlamaIndex. For production use cases it's more likely that you'll want to use one of the many Readers available on [LlamaHub](https://llamalab.com/hub), but `SimpleDirectoryReader` is a great way to get started.
+`SimpleDirectoryReader` is the simplest way to load data from local files into LlamaIndex. For production use cases it's more likely that you'll want to use one of the many Readers available on [LlamaHub](https://llamahub.ai/), but `SimpleDirectoryReader` is a great way to get started.
 
 ## Supported file types
 
@@ -143,3 +143,30 @@ print(documents)
 ```
 
 Note that this mapping will override the default file extractors for the file types you specify, so you'll need to add them back in if you want to support them.
+
+### Support for External FileSystems
+
+As with other modules, the `SimpleDirectoryReader` takes an optional `fs` parameter that can be used to traverse remote filesystems.
+
+This can be any filesystem object that is implemented by the [`fsspec`](https://filesystem-spec.readthedocs.io/en/latest/) protocol.
+The `fsspec` protocol has open-source implementations for a variety of remote filesystems including [AWS S3](https://github.com/fsspec/s3fs), [Azure Blob & DataLake](https://github.com/fsspec/adlfs), [Google Drive](https://github.com/fsspec/gdrivefs), [SFTP](https://github.com/fsspec/sshfs), and [many others](https://github.com/fsspec/).
+
+Here's an example that connects to S3:
+
+```python
+from s3fs import S3FileSystem
+
+s3_fs = S3FileSystem(key="...", secret="...")
+bucket_name = "my-document-bucket"
+
+reader = SimpleDirectoryReader(
+    input_dir=bucket_name,
+    fs=s3_fs,
+    recursive=True,  # recursively searches all subdirectories
+)
+
+documents = reader.load_data()
+print(documents)
+```
+
+A full example notebook can be found [here](https://github.com/run-llama/llama_index/blob/main/docs/examples/data_connectors/simple_directory_reader_remote_fs.ipynb).

@@ -7,9 +7,15 @@ check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.yahoo_finance"
+
+[tool.llamahub.class_authors]
+YahooFinanceToolSpec = "llama-index"
+
 [tool.mypy]
 disallow_untyped_defs = true
-# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
@@ -17,20 +23,18 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index tools yahoo_finance integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-tools-yahoo-finance"
-packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
 yfinance = "^0.2.36"
 
 [tool.poetry.group.dev.dependencies]
-black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
-codespell = {extras = ["toml"], version = ">=v2.2.6"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
@@ -46,3 +50,14 @@ types-protobuf = "^4.24.0.4"
 types-redis = "4.5.5.0"
 types-requests = "2.28.11.8"
 types-setuptools = "67.1.0.0"
+
+[tool.poetry.group.dev.dependencies.black]
+extras = ["jupyter"]
+version = "<=23.9.1,>=23.7.0"
+
+[tool.poetry.group.dev.dependencies.codespell]
+extras = ["toml"]
+version = ">=v2.2.6"
+
+[[tool.poetry.packages]]
+include = "llama_index/"

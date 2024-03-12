@@ -36,7 +36,8 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     @classmethod
     def from_defaults(
         cls,
-        output_parser: PydanticOutputParser,
+        output_parser: Optional[PydanticOutputParser] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
         multi_modal_llm: Optional[MultiModalLLM] = None,
@@ -64,6 +65,12 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
             raise ValueError("Must provide either prompt or prompt_template_str.")
         if prompt_template_str is not None:
             prompt = PromptTemplate(prompt_template_str)
+
+        if output_parser is None:
+            if output_cls is None:
+                raise ValueError("Must provide either output_cls or output_parser.")
+            output_parser = PydanticOutputParser(output_cls=output_cls)
+
         return cls(
             output_parser,
             prompt=cast(PromptTemplate, prompt),

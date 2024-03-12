@@ -1,5 +1,9 @@
 # Intercom Loader
 
+```bash
+pip install llama-index-readers-intercom
+```
+
 This loader fetches the text from Intercom help articles using the Intercom API. It also uses the BeautifulSoup library to parse the HTML and extract the text from the articles.
 
 ## Usage
@@ -7,9 +11,7 @@ This loader fetches the text from Intercom help articles using the Intercom API.
 To use this loader, you need to pass in an Intercom account access token.
 
 ```python
-from llama_index import download_loader
-
-IntercomReader = download_loader("IntercomReader")
+from llama_index.readers.intercom import IntercomReader
 
 loader = IntercomReader(intercom_access_token="my_access_token")
 documents = loader.load_data()

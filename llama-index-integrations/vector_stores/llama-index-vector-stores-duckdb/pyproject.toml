@@ -5,18 +5,17 @@ requires = ["poetry-core"]
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-# Feel free to un-skip examples, and experimental, you will just need to
-# work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["DuckDBVectorStore"]
-contains_example = true
+contains_example = false
 import_path = "llama_index.vector_stores.duckdb"
+
+[tool.llamahub.class_authors]
+DuckDBVectorStore = "krish-adi"
 
 [tool.mypy]
 disallow_untyped_defs = true
-# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
@@ -24,12 +23,12 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Adithya Krishnan <me@krishadi.com>"]
 description = "llama-index vector_stores duckdb integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 maintainers = ["krish-adi"]
 name = "llama-index-vector-stores-duckdb"
-packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -37,8 +36,6 @@ llama-index-core = "^0.10.0"
 duckdb = "0.9.2"
 
 [tool.poetry.group.dev.dependencies]
-black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
-codespell = {extras = ["toml"], version = ">=v2.2.6"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
@@ -52,5 +49,16 @@ types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-protobuf = "^4.24.0.4"
 types-redis = "4.5.5.0"
-types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
+types-requests = "2.28.11.8"
 types-setuptools = "67.1.0.0"
+
+[tool.poetry.group.dev.dependencies.black]
+extras = ["jupyter"]
+version = "<=23.9.1,>=23.7.0"
+
+[tool.poetry.group.dev.dependencies.codespell]
+extras = ["toml"]
+version = ">=v2.2.6"
+
+[[tool.poetry.packages]]
+include = "llama_index/"

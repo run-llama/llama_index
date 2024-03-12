@@ -26,6 +26,7 @@ Define Custom Retriever </examples/query_engine/CustomRetrievers.ipynb>
 BM25 Hybrid Retriever </examples/retrievers/bm25_retriever.ipynb>
 /examples/retrievers/simple_fusion.ipynb
 /examples/retrievers/reciprocal_rerank_fusion.ipynb
+/examples/retrievers/relative_score_dist_fusion.ipynb
 /examples/retrievers/auto_merging_retriever.ipynb
 /examples/node_postprocessor/MetadataReplacementDemo.ipynb
 /examples/retrievers/composable_retrievers.ipynb
@@ -84,6 +85,7 @@ maxdepth: 1
 /examples/managed/GoogleDemo.ipynb
 /examples/managed/vectaraDemo.ipynb
 /examples/managed/zcpDemo.ipynb
+VideoDB Retriever </examples/retrievers/videodb_retriever.ipynb>
 ```
 
 ### Other Retrievers

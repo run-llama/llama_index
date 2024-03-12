@@ -9,7 +9,7 @@ import os
 import subprocess
 import tempfile
 from collections import defaultdict
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -22,7 +22,9 @@ from llama_index.core.async_utils import asyncio_module
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.constants import DEFAULT_BASE_URL, DEFAULT_PROJECT_NAME
 from llama_index.core.evaluation.base import EvaluationResult
-from llama_index.core.llama_dataset import LabelledRagDataset
+
+if TYPE_CHECKING:
+    from llama_index.core.llama_dataset import LabelledRagDataset
 
 
 async def aget_responses(
@@ -71,8 +73,10 @@ def get_results_df(
     return pd.DataFrame(metric_dict)
 
 
-def _download_llama_dataset_from_hub(llama_dataset_id: str) -> LabelledRagDataset:
+def _download_llama_dataset_from_hub(llama_dataset_id: str) -> "LabelledRagDataset":
     """Uses a subprocess and llamaindex-cli to download a dataset from llama-hub."""
+    from llama_index.core.llama_dataset import LabelledRagDataset
+
     with tempfile.TemporaryDirectory() as tmp:
         try:
             subprocess.run(

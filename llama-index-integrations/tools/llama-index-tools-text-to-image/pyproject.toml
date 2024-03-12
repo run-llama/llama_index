@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["TextToImageToolSpec"]
 contains_example = false
 import_path = "llama_index.tools.text_to_image"
+
+[tool.llamahub.class_authors]
+TextToImageToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,15 +23,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index tools text_to_image integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 maintainers = ["ajhofmann"]
 name = "llama-index-tools-text-to-image"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-llama-index-core = "^0.10.1"
+python = ">=3.9,<4.0"
+llama-index-core = "^0.10.11.post1"
 pillow = "^10.2.0"
 matplotlib = "^3.8.2"
 

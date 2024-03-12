@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["LlamaAPI"]
 contains_example = false
 import_path = "llama_index.llms.llama_api"
+
+[tool.llamahub.class_authors]
+LlamaAPI = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,16 +23,17 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index llms llama api integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-llama-api"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-llama-index-core = "^0.10.1"
+python = ">=3.9,<4.0"
+llama-index-core = "^0.10.11.post1"
 llamaapi = "^0.1.36"
-llama-index-llms-openai = "^0.1.1"
+llama-index-llms-openai = "^0.1.6"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

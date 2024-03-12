@@ -95,6 +95,47 @@ def get_source_files_list(source_tree_url: str, path: str) -> List[str]:
     return [item["name"] for item in payload["tree"]["items"]]
 
 
+def recursive_tree_traverse(
+    tree_urls: List[Tuple[str, str]], acc: List[str], source_tree_url: str
+):
+    """Recursively traversge Github trees to get all file paths in a folder."""
+    if not tree_urls:
+        return acc
+    else:
+        url = tree_urls[0]
+
+        try:
+            res = requests.get(url)
+            tree_elements = res.json()["payload"]["tree"]["items"]
+        except Exception:
+            raise ValueError("Failed to traverse github tree source.")
+
+        new_trees = [
+            source_tree_url + "/" + el["path"]
+            for el in tree_elements
+            if el["contentType"] == "directory"
+        ]
+
+        acc += [
+            el["path"].replace("llama-index-packs/", "/")
+            for el in tree_elements
+            if el["contentType"] == "file"
+        ]
+
+        return recursive_tree_traverse(
+            tree_urls=tree_urls[1:] + new_trees,
+            acc=acc,
+            source_tree_url=source_tree_url,
+        )
+
+
+def get_source_files_recursive(source_tree_url: str, path: str) -> List[str]:
+    """Get source files of a Github folder recursively."""
+    initial_url = source_tree_url + path + "?recursive=1"
+    initial_tree_urls = [initial_url]
+    return recursive_tree_traverse(initial_tree_urls, [], source_tree_url)
+
+
 class ChangeDirectory:
     """Context manager for changing the current working directory."""
 
