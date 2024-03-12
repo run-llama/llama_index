@@ -8,8 +8,8 @@ from typing import Any, List, Optional
 
 import googleapiclient.discovery as discovery
 from google_auth_oauthlib.flow import InstalledAppFlow
-from pydantic import Field
 
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
