@@ -279,6 +279,9 @@
   "LLMQuestionGenerator": "llama_index.core.question_gen",
   "SubQuestionOutputParser": "llama_index.core.question_gen",
   "ReaderConfig": "llama_index.core.readers",
+  "CodeHierarchyAgentPack": "llama_index.packs.code_hierarchy",
+  "CodeHierarchyNodeParser": "llama_index.packs.code_hierarchy",
+  "CodeHierarchyKeywordQueryEngine": "llama_index.packs.code_hierarchy",
   "StringIterableReader": "llama_index.core.readers",
   "ResponseMode": "llama_index.core.response_synthesizers",
   "BaseSynthesizer": "llama_index.core.response_synthesizers",
@@ -903,5 +906,6 @@
   "run_jobs": "llama_index.core.async_utils",
   "DecomposeQueryTransform": "llama_index.core.query.query_transform.base",
   "get_eval_results": "llama_index.core.evaluation.eval_utils",
-  "REPLICATE_MULTI_MODAL_LLM_MODELS": "llama_index.multi_modal_llms.replicate.base"
+  "REPLICATE_MULTI_MODAL_LLM_MODELS": "llama_index.multi_modal_llms.replicate.base",
+  "QueryUnderstandingPack": "llama_index.packs.query_understanding_agent"
 }

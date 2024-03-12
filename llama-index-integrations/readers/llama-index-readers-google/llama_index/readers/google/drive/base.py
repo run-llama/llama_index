@@ -4,7 +4,12 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import List, Optional, Tuple
+
+from google.auth.transport.requests import Request
+from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from pydrive.drive import GoogleDrive
 
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import BaseReader
@@ -52,7 +57,7 @@ class GoogleDriveReader(BaseReader):
             },
         }
 
-    def _get_credentials(self) -> Any:
+    def _get_credentials(self) -> Tuple[Credentials, GoogleDrive]:
         """Authenticate with Google and save credentials.
         Download the credentials.json file with these instructions: https://developers.google.com/drive/api/v3/quickstart/python.
             Copy credentials.json file and rename it to client_secrets.json file which will be used by pydrive for downloading files.
@@ -66,17 +71,13 @@ class GoogleDriveReader(BaseReader):
         """
         from google_auth_oauthlib.flow import InstalledAppFlow
         from pydrive.auth import GoogleAuth
-        from pydrive.drive import GoogleDrive
-
-        from google.auth.transport.requests import Request
-        from google.oauth2 import service_account
-        from google.oauth2.credentials import Credentials
 
         # First, we need the Google API credentials for the app
         creds = None
-        if os.path.exists(self.token_path):
+
+        if Path(self.token_path).exists():
             creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
-        elif os.path.exists(self.credentials_path):
+        elif Path(self.credentials_path).exists():
             creds = service_account.Credentials.from_service_account_file(
                 self.credentials_path, scopes=SCOPES
             )
@@ -84,6 +85,7 @@ class GoogleDriveReader(BaseReader):
             gauth.credentials = creds
             drive = GoogleDrive(gauth)
             return creds, drive
+
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -94,7 +96,7 @@ class GoogleDriveReader(BaseReader):
                 )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open(self.token_path, "w") as token:
+            with open(self.token_path, "w", encoding="utf-8") as token:
                 token.write(creds.to_json())
 
         # Next, we need user authentication to download files (via pydrive)
@@ -122,13 +124,16 @@ class GoogleDriveReader(BaseReader):
         self,
         folder_id: Optional[str] = None,
         file_id: Optional[str] = None,
-        mime_types: Optional[list] = None,
+        mime_types: Optional[List[str]] = None,
+        query_string: Optional[str] = None,
     ) -> List[List[str]]:
         """Get file ids present in folder/ file id
         Args:
             folder_id: folder id of the folder in google drive.
             file_id: file id of the file in google drive
-            mime_types: the mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
+
         Returns:
             metadata: List of metadata of filde ids.
         """
@@ -139,7 +144,7 @@ class GoogleDriveReader(BaseReader):
             fileids_meta = []
             if folder_id:
                 folder_mime_type = "application/vnd.google-apps.folder"
-                query = "'" + folder_id + "' in parents"
+                query = "('" + folder_id + "' in parents)"
 
                 # Add mimeType filter to query
                 if mime_types:
@@ -150,22 +155,38 @@ class GoogleDriveReader(BaseReader):
                     )
                     query += f" and ({mime_query})"
 
-                results = (
-                    service.files()
-                    .list(
-                        q=query,
-                        includeItemsFromAllDrives=True,
-                        supportsAllDrives=True,
-                        fields="*",
+                # Add query string filter
+                if query_string:
+                    # to keep the recursiveness, we need to add folder_mime_type to the mime_types
+                    query += (
+                        f" and ((mimeType='{folder_mime_type}') or ({query_string}))"
                     )
-                    .execute()
-                )
-                items = results.get("files", [])
+
+                items = []
+                # get files taking into account that the results are paginated
+                while True:
+                    results = (
+                        service.files()
+                        .list(
+                            q=query,
+                            includeItemsFromAllDrives=True,
+                            supportsAllDrives=True,
+                            fields="*",
+                        )
+                        .execute()
+                    )
+                    items.extend(results.get("files", []))
+                    page_token = results.get("nextPageToken", None)
+                    if page_token is None:
+                        break
+
                 for item in items:
                     if item["mimeType"] == folder_mime_type:
                         fileids_meta.extend(
                             self._get_fileids_meta(
-                                folder_id=item["id"], mime_types=mime_types
+                                folder_id=item["id"],
+                                mime_types=mime_types,
+                                query_string=query_string,
                             )
                         )
                     else:
@@ -187,7 +208,6 @@ class GoogleDriveReader(BaseReader):
                                 item["modifiedTime"],
                             )
                         )
-
             else:
                 # Get the file details
                 file = (
@@ -217,7 +237,9 @@ class GoogleDriveReader(BaseReader):
             return fileids_meta
 
         except Exception as e:
-            logger.error(f"An error occurred while getting fileids metadata: {e}")
+            logger.error(
+                f"An error occurred while getting fileids metadata: {e}", exc_info=True
+            )
 
     def _download_file(self, fileid: str, filename: str) -> str:
         """Download the file with fileid and filename
@@ -266,7 +288,9 @@ class GoogleDriveReader(BaseReader):
 
             return new_file_name
         except Exception as e:
-            logger.error(f"An error occurred while downloading file: {e}")
+            logger.error(
+                f"An error occurred while downloading file: {e}", exc_info=True
+            )
 
     def _load_data_fileids_meta(self, fileids_meta: List[List[str]]) -> List[Document]:
         """Load data from fileids metadata
@@ -306,14 +330,22 @@ class GoogleDriveReader(BaseReader):
 
             return documents
         except Exception as e:
-            logger.error(f"An error occurred while loading data from fileids meta: {e}")
+            logger.error(
+                f"An error occurred while loading data from fileids meta: {e}",
+                exc_info=True,
+            )
 
     def _load_from_file_ids(
-        self, file_ids: List[str], mime_types: list
+        self,
+        file_ids: List[str],
+        mime_types: Optional[List[str]],
+        query_string: Optional[str],
     ) -> List[Document]:
         """Load data from file ids
         Args:
-            file_ids: file ids of the files in google drive.
+            file_ids: File ids of the files in google drive.
+            mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            query_string: List of query strings to filter the documents, e.g. "name contains 'test'".
 
         Returns:
             Document: List of Documents of text.
@@ -322,46 +354,71 @@ class GoogleDriveReader(BaseReader):
             fileids_meta = []
             for file_id in file_ids:
                 fileids_meta.extend(
-                    self._get_fileids_meta(file_id=file_id, mime_types=mime_types)
+                    self._get_fileids_meta(
+                        file_id=file_id,
+                        mime_types=mime_types,
+                        query_string=query_string,
+                    )
                 )
             return self._load_data_fileids_meta(fileids_meta)
         except Exception as e:
-            logger.error(f"An error occurred while loading with fileid: {e}")
+            logger.error(
+                f"An error occurred while loading with fileid: {e}", exc_info=True
+            )
 
-    def _load_from_folder(self, folder_id: str, mime_types: list) -> List[Document]:
-        """Load data from folder_id
+    def _load_from_folder(
+        self,
+        folder_id: str,
+        mime_types: Optional[List[str]],
+        query_string: Optional[str],
+    ) -> List[Document]:
+        """Load data from folder_id.
+
         Args:
             folder_id: folder id of the folder in google drive.
-            mime_types: the mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
+
         Returns:
             Document: List of Documents of text.
         """
         try:
             fileids_meta = self._get_fileids_meta(
-                folder_id=folder_id, mime_types=mime_types
+                folder_id=folder_id,
+                mime_types=mime_types,
+                query_string=query_string,
             )
             return self._load_data_fileids_meta(fileids_meta)
         except Exception as e:
-            logger.error(f"An error occurred while loading from folder: {e}")
+            logger.error(
+                f"An error occurred while loading from folder: {e}", exc_info=True
+            )
 
     def load_data(
         self,
-        folder_id: str = None,
-        file_ids: List[str] = None,
-        mime_types: List[str] = None,
+        folder_id: Optional[str] = None,
+        file_ids: Optional[List[str]] = None,
+        mime_types: Optional[List[str]] = None,  # Deprecated
+        query_string: Optional[str] = None,
     ) -> List[Document]:
-        """Load data from the folder id and file ids.
+        """Load data from the folder id or file ids.
 
         Args:
-            folder_id: folder id of the folder in google drive.
-            file_ids: file ids of the files in google drive.
-            mime_types: the mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            folder_id: Folder id of the folder in google drive.
+            file_ids: File ids of the files in google drive.
+            mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
+                It gives more flexibility to filter the documents. More info: https://developers.google.com/drive/api/v3/search-files
+
         Returns:
             List[Document]: A list of documents.
         """
         self._creds, self._drive = self._get_credentials()
 
         if folder_id:
-            return self._load_from_folder(folder_id, mime_types)
+            return self._load_from_folder(folder_id, mime_types, query_string)
+        elif file_ids:
+            return self._load_from_file_ids(file_ids, mime_types, query_string)
         else:
-            return self._load_from_file_ids(file_ids, mime_types)
+            logger.warning("Either 'folder_id' or 'file_ids' must be provided.")
+            return []

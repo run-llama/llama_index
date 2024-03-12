@@ -19,6 +19,9 @@ GoogleDriveReader = "ravi03071991"
 GoogleKeepReader = "pycui"
 GoogleSheetsReader = "piroz"
 
+[tool.llamahub.class_contributors]
+GoogleDriveReader = ["metanov"]
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
@@ -31,10 +34,18 @@ description = "llama-index readers google integration"
 exclude = ["**/BUILD"]
 keywords = ["email", "gmail", "google keep", "google notes"]
 license = "MIT"
-maintainers = ["bbornsztein", "jerryjliu", "ong", "piroz", "pycui", "ravi03071991"]
+maintainers = [
+    "bbornsztein",
+    "jerryjliu",
+    "metanov",
+    "ong",
+    "piroz",
+    "pycui",
+    "ravi03071991",
+]
 name = "llama-index-readers-google"
 readme = "README.md"
-version = "0.1.4"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
