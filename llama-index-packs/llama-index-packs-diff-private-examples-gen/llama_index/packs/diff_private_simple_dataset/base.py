@@ -12,16 +12,27 @@ from llama_index.packs.diff_private_simple_dataset.templates import (
     one_shot_chat_template,
     two_shot_chat_template,
     three_shot_chat_template,
-    three_shot_completion_template,
     zero_shot_completion_template,
     refine_chat_template,
+    few_shot_completion_template,
+    single_example_template,
 )
 from llama_index.packs.diff_private_simple_dataset.privacy_mechanism import (
     PrivacyMechanism,
 )
+from functools import reduce
 import numpy as np
 import random
 import tqdm
+
+
+STOP_TOKENS = {"<|endoftext|>", " END", "<|end|>"}
+
+FALLBACK_SYNTHETIC_EXAMPLE = LabelledSimpleDataExample(
+    reference_label="FALLBACK",
+    text="DO NOT USE.",
+    text_by=CreatedBy(type=CreatedByType.HUMAN),
+)
 
 
 class PromptBundle(BaseModel):
@@ -41,6 +52,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         prompt_bundle: PromptBundle,
         simple_dataset: LabelledSimpleDataset,
         chat_mode: bool = False,
+        refine: bool = False,
         show_progress: bool = True,
     ):
         self.llm = llm
@@ -51,6 +63,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         self._num_examples = len(self.simple_dataset.examples)
         self._labels = list({el.reference_label for el in self.simple_dataset[:]})
         self.chat_mode = chat_mode
+        self.refine = refine
         self.show_progress = show_progress
         self.prediction_dataset = None
 
@@ -120,25 +133,31 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             text_heading=self.prompt_bundle.text_heading,
         )
 
-    def _get_prompt(
+    def _get_private_prompt(
         self,
         split: LabelledSimpleDataset,
         synthetic_example: str,
         label: str,
     ) -> str:
         """Get prompt for completion endpoint."""
-        return three_shot_completion_template.format(
-            synthetic_text=synthetic_example,
-            example_label=split.examples[0].reference_label,
-            example_text=split.examples[0].text,
-            second_example_label=split.examples[1].reference_label,
-            second_example_text=split.examples[1].text,
-            third_example_label=split.examples[2].reference_label,
-            third_example_text=split.examples[2].text,
-            label=label,
+        single_templates = [
+            single_example_template.format(
+                label_heading=self.prompt_bundle.label_heading,
+                text_heading=self.prompt_bundle.text_heading,
+                example_label=x.reference_label,
+                example_text=x.text,
+            )
+            for x in split.examples
+        ]
+
+        few_shot_examples = reduce(lambda x, y: x + y, single_templates)
+        return few_shot_completion_template.format(
             instruction=self.prompt_bundle.instruction,
             label_heading=self.prompt_bundle.label_heading,
             text_heading=self.prompt_bundle.text_heading,
+            few_shot_examples=few_shot_examples,
+            label=label,
+            synthetic_text=synthetic_example,
         )
 
     def _get_messages_for_synthetic_generation(
@@ -270,9 +289,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 token_universe_prompt = self._get_public_prompt(
                     synthetic_example=synthetic_example, label=label
                 )
-                print(f"{token_universe_prompt}\n", flush=True)
                 response = self.llm.complete(token_universe_prompt)
-                print(f"response: {response.logprobs}", flush=True)
                 token_universe_probas = {
                     el.token: np.exp(el.logprob)
                     for el in response.logprobs[0]  # only for next immediate token
@@ -302,10 +319,15 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                         if el.token in split_probs:
                             split_probs[el.token] = np.exp(el.logprob)
                 else:
-                    prompt = self._get_prompt(split, synthetic_example, label)
+                    prompt = self._get_private_prompt(split, synthetic_example, label)
                     response = self.llm.complete(prompt)
                     # updating and (rescaling) split probs
-                    for el in response.logprobs[0]:  # for immediate next token only
+                    try:
+                        next_token_proba_distn = response.logprobs[0]
+                    except IndexError:
+                        print(response)
+                        return FALLBACK_SYNTHETIC_EXAMPLE
+                    for el in next_token_proba_distn:  # for immediate next token only
                         if el.token in split_probs:
                             split_probs[el.token] = np.exp(el.logprob)
                 split_probs = self._normalize(
@@ -323,22 +345,26 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
 
             # next token
             next_token = self._mode_of_distribution(noisy_probs)
-            if next_token == "<|end|>":
+            if next_token in STOP_TOKENS:
                 break
             else:
                 synthetic_example += next_token
 
-        if self.show_progress:
-            print(f"synthetic_example: {synthetic_example}", flush=True)
-
         # refinement
-        refined_synthetic_example = self._refine_synthetic_example(
-            synthetic_example=synthetic_example, label=label
-        )
+        if self.refine:
+            synthetic_example = self._refine_synthetic_example(
+                synthetic_example=synthetic_example, label=label
+            )
+
+        # synthetic example remove [RESULT]
+        try:
+            synthetic_example = synthetic_example.split("[RESULT] ")[-1]
+        except Exception as e:
+            synthetic_example = synthetic_example
 
         return LabelledSimpleDataExample(
             reference_label=label,
-            text=refined_synthetic_example,
+            text=synthetic_example,
             text_by=CreatedBy(type=CreatedByType.AI, model_name=self.llm.model),
         )
 
@@ -351,8 +377,10 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         num_samples_per_split: int = 1,
     ) -> LabelledSimpleDataset:
         """Main run method."""
-        if num_samples_per_split not in [1, 2, 3]:
-            raise ValueError("`num_samples_per_split` can only be either 1, 2 or 3.")
+        if num_samples_per_split < 1:
+            raise ValueError(
+                "`num_samples_per_split` must be an integer greater than 1."
+            )
 
         if not all(c in sizes for c in self._labels):
             raise ValueError("Not all labels have sizes.")
