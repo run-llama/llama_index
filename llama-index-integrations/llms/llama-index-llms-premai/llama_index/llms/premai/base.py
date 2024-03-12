@@ -1,4 +1,4 @@
-"""PremAI's API to interact with deployed projects."""
+"""PremAI's API integration with llama-index to interact with deployed projects."""
 
 from typing import Any, Dict, Optional, Sequence, Callable
 
