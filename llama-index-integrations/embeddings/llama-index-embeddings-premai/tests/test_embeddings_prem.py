@@ -3,5 +3,5 @@ from llama_index.embeddings.premai import PremAIEmbeddings
 
 
 def test_embedding_class():
-    emb = PremAIEmbeddings(api_key="fake-key")
+    emb = PremAIEmbeddings(project_id=8, model_name="text-embedding-3-large")
     assert isinstance(emb, BaseEmbedding)
