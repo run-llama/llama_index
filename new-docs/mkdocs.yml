@@ -49,10 +49,12 @@ plugins:
             filters: ["!^_", "!^__init__"]
             docstring_options:
               ignore_init_summary: true
-            merge_init_into_class: true
+            merge_init_into_class: false
             show_signature_annotations: true
             signature_crossrefs: true
             show_root_toc_entry: false
+            show_root_full_path: true
+            show_root_heading: true
           paths:
             - ../llama-index-core
             - ../llama-index-integrations/llms/llama-index-llms-neutrino/
