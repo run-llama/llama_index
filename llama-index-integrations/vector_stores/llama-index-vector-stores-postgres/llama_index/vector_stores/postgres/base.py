@@ -350,12 +350,10 @@ class PGVectorStore(BasePydanticVectorStore):
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
 
-    def _apply_filters_and_limit(
-        self,
-        stmt: Select,
-        limit: int,
-        metadata_filters: Optional[MetadataFilters] = None,
-    ) -> Any:
+    def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
+        """
+        Returns a sqlalchemy where clause.
+        """
         import sqlalchemy
 
         sqlalchemy_conditions = {
@@ -363,31 +361,44 @@ class PGVectorStore(BasePydanticVectorStore):
             "and": sqlalchemy.sql.and_,
         }
 
-        if metadata_filters:
-            if metadata_filters.condition not in sqlalchemy_conditions:
-                raise ValueError(
-                    f"Invalid condition: {metadata_filters.condition}. "
-                    f"Must be one of {list(sqlalchemy_conditions.keys())}"
-                )
-            stmt = stmt.where(  # type: ignore
-                sqlalchemy_conditions[metadata_filters.condition](
-                    *(
-                        (
-                            sqlalchemy.text(
-                                f"metadata_::jsonb->'{filter_.key}' "
-                                f"{self._to_postgres_operator(filter_.operator)} "
-                                f"'[\"{filter_.value}\"]'"
-                            )
-                            if filter_.operator == FilterOperator.IN
-                            else sqlalchemy.text(
-                                f"metadata_->>'{filter_.key}' "
-                                f"{self._to_postgres_operator(filter_.operator)} "
-                                f"'{filter_.value}'"
-                            )
+        if filters.condition not in sqlalchemy_conditions:
+            raise ValueError(
+                f"Invalid condition: {filters.condition}. "
+                f"Must be one of {list(sqlalchemy_conditions.keys())}"
+            )
+
+        return sqlalchemy_conditions[filters.condition](
+            *(
+                (
+                    (
+                        sqlalchemy.text(
+                            f"metadata_::jsonb->'{filter_.key}' "
+                            f"{self._to_postgres_operator(filter_.operator)} "
+                            f"'[\"{filter_.value}\"]'"
                         )
-                        for filter_ in metadata_filters.filters
+                        if filter_.operator == FilterOperator.IN
+                        else sqlalchemy.text(
+                            f"metadata_->>'{filter_.key}' "
+                            f"{self._to_postgres_operator(filter_.operator)} "
+                            f"'{filter_.value}'"
+                        )
                     )
+                    if not isinstance(filter_, MetadataFilters)
+                    else self._recursively_apply_filters(filter_)
                 )
+                for filter_ in filters.filters
+            )
+        )
+
+    def _apply_filters_and_limit(
+        self,
+        stmt: Select,
+        limit: int,
+        metadata_filters: Optional[MetadataFilters] = None,
+    ) -> Any:
+        if metadata_filters:
+            stmt = stmt.where(  # type: ignore
+                self._recursively_apply_filters(metadata_filters)
             )
         return stmt.limit(limit)  # type: ignore
 

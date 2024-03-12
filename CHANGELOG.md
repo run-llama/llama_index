@@ -1,5 +1,55 @@
 # ChangeLog
 
+## [2024-03-07]
+
+### `llama-index-callbacks-deepeval` [0.1.3]
+
+- Update import path for callback handler (#11754)
+
+### `llama-index-core` [0.10.18]
+
+- Ensure `LoadAndSearchToolSpec` loads document objects (#11733)
+- Fixed bug for no nodes in `QueryFusionRetriever` (#11759)
+- Allow using different runtime kwargs for different evaluators in `BatchEvalRunner` (#11727)
+- Fixed issues with fsspec + `SimpleDirectoryReader` (#11665)
+- Remove `asyncio.run()` requirement from guideline evaluator (#11719)
+
+### `llama-index-embeddings-voyageai` [0.1.3]
+
+- Update voyage embeddings to use proper clients (#11721)
+
+### `llama-index-indices-managed-vectara` [0.1.3]
+
+- Fixed issues with vectara query engine in non-summary mode (#11668)
+
+### `llama-index-llms-mymagic` [0.1.5]
+
+- Add `return_output` option for json output with query and response (#11761)
+
+### `llama-index-packs-code-hierarchy` [0.1.0]
+
+- Added support for a `CodeHiearchyAgentPack` that allows for agentic traversal of a codebase (#10671)
+
+### `llama-index-packs-cohere-citation-chat` [0.1.3]
+
+- Added a new llama-pack for citations + chat with cohere (#11697)
+
+### `llama-index-vector-stores-milvus` [0.1.6]
+
+- Prevent forced `flush()` on document add (#11734)
+
+### `llama-index-vector-stores-opensearch` [0.1.7]
+
+- Small typo in metadata column name (#11751)
+
+### `llama-index-vector-stores-tidbvector` [0.1.0]
+
+- Initial support for TiDB vector store (#11635)
+
+### `llama-index-vector-stores-weaviate` [0.1.4]
+
+- Small fix for `int` fields in metadata filters (#11742)
+
 ## [2024-03-06]
 
 New format! Going to try out reporting changes per package.
