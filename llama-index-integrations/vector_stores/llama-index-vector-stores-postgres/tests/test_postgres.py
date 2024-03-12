@@ -269,7 +269,9 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
-                key="test_key", value="('test_value', 'another_value')", operator=FilterOperator.IN
+                key="test_key",
+                value="('test_value', 'another_value')",
+                operator=FilterOperator.IN,
             )
         ]
     )

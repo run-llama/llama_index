@@ -371,13 +371,16 @@ class PGVectorStore(BasePydanticVectorStore):
             *(
                 (
                     sqlalchemy.text(
-                        (
-                            f"metadata_->>'{filter_.key}' "
-                            f"{self._to_postgres_operator(filter_.operator)} "
-                            f"{filter_.value}"
-                            if filter_.operator == FilterOperator.IN
-                            else f"'{filter_.value}'"
-                        )
+                        f"metadata_->>'{filter_.key}' "
+                        f"{self._to_postgres_operator(filter_.operator)} "
+                        # Do not enclose the value in quotes for IN operator
+                        # because we expect a (list of values) as a string
+                        # with the values already enclosed in quotes
+                        # e.g. ('Jane', 'John', 'Jack')
+                        f"{filter_.value}"
+                        if filter_.operator == FilterOperator.IN
+                        # Enclose the value in quotes for other operators
+                        else f"'{filter_.value}'"
                     )
                     if not isinstance(filter_, MetadataFilters)
                     else self._recursively_apply_filters(filter_)
@@ -497,6 +500,7 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
+        # Replace '&' with '|' to perform an OR search for higher recall
         ts_query = func.to_tsquery(
             func.replace(
                 func.text(
