@@ -50,6 +50,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Timescale                |                     | ✓                  |               | ✓      | ✓               | ✓     |
 | Typesense                | self-hosted / cloud | ✓                  |               | ✓      | ✓               |       |
 | Upstash                  | cloud               |                    |               |        | ✓               |       |
+| Vearch                   | self-hosted         | ✓                  |               | ✓      | ✓               |       |
 | Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
@@ -95,6 +96,7 @@ maxdepth: 1
 /examples/vector_stores/TairIndexDemo.ipynb
 /examples/vector_stores/TencentVectorDBIndexDemo.ipynb
 /examples/vector_stores/Timescalevector.ipynb
+/examples/vector_stores/VearchDemo.ipynb
 /examples/vector_stores/WeaviateIndexDemo.ipynb
 /examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
 /examples/vector_stores/ZepIndexDemo.ipynb
