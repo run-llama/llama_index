@@ -135,7 +135,7 @@ def create_retry_decorator(
     random_exponential: bool = False,
     stop_after_delay_seconds: Optional[float] = None,
     min_seconds: float = 4,
-    max_seconds: float = 10,
+    max_seconds: float = 60,
 ) -> Callable[[Any], Any]:
     wait_strategy = (
         wait_random_exponential(min=min_seconds, max=max_seconds)
