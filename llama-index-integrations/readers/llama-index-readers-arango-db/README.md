@@ -1,10 +1,10 @@
-# LlamaIndex Readers Integration: Arango Db
+# LlamaIndex Readers Integration: ArangoDB
 
 ```bash
 pip install llama-index-readers-arango-db
 ```
 
-This loader loads documents from ArangoDB. The user specifies a ArangoDB instance to
+This loader loads documents from [ArangoDB](√https://github.com/arangodb/arangodb?tab=readme-ov-file#arangodb). The user specifies a ArangoDB instance to
 initialize the reader. They then specify the collection name and query params to
 fetch the relevant docs.
 
