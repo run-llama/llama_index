@@ -1,5 +1,7 @@
 # Google Drive Loader
 
+`pip install llama-index-readers-google`
+
 This loader reads files from Google Drive using folder or file ids. To use this loader, you need to pass in a list of file id's or folder id.
 
 ### folder_id
@@ -35,9 +37,7 @@ We need `credentials.json` file to use this reader.
 Finally, make sure you enable "Google Drive API" in the console of your Google App.
 
 ```python
-from llama_index import download_loader
-
-GoogleDriveReader = download_loader("GoogleDriveReader")
+from llama_index.readers.google import GoogleDriveReader
 
 loader = GoogleDriveReader()
 
@@ -48,4 +48,4 @@ documents = loader.load_data(folder_id="folderid")
 documents = loader.load_data(file_ids=["fileid1", "fileid2"])
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index).
