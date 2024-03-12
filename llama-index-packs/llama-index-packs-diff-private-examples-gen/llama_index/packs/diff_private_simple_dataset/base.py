@@ -11,12 +11,17 @@ from llama_index.packs.diff_private_simple_dataset.templates import (
     zero_shot_chat_template,
     one_shot_chat_template,
     two_shot_chat_template,
+    three_shot_chat_template,
+    three_shot_completion_template,
+    zero_shot_completion_template,
+    refine_chat_template,
 )
 from llama_index.packs.diff_private_simple_dataset.privacy_mechanism import (
     PrivacyMechanism,
 )
 import numpy as np
 import random
+import tqdm
 
 
 class PromptBundle(BaseModel):
@@ -31,17 +36,21 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
     def __init__(
         self,
         llm: LLM,  # needs an LLM that produces logprobs one token at a time
+        refine_llm: LLM,
         tokenizer: Any,
         prompt_bundle: PromptBundle,
         simple_dataset: LabelledSimpleDataset,
+        chat_mode: bool = False,
         show_progress: bool = True,
     ):
         self.llm = llm
+        self.refine_llm = refine_llm
         self.tokenizer = tokenizer
         self.prompt_bundle = prompt_bundle
         self.simple_dataset = simple_dataset
         self._num_examples = len(self.simple_dataset.examples)
         self._labels = list({el.reference_label for el in self.simple_dataset[:]})
+        self.chat_mode = chat_mode
         self.show_progress = show_progress
         self.prediction_dataset = None
 
@@ -83,6 +92,20 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             splits.append(LabelledSimpleDataset(examples=examples))
         return splits
 
+    def _get_public_prompt(
+        self,
+        synthetic_example: str,
+        label: str,
+    ) -> str:
+        """Get completion prompt for token universe."""
+        return zero_shot_completion_template.format(
+            synthetic_text=synthetic_example,
+            label=label,
+            instruction=self.prompt_bundle.instruction,
+            label_heading=self.prompt_bundle.label_heading,
+            text_heading=self.prompt_bundle.text_heading,
+        )
+
     def _get_messages_for_reduced_token_universe(
         self,
         synthetic_example: str,
@@ -91,6 +114,27 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         """Get chat messages with instructions to produce the reduced next token universe."""
         return zero_shot_chat_template.format_messages(
             synthetic_text=synthetic_example,
+            label=label,
+            instruction=self.prompt_bundle.instruction,
+            label_heading=self.prompt_bundle.label_heading,
+            text_heading=self.prompt_bundle.text_heading,
+        )
+
+    def _get_prompt(
+        self,
+        split: LabelledSimpleDataset,
+        synthetic_example: str,
+        label: str,
+    ) -> str:
+        """Get prompt for completion endpoint."""
+        return three_shot_completion_template.format(
+            synthetic_text=synthetic_example,
+            example_label=split.examples[0].reference_label,
+            example_text=split.examples[0].text,
+            second_example_label=split.examples[1].reference_label,
+            second_example_text=split.examples[1].text,
+            third_example_label=split.examples[2].reference_label,
+            third_example_text=split.examples[2].text,
             label=label,
             instruction=self.prompt_bundle.instruction,
             label_heading=self.prompt_bundle.label_heading,
@@ -114,7 +158,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 label_heading=self.prompt_bundle.label_heading,
                 text_heading=self.prompt_bundle.text_heading,
             )
-        else:
+        elif len(split.examples) == 2:
             return two_shot_chat_template.format_messages(
                 synthetic_text=synthetic_example,
                 example_label=split.examples[0].reference_label,
@@ -126,10 +170,29 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 label_heading=self.prompt_bundle.label_heading,
                 text_heading=self.prompt_bundle.text_heading,
             )
+        else:
+            return three_shot_chat_template.format_messages(
+                synthetic_text=synthetic_example,
+                example_label=split.examples[0].reference_label,
+                example_text=split.examples[0].text,
+                second_example_label=split.examples[1].reference_label,
+                second_example_text=split.examples[1].text,
+                third_example_label=split.examples[2].reference_label,
+                third_example_text=split.examples[2].text,
+                label=label,
+                instruction=self.prompt_bundle.instruction,
+                label_heading=self.prompt_bundle.label_heading,
+                text_heading=self.prompt_bundle.text_heading,
+            )
 
-    def _normalize(self, split_probs: Dict[str, float]) -> Dict[str, float]:
+    def _normalize(
+        self, split_probs: Dict[str, float], universe_proba: Dict[str, float]
+    ) -> Dict[str, float]:
         """Normalize a probability distribution over tokens to become a valid probability distribution."""
         scale = sum(proba for proba in split_probs.values())
+        if scale == 0:
+            # universe
+            return universe_proba
         return {token: proba / scale for token, proba in split_probs.items()}
 
     def _generate_noise(
@@ -164,6 +227,17 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         """Returns the mode of a given probability distribution."""
         return max(proba, key=proba.get)
 
+    def _refine_synthetic_example(self, synthetic_example: str, label) -> str:
+        refine_messages = refine_chat_template.format_messages(
+            synthetic_text=synthetic_example,
+            label=label,
+            instruction=self.prompt_bundle.instruction,
+            label_heading=self.prompt_bundle.label_heading,
+            text_heading=self.prompt_bundle.text_heading,
+        )
+        response = self.refine_llm.chat(refine_messages)
+        return response.message.content
+
     def generate_dp_synthetic_example(
         self,
         label: str,
@@ -176,26 +250,33 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         delta = 1 / self._num_examples
         synthetic_example = ""
 
-        for _ in range(t_max):
-            print(f"synthetic example: {synthetic_example}\n", flush=True)
-            # reduced token universe
-            token_universe_messages = self._get_messages_for_reduced_token_universe(
-                synthetic_example=synthetic_example, label=label
-            )
-            print(f"token_univer_messages: {token_universe_messages}\n", flush=True)
-            response = self.llm.chat(token_universe_messages)
-            print(f"universe response: {response.logprobs}\n", flush=True)
-            token_universe_probas = {
-                el.token: np.exp(el.logprob)
-                for el in response.logprobs[0]  # only for next immediate token
-            }
-            print(f"universe: {token_universe_probas}\n", flush=True)
-            self.llm.additional_kwargs = {
-                "logit_bias": {
-                    self.tokenizer.encode(token)[0]: 5
-                    for token in token_universe_probas
+        iterator = range(1, t_max + 1)
+        if self.show_progress:
+            iterator = tqdm.tqdm(iterator)
+
+        for max_tokens in iterator:
+            if self.chat_mode:
+                self.llm.max_tokens = max_tokens
+                # reduced token universe
+                token_universe_messages = self._get_messages_for_reduced_token_universe(
+                    synthetic_example=synthetic_example, label=label
+                )
+                response = self.llm.chat(token_universe_messages)
+                token_universe_probas = {
+                    el.token: np.exp(el.logprob)
+                    for el in response.logprobs[-1]  # only for next immediate token
                 }
-            }
+            else:
+                token_universe_prompt = self._get_public_prompt(
+                    synthetic_example=synthetic_example, label=label
+                )
+                print(f"{token_universe_prompt}\n", flush=True)
+                response = self.llm.complete(token_universe_prompt)
+                print(f"response: {response.logprobs}", flush=True)
+                token_universe_probas = {
+                    el.token: np.exp(el.logprob)
+                    for el in response.logprobs[0]  # only for next immediate token
+                }
 
             # filter dataset by label
             filtered_simple_dataset = self._filter_dataset_by_label(label=label)
@@ -211,22 +292,26 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             splits = []
             for split in disjoint_splits:
                 split_probs = {token: 0 for token in token_universe_probas}
-                messages = self._get_messages_for_synthetic_generation(
-                    split, synthetic_example, label
-                )
-                print(f"messages: {messages}\n", flush=True)
-                response = self.llm.chat(messages)
-
-                # updating and (rescaling) split probs
-                for el in response.logprobs[0]:  # for immediate next token only
-                    if el.token in split_probs:
-                        split_probs[el.token] = np.exp(el.logprob)
+                if self.chat_mode:
+                    messages = self._get_messages_for_synthetic_generation(
+                        split, synthetic_example, label
+                    )
+                    response = self.llm.chat(messages)
+                    # updating and (rescaling) split probs
+                    for el in response.logprobs[-1]:  # for immediate next token only
+                        if el.token in split_probs:
+                            split_probs[el.token] = np.exp(el.logprob)
+                else:
+                    prompt = self._get_prompt(split, synthetic_example, label)
+                    response = self.llm.complete(prompt)
+                    # updating and (rescaling) split probs
+                    for el in response.logprobs[0]:  # for immediate next token only
+                        if el.token in split_probs:
+                            split_probs[el.token] = np.exp(el.logprob)
                 split_probs = self._normalize(
-                    split_probs
+                    split_probs, token_universe_probas
                 )  # to make into a valid prob distribution
                 splits.append(split_probs)
-
-            print(f"splits: {splits}\n", flush=True)
 
             # noisy aggrergation
             sigma_calib = np.sqrt(2) / num_splits * sigma
@@ -234,17 +319,26 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 sigma=sigma_calib, size=len(token_universe_probas), mechanism="gaussian"
             )
             merged_probas = self._merge_probas(splits)
-            print(f"merged_probas: {merged_probas}\n", flush=True)
             noisy_probs = self._add_noise(merged_probas, noise_array)
-            print(f"noisy_probs: {noisy_probs}\n\n", flush=True)
 
             # next token
-            synthetic_example += self._mode_of_distribution(noisy_probs) + " "
-            synthetic_example = synthetic_example.lower()
+            next_token = self._mode_of_distribution(noisy_probs)
+            if next_token == "<|end|>":
+                break
+            else:
+                synthetic_example += next_token
+
+        if self.show_progress:
+            print(f"synthetic_example: {synthetic_example}", flush=True)
+
+        # refinement
+        refined_synthetic_example = self._refine_synthetic_example(
+            synthetic_example=synthetic_example, label=label
+        )
 
         return LabelledSimpleDataExample(
             reference_label=label,
-            text=synthetic_example,
+            text=refined_synthetic_example,
             text_by=CreatedBy(type=CreatedByType.AI, model_name=self.llm.model),
         )
 
@@ -257,10 +351,10 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         num_samples_per_split: int = 1,
     ) -> LabelledSimpleDataset:
         """Main run method."""
-        if num_samples_per_split not in [1, 2]:
-            raise ValueError("`num_samples_per_split` can only be either 1 or 2.")
+        if num_samples_per_split not in [1, 2, 3]:
+            raise ValueError("`num_samples_per_split` can only be either 1, 2 or 3.")
 
-        if not all(c is sizes.keys() for c in self._labels):
+        if not all(c in sizes for c in self._labels):
             raise ValueError("Not all labels have sizes.")
 
         examples = []
@@ -276,4 +370,4 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 )
                 examples.append(example)
 
-        return LabelledSimpleDataset(examples=example)
+        return LabelledSimpleDataset(examples=examples)
