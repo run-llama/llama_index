@@ -2,6 +2,7 @@ from llama_index.networks.network.query_engine import NetworkQueryEngine
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.base.response.schema import Response
 from unittest.mock import patch
+import pytest
 
 
 async def return_response():
