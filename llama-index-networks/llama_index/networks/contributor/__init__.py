@@ -6,8 +6,6 @@ from llama_index.networks.contributor.query_engine import (
 )
 
 
-# keep around for backwards compatibility
-
 __all__ = [
     "ContributorClient",
     "ContributorClientSettings",

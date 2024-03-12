@@ -1,17 +1,16 @@
 from llama_index.networks.contributor.query_engine.service import (
     ContributorQueryEngineService,
     ContributorQueryEngineServiceSettings,
+    ContributorService,
+    ContributorServiceSettings,
 )
 from llama_index.networks.contributor.query_engine.client import (
     ContributorQueryEngineClient,
     ContributorQueryEngineClientSettings,
+    ContributorClientSettings,
+    ContributorClient,
 )
 
-# keep for backwards compatibility
-ContributorService = ContributorQueryEngineService
-ContributorServiceSettings = ContributorQueryEngineServiceSettings
-ContributorClient = ContributorQueryEngineClient
-ContributorClientSettings = ContributorQueryEngineClientSettings
 
 __all__ = [
     "ContributorQueryEngineService",

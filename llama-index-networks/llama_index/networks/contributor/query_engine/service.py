@@ -71,3 +71,8 @@ class ContributorQueryEngineService(BaseModel):
     @property
     def app(self):
         return self._fastapi
+
+
+# keep for backwards compatibility
+ContributorService = ContributorQueryEngineService
+ContributorServiceSettings = ContributorQueryEngineServiceSettings

@@ -83,3 +83,8 @@ class ContributorQueryEngineClient(BaseQueryEngine):
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
         return {}
+
+
+# keep for backwards compatibility
+ContributorClient = ContributorQueryEngineClient
+ContributorClientSettings = ContributorQueryEngineClientSettings
