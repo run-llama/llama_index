@@ -906,5 +906,6 @@
   "run_jobs": "llama_index.core.async_utils",
   "DecomposeQueryTransform": "llama_index.core.query.query_transform.base",
   "get_eval_results": "llama_index.core.evaluation.eval_utils",
-  "REPLICATE_MULTI_MODAL_LLM_MODELS": "llama_index.multi_modal_llms.replicate.base"
+  "REPLICATE_MULTI_MODAL_LLM_MODELS": "llama_index.multi_modal_llms.replicate.base",
+  "QueryUnderstandingPack": "llama_index.packs.query_understanding_agent"
 }
