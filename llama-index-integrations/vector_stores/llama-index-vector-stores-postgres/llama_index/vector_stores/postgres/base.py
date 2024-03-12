@@ -371,9 +371,9 @@ class PGVectorStore(BasePydanticVectorStore):
             *(
                 (
                     sqlalchemy.text(
-                        f"metadata_->>'{filter_.key}' "
-                        f"{self._to_postgres_operator(filter_.operator)} "
                         (
+                            f"metadata_->>'{filter_.key}' "
+                            f"{self._to_postgres_operator(filter_.operator)} "
                             f"{filter_.value}"
                             if filter_.operator == FilterOperator.IN
                             else f"'{filter_.value}'"
@@ -497,8 +497,16 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        ts_query = func.plainto_tsquery(
-            type_coerce(self.text_search_config, REGCONFIG), query_str
+        ts_query = func.to_tsquery(
+            func.replace(
+                func.text(
+                    func.plainto_tsquery(
+                        type_coerce(self.text_search_config, REGCONFIG), query_str
+                    )
+                ),
+                "&",
+                "|",
+            )
         )
         stmt = (
             select(  # type: ignore
