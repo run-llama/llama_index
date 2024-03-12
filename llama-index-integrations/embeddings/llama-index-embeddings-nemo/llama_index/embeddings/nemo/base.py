@@ -9,11 +9,24 @@ from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
 )
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 
 
 class NeMoEmbedding(BaseEmbedding):
     """Nvidia NeMo embeddings."""
+
+    model_name: str = Field(
+        default="NV-Embed-QA-003",
+        description="Name of the FastEmbedding model to use.\n"
+        "Defaults to 'NV-Embed-QA-003'.\n",
+    )
+    api_endpoint_url: str = Field(
+        default="http://localhost:8088/v1/embeddings",
+        description="Endpoint of NeMo Embeddings microservice to use",
+    )
+
+    _api_endpoint_url: str = PrivateAttr()
 
     def __init__(
         self,
@@ -23,7 +36,7 @@ class NeMoEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
-        self.api_endpoint_url = api_endpoint_url
+        self._api_endpoint_url = api_endpoint_url
 
         super().__init__(
             model_name=model_name,
@@ -43,7 +56,7 @@ class NeMoEmbedding(BaseEmbedding):
         headers = {"Content-Type": "application/json"}
 
         response = requests.request(
-            "POST", self.api_endpoint_url, headers=headers, data=payload
+            "POST", self._api_endpoint_url, headers=headers, data=payload
         )
         response = json.loads(response.text)
 
@@ -55,8 +68,8 @@ class NeMoEmbedding(BaseEmbedding):
         headers = {"Content-Type": "application/json"}
 
         async with session.post(
-            self.api_endpoint_url,
-            json={"input": text, "model": self.model, "input_type": input_type},
+            self._api_endpoint_url,
+            json={"input": text, "model": self.model_name, "input_type": input_type},
             headers=headers,
         ) as response:
             response.raise_for_status()
@@ -73,10 +86,10 @@ class NeMoEmbedding(BaseEmbedding):
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         return [self._get_embedding(text, input_type="passage") for text in texts]
 
-    def _aget_query_embedding(self, query: str) -> List[float]:
+    async def _aget_query_embedding(self, query: str) -> List[float]:
         async with aiohttp.ClientSession() as session:
             return await self._aget_embedding(session, query, "query")
 
-    def _aget_text_embedding(self, text: str) -> List[float]:
+    async def _aget_text_embedding(self, text: str) -> List[float]:
         async with aiohttp.ClientSession() as session:
             return await self._aget_embedding(session, text, "passage")

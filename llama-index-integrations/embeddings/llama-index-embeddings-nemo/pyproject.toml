@@ -16,6 +16,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index embeddings nemo integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-nemo"
 readme = "README.md"
