@@ -23,6 +23,7 @@ class MyMagicAI(LLM):
     max_tokens: int = Field(
         default=10, description="The maximum number of tokens to generate."
     )
+    question = Field(default="", description="The user question.")
     storage_provider: str = Field(
         default="gcs", description="The storage provider to use."
     )
@@ -35,7 +36,7 @@ class MyMagicAI(LLM):
         description="The session to use. This is a subfolder in the bucket where your data is located.",
     )
     role_arn: Optional[str] = Field(
-        None, description="ARN for role assumption in AWS S3"
+        None, description="ARN for role assumption in AWS S3."
     )
     system_prompt: str = Field(
         default="Answer the question based only on the given content. Do not give explanations or examples. Do not continue generating more text after the answer.",
@@ -43,6 +44,12 @@ class MyMagicAI(LLM):
     )
     question_data: Dict[str, Any] = Field(
         default_factory=dict, description="The data to send to the MyMagicAI API."
+    )
+    region: Optional[str] = Field(
+        "eu-west-2", description="The region the bucket is in. Only used for AWS S3."
+    )
+    return_output: Optional[bool] = Field(
+        False, description="Whether MyMagic API should return the output json"
     )
 
     def __init__(
@@ -53,6 +60,8 @@ class MyMagicAI(LLM):
         session: str,
         system_prompt: Optional[str],
         role_arn: Optional[str] = None,
+        region: Optional[str] = None,
+        return_output: Optional[bool] = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -65,6 +74,8 @@ class MyMagicAI(LLM):
             "max_tokens": self.max_tokens,
             "role_arn": role_arn,
             "system_prompt": system_prompt,
+            "region": region,
+            "return_output": return_output,
         }
 
     @classmethod
@@ -105,11 +116,17 @@ class MyMagicAI(LLM):
             return resp.json()
 
     async def acomplete(
-        self, question: str, model: str, max_tokens: int, poll_interval: float = 1.0
+        self,
+        question: str,
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        poll_interval: float = 1.0,
     ) -> CompletionResponse:
         self.question_data["question"] = question
-        self.question_data["model"] = model
-        self.question_data["max_tokens"] = max_tokens
+        self.model = self.question_data["model"] = model or self.model
+        self.max_tokens = self.question_data["max_tokens"] = (
+            max_tokens or self.max_tokens
+        )
 
         task_response = await self._submit_question(self.question_data)
         task_id = task_response.get("task_id")
@@ -120,11 +137,17 @@ class MyMagicAI(LLM):
             await asyncio.sleep(poll_interval)
 
     def complete(
-        self, question: str, model: str, max_tokens: int, poll_interval: float = 1.0
+        self,
+        question: str,
+        model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        poll_interval: float = 1.0,
     ) -> CompletionResponse:
         self.question_data["question"] = question
-        self.question_data["model"] = model
-        self.question_data["max_tokens"] = max_tokens
+        self.model = self.question_data["model"] = model or self.model
+        self.max_tokens = self.question_data["max_tokens"] = (
+            max_tokens or self.max_tokens
+        )
 
         task_response = self._submit_question_sync(self.question_data)
         task_id = task_response.get("task_id")

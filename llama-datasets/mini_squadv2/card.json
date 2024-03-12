@@ -1,0 +1,27 @@
+{
+  "name": "Mini Squad V2 Dataset",
+  "className": "LabelledRagDataset",
+  "description": "This is a subset of the original SquadV2 dataset. In particular, it considers only the top 10 Wikipedia pages in terms of having questions about them.",
+  "numberObservations": 195,
+  "containsExamplesByHumans": true,
+  "containsExamplesByAi": false,
+  "sourceUrls": ["https://huggingface.co/datasets/squad_v2"],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": 0.878,
+        "correctness": 3.464,
+        "faithfulness": 0.815,
+        "relevancy": 0.697
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/mini_squadv2/llamaindex_baseline.py"
+    }
+  ]
+}

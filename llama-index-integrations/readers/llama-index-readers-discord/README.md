@@ -1,5 +1,9 @@
 # Discord Loader
 
+```bash
+pip install llama-index-readers-discord
+```
+
 This loader loads conversations from Discord. The user specifies `channel_ids` and we fetch conversations from
 those `channel_ids`.
 
@@ -8,10 +12,9 @@ those `channel_ids`.
 Here's an example usage of the DiscordReader.
 
 ```python
-from llama_index import download_loader
 import os
 
-DiscordReader = download_loader("DiscordReader")
+from llama_index.readers.discord import DiscordReader
 
 discord_token = os.getenv("DISCORD_TOKEN")
 channel_ids = [1057178784895348746]  # Replace with your channel_id

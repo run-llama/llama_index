@@ -1,5 +1,9 @@
 # Simple Website Loader
 
+```bash
+pip install llama-index-readers-web
+```
+
 This loader is a simple web scraper that fetches the text from static websites by converting the HTML to text.
 
 ## Usage
@@ -7,9 +11,7 @@ This loader is a simple web scraper that fetches the text from static websites b
 To use this loader, you need to pass in an array of URLs.
 
 ```python
-from llama_index import download_loader
-
-SimpleWebPageReader = download_loader("SimpleWebPageReader")
+from llama_index.readers.web import SimpleWebPageReader
 
 loader = SimpleWebPageReader()
 documents = loader.load_data(urls=["https://google.com"])
@@ -22,9 +24,9 @@ This loader is designed to be used as a way to load data into [LlamaIndex](https
 ### LlamaIndex
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-SimpleWebPageReader = download_loader("SimpleWebPageReader")
+from llama_index.readers.web import SimpleWebPageReader
 
 loader = SimpleWebPageReader()
 documents = loader.load_data(urls=["https://google.com"])
@@ -37,12 +39,12 @@ index.query("What language is on this website?")
 Note: Make sure you change the description of the `Tool` to match your use-case.
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 from langchain.agents import initialize_agent, Tool
 from langchain.llms import OpenAI
 from langchain.chains.conversation.memory import ConversationBufferMemory
 
-SimpleWebPageReader = download_loader("SimpleWebPageReader")
+from llama_index.readers.web import SimpleWebPageReader
 
 loader = SimpleWebPageReader()
 documents = loader.load_data(urls=["https://google.com"])

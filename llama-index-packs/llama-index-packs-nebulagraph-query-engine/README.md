@@ -37,11 +37,15 @@ From here, you can use the pack, or inspect and modify the pack in `./nebulagrap
 
 Then, you can set up the pack like so:
 
+```bash
+pip install llama-index-readers-wikipedia
+```
+
 ```python
 # Load the docs (example of Paleo diet from Wikipedia)
-from llama_index import download_loader
 
-WikipediaReader = download_loader("WikipediaReader")
+from llama_index.readers.wikipedia import WikipediaReader
+
 loader = WikipediaReader()
 docs = loader.load_data(pages=["Paleolithic diet"], auto_suggest=False)
 print(f"Loaded {len(docs)} documents")
@@ -75,7 +79,7 @@ nebulagraph_pack = NebulaGraphQueryEnginePack(
 Optionally, you can pass in the `query_engine_type` from `NebulaGraphQueryEngineType` to construct `NebulaGraphQueryEnginePack`. If `query_engine_type` is not defined, it defaults to Knowledge Graph vector based entity retrieval.
 
 ```python
-from llama_index.packs.nebulagraph_query_engine.base import (
+from llama_index.core.packs.nebulagraph_query_engine.base import (
     NebulaGraphQueryEngineType,
 )
 

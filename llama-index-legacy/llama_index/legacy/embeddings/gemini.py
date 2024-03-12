@@ -18,6 +18,8 @@ class GeminiEmbedding(BaseEmbedding):
             Defaults to "models/embedding-001".
 
         api_key (Optional[str]): API key to access the model. Defaults to None.
+        api_base (Optional[str]): API base to access the model. Defaults to Official Base.
+        transport (Optional[str]): Transport to access the model.
     """
 
     _model: Any = PrivateAttr()
@@ -35,6 +37,8 @@ class GeminiEmbedding(BaseEmbedding):
         model_name: str = "models/embedding-001",
         task_type: Optional[str] = "retrieval_document",
         api_key: Optional[str] = None,
+        api_base: Optional[str] = None,
+        transport: Optional[str] = None,
         title: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,

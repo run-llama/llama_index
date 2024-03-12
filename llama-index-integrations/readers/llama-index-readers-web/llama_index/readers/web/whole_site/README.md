@@ -1,5 +1,9 @@
 # WholeSiteReader
 
+```bash
+pip install llama-index-readers-web
+```
+
 The WholeSiteReader is a sophisticated web scraping tool that employs a breadth-first search (BFS) algorithm. It's designed to methodically traverse and extract content from entire websites, focusing specifically on predefined URL paths.
 
 ## Features
@@ -10,9 +14,8 @@ The WholeSiteReader is a sophisticated web scraping tool that employs a breadth-
 - **Selenium-Based:** Leverages Selenium for dynamic interaction with web pages, supporting JavaScript-rendered content.
 
 ```python
-from llama_index import download_loader
+from llama_index.readers.web import WholeSiteReader
 
-WholeSiteReader = download_loader("WholeSiteReader")
 # Initialize the scraper with a prefix URL and maximum depth
 scraper = WholeSiteReader(
     prefix="https://www.paulgraham.com/", max_depth=10  # Example prefix
@@ -31,9 +34,9 @@ This loader is designed to be used as a way to load data into [LlamaIndex](https
 ### LlamaIndex
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-WholeSiteReader = download_loader("WholeSiteReader")
+from llama_index.readers.web import WholeSiteReader
 
 # Initialize the scraper with a prefix URL and maximum depth
 scraper = WholeSiteReader(
@@ -54,12 +57,12 @@ index.query("What language is on this website?")
 Note: Make sure you change the description of the `Tool` to match your use-case.
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 from langchain.agents import initialize_agent, Tool
 from langchain.llms import OpenAI
 from langchain.chains.conversation.memory import ConversationBufferMemory
 
-WholeSiteReader = download_loader("WholeSiteReader")
+from llama_index.readers.web import WholeSiteReader
 
 # Initialize the scraper with a prefix URL and maximum depth
 scraper = WholeSiteReader(

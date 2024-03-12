@@ -23,15 +23,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers singlestore integration"
+exclude = ["**/BUILD"]
 keywords = ["memsql", "singlestore"]
 license = "MIT"
 maintainers = ["singlestore"]
 name = "llama-index-readers-singlestore"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llama-index-readers-database = "^0.1.1"
 pymysql = "^1.1.0"

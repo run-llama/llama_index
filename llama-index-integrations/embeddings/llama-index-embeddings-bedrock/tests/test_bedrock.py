@@ -73,3 +73,37 @@ class TestBedrockEmbedding(TestCase):
 
         self.bedrock_stubber.assert_no_pending_responses()
         self.assertEqual(embedding, mock_response["embeddings"][0])
+
+    def test_get_text_embedding_batch_cohere(self) -> None:
+        mock_response = {
+            "embeddings": [
+                [0.017410278, 0.040924072, -0.007507324, 0.09429932, 0.015304565],
+                [0.017410278, 0.040924072, -0.007507324, 0.09429932, 0.015304565],
+            ]
+        }
+        mock_request = ["foo bar baz", "foo baz bar"]
+
+        mock_stream = BytesIO(json.dumps(mock_response).encode())
+
+        self.bedrock_stubber.add_response(
+            "invoke_model",
+            {
+                "contentType": "application/json",
+                "body": StreamingBody(mock_stream, len(json.dumps(mock_response))),
+            },
+        )
+
+        bedrock_embedding = BedrockEmbedding(
+            model=Models.COHERE_EMBED_ENGLISH_V3,
+            client=self.bedrock_client,
+        )
+
+        self.bedrock_stubber.activate()
+        embedding = bedrock_embedding.get_text_embedding_batch(texts=mock_request)
+
+        self.bedrock_stubber.deactivate()
+
+        self.assertEqual(len(embedding), 2)
+
+        for i in range(2):
+            self.assertEqual(embedding[i], mock_response["embeddings"][i])

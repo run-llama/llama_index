@@ -1,9 +1,9 @@
 """Local RAG CLI Pack."""
 
+from llama_index.cli.rag import RagCLI
 from llama_index.core.ingestion import IngestionPipeline, IngestionCache
 from llama_index.core.query_pipeline.query import QueryPipeline
 from llama_index.core.storage.docstore import SimpleDocumentStore
-from llama_index.core.command_line.rag import RagCLI
 from llama_index.core.text_splitter import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
