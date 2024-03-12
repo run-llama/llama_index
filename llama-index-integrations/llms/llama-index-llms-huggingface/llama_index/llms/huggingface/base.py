@@ -312,9 +312,7 @@ class HuggingFaceLLM(CustomLLM):
                 inputs.pop(key, None)
 
         streamer = TextIteratorStreamer(
-            self._tokenizer,
-            skip_prompt=True,
-            decode_kwargs={"skip_special_tokens": True},
+            self._tokenizer, skip_prompt=True, skip_special_tokens=True
         )
         generation_kwargs = dict(
             inputs,

@@ -367,6 +367,7 @@
   "CrossEncoderFinetuneEngine": "llama_index.finetuning.cross_encoders",
   "CohereRerankerFinetuneDataset": "llama_index.finetuning.rerankers",
   "SingleStoreVectorStore": "llama_index.vector_stores.singlestoredb",
+  "TiDBVectorStore": "llama_index.vector_stores.tidbvector",
   "QdrantVectorStore": "llama_index.vector_stores.qdrant",
   "PineconeVectorStore": "llama_index.vector_stores.pinecone",
   "DuckDBVectorStore": "llama_index.vector_stores.duckdb",

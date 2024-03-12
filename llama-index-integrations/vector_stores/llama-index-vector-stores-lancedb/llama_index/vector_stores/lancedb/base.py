@@ -154,6 +154,9 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
+        if not nodes:
+            _logger.debug("No nodes to add. Skipping the database operation.")
+            return []
         data = []
         ids = []
         for node in nodes:
@@ -186,7 +189,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         """
         table = self._connection.open_table(self.table_name)
-        table.delete('document_id = "' + ref_doc_id + '"')
+        table.delete('doc_id = "' + ref_doc_id + '"')
 
     def query(
         self,

@@ -1,5 +1,160 @@
 # ChangeLog
 
+## [2024-03-12]
+
+### `llama-index-cli` [0.1.9]
+
+- Removed chroma as a bundled dep to reduce `llama-index` deps
+
+### `llama-index-core` [0.10.19]
+
+- Introduce retries for rate limits in `OpenAI` llm class (#11867)
+- Added table comments to SQL table schemas in `SQLDatabase` (#11774)
+- Added `LogProb` type to `ChatResponse` object (#11795)
+- Introduced `LabelledSimpleDataset` (#11805)
+- Fixed insert `IndexNode` objects with unserializable objects (#11836)
+- Fixed stream chat type error when writing response to history in `CondenseQuestionChatEngine` (#11856)
+- Improve post-processing for json query engine (#11862)
+
+### `llama-index-embeddings-cohere` [0.1.4]
+
+- Fixed async kwarg error (#11822)
+
+### `llama-index-embeddings-dashscope` [0.1.2]
+
+- Fixed pydantic import (#11765)
+
+### `llama-index-graph-stores-neo4j` [0.1.3]
+
+- Properly close connection after verifying connectivity (#11821)
+
+### `llama-index-llms-cohere` [0.1.3]
+
+- Add support for new `command-r` model (#11852)
+
+### `llama-index-llms-huggingface` [0.1.4]
+
+- Fixed streaming decoding with special tokens (#11807)
+
+### `llama-index-llms-mistralai` [0.1.5]
+
+- Added support for latest and open models (#11792)
+
+### `llama-index-tools-finance` [0.1.1]
+
+- Fixed small bug when passing in the API get for stock news (#11772)
+
+### `llama-index-vector-stores-chroma` [0.1.6]
+
+- Slimmed down chroma deps (#11775)
+
+### `llama-index-vector-stores-lancedb` [0.1.3]
+
+- Fixes for deleting (#11825)
+
+### `llama-index-vector-stores-postgres` [0.1.3]
+
+- Support for nested metadata filters (#11778)
+
+## [2024-03-07]
+
+### `llama-index-callbacks-deepeval` [0.1.3]
+
+- Update import path for callback handler (#11754)
+
+### `llama-index-core` [0.10.18]
+
+- Ensure `LoadAndSearchToolSpec` loads document objects (#11733)
+- Fixed bug for no nodes in `QueryFusionRetriever` (#11759)
+- Allow using different runtime kwargs for different evaluators in `BatchEvalRunner` (#11727)
+- Fixed issues with fsspec + `SimpleDirectoryReader` (#11665)
+- Remove `asyncio.run()` requirement from guideline evaluator (#11719)
+
+### `llama-index-embeddings-voyageai` [0.1.3]
+
+- Update voyage embeddings to use proper clients (#11721)
+
+### `llama-index-indices-managed-vectara` [0.1.3]
+
+- Fixed issues with vectara query engine in non-summary mode (#11668)
+
+### `llama-index-llms-mymagic` [0.1.5]
+
+- Add `return_output` option for json output with query and response (#11761)
+
+### `llama-index-packs-code-hierarchy` [0.1.0]
+
+- Added support for a `CodeHiearchyAgentPack` that allows for agentic traversal of a codebase (#10671)
+
+### `llama-index-packs-cohere-citation-chat` [0.1.3]
+
+- Added a new llama-pack for citations + chat with cohere (#11697)
+
+### `llama-index-vector-stores-milvus` [0.1.6]
+
+- Prevent forced `flush()` on document add (#11734)
+
+### `llama-index-vector-stores-opensearch` [0.1.7]
+
+- Small typo in metadata column name (#11751)
+
+### `llama-index-vector-stores-tidbvector` [0.1.0]
+
+- Initial support for TiDB vector store (#11635)
+
+### `llama-index-vector-stores-weaviate` [0.1.4]
+
+- Small fix for `int` fields in metadata filters (#11742)
+
+## [2024-03-06]
+
+New format! Going to try out reporting changes per package.
+
+### `llama-index-cli` [0.1.8]
+
+- Update mappings for `upgrade` command (#11699)
+
+### `llama-index-core` [0.10.17]
+
+- add `relative_score` and `dist_based_score` to `QueryFusionRetriever` (#11667)
+- check for `none` in async agent queue (#11669)
+- allow refine template for `BaseSQLTableQueryEngine` (#11378)
+- update mappings for llama-packs (#11699)
+- fixed index error for extracting rel texts in KG index (#11695)
+- return proper response types from synthesizer when no nodes (#11701)
+- Inherit metadata to summaries in DocumentSummaryIndex (#11671)
+- Inherit callback manager in sql query engines (#11662)
+- Fixed bug with agent streaming not being written to chat history (#11675)
+- Fixed a small bug with `none` deltas when streaming a function call with an agent (#11713)
+
+### `llama-index-multi-modal-llms-anthropic` [0.1.2]
+
+- Added support for new multi-modal models `haiku` and `sonnet` (#11656)
+
+### `llama-index-packs-finchat` [0.1.0]
+
+- Added a new llama-pack for hierarchical agents + finance chat (#11387)
+
+### `llama-index-readers-file` [0.1.8]
+
+- Added support for checking if NLTK files are already downloaded (#11676)
+
+### `llama-index-readers-json` [0.1.4]
+
+- Use the metadata passed in when creating documents (#11626)
+
+### `llama-index-vector-stores-astra-db` [0.1.4]
+
+- Update wording in warning message (#11702)
+
+### `llama-index-vector-stores-opensearch` [0.1.7]
+
+- Avoid calling `nest_asyncio.apply()` in code to avoid confusing errors for users (#11707)
+
+### `llama-index-vector-stores-qdrant` [0.1.4]
+
+- Catch RPC errors (#11657)
+
 ## [0.10.16] - 2024-03-05
 
 ### New Features
