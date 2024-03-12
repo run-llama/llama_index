@@ -217,6 +217,14 @@ class BaseIndex(Generic[IS], ABC):
 
     def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert nodes."""
+        for node in nodes:
+            if isinstance(node, IndexNode):
+                try:
+                    node.dict()
+                except ValueError:
+                    self._object_map[node.index_id] = node.obj
+                    node.obj = None
+
         with self._callback_manager.as_trace("insert_nodes"):
             self.docstore.add_documents(nodes, allow_update=True)
             self._insert(nodes, **insert_kwargs)
