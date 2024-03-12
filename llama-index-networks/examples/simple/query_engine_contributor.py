@@ -73,10 +73,11 @@ query_engine = index.as_query_engine(llm=llm)
 
 if __name__ == "__main__":
     from llama_index.networks.contributor.query_engine import (
-        ContributorService as QueryEngineContributorService,
+        ContributorQueryEngineService,
     )
+    import uvicorn
 
-    query_engine_service = QueryEngineContributorService.from_config_file(
+    query_engine_service = ContributorQueryEngineService.from_config_file(
         ".env.contributor.service", query_engine=query_engine
     )
     query_engine_app = query_engine_service.app

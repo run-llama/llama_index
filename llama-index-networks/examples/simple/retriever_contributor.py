@@ -72,12 +72,10 @@ index = VectorStoreIndex(nodes=nodes, embed_model=embed_model)
 retriever = index.as_retriever()
 
 if __name__ == "__main__":
-    from llama_index.networks.contributor.retriever import (
-        ContributorService as RetrieverContributorService,
-    )
+    from llama_index.networks.contributor.retriever import ContributorRetrieverService
     import uvicorn
 
-    retriever_service = RetrieverContributorService.from_config_file(
+    retriever_service = ContributorRetrieverService.from_config_file(
         ".env.contributor.service", retriever=retriever
     )
     retriever_app = retriever_service.app
@@ -87,4 +85,4 @@ if __name__ == "__main__":
     # async def custom_endpoint_logic():
     #   ...
 
-    uvicorn.run(retriever_app, host="0.0.0.0", port=800, log_level="debug")
+    uvicorn.run(retriever_app, host="0.0.0.0", port=8000, log_level="debug")
