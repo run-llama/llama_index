@@ -3,11 +3,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from deprecated import deprecated
-<<<<<<< HEAD
 from llama_index.core.base.llms.types import ChatMessage, LogProb, CompletionResponse
-=======
-from llama_index.core.base.llms.types import ChatMessage, LogProb
->>>>>>> 3a84a6cab (add logprob)
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from tenacity import (
@@ -26,11 +22,8 @@ from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageT
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
-<<<<<<< HEAD
 from openai.types.completion_choice import Logprobs
 from openai.types.completion import Completion
-=======
->>>>>>> 3a84a6cab (add logprob)
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -276,7 +269,6 @@ def from_openai_token_logprob(
     openai_token_logprob: ChatCompletionTokenLogprob,
 ) -> List[LogProb]:
     """Convert a single openai token logprob to generic list of logprobs."""
-<<<<<<< HEAD
     try:
         result = [
             LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
@@ -286,12 +278,6 @@ def from_openai_token_logprob(
         print(openai_token_logprob)
         raise
     return result
-=======
-    return [
-        LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes)
-        for el in openai_token_logprob.top_logprobs
-    ]
->>>>>>> 3a84a6cab (add logprob)
 
 
 def from_openai_token_logprobs(
@@ -304,7 +290,6 @@ def from_openai_token_logprobs(
     ]
 
 
-<<<<<<< HEAD
 def from_openai_completion_logprob(
     openai_completion_logprob: Dict[str, float]
 ) -> List[LogProb]:
@@ -330,8 +315,6 @@ def from_openai_completion(openai_completion: Completion) -> CompletionResponse:
     text = openai_completion.choices[0].text
 
 
-=======
->>>>>>> 3a84a6cab (add logprob)
 def from_openai_messages(
     openai_messages: Sequence[ChatCompletionMessage],
 ) -> List[ChatMessage]:

@@ -145,6 +145,7 @@ class OpenAI(LLM):
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
+        is_chat_model: Optional[bool] = None,
         max_retries: int = 3,
         timeout: float = 60.0,
         reuse_client: bool = True,
@@ -449,6 +450,7 @@ class OpenAI(LLM):
             stream=False,
             **all_kwargs,
         )
+        print(f"raw response: {response}", flush=True)
         text = response.choices[0].text
 
         openai_completion_logprobs = response.choices[0].logprobs
