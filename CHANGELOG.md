@@ -2,6 +2,10 @@
 
 ## [2024-03-12]
 
+### `llama-index-cli` [0.1.9]
+
+- Removed chroma as a bundled dep to reduce `llama-index` deps
+
 ### `llama-index-core` [0.10.19]
 
 - Introduce retries for rate limits in `OpenAI` llm class (#11867)
