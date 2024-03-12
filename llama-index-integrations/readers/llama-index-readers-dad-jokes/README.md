@@ -1,5 +1,9 @@
 # DadJoke Loader
 
+```bash
+pip install llama-index-readers-dad-jokes
+```
+
 This loader fetches a joke from icanhazdadjoke.
 
 ## Usage
@@ -7,9 +11,7 @@ This loader fetches a joke from icanhazdadjoke.
 To use this loader, load it.
 
 ```python
-from llama_index import download_loader
-
-DadJokesReader = download_loader("DadJokesReader")
+from llama_index.readers.dad_jokes import DadJokesReader
 
 loader = DadJokesReader()
 documents = loader.load_data()

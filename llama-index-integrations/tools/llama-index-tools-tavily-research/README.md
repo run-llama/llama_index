@@ -20,7 +20,7 @@ Here's an example usage of the TavilyToolSpec.
 
 ```python
 from llama_index.tools.tavily_research import TavilyToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tavily_tool = TavilyToolSpec(
     api_key="your-key",

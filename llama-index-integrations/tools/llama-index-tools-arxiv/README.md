@@ -10,7 +10,7 @@ Here's an example usage of the ArxivToolSpec.
 
 ```python
 from llama_index.tools.arxiv import ArxivToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = ArxivToolSpec()
 
