@@ -1,8 +1,20 @@
 from typing import Optional, List, Dict, Any, Type
-from llama_index.core.schema import NodeWithScore, TextNode, BaseNode
+from llama_index.core.schema import (
+    NodeWithScore,
+    TextNode,
+    BaseNode,
+    IndexNode,
+    ImageNode,
+)
 from llama_index.core.base.response.schema import Response
 from llama_index.core.bridge.pydantic import BaseModel
 from pydantic import BaseModel as V2BaseModel
+
+NODE_REGISTRY: Dict[str, Type[BaseNode]] = {
+    "TextNode": TextNode,
+    "IndexNode": IndexNode,
+    "ImageNode": ImageNode,
+}
 
 
 class ContributorQueryRequest(V2BaseModel):
@@ -24,9 +36,6 @@ class ContributorQueryResponse(BaseModel):
 
 class ContributorRetrieverRequest(V2BaseModel):
     query: str
-
-
-NODE_REGISTRY: Dict[str, Type[BaseNode]] = {"TextNode": TextNode}
 
 
 class ContributorRetrieverResponse(BaseModel):
