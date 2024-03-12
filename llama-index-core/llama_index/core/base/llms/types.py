@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, AsyncGenerator, Generator, Optional, Union
+from typing import Any, AsyncGenerator, Generator, Optional, Union, List
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -40,6 +40,14 @@ class ChatMessage(BaseModel):
         return cls(role=role, content=content, **kwargs)
 
 
+class LogProb(BaseModel):
+    """LogProb of a token."""
+
+    token: str = Field(default_factory=str)
+    logprob: float = Field(default_factory=float)
+    bytes: List[int] = Field(default_factory=list)
+
+
 # ===== Generic Model Output - Chat =====
 class ChatResponse(BaseModel):
     """Chat response."""
@@ -47,6 +55,7 @@ class ChatResponse(BaseModel):
     message: ChatMessage
     raw: Optional[dict] = None
     delta: Optional[str] = None
+    logprobs: Optional[List[List[LogProb]]] = None
     additional_kwargs: dict = Field(default_factory=dict)
 
     def __str__(self) -> str:

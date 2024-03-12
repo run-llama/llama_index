@@ -199,7 +199,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         # Insert the data into milvus
         self._collection.insert(insert_list)
-        self._collection.flush()
+        if add_kwargs.get("force_flush", False):
+            self._collection.flush()
         self._create_index_if_required()
         logger.debug(
             f"Successfully inserted embeddings into: {self.collection_name} "

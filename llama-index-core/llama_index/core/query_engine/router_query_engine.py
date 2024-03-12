@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, List, Optional, Sequence
+from typing import Callable, List, Optional, Sequence, Any
 
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -146,6 +146,7 @@ class RouterQueryEngine(BaseQueryEngine):
         select_multi: bool = False,
         # deprecated
         service_context: Optional[ServiceContext] = None,
+        **kwargs: Any,
     ) -> "RouterQueryEngine":
         llm = llm or llm_from_settings_or_context(Settings, llm)
 
@@ -158,6 +159,7 @@ class RouterQueryEngine(BaseQueryEngine):
             query_engine_tools,
             service_context=service_context,
             summarizer=summarizer,
+            **kwargs,
         )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:

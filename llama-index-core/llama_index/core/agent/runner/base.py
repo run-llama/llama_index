@@ -528,7 +528,10 @@ class AgentRunner(BaseAgentRunner):
             # ensure tool_choice does not cause endless loops
             tool_choice = "auto"
 
-        return self.finalize_response(task.task_id, result_output)
+        return self.finalize_response(
+            task.task_id,
+            result_output,
+        )
 
     async def _achat(
         self,
@@ -556,7 +559,10 @@ class AgentRunner(BaseAgentRunner):
             # ensure tool_choice does not cause endless loops
             tool_choice = "auto"
 
-        return self.finalize_response(task.task_id, result_output)
+        return self.finalize_response(
+            task.task_id,
+            result_output,
+        )
 
     @trace_method("chat")
     def chat(
