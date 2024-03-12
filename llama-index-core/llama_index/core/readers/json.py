@@ -116,7 +116,7 @@ class JSONReader(BaseReader):
                         line for line in lines if not re.match(r"^[{}\[\],]*$", line)
                     ]
                     documents.append(
-                        Document(text="".join(useful_lines), metadata=extra_info)
+                        Document(text="\n".join(useful_lines), metadata=extra_info)
                     )
 
                 elif self.levels_back is None and self.clean_json is False:
