@@ -1,12 +1,12 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.base.llms.generic_utils import (
     prompt_to_messages,
 )
-from llama_index.llms.anthropic.utils import messages_to_anthropic_prompt
+from llama_index.llms.anthropic.utils import messages_to_anthropic_messages
 from llama_index.llms.bedrock.llama_utils import (
     completion_to_prompt as completion_to_llama_prompt,
 )
@@ -109,14 +109,21 @@ class Ai21Provider(Provider):
 
 
 def completion_to_anthopic_prompt(completion: str) -> str:
-    return messages_to_anthropic_prompt(prompt_to_messages(completion))
+    return messages_to_anthropic_messages(prompt_to_messages(completion))
+
+
+def _messages_to_anthropic_messages(messages: Sequence[ChatMessage]) -> List[dict]:
+    messages, system_prompt = messages_to_anthropic_messages(messages)
+    if system_prompt:
+        messages = [{"role": "system", "content": system_prompt}, *messages]
+    return messages
 
 
 class AnthropicProvider(Provider):
     max_tokens_key = "max_tokens"
 
     def __init__(self) -> None:
-        self.messages_to_prompt = messages_to_anthropic_prompt
+        self.messages_to_prompt = _messages_to_anthropic_messages
         self.completion_to_prompt = completion_to_anthopic_prompt
 
     def get_text_from_stream_response(self, response: dict) -> str:
@@ -129,6 +136,18 @@ class AnthropicProvider(Provider):
         return response["content"][0]["text"]
 
     def get_request_body(self, prompt: Sequence[Dict], inference_parameters: dict):
+        if len(prompt) > 0 and prompt[0]["role"] == "system":
+            system_message = prompt[0]["content"]
+            prompt = prompt[1:]
+
+            if (
+                "system" in inference_parameters
+                and inference_parameters["system"] is not None
+            ):
+                inference_parameters["system"] += system_message
+            else:
+                inference_parameters["system"] = system_message
+
         return {
             "messages": prompt,
             "anthropic_version": inference_parameters.get(
