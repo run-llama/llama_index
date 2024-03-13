@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["OpenAIImageGenerationToolSpec"]
 contains_example = false
 import_path = "llama_index.tools.openai"
+
+[tool.llamahub.class_authors]
+OpenAIImageGenerationToolSpec = "manelferreira_"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,15 +23,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index tools openai_image_generation integration"
+exclude = ["**/BUILD"]
 keywords = ["cv", "gpt-3", "image", "openai", "vision"]
 license = "MIT"
 maintainers = ["manelferreira_"]
 name = "llama-index-tools-openai-image-generation"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 
 [tool.poetry.group.dev.dependencies]

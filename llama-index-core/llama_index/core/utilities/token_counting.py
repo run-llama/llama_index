@@ -3,7 +3,7 @@
 
 from typing import Any, Callable, Dict, List, Optional
 
-from llama_index.core.llms import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.utils import get_tokenizer
 
 

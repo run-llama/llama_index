@@ -2,6 +2,10 @@
 
 ## playgrounds_subgraph_connector
 
+```bash
+pip install llama-index-tools-playgrounds
+```
+
 Playgrounds API is a service provided by [Playgrounds Analytics](https://playgrounds.network) to streamline interfacing with decentralized subgraphs (indexed blockchain datasets).
 
 The `PlaygroundsSubgraphConnector` is a tool designed for LLM agents to seamlessly interface with and query subgraphs on The Graph's decentralized network via Playgrounds API.
@@ -23,10 +27,8 @@ To utilize the tool, simply initialize it with the appropriate `identifier` (Sub
 
 ```python
 import openai
-from llama_index.agent import OpenAIAgent
-from llama_index.tools.playgrounds_subgraph_connector import (
-    PlaygroundsSubgraphConnectorToolSpec,
-)
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.tools.playgrounds import PlaygroundsSubgraphConnectorToolSpec
 
 
 def simple_test():
@@ -85,10 +87,8 @@ To utilize the tool, initialize it with the appropriate `identifier` (Subgraph I
 
 ```python
 import openai
-from llama_index.agent import OpenAIAgent
-from llama_index.tools.playgrounds_subgraph_inspector import (
-    PlaygroundsSubgraphInspectorToolSpec,
-)
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.tools.playgrounds import PlaygroundsSubgraphInspectorToolSpec
 
 
 def inspect_subgraph(

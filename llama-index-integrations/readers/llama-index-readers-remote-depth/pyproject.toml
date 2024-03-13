@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["RemoteDepthReader"]
 contains_example = false
 import_path = "llama_index.readers.remote_depth"
+
+[tool.llamahub.class_authors]
+RemoteDepthReader = "simonMoisselin"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,16 +23,17 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers remote_depth integration"
+exclude = ["**/BUILD"]
 keywords = ["hosted", "multiple", "url"]
 license = "MIT"
 maintainers = ["simonMoisselin"]
 name = "llama-index-readers-remote-depth"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
-llama-index-core = "^0.10.1"
+llama-index-core = "^0.10.11.post1"
 llama-index-readers-remote = "^0.1.1"
 
 [tool.poetry.group.dev.dependencies]

@@ -34,11 +34,11 @@ from llama_index.core.base.query_pipeline.query import (
     validate_and_convert_stringable,
 )
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.llms.base import BaseLLM
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as default_messages_to_prompt,
 )
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.generic_utils import (
     prompt_to_messages,
 )
 from llama_index.core.prompts.prompt_type import PromptType
@@ -245,6 +245,20 @@ class ChatPromptTemplate(BasePromptTemplate):
             template_var_mappings=template_var_mappings,
             function_mappings=function_mappings,
         )
+
+    @classmethod
+    def from_messages(
+        cls,
+        message_templates: Union[List[Tuple[str, str]], List[ChatMessage]],
+        **kwargs: Any,
+    ) -> "ChatPromptTemplate":
+        """From messages."""
+        if isinstance(message_templates[0], tuple):
+            message_templates = [
+                ChatMessage.from_str(role=role, content=content)
+                for role, content in message_templates
+            ]
+        return cls(message_templates=message_templates, **kwargs)
 
     def partial_format(self, **kwargs: Any) -> "ChatPromptTemplate":
         prompt = deepcopy(self)

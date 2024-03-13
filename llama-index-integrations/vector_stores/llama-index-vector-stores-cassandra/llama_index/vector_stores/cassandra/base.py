@@ -9,6 +9,7 @@ import logging
 from typing import Any, Dict, Iterable, List, Optional, TypeVar, cast
 
 from cassio.table import ClusteredMetadataVectorCassandraTable
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_mmr_embeddings,
 )
@@ -16,10 +17,10 @@ from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
+    BasePydanticVectorStore,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -45,7 +46,7 @@ def _batch_iterable(iterable: Iterable[T], batch_size: int) -> Iterable[Iterable
         yield this_batch
 
 
-class CassandraVectorStore(VectorStore):
+class CassandraVectorStore(BasePydanticVectorStore):
     """
     Cassandra Vector Store.
 
@@ -83,6 +84,14 @@ class CassandraVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    _session: Optional[Any] = PrivateAttr()
+    _keyspace: Optional[Any] = PrivateAttr()
+    _table: str = PrivateAttr()
+    _embedding_dimension: int = PrivateAttr()
+    _ttl_seconds: Optional[int] = PrivateAttr()
+    _insertion_batch_size: int = PrivateAttr()
+    _vector_table: ClusteredMetadataVectorCassandraTable = PrivateAttr()
+
     def __init__(
         self,
         table: str,
@@ -93,6 +102,8 @@ class CassandraVectorStore(VectorStore):
         ttl_seconds: Optional[int] = None,
         insertion_batch_size: int = DEFAULT_INSERTION_BATCH_SIZE,
     ) -> None:
+        super().__init__()
+
         self._session = session
         self._keyspace = keyspace
         self._table = table
@@ -101,7 +112,7 @@ class CassandraVectorStore(VectorStore):
         self._insertion_batch_size = insertion_batch_size
 
         _logger.debug("Creating the Cassandra table")
-        self.vector_table = ClusteredMetadataVectorCassandraTable(
+        self._vector_table = ClusteredMetadataVectorCassandraTable(
             session=self._session,
             keyspace=self._keyspace,
             table=self._table,
@@ -153,7 +164,7 @@ class CassandraVectorStore(VectorStore):
             ) in insertion_batch:
                 node_ref_doc_id = node_metadata["ref_doc_id"]
                 futures.append(
-                    self.vector_table.put_async(
+                    self._vector_table.put_async(
                         row_id=node_id,
                         body_blob=node_content,
                         vector=node_embedding,
@@ -176,14 +187,14 @@ class CassandraVectorStore(VectorStore):
 
         """
         _logger.debug("Deleting a document from the Cassandra table")
-        self.vector_table.delete_partition(
+        self._vector_table.delete_partition(
             partition_id=ref_doc_id,
         )
 
     @property
     def client(self) -> Any:
         """Return the underlying cassIO vector table object."""
-        return self.vector_table
+        return self._vector_table
 
     @staticmethod
     def _query_filters_to_dict(query_filters: MetadataFilters) -> Dict[str, Any]:
@@ -237,7 +248,7 @@ class CassandraVectorStore(VectorStore):
         )
         if query.mode == VectorStoreQueryMode.DEFAULT:
             matches = list(
-                self.vector_table.metric_ann_search(
+                self._vector_table.metric_ann_search(
                     vector=query_embedding,
                     n=query.similarity_top_k,
                     metric="cos",
@@ -267,7 +278,7 @@ class CassandraVectorStore(VectorStore):
             prefetch_k = max(prefetch_k0, query.similarity_top_k)
             #
             prefetch_matches = list(
-                self.vector_table.metric_ann_search(
+                self._vector_table.metric_ann_search(
                     vector=query_embedding,
                     n=prefetch_k,
                     metric="cos",

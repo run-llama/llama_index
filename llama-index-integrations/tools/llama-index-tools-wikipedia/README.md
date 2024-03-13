@@ -8,7 +8,7 @@ This tool has more extensive example usage documented in a Jupyter notebook [her
 
 ```python
 from llama_index.tools.wikipedia import WikipediaToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = WikipediaToolSpec()
 

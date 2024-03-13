@@ -8,9 +8,23 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AsyncWebPageReader", "BeautifulSoupWebReader", "KnowledgeBaseWebReader", "MainContentExtractorReader", "NewsArticleReader", "ReadabilityWebPageReader", "RssNewsReader", "RssReader", "SimpleWebPageReader", "SitemapReader", "TrafilaturaWebReader", "UnstructuredURLLoader", "WholeSiteReader"]
 contains_example = false
 import_path = "llama_index.readers.web"
+
+[tool.llamahub.class_authors]
+AsyncWebPageReader = "Hironsan"
+BeautifulSoupWebReader = "thejessezhang"
+KnowledgeBaseWebReader = "jasonwcfan"
+MainContentExtractorReader = "HawkClaws"
+NewsArticleReader = "ruze00"
+ReadabilityWebPageReader = "pandazki"
+RssNewsReader = "ruze00"
+RssReader = "bborn"
+SimpleWebPageReader = "thejessezhang"
+SitemapReader = "selamanse"
+TrafilaturaWebReader = "NA"
+UnstructuredURLLoader = "kravetsmic"
+WholeSiteReader = "an-bluecat"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,15 +35,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers web integration"
+exclude = ["**/BUILD"]
 keywords = ["BFS", "article", "atom", "documentation", "feed", "main content extractor", "news", "readthedocs", "rss", "scraper", "selenium", "seo", "sitemap", "substack", "trafilatura", "unstructured.io", "url", "web reader", "web", "website"]
 license = "MIT"
 maintainers = ["HawkClaws", "Hironsan", "NA", "an-bluecat", "bborn", "jasonwcfan", "kravetsmic", "pandazki", "ruze00", "selamanse", "thejessezhang"]
 name = "llama-index-readers-web"
 readme = "README.md"
-version = "0.1.5"
+version = "0.1.6"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 selenium = "^4.17.2"
 chromedriver-autoinstaller = "^0.6.3"

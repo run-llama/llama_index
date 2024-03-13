@@ -8,7 +8,7 @@ import asyncio
 import os
 import time
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from llama_index.readers.github.repository.github_client import (
     GitBlobResponseModel,
@@ -146,7 +146,7 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
 
         if self._verbose:
             start_t = time.time()
-        results: List[GitBlobResponseModel] = await asyncio.gather(
+        results: List[Optional[GitBlobResponseModel]] = await asyncio.gather(
             *[
                 self._github_client.get_blob(self._owner, self._repo, blob.sha)
                 for blob, _ in self._blobs_and_paths[
@@ -154,6 +154,9 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
                 ]  # TODO: use batch_size instead of buffer_size for concurrent requests
             ]
         )
+
+        filtered_results = [result for result in results if result is not None]
+
         if self._verbose:
             end_t = time.time()
             blob_names_and_sizes = [
@@ -167,5 +170,7 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
 
         self._buffer = [
             (result, path)
-            for result, (_, path) in zip(results, self._blobs_and_paths[start:end])
+            for result, (_, path) in zip(
+                filtered_results, self._blobs_and_paths[start:end]
+            )
         ]

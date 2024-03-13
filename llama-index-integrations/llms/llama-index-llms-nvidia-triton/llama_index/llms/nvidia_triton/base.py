@@ -8,7 +8,7 @@ from typing import (
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.llms.base import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
@@ -19,7 +19,7 @@ from llama_index.core.llms.base import (
     LLMMetadata,
 )
 from llama_index.core.llms.callbacks import llm_chat_callback
-from llama_index.core.llms.generic_utils import (
+from llama_index.core.base.llms.generic_utils import (
     completion_to_chat_decorator,
 )
 from llama_index.core.llms.llm import LLM

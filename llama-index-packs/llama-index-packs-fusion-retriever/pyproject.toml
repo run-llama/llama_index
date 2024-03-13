@@ -8,9 +8,12 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["HybridFusionRetrieverPack", "QueryRewritingRetrieverPack"]
 contains_example = false
 import_path = "llama_index.packs.fusion_retriever"
+
+[tool.llamahub.class_authors]
+HybridFusionRetrieverPack = "jerryjliu"
+QueryRewritingRetrieverPack = "jerryjliu"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,15 +24,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs fusion_retriever integration"
+exclude = ["**/BUILD"]
 keywords = ["fusion", "hybrid", "query", "retriever", "rewriting"]
 license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-packs-fusion-retriever"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 rank-bm25 = "^0.2.2"
 llama-index-retrievers-bm25 = "^0.1.1"

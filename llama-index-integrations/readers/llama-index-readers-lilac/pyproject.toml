@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["LilacReader"]
 contains_example = false
 import_path = "llama_index.readers.lilac"
+
+[tool.llamahub.class_authors]
+LilacReader = "nsthorat"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,15 +23,16 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers lilac integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 maintainers = ["nsthorat"]
 name = "llama-index-readers-lilac"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-llama-index-core = "^0.10.1"
+python = ">=3.9,<4.0"
+llama-index-core = "^0.10.11.post1"
 lilac = ">=0.1.5,<0.2.0"
 
 [tool.poetry.group.dev.dependencies]

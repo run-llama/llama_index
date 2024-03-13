@@ -1,5 +1,9 @@
 # Readwise Reader
 
+```bash
+pip install llama-index-readers-readwise
+```
+
 Use Readwise's export API to fetch your highlights from web articles, epubs, pdfs, Kindle, YouTube, and load the resulting text into LLMs.
 
 ## Setup
@@ -12,9 +16,10 @@ Here is an example usage of the Readwise Reader:
 
 ```python
 import os
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-ReadwiseReader = download_loader("ReadwiseReader")
+from llama_index.readers.readwise import ReadwiseReader
+
 token = os.getenv("READWISE_API_KEY")
 loader = ReadwiseReader(api_key=token)
 documents = loader.load_data()
@@ -28,9 +33,10 @@ You can also query for highlights that have been created after a certain time:
 ```python
 import os
 import datetime
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-ReadwiseReader = download_loader("ReadwiseReader")
+from llama_index.readers.readwise import ReadwiseReader
+
 token = os.getenv("READWISE_API_KEY")
 loader = ReadwiseReader(api_key=token)
 seven_days_ago = datetime.datetime.now() - datetime.timedelta(days=7)

@@ -8,9 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["RemoteReader"]
 contains_example = false
 import_path = "llama_index.readers.remote"
+
+[tool.llamahub.class_authors]
+RemoteReader = "thejessezhang"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,17 +23,18 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers remote integration"
+exclude = ["**/BUILD"]
 keywords = ["gutenberg", "hosted", "url"]
 license = "MIT"
 maintainers = ["thejessezhang"]
 name = "llama-index-readers-remote"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
-llama-index-core = "^0.10.1"
-llama-index-readers-youtube-transcript = "^0.1.1"
+python = ">=3.8.1,<4.0"
+llama-index-core = "^0.10.11.post1"
+llama-index-readers-youtube-transcript = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

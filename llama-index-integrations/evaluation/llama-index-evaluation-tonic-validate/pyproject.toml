@@ -8,9 +8,17 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["AnswerConsistencyBinaryEvaluator", "AnswerConsistencyEvaluator", "AnswerSimilarityEvaluator", "AugmentationAccuracyEvaluator", "AugmentationPrecisionEvaluator", "RetrievalPrecisionEvaluator", "TonicValidateEvaluator"]
 contains_example = false
 import_path = "llama_index.evaluation.tonic_validate"
+
+[tool.llamahub.class_authors]
+AnswerConsistencyBinaryEvaluator = "llama-index"
+AnswerConsistencyEvaluator = "llama-index"
+AnswerSimilarityEvaluator = "llama-index"
+AugmentationAccuracyEvaluator = "llama-index"
+AugmentationPrecisionEvaluator = "llama-index"
+RetrievalPrecisionEvaluator = "llama-index"
+TonicValidateEvaluator = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,13 +29,14 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index evaluation tonic validate integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-evaluation-tonic-validate"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 tonic-validate = "^2.1.1"
 

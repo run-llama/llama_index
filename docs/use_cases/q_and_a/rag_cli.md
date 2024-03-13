@@ -112,6 +112,8 @@ import os
 from llama_index.core.ingestion import IngestionPipeline, IngestionCache
 from llama_index.core.query_pipeline import QueryPipeline
 from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.cli.rag import RagCLI
+
 
 # optional, set any API keys your script may need (perhaps using python-dotenv library instead)
 os.environ["OPENAI_API_KEY"] = "sk-xxx"

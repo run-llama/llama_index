@@ -227,13 +227,11 @@ class SemanticSplitterNodeParser(NodeParser):
             start_index = 0
 
             for index in indices_above_threshold:
-                end_index = index - 1
-
-                group = sentences[start_index : end_index + 1]
+                group = sentences[start_index : index + 1]
                 combined_text = "".join([d["sentence"] for d in group])
                 chunks.append(combined_text)
 
-                start_index = index
+                start_index = index + 1
 
             if start_index < len(sentences):
                 combined_text = "".join(

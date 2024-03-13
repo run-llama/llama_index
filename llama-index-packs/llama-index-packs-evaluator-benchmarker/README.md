@@ -32,8 +32,8 @@ single-grading evaluation — in this case, the usage flow remains the same.
 from llama_index.core.llama_dataset import download_llama_dataset
 from llama_index.core.llama_pack import download_llama_pack
 from llama_index.core.evaluation import PairwiseComparisonEvaluator
-from llama_index.core.llms import OpenAI
-from llama_index import ServiceContext
+from llama_index.llms.openai import OpenAI
+from llama_index.core import ServiceContext
 
 # download a LabelledRagDataset from llama-hub
 pairwise_dataset = download_llama_dataset(

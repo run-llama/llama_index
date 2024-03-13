@@ -21,7 +21,7 @@ which makes it hard to load directly.
 We will show you how to import the agent from these files!
 
 ```python
-from llama_index.llama_pack import download_llama_pack
+from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
 download_llama_pack("LocalRAGCLIPack", "./local_rag_cli_pack", skip_load=True)

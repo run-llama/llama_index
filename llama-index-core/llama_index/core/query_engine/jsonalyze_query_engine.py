@@ -80,7 +80,7 @@ def default_jsonalyzer(
     try:
         # Load list of dictionaries into SQLite database
         db[table_name].insert_all(list_of_dict)
-    except sqlite_utils.db_exceptions.IntegrityError as exc:
+    except sqlite_utils.utils.sqlite3.IntegrityError as exc:
         print_text(f"Error inserting into table {table_name}, expected format:")
         print_text("[{col1: val1, col2: val2, ...}, ...]")
         raise ValueError("Invalid list_of_dict") from exc
@@ -105,7 +105,7 @@ def default_jsonalyzer(
     try:
         # Execute the SQL query
         results = list(db.query(sql_query))
-    except sqlite_utils.db_exceptions.OperationalError as exc:
+    except sqlite_utils.utils.sqlite3.OperationalError as exc:
         print_text(f"Error executing query: {sql_query}")
         raise ValueError("Invalid query") from exc
 
@@ -148,7 +148,7 @@ async def async_default_jsonalyzer(
     try:
         # Load list of dictionaries into SQLite database
         db[table_name].insert_all(list_of_dict)
-    except sqlite_utils.db_exceptions.IntegrityError as exc:
+    except sqlite_utils.utils.sqlite3.IntegrityError as exc:
         print_text(f"Error inserting into table {table_name}, expected format:")
         print_text("[{col1: val1, col2: val2, ...}, ...]")
         raise ValueError("Invalid list_of_dict") from exc
@@ -173,7 +173,7 @@ async def async_default_jsonalyzer(
     try:
         # Execute the SQL query
         results = list(db.query(sql_query))
-    except sqlite_utils.db_exceptions.OperationalError as exc:
+    except sqlite_utils.utils.sqlite3.OperationalError as exc:
         print_text(f"Error executing query: {sql_query}")
         raise ValueError("Invalid query") from exc
 
