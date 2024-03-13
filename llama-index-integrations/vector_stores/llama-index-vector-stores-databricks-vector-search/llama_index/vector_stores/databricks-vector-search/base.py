@@ -122,6 +122,7 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
     _index_type: str = PrivateAttr()
     _delta_sync_index_spec: dict = PrivateAttr()
     _direct_access_index_spec: dict = PrivateAttr()
+    _doc_id_to_pk: dict = PrivateAttr()
 
     def __init__(
         self,
@@ -152,7 +153,12 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         self._index_type = index_description.index_type
         self._delta_sync_index_spec = index_description.delta_sync_index_spec
         self._direct_access_index_spec = index_description.direct_access_index_spec
+        self._doc_id_to_pk = {}
 
+        if columns is None:
+            columns = []
+        if "doc_id" not in columns:
+            columns = columns[:19] + ["doc_id"]
         super().__init__(
             text_column=text_column,
             columns=columns,
@@ -226,10 +232,12 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
                     for col in filter(
                         lambda column: column
                         not in (self._primary_key, self.text_column),
-                        self.columns or [],
+                        self.columns + ["doc_id"] or ["doc_id"], # explicitly record doc_id as metadata (for delete)
                     )
                 },
             }
+            doc_id = metadata.get("doc_id")
+            self._doc_id_to_pk[doc_id] = list(set(self._doc_id_to_pk.get(doc_id, []) + [node_id])) # associate this node_id with this doc_id
 
             entries.append(entry)
             ids.append(node_id)
@@ -272,9 +280,12 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self._index.delete(
-            primary_keys=[ref_doc_id],
-        )
+        primary_keys = self._doc_id_to_pk.get(ref_doc_id, None) # get the node_ids associated with the doc_id
+        if primary_keys is not None:
+            self._index.delete(
+                primary_keys=primary_keys,
+            )
+            self._doc_id_to_pk.pop(ref_doc_id) # remove this doc_id from the doc_id-to-node_id map
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
