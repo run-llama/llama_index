@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.mongodb"
+import_path = "llama_index.vector_stores.awsdocdb"
 
 [tool.llamahub.class_authors]
 MongoDBAtlasVectorSearch = "llama-index"
@@ -21,11 +21,11 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index vector_stores mongodb integration"
+authors = ["Prajwal Saokar <prajwal.saokar@gmail.com>", "Vidur Modgil", "vmod2005@gmail.com"]
+description = "llama-index vector_stores awsdocdb integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-mongodb"
+name = "llama-index-vector-stores-awsdocdb"
 readme = "README.md"
 version = "0.1.4"
 
