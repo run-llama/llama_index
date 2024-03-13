@@ -152,8 +152,10 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         noise_rng = np.random.RandomState()
         if mechanism == PrivacyMechanism.GAUSSIAN:
             return noise_rng.normal(0, sigma, size=size)
+        elif mechanism == PrivacyMechanism.LAPLACE:
+            return noise_rng.exponential(scale=sigma, size=size)
         else:
-            return 0.0  # not yet implemented
+            raise ValueError("Value entered for `mechanism` is not supported.")
 
     def _merge_probas(self, list_of_probas: List[Dict[str, float]]) -> Dict[str, float]:
         """Merges a set of probabillity distributions over a common token universe."""
