@@ -75,9 +75,7 @@ SimpleDirectoryReader(input_files=["path/to/file1", "path/to/file2"])
 or you can pass a list of file paths to **include** using `include`:
 
 ```python
-SimpleDirectoryReader(
-    input_dir="path/to/directory", include=["**/tests/**"]
-)
+SimpleDirectoryReader(input_dir="path/to/directory", include=["**/tests/**"])
 ```
 
 or you can pass a list of file paths to **exclude** using `exclude`:

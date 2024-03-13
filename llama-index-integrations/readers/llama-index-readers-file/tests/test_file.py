@@ -312,7 +312,9 @@ def test_included_files() -> None:
                     f.write("test4")
 
                     reader = SimpleDirectoryReader(
-                        tmp_dir, recursive=True, include=["test1.txt","test2.txt","test3.txt"]
+                        tmp_dir,
+                        recursive=True,
+                        include=["test1.txt", "test2.txt", "test3.txt"],
                     )
                     input_file_names = [f.name for f in reader.input_files]
                     assert len(reader.input_files) == 3
@@ -335,7 +337,9 @@ def test_included_files() -> None:
         with open(f"{tmp_dir}/test5.txt", "w") as f:
             f.write("test5")
 
-        reader = SimpleDirectoryReader(tmp_dir, recursive=False, include=["*.txt"], exclude=["test5.txt"])
+        reader = SimpleDirectoryReader(
+            tmp_dir, recursive=False, include=["*.txt"], exclude=["test5.txt"]
+        )
         input_file_names = [f.name for f in reader.input_files]
         assert len(reader.input_files) == 4
         assert input_file_names == ["test2.txt", "test3.txt", "test4.txt"]
@@ -354,7 +358,10 @@ def test_included_files() -> None:
                     f.write("test4")
 
                     reader = SimpleDirectoryReader(
-                        tmp_dir, recursive=True, include=["*.txt"], exclude=["test4.txt"]
+                        tmp_dir,
+                        recursive=True,
+                        include=["*.txt"],
+                        exclude=["test4.txt"],
                     )
                     input_file_names = [f.name for f in reader.input_files]
                     assert len(reader.input_files) == 2
