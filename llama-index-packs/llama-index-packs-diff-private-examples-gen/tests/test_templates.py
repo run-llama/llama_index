@@ -1,11 +1,11 @@
+from llama_index.core.llama_dataset.simple import (
+    LabelledSimpleDataExample,
+)
 from llama_index.packs.diff_private_simple_dataset.templates import (
     few_shot_completion_template,
     single_example_template,
 )
 from llama_index.packs.diff_private_simple_dataset.base import PromptBundle
-from llama_index.packs.diff_private_simple_dataset.simple_dataset import (
-    LabelledSimpleDataExample,
-)
 from functools import reduce
 
 

@@ -3,7 +3,7 @@ from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import LLM
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llama_dataset.base import CreatedBy, CreatedByType
-from llama_index.packs.diff_private_simple_dataset.simple_dataset import (
+from llama_index.core.llama_dataset.simple import (
     LabelledSimpleDataset,
     LabelledSimpleDataExample,
 )

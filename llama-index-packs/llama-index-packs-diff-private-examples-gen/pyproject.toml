@@ -19,6 +19,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index packs diff private simple dataset"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-packs-diff-private-simple-dataset"
 packages = [{include = "llama_index/"}]
@@ -27,8 +28,8 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
-llama-index-core = {develop = true, path = "/Users/nerdai/Projects/llama_index/llama-index-core/"}
-llama-index-llms-openai = {develop = true, path = "/Users/nerdai/Projects/llama_index/llama-index-integrations/llms/llama-index-llms-openai/"}
+llama-index-core = "^0.10.19"
+llama-index-llms-openai = "^0.1.9"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
