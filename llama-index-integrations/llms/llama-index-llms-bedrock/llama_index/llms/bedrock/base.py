@@ -199,7 +199,7 @@ class Bedrock(LLM):
             "temperature": self.temperature,
             self._provider.max_tokens_key: self.max_tokens,
         }
-        if type(self._provider) is AnthropicProvider:
+        if type(self._provider) is AnthropicProvider and self.system_prompt:
             base_kwargs["system"] = self.system_prompt
         return {
             **base_kwargs,
