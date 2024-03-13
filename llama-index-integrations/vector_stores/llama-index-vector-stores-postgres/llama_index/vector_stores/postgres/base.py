@@ -345,7 +345,7 @@ class PGVectorStore(BasePydanticVectorStore):
         elif operator == FilterOperator.LTE:
             return "<="
         elif operator == FilterOperator.IN:
-            return "@>"
+            return "IN"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -370,18 +370,17 @@ class PGVectorStore(BasePydanticVectorStore):
         return sqlalchemy_conditions[filters.condition](
             *(
                 (
-                    (
-                        sqlalchemy.text(
-                            f"metadata_::jsonb->'{filter_.key}' "
-                            f"{self._to_postgres_operator(filter_.operator)} "
-                            f"'[\"{filter_.value}\"]'"
-                        )
+                    sqlalchemy.text(
+                        f"metadata_->>'{filter_.key}' "
+                        f"{self._to_postgres_operator(filter_.operator)} "
+                        # Do not enclose the value in quotes for IN operator
+                        # because we expect a (list of values) as a string
+                        # with the values already enclosed in quotes
+                        # e.g. ('Jane', 'John', 'Jack')
+                        f"{filter_.value}"
                         if filter_.operator == FilterOperator.IN
-                        else sqlalchemy.text(
-                            f"metadata_->>'{filter_.key}' "
-                            f"{self._to_postgres_operator(filter_.operator)} "
-                            f"'{filter_.value}'"
-                        )
+                        # Enclose the value in quotes for other operators
+                        else f"'{filter_.value}'"
                     )
                     if not isinstance(filter_, MetadataFilters)
                     else self._recursively_apply_filters(filter_)
@@ -501,8 +500,17 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        ts_query = func.plainto_tsquery(
-            type_coerce(self.text_search_config, REGCONFIG), query_str
+        # Replace '&' with '|' to perform an OR search for higher recall
+        ts_query = func.to_tsquery(
+            func.replace(
+                func.text(
+                    func.plainto_tsquery(
+                        type_coerce(self.text_search_config, REGCONFIG), query_str
+                    )
+                ),
+                "&",
+                "|",
+            )
         )
         stmt = (
             select(  # type: ignore

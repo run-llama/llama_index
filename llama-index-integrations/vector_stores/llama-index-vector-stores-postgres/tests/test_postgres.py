@@ -269,7 +269,9 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
-                key="test_key_list", value="test_value", operator=FilterOperator.IN
+                key="test_key",
+                value="('test_value', 'another_value')",
+                operator=FilterOperator.IN,
             )
         ]
     )
@@ -282,7 +284,7 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
         res = pg.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
-    assert res.nodes[0].node_id == "ccc"
+    assert res.nodes[0].node_id == "bbb"
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
