@@ -109,7 +109,8 @@ class Ai21Provider(Provider):
 
 
 def completion_to_anthopic_prompt(completion: str) -> str:
-    return messages_to_anthropic_messages(prompt_to_messages(completion))
+    messages, _ = messages_to_anthropic_messages(prompt_to_messages(completion))
+    return messages
 
 
 def _messages_to_anthropic_messages(messages: Sequence[ChatMessage]) -> List[dict]:
