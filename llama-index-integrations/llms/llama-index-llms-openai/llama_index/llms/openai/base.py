@@ -449,7 +449,6 @@ class OpenAI(LLM):
             stream=False,
             **all_kwargs,
         )
-        print(f"raw response: {response}", flush=True)
         text = response.choices[0].text
 
         openai_completion_logprobs = response.choices[0].logprobs
