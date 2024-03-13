@@ -61,6 +61,7 @@ def get_text_embedding(
 
     Returns:
         List[List[float]]: The list of embedding result, if failed return empty list.
+            if some of test no output, the correspond index of output is None.
     """
     try:
         import dashscope
@@ -68,13 +69,13 @@ def get_text_embedding(
         raise ImportError("DashScope requires `pip install dashscope")
     if isinstance(text, str):
         text = [text]
-    embedding_results = []
     response = dashscope.TextEmbedding.call(
         model=model, input=text, api_key=api_key, kwargs=kwargs
     )
+    embedding_results = [None] * len(text)
     if response.status_code == HTTPStatus.OK:
         for emb in response.output["embeddings"]:
-            embedding_results.append(emb["embedding"])
+            embedding_results[emb["text_index"]] = emb["embedding"]
     else:
         logger.error("Calling TextEmbedding failed, details: %s" % response)
 
@@ -172,12 +173,14 @@ class DashScopeEmbedding(MultiModalEmbedding):
         model_name: str = DashScopeTextEmbeddingModels.TEXT_EMBEDDING_V2,
         text_type: str = "document",
         api_key: Optional[str] = None,
+        embed_batch_size: int = EMBED_MAX_BATCH_SIZE,
         **kwargs: Any,
     ) -> None:
         self._api_key = api_key
         self._text_type = text_type
         super().__init__(
             model_name=model_name,
+            embed_batch_size=embed_batch_size,
             **kwargs,
         )
 
@@ -191,9 +194,9 @@ class DashScopeEmbedding(MultiModalEmbedding):
             self.model_name,
             query,
             api_key=self._api_key,
-            text_type=self._text_type,
+            text_type="query",
         )
-        if len(emb) > 0:
+        if len(emb) > 0 and emb[0] is not None:
             return emb[0]
         else:
             return []
@@ -206,7 +209,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
             api_key=self._api_key,
             text_type=self._text_type,
         )
-        if len(emb) > 0:
+        if len(emb) > 0 and emb[0] is not None:
             return emb[0]
         else:
             return []
