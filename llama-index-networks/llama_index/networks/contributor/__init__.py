@@ -1,9 +1,6 @@
-from llama_index.networks.contributor.client import (
+from llama_index.networks.contributor.query_engine import (
     ContributorClient,
     ContributorClientSettings,
-)
-
-from llama_index.networks.contributor.service import (
     ContributorService,
     ContributorServiceSettings,
 )

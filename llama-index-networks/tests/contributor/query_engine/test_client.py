@@ -1,25 +1,25 @@
 from unittest.mock import MagicMock, patch
-from llama_index.networks import (
-    ContributorClient,
-    ContributorClientSettings,
+from llama_index.networks.contributor.query_engine import (
+    ContributorQueryEngineClient,
+    ContributorQueryEngineClientSettings,
 )
 from llama_index.core.settings import Settings
 
 
-@patch("llama_index.networks.contributor.client.requests")
+@patch("llama_index.networks.contributor.query_engine.client.requests")
 def test_contributor_client(mock_requests):
     # arrange
     result_mock = MagicMock()
     result_mock.status_code = 200
     result_mock.json.return_value = {
         "response": "Mock response",
-        "souce_nodes": [],
+        "source_nodes": [],
         "metadata": None,
     }
     mock_requests.post.return_value = result_mock
 
-    settings = ContributorClientSettings(api_url="fake-url")
-    client = ContributorClient(
+    settings = ContributorQueryEngineClientSettings(api_url="fake-url")
+    client = ContributorQueryEngineClient(
         config=settings, callback_manager=Settings.callback_manager
     )
 
