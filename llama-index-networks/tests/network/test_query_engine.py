@@ -1,4 +1,4 @@
-from llama_index.networks.query_engine.network_query_engine import NetworkQueryEngine
+from llama_index.networks.network.query_engine import NetworkQueryEngine
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.base.response.schema import Response
 from unittest.mock import patch
@@ -8,7 +8,9 @@ async def return_response():
     return Response(response="mock contributor response", metadata={"score": 0.5})
 
 
-@patch("llama_index.networks.contributor.client.ContributorClient")
+@patch(
+    "llama_index.networks.contributor.query_engine.client.ContributorQueryEngineClient"
+)
 def test_network_query_engine(mock_contributor):
     # arange
     llm = MockLLM()

@@ -17,7 +17,7 @@ from llama_index.core.settings import (
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.core.llms import LLM
-from llama_index.networks.contributor.client import ContributorClient
+from llama_index.networks.contributor.query_engine import ContributorQueryEngineClient
 import asyncio
 
 
@@ -26,7 +26,7 @@ class NetworkQueryEngine(BaseQueryEngine):
 
     def __init__(
         self,
-        contributors: List[ContributorClient],
+        contributors: List[ContributorQueryEngineClient],
         response_synthesizer: Optional[BaseSynthesizer] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
@@ -39,7 +39,7 @@ class NetworkQueryEngine(BaseQueryEngine):
     @classmethod
     def from_args(
         cls,
-        contributors: List[ContributorClient],
+        contributors: List[ContributorQueryEngineClient],
         llm: Optional[LLM] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         # response synthesizer args
@@ -131,6 +131,6 @@ class NetworkQueryEngine(BaseQueryEngine):
         return response
 
     @property
-    def contributors(self) -> List[ContributorClient]:
+    def contributors(self) -> List[ContributorQueryEngineClient]:
         """Get the retriever object."""
         return self._contributors

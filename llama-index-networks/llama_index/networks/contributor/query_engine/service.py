@@ -8,7 +8,7 @@ from pydantic.v1 import BaseSettings, PrivateAttr
 from fastapi import FastAPI
 
 
-class ContributorServiceSettings(BaseSettings):
+class ContributorQueryEngineServiceSettings(BaseSettings):
     api_version: str = Field(default="v1", description="API version.")
     secret: Optional[str] = Field(
         default=None, description="JWT secret."
@@ -19,9 +19,9 @@ class ContributorServiceSettings(BaseSettings):
         env_file = ".env", ".env.contributor.service"
 
 
-class ContributorService(BaseModel):
+class ContributorQueryEngineService(BaseModel):
     query_engine: Optional[BaseQueryEngine]
-    config: ContributorServiceSettings
+    config: ContributorQueryEngineServiceSettings
     _fastapi: FastAPI = PrivateAttr()
 
     class Config:
@@ -58,8 +58,8 @@ class ContributorService(BaseModel):
     @classmethod
     def from_config_file(
         cls, env_file: str, query_engine: BaseQueryEngine
-    ) -> "ContributorService":
-        config = ContributorServiceSettings(_env_file=env_file)
+    ) -> "ContributorQueryEngineService":
+        config = ContributorQueryEngineServiceSettings(_env_file=env_file)
         return cls(query_engine=query_engine, config=config)
 
     def __getattr__(self, attr) -> Any:
@@ -71,3 +71,8 @@ class ContributorService(BaseModel):
     @property
     def app(self):
         return self._fastapi
+
+
+# keep for backwards compatibility
+ContributorService = ContributorQueryEngineService
+ContributorServiceSettings = ContributorQueryEngineServiceSettings

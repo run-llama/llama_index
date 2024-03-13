@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
-from llama_index.networks import (
-    ContributorService,
-    ContributorServiceSettings,
+from llama_index.networks.contributor.query_engine import (
+    ContributorQueryEngineService,
+    ContributorQueryEngineServiceSettings,
 )
 from llama_index.core.query_engine.custom import CustomQueryEngine
 
@@ -20,9 +20,11 @@ class MockQueryEngine(CustomQueryEngine):
 
 def test_contributor_service_index():
     # arrange
-    config = ContributorServiceSettings()
+    config = ContributorQueryEngineServiceSettings()
     mock_query_engine = MockQueryEngine()
-    service = ContributorService(query_engine=mock_query_engine, config=config)
+    service = ContributorQueryEngineService(
+        query_engine=mock_query_engine, config=config
+    )
     test_client = TestClient(service.app)
 
     # act
@@ -35,9 +37,11 @@ def test_contributor_service_index():
 
 def test_contributor_service_query():
     # arrange
-    config = ContributorServiceSettings(secret="secret")
+    config = ContributorQueryEngineServiceSettings(secret="secret")
     mock_query_engine = MockQueryEngine()
-    service = ContributorService(query_engine=mock_query_engine, config=config)
+    service = ContributorQueryEngineService(
+        query_engine=mock_query_engine, config=config
+    )
     test_client = TestClient(service.app)
 
     # act
