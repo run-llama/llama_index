@@ -18,6 +18,7 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/anthropic.ipynb
+/cookbooks/anthropic_haiku.ipynb
 ```
 
 ## AnyScale
