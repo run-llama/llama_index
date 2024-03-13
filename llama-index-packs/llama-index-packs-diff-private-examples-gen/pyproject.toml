@@ -9,6 +9,13 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.packs.diff_private_simple_dataset"
+
+[tool.llamahub.class_authors]
+DiffPrivateSimpleDatasetPack = "nerdai"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -17,7 +24,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Andrei Fajardo <andrei@llamaindex.ai>"]
 description = "llama-index packs diff private simple dataset"
 exclude = ["**/BUILD"]
 license = "MIT"
