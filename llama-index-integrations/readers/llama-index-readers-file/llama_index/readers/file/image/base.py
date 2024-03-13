@@ -136,7 +136,9 @@ class ImageReader(BaseReader):
                 import pytesseract
 
                 model = cast(pytesseract, self._parser_config["model"])
-                text_str = model.image_to_string(image, **self._pytesseract_model_kwargs)
+                text_str = model.image_to_string(
+                    image, **self._pytesseract_model_kwargs
+                )
 
         return [
             ImageDocument(
