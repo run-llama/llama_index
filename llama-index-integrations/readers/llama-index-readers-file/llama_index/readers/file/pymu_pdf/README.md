@@ -1,7 +1,7 @@
 # PyMuPDF Loader
 
 ```bash
-pip install llama-index-readers-file
+pip install llama-index-readers-file pymupdf
 ```
 
 This loader extracts text from a local PDF file using the `PyMuPDF` Python library. If `metadata` is passed as True while calling `load` function; extracted documents will include basic metadata such as page numbers, file path and total number of pages in pdf.
