@@ -12,6 +12,7 @@ from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     FilterOperator,
     MetadataFilters,
+    MetadataFilter,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -346,9 +347,33 @@ class PGVectorStore(BasePydanticVectorStore):
             return "<="
         elif operator == FilterOperator.IN:
             return "IN"
+        elif operator == FilterOperator.NIN:
+            return "NOT IN"
+        elif operator == FilterOperator.CONTAINS:
+            return "@>"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
+
+    def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
+        from sqlalchemy import text
+
+        if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
+            return text(
+                f"metadata_->>'{filter_.key}' {self._to_postgres_operator(filter_.operator)} :values"
+            ).bindparams(values=tuple(filter_.value))
+        elif filter_.operator == FilterOperator.CONTAINS:
+            return text(
+                f"metadata_::jsonb->'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"'[\"{filter_.value}\"]'"
+            )
+        else:
+            return text(
+                f"metadata_->>'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"'{filter_.value}'"
+            )
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
         """
@@ -370,18 +395,7 @@ class PGVectorStore(BasePydanticVectorStore):
         return sqlalchemy_conditions[filters.condition](
             *(
                 (
-                    sqlalchemy.text(
-                        f"metadata_->>'{filter_.key}' "
-                        f"{self._to_postgres_operator(filter_.operator)} "
-                        # Do not enclose the value in quotes for IN operator
-                        # because we expect a (list of values) as a string
-                        # with the values already enclosed in quotes
-                        # e.g. ('Jane', 'John', 'Jack')
-                        f"{filter_.value}"
-                        if filter_.operator == FilterOperator.IN
-                        # Enclose the value in quotes for other operators
-                        else f"'{filter_.value}'"
-                    )
+                    self._build_filter_clause(filter_)
                     if not isinstance(filter_, MetadataFilters)
                     else self._recursively_apply_filters(filter_)
                 )
