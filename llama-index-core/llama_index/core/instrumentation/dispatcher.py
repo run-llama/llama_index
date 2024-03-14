@@ -16,8 +16,8 @@ class Dispatcher(BaseModel):
     event_handlers: List[BaseEventHandler] = Field(
         default=[], description="List of attached handlers"
     )
-    span_handler: BaseSpanHandler = Field(
-        default=NullSpanHandler(), description="Span handler."
+    span_handlers: List[BaseSpanHandler] = Field(
+        default=[NullSpanHandler()], description="Span handler."
     )
     parent_name: str = Field(
         default_factory=str, description="Name of parent Dispatcher."
@@ -39,9 +39,13 @@ class Dispatcher(BaseModel):
     def root(self) -> "Dispatcher":
         return self.manager.dispatchers[self.root_name]
 
-    def add_event_handler(self, handler) -> None:
+    def add_event_handler(self, handler: BaseEventHandler) -> None:
         """Add handler to set of handlers."""
         self.event_handlers += [handler]
+
+    def add_span_handler(self, handler: BaseSpanHandler) -> None:
+        """Add handler to set of handlers."""
+        self.span_handlers += [handler]
 
     def event(self, event: BaseEvent, **kwargs) -> None:
         """Dispatch event to all registered handlers."""
@@ -58,7 +62,8 @@ class Dispatcher(BaseModel):
         """Send notice to handlers that a span with id has started."""
         c = self
         while c:
-            c.span_handler.span_enter(id, **kwargs)
+            for h in c.span_handlers:
+                h.span_enter(id, **kwargs)
             if not c.propagate:
                 c = None
             else:
@@ -68,7 +73,8 @@ class Dispatcher(BaseModel):
         """Send notice to handlers that a span with id is being dropped."""
         c = self
         while c:
-            c.span_handler.span_drop(id, err, **kwargs)
+            for h in c.span_handlers:
+                h.span_drop(id, err, **kwargs)
             if not c.propagate:
                 c = None
             else:
@@ -78,7 +84,8 @@ class Dispatcher(BaseModel):
         """Send notice to handlers that a span with id is exiting."""
         c = self
         while c:
-            c.span_handler.span_exit(id, result, **kwargs)
+            for h in c.span_handlers:
+                h.span_exit(id, result, **kwargs)
             if not c.propagate:
                 c = None
             else:
