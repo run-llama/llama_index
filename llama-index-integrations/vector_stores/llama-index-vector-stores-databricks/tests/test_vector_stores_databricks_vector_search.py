@@ -1,5 +1,5 @@
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.vector_stores.databricks_vector_search import DatabricksVectorSearch
+from llama_index.vector_stores.databricks import DatabricksVectorSearch
 
 
 def test_class():

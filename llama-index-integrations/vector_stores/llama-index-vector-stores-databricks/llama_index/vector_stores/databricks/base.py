@@ -11,13 +11,13 @@ from typing import (
     List,
     Dict,
     Optional,
-    TYPE_CHECKING,
     cast,
 )
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from databricks.vector_search.client import VectorSearchIndex
 
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -30,10 +30,6 @@ from llama_index.core.vector_stores.types import (
 from llama_index.core.vector_stores.utils import node_to_metadata_dict
 from llama_index.core.schema import TextNode, BaseNode
 from llama_index.core.bridge.pydantic import PrivateAttr
-
-
-if TYPE_CHECKING:
-    from databricks.vector_search.client import VectorSearchIndex
 
 
 class _DatabricksIndexType(str, Enum):
@@ -223,6 +219,12 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         for node in nodes:
             node_id = node.node_id
             metadata = node_to_metadata_dict(node, remove_text=True, flat_metadata=True)
+
+            metadata_columns = self.columns or []
+
+            # explicitly record doc_id as metadata (for delete)
+            metadata_columns.append("doc_id")
+
             entry = {
                 self._primary_key: node_id,
                 self.text_column: node.get_content(),
@@ -232,12 +234,14 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
                     for col in filter(
                         lambda column: column
                         not in (self._primary_key, self.text_column),
-                        self.columns + ["doc_id"] or ["doc_id"], # explicitly record doc_id as metadata (for delete)
+                        metadata_columns,
                     )
                 },
             }
             doc_id = metadata.get("doc_id")
-            self._doc_id_to_pk[doc_id] = list(set(self._doc_id_to_pk.get(doc_id, []) + [node_id])) # associate this node_id with this doc_id
+            self._doc_id_to_pk[doc_id] = list(
+                set(self._doc_id_to_pk.get(doc_id, []) + [node_id])  # noqa: RUF005
+            )  # associate this node_id with this doc_id
 
             entries.append(entry)
             ids.append(node_id)
@@ -280,12 +284,16 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        primary_keys = self._doc_id_to_pk.get(ref_doc_id, None) # get the node_ids associated with the doc_id
+        primary_keys = self._doc_id_to_pk.get(
+            ref_doc_id, None
+        )  # get the node_ids associated with the doc_id
         if primary_keys is not None:
             self._index.delete(
                 primary_keys=primary_keys,
             )
-            self._doc_id_to_pk.pop(ref_doc_id) # remove this doc_id from the doc_id-to-node_id map
+            self._doc_id_to_pk.pop(
+                ref_doc_id
+            )  # remove this doc_id from the doc_id-to-node_id map
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""

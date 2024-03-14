@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.databricks_vector_search"
+import_path = "llama_index.vector_stores.databricks"
 
 [tool.llamahub.class_authors]
 DatabricksVectorSearch = "NickhilN"
@@ -24,7 +24,7 @@ python_version = "3.8"
 authors = ["Alberto Da Costa <alberto@bamelevate.com>", "Nickhil Nabar <nickhil@bamelevate.com"]
 description = "llama-index vector_stores databricks vector search integration"
 license = "MIT"
-name = "llama-index-vector-stores-databricks-vector-search"
+name = "llama-index-vector-stores-databricks"
 readme = "README.md"
 version = "0.1.1"
 
