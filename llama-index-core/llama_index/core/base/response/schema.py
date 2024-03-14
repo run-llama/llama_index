@@ -1,7 +1,7 @@
 """Response schema."""
 import asyncio
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union, AsyncGenerator
+from typing import Any, Dict, List, Optional, Union
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.schema import NodeWithScore
@@ -156,7 +156,7 @@ class AsyncStreamingResponse:
     response_txt: Optional[str] = None
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
-    async def _yield_response(self) -> AsyncGenerator[str, None]:
+    async def _yield_response(self) -> TokenAsyncGen:
         """Yield the string response."""
         async with self._lock:
             if self.response_txt is None and self.async_response_gen is not None:
@@ -167,7 +167,7 @@ class AsyncStreamingResponse:
             else:
                 yield self.response_txt
 
-    async def yield_response(self) -> AsyncGenerator[str, None]:
+    async def yield_response(self) -> TokenAsyncGen:
         """Yield the string response."""
         async for text in self._yield_response():
             yield text
