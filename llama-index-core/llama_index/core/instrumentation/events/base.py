@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from uuid import uuid4
 from datetime import datetime
@@ -14,3 +15,8 @@ class BaseEvent(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().dict(**kwargs)
+        data["class_name"] = self.class_name()
+        return data
