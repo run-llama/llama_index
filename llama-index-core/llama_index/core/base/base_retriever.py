@@ -240,8 +240,6 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-
-        return nodes
         dispatcher.event(RetrievalEndEvent())
         return nodes
 

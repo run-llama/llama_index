@@ -193,6 +193,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
             )
             query_event.on_end(payload={EventPayload.RESPONSE: response})
 
+        return response
+
     @dispatcher.span
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
