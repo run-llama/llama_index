@@ -49,6 +49,14 @@ from llama_index.core.types import (
 )
 
 
+class ToolSelection(BaseModel):
+    """Tool selection."""
+
+    tool_name: str = Field(description="Tool name to select.")
+    tool_args: List[str] = Field(description="Arguments for the tool")
+    tool_kwargs: Dict[str, Any] = Field(description="Keyword arguments for the tool.")
+
+
 # NOTE: These two protocols are needed to appease mypy
 @runtime_checkable
 class MessagesToPromptType(Protocol):
@@ -142,6 +150,8 @@ class LLM(BaseLLM):
         exclude=True,
     )
 
+    # -- Pydantic Configs --
+
     @validator("messages_to_prompt", pre=True)
     def set_messages_to_prompt(
         cls, messages_to_prompt: Optional[MessagesToPromptType]
@@ -161,6 +171,8 @@ class LLM(BaseLLM):
         if values.get("messages_to_prompt") is None:
             values["messages_to_prompt"] = generic_messages_to_prompt
         return values
+
+    # -- Utils --
 
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any
@@ -200,6 +212,47 @@ class LLM(BaseLLM):
             messages = self.output_parser.format_messages(messages)
         return self._extend_messages(messages)
 
+    def _parse_output(self, output: str) -> str:
+        if self.output_parser is not None:
+            return str(self.output_parser.parse(output))
+
+        return output
+
+    def _extend_prompt(
+        self,
+        formatted_prompt: str,
+    ) -> str:
+        """Add system and query wrapper prompts to base prompt."""
+        extended_prompt = formatted_prompt
+
+        if self.system_prompt:
+            extended_prompt = self.system_prompt + "\n\n" + extended_prompt
+
+        if self.query_wrapper_prompt:
+            extended_prompt = self.query_wrapper_prompt.format(
+                query_str=extended_prompt
+            )
+
+        return extended_prompt
+
+    def _extend_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
+        """Add system prompt to chat message list."""
+        if self.system_prompt:
+            messages = [
+                ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt),
+                *messages,
+            ]
+        return messages
+
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """Return query component."""
+        if self.metadata.is_chat_model:
+            return LLMChatComponent(llm=self, **kwargs)
+        else:
+            return LLMCompleteComponent(llm=self, **kwargs)
+
+    # -- Structured outputs --
+
     def structured_predict(
         self,
         output_cls: BaseModel,
@@ -234,11 +287,7 @@ class LLM(BaseLLM):
 
         return await program.acall(**prompt_args)
 
-    def _parse_output(self, output: str) -> str:
-        if self.output_parser is not None:
-            return str(self.output_parser.parse(output))
-
-        return output
+    # -- Prompt Chaining --
 
     def predict(
         self,
@@ -324,38 +373,35 @@ class LLM(BaseLLM):
 
         return stream_tokens
 
-    def _extend_prompt(
-        self,
-        formatted_prompt: str,
-    ) -> str:
-        """Add system and query wrapper prompts to base prompt."""
-        extended_prompt = formatted_prompt
+    # -- Tool Calling --
 
-        if self.system_prompt:
-            extended_prompt = self.system_prompt + "\n\n" + extended_prompt
+    def _get_tools_str(self, tools: List[Any]) -> str:
+        tools_str += "\n----\n".join(
+            [tool.metadata.simple_fn_schema_str for tool in tools]
+        )
 
-        if self.query_wrapper_prompt:
-            extended_prompt = self.query_wrapper_prompt.format(
-                query_str=extended_prompt
-            )
+    def _call_tool(self, tool_selection: ToolSelection, tool: Any) -> Any:
+        """Call tool."""
+        return tool(*tool_selection.tool_args, **tool_selection.tool_kwargs)
 
-        return extended_prompt
+    def predict_and_call(
+        self, prompt: PromptTemplate, tools: List[Any], **prompt_args: Any
+    ) -> Any:
+        """Predict and call the tool."""
+        tools_by_name = {tool.metadata.name: tool for tool in tools}
 
-    def _extend_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
-        """Add system prompt to chat message list."""
-        if self.system_prompt:
-            messages = [
-                ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt),
-                *messages,
-            ]
-        return messages
+        formatted_prompt = self._get_prompt(prompt, **prompt_args)
+        tools_str = self._get_tools_str(tools)
 
-    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
-        """Return query component."""
-        if self.metadata.is_chat_model:
-            return LLMChatComponent(llm=self, **kwargs)
-        else:
-            return LLMCompleteComponent(llm=self, **kwargs)
+        selection_prompt = PromptTemplate(
+            "Given a user prompt and a list of tools, select a tool to call.\n",
+            "{tools}\n" "User prompt: {prompt}\n",
+        )
+
+        tool_selection = self.structured_predict(
+            ToolSelection, selection_prompt, tools=tools_str, prompt=formatted_prompt
+        )
+        return self._call_tool(tool_selection, tools_by_name[tool_selection.tool_name])
 
 
 class BaseLLMComponent(QueryComponent):
