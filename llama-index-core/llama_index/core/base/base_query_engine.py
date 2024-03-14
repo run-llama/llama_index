@@ -88,11 +88,11 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
         )
 
     @abstractmethod
-    def _query(self, *, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         pass
 
     @abstractmethod
-    async def _aquery(self, *, query_bundle: QueryBundle) -> RESPONSE_TYPE:
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         pass
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:

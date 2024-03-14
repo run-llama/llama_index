@@ -205,7 +205,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
         current_trace_stack_ids = global_stack_trace_ids.get().copy()
         if trace_id is not None:
             if len(current_trace_stack_ids) == 0:
-                # self._reset_trace_events()
+                self._reset_trace_events()
 
                 for handler in self.handlers:
                     handler.start_trace(trace_id=trace_id)
