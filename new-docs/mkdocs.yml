@@ -23,6 +23,10 @@ theme:
   #- API Reference:
   #  - LLMs: api_reference/llms
   #- Changes: ./changes
+extra:
+  analytics:
+    provider: google
+    property: G-BYVB1ZVE6J
 markdown_extensions:
   - admonition
   - pymdownx.details
