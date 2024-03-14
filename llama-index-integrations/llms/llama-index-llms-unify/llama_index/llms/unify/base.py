@@ -3,8 +3,7 @@ from typing import Any, Optional
 
 from llama_index.llms.openai_like import OpenAILike
 
-
-class UnifyLLM(OpenAILike):
+class Unify(OpenAILike):
     def __init__(
         self,
         model: str,

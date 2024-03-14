@@ -1,4 +1,4 @@
-from llama_index.llms.unify.base import UnifyLLM
+from llama_index.llms.unify.base import Unify
 
 
-__all__ = ["UnifyLLM"]
+__all__ = ["Unify"]
