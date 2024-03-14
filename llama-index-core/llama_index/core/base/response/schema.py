@@ -167,7 +167,7 @@ class AsyncStreamingResponse:
             else:
                 yield self.response_txt
 
-    async def yield_response(self) -> TokenAsyncGen:
+    async def async_response_gen(self) -> TokenAsyncGen:
         """Yield the string response."""
         async for text in self._yield_response():
             yield text
