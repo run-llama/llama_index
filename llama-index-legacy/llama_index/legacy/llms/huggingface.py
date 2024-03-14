@@ -197,9 +197,9 @@ class HuggingFaceLLM(CustomLLM):
             tokenizer_name, **tokenizer_kwargs
         )
 
-        if self._tokenizer.name_or_path != model_name:
+        if tokenizer_name != model_name:
             logger.warning(
-                f"The model `{model_name}` and tokenizer `{self._tokenizer.name_or_path}` "
+                f"The model `{model_name}` and tokenizer `{tokenizer_name}` "
                 f"are different, please ensure that they are compatible."
             )
 
