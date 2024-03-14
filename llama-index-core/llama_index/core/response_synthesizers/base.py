@@ -36,6 +36,7 @@ from llama_index.core.schema import (
     MetadataMode,
     NodeWithScore,
     QueryBundle,
+    QueryType,
 )
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
@@ -55,7 +56,7 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 logger = logging.getLogger(__name__)
 
-QueryTextType = Union[str, QueryBundle]
+QueryTextType = QueryType
 
 
 def empty_response_generator() -> Generator[str, None, None]:
@@ -200,7 +201,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        dispatcher.event(SynthesizeStartEvent())
+        dispatcher.event(SynthesizeStartEvent(query=query))
 
         if len(nodes) == 0:
             if self._streaming:
@@ -231,7 +232,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
-        dispatcher.event(SynthesizeEndEvent())
+        dispatcher.event(SynthesizeEndEvent(query=query, response=response))
         return response
 
     @dispatcher.span
@@ -242,13 +243,17 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        dispatcher.event(SynthesizeStartEvent())
+        dispatcher.event(SynthesizeStartEvent(query=query))
         if len(nodes) == 0:
             if self._streaming:
-                self.dispatcher.event(SynthesizeEndEvent)
-                return StreamingResponse(response_gen=empty_response_generator())
+                empty_response = StreamingResponse(
+                    response_gen=empty_response_generator()
+                )
+                dispatcher.event(
+                    SynthesizeEndEvent(query=query, response=empty_response)
+                )
             else:
-                self.dispatcher.event(SynthesizeEndEvent)
+                dispatcher.event(SynthesizeEndEvent(query=query))
                 return Response("Empty Response")
 
         if isinstance(query, str):
@@ -272,7 +277,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
-        dispatcher.event(SynthesizeEndEvent())
+        dispatcher.event(SynthesizeEndEvent(query=query, response=response))
         return response
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:

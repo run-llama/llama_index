@@ -1,7 +1,12 @@
+from typing import Optional
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.instrumentation.events.base import BaseEvent
+from llama_index.core.schema import QueryType
 
 
 class SynthesizeStartEvent(BaseEvent):
+    query: QueryType
+
     @classmethod
     def class_name(cls):
         """Class name."""
@@ -9,6 +14,9 @@ class SynthesizeStartEvent(BaseEvent):
 
 
 class SynthesizeEndEvent(BaseEvent):
+    query: QueryType
+    response: Optional[RESPONSE_TYPE] = None
+
     @classmethod
     def class_name(cls):
         """Class name."""
