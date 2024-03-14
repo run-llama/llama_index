@@ -66,9 +66,9 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
 
         Args:
             text: node's text content
-            mode: different modes for handling different types of elements
+            mode: different modes for returning different types of elements based on the selected mode
             node_id: unique id for the node
-            node_metadata: metadata for the node. json output for the nodes contains a lot of fields
+            node_metadata: metadata for the node. the json output for the nodes contains a lot of fields for elements
 
         """
         elements: List[Element] = []
@@ -77,8 +77,7 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
         if mode == "json" and node_metadata is not None:
             page_number = node_metadata.get("page")
             json_items = node_metadata.get("items") or []
-            element_idx = 0
-            for json_item in json_items:
+            for element_idx, json_item in enumerate(json_items):
                 ele_type = json_item.get("type")
                 if ele_type == "heading":
                     elements.append(
@@ -111,14 +110,13 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
                             page_number=page_number,
                         )
                     )
-                element_idx += 1
         elif mode == "images" and node_metadata is not None:
             # only get images from json metadata
             images = node_metadata.get("images") or []
             for idx, image in enumerate(images):
                 elements.append(
                     Element(
-                        id=f"id_image_{idx}",
+                        id=f"id_page_{page_number}_image_{idx}",
                         type="image",
                         element=image,
                     )
@@ -206,7 +204,7 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
                 perfect_table = True
 
                 # verify that the table (markdown) have the same number of columns on each rows
-                table_lines = element.element.split("\n")
+                table_lines = element.markdown.split("\n")
                 table_columns = [len(line.split("|")) for line in table_lines]
                 if len(set(table_columns)) > 1:
                     # if the table have different number of columns on each rows, it's not a perfect table
