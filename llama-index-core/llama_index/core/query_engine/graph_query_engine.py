@@ -9,9 +9,6 @@ from llama_index.core.settings import (
     Settings,
     callback_manager_from_settings_or_context,
 )
-from llama_index.core.instrumentation.span_handlers.legacy_callback import (
-    LegacyCallbackSpanHandler,
-)
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -50,10 +47,6 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         callback_manager = callback_manager_from_settings_or_context(
             Settings, self._graph.service_context
         )
-        legacy_span_handler = LegacyCallbackSpanHandler(
-            callback_manager=callback_manager
-        )
-        dispatcher.span_handler = legacy_span_handler
         super().__init__(callback_manager=callback_manager)
 
     def _get_prompt_modules(self) -> Dict[str, Any]:

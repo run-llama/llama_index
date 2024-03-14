@@ -34,7 +34,6 @@ from llama_index.core.instrumentation.events.agent import (
     AgentChatWithStepStartEvent,
     AgentChatWithStepEndEvent,
 )
-from llama_index.core.instrumentation.span_handlers import LegacyCallbackSpanHandler
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -241,11 +240,6 @@ class AgentRunner(BaseAgentRunner):
                 )
             else:
                 self.callback_manager = CallbackManager()
-        legacy_span_handler = LegacyCallbackSpanHandler(
-            callback_manager=self.callback_manager
-        )
-        dispatcher.span_handler = legacy_span_handler
-
         self.init_task_state_kwargs = init_task_state_kwargs or {}
         self.delete_task_on_finish = delete_task_on_finish
         self.default_tool_choice = default_tool_choice

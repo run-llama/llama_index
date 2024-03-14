@@ -49,10 +49,6 @@ from llama_index.core.instrumentation.events.synthesis import (
     SynthesizeStartEvent,
     SynthesizeEndEvent,
 )
-from llama_index.core.instrumentation.span_handlers.legacy_callback import (
-    LegacyCallbackSpanHandler,
-)
-
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -93,13 +89,6 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
             callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context)
         )
-
-        legacy_span_handler = LegacyCallbackSpanHandler(
-            callback_manager=self.callback_manager
-        )
-        # don't overwrite current span_handler
-        if not dispatcher.span_handler.open_spans:
-            dispatcher.span_handler = legacy_span_handler
 
         self._prompt_helper = (
             prompt_helper

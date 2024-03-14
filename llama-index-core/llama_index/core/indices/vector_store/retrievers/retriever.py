@@ -16,7 +16,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.core.instrumentation.span_handlers import LegacyCallbackSpanHandler
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -71,10 +70,6 @@ class VectorIndexRetriever(BaseRetriever):
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
 
         callback_manager = callback_manager or CallbackManager()
-        legacy_span_handler = LegacyCallbackSpanHandler(
-            callback_manager=callback_manager
-        )
-        dispatcher.span_handler = legacy_span_handler
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,

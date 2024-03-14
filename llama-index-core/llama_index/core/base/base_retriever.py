@@ -34,7 +34,6 @@ from llama_index.core.instrumentation.events.retrieval import (
     RetrievalEndEvent,
     RetrievalStartEvent,
 )
-from llama_index.core.instrumentation.span_handlers import LegacyCallbackSpanHandler
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -51,10 +50,6 @@ class BaseRetriever(ChainableMixin, PromptMixin):
         verbose: bool = False,
     ) -> None:
         self.callback_manager = callback_manager or CallbackManager()
-        legacy_span_handler = LegacyCallbackSpanHandler(
-            callback_manager=self.callback_manager
-        )
-        dispatcher.span_handler = legacy_span_handler
 
         if objects is not None:
             object_map = {obj.index_id: obj.obj for obj in objects}
@@ -235,17 +230,18 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
             query_bundle = str_or_query_bundle
-        with self.callback_manager.event(
-            CBEventType.RETRIEVE,
-            payload={EventPayload.QUERY_STR: query_bundle.query_str},
-        ) as retrieve_event:
-            nodes = self._retrieve(query_bundle=query_bundle)
-            nodes = self._handle_recursive_retrieval(
-                query_bundle=query_bundle, nodes=nodes
-            )
-            retrieve_event.on_end(
-                payload={EventPayload.NODES: nodes},
-            )
+        with self.callback_manager.as_trace("query"):
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
+                nodes = self._retrieve(query_bundle)
+                nodes = self._handle_recursive_retrieval(query_bundle, nodes)
+                retrieve_event.on_end(
+                    payload={EventPayload.NODES: nodes},
+                )
+
+        return nodes
         dispatcher.event(RetrievalEndEvent())
         return nodes
 
