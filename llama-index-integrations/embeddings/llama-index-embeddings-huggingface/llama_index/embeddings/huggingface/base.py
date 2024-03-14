@@ -68,7 +68,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         trust_remote_code: bool = False,
         device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
-        safe_serialization: bool = False
+        safe_serialization: Optional[bool] = None
     ):
         self._device = device or infer_torch_device()
 
