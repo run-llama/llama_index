@@ -7,22 +7,21 @@ theme:
     - navigation.indexes
     - navigation.top
     - toc.follow
-#nav:
-  # - Home: 'index.md'
-  #- Getting Started:
-  #  - 'getting_started/installation.md'
-  #  - 'getting_started/reading.md'
-  #  - 'getting_started/starter_example.md'
-  #  - 'getting_started/concepts.md'
-  #  - 'getting_started/customization.md'
-  #  - 'getting_started/discover_llamaindex.md'
-  #- Use Cases: ./use_cases
-  #- Understanding: ./understanding
-  #- Module Guides: ./module_guides
-  #- Community: ./community
-  #- API Reference:
-  #  - LLMs: api_reference/llms
-  #- Changes: ./changes
+nav:
+  - Home: 'index.md'
+  - Getting Started:
+    - 'getting_started/installation.md'
+    - 'getting_started/reading.md'
+    - 'getting_started/starter_example.md'
+    - 'getting_started/concepts.md'
+    - 'getting_started/customization.md'
+    - 'getting_started/discover_llamaindex.md'
+  - Use Cases: ./use_cases
+  - Understanding: ./understanding
+  - Module Guides: ./module_guides
+  - Community: ./community
+  - API Reference: ./api_reference
+  - Changes: ./changes
 extra:
   analytics:
     provider: google
