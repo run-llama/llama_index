@@ -10,7 +10,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Union, AsyncGenerator
 
 from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
@@ -24,6 +24,7 @@ from llama_index.core.base.response.schema import (
     PydanticResponse,
     Response,
     StreamingResponse,
+    AsyncStreamingResponse,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager
@@ -51,6 +52,10 @@ QueryTextType = Union[str, QueryBundle]
 
 
 def empty_response_generator() -> Generator[str, None, None]:
+    yield "Empty Response"
+
+
+async def empty_response_agenerator() -> AsyncGenerator[str, None]:
     yield "Empty Response"
 
 
@@ -164,6 +169,12 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                 source_nodes=source_nodes,
                 metadata=response_metadata,
             )
+        if isinstance(response_str, AsyncGenerator):
+            return AsyncStreamingResponse(
+                response_str,
+                source_nodes=source_nodes,
+                metadata=response_metadata,
+            )
         if isinstance(response_str, self._output_cls):
             return PydanticResponse(
                 response_str, source_nodes=source_nodes, metadata=response_metadata
@@ -218,7 +229,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
     ) -> RESPONSE_TYPE:
         if len(nodes) == 0:
             if self._streaming:
-                return StreamingResponse(response_gen=empty_response_generator())
+                return AsyncStreamingResponse(response_gen=empty_response_agenerator())
             else:
                 return Response("Empty Response")
 

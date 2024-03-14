@@ -1,5 +1,14 @@
 import logging
-from typing import Any, Callable, Generator, Optional, Sequence, Type, cast
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Optional,
+    Sequence,
+    Type,
+    cast,
+    AsyncGenerator,
+)
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
@@ -351,7 +360,7 @@ class Refine(BaseSynthesizer):
             else:
                 response = response or "Empty Response"
         else:
-            response = cast(Generator, response)
+            response = cast(AsyncGenerator, response)
         return response
 
     async def _arefine_response_single(
@@ -411,7 +420,24 @@ class Refine(BaseSynthesizer):
                         f"Validation error on structured response: {e}", exc_info=True
                     )
             else:
-                raise ValueError("Streaming not supported for async")
+                if isinstance(response, Generator):
+                    response = "".join(response)
+
+                if isinstance(response, AsyncGenerator):
+                    _r = ""
+                    async for text in response:
+                        _r += text
+                    response = _r
+
+                refine_template = self._refine_template.partial_format(
+                    query_str=query_str, existing_answer=response
+                )
+
+                response = await self._llm.astream(
+                    refine_template,
+                    context_msg=cur_text_chunk,
+                    **response_kwargs,
+                )
 
             if query_satisfied:
                 refine_template = self._refine_template.partial_format(
@@ -451,7 +477,12 @@ class Refine(BaseSynthesizer):
                         f"Validation error on structured response: {e}", exc_info=True
                     )
             elif response is None and self._streaming:
-                raise ValueError("Streaming not supported for async")
+                response = await self._llm.astream(
+                    text_qa_template,
+                    context_str=cur_text_chunk,
+                    **response_kwargs,
+                )
+                query_satisfied = True
             else:
                 response = await self._arefine_response_single(
                     cast(RESPONSE_TEXT_TYPE, response),
@@ -464,5 +495,5 @@ class Refine(BaseSynthesizer):
         if isinstance(response, str):
             response = response or "Empty Response"
         else:
-            response = cast(Generator, response)
+            response = cast(AsyncGenerator, response)
         return response
