@@ -57,7 +57,7 @@ class PremAIEmbeddings(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        return "PremAIEmbedding"
+        return "PremAIEmbeddings"
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
