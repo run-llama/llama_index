@@ -18,7 +18,7 @@ class NeMoEmbedding(BaseEmbedding):
 
     model_name: str = Field(
         default="NV-Embed-QA-003",
-        description="Name of the FastEmbedding model to use.\n"
+        description="Name of the NeMo embeddings model to use.\n"
         "Defaults to 'NV-Embed-QA-003'.\n",
     )
     api_endpoint_url: str = Field(
