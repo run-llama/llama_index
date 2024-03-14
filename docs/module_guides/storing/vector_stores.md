@@ -23,7 +23,7 @@ We are actively adding more integrations and improving feature coverage for each
 | ChatGPT Retrieval Plugin | aggregator              |                    |               | ✓      | ✓               |       |
 | Chroma                   | self-hosted             | ✓                  |               | ✓      | ✓               |       |
 | DashVector               | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
-| Databricks               | cloud               | ✓                  |               | ✓      | ✓               |       |
+| Databricks               | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Deeplake                 | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | DocArray                 | aggregator              | ✓                  |               | ✓      | ✓               |       |
 | DuckDB                   | in-memory / self-hosted | ✓                  |               | ✓      | ✓               |       |
