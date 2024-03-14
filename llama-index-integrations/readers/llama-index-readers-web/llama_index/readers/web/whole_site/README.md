@@ -38,7 +38,6 @@ except ImportError:
     raise ImportError("Please install chromedriver_autoinstaller")
 from llama_index.readers.web import WholeSiteReader
 from selenium import webdriver
-from llama_index.readers.web import WholeSiteReader
 
 options = webdriver.ChromeOptions()
 options.binary_location = "/usr/bin/google-chrome"
