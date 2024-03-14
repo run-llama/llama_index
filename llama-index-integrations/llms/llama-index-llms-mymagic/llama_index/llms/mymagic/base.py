@@ -72,6 +72,7 @@ class MyMagicAI(LLM):
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
+        self.return_output = return_output
 
         self.question_data = {
             "storage_provider": storage_provider,
@@ -85,7 +86,6 @@ class MyMagicAI(LLM):
             "return_output": return_output,
             "input_json_file":input_json_file,
             "structured_output":structured_output,
-            ""
         }
 
     @classmethod
@@ -97,7 +97,9 @@ class MyMagicAI(LLM):
         return self.base_url_template.format(model=model)
 
     async def _submit_question(self, question_data: Dict[str, Any]) -> Dict[str, Any]:
-        async with httpx.AsyncClient() as client:
+        timeout_config = httpx.Timeout(600.0, connect=60.0)
+
+        async with httpx.AsyncClient(timeout=timeout_config) as client:
             url = f"{self._construct_url(self.model)}/submit_question"
             resp = await client.post(url, json=question_data)
             resp.raise_for_status()
@@ -139,6 +141,10 @@ class MyMagicAI(LLM):
         )
 
         task_response = await self._submit_question(self.question_data)
+
+        if self.return_output:
+            return task_response     
+
         task_id = task_response.get("task_id")
         while True:
             result = await self._get_result(task_id)
@@ -160,6 +166,9 @@ class MyMagicAI(LLM):
         )
 
         task_response = self._submit_question_sync(self.question_data)
+        if self.return_output:
+            return task_response
+
         task_id = task_response.get("task_id")
         while True:
             result = self._get_result_sync(task_id)
