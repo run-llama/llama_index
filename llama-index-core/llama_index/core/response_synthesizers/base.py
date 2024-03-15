@@ -211,11 +211,13 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                 dispatcher.event(
                     SynthesizeEndEvent(query=query, response=empty_response)
                 )
+                return empty_response
             else:
                 empty_response = Response("Empty Response")
                 dispatcher.event(
                     SynthesizeEndEvent(query=query, response=empty_response)
                 )
+                return empty_response
 
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
@@ -258,11 +260,13 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                 dispatcher.event(
                     SynthesizeEndEvent(query=query, response=empty_response)
                 )
+                return empty_response
             else:
                 empty_response = Response("Empty Response")
                 dispatcher.event(
                     SynthesizeEndEvent(query=query, response=empty_response)
                 )
+                return empty_response
 
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
