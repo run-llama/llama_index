@@ -28,9 +28,10 @@
 
 - Fixed import error for ChatMessage (#11902)
 
-### `llama-index-llms-openai` [0.1.10]
+### `llama-index-llms-openai` [0.1.11]
 
 - added gpt-35-turbo-0125 for AZURE_TURBO_MODELS (#11956)
+- fixed error with nontype in logprobs (#11967)
 
 ### `llama-index-llms-premai` [0.1.4]
 
