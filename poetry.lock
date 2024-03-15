@@ -1629,13 +1629,13 @@ query-tools = ["guidance (>=0.0.64,<0.0.65)", "jsonpath-ng (>=1.6.0,<2.0.0)", "l
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.1.10"
+version = "0.1.11"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "llama_index_llms_openai-0.1.10-py3-none-any.whl", hash = "sha256:662d42314376df81921e0840342fc58db8fa8c83860eaf761c8d99c31047d196"},
-    {file = "llama_index_llms_openai-0.1.10.tar.gz", hash = "sha256:81ea443d0705076c9e6a5bd1d9654f0a3dd1a3093f5b362369a73d8e3610b7ca"},
+    {file = "llama_index_llms_openai-0.1.11-py3-none-any.whl", hash = "sha256:b8ebbe5b9e6b20d0fb7b4c619bbe1638ef25ffc3ad0529937c4d5c4863e53f3d"},
+    {file = "llama_index_llms_openai-0.1.11.tar.gz", hash = "sha256:ad5a0d087c88ccfbb53960bb32865412069433f67274f51274a38b5103e2e502"},
 ]
 
 [package.dependencies]
@@ -2182,13 +2182,13 @@ test = ["flaky", "ipykernel", "ipython", "ipywidgets", "nbconvert (>=7.0.0)", "p
 
 [[package]]
 name = "nbformat"
-version = "5.10.2"
+version = "5.10.3"
 description = "The Jupyter Notebook format"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "nbformat-5.10.2-py3-none-any.whl", hash = "sha256:7381189a0d537586b3f18bae5dbad347d7dd0a7cf0276b09cdcd5c24d38edd99"},
-    {file = "nbformat-5.10.2.tar.gz", hash = "sha256:c535b20a0d4310167bf4d12ad31eccfb0dc61e6392d6f8c570ab5b45a06a49a3"},
+    {file = "nbformat-5.10.3-py3-none-any.whl", hash = "sha256:d9476ca28676799af85385f409b49d95e199951477a159a576ef2a675151e5e8"},
+    {file = "nbformat-5.10.3.tar.gz", hash = "sha256:60ed5e910ef7c6264b87d644f276b1b49e24011930deef54605188ddeb211685"},
 ]
 
 [package.dependencies]
