@@ -329,7 +329,7 @@ class OpenAI(LLM):
         message = from_openai_message(openai_message)
         openai_token_logprobs = response.choices[0].logprobs
         logprobs = None
-        if openai_token_logprobs:
+        if openai_token_logprobs and openai_token_logprobs.content:
             logprobs = from_openai_token_logprobs(openai_token_logprobs.content)
 
         return ChatResponse(
