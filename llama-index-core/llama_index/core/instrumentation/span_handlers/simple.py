@@ -3,6 +3,7 @@ from llama_index.core.bridge.pydantic import Field
 from llama_index.core.instrumentation.span.simple import SimpleSpan
 from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
 from datetime import datetime
+import warnings
 
 if TYPE_CHECKING:
     from treelib import Tree
@@ -42,6 +43,7 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         """Method for getting trace trees."""
         try:
             from treelib import Tree
+            from treelib.exceptions import NodeIDAbsentError
         except ImportError as e:
             raise ImportError(
                 "`treelib` package is missing. Please install it by using "
@@ -59,12 +61,31 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
                     # start new tree
                     tree = Tree()
 
-            tree.create_node(
-                tag=f"{span.id_} ({span.duration})",
-                identifier=span.id_,
-                parent=span.parent_id,
-                data=span.start_time,
-            )
+            try:
+                tree.create_node(
+                    tag=f"{span.id_} ({span.duration})",
+                    identifier=span.id_,
+                    parent=span.parent_id,
+                    data=span.start_time,
+                )
+            except NodeIDAbsentError:
+                warnings.warn("Parent with id {span.parent_id} missing from spans")
+                # create new tree and fake parent node
+                trees.append(tree)
+                tree = Tree()
+                tree.create_node(
+                    tag=f"{span.parent_id} (MISSING)",
+                    identifier=span.parent_id,
+                    parent=None,
+                    data=span.start_time,
+                )
+                tree.create_node(
+                    tag=f"{span.id_} ({span.duration})",
+                    identifier=span.id_,
+                    parent=span.parent_id,
+                    data=span.start_time,
+                )
+
         trees.append(tree)
         return trees
 
